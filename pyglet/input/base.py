@@ -599,6 +599,8 @@ class Controller(EventDispatcher):
             `dpdown` : bool
             `dpleft` : bool
             `dpright` : bool
+
+        .. versionadded:: 1.2
         """
 
         self.device = device
@@ -868,7 +870,7 @@ class Controller(EventDispatcher):
         """A button on the controller was pressed.
 
         :Parameters:
-            `controller` : `Controller`
+            `controller` :  :py:class:`Controller`
                 The controller whose button was pressed.
             `button` : string
                 The name of the button that was pressed.
@@ -883,6 +885,9 @@ class Controller(EventDispatcher):
             `button` : string
                 The name of the button that was released.
         """
+
+    def __repr__(self):
+        return f"Controller(name={self.name})"
 
 
 Controller.register_event_type('on_button_press')
@@ -975,7 +980,7 @@ class AppleRemote(EventDispatcher):
         whether or not the user has released the button.
 
         :Parameters:
-            `button` : unicode
+            `button` : str
                 The name of the button that was released. The valid names are
                 'up', 'down', 'left', 'right', 'left_hold', 'right_hold',
                 'menu', 'menu_hold', 'select', and 'select_hold'
@@ -1122,3 +1127,74 @@ class TabletCursor:
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.name)
+
+
+class ControllerManager(EventDispatcher):
+    """High level interface for managing game Controllers.
+
+    This class provides a convenient way to handle the
+    connection and disconnection of devices. A list of all
+    connected Controllers can be queried at any time with the
+    `get_controllers` method. For hot-plugging, events are
+    dispatched for `on_connect` and `on_disconnect`.
+    To use the ControllerManager, first make an instance::
+
+        controller_man = pyglet.input.ControllerManager()
+
+    At the start of your game, query for any Controllers
+    that are already connected::
+
+        controllers = controller_man.get_controllers()
+
+    To handle Controllers that are connected or disconnected
+    after the start of your game, register handlers for the
+    appropriate events::
+
+        @controller_man.event
+        def on_connect(controller):
+            # code to handle newly connected
+            # (or re-connected) controllers
+            controller.open()
+            print("Connect:", controller)
+
+        @controller_man.event
+        def on_disconnect(controller):
+            # code to handle disconnected Controller
+            print("Disconnect:", controller)
+
+    .. versionadded:: 1.2
+    """
+
+    def get_controllers(self) -> list[Controller]:
+        """Get a list of all connected Controllers
+
+        :rtype: list of :py:class:`Controller`
+        """
+        raise NotImplementedError
+
+    def on_connect(self, controller):
+        """A Controller has been connected. If this is
+        a previously dissconnected Controller that is
+        being re-connected, the same Controller instance
+        will be returned.
+
+        :Parameters:
+            `controller` : :py:class:`Controller`
+                An un-opened Controller instance.
+
+        :event:
+        """
+
+    def on_disconnect(self, controller):
+        """A Controller has been disconnected.
+
+        :Parameters:
+            `controller` : :py:class:`Controller`
+                An un-opened Controller instance.
+
+        :event:
+        """
+
+
+ControllerManager.register_event_type('on_connect')
+ControllerManager.register_event_type('on_disconnect')
