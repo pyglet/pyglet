@@ -368,7 +368,7 @@ controller_api_to_pyglet = {
 class XInputDevice(Device):
 
     def __init__(self, index, manager):
-        super().__init__(None, f'XInput Controller {index}')
+        super().__init__(None, f"XInput{index}")
         self.index = index
         self._manager = weakref.proxy(manager)
         self.connected = False
@@ -418,11 +418,11 @@ class XInputDevice(Device):
 class XInputDeviceManager(EventDispatcher):
 
     def __init__(self):
-        self._devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
+        self.all_devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
         self._connected_devices = set()
 
         for i in range(XUSER_MAX_COUNT):
-            device = self._devices[i]
+            device = self.all_devices[i]
             if XInputGetStateEx(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                 continue
             device.connected = True
@@ -437,7 +437,7 @@ class XInputDeviceManager(EventDispatcher):
 
     def get_devices(self):
         with self._dev_lock:
-            return [dev for dev in self._devices if dev.connected]
+            return [dev for dev in self.all_devices if dev.connected]
 
     def _get_state(self):
         xuser_max_count = set(range(XUSER_MAX_COUNT))     # {0, 1, 2, 3}
@@ -453,7 +453,7 @@ class XInputDeviceManager(EventDispatcher):
             if elapsed >= detect_rate:
                 # Only check if not currently connected:
                 for i in xuser_max_count - self._connected_devices:
-                    device = self._devices[i]
+                    device = self.all_devices[i]
                     if XInputGetStateEx(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                         continue
 
@@ -467,7 +467,7 @@ class XInputDeviceManager(EventDispatcher):
             # At the set polling rate, update all connected and
             # opened devices. Skip unopened devices to save CPU:
             for i in self._connected_devices.copy():
-                device = self._devices[i]
+                device = self.all_devices[i]
                 result = XInputGetStateEx(i, byref(device.xinput_state))
 
                 if result == ERROR_DEVICE_NOT_CONNECTED:
@@ -611,22 +611,19 @@ class XInputControllerManager(ControllerManager):
     def __init__(self):
         self._controllers = {}
 
-        for device in _device_manager._devices:
-            meta = {'name': device.name, 'guid': device.get_guid()}
-            controller = XInputController(device, meta)
-            controller.device.push_handler('on_connect', self._on_connect)
-            controller.device.push_handler('on_connect', self._on_disconnect)
-            self._controllers[device] = controller
+        for device in _device_manager.all_devices:
+            meta = {'name': device.name, 'guid': "XINPUTCONTROLLER"}
+            self._controllers[device] = XInputController(device, meta)
 
-    def _on_connect(self, device):
-        controller = self._controllers[device]
-        self.dispatch_event('on_connect', controller)
+        @_device_manager.event
+        def on_connect(xdevice):
+            self.dispatch_event('on_connect', self._controllers[xdevice])
 
-    def _on_disconnect(self, device):
-        controller = self._controllers[device]
-        self.dispatch_event('on_disconnect', controller)
+        @_device_manager.event
+        def on_disconnect(xdevice):
+            self.dispatch_event('on_disconnect', self._controllers[xdevice])
 
-    def get_controllers(self) -> list[Controller]:
+    def get_controllers(self):
         return [ctlr for ctlr in self._controllers.values() if ctlr.device.connected]
 
 
