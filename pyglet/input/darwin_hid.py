@@ -39,12 +39,13 @@ from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32,
 
 from .controller import get_mapping
 from .base import Device, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, Controller, AppleRemote
+from .base import Joystick, Controller, AppleRemote, ControllerManager
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
 from pyglet.libs.darwin.cocoapy import cfset_to_set, cftype_to_value, cfarray_to_list
 from pyglet.lib import load_library
+from pyglet.event import EventDispatcher
 
 
 __LP64__ = (sys.maxsize > 2 ** 32)
@@ -465,7 +466,7 @@ class HIDDeviceElement:
         self.physicalMax = iokit.IOHIDElementGetPhysicalMax(elementRef)
 
 
-class HIDManager:
+class HIDManager(EventDispatcher):
     def __init__(self):
         # Create the HID Manager.
         self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
@@ -521,6 +522,10 @@ class HIDManager:
         return matching_callback
 
 
+HIDManager.register_event_type('on_connect')
+HIDManager.register_event_type('on_disconnect')
+
+
 ######################################################################
 # Add conversion methods for IOHIDDevices and IOHIDDeviceElements
 # to the list of known types used by cftype_to_value.
@@ -565,11 +570,12 @@ _button_names = {
 
 class PygletDevice(Device):
     def __init__(self, display, device, manager):
-        super(PygletDevice, self).__init__(display=display, name=device.product)
+        super().__init__(display=display, name=device.product)
         self.device = device
         self.device_identifier = self.device.unique_identifier()
         self.device.add_value_observer(self)
         self.device.add_removal_observer(self)
+        self._manager = manager
         manager.matching_observers.add(self)
         self._create_controls()
         self._is_open = False
@@ -619,6 +625,7 @@ class PygletDevice(Device):
         # Set device to None, but Keep self._controls around
         # in case device is plugged back in.
         self.device = None
+        self._manager.dispatch_event('on_disconnect', self)
 
     def device_discovered(self, hid_device):
         # Called by HID manager when new device is found.
@@ -632,6 +639,7 @@ class PygletDevice(Device):
             if self._is_open:
                 self.device.open(self._is_exclusive)
                 self.device.schedule_with_run_loop()
+        self._manager.dispatch_event('on_connect', self)
 
     def device_value_changed(self, hid_device, hid_value):
         # Called by device when input value changes.
@@ -671,32 +679,55 @@ class PygletDevice(Device):
 ######################################################################
 
 
-_manager = HIDManager()
+_hid_manager = HIDManager()
+
+
+class DarwinControllerManager(ControllerManager):
+
+    def __init__(self, display=None):
+        self._display = display
+        self._controllers = {}
+
+        for device in _hid_manager.devices:
+            controller = _create_controller(device, display)
+            if controller:
+                self._controllers[device] = controller
+
+        @_hid_manager.event
+        def on_connect(hiddevice):
+            self.dispatch_event('on_connect', self._controllers[hiddevice])
+
+        @_hid_manager.event
+        def on_disconnect(hiddevice):
+            self.dispatch_event('on_disconnect', self._controllers[hiddevice])
+
+    def get_controllers(self):
+        pass
 
 
 def get_devices(display=None):
-    return [PygletDevice(display, device, _manager) for device in _manager.devices]
+    return [PygletDevice(display, device, _hid_manager) for device in _hid_manager.devices]
 
 
 def get_joysticks(display=None):
-    return [Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
+    return [Joystick(PygletDevice(display, device, _hid_manager)) for device in _hid_manager.devices
             if device.is_joystick() or device.is_gamepad() or device.is_multi_axis()]
 
 
 def get_apple_remote(display=None):
-    for device in _manager.devices:
+    for device in _hid_manager.devices:
         if device.product == 'Apple IR':
-            return AppleRemote(PygletDevice(display, device, _manager))
+            return AppleRemote(PygletDevice(display, device, _hid_manager))
 
 
 def _create_controller(device, display):
     mapping = get_mapping(device.get_guid())
     if not mapping:
         return
-    return Controller(PygletDevice(display, device, _manager), mapping)
+    return Controller(PygletDevice(display, device, _hid_manager), mapping)
 
 
 def get_controllers(display=None):
     return [controller for controller in
-            [_create_controller(device, display) for device in _manager.devices]
+            [_create_controller(device, display) for device in _hid_manager.devices]
             if controller is not None]

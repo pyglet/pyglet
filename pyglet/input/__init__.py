@@ -211,4 +211,4 @@ else:
         from .darwin_hid import get_joysticks
         from .darwin_hid import get_apple_remote
         from .darwin_hid import get_controllers
-        # TODO: create ControllerManager for OSX
+        from .darwin_hid import DarwinControllerManager as ControllerManager
