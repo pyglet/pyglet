@@ -44,6 +44,7 @@ import pyglet.lib
 
 swresample = pyglet.lib.load_library(
     'swresample',
+    linux='libswresample.so.3',
     win32='swresample-3',
     darwin='swresample.3'
 )

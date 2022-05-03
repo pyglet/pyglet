@@ -44,6 +44,7 @@ import pyglet.lib
 
 avutil = pyglet.lib.load_library(
     'avutil',
+    linux='libavutil.so.56',
     win32='avutil-56',
     darwin='avutil.56'
 )

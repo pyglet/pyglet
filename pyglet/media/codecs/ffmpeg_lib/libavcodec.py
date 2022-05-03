@@ -47,6 +47,7 @@ from . import libavutil
 
 avcodec = pyglet.lib.load_library(
     'avcodec',
+    linux='libavcodec.so.58',
     win32='avcodec-58',
     darwin='avcodec.58'
 )

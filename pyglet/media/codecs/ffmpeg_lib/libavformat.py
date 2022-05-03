@@ -46,6 +46,7 @@ from . import libavutil
 
 avformat = pyglet.lib.load_library(
     'avformat',
+    linux='libavformat.so.58',
     win32='avformat-58',
     darwin='avformat.58'
 )

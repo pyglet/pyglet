@@ -44,6 +44,7 @@ import pyglet.lib
 
 swscale = pyglet.lib.load_library(
     'swscale',
+    linux='libswscale.so.5',
     win32='swscale-5',
     darwin='swscale.5'
 )
