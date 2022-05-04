@@ -210,7 +210,7 @@ class PushButton(WidgetBase):
         self._pressed = False
 
     def _update_position(self):
-        self._sprite.position = self._x, self._y
+        self._sprite.position = self._x, self._y, 0
 
     @property
     def value(self):
