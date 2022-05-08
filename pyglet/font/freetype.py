@@ -115,7 +115,6 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         # In FT positive pitch means `down` flow, in Pyglet ImageData
         # negative values indicate a top-to-bottom arrangement. So pitch must be inverted.
         # Using negative pitch causes conversions, so much faster to just swap tex_coords
-        import sys
         img = image.ImageData(self._width,
                               self._height,
                               'A',

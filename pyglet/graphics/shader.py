@@ -1,7 +1,6 @@
 from typing import Dict, List
 from ctypes import *
 from weakref import proxy
-import re
 
 import pyglet
 

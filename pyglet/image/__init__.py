@@ -1270,7 +1270,7 @@ class Texture(AbstractImage):
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `mag_filter` : int
+            `fmt` : int
                 GL constant giving format of texture; for example, ``GL_RGBA``.
                 The format specifies what format the pixel data we're expecting to write
                 to the texture and should ideally be the same as for internal format.
