@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,7 @@ vertex_source = """#version 150 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position, 0, 1);
+        gl_Position = window.projection * window.view * vec4(position, 0.0, 1.0);
         vertex_colors = colors;
     }
 """

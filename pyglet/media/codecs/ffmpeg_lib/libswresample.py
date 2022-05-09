@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,27 +44,16 @@ from . import compat
 
 _debug = debug_print('debug_media')
 
+swresample = pyglet.lib.load_library(
+    'swresample',
+    win32=('swresample-4', 'swresample-3'),
+    darwin=('swresample.4', 'swresample.3')
+)
 
-try:
-    swresample = pyglet.lib.load_library(
-        'swresample',
-        win32='swresample-4',
-        darwin='swresample.4'
-    )
-    version = 4
+swresample.swresample_version.restype = c_int
 
-except ImportError:
-    if _debug:
-        print("Failed to load: swresample-4. Trying older version.")
+compat.set_version('swresample', swresample.swresample_version() >> 16)
 
-    swresample = pyglet.lib.load_library(
-        'swresample',
-        win32='swresample-3',
-        darwin='swresample.3'
-    )
-    version = 3
-
-compat.set_version('swresample', version)
 
 SWR_CH_MAX = 32
 

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -91,6 +91,7 @@ _user32 = DebugLibrary(windll.user32)
 _dwmapi = DebugLibrary(windll.dwmapi)
 _shell32 = DebugLibrary(windll.shell32)
 _ole32 = DebugLibrary(windll.ole32)
+_oleaut32 = DebugLibrary(windll.oleaut32)
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -292,6 +293,8 @@ _shell32.DragQueryPoint.argtypes = [HDROP, LPPOINT]
 
 # ole32
 _ole32.CreateStreamOnHGlobal.argtypes = [HGLOBAL, BOOL, LPSTREAM]
+_ole32.CoInitialize.restype = HRESULT
+_ole32.CoInitialize.argtypes = [LPVOID]
 _ole32.CoInitializeEx.restype = HRESULT
 _ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
 _ole32.CoUninitialize.restype = HRESULT
@@ -300,3 +303,12 @@ _ole32.PropVariantClear.restype = HRESULT
 _ole32.PropVariantClear.argtypes = [c_void_p]
 _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
+_ole32.CoSetProxyBlanket.restype = HRESULT
+_ole32.CoSetProxyBlanket.argtypes = (c_void_p, DWORD, DWORD, c_void_p, DWORD, DWORD, c_void_p, DWORD)
+
+
+# oleaut32
+_oleaut32.VariantInit.restype = c_void_p
+_oleaut32.VariantInit.argtypes = [c_void_p]
+_oleaut32.VariantClear.restype = HRESULT
+_oleaut32.VariantClear.argtypes = [c_void_p]

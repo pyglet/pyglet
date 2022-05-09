@@ -54,8 +54,8 @@ mouse event, but besides being tiresome to code, it does not take into account
 the effects of other obscuring windows.  It is best to use the `dx` and `dy`
 parameters instead.
 
-The following events are dispatched when a mouse button is pressed or
-released, or the mouse is moved while any button is held down::
+The following events are dispatched by the Window when a mouse button is
+pressed or released, or the mouse is moved while any button is held down::
 
     def on_mouse_press(x, y, button, modifiers):
         pass

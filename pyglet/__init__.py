@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.a3'
+version = '2.0.dev14'
 __version__ = version
 
 if sys.version_info < (3, 6):
@@ -159,6 +159,7 @@ options = {
     'headless': False,
     'headless_device': 0,
     'win32_disable_shaping': False,
+    'xinput_controllers': True,
 }
 
 _option_types = {
@@ -186,28 +187,26 @@ _option_types = {
     'win32_gdi_font': bool,
     'headless': bool,
     'headless_device': int,
-    'win32_disable_shaping': bool
+    'win32_disable_shaping': bool,
+    'xinput_controllers': bool
 }
 
 
-def _read_environment():
+for key in options:
     """Read defaults for options from environment"""
-    for key in options:
-        assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
-        env = 'PYGLET_%s' % key.upper()
-        try:
-            value = os.environ[env]
-            if _option_types[key] is tuple:
-                options[key] = value.split(',')
-            elif _option_types[key] is bool:
-                options[key] = value in ('true', 'TRUE', 'True', '1')
-            elif _option_types[key] is int:
-                options[key] = int(value)
-        except KeyError:
-            pass
+    assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
+    env = 'PYGLET_%s' % key.upper()
+    try:
+        value = os.environ[env]
+        if _option_types[key] is tuple:
+            options[key] = value.split(',')
+        elif _option_types[key] is bool:
+            options[key] = value in ('true', 'TRUE', 'True', '1')
+        elif _option_types[key] is int:
+            options[key] = int(value)
+    except KeyError:
+        pass
 
-
-_read_environment()
 
 if compat_platform == 'cygwin':
     # This hack pretends that the posix-like ctypes provides windows

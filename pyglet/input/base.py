@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -76,6 +76,10 @@ class Device:
         self.name = name
         self.manufacturer = None
         self._is_open = False
+
+    @property
+    def is_open(self):
+        return self._is_open
 
     def open(self, window=None, exclusive=False):
         """Open the device to begin receiving input from it.
@@ -178,16 +182,15 @@ class Control(EventDispatcher):
         else:
             return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
-    if _is_pyglet_doc_run:
-        def on_change(self, value):
-            """The value changed.
+    def on_change(self, value):
+        """The value changed.
 
-            :Parameters:
-                `value` : float
-                    Current value of the control.
+        :Parameters:
+            `value` : float
+                Current value of the control.
 
-            :event:
-            """
+        :event:
+        """
 
 
 Control.register_event_type('on_change')
@@ -596,13 +599,15 @@ class Controller(EventDispatcher):
             `dpdown` : bool
             `dpleft` : bool
             `dpright` : bool
+
+        .. versionadded:: 1.2
         """
 
         self.device = device
         self._mapping = mapping
 
-        self.name = self._mapping['name']
-        self.guid = self._mapping['guid']
+        self.name = mapping.get('name')
+        self.guid = mapping.get('guid')
 
         self.a = False
         self.b = False
@@ -615,8 +620,8 @@ class Controller(EventDispatcher):
         self.rightshoulder = False
         self.leftstick = False          # stick press button
         self.rightstick = False         # stick press button
-        self.lefttrigger = -1           # default to rest position
-        self.righttrigger = -1          # default to rest position
+        self.lefttrigger = 0
+        self.righttrigger = 0
         self.leftx = 0
         self.lefty = 0
         self.rightx = 0
@@ -632,7 +637,12 @@ class Controller(EventDispatcher):
         self._hat_x_control = None
         self._hat_y_control = None
 
+        self._initialize_controls()
+
+    def _initialize_controls(self):
+
         def add_axis(control, axis_name):
+            tscale = 1.0 / (control.max - control.min)
             scale = 2.0 / (control.max - control.min)
             bias = -1.0 - control.min * scale
             if control.inverted:
@@ -666,7 +676,7 @@ class Controller(EventDispatcher):
             elif axis_name in ("lefttrigger", "righttrigger"):
                 @control.event
                 def on_change(value):
-                    normalized_value = value * scale + bias
+                    normalized_value = value * tscale
                     setattr(self, axis_name, normalized_value)
                     self.dispatch_event('on_trigger_motion', self, axis_name, normalized_value)
 
@@ -732,10 +742,11 @@ class Controller(EventDispatcher):
                 self.dispatch_event('on_dpad_motion', self,
                                     self.dpleft, self.dpright, self.dpup, self.dpdown)
 
-        for control in device.get_controls():
+        for control in self.device.get_controls():
             """Categorize the various control types"""
             if isinstance(control, Button):
                 self._button_controls.append(control)
+
             elif isinstance(control, AbsoluteAxis):
                 if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz'):
                     self._axis_controls.append(control)
@@ -770,11 +781,10 @@ class Controller(EventDispatcher):
                         add_axis(self._hat_y_control, "dpup")
                     elif relation.index == 2:     # 2 == RIGHT
                         add_axis(self._hat_x_control, "dpright")
-                    # TODO: figure out a more elegent way to handle direction pairs
-                    # elif relation.index == 4:     # 4 == DOWN
-                    #     add_axis(self._hat_y_control, "dpdown")
-                    # elif relation.index == 8:     # 8 == LEFT
-                    #     add_axis(self._hat_x_control, "dpleft")
+                    elif relation.index == 4:     # 4 == DOWN
+                        add_axis(self._hat_y_control, "dpdown")
+                    elif relation.index == 8:     # 8 == LEFT
+                        add_axis(self._hat_x_control, "dpleft")
 
     def open(self, window=None, exclusive=False):
         """Open the controller.  See `Device.open`. """
@@ -860,7 +870,7 @@ class Controller(EventDispatcher):
         """A button on the controller was pressed.
 
         :Parameters:
-            `controller` : `Controller`
+            `controller` :  :py:class:`Controller`
                 The controller whose button was pressed.
             `button` : string
                 The name of the button that was pressed.
@@ -875,6 +885,9 @@ class Controller(EventDispatcher):
             `button` : string
                 The name of the button that was released.
         """
+
+    def __repr__(self):
+        return f"Controller(name={self.name})"
 
 
 Controller.register_event_type('on_button_press')
@@ -967,7 +980,7 @@ class AppleRemote(EventDispatcher):
         whether or not the user has released the button.
 
         :Parameters:
-            `button` : unicode
+            `button` : str
                 The name of the button that was released. The valid names are
                 'up', 'down', 'left', 'right', 'left_hold', 'right_hold',
                 'menu', 'menu_hold', 'select', and 'select_hold'
@@ -1114,3 +1127,74 @@ class TabletCursor:
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.name)
+
+
+class ControllerManager(EventDispatcher):
+    """High level interface for managing game Controllers.
+
+    This class provides a convenient way to handle the
+    connection and disconnection of devices. A list of all
+    connected Controllers can be queried at any time with the
+    `get_controllers` method. For hot-plugging, events are
+    dispatched for `on_connect` and `on_disconnect`.
+    To use the ControllerManager, first make an instance::
+
+        controller_man = pyglet.input.ControllerManager()
+
+    At the start of your game, query for any Controllers
+    that are already connected::
+
+        controllers = controller_man.get_controllers()
+
+    To handle Controllers that are connected or disconnected
+    after the start of your game, register handlers for the
+    appropriate events::
+
+        @controller_man.event
+        def on_connect(controller):
+            # code to handle newly connected
+            # (or re-connected) controllers
+            controller.open()
+            print("Connect:", controller)
+
+        @controller_man.event
+        def on_disconnect(controller):
+            # code to handle disconnected Controller
+            print("Disconnect:", controller)
+
+    .. versionadded:: 1.2
+    """
+
+    def get_controllers(self):
+        """Get a list of all connected Controllers
+
+        :rtype: list of :py:class:`Controller`
+        """
+        raise NotImplementedError
+
+    def on_connect(self, controller):
+        """A Controller has been connected. If this is
+        a previously dissconnected Controller that is
+        being re-connected, the same Controller instance
+        will be returned.
+
+        :Parameters:
+            `controller` : :py:class:`Controller`
+                An un-opened Controller instance.
+
+        :event:
+        """
+
+    def on_disconnect(self, controller):
+        """A Controller has been disconnected.
+
+        :Parameters:
+            `controller` : :py:class:`Controller`
+                An un-opened Controller instance.
+
+        :event:
+        """
+
+
+ControllerManager.register_event_type('on_connect')
+ControllerManager.register_event_type('on_disconnect')

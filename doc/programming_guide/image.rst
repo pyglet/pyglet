@@ -47,7 +47,146 @@ In this case the filename ``kitten.png`` is optional, but gives a hint to
 the decoder as to the file type (it is otherwise unused when a file object
 is provided).
 
-pyglet provides the following image decoders:
+Displaying images
+-----------------
+
+Image drawing is usually done in the window's
+:py:meth:`~pyglet.window.Window.on_draw` event handler.
+It is possible to draw individual images directly, but usually you will
+want to create a "sprite" for each appearance of the image on-screen.
+
+Sprites
+^^^^^^^
+
+A Sprite is a full featured class for displaying instances of Images or
+Animations in the window. Image and Animation instances are mainly concerned
+with the image data (size, pixels, etc.), wheras Sprites also include
+additional properties. These include x/y location, scale, rotation, opacity,
+color tint, visibility, and both horizontal and vertical scaling.
+Multiple sprites can share the same image; for example, hundreds of bullet
+sprites might share the same bullet image.
+
+A Sprite is constructed given an image or animation, and can be directly
+drawn with the :py:meth:`~pyglet.sprite.Sprite.draw` method::
+
+    sprite = pyglet.sprite.Sprite(img=image)
+
+    @window.event
+    def on_draw():
+        window.clear()
+        sprite.draw()
+
+If created with an animation, sprites automatically handle displaying
+the most up-to-date frame of the animation.  The following example uses a
+scheduled function to gradually move the Sprite across the screen::
+
+    def update(dt):
+        # Move 10 pixels per second
+        sprite.x += dt * 10
+
+    # Call update 60 times a second
+    pyglet.clock.schedule_interval(update, 1/60.)
+
+If you need to draw many sprites, using a :py:class:`~pyglet.graphics.Batch`
+to draw them all at once is strongly recommended.  This is far more efficient
+than calling :py:meth:`~pyglet.sprite.Sprite.draw` on each of them in a loop::
+
+    batch = pyglet.graphics.Batch()
+
+    sprites = [pyglet.sprite.Sprite(image, batch=batch),
+               pyglet.sprite.Sprite(image, batch=batch),
+               # ...  ]
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
+When sprites are collected into a batch, no guarantee is made about the order
+in which they will be drawn.  If you need to ensure some sprites are drawn
+before others (for example, landscape tiles might be drawn before character
+sprites, which might be drawn before some particle effect sprites), use two
+or more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the
+draw order::
+
+    batch = pyglet.graphics.Batch()
+    background = pyglet.graphics.OrderedGroup(0)
+    foreground = pyglet.graphics.OrderedGroup(1)
+
+    sprites = [pyglet.sprite.Sprite(image, batch=batch, group=background),
+               pyglet.sprite.Sprite(image, batch=batch, group=background),
+               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
+               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
+               # ...]
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
+For best performance, you should use as few batches and groups as required.
+(See the :ref:`guide_graphics` section for more details on batch
+and group rendering). This will reduce the number of internal and OpenGL
+operations for drawing each frame.
+
+In addition, try to combine your images into as few textures as possible;
+for example, by loading images with :py:func:`pyglet.resource.image`
+(see :ref:`guide_resources`) or with :ref:`guide_texture-bins-and-atlases`).
+A common pitfall is to use the :py:func:`pyglet.image.load` method to load
+a large number of images.  This will cause a seperate texture to be created
+for each image loaded, resulting in a lot of OpenGL texture binding overhead
+for each frame.
+
+Simple image blitting
+^^^^^^^^^^^^^^^^^^^^^
+
+Drawing images directly is less efficient, but may be adequate for
+simple cases. Images can be drawn into a window with the
+:py:meth:`~pyglet.image.AbstractImage.blit` method::
+
+    @window.event
+    def on_draw():
+        window.clear()
+        image.blit(x, y)
+
+The `x` and `y` coordinates locate where to draw the anchor point of the
+image.  For example, to center the image at ``(x, y)``::
+
+    kitten.anchor_x = kitten.width // 2
+    kitten.anchor_y = kitten.height // 2
+    kitten.blit(x, y)
+
+You can also specify an optional `z` component to the
+:py:meth:`~pyglet.image.AbstractImage.blit` method.
+This has no effect unless you have changed the default projection
+or enabled depth testing.  In the following example, the second
+image is drawn *behind* the first, even though it is drawn after it::
+
+    from pyglet.gl import *
+    glEnable(GL_DEPTH_TEST)
+
+    kitten.blit(x, y, 0)
+    kitten.blit(x, y, -0.5)
+
+The default pyglet projection has a depth range of (-1, 1) -- images drawn
+with a z value outside this range will not be visible, regardless of whether
+depth testing is enabled or not.
+
+Images with an alpha channel can be blended with the existing framebuffer.  To
+do this you need to supply OpenGL with a blend equation.  The following code
+fragment implements the most common form of alpha blending, however other
+techniques are also possible::
+
+    from pyglet.gl import *
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+You would only need to call the code above once during your program, before
+you draw any images (this is not necessary when using only sprites).
+
+Supported image decoders
+------------------------
+The following table shows which codecs are available in pyglet. 
 
     .. list-table::
         :header-rows: 1
@@ -59,6 +198,9 @@ pyglet provides the following image decoders:
           - ``DDSImageDecoder``
           - Reads Microsoft DirectDraw Surface files containing compressed
             textures
+        * - ``pyglet.image.codecs.wic``
+          - ``WICDecoder``
+          - Uses Windows Imaging Component services to decode images.
         * - ``pyglet.image.codecs.gdiplus``
           - ``GDIPlusDecoder``
           - Uses Windows GDI+ services to decode images.
@@ -73,7 +215,7 @@ pyglet provides the following image decoders:
           - Uses Mac OS X QuickTime to decode images.
         * - ``pyglet.image.codecs.png``
           - ``PNGImageDecoder``
-          - BMP decoder written in pure Python.
+          - PNG decoder written in pure Python.
         * - ``pyglet.image.codecs.bmp``
           - ``BMPImageDecoder``
           - BMP decoder written in pure Python.
@@ -676,143 +818,6 @@ Similarly, a free auxiliary buffer is obtained::
 When using the stencil or auxiliary buffers, make sure you explicitly request
 these when creating the window.  See `OpenGL configuration options` for
 details.
-
-Displaying images
------------------
-
-Image drawing is usually done in the window's
-:py:meth:`~pyglet.window.Window.on_draw` event handler.
-It is possible to draw individual images directly, but usually you will
-want to create a "sprite" for each appearance of the image on-screen.
-
-Sprites
-^^^^^^^
-
-A Sprite is a full featured class for displaying instances of Images or
-Animations in the window. Image and Animation instances are mainly concerned
-with the image data (size, pixels, etc.), wheras Sprites also include
-additional properties. These include x/y location, scale, rotation, opacity,
-color tint, visibility, and both horizontal and vertical scaling.
-Multiple sprites can share the same image; for example, hundreds of bullet
-sprites might share the same bullet image.
-
-A Sprite is constructed given an image or animation, and can be directly
-drawn with the :py:meth:`~pyglet.sprite.Sprite.draw` method::
-
-    sprite = pyglet.sprite.Sprite(img=image)
-
-    @window.event
-    def on_draw():
-        window.clear()
-        sprite.draw()
-
-If created with an animation, sprites automatically handle displaying
-the most up-to-date frame of the animation.  The following example uses a
-scheduled function to gradually move the Sprite across the screen::
-
-    def update(dt):
-        # Move 10 pixels per second
-        sprite.x += dt * 10
-
-    # Call update 60 times a second
-    pyglet.clock.schedule_interval(update, 1/60.)
-
-If you need to draw many sprites, using a :py:class:`~pyglet.graphics.Batch`
-to draw them all at once is strongly recommended.  This is far more efficient
-than calling :py:meth:`~pyglet.sprite.Sprite.draw` on each of them in a loop::
-
-    batch = pyglet.graphics.Batch()
-
-    sprites = [pyglet.sprite.Sprite(image, batch=batch),
-               pyglet.sprite.Sprite(image, batch=batch),
-               # ...  ]
-
-    @window.event
-    def on_draw():
-        window.clear()
-        batch.draw()
-
-When sprites are collected into a batch, no guarantee is made about the order
-in which they will be drawn.  If you need to ensure some sprites are drawn
-before others (for example, landscape tiles might be drawn before character
-sprites, which might be drawn before some particle effect sprites), use two
-or more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the
-draw order::
-
-    batch = pyglet.graphics.Batch()
-    background = pyglet.graphics.OrderedGroup(0)
-    foreground = pyglet.graphics.OrderedGroup(1)
-
-    sprites = [pyglet.sprite.Sprite(image, batch=batch, group=background),
-               pyglet.sprite.Sprite(image, batch=batch, group=background),
-               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
-               pyglet.sprite.Sprite(image, batch=batch, group=foreground),
-               # ...]
-
-    @window.event
-    def on_draw():
-        window.clear()
-        batch.draw()
-
-For best performance, you should use as few batches and groups as required.
-(See the :ref:`guide_graphics` section for more details on batch
-and group rendering). This will reduce the number of internal and OpenGL
-operations for drawing each frame.
-
-In addition, try to combine your images into as few textures as possible;
-for example, by loading images with :py:func:`pyglet.resource.image`
-(see :ref:`guide_resources`) or with :ref:`guide_texture-bins-and-atlases`).
-A common pitfall is to use the :py:func:`pyglet.image.load` method to load
-a large number of images.  This will cause a seperate texture to be created
-for each image loaded, resulting in a lot of OpenGL texture binding overhead
-for each frame.
-
-Simple image blitting
-^^^^^^^^^^^^^^^^^^^^^
-
-Drawing images directly is less efficient, but may be adequate for
-simple cases. Images can be drawn into a window with the
-:py:meth:`~pyglet.image.AbstractImage.blit` method::
-
-    @window.event
-    def on_draw():
-        window.clear()
-        image.blit(x, y)
-
-The `x` and `y` coordinates locate where to draw the anchor point of the
-image.  For example, to center the image at ``(x, y)``::
-
-    kitten.anchor_x = kitten.width // 2
-    kitten.anchor_y = kitten.height // 2
-    kitten.blit(x, y)
-
-You can also specify an optional `z` component to the
-:py:meth:`~pyglet.image.AbstractImage.blit` method.
-This has no effect unless you have changed the default projection
-or enabled depth testing.  In the following example, the second
-image is drawn *behind* the first, even though it is drawn after it::
-
-    from pyglet.gl import *
-    glEnable(GL_DEPTH_TEST)
-
-    kitten.blit(x, y, 0)
-    kitten.blit(x, y, -0.5)
-
-The default pyglet projection has a depth range of (-1, 1) -- images drawn
-with a z value outside this range will not be visible, regardless of whether
-depth testing is enabled or not.
-
-Images with an alpha channel can be blended with the existing framebuffer.  To
-do this you need to supply OpenGL with a blend equation.  The following code
-fragment implements the most common form of alpha blending, however other
-techniques are also possible::
-
-    from pyglet.gl import *
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-You would only need to call the code above once during your program, before
-you draw any images (this is not necessary when using only sprites).
 
 OpenGL imaging
 --------------

@@ -69,7 +69,7 @@ skip_modules = {"pyglet": {
                                      "win32",
                                      "freetype", "freetype_lib",
                                      "fontconfig",
-                                     "win32query",],
+                                     "win32query"],
                      "pyglet.input": ["darwin_hid",
                                       "directinput",
                                       "evdev",
@@ -115,8 +115,7 @@ inheritance_graph_attrs = dict(rankdir="LR", size='""')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
-              'ext.docstrings',
-              'sphinx.ext.inheritance_diagram', 
+              'sphinx.ext.inheritance_diagram',
               'sphinx.ext.todo',
               'sphinx.ext.napoleon']
 

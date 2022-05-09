@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -226,8 +226,21 @@ def _init_directinput():
 def get_devices(display=None):
     _init_directinput()
     _devices = []
+    _xinput_devices = []
+    if pyglet.options["xinput_controllers"]:
+        try:
+            from .xinput import get_xinput_guids
+            _xinput_devices = get_xinput_guids()
+        except ImportError:
+            pass
 
     def _device_enum(device_instance, arg):
+        guid_id = format(device_instance.contents.guidProduct.Data1, "08x")
+        # Only XInput should handle DirectInput devices if enabled. Filter them out.
+        if guid_id in _xinput_devices:
+            # Log somewhere?
+            return dinput.DIENUM_CONTINUE
+
         device = dinput.IDirectInputDevice8()
         _i_dinput.CreateDevice(device_instance.contents.guidInstance, ctypes.byref(device), None)
         _devices.append(DirectInputDevice(display, device, device_instance.contents))

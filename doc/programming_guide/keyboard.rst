@@ -9,7 +9,7 @@ locale- and device-independent Unicode text entry.
 Keyboard input requires a window which has focus.  The operating system
 usually decides which application window has keyboard focus.  Typically this
 window appears above all others and may be decorated differently, though this
-is platform-specific (for example, Unix window managers sometimes couple
+is platform-specific (for example, some Linux window managers couple
 keyboard focus with the mouse pointer).
 
 You can request keyboard focus for a window with the

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -694,9 +694,6 @@ class TextureGroup(Group):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
 
-    def unset_state(self):
-        glBindTexture(self.texture.target, 0)
-
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.order, self.parent))
 
@@ -728,7 +725,7 @@ _vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position, 1);
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;

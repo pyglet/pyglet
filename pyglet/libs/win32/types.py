@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 
 import sys
 import ctypes
+from pyglet import com
 from ctypes import *
 from ctypes.wintypes import *
 
@@ -82,6 +83,7 @@ def POINTER_(obj):
 
 c_void_p = POINTER_(c_void)
 INT = c_int
+UBYTE = c_ubyte
 LPVOID = c_void_p
 HCURSOR = HANDLE
 LRESULT = LPARAM
@@ -509,6 +511,23 @@ class PROPVARIANT(ctypes.Structure):
         ('union', _VarTable)
     ]
 
+class _VarTableVariant(ctypes.Union):
+    """Must be in an anonymous union or values will not work across various VT's."""
+    _fields_ = [
+        ('bstrVal', LPCWSTR)
+    ]
+
+
+class VARIANT(ctypes.Structure):
+    _anonymous_ = ['union']
+
+    _fields_ = [
+        ('vt', ctypes.c_ushort),
+        ('wReserved1', WORD),
+        ('wReserved2', WORD),
+        ('wReserved3', WORD),
+        ('union', _VarTableVariant)
+    ]
 
 class DWM_BLURBEHIND(ctypes.Structure):
     _fields_ = [
@@ -516,4 +535,46 @@ class DWM_BLURBEHIND(ctypes.Structure):
         ("fEnable", BOOL),
         ("hRgnBlur", HRGN),
         ("fTransitionOnMaximized", DWORD),
+    ]
+
+
+class STATSTG(ctypes.Structure):
+    _fields_ = [
+        ('pwcsName', LPOLESTR),
+        ('type', DWORD),
+        ('cbSize', ULARGE_INTEGER),
+        ('mtime', FILETIME),
+        ('ctime', FILETIME),
+        ('atime', FILETIME),
+        ('grfMode', DWORD),
+        ('grfLocksSupported', DWORD),
+        ('clsid', DWORD),
+        ('grfStateBits', DWORD),
+        ('reserved', DWORD),
+    ]
+
+class IStream(com.pIUnknown):
+    _methods_ = [
+        ('Read',
+         com.STDMETHOD(c_void_p, ULONG, POINTER(ULONG))),
+        ('Write',
+         com.STDMETHOD()),
+        ('Seek',
+         com.STDMETHOD(LARGE_INTEGER, DWORD, POINTER(ULARGE_INTEGER))),
+        ('SetSize',
+         com.STDMETHOD()),
+        ('CopyTo',
+         com.STDMETHOD()),
+        ('Commit',
+         com.STDMETHOD()),
+        ('Revert',
+         com.STDMETHOD()),
+        ('LockRegion',
+         com.STDMETHOD()),
+        ('UnlockRegion',
+         com.STDMETHOD()),
+        ('Stat',
+         com.STDMETHOD(POINTER(STATSTG), UINT)),
+        ('Clone',
+         com.STDMETHOD()),
     ]

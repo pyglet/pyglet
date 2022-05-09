@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,25 +44,17 @@ from . import compat
 
 _debug = debug_print('debug_media')
 
-try:
-    swscale = pyglet.lib.load_library(
-        'swscale',
-        win32='swscale-6',
-        darwin='swscale.6'
-    )
-    version = 6
-except ImportError:
-    if _debug:
-        print("Failed to load: swscale-6. Trying older version.")
 
-    swscale = pyglet.lib.load_library(
-        'swscale',
-        win32='swscale-5',
-        darwin='swscale.5'
-    )
-    version = 5
+swscale = pyglet.lib.load_library(
+    'swscale',
+    win32=('swscale-6', 'swscale-5'),
+    darwin=('swscale.6', 'swscale.5')
+)
 
-compat.set_version('swscale', version)
+swscale.swscale_version.restype = c_int
+
+compat.set_version('swscale', swscale.swscale_version() >> 16)
+
 
 SWS_FAST_BILINEAR = 1
 

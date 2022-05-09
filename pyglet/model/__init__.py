@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -304,9 +304,6 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
         self.program['model'] = self.matrix
-
-    def unset_state(self):
-        gl.glBindTexture(self.texture.target, 0)
 
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))

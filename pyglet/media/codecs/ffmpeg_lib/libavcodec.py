@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,25 +47,16 @@ from . import libavutil
 
 _debug = debug_print('debug_media')
 
-try:
-    avcodec = pyglet.lib.load_library(
-        'avcodec',
-        win32='avcodec-59',
-        darwin='avcodec.59'
-    )
-    version = 59
-except ImportError:
-    if _debug:
-        print("Failed to load: avcodec-59. Trying older version.")
+avcodec = pyglet.lib.load_library(
+    'avcodec',
+    win32=('avcodec-59', 'avcodec-58'),
+    darwin=('avcodec.59', 'avcodec.58')
+)
 
-    avcodec = pyglet.lib.load_library(
-        'avcodec',
-        win32='avcodec-58',
-        darwin='avcodec.58'
-    )
-    version = 58
+avcodec.avcodec_version.restype = c_int
 
-compat.set_version('avcodec', version)
+compat.set_version('avcodec', avcodec.avcodec_version() >> 16)
+
 
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 

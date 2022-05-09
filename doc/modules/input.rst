@@ -8,6 +8,18 @@ pyglet.input
 Classes
 -------
 
+.. autoclass:: ControllerManager
+
+  .. rubric:: Methods
+
+  .. automethod:: get_controllers
+
+  .. rubric:: Events
+
+  .. automethod:: on_connect
+  .. automethod:: on_disconnect
+
+
 .. autoclass:: Device
   :members:
   :undoc-members:
@@ -95,6 +107,7 @@ Classes
 
 .. autoclass:: Tablet
   :undoc-members:
+
 
 Functions
 ---------

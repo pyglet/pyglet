@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,24 +36,19 @@
 """Use ffmpeg to decode audio and video media.
 """
 
-import tempfile
-from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
-                    c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
-                    c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union,
-                    create_string_buffer, memmove, pointer)
 from collections import deque
+from ctypes import (c_int, c_int32, c_uint8, c_char_p,
+                    addressof, byref, cast, POINTER, Structure, create_string_buffer, memmove)
 
 import pyglet
 import pyglet.lib
-
 from pyglet import image
 from pyglet.util import asbytes, asbytes_filename, asstr
-from ..events import MediaEvent
-from ..exceptions import MediaFormatException
-from .base import StreamingSource, VideoFormat, AudioFormat
+from . import MediaDecoder
 from .base import AudioData, SourceInfo, StaticSource
+from .base import StreamingSource, VideoFormat, AudioFormat
 from .ffmpeg_lib import *
-from . import MediaEncoder, MediaDecoder
+from ..exceptions import MediaFormatException
 
 
 class FileInfo:
@@ -538,10 +533,14 @@ class FFmpegSource(StreamingSource):
     # Max increase/decrease of original sample size
     SAMPLE_CORRECTION_PERCENT_MAX = 10
 
+    # Maximum amount of packets to create for video and audio queues.
+    MAX_QUEUE_SIZE = 100
+
     def __init__(self, filename, file=None):
         self._packet = None
         self._video_stream = None
         self._audio_stream = None
+        self._stream_end = False
         self._file = None
         self._memory_file = None
 
@@ -635,15 +634,15 @@ class FFmpegSource(StreamingSource):
         self._events = []  # They don't seem to be used!
 
         self.audioq = deque()
-        # # Make queue big enough to accomodate 1.2 sec?
-        self._max_len_audioq = 50  # Need to figure out a correct amount
+        # Make queue big enough to accomodate 1.2 sec?
+        self._max_len_audioq = self.MAX_QUEUE_SIZE  # Need to figure out a correct amount
         if self.audio_format:
              # Buffer 1 sec worth of audio
              nbytes = ffmpeg_get_audio_buffer_size(self.audio_format)
              self._audio_buffer = (c_uint8 * nbytes)()
 
         self.videoq = deque()
-        self._max_len_videoq = 50  # Need to figure out a correct amount
+        self._max_len_videoq = self.MAX_QUEUE_SIZE  # Need to figure out a correct amount
 
         self.start_time = self._get_start_time()
         self._duration = timestamp_from_ffmpeg(file_info.duration)
@@ -680,6 +679,7 @@ class FFmpegSource(StreamingSource):
             timestamp_to_ffmpeg(timestamp + self.start_time)
         )
         del self._events[:]
+        self._stream_end = False
         self._clear_video_audio_queues()
         self._fillq()
 
@@ -721,14 +721,6 @@ class FFmpegSource(StreamingSource):
 
                 else:
                     break
-
-    def _append_audio_data(self, audio_data):
-        self.audioq.append(audio_data)
-        assert len(self.audioq) <= self._max_len_audioq
-
-    def _append_video_packet(self, video_packet):
-        self.videoq.append(video_packet)
-        assert len(self.videoq) <= self._max_len_audioq
 
     def _get_audio_packet(self):
         """Take an audio packet from the queue.
@@ -776,9 +768,8 @@ class FFmpegSource(StreamingSource):
             if self._get_packet():
                 self._process_packet()
             else:
+                self._stream_end = True
                 break
-                # Should maybe record that end of stream is reached in an
-                # instance member.
 
     def _check_low_level(self):
         """Check if both audio and video queues are getting very low.
@@ -817,12 +808,13 @@ class FFmpegSource(StreamingSource):
             if _debug:
                 print('Created and queued packet %d (%f)' % (video_packet.id, video_packet.timestamp))
 
-            self._append_video_packet(video_packet)
+            self.videoq.append(video_packet)
             return video_packet
 
         elif self.audio_format and self._packet.contents.stream_index == self._audio_stream_index:
             audio_packet = AudioPacket(self._packet, timestamp)
-            self._append_audio_data(audio_packet)
+
+            self.audioq.append(audio_packet)
             return audio_packet
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
@@ -831,16 +823,22 @@ class FFmpegSource(StreamingSource):
 
         while len(data) < num_bytes:
             if not self.audioq:
-                data = None
                 break
 
             audio_packet = self._get_audio_packet()
             buffer, timestamp, duration = self._decode_audio_packet(audio_packet, compensation_time)
+
             if not buffer:
                 break
             data += buffer
 
-        if data is None:
+        # No data and no audio queue left
+        if not data and not self.audioq:
+            if not self._stream_end:
+                # No more audio data in queue, but we haven't hit the stream end.
+                if _debug:
+                    print("Audio queue was starved by the audio driver.")
+
             return None
 
         audio_data = AudioData(data, len(data), timestamp, duration, [])
@@ -1093,6 +1091,8 @@ class FFmpegSource(StreamingSource):
             # We skip video packets which are not video frames
             # This happens in mkv files for the first few frames.
             video_packet = self._get_video_packet()
+            if not video_packet:
+                return None
             if video_packet.image == 0:
                 self._decode_video_packet(video_packet)
             if video_packet.image is not None or not skip_empty_frame:

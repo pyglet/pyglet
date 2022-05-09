@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Joystick, Game Controller, tablet and USB HID device support.
+"""Joystick, Game Controller, Tablet and USB HID device support.
 
 This module provides a unified interface to almost any input device, besides
 the regular mouse and keyboard support provided by
@@ -52,20 +52,21 @@ not.  In these cases the device API may still be useful -- the user will have
 to be asked to press each button in turn or move each axis separately to
 identify them.
 
-Higher-level interfaces are provided for joysticks, tablets and the Apple
-remote control.  These devices can usually be identified by pyglet positively,
-and a base level of functionality for each one provided through a common
-interface.
+Higher-level interfaces are provided for joysticks, game controllers, tablets
+and the Apple remote control. These devices can usually be identified by pyglet
+positively, and a base level of functionality for each one provided through a
+common interface.
 
 To use an input device:
 
-1. Call :py:func:`get_devices`, :py:func:`get_apple_remote` or
-   :py:func:`get_joysticks`
-   to retrieve and identify the device.
+1. Call :py:func:`get_devices`, :py:func:`get_apple_remote`,
+   :py:func:`get_controllers` or :py:func:`get_joysticks` to retrieve and
+   identify the device.
 2. For low-level devices (retrieved by :py:func:`get_devices`), query the
    devices list of controls and determine which ones you are interested in. For
    high-level interfaces the set of controls is provided by the interface.
-3. Optionally attach event handlers to controls on the device.
+3. Optionally attach event handlers to controls on the device. For high-level
+   interfaces, additional events are available.
 4. Call :py:meth:`Device.open` to begin receiving events on the device.  You can
    begin querying the control values after this time; they will be updated
    asynchronously.
@@ -77,13 +78,16 @@ note that no control list is available; instead, calling :py:meth:`Tablet.open`
 returns a :py:class:`TabletCanvas` onto which you should set your event
 handlers.
 
+For game controllers, the :py:class:`ControllerManager` is available. This
+provides a convenient way to handle hot-plugging of controllers.
+
 .. versionadded:: 1.2
 
 """
 
 import sys
 
-from .base import Device, Control, RelativeAxis, AbsoluteAxis
+from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
@@ -167,29 +171,44 @@ else:
     def get_tablets(display=None):
         return []
 
-    from pyglet import compat_platform
+    from pyglet import compat_platform, options
 
     if compat_platform.startswith('linux'):
         from .x11_xinput_tablet import get_tablets
-        from .x11_xinput import get_devices as xinput_get_devices
+        from .x11_xinput import get_devices as x11xinput_get_devices
         from .evdev import get_devices as evdev_get_devices
         from .evdev import get_joysticks
         from .evdev import get_controllers
+        from .evdev import EvdevControllerManager as ControllerManager
 
         def get_devices(display=None):
-            return evdev_get_devices(display) + xinput_get_devices(display)
+            return evdev_get_devices(display) + x11xinput_get_devices(display)
 
     elif compat_platform in ('cygwin', 'win32'):
-        from .directinput import get_devices
+        from .directinput import get_devices as dinput_get_devices
+        from .directinput import get_controllers as dinput_get_controllers
         from .directinput import get_joysticks
-        from .directinput import get_controllers
         try:
             from .wintab import get_tablets
         except:
             pass
+        if options["xinput_controllers"] is False:
+            get_devices = dinput_get_devices
+            get_controllers = dinput_get_controllers
+        else:
+            from .xinput import get_devices as xinput_get_devices
+            from .xinput import get_controllers as xinput_get_controllers
+            from .xinput import XInputControllerManager as ControllerManager
+
+            def get_devices(display=None):
+                return xinput_get_devices() + dinput_get_devices(display)
+
+            def get_controllers(display=None):
+                return xinput_get_controllers() + dinput_get_controllers(display)
 
     elif compat_platform == 'darwin':
         from .darwin_hid import get_devices
         from .darwin_hid import get_joysticks
         from .darwin_hid import get_apple_remote
         from .darwin_hid import get_controllers
+        from .darwin_hid import DarwinControllerManager as ControllerManager

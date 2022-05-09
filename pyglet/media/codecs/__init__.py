@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -122,7 +122,7 @@ def have_ffmpeg():
     try:
         from . import ffmpeg_lib
         if _debug:
-            print('FFmpeg available, using to load media files.')
+            print('FFmpeg available, using to load media files. Versions: {}'.format(ffmpeg_lib.compat.versions))
         return True
 
     except (ImportError, FileNotFoundError, AttributeError):

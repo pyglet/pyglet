@@ -215,8 +215,18 @@ class Shader:
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, byref(status))
 
         if status.value != GL_TRUE:
-            raise GLException("The {0} shader failed to compile. "
-                              "\n{1}".format(self.type, self._get_shader_log(shader_id)))
+            source = self._get_shader_source(shader_id)
+            source_lines = "{0}".format("\n".join(f"{str(i+1).zfill(3)}: {line} "
+                                        for i, line in enumerate(source.split("\n"))))
+            raise GLException(
+                (
+                    f"The {self.type} shader failed to compile.\n"
+                    f"{self._get_shader_log(shader_id)}"
+                    "------------------------------------------------------------\n"
+                    f"{source_lines}\n"
+                    "------------------------------------------------------------"
+                )
+            )
         elif _debug_gl_shaders:
             print(self._get_shader_log(shader_id))
 
@@ -236,6 +246,14 @@ class Shader:
                     "\n{1}".format(self.type, result_str.value.decode('utf8')))
         else:
             return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
+
+    def _get_shader_source(self, shader_id):
+        """Get the shader source from the shader object"""
+        source_length = c_int(0)
+        glGetShaderiv(shader_id, GL_SHADER_SOURCE_LENGTH, source_length)
+        source_str = create_string_buffer(source_length.value)
+        glGetShaderSource(shader_id, source_length, None, source_str)
+        return source_str.value.decode('utf8')
 
     def __del__(self):
         try:
@@ -305,11 +323,22 @@ class ShaderProgram:
 
     @staticmethod
     def _link_program(shaders):
-        # TODO: catch exceptions when linking Program:
         program_id = glCreateProgram()
         for shader in shaders:
             glAttachShader(program_id, shader.id)
         glLinkProgram(program_id)
+
+        # Check the link status of program
+        status = c_int()
+        glGetProgramiv(program_id, GL_LINK_STATUS, status)
+        if not status.value:
+            length = c_int()
+            glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, length)
+            log = c_buffer(length.value)
+            glGetProgramInfoLog(program_id, len(log), None, log)
+            raise ShaderException("Error linking shader program:\n{}".format(log.value.decode()))
+
+        # Shader objects no longer needed
         for shader in shaders:
             glDetachShader(program_id, shader.id)
         return program_id

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -548,12 +548,9 @@ layout_vertex_source = """#version 330 core
 
     void main()
     {
-        mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translation, 1.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 1);
-
-        vert_position = vec4(position + translation, 0, 1);
+        vert_position = vec4(position + translation, 0.0, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -571,7 +568,7 @@ layout_fragment_source = """#version 330 core
     uniform vec4 scissor_area;
 
     void main()
-    {   
+    {
         final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
@@ -598,12 +595,9 @@ decoration_vertex_source = """#version 330 core
 
     void main()
     {
-        mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translation, 1.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 1);
-
-        vert_position = vec4(position + translation, 0, 1);
+        vert_position = vec4(position + translation, 0.0, 1.0);
         vert_colors = colors;
     }
 """
@@ -675,7 +669,6 @@ class TextLayoutGroup(graphics.Group):
 
     def unset_state(self):
         glDisable(GL_BLEND)
-        glBindTexture(self.texture.target, 0)
         self.program.stop()
 
     def __repr__(self):
@@ -720,7 +713,6 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
     def unset_state(self):
         glDisable(GL_BLEND)
-        glBindTexture(self.texture.target, 0)
         self.program.stop()
 
     def __repr__(self):

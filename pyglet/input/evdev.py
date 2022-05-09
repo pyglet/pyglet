@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import os
+import time
 import fcntl
 import ctypes
 
@@ -42,14 +43,15 @@ from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
 from ctypes import c_int32 as _s32
 from ctypes import c_int64 as _s64
+from concurrent.futures import ThreadPoolExecutor
 
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
 from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
-from .base import DeviceOpenException
+from .base import DeviceOpenException, ControllerManager
 from .evdev_constants import *
-from .controller import get_mapping
+from .controller import get_mapping, Relation
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -473,17 +475,15 @@ class FFController(Controller):
         self._fileno = self.device.fileno()
         # Create Force Feedback effects & events when opened:
         # https://www.kernel.org/doc/html/latest/input/ff.html
-        self._weak_effect = self._create_effect()
+        self._weak_effect = FFEvent(FF_RUMBLE, -1)
+        EVIOCSFF(self._fileno, self._weak_effect)
         self._play_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 1)
         self._stop_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 0)
-        self._strong_effect = self._create_effect()
+
+        self._strong_effect = FFEvent(FF_RUMBLE, -1)
+        EVIOCSFF(self._fileno, self._strong_effect)
         self._play_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 1)
         self._stop_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 0)
-
-    def _create_effect(self):
-        event = FFEvent(FF_RUMBLE, -1)
-        EVIOCSFF(self._fileno, event)
-        return event
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
         effect = self._weak_effect
@@ -500,12 +500,88 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._play_strong_event)
 
     def rumble_stop_weak(self):
-        """Stop playing rumble effects on the weak motor."""
         self.device.ff_upload_effect(self._stop_weak_event)
 
     def rumble_stop_strong(self):
-        """Stop playing rumble effects on the strong motor."""
         self.device.ff_upload_effect(self._stop_strong_event)
+
+
+class EvdevControllerManager(ControllerManager, XlibSelectDevice):
+
+    def __init__(self, display=None):
+        super().__init__()
+        self._display = display
+        self._devices_file = open('/proc/bus/input/devices')
+        self._device_names = self._get_device_names()
+        self._controllers = {}
+        self._thread_pool = ThreadPoolExecutor(max_workers=1)
+
+        for name in self._device_names:
+            path = os.path.join('/dev/input', name)
+            try:
+                device = EvdevDevice(self._display, path)
+            except OSError:
+                continue
+            controller = _create_controller(device)
+            if controller:
+                self._controllers[name] = controller
+
+        pyglet.app.platform_event_loop.select_devices.add(self)
+
+    def __del__(self):
+        self._devices_file.close()
+
+    def fileno(self):
+        """Allow this class to be Selectable"""
+        return self._devices_file.fileno()
+
+    @staticmethod
+    def _get_device_names():
+        return {name for name in os.listdir('/dev/input') if name.startswith('event')}
+
+    def _make_device_callback(self, future):
+        name, device = future.result()
+        if not device:
+            return
+
+        if name in self._controllers:
+            controller = self._controllers.get(name)
+        else:
+            controller = _create_controller(device)
+            self._controllers[name] = controller
+
+        if controller:
+            self.dispatch_event('on_connect', controller)
+
+    def _make_device(self, name, count=1):
+        path = os.path.join('/dev/input', name)
+        while count > 0:
+            try:
+                return name, EvdevDevice(self._display, path)
+            except OSError:
+                if count > 0:
+                    time.sleep(0.1)
+                count -= 1
+        return None, None
+
+    def select(self):
+        """Triggered whenever the devices_file changes."""
+        new_device_files = self._get_device_names()
+        appeared = new_device_files - self._device_names
+        disappeared = self._device_names - new_device_files
+        self._device_names = new_device_files
+
+        for name in appeared:
+            future = self._thread_pool.submit(self._make_device, name, count=10)
+            future.add_done_callback(self._make_device_callback)
+
+        for name in disappeared:
+            controller = self._controllers.get(name)
+            if controller:
+                self.dispatch_event('on_disconnect', controller)
+
+    def get_controllers(self) -> list[Controller]:
+        return list(self._controllers.values())
 
 
 def get_devices(display=None):
@@ -549,20 +625,59 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_controller(device):
-    # Look for something with an ABS X and ABS Y axis, and BTN_GAMEPAD
-    have_button = False
+def _detect_controller_mapping(device):
+    # If no explicit mapping is available, we can
+    # detect it from the Linux gamepad specification:
+    # https://www.kernel.org/doc/html/v4.13/input/gamepad.html
+    # Note: legacy device drivers don't always adhere to this.
+    mapping = dict(guid=device.get_guid(), name=device.name)
 
-    device.controls.sort(key=lambda ctrl: ctrl._event_code)
+    _aliases = {BTN_MODE: 'guide', BTN_SELECT: 'back', BTN_START: 'start',
+                BTN_SOUTH: 'a', BTN_EAST: 'b', BTN_WEST: 'x', BTN_NORTH: 'y',
+                BTN_TL: 'leftshoulder', BTN_TR: 'rightshoulder',
+                BTN_TL2: 'lefttrigger', BTN_TR2: 'righttrigger',
+                BTN_THUMBL: 'leftstick', BTN_THUMBR: 'rightstick',
+                BTN_DPAD_UP: 'dpup', BTN_DPAD_DOWN: 'dpdown',
+                BTN_DPAD_LEFT: 'dpleft', BTN_DPAD_RIGHT: 'dpright',
+
+                ABS_HAT0X: 'dpleft',  # 'dpright',
+                ABS_HAT0Y: 'dpup',    # 'dpdown',
+                ABS_Z: 'lefttrigger', ABS_RZ: 'righttrigger',
+                ABS_X: 'leftx', ABS_Y: 'lefty', ABS_RX: 'rightx', ABS_RY: 'righty'}
+
+    button_controls = [control for control in device.controls if isinstance(control, Button)]
+    axis_controls = [control for control in device.controls if isinstance(control, AbsoluteAxis)]
+    hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
+
+    for i, control in enumerate(button_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            mapping[name] = Relation('button', i)
+
+    for i, control in enumerate(axis_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            mapping[name] = Relation('axis', i)
+
+    for i, control in enumerate(hat_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            index = 1 + i << 1
+            mapping[name] = Relation('hat0', index)
+
+    return mapping
+
+
+def _create_controller(device):
     for control in device.controls:
         if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
-            have_button = True
+            break
+    else:
+        return None     # Game Controllers must have a BTN_GAMEPAD
 
     mapping = get_mapping(device.get_guid())
-    # TODO: detect via device types, and use default mapping.
-
-    if have_button is False or mapping is None:
-        return
+    if not mapping:
+        mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:
         return FFController(device, mapping)

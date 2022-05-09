@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -44,25 +44,14 @@ from . import compat
 
 _debug = debug_print('debug_media')
 
-try:
-    avutil = pyglet.lib.load_library(
-        'avutil',
-        win32='avutil-57',
-        darwin='avutil.57'
-    )
-    version = 57
-except ImportError:
-    if _debug:
-        print("Failed to load: avutil-57. Trying older version.")
+avutil = pyglet.lib.load_library(
+    'avutil',
+    win32=('avutil-57', 'avutil-56'),
+    darwin=('avutil.57', 'avutil-56')
+)
 
-    avutil = pyglet.lib.load_library(
-        'avutil',
-        win32='avutil-56',
-        darwin='avutil.56'
-    )
-    version = 56
-
-compat.set_version('avutil', version)
+avutil.avutil_version.restype = c_int
+compat.set_version('avutil', avutil.avutil_version() >> 16)
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0
@@ -137,6 +126,9 @@ class AVRational(Structure):
         ('num', c_int),
         ('den', c_int)
     ]
+
+    def __repr__(self):
+        return f"AVRational({self.num}/{self.den})"
 
 
 class AVFrameSideData(Structure):

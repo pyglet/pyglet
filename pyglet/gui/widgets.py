@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -210,7 +210,7 @@ class PushButton(WidgetBase):
         self._pressed = False
 
     def _update_position(self):
-        self._sprite.position = self._x, self._y
+        self._sprite.position = self._x, self._y, 0
 
     @property
     def value(self):

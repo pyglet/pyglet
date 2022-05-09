@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,7 @@ class XInputDevice(DeviceResponder, Device):
                 for i in range(num_axes):
                     axis = axes[i]
                     if mode == xi.Absolute:
-                        self.axes.append(AbsoluteAxis('axis%d' % i, min=axis.min_value, max=axis.max_value))
+                        self.axes.append(AbsoluteAxis('axis%d' % i, axis.min_value, axis.max_value))
                     elif mode == xi.Relative:
                         self.axes.append(RelativeAxis('axis%d' % i))
 
