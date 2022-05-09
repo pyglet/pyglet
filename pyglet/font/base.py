@@ -200,7 +200,7 @@ class GlyphTextureAtlas(image.atlas.TextureAtlas):
     texture_class = GlyphTexture
 
     def __init__(self, width=2048, height=2048, fmt=GL_RGBA, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
-        self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter)
+        self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter, fmt=fmt)
         self.allocator = image.atlas.Allocator(width, height)
 
 
@@ -306,7 +306,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, image):
+    def create_glyph(self, image, fmt=None):
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -320,6 +320,8 @@ class Font:
         :Parameters:
             `image` : `pyglet.image.AbstractImage`
                 The image to write to the font texture.
+            `fmt` : `int`
+                Override for the format and internalformat of the atlas texture
 
         :rtype: `Glyph`
         """
@@ -329,7 +331,7 @@ class Font:
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
         glyph = self.texture_bin.add(
-            image, self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
+            image, fmt or self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
 
         return glyph
 

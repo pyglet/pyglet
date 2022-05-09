@@ -56,10 +56,11 @@ context::
 
 """
 
-from ctypes import c_char_p, cast
+from ctypes import c_char_p, cast, c_int
 import warnings
 
-from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
+from pyglet.gl.gl import (GL_EXTENSIONS, GL_RENDERER, GL_VENDOR,
+                          GL_VERSION, GL_MAJOR_VERSION, GL_MINOR_VERSION)
 from pyglet.util import asstr
 
 
@@ -92,7 +93,16 @@ class GLInfo:
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
+            major_version = c_int()
+            glGetIntegerv(GL_MAJOR_VERSION, major_version)
+            self.major_version = major_version.value
+            minor_version = c_int()
+            glGetIntegerv(GL_MINOR_VERSION, minor_version)
+            self.minor_version = minor_version.value
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+            # NOTE: The version string requirements for gles is a lot stricter
+            #       so using this to rely on detecting the API is not too unreasonable
+            self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
             num_extensions = GLint()
             glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
             self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
@@ -132,7 +142,17 @@ class GLInfo:
     def get_version(self):
         """Get the current OpenGL version.
 
-        :return: the OpenGL version
+        :return: The major and minor version as a tuple
+        :rtype: tuple
+        """
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
+        return self.major_version, self.minor_version
+
+    def get_version_string(self):
+        """Get the current OpenGL version string.
+
+        :return: The OpenGL version string
         :rtype: str
         """
         if not self.have_context:
@@ -154,13 +174,12 @@ class GLInfo:
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        if not self.version or 'None' in self.version:
+        if not self.major_version and not self.minor_version:
             return False
-        ver = '%s.0' % self.version.split(' ', 1)[0]
-        imajor, iminor = [int(v) for v in ver.split('.', 3)[:2]]
-        return (imajor > major or
-                (imajor == major and iminor >= minor) or
-                (imajor == major and iminor == minor))
+
+        return (self.major_version > major or
+                (self.major_version == major and self.minor_version >= minor) or
+                (self.major_version == major and self.minor_version == minor))
 
     def get_renderer(self):
         """Determine the renderer string of the OpenGL context.
@@ -180,6 +199,16 @@ class GLInfo:
             warnings.warn('No GL context created yet.')
         return self.vendor
 
+    def get_opengl_api(self):
+        """Determine the OpenGL API version.
+        Usually ``gl`` or ``gles``.
+
+        :rtype: str
+        """
+        if not self.have_context:
+            warnings.warn('No GL context created yet.')
+        return self.opengl_api
+
 
 # Single instance useful for apps with only a single context
 # (or all contexts have the same GL driver, a common case).
@@ -190,10 +219,11 @@ remove_active_context = _gl_info.remove_active_context
 have_extension = _gl_info.have_extension
 get_extensions = _gl_info.get_extensions
 get_version = _gl_info.get_version
+get_version_string = _gl_info.get_version_string
 have_version = _gl_info.have_version
 get_renderer = _gl_info.get_renderer
 get_vendor = _gl_info.get_vendor
-
+get_opengl_api = _gl_info.get_opengl_api
 
 def have_context():
     """Determine if a default OpenGL context has been set yet.

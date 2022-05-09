@@ -564,7 +564,7 @@ layout_fragment_source = """#version 330 core
     out vec4 final_colors;
 
     uniform sampler2D text;
-    uniform bool scissor = false;
+    uniform bool scissor;
     uniform vec4 scissor_area;
 
     void main()
@@ -608,7 +608,7 @@ decoration_fragment_source = """#version 330 core
 
     out vec4 final_colors;
 
-    uniform bool scissor = false;
+    uniform bool scissor;
     uniform vec4 scissor_area;
 
     void main()
@@ -628,10 +628,10 @@ def get_default_layout_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_layout_shader
     except AttributeError:
-        _default_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
-        _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
-        default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
-        pyglet.gl.current_context.pyglet_text_layout_shader = default_shader_program
+        pyglet.gl.current_context.pyglet_text_layout_shader = shader.ShaderProgram(
+            shader.Shader(layout_vertex_source, 'vertex'),
+            shader.Shader(layout_fragment_source, 'fragment'),
+        )
         return pyglet.gl.current_context.pyglet_text_layout_shader
 
 
@@ -639,10 +639,10 @@ def get_default_decoration_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_decoration_shader
     except AttributeError:
-        _default_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
-        _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
-        default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
-        pyglet.gl.current_context.pyglet_text_decoration_shader = default_shader_program
+        pyglet.gl.current_context.pyglet_text_decoration_shader = shader.ShaderProgram(
+            shader.Shader(decoration_vertex_source, 'vertex'),
+            shader.Shader(decoration_fragment_source, 'fragment'),
+        )
         return pyglet.gl.current_context.pyglet_text_decoration_shader
 
 

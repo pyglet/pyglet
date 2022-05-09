@@ -1249,7 +1249,7 @@ class Texture(AbstractImage):
             pass
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA, min_filter=None, mag_filter=None):
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1264,11 +1264,16 @@ class Texture(AbstractImage):
                 GL constant giving texture target to use, typically ``GL_TEXTURE_2D``.
             `internalformat` : int
                 GL constant giving internal format of texture; for example, ``GL_RGBA``.
+                The internal format decides how the texture data will be stored internally.
                 If ``None``, the texture will be created but not initialized.
             `min_filter` : int
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `fmt` : int
+                GL constant giving format of texture; for example, ``GL_RGBA``.
+                The format specifies what format the pixel data we're expecting to write
+                to the texture and should ideally be the same as for internal format.
 
         :rtype: :py:class:`~pyglet.image.Texture`
         """
@@ -1287,7 +1292,8 @@ class Texture(AbstractImage):
                          internalformat,
                          width, height,
                          0,
-                         GL_RGBA, GL_UNSIGNED_BYTE,
+                         fmt,
+                         GL_UNSIGNED_BYTE,
                          blank)
             glFlush()
 
@@ -1320,9 +1326,22 @@ class Texture(AbstractImage):
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
-        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+
+        # TODO: Clean up this temporary hack
+        if gl.current_context.get_info().get_opengl_api() == "gles":
+            fbo = c_uint()
+            glGenFramebuffers(1, fbo)
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
+            glPixelStorei(GL_PACK_ALIGNMENT, 1)
+            glCheckFramebufferStatus(GL_FRAMEBUFFER)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+            glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glDeleteFramebuffers(1, fbo)
+        else:
+            glPixelStorei(GL_PACK_ALIGNMENT, 1)
+            glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
         data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
