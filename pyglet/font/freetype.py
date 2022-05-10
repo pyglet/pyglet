@@ -120,8 +120,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
                               'A',
                               self._data,
                               abs(self._pitch))
-        GL_ALPHA = 0x1906
-        glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
+        glyph = self.font.create_glyph(img)
         glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
         if self._pitch > 0:
             t = list(glyph.tex_coords)
