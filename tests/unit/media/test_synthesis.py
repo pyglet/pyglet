@@ -98,7 +98,3 @@ class SawtoothTest(SynthesisSourceTest, unittest.TestCase):
 
 class SquareTest(SynthesisSourceTest, unittest.TestCase):
     source_class = Square
-
-
-class FMTest(SynthesisSourceTest, unittest.TestCase):
-    source_class = SimpleFM
