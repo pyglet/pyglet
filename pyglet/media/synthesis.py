@@ -33,12 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import os
-import math
-import ctypes
-import struct
+import math as _math
+import struct as _struct
 
-from .codecs.base import Source, AudioFormat, AudioData
+from random import uniform as _uniform
+
+from pyglet.media.codecs.base import Source, AudioFormat, AudioData
 
 
 # Envelope classes:
@@ -168,9 +168,9 @@ class TremoloEnvelope(_Envelope):
         period = total_bytes / duration
         max_amplitude = self.amplitude
         min_amplitude = max(0.0, (1.0 - self.depth) * self.amplitude)
-        step = (math.pi * 2) / period / self.rate
+        step = (_math.pi * 2) / period / self.rate
         for i in range(total_bytes):
-            value = math.sin(step * i)
+            value = _math.sin(step * i)
             yield value * (max_amplitude - min_amplitude) + min_amplitude
         while True:
             yield 0
@@ -178,35 +178,51 @@ class TremoloEnvelope(_Envelope):
 
 # Waveform generators
 
-def sine_generator(frequency, sample_rate, offset=0):
-    step = 2 * math.pi * frequency
-    i = offset
+def silence_generator(frequency, sample_rate):
     while True:
-        yield math.sin(step * i / sample_rate)
+        yield 0
+
+
+def noise_generator(frequency, sample_rate):
+    while True:
+        yield _uniform(-1, 1)
+
+
+def sine_generator(frequency, sample_rate):
+    step = 2 * _math.pi * frequency
+    i = 0
+    while True:
+        yield _math.sin(step * i / sample_rate)
         i += 1
 
 
-# def triangle_generator(frequency, sample_rate, offset=0):
-#     period_length = int(sample_rate / frequency)
-#     half_period = period_length / 2
-#     one_period = [1 / half_period * (half_period - abs(i - half_period) * 2 - 1) + 0.02
-#                   for i in range(period_length)]
-#     return itertools.cycle(one_period)
-#
-#
-# def sawtooth_generator(frequency, sample_rate, offset=0):
-#     i = offset
-#     while True:
-#         yield frequency * i * 2 - 1
-#         i += 1 / sample_rate
-#         if i > 1:
-#             i = 0
+def triangle_generator(frequency, sample_rate):
+    step = 4 * frequency / sample_rate
+    value = 0
+    while True:
+        if value > 1:
+            value = 1 - (value - 1)
+            step = -step
+        if value < -1:
+            value = -1 - (value - -1)
+            step = -step
+        yield value
+        value += step
 
 
-def pulse_generator(frequency, sample_rate, offset=0, duty_cycle=50):
+def sawtooth_generator(frequency, sample_rate):
+    period_length = int(sample_rate / frequency)
+    step = 2 * frequency / sample_rate
+    i = 0
+    while True:
+        yield step * (i % period_length) - 1
+        i += 1
+
+
+def pulse_generator(frequency, sample_rate, duty_cycle=50):
     period_length = int(sample_rate / frequency)
     duty_cycle = int(duty_cycle * period_length / 100)
-    i = offset
+    i = 0
     while True:
         yield int(i % period_length < duty_cycle) * 2 - 1
         i += 1
@@ -214,68 +230,11 @@ def pulse_generator(frequency, sample_rate, offset=0, duty_cycle=50):
 
 # Source classes:
 
-class SynthesisSource(Source):
-    """Base class for synthesized waveforms.
-
-    :Parameters:
-        `duration` : float
-            The length, in seconds, of audio that you wish to generate.
-        `sample_rate` : int
-            Audio samples per second. (CD quality is 44100).
-    """
-
-    def __init__(self, duration, sample_rate=44800, envelope=None):
-
-        self._duration = float(duration)
-        self.audio_format = AudioFormat(channels=1, sample_size=16, sample_rate=sample_rate)
-
-        self._offset = 0
-        self._sample_rate = sample_rate
-        self._bytes_per_sample = 2
-        self._bytes_per_second = self._bytes_per_sample * sample_rate
-        self._max_offset = int(self._bytes_per_second * self._duration)
-        self.envelope = envelope or FlatEnvelope(amplitude=1.0)
-        self._envelope_generator = self.envelope.get_generator(sample_rate, duration)
-        # Align to sample:
-        self._max_offset &= 0xfffffffe
-
-    def get_audio_data(self, num_bytes, compensation_time=0.0):
-        """Return `num_bytes` bytes of audio data."""
-        num_bytes = min(num_bytes, self._max_offset - self._offset)
-        if num_bytes <= 0:
-            return None
-
-        timestamp = float(self._offset) / self._bytes_per_second
-        duration = float(num_bytes) / self._bytes_per_second
-        data = self._generate_data(num_bytes)
-        self._offset += num_bytes
-
-        return AudioData(data, num_bytes, timestamp, duration, [])
-
-    def _generate_data(self, num_bytes):
-        """Generate `num_bytes` bytes of data.
-
-        Return data as ctypes array or bytes.
-        """
-        raise NotImplementedError('abstract')
-
-    def seek(self, timestamp):
-        self._offset = int(timestamp * self._bytes_per_second)
-
-        # Bound within duration
-        self._offset = min(max(self._offset, 0), self._max_offset)
-
-        # Align to sample
-        self._offset &= 0xfffffffe
-
-        self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
-
-
 class _SynthesisSource(Source):
     """Base class for synthesized waveforms.
 
     :Parameters:
-        `generator` : generator
+        `generator` : A non-instantiated generator object
             A waveform generator that produces a stream of numbers from (-1, 1)
         `duration` : float
             The length, in seconds, of audio that you wish to generate.
@@ -286,11 +245,11 @@ class _SynthesisSource(Source):
         `envelope` : :py:class:`pyglet.media.synthesis._Envelope`
             An optional Envelope to apply to the waveform.
     """
-    def __init__(self, generator, duration, frequency=440, sample_rate=44800, envelope=None):
-        self._generator_function = generator
-        self._generator = generator(frequency, sample_rate)
-        self._duration = float(duration)
+    def __init__(self, generator, duration, frequency, sample_rate, envelope=None):
+        self._generator = generator
+        self._duration = duration
         self._frequency = frequency
+
         self.envelope = envelope or FlatEnvelope(amplitude=1.0)
         self._envelope_generator = self.envelope.get_generator(sample_rate, duration)
 
@@ -300,7 +259,7 @@ class _SynthesisSource(Source):
         self._sample_rate = sample_rate
         self._bytes_per_sample = 2
         self._bytes_per_second = self._bytes_per_sample * sample_rate
-        self._max_offset = int(self._bytes_per_second * self._duration)
+        self._max_offset = int(self._bytes_per_second * duration)
         # Align to sample:
         self._max_offset &= 0xfffffffe
 
@@ -312,8 +271,9 @@ class _SynthesisSource(Source):
 
         timestamp = float(self._offset) / self._bytes_per_second
         duration = float(num_bytes) / self._bytes_per_second
-        data = self._generate_data(num_bytes)
         self._offset += num_bytes
+
+        data = self._generate_data(num_bytes)
 
         return AudioData(data, num_bytes, timestamp, duration, [])
 
@@ -323,7 +283,7 @@ class _SynthesisSource(Source):
         generator = self._generator
         envelope = self._envelope_generator
         data = (int(next(generator) * next(envelope) * amplitude) for _ in range(samples))
-        return struct.pack(f"{samples}h", *data)
+        return _struct.pack(f"{samples}h", *data)
 
     def seek(self, timestamp):
         self._offset = int(timestamp * self._bytes_per_second)
@@ -333,115 +293,54 @@ class _SynthesisSource(Source):
 
         # Align to sample
         self._offset &= 0xfffffffe
-
         self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
-        self._generator = self._generator_function(self._frequency, self._sample_rate, self._offset)
 
 
-class Silence(SynthesisSource):
-    """A silent waveform."""
+class Silence(_SynthesisSource):
+    def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
+        """Create a Silent waveform."""
+        super().__init__(silence_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
-    def _generate_data(self, num_bytes):
-        return b'\0' * num_bytes
 
-
-class WhiteNoise(SynthesisSource):
-    """A white noise, random waveform."""
-
-    def _generate_data(self, num_bytes):
-        # TODO; use envelope
-        return os.urandom(num_bytes)
+class WhiteNoise(_SynthesisSource):
+    def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
+        """Create a random white noise waveform."""
+        super().__init__(noise_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
 
 class Sine(_SynthesisSource):
     def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
         """Create a sinusoid (sine) waveform."""
-        super().__init__(sine_generator, duration, frequency, sample_rate, envelope)
+        super().__init__(sine_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
 
 class Square(_SynthesisSource):
     def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
         """Create a Square (pulse) waveform."""
-        super().__init__(pulse_generator, duration, frequency, sample_rate, envelope)
+        super().__init__(pulse_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
 
-class Triangle(SynthesisSource):
-    """A triangle waveform.
-
-    :Parameters:
-        `duration` : float
-            The length, in seconds, of audio that you wish to generate.
-        `frequency` : int
-            The frequency, in Hz of the waveform you wish to produce.
-        `sample_rate` : int
-            Audio samples per second. (CD quality is 44100).
-    """
-
-    def __init__(self, duration, frequency=440, **kwargs):
-        super().__init__(duration, **kwargs)
-        self.frequency = frequency
-
-    def _generate_data(self, num_bytes):
-        samples = num_bytes >> 1
-        value = 0
-        maximum = 32767
-        minimum = -32768
-        data = (ctypes.c_short * samples)()
-        step = (maximum - minimum) * 2 * self.frequency / self.audio_format.sample_rate
-        envelope = self._envelope_generator
-        for i in range(samples):
-            value += step
-            if value > maximum:
-                value = maximum - (value - maximum)
-                step = -step
-            if value < minimum:
-                value = minimum - (value - minimum)
-                step = -step
-            data[i] = int(value * next(envelope))
-        return bytes(data)
+class Triangle(_SynthesisSource):
+    def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
+        """Create a Triangle waveform."""
+        super().__init__(triangle_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
 
-class Sawtooth(SynthesisSource):
-    """A sawtooth waveform.
-
-    :Parameters:
-        `duration` : float
-            The length, in seconds, of audio that you wish to generate.
-        `frequency` : int
-            The frequency, in Hz of the waveform you wish to produce.
-        `sample_rate` : int
-            Audio samples per second. (CD quality is 44100).
-    """
-
-    def __init__(self, duration, frequency=440, **kwargs):
-        super().__init__(duration, **kwargs)
-        self.frequency = frequency
-
-    def _generate_data(self, num_bytes):
-        samples = num_bytes >> 1
-        value = 0
-        maximum = 32767
-        minimum = -32768
-        data = (ctypes.c_short * samples)()
-        step = (maximum - minimum) * self.frequency / self._sample_rate
-        envelope = self._envelope_generator
-        for i in range(samples):
-            value += step
-            if value > maximum:
-                value = minimum + (value % maximum)
-            data[i] = int(value * next(envelope))
-        return bytes(data)
+class Sawtooth(_SynthesisSource):
+    def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
+        """Create a Sawtooth waveform."""
+        super().__init__(sawtooth_generator(frequency, sample_rate), duration, frequency, sample_rate, envelope)
 
 
 #############################################
 #   Experimental multi-operator FM synthesis:
 #############################################
 
-def operator(samplerate=44800, frequency=440, index=1, modulator=None, envelope=None):
+def sine_operator(samplerate=44800, frequency=440, index=1, modulator=None, envelope=None):
     # A sine generator that can be optionally modulated with another generator.
     # FM equation:  sin((i * 2 * pi * carrier_frequency) + sin(i * 2 * pi * modulator_frequency))
-    sin = math.sin
-    step = 2 * math.pi * frequency / samplerate
+    sin = _math.sin
+    step = 2 * _math.pi * frequency / samplerate
     i = 0
     envelope = envelope or FlatEnvelope(1).get_generator(samplerate, duration=None)
     if modulator:
@@ -450,7 +349,7 @@ def operator(samplerate=44800, frequency=440, index=1, modulator=None, envelope=
             i += 1
     else:
         while True:
-            yield math.sin(i * step) * next(envelope)
+            yield _math.sin(i * step) * next(envelope)
             i += 1
 
 
@@ -458,20 +357,6 @@ def composite_operator(*operators):
     return (sum(samples) / len(samples) for samples in zip(*operators))
 
 
-class Encoder(SynthesisSource):
-    def __init__(self, duration, operator, **kwargs):
-        super().__init__(duration, **kwargs)
-        self._operator = operator
-        self._total = int(duration * self.audio_format.sample_rate)
-        self._consumed = 0
-
-    def _generate_data(self, num_bytes):
-        envelope = self._envelope_generator
-        generator = self._operator
-
-        samples = num_bytes >> 1
-        amplitude = 32767
-
-        data = (int(next(generator) * amplitude * next(envelope)) for i in range(samples))
-
-        return struct.pack(f"{samples}h", *data)
+class Encoder(_SynthesisSource):
+    def __init__(self, operator, duration,  frequency=440, sample_rate=44800, envelope=None):
+        super().__init__(operator, duration, frequency, sample_rate, envelope)
