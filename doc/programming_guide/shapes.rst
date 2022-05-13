@@ -4,8 +4,8 @@ Shapes
 .. _guide_shapes:
 
 
-The :py:mod:`~pyglet.shapes` module is a simplified option for creating
-and manipulating colored shapes. This includes rectangles, circles, and
+The :py:mod:`~pyglet.shapes` module is an easy to use option for creating
+and manipulating colored shapes, such as rectangles, circles, and
 lines. Shapes can be resized, positioned, and rotated where applicable,
 and their color and opacity can be changed. All shapes are implemented
 using OpenGL primitives, so they can be drawn efficiently with :ref:`guide_batched-rendering`.

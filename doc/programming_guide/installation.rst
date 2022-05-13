@@ -8,7 +8,7 @@ required for installation. You can install it in a variety of ways, or simply
 copy the `pyglet` folder directly into your project. If you're unsure what to do,
 the recommended method is to install it into your local ``site-packages``
 directory. pyglet is available `on PyPI <https://pypi.python.org/pypi/pyglet>`_.
-and can be installed like any other Python library via **pip**:
+for easy installation via **pip**:
 
 .. code-block:: sh
 
@@ -23,8 +23,8 @@ You can also clone the repository using **git** and install from source:
     python setup.py install --user
 
 
-To play video, or a wide selection of compressed audio (anything except for WAV),
-pyglet can optionally use `FFmpeg <https://www.ffmpeg.org/download.html>`_.
+To play video, or a wide selection of compressed audio, pyglet can optionally
+use `FFmpeg <https://www.ffmpeg.org/download.html>`_.
 
 
 Running the examples

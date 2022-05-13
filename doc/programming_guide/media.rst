@@ -7,14 +7,15 @@ mixing and surround-sound 3D positioning. Video is played into OpenGL
 textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_ v4.X, an
+Decoding of compressed audio and video is provided by `FFmpeg`_ v4 or v5, an
 optional component available for Linux, Windows and Mac OS X. FFmpeg needs
 to be installed separately.
 
-If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
-files only. This may be sufficient for many applications that require only a
-small number of short sounds, in which case those applications need not
-distribute FFmpeg.
+If FFmpeg is not present, pyglet will at a minimum be able to play WAV files
+only. Depending on the OS, an additional limited amount of compressed formats
+may also be supported, but only WAV is guaranteed (see "Supported media types
+" below). the This may be sufficient for many applications that require only a
+small number of short sounds, in which case those applications need not distribute FFmpeg.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
 
@@ -41,18 +42,18 @@ The available drivers depend on your operating system:
         * - DirectSound
           -
           -
-        * -
+        * - XAudio2
           -
           - Pulseaudio
 
 The audio driver can be set through the ``audio`` key of the
 :py:data:`pyglet.options` dictionary. For example::
 
-    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
+    pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
 This tells pyglet to try using the OpenAL driver first, and if not available
-to try Pulseaudio and DirectSound in that order. If all else fails, no driver
-will be instantiated. The ``audio`` option can be a list of any of these
+to try Pulseaudio, XAudio2 and DirectSound in that order. If all else fails,
+no driver will be instantiated. The ``audio`` option can be a list of any of these
 strings, giving the preference order for each driver:
 
     .. list-table::
@@ -105,10 +106,10 @@ For example, Ubuntu users can ``apt install libopenal1``.
 Pulse
 ^^^^^
 
-Pulseaudio has become the standard Linux audio implementation over the past
-few years, and is installed by default with most modern Linux distributions.
-Pulseaudio does not support positional audio, and is limited to stereo. It
-is recommended to use OpenAL if positional audio is required.
+Pulseaudio can also be used directly on Linux, and is installed by default
+with most modern Linux distributions. Pulseaudio does not support positional
+audio, and is limited to stereo. It is recommended to use OpenAL if positional
+audio is required.
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
     distributions. It can be downloaded separately from your audio device
@@ -349,20 +350,19 @@ Audio Synthesis
 
 In addition to loading audio files, the :py:mod:`pyglet.media.synthesis`
 module is available for simple audio synthesis. There are several basic
-waveforms available:
+waveforms available, including:
 
 * :py:class:`~pyglet.media.synthesis.Sine`
-* :py:class:`~pyglet.media.synthesis.Sawtooth`
 * :py:class:`~pyglet.media.synthesis.Square`
-* :py:class:`~pyglet.media.synthesis.FM`
-* :py:class:`~pyglet.media.synthesis.Silence`
+* :py:class:`~pyglet.media.synthesis.Sawtooth`
+* :py:class:`~pyglet.media.synthesis.Triangle`
 * :py:class:`~pyglet.media.synthesis.WhiteNoise`
-* :py:class:`~pyglet.media.synthesis.Digitar`
+* :py:class:`~pyglet.media.synthesis.Silence`
 
-The module documentation for each will provide more information on
-constructing them, but at a minimum you will need to specify the duration.
-You will also want to set the audio frequency (most waveforms will default
-to 440Hz). Some waveforms, such as the FM, have additional parameters.
+These waveforms can be constructed by specifying a duration, frequency,
+and sample rate. At a minimum, a duration is required. For example::
+
+    sine = pyglet.media.synthesis.Sine(3.0, frequency=440, sample_rate=44800)
 
 For shaping the waveforms, several simple envelopes are available.
 These envelopes affect the amplitude (volume), and can make for more
@@ -371,7 +371,7 @@ and then pass it into the constructor of any of the above waveforms.
 The same envelope instance can be passed to any number of waveforms,
 reducing duplicate code when creating multiple sounds.
 If no envelope is used, all waveforms will default to the FlatEnvelope
-of maximum volume, which esentially has no effect on the sound.
+of maximum amplitude, which esentially has no effect on the sound.
 Check the module documentation of each Envelope to see which parameters
 are available.
 
@@ -382,10 +382,8 @@ are available.
 
 An example of creating an envelope and waveforms::
 
-    adsr = pyglet.media.synthesis.ADSREnvelope(0.05, 0.2, 0.1)
-
+    adsr = pyglet.media.synthesis.ADSREnvelope(attack=0.05, decay=0.2, release=0.1)
     saw = pyglet.media.synthesis.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
-    fm = pyglet.media.synthesis.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
 
 The waveforms you create with the synthesis module can be played like any
 other loaded sound. See the next sections for more detail on playback.
