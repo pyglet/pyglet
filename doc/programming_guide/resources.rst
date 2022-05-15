@@ -225,12 +225,12 @@ The :py:func:`pyglet.resource.get_data_path` function returns a directory
 suitable for writing arbitray data, such as save files. The directory used follows
 the operating system's convention:
 
-* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_DATA_HOME` environment variable).
+* ``~/.local/share/ApplicationName/`` on Linux (depends on `XDG_DATA_HOME` environment variable).
 * ``$HOME\Application Settings\ApplicationName`` on Windows
 * ``~/Library/Application Support/ApplicationName`` on Mac OS X
 
-The returned directory name is not guaranteed to exist -- it is the
-application's responsibility to create it.  The following example opens a high
+The returned directory names are not guaranteed to exist -- it is the
+application's responsibility to create them.  The following example opens a high
 score list file for a game called "SuperGame" into the data directory::
 
     import os

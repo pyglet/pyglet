@@ -369,7 +369,7 @@ class Clock:
 
         return None
 
-    def get_fps(self):
+    def get_frequency(self):
         """Get the average clock update frequency of recent history.
 
         The result is the average of a sliding window of the last "n" updates,
