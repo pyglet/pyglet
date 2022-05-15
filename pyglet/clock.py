@@ -638,7 +638,7 @@ def get_sleep_time(sleep_idle):
     return _default.get_sleep_time(sleep_idle)
 
 
-def get_fps():
+def get_frequency():
     """Get the average clock update frequency.
 
     The result is the sliding average of the last "n" updates,
@@ -650,7 +650,7 @@ def get_fps():
     :rtype: float
     :return: The measured updates per second.
     """
-    return _default.get_fps()
+    return _default.get_frequency()
 
 
 def schedule(func, *args, **kwargs):
