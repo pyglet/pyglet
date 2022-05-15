@@ -35,7 +35,7 @@ def test_start_at_zero_fps(newclock):
     Tests that the default clock starts
     with zero fps.
     """
-    fps = newclock.get_fps()
+    fps = newclock.get_frequency()
     assert fps == 0
 
 
@@ -81,6 +81,6 @@ def test_compute_fps():
     for i in range(ticks):
         time.sleep(seconds_per_tick)
         clock.tick()
-    computed_fps = clock.get_fps()
+    computed_fps = clock.get_frequency()
 
     assert computed_fps == pytest.approx(expected_fps, rel=0.1*expected_fps)
