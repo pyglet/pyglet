@@ -1,5 +1,5 @@
-Shapes
-======
+Drawing Shapes
+==============
 
 .. _guide_shapes:
 

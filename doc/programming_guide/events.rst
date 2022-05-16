@@ -1,5 +1,5 @@
-The pyglet event framework
-==========================
+Dispatching Events
+==================
 
 The :py:mod:`pyglet.window`, :py:mod:`pyglet.media`, :py:mod:`pyglet.app`,
 :py:mod:`pyglet.text`, :py:mod:`pyglet.input` and other modules make use

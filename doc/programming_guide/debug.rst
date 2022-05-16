@@ -63,9 +63,7 @@ A summary of the debug environment variables appears in the table below.
         * - ``debug_x11``
           - ``PYGLET_DEBUG_X11``
           - bool
-        * - ``graphics_vbo``
-          - ``PYGLET_GRAPHICS_VBO``
-          - bool
+
 
 The ``debug_media`` and ``debug_font`` options are used to debug the
 :py:mod:`pyglet.media` and :py:mod:`pyglet.font` modules, respectively.
@@ -75,11 +73,6 @@ The remaining debug options are detailed below.
 
 Debugging OpenGL
 ----------------
-
-The ``graphics_vbo`` option enables the use of vertex buffer objects in
-:py:mod:`pyglet.graphics` (instead, only vertex arrays).  This is useful when
-debugging the ``graphics`` module as well as isolating code for determining if
-a video driver is faulty.
 
 The ``debug_graphics_batch`` option causes all
 :py:class:`~pyglet.graphics.Batch` objects to dump their

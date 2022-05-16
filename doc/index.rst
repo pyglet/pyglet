@@ -40,20 +40,26 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
-   programming_guide/graphics
    programming_guide/shapes
-   programming_guide/text
    programming_guide/image
    programming_guide/media
+   programming_guide/text
+
+   programming_guide/graphics
+
    programming_guide/resources
+
    programming_guide/events
    programming_guide/time
+
    programming_guide/context
    programming_guide/gl
+   programming_guide/math
+
    programming_guide/eventloop
    programming_guide/options
    programming_guide/debug
-   programming_guide/advanced
+   programming_guide/beta
    programming_guide/examplegame
 
 .. toctree::

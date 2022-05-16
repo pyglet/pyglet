@@ -1,5 +1,5 @@
-Images
-======
+Images and Sprites
+==================
 
 pyglet provides functions for loading and saving images in various formats
 using native operating system services.  If the `Pillow`_ library is installed,
