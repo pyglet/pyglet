@@ -1,3 +1,10 @@
+pyglet 1.5.25
+
+Bugfixes
+--------
+- Windows - Prevent ImportError when attempting to load more than one DLL version.
+
+
 pyglet 1.5.24
 
 Features
