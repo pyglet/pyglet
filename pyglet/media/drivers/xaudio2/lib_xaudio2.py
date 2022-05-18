@@ -3,7 +3,7 @@ import platform
 import os
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from pyglet import com
+from pyglet.libs.win32 import com
 from pyglet.util import debug_print
 
 _debug = debug_print('debug_media')

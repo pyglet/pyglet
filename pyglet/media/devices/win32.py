@@ -1,4 +1,4 @@
-from pyglet import com
+from pyglet.libs.win32 import com
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
 from pyglet.libs.win32.types import *

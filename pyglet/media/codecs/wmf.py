@@ -36,14 +36,15 @@ import os
 import platform
 import warnings
 
-from pyglet import com, image
-from pyglet.util import debug_print, DecodeException
+from pyglet import image
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
+from pyglet.libs.win32 import com
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet.media import Source
 from pyglet.media.codecs import AudioFormat, AudioData, VideoFormat, MediaDecoder, StaticSource
+from pyglet.util import debug_print, DecodeException
 
 _debug = debug_print('debug_media')
 
@@ -827,15 +828,7 @@ class WMFSource(Source):
 
 class WMFDecoder(MediaDecoder):
     def __init__(self):
-
-        self.ole32 = None
         self.MFShutdown = None
-
-        try:
-            # Coinitialize supposed to be called for COMs?
-            ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
-        except OSError as err:
-            warnings.warn(str(err))
 
         try:
             MFStartup(MF_VERSION, 0)
@@ -844,7 +837,6 @@ class WMFDecoder(MediaDecoder):
 
         self.extensions = self._build_decoder_extensions()
 
-        self.ole32 = ole32
         self.MFShutdown = MFShutdown
 
         assert _debug('Windows Media Foundation: Initialized.')
@@ -884,8 +876,6 @@ class WMFDecoder(MediaDecoder):
     def __del__(self):
         if self.MFShutdown is not None:
             self.MFShutdown()
-        if self.ole32 is not None:
-            self.ole32.CoUninitialize()
 
 
 def get_decoders():

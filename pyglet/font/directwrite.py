@@ -9,7 +9,7 @@ from pyglet.image.codecs.wic import IWICBitmap, GUID_WICPixelFormat32bppBGR, WIC
 from pyglet import image
 import ctypes
 import math
-from pyglet import com
+from pyglet.libs.win32 import com
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import *
