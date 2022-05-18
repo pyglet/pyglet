@@ -4,7 +4,7 @@ import threading
 
 import pyglet
 
-from pyglet import com
+from pyglet.libs.win32 import com
 from pyglet.event import EventDispatcher
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _ole32 as ole32, _oleaut32 as oleaut32
@@ -281,8 +281,6 @@ def get_xinput_guids():
     XInput device. Returns a list of strings containing pid/vid.
     Monstrosity found at: https://docs.microsoft.com/en-us/windows/win32/xinput/xinput-and-directinput
     """
-    ole32.CoInitialize(None)
-
     guids_found = []
 
     locator = IWbemLocator()
@@ -340,7 +338,6 @@ def get_xinput_guids():
                             guids_found.append(sdl_guid)
 
     oleaut32.VariantClear(var)
-    ole32.CoUninitialize()
     return guids_found
 
 

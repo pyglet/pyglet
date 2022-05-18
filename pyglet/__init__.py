@@ -360,7 +360,6 @@ if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
-    from . import com
     from . import event
     from . import font
     from . import gl
@@ -381,7 +380,6 @@ else:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')
