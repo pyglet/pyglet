@@ -18,9 +18,9 @@ These objects support most common Matrix and Vector operations, in addition
 to helper methods for rotating, scaling, and transforming. See the
 :py:mod:`~pyglet.math` module for more information.
 
-:note: For performance, all Matrix and Vector objects subclass the `tuple` type.
-    They are therefore immutable - all operations return a **new** object; they
-    are not updated in-place.
+.. note:: For performance, all Matrix and Vector objects are subclasses of
+    the `tuple` type. They are therefore immutable - all operations return
+    a **new** object; they are not updated in-place.
 
 Creating a Matrix
 -----------------
