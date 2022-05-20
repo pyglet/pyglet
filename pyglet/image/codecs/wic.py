@@ -1,11 +1,10 @@
-import warnings
 from pyglet.image import *
 from pyglet.image.codecs import *
-from pyglet import com
+from pyglet.libs.win32 import _ole32 as ole32
+from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from pyglet.libs.win32 import _kernel32 as kernel32
-from pyglet.libs.win32 import _ole32 as ole32
+
 
 CLSID_WICImagingFactory1 = com.GUID(0xcacaf262, 0x9370, 0x4615, 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa)
 CLSID_WICImagingFactory2 = com.GUID(0x317d06e8, 0x5f24, 0x433d, 0xbd, 0xf7, 0x79, 0xce, 0x68, 0xd8, 0xab, 0xc2)
@@ -61,7 +60,7 @@ WICBITMAPENCODERCACHEOPTION_FORCE_DWORD = 0x7fffffff
 
 # Different pixel formats.
 REFWICPixelFormatGUID = com.GUID
-GUID_WICPixelFormatDontCare = com.GUID(0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x00)
+GUID_WICPixelFormatDontCare = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x00)
 GUID_WICPixelFormat1bppIndexed = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x01)
 GUID_WICPixelFormat2bppIndexed = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x02)
 GUID_WICPixelFormat4bppIndexed = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x03)
@@ -80,7 +79,8 @@ GUID_WICPixelFormat24bppRGB = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0
 GUID_WICPixelFormat32bppBGR = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0e)
 GUID_WICPixelFormat32bppBGRA = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x0f)
 GUID_WICPixelFormat32bppPBGRA = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10)
-GUID_WICPixelFormat32bppRGB = com.GUID(0xd98c6b95, 0x3efe, 0x47d6, 0xbb, 0x25, 0xeb, 0x17, 0x48, 0xab, 0x0c,  0xf1)  # 7 platform update?
+GUID_WICPixelFormat32bppRGB = com.GUID(0xd98c6b95, 0x3efe, 0x47d6, 0xbb, 0x25, 0xeb, 0x17, 0x48, 0xab, 0x0c,
+                                       0xf1)  # 7 platform update?
 GUID_WICPixelFormat32bppRGBA = com.GUID(0xf5c7ad2d, 0x6a8d, 0x43dd, 0xa7, 0xa8, 0xa2, 0x99, 0x35, 0x26, 0x1a, 0xe9)
 GUID_WICPixelFormat32bppPRGBA = com.GUID(0x3cc4a650, 0xa527, 0x4d37, 0xa9, 0x16, 0x31, 0x42, 0xc7, 0xeb, 0xed, 0xba)
 GUID_WICPixelFormat48bppRGB = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x15)
@@ -110,16 +110,6 @@ class IPropertyBag2(com.pIUnknown):
     ]
 
 
-# class PROPBAG2(Structure):
-#     _fields_ = [
-#         ('dwType', DWORD),
-#         ('vt', VARTYPE),
-#         ('cfType', CLIPFORMAT),
-#         ('dwHint', DWORD),
-#         ('pstrName', LPOLESTR),
-#         ('clsid', CLSID)
-#     ]
-
 class IWICPalette(com.pIUnknown):
     _methods_ = [
         ('InitializePredefined',
@@ -143,36 +133,16 @@ class IWICPalette(com.pIUnknown):
         ('HasAlpha',
          com.STDMETHOD()),
     ]
-class IWICStream(com.pIUnknown):
+
+
+class IWICStream(IStream, com.pIUnknown):
     _methods_ = [
-        ('Read',
-         com.STDMETHOD()),
-        ('Write',
-         com.STDMETHOD()),
-        ('Seek',
-         com.STDMETHOD()),
-        ('SetSize',
-         com.STDMETHOD()),
-        ('CopyTo',
-         com.STDMETHOD()),
-        ('Commit',
-         com.STDMETHOD()),
-        ('Revert',
-         com.STDMETHOD()),
-        ('LockRegion',
-         com.STDMETHOD()),
-        ('UnlockRegion',
-         com.STDMETHOD()),
-        ('Stat',
-         com.STDMETHOD()),
-        ('Clone',
-         com.STDMETHOD()),
         ('InitializeFromIStream',
-         com.STDMETHOD()),
+         com.STDMETHOD(IStream)),
         ('InitializeFromFilename',
          com.STDMETHOD(LPCWSTR, DWORD)),
         ('InitializeFromMemory',
-         com.STDMETHOD(c_void_p, DWORD)),
+         com.STDMETHOD(POINTER(BYTE), DWORD)),
         ('InitializeFromIStreamRegion',
          com.STDMETHOD()),
     ]
@@ -187,7 +157,7 @@ class IWICBitmapFrameEncode(com.pIUnknown):
         ('SetResolution',
          com.STDMETHOD()),
         ('SetPixelFormat',
-         com.STDMETHOD(REFWICPixelFormatGUID)),
+         com.STDMETHOD(POINTER(REFWICPixelFormatGUID))),
         ('SetColorContexts',
          com.STDMETHOD()),
         ('SetPalette',
@@ -384,7 +354,7 @@ class IWICImagingFactory(com.pIUnknown):
         ('CreateDecoder',
          com.STDMETHOD()),
         ('CreateEncoder',
-         com.STDMETHOD(com.GUID, POINTER(com.GUID), POINTER(IWICBitmapEncoder))),
+         com.STDMETHOD(POINTER(com.GUID), POINTER(com.GUID), POINTER(IWICBitmapEncoder))),
         ('CreatePalette',
          com.STDMETHOD(POINTER(IWICPalette))),
         ('CreateFormatConverter',
@@ -428,11 +398,6 @@ class IWICImagingFactory(com.pIUnknown):
 
 _factory = IWICImagingFactory()
 
-try:
-    ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
-except OSError as err:
-    warnings.warn(str(err))
-
 ole32.CoCreateInstance(CLSID_WICImagingFactory,
                        None,
                        CLSCTX_INPROC_SERVER,
@@ -451,7 +416,7 @@ class WICDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ico', '.jxr', '.hdp', '.wdp']
 
-    def _load_bitmap_decoder(self, file, filename):
+    def _load_bitmap_decoder(self, filename, file):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -536,8 +501,10 @@ class WICDecoder(ImageDecoder):
         bitmap_decoder.Release()
         stream.Release()
 
-    def decode(self, file, filename):
-        bitmap_decoder, stream = self._load_bitmap_decoder(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
         bitmap = self._get_bitmap_frame(bitmap_decoder, 0)
         image = self.get_image(bitmap)
         self._delete_bitmap_decoder(bitmap_decoder, stream)
@@ -582,10 +549,10 @@ class WICEncoder(ImageEncoder):
     def get_file_extensions(self):
         return [ext for ext in extension_to_container]
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         image = image.get_image_data()
 
-        stream = IWICStream()
+        wicstream = IWICStream()
         encoder = IWICBitmapEncoder()
         frame = IWICBitmapFrameEncode()
         property_bag = IPropertyBag2()
@@ -595,7 +562,7 @@ class WICEncoder(ImageEncoder):
         # Choose container based on extension. Default to PNG.
         container = extension_to_container.get(ext, GUID_ContainerFormatPng)
 
-        _factory.CreateStream(byref(stream))
+        _factory.CreateStream(byref(wicstream))
         # https://docs.microsoft.com/en-us/windows/win32/wic/-wic-codec-native-pixel-formats#native-image-formats
         if container == GUID_ContainerFormatJpeg:
             # Expects BGR, no transparency available. Hard coded.
@@ -614,18 +581,18 @@ class WICEncoder(ImageEncoder):
 
         image_data = image.get_data(fmt, -pitch)
 
-        size = len(image_data)
+        size = pitch * image.height
 
         if file:
-            buf = create_string_buffer(size)
-
-            stream.InitializeFromMemory(byref(buf), size)
+            istream = IStream()
+            ole32.CreateStreamOnHGlobal(None, True, byref(istream))
+            wicstream.InitializeFromIStream(istream)
         else:
-            stream.InitializeFromFilename(filename, GENERIC_WRITE)
+            wicstream.InitializeFromFilename(filename, GENERIC_WRITE)
 
         _factory.CreateEncoder(container, None, byref(encoder))
 
-        encoder.Initialize(stream, WICBitmapEncoderNoCache)
+        encoder.Initialize(wicstream, WICBitmapEncoderNoCache)
 
         encoder.CreateNewFrame(byref(frame), byref(property_bag))
 
@@ -633,7 +600,7 @@ class WICEncoder(ImageEncoder):
 
         frame.SetSize(image.width, image.height)
 
-        frame.SetPixelFormat(default_format)
+        frame.SetPixelFormat(byref(default_format))
 
         data = (c_byte * size).from_buffer(bytearray(image_data))
 
@@ -644,12 +611,26 @@ class WICEncoder(ImageEncoder):
         encoder.Commit()
 
         if file:
-            file.write(buf)
+            sts = STATSTG()
+            istream.Stat(byref(sts), 0)
+            stream_size = sts.cbSize
+            istream.Seek(0, STREAM_SEEK_SET, None)
+
+            buf = (BYTE * stream_size)()
+            written = ULONG()
+            istream.Read(byref(buf), stream_size, byref(written))
+
+            if written.value == stream_size:
+                file.write(buf)
+            else:
+                print(f"Failed to read all of the data from stream attempting to save {file}")
+
+            istream.Release()
 
         encoder.Release()
         frame.Release()
         property_bag.Release()
-        stream.Release()
+        wicstream.Release()
 
 
 def get_encoders():
