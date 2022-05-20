@@ -35,7 +35,7 @@
 
 import sys
 import ctypes
-from . import com
+from pyglet import com
 from ctypes import *
 from ctypes.wintypes import *
 

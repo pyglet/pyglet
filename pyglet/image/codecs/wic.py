@@ -501,7 +501,7 @@ class WICDecoder(ImageDecoder):
         bitmap_decoder.Release()
         stream.Release()
 
-    def decode(self, filename, file):
+    def decode(self, file, filename):
         if not file:
             file = open(filename, 'rb')
         bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
@@ -549,7 +549,7 @@ class WICEncoder(ImageEncoder):
     def get_file_extensions(self):
         return [ext for ext in extension_to_container]
 
-    def encode(self, image, filename, file):
+    def encode(self, image, file, filename):
         image = image.get_image_data()
 
         wicstream = IWICStream()
