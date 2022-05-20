@@ -1,3 +1,11 @@
+pyglet 1.5.26
+
+Bugfixes
+--------
+- Windows - Backport WIC codec changes from 2.0
+- Fix library loading when passing multiple library names.
+
+
 pyglet 1.5.25
 
 Bugfixes
