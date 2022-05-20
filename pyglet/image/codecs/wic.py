@@ -1,3 +1,5 @@
+import warnings
+
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32 import _ole32 as ole32
@@ -397,6 +399,11 @@ class IWICImagingFactory(com.pIUnknown):
 
 
 _factory = IWICImagingFactory()
+
+try:
+    ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
+except OSError as err:
+    warnings.warn(str(err))
 
 ole32.CoCreateInstance(CLSID_WICImagingFactory,
                        None,
