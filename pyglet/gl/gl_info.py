@@ -112,10 +112,8 @@ class GLInfo:
                 glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
                 self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
                                    for i in range(num_extensions.value))
-            else:
-                self.extensions = asstr(cast(glGetString(GL_EXTENSIONS), c_char_p).value).split()
+                self.extensions = set(self.extensions)
 
-            self.extensions = set(self.extensions)
             self._have_info = True
 
     def remove_active_context(self):
