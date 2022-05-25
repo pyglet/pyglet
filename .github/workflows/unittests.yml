@@ -69,4 +69,5 @@ jobs:
         run: |
           pip install pytest
           $env:GLCONTEXT_WIN_LIBGL = "C:\msys64\mingw64\bin\opengl32.dll"
-          pytest tests/unit
+          # pytest tests/unit
+          python -m pyglet.info
