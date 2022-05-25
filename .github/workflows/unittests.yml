@@ -64,9 +64,10 @@ jobs:
           msystem: MINGW64
           release: false
           install: mingw-w64-x86_64-mesa
-      - name: Install pytest
+      - name: Run tests
+        shell: pwsh
         run: |
           pip install pytest
-      - name: Run tests
-        run: |
+          Remove-Item C:\msys64\mingw64\bin\python.exe -Force
+          $env:GLCONTEXT_WIN_LIBGL = "C:\msys64\mingw64\bin\opengl32.dll"
           pytest tests/unit
