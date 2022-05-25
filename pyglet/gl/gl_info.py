@@ -107,9 +107,14 @@ class GLInfo:
             #       so using this to rely on detecting the API is not too unreasonable
             self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
 
-            num_extensions = GLint()
-            glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
-            self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value) for i in range(num_extensions.value))
+            if self.have_version(3):
+                num_extensions = GLint()
+                glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
+                self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
+                                   for i in range(num_extensions.value))
+            else:
+                self.extensions = asstr(cast(glGetString(GL_EXTENSIONS), c_char_p).value).split()
+
             self.extensions = set(self.extensions)
             self._have_info = True
 
