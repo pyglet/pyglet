@@ -68,6 +68,5 @@ jobs:
         shell: pwsh
         run: |
           pip install pytest
-          Remove-Item C:\msys64\mingw64\bin\python.exe -Force
           $env:GLCONTEXT_WIN_LIBGL = "C:\msys64\mingw64\bin\opengl32.dll"
           pytest tests/unit
