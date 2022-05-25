@@ -55,12 +55,11 @@ context::
         # ...
 
 """
-
-from ctypes import c_char_p, cast, c_int
 import warnings
 
-from pyglet.gl.gl import (GL_EXTENSIONS, GL_RENDERER, GL_VENDOR,
-                          GL_VERSION, GL_MAJOR_VERSION, GL_MINOR_VERSION)
+from ctypes import c_char_p, cast
+
+from pyglet.gl.gl import (GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION)
 from pyglet.util import asstr
 
 
@@ -75,9 +74,12 @@ class GLInfo:
     when the context is active for this `GLInfo` instance.
     """
     have_context = False
-    version = '0.0'
     vendor = ''
     renderer = ''
+    version = '0.0'
+    major_version = 0
+    minor_version = 0
+    opengl_api = 'gl'
     extensions = set()
 
     _have_info = False
@@ -93,20 +95,21 @@ class GLInfo:
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
-            major_version = c_int()
-            glGetIntegerv(GL_MAJOR_VERSION, major_version)
-            self.major_version = major_version.value
-            minor_version = c_int()
-            glGetIntegerv(GL_MINOR_VERSION, minor_version)
-            self.minor_version = minor_version.value
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+
+            try:
+                ver = '%s.0' % self.version.split(' ', 1)[0]
+                self.major_version, self.minor_version = [int(v) for v in ver.split('.', 3)[:2]]
+            except ValueError:
+                self.major_version = self.minor_version = 0
+
             # NOTE: The version string requirements for gles is a lot stricter
             #       so using this to rely on detecting the API is not too unreasonable
             self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
+
             num_extensions = GLint()
             glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
-            self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
-                                for i in range(num_extensions.value))
+            self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value) for i in range(num_extensions.value))
             self.extensions = set(self.extensions)
             self._have_info = True
 
@@ -214,9 +217,6 @@ class GLInfo:
 # (or all contexts have the same GL driver, a common case).
 _gl_info = GLInfo()
 
-set_active_context = _gl_info.set_active_context
-remove_active_context = _gl_info.remove_active_context
-have_extension = _gl_info.have_extension
 get_extensions = _gl_info.get_extensions
 get_version = _gl_info.get_version
 get_version_string = _gl_info.get_version_string
@@ -224,10 +224,7 @@ have_version = _gl_info.have_version
 get_renderer = _gl_info.get_renderer
 get_vendor = _gl_info.get_vendor
 get_opengl_api = _gl_info.get_opengl_api
-
-def have_context():
-    """Determine if a default OpenGL context has been set yet.
-
-    :rtype: bool
-    """
-    return _gl_info.have_context
+have_extension = _gl_info.have_extension
+have_context = _gl_info.have_context
+remove_active_context = _gl_info.remove_active_context
+set_active_context = _gl_info.set_active_context
