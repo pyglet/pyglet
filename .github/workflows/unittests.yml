@@ -59,10 +59,17 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Install pytest
         run: |
           pip install pytest
-          dotnet add package mesa3d-x64
+      - name: Install Mesa3D
+        shell: cmd
+        run: |
+          curl.exe -L --output mesa.7z --url https://github.com/pal1000/mesa-dist-win/releases/download/22.1.0/mesa3d-22.1.0-release-msvc.7z
+          "C:\Program Files\7-Zip\7z.exe" x mesa.7z
+          mklink opengl32.dll "x64\opengl32.dll"
+          mklink libglapi.dll "x64\libglapi.dll"
+        working-directory: build\tests\Debug
       - name: Run tests
         run: |
           pytest tests/unit
