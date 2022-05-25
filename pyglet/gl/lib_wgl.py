@@ -115,7 +115,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
                 from pyglet.gl import gl_info
-                if gl_info.have_context():
+                if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
                         func = cast(address, ftype)
