@@ -7,8 +7,7 @@ on:
     branches: [ master, pyglet-1.5-maintenance]
 
 jobs:
-  test1:
-
+  linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,14 +28,12 @@ jobs:
         run: |
           xvfb-run pytest tests/unit
 
-  test2:
-
-    runs-on: ${{ matrix.os }}
+  osx:
+    runs-on: macos-latest
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest ]
         python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-    name: Python ${{ matrix.python-version }} ${{ matrix.os }}
+    name: Python ${{ matrix.python-version }} OSX
     steps:
       - uses: actions/checkout@v2
       - name: Setup python
@@ -46,6 +43,26 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pytest
+      - name: Run tests
+        run: |
+          pytest tests/unit
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    name: Python ${{ matrix.python-version }} Windows
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install pytest
+          dotnet add package mesa3d-x64
       - name: Run tests
         run: |
           pytest tests/unit
