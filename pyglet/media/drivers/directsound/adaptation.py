@@ -374,13 +374,13 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
 class DirectSoundDriver(AbstractAudioDriver):
     def __init__(self):
-        self.worker = PlayerWorkerThread()
         self._ds_driver = interface.DirectSoundDriver()
         self._ds_listener = self._ds_driver.create_listener()
 
         assert self._ds_driver is not None
         assert self._ds_listener is not None
 
+        self.worker = PlayerWorkerThread()
         self.worker.start()
 
     def __del__(self):
@@ -400,8 +400,9 @@ class DirectSoundDriver(AbstractAudioDriver):
         return DirectSoundListener(self._ds_listener, self._ds_driver.primary_buffer)
 
     def delete(self):
+        if hasattr(self, 'worker'):
+            self.worker.stop()
         # Make sure the _ds_listener is deleted before the _ds_driver
-        self.worker.stop()
         self._ds_listener = None
 
 
