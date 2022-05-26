@@ -70,6 +70,8 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          copy C:\msys64\mingw64\bin\opengl32.dll C:\Windows\System32\opengl32.dll
+          mkdir libs
+          copy C:\msys64\mingw64\bin\opengl32.dll libs\
+          set PYGLET_SEARCH_LOCAL_LIBS=True
           # pytest tests/unit
           python -m pyglet.info
