@@ -70,6 +70,6 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          cp C:\msys64\mingw64\bin\opengl32.dll C:\Windows\System32\opengl32.dll /Y
+          move /Y C:\msys64\mingw64\bin\opengl32.dll C:\Windows\System32\opengl32.dll
           # pytest tests/unit
           python -m pyglet.info
