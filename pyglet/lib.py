@@ -145,7 +145,7 @@ class LibraryLoader:
             try:
                 lib = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
-                    print(name)
+                    print(name, self.find_library(name))
                 if _debug_trace:
                     lib = _TraceLibrary(lib)
                 return lib
