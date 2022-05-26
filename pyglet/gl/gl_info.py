@@ -59,8 +59,16 @@ import warnings
 
 from ctypes import c_char_p, cast
 
-from pyglet.gl.gl import (GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION)
+from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GL_NUM_EXTENSIONS
+from pyglet.gl.gl import GL_MAJOR_VERSION, GL_MINOR_VERSION, GLint, glGetIntegerv, glGetString, glGetStringi
+from pyglet.gl.lib import GLException
 from pyglet.util import asstr
+
+
+def _get_number(parameter):
+    number = GLint()
+    glGetIntegerv(parameter, number)
+    return number.value
 
 
 class GLInfo:
@@ -89,30 +97,23 @@ class GLInfo:
 
         This method is called automatically for the default context.
         """
-        from pyglet.gl.gl import GLint, glGetIntegerv, glGetString, glGetStringi, GL_NUM_EXTENSIONS
-
         self.have_context = True
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
-
-            try:
-                ver = '%s.0' % self.version.split(' ', 1)[0]
-                self.major_version, self.minor_version = [int(v) for v in ver.split('.', 3)[:2]]
-            except ValueError:
-                self.major_version = self.minor_version = 0
-
             # NOTE: The version string requirements for gles is a lot stricter
             #       so using this to rely on detecting the API is not too unreasonable
             self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
 
-            if self.have_version(3):
-                num_extensions = GLint()
-                glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
-                self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
-                                   for i in range(num_extensions.value))
+            try:
+                self.major_version = _get_number(GL_MAJOR_VERSION)
+                self.minor_version = _get_number(GL_MINOR_VERSION)
+                num_ext = _get_number(GL_NUM_EXTENSIONS)
+                self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value) for i in range(num_ext))
                 self.extensions = set(self.extensions)
+            except GLException:
+                pass    # GL3 is likely not available
 
             self._have_info = True
 
