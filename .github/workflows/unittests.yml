@@ -71,9 +71,9 @@ jobs:
         shell: pwsh
         run: |
           
-          set PYGLET_DEBUG_LIB=True
-          set PYGLET_DEBUG_GL_TRACE=True
-          
+          $env:PYGLET_DEBUG_LIB = True
+          $env:PYGLET_DEBUG_GL_TRACE = True
+
           mkdir D:\a\pyglet\pyglet\lib
           copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\pyglet\lib\
 
