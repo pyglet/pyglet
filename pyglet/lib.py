@@ -123,11 +123,11 @@ class LibraryLoader:
         if _is_pyglet_doc_run:
             return LibraryMock()
 
-        if not names:
-            raise ImportError("No library name specified")
-
         if 'framework' in kwargs and self.platform == 'darwin':
             return self.load_framework(kwargs['framework'])
+
+        if not names:
+            raise ImportError("No library name specified")
 
         platform_names = kwargs.get(self.platform, [])
         if isinstance(platform_names, str):
