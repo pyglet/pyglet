@@ -944,6 +944,27 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self.set_size(self.width, new_height)
 
     @property
+    def size(self):
+        """The size of the window. Read-Write.
+
+        :type: tuple
+        """
+        return self.get_size()
+
+    @size.setter
+    def size(self, new_size):
+        self.set_size(*new_size)
+
+    @property
+    def aspect_ratio(self):
+        """The aspect ratio of the window. Read-Only.
+
+        :type: float
+        """
+        w, h = self.get_size()
+        return w / h
+
+    @property
     def projection(self):
         """The OpenGL window projection matrix. Read-write.
 
