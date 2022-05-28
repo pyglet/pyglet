@@ -45,6 +45,8 @@ from ctypes import c_int32 as _s32
 from ctypes import c_int64 as _s64
 from concurrent.futures import ThreadPoolExecutor
 
+from typing import List
+
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
@@ -580,7 +582,7 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
             if controller:
                 self.dispatch_event('on_disconnect', controller)
 
-    def get_controllers(self) -> list[Controller]:
+    def get_controllers(self) -> List[Controller]:
         return list(self._controllers.values())
 
 

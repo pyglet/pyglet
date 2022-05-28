@@ -44,7 +44,8 @@ __all__ = ['link_GL', 'link_WGL']
 
 _debug_trace = pyglet.options['debug_trace']
 
-gl_lib = ctypes.windll.opengl32
+# gl_lib = ctypes.windll.opengl32
+gl_lib = pyglet.lib.load_library('opengl32')
 wgl_lib = gl_lib
 
 if _debug_trace:
@@ -115,7 +116,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
             ftype = ctypes.WINFUNCTYPE(*fargs)
             if _have_get_proc_address:
                 from pyglet.gl import gl_info
-                if gl_info.have_context():
+                if gl_info.have_context:
                     address = wglGetProcAddress(name)
                     if address:
                         func = cast(address, ftype)

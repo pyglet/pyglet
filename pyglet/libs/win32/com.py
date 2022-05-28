@@ -77,7 +77,7 @@ from pyglet.util import debug_print
 _debug_com = debug_print('debug_com')
 
 if sys.platform != 'win32':
-    raise ImportError('pyglet.com requires a Windows build of Python')
+    raise ImportError('pyglet.libs.win32.com requires a Windows build of Python')
 
 
 class GUID(ctypes.Structure):

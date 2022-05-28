@@ -40,7 +40,7 @@ Do not modify generated portions of this file.
 
 from ctypes import *
 from pyglet.gl.lib import link_GLX as _link_function
-from pyglet.gl.lib import c_ptrdiff_t, c_void
+from pyglet.gl.lib import c_void
 
 if not _link_function:
     raise ImportError('libGL.so is not available.')

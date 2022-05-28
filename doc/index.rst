@@ -44,16 +44,16 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/image
    programming_guide/media
    programming_guide/text
+   programming_guide/resources
 
    programming_guide/graphics
-
-   programming_guide/resources
 
    programming_guide/events
    programming_guide/time
 
    programming_guide/context
    programming_guide/gl
+   programming_guide/shaders
    programming_guide/math
 
    programming_guide/eventloop

@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.com import pIUnknown
+from pyglet.libs.win32.com import pIUnknown
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *

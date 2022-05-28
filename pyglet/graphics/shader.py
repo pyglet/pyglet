@@ -1,4 +1,3 @@
-from typing import Dict, List
 from ctypes import *
 from weakref import proxy
 
@@ -181,6 +180,56 @@ class _Uniform:
         return f"Uniform('{self.name}', location={self.location}, length={self.length}, count={self.count})"
 
 
+class ShaderSource:
+    """GLSL source container for making source parsing simpler.
+
+    We support locating out attributes and applying #defines values.
+
+    NOTE: We do assume the source is neat enough to be parsed
+    this way and don't contain several statements in one line.
+    """
+
+    def __init__(self, source: str, source_type: gl.GLenum):
+        """Create a shader source wrapper."""
+        self._lines = source.strip().splitlines()
+        self._type = source_type
+
+        if not self._lines:
+            raise ValueError("Shader source is empty")
+
+        self._version = self._find_glsl_version()
+
+        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
+            self._lines[0] = "#version 310 es"
+            self._lines.insert(1, "precision mediump float;")
+
+            if self._type == gl.GL_GEOMETRY_SHADER:
+                self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
+
+            if self._type == gl.GL_COMPUTE_SHADER:
+                self._lines.insert(1, "precision mediump image2D;")
+
+            self._version = self._find_glsl_version()
+
+    def validate(self) -> str:
+        """Return the validated shader source."""
+        return "\n".join(self._lines)
+
+    def _find_glsl_version(self) -> int:
+        if self._lines[0].strip().startswith("#version"):
+            try:
+                return int(self._lines[0].split()[1])
+            except Exception:
+                pass
+
+        source = "\n".join(f"{str(i+1).zfill(3)}: {line} " for i, line in enumerate(self._lines))
+
+        raise ShaderException(("Cannot find #version flag in shader source. "
+                               "A #version statement is required on the first line.\n"
+                               "------------------------------------\n"
+                               f"{source}"))
+
+
 class Shader:
     """OpenGL Shader object"""
 
@@ -247,7 +296,8 @@ class Shader:
         else:
             return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
 
-    def _get_shader_source(self, shader_id):
+    @staticmethod
+    def _get_shader_source(shader_id):
         """Get the shader source from the shader object"""
         source_length = c_int(0)
         glGetShaderiv(shader_id, GL_SHADER_SOURCE_LENGTH, source_length)
@@ -698,61 +748,3 @@ class UniformBufferObject:
 
     def __repr__(self):
         return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)
-
-
-
-class ShaderSource:
-    """
-    GLSL source container for making source parsing simpler.
-    We support locating out attributes and applying #defines values.
-
-    NOTE: We do assume the source is neat enough to be parsed
-    this way and don't contain several statements in one line.
-    """
-
-    def __init__(self, source: str, source_type: gl.GLenum):
-        """Create a shader source wrapper."""
-        self._source = source.strip()
-        self._type = source_type
-        self._lines = self._source.split("\n") if source else []
-
-        if not self._lines:
-            raise ValueError("Shader source is empty")
-
-        self._version = self._find_glsl_version()
-
-        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
-            self._lines[0] = "#version 310 es"
-            self._lines.insert(1, "precision mediump float;")
-
-            if self._type == gl.GL_GEOMETRY_SHADER:
-                self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
-
-            if self._type == gl.GL_COMPUTE_SHADER:
-                self._lines.insert(1, "precision mediump image2D;")
-
-            self._version = self._find_glsl_version()
-
-    def validate(self) -> str:
-        """Return the validated shader source."""
-        return "\n".join(self._lines)
-
-    def _find_glsl_version(self) -> int:
-        if self._lines[0].strip().startswith("#version"):
-            try:
-                return int(self._lines[0].split()[1])
-            except Exception:
-                pass
-
-        source = "\n".join(
-            f"{str(i+1).zfill(3)}: {line} " for i, line in enumerate(self._lines)
-        )
-
-        raise ShaderException(
-            (
-                "Cannot find #version in shader source. "
-                "A #version statement is required in the first line.\n"
-                f"------------------------------------\n"
-                f"{source}"
-            )
-        )

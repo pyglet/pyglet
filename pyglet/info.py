@@ -94,6 +94,10 @@ def dump_pyglet():
 
 def dump_window():
     """Dump display, window, screen and default config info."""
+    from pyglet.gl import gl_info
+    if not gl_info.have_version(3):
+        print(f"Insufficient OpenGL version: {gl_info.get_version_string()}")
+        return
     import pyglet.window
     display = pyglet.canvas.get_display()
     print('display:', repr(display))

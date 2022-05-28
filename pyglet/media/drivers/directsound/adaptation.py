@@ -400,8 +400,9 @@ class DirectSoundDriver(AbstractAudioDriver):
         return DirectSoundListener(self._ds_listener, self._ds_driver.primary_buffer)
 
     def delete(self):
+        if hasattr(self, 'worker'):
+            self.worker.stop()
         # Make sure the _ds_listener is deleted before the _ds_driver
-        self.worker.stop()
         self._ds_listener = None
 
 

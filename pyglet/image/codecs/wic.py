@@ -399,11 +399,6 @@ class IWICImagingFactory(com.pIUnknown):
 
 _factory = IWICImagingFactory()
 
-try:
-    ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
-except OSError as err:
-    warnings.warn(str(err))
-
 ole32.CoCreateInstance(CLSID_WICImagingFactory,
                        None,
                        CLSCTX_INPROC_SERVER,

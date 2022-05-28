@@ -56,9 +56,6 @@ class HeadlessWindow(BaseWindow):
     _egl_display_connection = None
     _egl_surface = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _recreate(self, changes):
         pass
 

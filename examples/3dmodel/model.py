@@ -12,6 +12,7 @@ time = 0
 @window.event
 def on_resize(width, height):
     window.viewport = (0, 0, *window.get_framebuffer_size())
+
     window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255)
     return pyglet.event.EVENT_HANDLED
 
@@ -29,7 +30,7 @@ def animate(dt):
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
     rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/3, Vec3(0, 0, 1))
-    trans = Mat4.from_translation((1.25, 0, 2))
+    trans = Mat4.from_translation(Vec3(1.25, 0, 2))
     model_logo.matrix = rot_x @ rot_y @ rot_z @ trans
 
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))

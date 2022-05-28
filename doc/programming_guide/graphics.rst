@@ -7,15 +7,108 @@ At the lowest level, pyglet uses OpenGL to draw graphics in program windows.
 The OpenGL interface is exposed via the :py:mod:`pyglet.gl` module
 (see :ref:`guide_gl`).
 
-Using the OpenGL interface directly, however, can be difficult to do
-efficiently. The :py:mod:`pyglet.graphics` module provides a simpler means
-for drawing graphics that uses vertex arrays and vertex buffer objects
-internally to deliver better performance.
+For new users, however, using the OpenGL interface directly can be daunting.
+The :py:mod:`pyglet.graphics` module provides high level abstractions that
+use vertex arrays and vertex buffer objects internally to deliver high
+performance.
+For advanced users, these abstractions can still help to avoid a lot of the
+OpenGL boilerplate code that would otherwise be necessary to write yourself.
 
-Drawing primitives
-------------------
 
-The :py:mod:`pyglet.graphics` module draws the OpenGL primitive objects by
+Working with Shaders
+--------------------
+
+Drawing anything in modern OpenGL requires a Shader Program. Working with
+Shader resources directly can be tedious, so the :py:mod:`pyglet.graphics.shader`
+module provides simplified (but robust) abstractions.
+
+See the `OpenGL Programming SDK`_ for more information on Shaders, and the .
+GL Shader Language (GLSL).
+
+Creating a Shader Program
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+What is commonly referred to as a "Shader" is usually referring to a
+"Shader Program", which is multiple compiled and linked Shader objects.
+To create a rudimentary Shader Program, first start with the the source
+as Python strings. Here is simplistic Vertex and Fragment source::
+
+    vertex_source = """#version 150 core
+        in vec2 position;
+        in vec4 colors;
+        out vec4 vertex_colors;
+
+        uniform mat4 projection;
+
+        void main()
+        {
+            gl_Position = projection * vec4(position, 0.0, 1.0);
+            vertex_colors = colors;
+        }
+    """
+
+    fragment_source = """#version 150 core
+        in vec4 vertex_colors;
+        out vec4 final_color;
+
+        void main()
+        {
+            final_color = vertex_colors;
+        }
+    """
+
+The source strings are then used to create `Shader` objects, which are
+then linked together in a `ShaderProgram`. Shader objects are automatically
+detached after linking the ShaderProgram, so they can be discarded
+afterwards (or used again in other ShaderPrograms)::
+
+    from pyglet.graphics.shader import Shader, ShaderProgram
+
+    vert_shader = Shader(vertex_source, 'vertex')
+    frag_shader = Shader(fragment_source, 'fragment')
+    shader_program = ShaderProgram(vert_shader, frag_shader)
+
+ShaderPrograms internally introspect on creation. There are several properties
+that can be queried to inspect the varios vertex attributes, uniforms, and uniform
+blocks that are available::
+
+    >>> for attribute in shader_program.attributes.items():
+    ...     print(attribute)
+    ...
+    ('position', {'type': 35664, 'size': 1, 'location': 0, 'count': 2, 'format': 'f'})
+    ('colors', {'type': 35666, 'size': 1, 'location': 1, 'count': 4, 'format': 'f'})
+
+    >>> for uniform in shader_program.uniforms.items():
+    ...     print(uniform)
+    ...
+    ('projection', Uniform('projection', location=0, length=16, count=1))
+
+
+.. note:: Most OpenGL drivers will optimize shaders during compilation. If an
+          attribute or a uniform is not being used, it will often be optimized out.
+
+Creating Vertex Lists
+^^^^^^^^^^^^^^^^^^^^^
+
+Once you have a shader program, you need vertex data to render with it.
+Instead of manually creating vertex buffers,
+a :py:class:`~pyglet.graphics.vertexdomain.VertexList` can be created
+directly from a ShaderProgram instance. A vertex
+
+is a list of
+vertices and their attributes, as defined in a ShaderProgram.
+Vertex Lists are essentially a view into an OpenGL buffer, that
+
+They are stored in an efficient manner that's suitable for
+direct upload to the video card. On newer video cards (supporting
+OpenGL 1.5 or later) the data is actually stored in video memory.
+
+Create a :py:class:`~pyglet.graphics.vertexdomain.VertexList` for a set of
+attributes and initial data with :py:func:`pyglet.graphics.vertex_list`.
+The following example creates a vertex list with the two coloured points
+used in the previous page::
+
+
 a mode denoted by the constants
 
 * ``pyglet.gl.GL_POINTS``
@@ -222,9 +315,9 @@ Vertex lists
 
 There is a significant overhead in using :py:func:`pyglet.graphics.draw` and
 :py:func:`pyglet.graphics.draw_indexed` due to pyglet interpreting and
-formatting the vertex data for the video device.  Usually the data drawn in
-each frame (of an animation) is identical or very similar to the previous
-frame, so this overhead is unnecessarily repeated.
+formatting the vertex data for the GPU.  Usually the data drawn in each frame
+(of an animation) is identical or very similar to the previous frame, so this
+overhead is unnecessarily repeated.
 
 A :py:class:`~pyglet.graphics.vertexdomain.VertexList` is a list of vertices
 and their attributes, stored in an efficient manner that's suitable for
@@ -313,38 +406,6 @@ function.  The following example creates a vertex list of 1024 vertices with
 positional, color, texture coordinate and normal attributes::
 
     vertex_list = pyglet.graphics.vertex_list(1024, 'v3f', 'c4B', 't2f', 'n3f')
-
-Data usage
-^^^^^^^^^^
-
-By default, pyglet assumes vertex data will be updated less often than it is
-drawn, but more often than just during initialisation.  You can override
-this assumption for each attribute by affixing a usage specification
-onto the end of the format string, detailed in the following table:
-
-    .. list-table::
-        :header-rows: 1
-
-        * - Usage
-          - Description
-        * - ``"/static"``
-          - Data is never or rarely modified after initialisation
-        * - ``"/dynamic"``
-          - Data is occasionally modified (default)
-        * - ``"/stream"``
-          - Data is updated every frame
-
-In the following example a vertex list is created in which the positional data
-is expected to change every frame, but the color data is expected to remain
-relatively constant::
-
-    vertex_list = pyglet.graphics.vertex_list(1024, 'v3f/stream', 'c4B/static')
-
-The usage specification affects how pyglet lays out vertex data in memory,
-whether or not it's stored on the video card, and is used as a hint to OpenGL.
-Specifying a usage does not affect what operations are possible with a vertex
-list (a ``static`` attribute can still be modified), and may only have
-performance benefits on some hardware.
 
 Indexed vertex lists
 ^^^^^^^^^^^^^^^^^^^^
@@ -580,3 +641,5 @@ Shader program details
 * Only one texture unit (GL_TEXTURE0) is currently being used by the image module,.
   and therefore textures.
 
+
+.. _OpenGL Programming SDK: http://www.opengl.org/sdk

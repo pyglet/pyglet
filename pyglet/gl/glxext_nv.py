@@ -41,6 +41,7 @@ Do not modify this file.
 
 from ctypes import *
 from pyglet.gl.lib import link_GLX as _link_function
+from pyglet.gl.lib import c_void
 
 
 # BEGIN GENERATED CONTENT (do not edit below this line)
