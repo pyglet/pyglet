@@ -47,11 +47,11 @@ This example demonstrates:
  * Drawing simple 3D primitives using the pyglet.graphics API
  * Fixed-pipeline lighting
 """
-
 from math import pi, sin, cos
 
 import pyglet
 from pyglet.gl import *
+from pyglet.math import Mat4, Vec3
 
 try:
     # Try and create a window with multisampling (antialiasing)
@@ -61,36 +61,37 @@ except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling if not supported
     window = pyglet.window.Window(resizable=True)
 
-# Change the window projection to 3D:
-window.projection = pyglet.math.Mat4.perspective_projection(0, 960, 0, 540, z_near=0.1, z_far=255)
-
-
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
 
 
-def update(dt):
-    rx, ry, rz = torus_model.rotation
-    rx += dt * 1
-    ry += dt * 80
-    rz += dt * 30
-    rx %= 360
-    ry %= 360
-    rz %= 360
-    torus_model.rotation = rx, ry, rz
+@window.event
+def on_resize(width, height):
+    window.viewport = (0, 0, *window.get_framebuffer_size())
+    window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255, fov=60)
+    return pyglet.event.EVENT_HANDLED
 
+
+def update(dt):
+    global time
+    time += dt
+    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
+    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
+    rot_z = Mat4.from_rotation(time/4, Vec3(0, 0, 1))
+    trans = Mat4.from_translation((0, 0, -3.0))
+    torus_model.matrix = rot_x @ rot_y @ rot_z @ trans
 
 def setup():
     # One-time GL setup
     glClearColor(1, 1, 1, 1)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
+    on_resize(*window.size)
 
     # Uncomment this line for a wireframe view:
     # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-
 
 def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
 
@@ -139,7 +140,7 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     shininess = 50
 
     material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
-    group = pyglet.model.MaterialGroup(material=material)
+    group = pyglet.model.MaterialGroup(material=material, program=shader)
 
     vertex_list = shader.vertex_list_indexed(len(vertices)//3, GL_TRIANGLES, indices, batch, group,
                                              vertices=('f', vertices),
@@ -150,12 +151,10 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
 
 
 setup()
+time = 0.0
 batch = pyglet.graphics.Batch()
 shader = pyglet.model.get_default_shader()
-
-
-torus_model = create_torus(1, 0.3, 50, 30, shader, batch)
-torus_model.translation = 0, 0, -4
+torus_model = create_torus(1.0, 0.3, 50, 30, shader, batch)
 
 pyglet.clock.schedule(update)
 pyglet.app.run()
