@@ -754,12 +754,16 @@ class Mat4(tuple):
                     tx, ty, tz, 1.0))
 
     @classmethod
-    def perspective_projection(cls, left, right, bottom, top, z_near, z_far, fov=60) -> 'Mat4':
-        """Create a Mat4 perspective projection matrix."""
-        width = right - left
-        height = top - bottom
-        aspect = width / height
+    def perspective_projection(cls, aspect, z_near, z_far, fov=60) -> 'Mat4':
+        """
+        Create a Mat4 perspective projection matrix.
 
+        :Parameters:
+            `aspect` : The aspect ratio as a `float`
+            `z_near` : The near plane as a `float`
+            `z_far` : The far plane as a `float`
+            `fov` : Field of view in degrees as a `float`
+        """
         xy_max = z_near * _math.tan(fov * _math.pi / 360)
         y_min = -xy_max
         x_min = -xy_max
@@ -781,11 +785,11 @@ class Mat4(tuple):
 
     @classmethod
     def from_translation(cls, vector: Vec3) -> 'Mat4':
-        """Create a translaton matrix from a Vec3.
+        """Create a translation matrix from a Vec3.
 
         :Parameters:
             `vector` : A `Vec3`, or 3 component tuple of float or int
-                Vec3 or tuple with x, y and z translaton values
+                Vec3 or tuple with x, y and z translation values
         """
         return cls((1.0, 0.0, 0.0, 0.0,
                     0.0, 1.0, 0.0, 0.0,
@@ -800,7 +804,7 @@ class Mat4(tuple):
             `angle` : A `float` :
                 The angle as a float.
             `vector` : A `Vec3`, or 3 component tuple of float or int :
-                Vec3 or tuple with x, y and z translaton values
+                Vec3 or tuple with x, y and z translation values
         """
         return cls().rotate(angle, vector)
 
@@ -869,7 +873,7 @@ class Mat4(tuple):
         return Mat4(self) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
 
     def transpose(self) -> 'Mat4':
-        """Get a tranpose of this Matrix."""
+        """Get a transpose of this Matrix."""
         return Mat4(self[0::4] + self[1::4] + self[2::4] + self[3::4])
 
     def __add__(self, other) -> 'Mat4':
