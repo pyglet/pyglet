@@ -59,13 +59,14 @@ import warnings
 
 from ctypes import c_char_p, cast
 
-from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GL_NUM_EXTENSIONS
-from pyglet.gl.gl import GL_MAJOR_VERSION, GL_MINOR_VERSION, GLint, glGetIntegerv, glGetString, glGetStringi
+from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
+from pyglet.gl.gl import GL_MAJOR_VERSION, GL_MINOR_VERSION, GLint
 from pyglet.gl.lib import GLException
 from pyglet.util import asstr
 
 
 def _get_number(parameter):
+    from pyglet.gl.gl import glGetIntegerv
     number = GLint()
     glGetIntegerv(parameter, number)
     return number.value
@@ -97,6 +98,8 @@ class GLInfo:
 
         This method is called automatically for the default context.
         """
+        from pyglet.gl.gl import glGetString, glGetStringi, GL_NUM_EXTENSIONS
+
         self.have_context = True
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
