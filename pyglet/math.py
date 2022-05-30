@@ -35,15 +35,15 @@
 
 """Matrix and Vector math.
 
-This module provides Vector and Matrix objects, include Vec2, Vec3, Vec4,
-Mat3, and Mat4. Most common operations are supported, and many helper
-methods are included for rotating, scaling, and transforming. The
-:py:class:`~pyglet.matrix.Mat4` includes class methods for creating
-orthographic and perspective projection matrixes.
+This module provides Vector and Matrix objects, including Vec2, Vec3,
+Vec4, Mat3, and Mat4. Most common matrix and vector operations are
+supported. Helper methods are included for rotating, scaling, and
+transforming. The :py:class:`~pyglet.matrix.Mat4` includes class methods
+for creating orthographic and perspective projection matrixes.
 
-:note: For performance, these objects' subclass the `tuple` type. They
-    are therefore immutable - all operations return a new object; the
-    object is not updated in-place.
+:note: For performance, Matrixes subclass the `tuple` type. They
+    are therefore immutable - all operations return a new object;
+    the object is not updated in-place.
 """
 
 import math as _math
