@@ -54,12 +54,12 @@ find in general OpenGL math libraries::
     projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     # Perspective (3D) projection matrix:
-    projection = Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
+    projection = Mat4.perspective_projection(aspect_ratio, z_near=0.1, z_far=255)
 
 For setting a 3D projection on the current OpenGL context, pyglet Windows have
 a `projection` property. For example::
 
-    window.projection = Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
+    window.projection = Mat4.perspective_projection(aspect_ratio, z_near=0.1, z_far=255)
 
 By default, pyglet automatically sets a 2D projection whenever a Window is resized.
 A useful pattern is to override the default on_resize event to set a 3D projection::
@@ -67,6 +67,6 @@ A useful pattern is to override the default on_resize event to set a 3D projecti
     @window.event
     def on_resize(width, height):
         # window.viewport = (0, 0, *window.get_framebuffer_size())
-        window.projection = Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
+        window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255)
         return pyglet.event.EVENT_HANDLED
 
