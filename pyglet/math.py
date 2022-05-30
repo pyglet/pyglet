@@ -328,7 +328,7 @@ class Vec3:
 
         Alias of abs(self).
 
-        :type: float 
+        :type: float
         """
         return self.__abs__()
 
@@ -405,10 +405,10 @@ class Vec3:
     def dot(self, other):
         """Calculate the dot product of this vector and another 3D vector.
 
-        :parameters: 
+        :parameters:
             `other`  : Vec3 :
                 The other vector.
-        
+
         :returns: The dot product of the two vectors.
         :rtype: float
         """
@@ -498,6 +498,7 @@ class Vec3:
 
 
 class Vec4:
+
     __slots__ = 'x', 'y', 'z', 'w'
 
     """A four-dimensional vector represented as X Y Z W coordinates.
