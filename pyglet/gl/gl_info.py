@@ -82,7 +82,7 @@ class GLInfo:
     If you are using more than one context, you must call `set_active_context`
     when the context is active for this `GLInfo` instance.
     """
-    have_context = False
+    _have_context = False
     vendor = ''
     renderer = ''
     version = '0.0'
@@ -100,7 +100,7 @@ class GLInfo:
         """
         from pyglet.gl.gl import glGetString, glGetStringi, GL_NUM_EXTENSIONS
 
-        self.have_context = True
+        self._have_context = True
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
@@ -121,8 +121,11 @@ class GLInfo:
             self._have_info = True
 
     def remove_active_context(self):
-        self.have_context = False
+        self._have_context = False
         self._have_info = False
+
+    def have_context(self):
+        return self._have_context
 
     def have_extension(self, extension):
         """Determine if an OpenGL extension is available.
@@ -135,7 +138,7 @@ class GLInfo:
         :return: True if the extension is provided by the driver.
         :rtype: bool
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return extension in self.extensions
 
@@ -145,7 +148,7 @@ class GLInfo:
         :return: a list of the available extensions.
         :rtype: list of str
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.extensions
 
@@ -155,7 +158,7 @@ class GLInfo:
         :return: The major and minor version as a tuple
         :rtype: tuple
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.major_version, self.minor_version
 
@@ -165,7 +168,7 @@ class GLInfo:
         :return: The OpenGL version string
         :rtype: str
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.version
 
@@ -182,7 +185,7 @@ class GLInfo:
         :return: True if the requested or a later version is supported.
         """
 
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         if not self.major_version and not self.minor_version:
             return False
@@ -196,7 +199,7 @@ class GLInfo:
 
         :rtype: str
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.renderer
 
@@ -205,7 +208,7 @@ class GLInfo:
 
         :rtype: str
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.vendor
 
@@ -215,7 +218,7 @@ class GLInfo:
 
         :rtype: str
         """
-        if not self.have_context:
+        if not self._have_context:
             warnings.warn('No GL context created yet.')
         return self.opengl_api
 

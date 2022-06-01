@@ -53,7 +53,7 @@ class Win32Config(Config):
             raise RuntimeError('Canvas must be instance of Win32Canvas')
 
         # Use ARB API if available
-        if gl_info.have_context and wgl_info.have_extension('WGL_ARB_pixel_format'):
+        if gl_info.have_context() and wgl_info.have_extension('WGL_ARB_pixel_format'):
             return self._get_arb_pixel_format_matching_configs(canvas)
         else:
             return self._get_pixel_format_descriptor_matching_configs(canvas)

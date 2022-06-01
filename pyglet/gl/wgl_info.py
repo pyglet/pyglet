@@ -54,7 +54,7 @@ class WGLInfoException(Exception):
 
 class WGLInfo:
     def get_extensions(self):
-        if not gl_info.have_context:
+        if not gl_info.have_context():
             warnings.warn("Can't query WGL until a context is created.")
             return []
 
