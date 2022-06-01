@@ -92,7 +92,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         # Up to one audio data may be buffered if too much data was received
         # from the source that could not be written immediately into the
-        # buffer.  See refill().
+        # buffer.  See _refill().
         self._audiodata_buffer = None
 
         # Theoretical write and play cursors for an infinite buffer.  play
@@ -106,7 +106,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._eos_cursor = None
 
         # Indexes into DSound circular buffer.  Complications ensue wrt each
-        # other to avoid writing over the play cursor.  See get_write_size and
+        # other to avoid writing over the play cursor.  See _get_write_size and
         # write().
         self._play_cursor_ring = 0
         self._write_cursor_ring = 0
@@ -126,7 +126,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         self._ds_buffer.current_position = 0
 
-        self.refill(self._buffer_size)
+        self._refill(self._buffer_size)
 
     def __del__(self):
         # We decrease the IDirectSound refcount
@@ -167,9 +167,16 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         del self._events[:]
         del self._timestamps[:]
 
-    def refill(self, write_size):
+    def refill_buffer(self):
+        write_size = self._get_write_size()
+        if write_size > self.min_buffer_size:
+            self._refill(write_size)
+            return True
+        return False
+
+    def _refill(self, write_size):
         while write_size > 0:
-            assert _debug('refill, write_size =', write_size)
+            assert _debug('_refill, write_size =', write_size)
             audio_data = self._get_audiodata()
 
             if audio_data is not None:
@@ -277,7 +284,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self.stop()
             self._dispatch_new_event('on_eos')
 
-    def get_write_size(self):
+    def _get_write_size(self):
         self.update_play_cursor()
 
         play_cursor = self._play_cursor
@@ -368,8 +375,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._ds_buffer.cone_outside_volume = volume
 
     def prefill_audio(self):
-        write_size = self.get_write_size()
-        self.refill(write_size)
+        write_size = self._get_write_size()
+        self._refill(write_size)
 
 
 class DirectSoundDriver(AbstractAudioDriver):

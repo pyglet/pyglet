@@ -23,8 +23,8 @@ def player(event_loop):
 
 
 class SilentTestSource(Silence):
-    def __init__(self, duration, sample_rate=44800):
-        super(Silence, self).__init__(duration, sample_rate)
+    def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):
+        super().__init__(duration, frequency, sample_rate, envelope)
         self.bytes_read = 0
 
     def get_audio_data(self, nbytes, compensation_time=0.0):

@@ -158,10 +158,10 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         # Up to one audio data may be buffered if too much data was received
         # from the source that could not be written immediately into the
-        # buffer.  See refill().
+        # buffer.  See _refill().
         self._audiodata_buffer = None
 
-        self.refill(self.ideal_buffer_size)
+        self._refill(self.ideal_buffer_size)
 
     def __del__(self):
         self.delete()
@@ -258,7 +258,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             _, event = self._events.pop(0)
             event._sync_dispatch_to_player(self.player)
 
-    def get_write_size(self):
+    def _get_write_size(self):
         self._update_play_cursor()
         buffer_size = int(self._write_cursor - self._play_cursor)
 
@@ -268,8 +268,15 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         assert _debug("Write size {} bytes".format(write_size))
         return write_size
 
-    def refill(self, write_size):
-        assert _debug('refill', write_size)
+    def refill_buffer(self):
+        write_size = self._get_write_size()
+        if write_size > self.min_buffer_size:
+            self._refill(write_size)
+            return True
+        return False
+
+    def _refill(self, write_size):
+        assert _debug('_refill', write_size)
 
         while write_size > self.min_buffer_size:
             audio_data = self._get_audiodata()
@@ -391,5 +398,5 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.alsource.cone_outer_gain = cone_outer_gain
 
     def prefill_audio(self):
-        write_size = self.get_write_size()
-        self.refill(write_size)
+        write_size = self._get_write_size()
+        self._refill(write_size)

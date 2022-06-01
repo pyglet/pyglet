@@ -51,9 +51,6 @@ class SilentAudioPlayer(AbstractAudioPlayer):
     def clear(self):
         pass
 
-    def get_write_size(self):
-        pass
-
     def write(self, audio_data, length):
         pass
 

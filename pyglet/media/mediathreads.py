@@ -152,10 +152,7 @@ class PlayerWorkerThread(MediaThread):
                 if self.players:
                     filled = False
                     for player in list(self.players):
-                        write_size = player.get_write_size()
-                        if write_size > player.min_buffer_size:
-                            player.refill(write_size)
-                            filled = True
+                        filled = player.refill_buffer()
                     if not filled:
                         sleep_time = self._nap_time
                 else:
