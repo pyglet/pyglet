@@ -12,14 +12,11 @@ import datetime
 
 # Prevents instance attributes from having a default value of None
 # See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
-from sphinx.ext.autodoc import (ClassLevelDocumenter, InstanceAttributeDocumenter)
+from sphinx.ext.autodoc import ClassLevelDocumenter
 
 
 def iad_add_directive_header(self, sig):
     ClassLevelDocumenter.add_directive_header(self, sig)
-
-
-InstanceAttributeDocumenter.add_directive_header = iad_add_directive_header
 
 
 def write_build(data, filename):
