@@ -1329,7 +1329,7 @@ class Texture(AbstractImage):
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
 
         # TODO: Clean up this temporary hack
-        if gl.current_context.get_info().get_opengl_api() == "gles":
+        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
             fbo = c_uint()
             glGenFramebuffers(1, fbo)
             glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
