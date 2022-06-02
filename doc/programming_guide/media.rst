@@ -19,7 +19,7 @@ small number of short sounds, in which case those applications need not distribu
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
 
-.. _openal.org: http://www.openal.org/downloads.html
+.. _openal.org: https://www.openal.org/downloads
 
 Audio drivers
 -------------
@@ -113,7 +113,7 @@ audio is required.
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
     distributions. It can be downloaded separately from your audio device
-    manufacturer or `openal.org <http://www.openal.org/downloads.html>`_
+    manufacturer or `openal.org <https://www.openal.org/downloads>`_
 
 Supported media types
 ---------------------

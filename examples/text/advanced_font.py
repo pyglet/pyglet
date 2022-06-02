@@ -1,6 +1,8 @@
+
 """Example of advanced font rendering features. Currently only supported on Windows."""
 
 import pyglet
+pyglet.options["advanced_font_features"] = True
 
 if pyglet.compat_platform != 'win32':
     print("This example is only for Windows")
