@@ -37,6 +37,7 @@ import os
 import pyglet
 
 from pyglet.gl import GL_TRIANGLES
+from pyglet.util import asstr
 
 from .. import Model, Material, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
@@ -121,17 +122,14 @@ def parse_obj_file(filename, file=None):
 
     location = os.path.dirname(filename)
 
-    if file is None:
-        with open(filename, 'r') as f:
-            file_contents = f.read()
-    else:
-        file_contents = file.read()
-
-    if hasattr(file_contents, 'decode'):
-        try:
-            file_contents = file_contents.decode()
-        except UnicodeDecodeError as e:
-            raise ModelDecodeException("Unable to decode obj: {}".format(e))
+    try:
+        if file is None:
+            with open(filename, 'r') as f:
+                file_contents = f.read()
+        else:
+            file_contents = asstr(file.read())
+    except (UnicodeDecodeError, OSError):
+        raise ModelDecodeException
 
     material = None
     mesh = None
