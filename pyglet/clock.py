@@ -38,19 +38,19 @@
 Measuring time
 ==============
 
-The `tick` and `get_fps` functions can be used in conjunction to fulfil most
+The `tick` and `get_frequency` functions can be used in conjunction to fulfil most
 games' basic requirements::
 
     from pyglet import clock
     while True:
         dt = clock.tick()
         # ... update and render ...
-        print(f"FPS is {clock.get_fps()}")
+        print(f"FPS is {clock.get_frequency()}")
 
 The ``dt`` value returned gives the number of seconds (as a float) since the
 last "tick".
 
-The `get_fps` function averages the framerate over a sliding window of
+The `get_frequency` function averages the framerate over a sliding window of
 approximately 1 second.  (You can calculate the instantaneous framerate by
 taking the reciprocal of ``dt``).
 
@@ -176,7 +176,7 @@ class Clock:
         self.next_ts = self.time()
         self.last_ts = None
 
-        # Used by self.get_fps to show update frequency
+        # Used by self.get_frequency to show update frequency
         self.times = _deque()
         self.cumulative_time = 0
         self.window_size = 60
