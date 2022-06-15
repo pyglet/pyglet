@@ -279,10 +279,13 @@ the third argument).
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
 
-VertexList objects reference data that is stored on the GPU, but they do not own
+VertexLists reference data that is stored on the GPU, but they do not own
 any data themselves. For this reason, it's not strictly necessary to keep a
-reference to a VertexList after creation. If you wish to delete the data from the
-GPU, however, it can be done with the `VertexList.delete()` method.
+reference to a VertexList after creating it. If you wish to delete the data
+from the GPU, however, it can only be done with the `VertexList.delete()`
+method. Likewise, you can only update a VertexList's vertex data if you have
+kept a reference to it. For that reason, you should keep a reference to any
+objects that you might want to modify or delete from your scene after creation.
 
 .. _guide_batched-rendering:
 
@@ -323,22 +326,16 @@ For batches containing many objects, this gives a significant performance
 improvement over drawing individually. It's generally recommended to always
 use Batches.
 
-
 Setting the OpenGL state
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to achieve many effects in OpenGL one or more global state parameters
-must be set.  For example, to enable and bind a texture requires::
+Before drawing in OpenGL, it's necessary to set certain state. You might need
+to activate a ShaderProgram, or bind a Texture. For example, to enable and bind
+a texture requires the following before drawing::
 
     from pyglet.gl import *
-    glEnable(texture.target)
+    glActiveTexture(GL_TEXTURE0)
     glBindTexture(texture.target, texture.id)
-
-before drawing vertex lists, and then::
-
-    glDisable(texture.target)
-
-afterwards to avoid interfering with later drawing commands.
 
 With a :py:class:`~pyglet.graphics.Group` these state changes can be
 encapsulated and associated with the vertex lists they affect.
@@ -346,34 +343,32 @@ Subclass :py:class:`~pyglet.graphics.Group` and override the `Group.set_state`
 and `Group.unset_state` methods to perform the required state changes::
 
     class CustomGroup(pyglet.graphics.Group):
+        def __init__(self, texture, shaderprogram):
+            super().__init__()
+            self.texture = texture
+            self.program = shaderprogram
+
         def set_state(self):
-            glEnable(texture.target)
-            glBindTexture(texture.target, texture.id)
+            self.program.use()
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(self.texture.target, self.texture.id)
 
         def unset_state(self):
-            glDisable(texture.target)
+            self.program.stop()
 
-An instance of this group can now be attached to vertex lists in the batch::
+An instance of this group can now be attached to vertex lists::
 
     custom_group = CustomGroup()
-    vertex_list = program.vertex_list(2, pyglet.gl.GL_POINTS, custom_group,
-        ('v2i', (10, 15, 30, 35)),
-        ('c3B', (0, 0, 255, 0, 255, 0))
+    vertex_list = program.vertex_list(2, pyglet.gl.GL_POINTS, batch, custom_group,
+        position=('i', (10, 15, 30, 35)),
+        colors=('Bn', (0, 0, 255, 0, 255, 0))
     )
 
 The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate
 ``set_state`` and ``unset_state`` methods are called before and after
 the vertex lists that use them.
 
-
-
-##################################
-#   Not yet done
-##################################
-
-
-
-Hierarchical state
+hierarchical state
 ^^^^^^^^^^^^^^^^^^
 
 Groups have a `parent` attribute that allows them to be implicitly organised
@@ -382,13 +377,15 @@ order of ``set_state`` and ``unset_state`` calls for vertex lists in a batch
 will be::
 
     A.set_state()
-    # Draw A vertices
-    B.set_state()
-    # Draw B vertices
-    B.unset_state()
-    C.set_state()
-    # Draw C vertices
-    C.unset_state()
+
+      B.set_state()
+      # Draw B vertices
+      B.unset_state()
+
+      C.set_state()
+      # Draw C vertices
+      C.unset_state()
+
     A.unset_state()
 
 This is useful to group state changes into as few calls as possible.  For
@@ -399,23 +396,26 @@ example demonstrates this::
 
     class TextureEnableGroup(pyglet.graphics.Group):
         def set_state(self):
-            glEnable(GL_TEXTURE_2D)
+            glActiveTexture(GL_TEXTURE0)
 
         def unset_state(self):
-            glDisable(GL_TEXTURE_2D)
+            # not necessary
+
 
     texture_enable_group = TextureEnableGroup()
 
+
     class TextureBindGroup(pyglet.graphics.Group):
         def __init__(self, texture):
-            super(TextureBindGroup, self).__init__(parent=texture_enable_group)
+            super().__init__(parent=texture_enable_group)
             assert texture.target = GL_TEXTURE_2D
             self.texture = texture
 
         def set_state(self):
             glBindTexture(GL_TEXTURE_2D, self.texture.id)
 
-        # No unset_state method required.
+        def unset_state(self):
+            # not required
 
         def __eq__(self, other):
             return (self.__class__ is other.__class__ and
@@ -426,50 +426,61 @@ example demonstrates this::
         def __hash__(self):
             return hash((self.texture.id, self.texture.target))
 
-    batch.add(4, GL_QUADS, TextureBindGroup(texture1), 'v2f', 't2f')
-    batch.add(4, GL_QUADS, TextureBindGroup(texture2), 'v2f', 't2f')
-    batch.add(4, GL_QUADS, TextureBindGroup(texture1), 'v2f', 't2f')
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture2))
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
 
-Note the use of an ``__eq__`` method on the group to allow
-:py:class:`~pyglet.graphics.Batch` to merge the two ``TextureBindGroup``
-identical instances.
 
-Sorting vertex lists
-^^^^^^^^^^^^^^^^^^^^
+.. note:: The ``__eq__`` method on the group allows the :py:class:`~pyglet.graphics.Batch`
+          to automatically merge the two identical ``TextureBindGroup`` instances.
+          For optimal performance, always take care to ensure your custom Groups have
+          correct ``__eq__`` and ``__hash__`` methods defined.
+
+drawing order
+^^^^^^^^^^^^^
 
 :py:class:`~pyglet.graphics.vertexdomain.VertexDomain` does not attempt
 to keep vertex lists in any particular order. So, any vertex lists sharing
 the same primitive mode, attribute formats and group will be drawn in an
-arbitrary order.  However, :py:class:`~pyglet.graphics.Batch` will sort
-:py:class:`~pyglet.graphics.Group` objects sharing the same parent by
-their ``__cmp__`` method.  This allows groups to be ordered.
+arbitrary order.  However, :py:class:`~pyglet.graphics.Group` objects do
+have an `order` parameter that allows `:py:class:`~pyglet.graphics.Batch`
+to sort objects sharing the same parent. In summary, inside of a Batch:
 
-The :py:class:`~pyglet.graphics.OrderedGroup` class is a convenience
-group that does not set any OpenGL state, but is parameterised by an
-integer giving its draw order.  In the following example a number of
-vertex lists are grouped into a "background" group that is drawn before
-the vertex lists in the "foreground" group::
+1. Groups are sorted by their parent (if any). (Parent Groups may also be ordered).
+2. Groups are sorted by their `order` attribute. There is one draw call per order level.
 
-    background = pyglet.graphics.OrderedGroup(0)
-    foreground = pyglet.graphics.OrderedGroup(1)
+A common use pattern is to create several Groups for each level in your scene.
+For instance, a "background" group that is drawn before the "foreground" group::
 
-    batch.add(4, GL_QUADS, foreground, 'v2f')
-    batch.add(4, GL_QUADS, background, 'v2f')
-    batch.add(4, GL_QUADS, foreground, 'v2f')
-    batch.add(4, GL_QUADS, background, 'v2f', 'c4B')
+    background = pyglet.graphics.Group(0)
+    foreground = pyglet.graphics.Group(1)
+
+    pyglet.sprite.Sprite(image, batch=batch, group=background)
+    pyglet.sprite.Sprite(image, batch=batch, group=foreground)
 
 By combining hierarchical groups with ordered groups it is possible to
 describe an entire scene within a single :py:class:`~pyglet.graphics.Batch`,
 which then renders it as efficiently as possible.
 
+visibility
+^^^^^^^^^^
+
+Groups have a boolean `visible` property. By setting this to `False`, any
+objects in that Group will no longer be rendered. A common use case is to
+create a parent Group specifically for this purpose, often when combined
+with custom ordering (as described above). For example, you might create
+a "HUD" Group, which is ordered to draw in front of everything else. The
+"HUD" Group's visibility can then easily be toggled.
+
+
 Batches and groups in other modules
 -----------------------------------
 
-The :py:class:`~pyglet.sprite.Sprite`, :py:class:`~pyglet.text.Label` and
-:py:class:`~pyglet.text.layout.TextLayout` classes all accept ``batch`` and
-``group`` parameters in their constructors.  This allows you to add any of
-these higher-level pyglet drawables into arbitrary places in your rendering
-code.
+The :py:class:`~pyglet.sprite.Sprite`, :py:class:`~pyglet.text.Label`,
+:py:class:`~pyglet.text.layout.TextLayout`, and other default classes all
+accept ``batch`` and ``group`` parameters in their constructors. This allows
+you to add any of these higher-level pyglet drawables into arbitrary places in
+your rendering code.
 
 For example, multiple sprites can be grouped into a single batch and then
 drawn at once, instead of calling ``Sprite.draw()`` on each one individually::
@@ -480,23 +491,13 @@ drawn at once, instead of calling ``Sprite.draw()`` on each one individually::
     batch.draw()
 
 The ``group`` parameter can be used to set the drawing order (and hence which
-objects overlap others) within a single batch, as described  on the previous
-page.
+objects overlap others) within a single batch, as described on the previous page.
 
 In general you should batch all drawing objects into as few batches as
 possible, and use groups to manage the draw order and other OpenGL state
-changes for optimal performance.   If you are creating your own drawable
+changes for optimal performance.
+
+If you are creating your own drawable
 classes, consider adding ``batch`` and ``group`` parameters in a similar way.
-
-
-Shader program details
-----------------------
-
-* VAOs are generated at the Batch level.
-* Groups are used to segregate shader programs. Group set/unset state_calls
-  are used to activate and deactivate these programs.
-* Only one texture unit (GL_TEXTURE0) is currently being used by the image module,.
-  and therefore textures.
-
 
 .. _OpenGL Programming SDK: http://www.opengl.org/sdk
