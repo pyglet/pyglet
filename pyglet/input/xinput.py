@@ -436,6 +436,7 @@ class XInputDeviceManager(EventDispatcher):
         with self._dev_lock:
             return [dev for dev in self.all_devices if dev.connected]
 
+    # Threaded method:
     def _get_state(self):
         xuser_max_count = set(range(XUSER_MAX_COUNT))     # {0, 1, 2, 3}
         polling_rate = self._polling_rate
@@ -457,7 +458,8 @@ class XInputDeviceManager(EventDispatcher):
                     # Found a new connection:
                     device.connected = True
                     self._connected_devices.add(i)
-                    self.dispatch_event('on_connect', device)
+                    # Dispatch event in main thread:
+                    pyglet.app.platform_event_loop.post_event(self, 'on_connect', device)
 
                 elapsed = 0.0
 
@@ -472,7 +474,8 @@ class XInputDeviceManager(EventDispatcher):
                     if device.connected:
                         device.connected = False
                         self._connected_devices.remove(i)
-                        self.dispatch_event('on_disconnect', device)
+                        # Dispatch event in main thread:
+                        pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', device)
                         continue
 
                 elif result == ERROR_SUCCESS and device.is_open:

@@ -553,7 +553,8 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
             self._controllers[name] = controller
 
         if controller:
-            self.dispatch_event('on_connect', controller)
+            # Dispatch event in main thread:
+            pyglet.app.platform_event_loop.post_event(self, 'on_connect', controller)
 
     def _make_device(self, name, count=1):
         path = os.path.join('/dev/input', name)
