@@ -269,7 +269,8 @@ class Win32Window(BaseWindow):
 
         # Position and size window
         if self._fullscreen:
-            _user32.SetWindowPos(self._hwnd, HWND_NOTOPMOST,
+            hwnd_after = HWND_TOPMOST if self.style == "overlay" else HWND_NOTOPMOST
+            _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  self._screen.x, self._screen.y, width, height, SWP_FRAMECHANGED)
         elif False:  # TODO location not in pyglet API
             x, y = self._client_to_window_pos(*factory.get_location())
