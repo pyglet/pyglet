@@ -34,17 +34,13 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
+from ctypes.wintypes import HANDLE, BYTE, HWND, BOOL, UINT, LONG, WORD, DWORD, WCHAR, LPVOID
 
 lib = ctypes.windll.wintab32
 
-LONG = ctypes.c_long
-BOOL = ctypes.c_int
-UINT = ctypes.c_uint
-WORD = ctypes.c_uint16
-DWORD = ctypes.c_uint32
-WCHAR = ctypes.c_wchar
 FIX32 = DWORD
 WTPKT = DWORD
+HCTX = HANDLE  # CONTEXT HANDLE
 
 LCNAMELEN = 40
 
@@ -119,6 +115,56 @@ class LOGCONTEXT(ctypes.Structure):
     )
 
 
+class TILT(ctypes.Structure):  # 1.1
+    _fields_ = (
+        ('tiltX', ctypes.c_int),
+        ('tiltY', ctypes.c_int),
+    )
+
+
+class EXTENSIONBASE(ctypes.Structure):  # 1.4
+    _fields_ = (
+        ('nContext', HCTX),  # Specifies the Wintab context to which these properties apply.
+        ('nStatus', UINT),  # Status of setting/getting properties.
+        ('nTime', DWORD),  # Timestamp applied to property transaction.
+        ('nSerialNumber', UINT),  # Reserved - not use
+    )
+
+
+class EXPKEYSDATA(ctypes.Structure):  # 1.4
+    _fields_ = (
+        ('nTablet', BYTE),  # Tablet index where control is found.
+        ('nControl', BYTE),  # Zero-based control index.
+        ('nLocation', BYTE),  # Zero-based index indicating side of tablet where control found (0 = left, 1 = right).
+        ('nReserved', BYTE),  # Reserved - not used
+        ('nState', DWORD)  # Indicates Express Key button press (1 = pressed, 0 = released)
+    )
+
+
+class SLIDERDATA(ctypes.Structure):  # 1.4
+    _fields_ = (
+        ('nTablet', BYTE),  # Tablet index where control is found.
+        ('nControl', BYTE),  # Zero-based control index.
+        ('nMode', BYTE),  # Zero-based current active mode of control. Mode selected by control's toggle button.
+        ('nReserved', BYTE),  # Reserved - not used
+        ('nPosition', DWORD)  # An integer representing the position of the user's finger on the control.
+        # When there is no finger on the control, this value is negative.
+    )
+
+
+class EXTPROPERTY(ctypes.Structure):  # 1.4
+    _fields_ = (
+        ('version', BYTE),  # Structure version, 0 for now
+        ('tabletIndex', BYTE),  # 0-based index for tablet
+        ('controlIndex', BYTE),  # 0-based index for control
+        ('functionIndex', BYTE),  # 0-based index for control's sub-function
+        ('propertyID', WORD),  # property ID
+        ('reserved', WORD),  # DWORD-alignment filler
+        ('dataSize', DWORD),  # number of bytes in data[] buffer
+        ('data', BYTE * 1),  # raw data
+    )
+
+
 # Custom packet format with fields
 #   PK_CHANGED
 #   PK_CURSOR
@@ -140,6 +186,15 @@ class PACKET(ctypes.Structure):
         ('pkNormalPressure', UINT),
         ('pkTangentPressure', UINT),
         ('pkOrientation', ORIENTATION),
+    )
+
+
+class PACKETEXT(ctypes.Structure):
+    _fields_ = (
+        ('pkBase', EXTENSIONBASE),  # Extension control properties common to all control types.
+        ('pkExpKeys', EXPKEYSDATA),  # Extension data for one Express Key.
+        ('pkTouchStrip', SLIDERDATA),  # Extension data for one Touch Strip.
+        ('pkTouchRing', SLIDERDATA)  # Extension data for one Touch Ring.
     )
 
 
@@ -174,6 +229,7 @@ WT_CTXOVERLAP = 4
 WT_PROXIMITY = 5
 WT_INFOCHANGE = 6
 WT_CSRCHANGE = 7
+WT_PACKETEXT = 8
 
 # system button assignment values 
 SBN_NONE = 0x00
@@ -370,4 +426,47 @@ WTX_FKEYS = 1  # Function keys
 WTX_TILT = 2  # Raw Cartesian tilt; 1.1
 WTX_CSRMASK = 3  # select input by cursor type; 1.1
 WTX_XBTNMASK = 4  # Extended button mask; 1.1
-WTX_EXPKEYS = 5  # ExpressKeys; 1.3
+WTX_EXPKEYS = 5  # ExpressKeys; 1.3  - DEPRECATED USE 2
+WTX_TOUCHSTRIP = 6  # TouchStrips; 1.4
+WTX_TOUCHRING = 7  # TouchRings; 1.4
+WTX_EXPKEYS2 = 8  # ExpressKeys; 1.4
+
+TABLET_PROPERTY_CONTROLCOUNT = 0  # UINT32: number of physical controls on tablet
+TABLET_PROPERTY_FUNCCOUNT = 1  # UINT32: number of functions of control
+TABLET_PROPERTY_AVAILABLE = 2  # BOOL: control/mode is available for override
+TABLET_PROPERTY_MIN = 3  # UINT32: minimum value
+TABLET_PROPERTY_MAX = 4  # UINT32: maximum value
+TABLET_PROPERTY_OVERRIDE = 5  # BOOL: control is overridden
+TABLET_PROPERTY_OVERRIDE_NAME = 6  # UTF-8: Displayable name when control is overridden
+TABLET_PROPERTY_OVERRIDE_ICON = 7  # Image: Icon to show when control is overridden
+TABLET_PROPERTY_ICON_WIDTH = 8  # UINT32: Pixel width of icon display
+TABLET_PROPERTY_ICON_HEIGHT = 9  # UINT32: Pixel height of icon display
+TABLET_PROPERTY_ICON_FORMAT = 10  # UINT32: UINT32: Pixel format of icon display (see TABLET_ICON_FMT_*)
+TABLET_PROPERTY_LOCATION = 11  # UINT32: Physical location of control (see TABLET_LOC_*)
+
+TABLET_LOC_LEFT = 0
+TABLET_LOC_RIGHT = 1
+TABLET_LOC_TOP = 2
+TABLET_LOC_BOTTOM = 3
+TABLET_LOC_TRANSDUCER = 4
+
+lib.WTOpenW.restype = HCTX
+lib.WTOpenW.argtypes = [HWND, ctypes.POINTER(LOGCONTEXT), BOOL]
+
+lib.WTClose.restype = BOOL
+lib.WTClose.argtypes = [HCTX]
+
+lib.WTInfoW.restype = UINT
+lib.WTInfoW.argtypes = [UINT, UINT, LPVOID]
+
+lib.WTPacket.restype = BOOL
+lib.WTPacket.argtypes = [HCTX, UINT, LPVOID]
+
+lib.WTGetW.restype = BOOL
+lib.WTGetW.argtypes = [HCTX, BOOL]
+
+lib.WTExtGet.restype = BOOL
+lib.WTExtGet.argtypes = [HCTX, UINT, LPVOID]
+
+lib.WTExtSet.restype = BOOL
+lib.WTExtSet.argtypes = [HCTX, UINT, LPVOID]

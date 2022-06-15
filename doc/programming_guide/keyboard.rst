@@ -103,8 +103,7 @@ Keys on the number pad have separate symbols::
     key.NUM_ENTER
 
 Some modifier keys have separate symbols for their left and right sides
-(however they cannot all be distinguished on all platforms, including Mac OS
-X)::
+(however they cannot all be distinguished on all platforms, including Mac OSX)::
 
     key.LCTRL
     key.RCTRL
@@ -112,14 +111,14 @@ X)::
     key.RSHIFT
     ...
 
-Key symbols are independent of any modifiers being held down.  For example,
+Key symbols are independent of any modifiers being active.  For example,
 lower-case and upper-case letters both generate the `A` symbol.  This is also
 true of the number keypad.
 
 Modifiers
 ^^^^^^^^^
 
-The modifiers that are held down when the event is generated are combined in a
+The modifiers that are active when the event is generated are combined in a
 bitwise fashion and provided in the ``modifiers`` parameter.  The modifier
 constants defined in :py:mod:`pyglet.window.key` are::
 
