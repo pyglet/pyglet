@@ -1079,7 +1079,7 @@ class TabletCanvas(EventDispatcher):
             :event:
             """
 
-        def on_motion(self, cursor, x, y, pressure, tilt_x, tilt_y):
+        def on_motion(self, cursor, x, y, pressure, tilt_x, tilt_y, buttons):
             """The cursor moved on the tablet surface.
 
             If `pressure` is 0, then the cursor is actually hovering above the
@@ -1099,6 +1099,9 @@ class TabletCanvas(EventDispatcher):
                     Currently undefined.
                 `tilt_y` : float
                     Currently undefined.
+                `buttons` : int
+                    Button state may be provided if the platform supports it.
+                    Supported on: Windows
 
             :event:
             """
