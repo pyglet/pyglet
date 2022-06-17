@@ -664,7 +664,7 @@ class UniformBlock:
         """
         if self.view_cls is None:
             self.view_cls = self._introspect_uniforms()
-        return UniformBufferObject(self, index)
+        return UniformBufferObject(self.view_cls, self.size, index)
 
     def _introspect_uniforms(self):
         """Introspect the block's structure and return a ctypes struct for
@@ -726,13 +726,11 @@ class UniformBlock:
 
 
 class UniformBufferObject:
-    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', 'index'
+    __slots__ = 'buffer', 'view', '_view_ptr', 'index'
 
-    def __init__(self, block, index):
-        assert type(block) is UniformBlock, "Must be a UniformBlock instance"
-        self.block = block
-        self.buffer = BufferObject(self.block.size, GL_UNIFORM_BUFFER)
-        self.view = block.view_cls()
+    def __init__(self, view_class, buffer_size, index):
+        self.buffer = BufferObject(buffer_size, GL_UNIFORM_BUFFER)
+        self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.index = index
 
@@ -760,4 +758,4 @@ class UniformBufferObject:
         self.buffer.set_data(self._view_ptr)
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)
+        return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
