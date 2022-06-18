@@ -144,7 +144,7 @@ def load(name=None, size=None, bold=False, italic=False, stretch=False, dpi=None
             name = found_name
 
     # Look for font name in font cache
-    descriptor = (name, size, bold, italic, stretch, dpi)
+    descriptor = (name, size, bold, italic, dpi)
     if descriptor in font_cache:
         return font_cache[descriptor]
 
