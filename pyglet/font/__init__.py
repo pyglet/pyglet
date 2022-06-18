@@ -114,22 +114,34 @@ def load(name=None, size=None, bold=False, italic=False, stretch=False, dpi=None
     if dpi is None:
         dpi = 96
 
-    # Find first matching name
-    if type(name) in (tuple, list):
-        for n in name:
-            if _font_class.have_font(n):
-                name = n
-                break
-        else:
-            name = None
-
     # Locate or create font cache
     shared_object_space = gl.current_context.object_space
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
+        shared_object_space.pyglet_font_font_name_match = {}  # Match a tuple to specific name to reduce lookups.
+
     font_cache = shared_object_space.pyglet_font_font_cache
     font_hold = shared_object_space.pyglet_font_font_hold
+    font_name_match = shared_object_space.pyglet_font_font_name_match
+
+    name_type = type(name)
+    if name_type in (tuple, list):
+        if name_type == list:
+            name = tuple(name)
+
+        if name in font_name_match:
+            name = font_name_match[name]
+        else:
+            # Find first matching name, cache it.
+            found_name = None
+            for n in name:
+                if _font_class.have_font(n):
+                    found_name = n
+                    break
+
+            font_name_match[name] = found_name
+            name = found_name
 
     # Look for font name in font cache
     descriptor = (name, size, bold, italic, stretch, dpi)
