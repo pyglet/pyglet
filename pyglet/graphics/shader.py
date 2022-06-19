@@ -484,17 +484,17 @@ class ShaderProgram:
             num_active = GLint()
             block_data_size = GLint()
 
-            glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
             glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
-            
+            glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+
             indices = (GLuint * num_active.value)()
             indices_ptr = cast(addressof(indices), POINTER(GLint))
             glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
             uniforms = {}
 
-            for i in range(num_active.value):
-                uniform_name, u_type, u_size = self._query_uniform(indices[i])
+            for block_uniform_index in indices:
+                uniform_name, u_type, u_size = self._query_uniform(block_uniform_index)
 
                 # Separate uniform name from block name (Only if instance name is provided on the Uniform Block)
                 try:
@@ -503,9 +503,12 @@ class ShaderProgram:
                     pass
 
                 gl_type, _, _, length, _ = _uniform_setters[u_type]
-                uniforms[i] = (uniform_name, gl_type, length)
+                uniforms[block_uniform_index] = (uniform_name, gl_type, length)
 
             uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, uniforms)
+            # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
+            # one would be crazy enough to use more than 36 uniform blocks, right?
+            glUniformBlockBinding(self.id, index, index)
 
             if _debug_gl_shaders:
                 for block in uniform_blocks.values():
@@ -638,7 +641,7 @@ class ShaderProgram:
 
 
 class UniformBlock:
-    __slots__ = 'program', 'name', 'index', 'size', 'uniforms'
+    __slots__ = 'program', 'name', 'index', 'size', 'uniforms', 'view_cls'
 
     def __init__(self, program, name, index, size, uniforms):
         self.program = proxy(program)
@@ -646,23 +649,88 @@ class UniformBlock:
         self.index = index
         self.size = size
         self.uniforms = uniforms
+        self.view_cls = None
 
     def create_ubo(self, index=0):
-        return UniformBufferObject(self, index)
+        """
+        Create a new UniformBufferObject from this uniform block.
+
+        :Parameters:
+            `index` : int
+                The uniform buffer index the returned UBO will bind itself to.
+                By default this is 0.
+
+        :rtype: :py:class:`~pyglet.graphics.shader.UniformBufferObject`
+        """
+        if self.view_cls is None:
+            self.view_cls = self._introspect_uniforms()
+        return UniformBufferObject(self.view_cls, self.size, index)
+
+    def _introspect_uniforms(self):
+        """Introspect the block's structure and return a ctypes struct for
+        manipulating the uniform block's members.
+        """
+        p_id = self.program.id
+        index = self.index
+
+        active_count = len(self.uniforms)
+
+        # Query the uniform index order and each uniform's offset:
+        indices = (GLuint * active_count)()
+        offsets = (GLint * active_count)()
+        indices_ptr = cast(addressof(indices), POINTER(GLint))
+        offsets_ptr = cast(addressof(offsets), POINTER(GLint))
+        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+        glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+
+        # Offsets may be returned in non-ascending order, sort them with the corresponding index:
+        _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
+        offsets = [x[0] for x in _oi] + [self.size]
+        indices = (GLuint * active_count)(*(x[1] for x in _oi))
+
+        # # Query other uniform information:
+        # gl_types = (GLint * active_count)()
+        # mat_stride = (GLint * active_count)()
+        # gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
+        # stride_ptr = cast(addressof(mat_stride), POINTER(GLint))
+        # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_TYPE, gl_types_ptr)
+        # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
+
+        view_fields = []
+        for i in range(active_count):
+            u_name, gl_type, length = self.uniforms[indices[i]]
+            size = offsets[i+1] - offsets[i]
+            c_type_size = sizeof(gl_type)
+            actual_size = c_type_size * length
+            padding = size - actual_size
+
+            # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
+            # m_stride = mat_stride[i]
+
+            arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
+            view_fields.append(arg)
+
+            if padding > 0:
+                padding_bytes = padding // c_type_size
+                view_fields.append((f'_padding{i}', gl_type * padding_bytes))
+
+        # Custom ctypes Structure for Uniform access:
+        class View(Structure):
+            _fields_ = view_fields
+            __repr__ = lambda self: str(dict(self._fields_))
+
+        return View
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name}, index={self.index})"
 
 
 class UniformBufferObject:
-    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', 'index'
+    __slots__ = 'buffer', 'view', '_view_ptr', 'index'
 
-    def __init__(self, block, index):
-        assert type(block) == UniformBlock, "Must be a UniformBlock instance"
-        self.block = block
-        self.buffer = BufferObject(self.block.size, GL_UNIFORM_BUFFER)
-        self.buffer.bind()
-        self.view = self._introspect_uniforms()
+    def __init__(self, view_class, buffer_size, index):
+        self.buffer = BufferObject(buffer_size, GL_UNIFORM_BUFFER)
+        self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.index = index
 
@@ -670,64 +738,8 @@ class UniformBufferObject:
     def id(self):
         return self.buffer.id
 
-    def _introspect_uniforms(self):
-        p_id = self.block.program.id
-        index = self.block.index
-
-        # Query the number of active Uniforms:
-        num_active = GLint()
-        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
-
-        # Query the uniform index order and each uniform's offset:
-        indices = (GLuint * num_active.value)()
-        offsets = (GLint * num_active.value)()
-        indices_ptr = cast(addressof(indices), POINTER(GLint))
-        offsets_ptr = cast(addressof(offsets), POINTER(GLint))
-        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
-
-        # Offsets may be returned in non-ascending order, sort them with the corresponding index:
-        _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
-        offsets = [x[0] for x in _oi] + [self.block.size]
-        indices = (GLuint * num_active.value)(*(x[1] for x in _oi))
-
-        # Query other uniform information:
-        gl_types = (GLint * num_active.value)()
-        mat_stride = (GLint * num_active.value)()
-        gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
-        stride_ptr = cast(addressof(mat_stride), POINTER(GLint))
-        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
-        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
-
-        args = []
-
-        for i in range(num_active.value):
-            u_name, gl_type, length = self.block.uniforms[indices[i]]
-            size = offsets[i+1] - offsets[i]
-            c_type_size = sizeof(gl_type)
-            actual_size = c_type_size * length
-            padding = size - actual_size
-
-            # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
-            m_stride = mat_stride[i]
-
-            arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
-            args.append(arg)
-
-            if padding > 0:
-                padding_bytes = padding // c_type_size
-                args.append((f'_padding{i}', gl_type * padding_bytes))
-
-        # Custom ctypes Structure for Uniform access:
-        class View(Structure):
-            _fields_ = args
-            __repr__ = lambda self: str(dict(self._fields_))
-
-        return View()
-
     def bind(self, index=None):
-        glUniformBlockBinding(self.block.program.id, self.block.index, index or self.index)
-        glBindBufferBase(GL_UNIFORM_BUFFER, index or self.index, self.buffer.id)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.index if index is None else index, self.buffer.id)
 
     def read(self):
         """Read the byte contents of the buffer"""
@@ -739,12 +751,11 @@ class UniformBufferObject:
 
     def __enter__(self):
         # Return the view to the user in a `with` context:
-        glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.index, self.buffer.id)
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.bind()
         self.buffer.set_data(self._view_ptr)
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)
+        return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
