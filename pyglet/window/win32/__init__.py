@@ -269,18 +269,14 @@ class Win32Window(BaseWindow):
                                    GWL_EXSTYLE,
                                    self._ex_ws_style)
 
-        if self._fullscreen:
-            hwnd_after = HWND_TOPMOST
-        else:
-            hwnd_after = HWND_NOTOPMOST
-
         # Position and size window
         if self._fullscreen:
+            hwnd_after = HWND_TOPMOST if self.style == "overlay" else HWND_NOTOPMOST
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  self._screen.x, self._screen.y, width, height, SWP_FRAMECHANGED)
         elif False:  # TODO location not in pyglet API
             x, y = self._client_to_window_pos(*factory.get_location())
-            _user32.SetWindowPos(self._hwnd, hwnd_after,
+            _user32.SetWindowPos(self._hwnd, HWND_NOTOPMOST,
                                  x, y, width, height, SWP_FRAMECHANGED)
         elif self.style == 'transparent' or self.style == "overlay":
             _user32.SetLayeredWindowAttributes(self._hwnd, 0, 254, LWA_ALPHA)
@@ -288,7 +284,7 @@ class Win32Window(BaseWindow):
                 _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
                                      0, width, height, SWP_NOMOVE | SWP_NOSIZE)
         else:
-            _user32.SetWindowPos(self._hwnd, hwnd_after,
+            _user32.SetWindowPos(self._hwnd, HWND_NOTOPMOST,
                                  0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
 
         self._update_view_location(self._width, self._height)
@@ -429,7 +425,7 @@ class Win32Window(BaseWindow):
 
     def set_visible(self, visible=True):
         if visible:
-            insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
+            insertAfter = HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
                                  SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             self.dispatch_event('on_resize', self._width, self._height)
