@@ -2,19 +2,20 @@ Working with other input devices
 ================================
 
 pyglet's :py:mod:`~pyglet.input` module allows you to accept input
-from any USB human interface device (HID). It's possible to access
-these devices directly, but high-level abstractions are provided for
-working with game controllers, joysticks, and the Apple Remote.
-The game controller abstraction is suited for modern gamepads, such as
-are found on home video game consoles. These types of controllers
+from any USB human interface device (HID). High-level abstractions are
+provided for working with game controllers, joysticks, and the Apple
+Remote. The game controller abstraction is suited for modern gamepads,
+such as are found on home video game consoles. These types of controllers
 have a strictly defined set of inputs. The joystick abstraction is more
 generalized, and works with devices with an arbitrary number of buttons,
 axis, and hats. This includes devices like steering wheels, joysticks
 used for flight simulators, and just about anything else. For most types
 of games, the Controller abstraction is usually the better choice.
+For advanced use cases, it's also possible to access the low-level
+devices directly.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
-devices::
+devices, and a ControllerManager class for hot-plugging of Controllers::
 
     # get a list of all low-level devices:
     devices = pyglet.input.get_devices()
@@ -31,47 +32,8 @@ devices::
     # get an Apple Remote, if available:
     remote = pyglet.input.get_apple_remote()
 
-
-Using Devices
--------------
-
-It's usually easier to use the high-level interfaces but, for specialized
-hardware, the low-level device can be accessed directly. You can query the
-list of all devices, and check the `name` attribute to find the correct
-device::
-
-    for device in pyglet.input.get_devices():
-        print(device.name)
-
-After identifying the Device you wish to use, you must first open it::
-
-    device.open()
-
-Devices contain a list of :py:class:`~pyglet.input.Control` objects.
-There are three types of controls: :py:class:`~pyglet.input.Button`,
-:py:class:`~pyglet.input.AbsoluteAxis`, and :py:class:`~pyglet.input.RelativeAxis`.
-For helping identify individual controls, each control has at least a
-`name`, and optionally a `raw_name` attribute. Control values can by
-queried at any time by checking the `Control.value` property. In addition,
-every control is also a subclass of :py:class:`~pyglet.event.EventDispatcher`,
-so you can add handlers to receive changes as well. All Controls dispatch the
-`on_change` event. Buttons also dispatch `on_press` and `on_release` events.::
-
-    # All controls:
-
-    @control.event
-    def on_change(value):
-        print("value:", value)
-
-    # Buttons:
-
-    @control.event
-    def on_press():
-        print("button pressed")
-
-    @control.event
-    def on_release():
-        print("button release")
+    # create a ControllerManager instance:
+    controller_manager = pyglet.input.ControllerManager()
 
 
 Using Controllers
@@ -103,9 +65,10 @@ The following platform interfaces are used for Controller support:
           - IOKit
           - rumble not yet implemented
 
-Before using a controller, you must find it and open it.
-To get a list of all controllers currently connected to your computer,
-call pyglet.input.get_controllers()::
+Before using a controller, you must find it and open it. A ControllerManager
+class is provided to allow hot-plugging of Controllers, but they can also
+be opened manually. To manually get a list of all controllers currently
+connected to your computer, call pyglet.input.get_controllers()::
 
     controllers = pyglet.input.get_controllers()
 
@@ -300,6 +263,44 @@ playback of a rumble effect at any time::
     controller.rumble_stop_strong()
 
 
+ControllerManager
+^^^^^^^^^^^^^^^^^
+
+To simplify hot-plugging of Controllers, the :py:class:`~pyglet.input.ControllerManager`
+class is available. This class has a `get_controllers()` method
+which will return a list of all currently connected Controllers.
+There are also `on_connect` and `on_disconnect` events, which will
+dispatch a Controller instance whenever one is connected or disconnected.
+If case a previously connected Controller is re-connected, the same
+instance will be returned when possible.
+
+To use a ControllerManager, first create an instance::
+
+    manager = pyglet.input.ControllerManager()
+
+You can then query the currently connected controllers, similar to
+doing it directly::
+
+    controllers = manager.get_controllers()
+
+As usual, choose a controller from the list and call `Controller.open()` to open it::
+
+    if controllers:
+        controller = controllers[0]
+
+    controller.open()
+
+To handle controller connections, attach handlers to the following methods::
+
+    @manager.event
+    def on_connect(controller):
+        print(f"Connected:  {controller}")
+
+    @manager.event
+    def on_disconnect(controller):
+        print(f"Disconnected:  {controller}")
+
+
 Using Joysticks
 ---------------
 
@@ -436,3 +437,45 @@ To use the remote, you may define code for the event handlers in
 some controller class and then call::
 
     remote.push_handlers(my_controller)
+
+
+Low-level Devices
+-----------------
+
+It's usually easier to use the high-level interfaces but, for specialized
+hardware, the low-level device can be accessed directly. You can query the
+list of all devices, and check the `name` attribute to find the correct
+device::
+
+    for device in pyglet.input.get_devices():
+        print(device.name)
+
+After identifying the Device you wish to use, you must first open it::
+
+    device.open()
+
+Devices contain a list of :py:class:`~pyglet.input.Control` objects.
+There are three types of controls: :py:class:`~pyglet.input.Button`,
+:py:class:`~pyglet.input.AbsoluteAxis`, and :py:class:`~pyglet.input.RelativeAxis`.
+For helping identify individual controls, each control has at least a
+`name`, and optionally a `raw_name` attribute. Control values can by
+queried at any time by checking the `Control.value` property. In addition,
+every control is also a subclass of :py:class:`~pyglet.event.EventDispatcher`,
+so you can add handlers to receive changes as well. All Controls dispatch the
+`on_change` event. Buttons also dispatch `on_press` and `on_release` events.::
+
+    # All controls:
+
+    @control.event
+    def on_change(value):
+        print("value:", value)
+
+    # Buttons:
+
+    @control.event
+    def on_press():
+        print("button pressed")
+
+    @control.event
+    def on_release():
+        print("button release")
