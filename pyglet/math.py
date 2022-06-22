@@ -113,9 +113,15 @@ class Vec2:
         else:
             return self.__add__(other)
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
+
     @staticmethod
     def from_polar(mag, angle):
-        """Create a new vector from the given polar coodinates.
+        """Create a new vector from the given polar coordinates.
 
         :parameters:
             `mag`   : int or float :
@@ -361,6 +367,12 @@ class Vec3:
         else:
             return self.__add__(other)
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y or self.z != other.z
+
     def from_magnitude(self, magnitude):
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The rotation remains unchanged.
@@ -559,6 +571,12 @@ class Vec4:
             return self
         else:
             return self.__add__(other)
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z and self.w == other.w
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y or self.z != other.z or self.w != other.w
 
     def lerp(self, other, alpha):
         return Vec4(self.x + (alpha * (other.x - self.x)),
@@ -964,7 +982,7 @@ class Mat4(tuple):
         c2 = other[2::4]
         c3 = other[3::4]
 
-        # Multiply and sum rows * colums:
+        # Multiply and sum rows * columns:
         return Mat4((sum(map(_mul, r0, c0)),
                      sum(map(_mul, r0, c1)),
                      sum(map(_mul, r0, c2)),
