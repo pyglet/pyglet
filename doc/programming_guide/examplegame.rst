@@ -211,13 +211,14 @@ To check new asteroids against the player’s position, we need to pass the
 player’s position into the `asteroids()` function and keep regenerating
 new coordinates until the asteroid is far enough away.  pyglet sprites
 keep track of their position both as a tuple (Sprite.position) and as
-x and y attributes (Sprite.x and Sprite.y).  To keep our code short,
-we’ll just pass the position tuple into the function::
+x, y, and z attributes (Sprite.x, Sprite.y, Sprite.z).  To keep our code
+short, we’ll just pass the position tuple into the function. We're not using
+the z value, so we just use a throwaway variable for that::
 
     def asteroids(num_asteroids, player_position):
         asteroids = []
         for i in range(num_asteroids):
-            asteroid_x, asteroid_y = player_position
+            asteroid_x, asteroid_y, _ = player_position
             while distance((asteroid_x, asteroid_y), player_position) < 100:
                 asteroid_x = random.randint(0, 800)
                 asteroid_y = random.randint(0, 600)

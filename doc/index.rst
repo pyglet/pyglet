@@ -33,6 +33,8 @@ Please join our `Discord`_ server, or join us on the `mailing list`_!
 
 If this is your first time reading about pyglet, we suggest you start at
 :doc:`programming_guide/quickstart`.
+If you are migrating from an older version of pyglet, please read through
+:doc:`programming_guide/migration`.
 
 .. toctree::
    :maxdepth: 3
@@ -49,22 +51,19 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/media
    programming_guide/text
    programming_guide/resources
-
    programming_guide/graphics
-
    programming_guide/events
    programming_guide/time
-
    programming_guide/context
    programming_guide/gl
    programming_guide/shaders
    programming_guide/math
-
    programming_guide/eventloop
+   programming_guide/examplegame
+
    programming_guide/options
    programming_guide/debug
-   programming_guide/beta
-   programming_guide/examplegame
+   programming_guide/migration
 
 .. toctree::
    :maxdepth: 3

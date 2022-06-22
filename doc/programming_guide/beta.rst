@@ -1,4 +1,0 @@
-Beta Features
-=============
-
-TBD
