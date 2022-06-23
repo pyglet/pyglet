@@ -177,7 +177,7 @@ class BufferObject(AbstractBuffer):
     that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
-    def __init__(self, size, target, usage=GL_DYNAMIC_DRAW):
+    def __init__(self, size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
         self.size = size
         self.target = target
         self.usage = usage
@@ -199,6 +199,10 @@ class BufferObject(AbstractBuffer):
 
     def unbind(self):
         glBindBuffer(self.target, 0)
+
+    def bind_to_index_buffer(self):
+        """Binds this buffer as an index buffer on the active vertex array."""
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
 
     def set_data(self, data):
         glBindBuffer(self.target, self.id)
