@@ -127,7 +127,7 @@ class VertexDomain:
             attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
             self.attributes.append(attribute)
             # Create buffer:
-            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity, GL_ARRAY_BUFFER)
+            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity)
             attribute.buffer.element_size = attribute.stride
             attribute.buffer.attributes = (attribute,)
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
