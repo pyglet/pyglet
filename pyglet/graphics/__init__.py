@@ -271,8 +271,9 @@ def draw_indexed(size, mode, indices, **data):
     # With GL 3.3 vertex arrays indices needs to be in a buffer
     # bound to the ELEMENT_ARRAY slot
     index_array = (index_c_type * len(indices))(*indices)
-    index_buffer = BufferObject(ctypes.sizeof(index_array), GL_ELEMENT_ARRAY_BUFFER)
+    index_buffer = BufferObject(ctypes.sizeof(index_array))
     index_buffer.set_data(index_array)
+    index_buffer.bind_to_index_buffer()
 
     glDrawElements(mode, len(indices), index_type, 0)
     glFlush()
