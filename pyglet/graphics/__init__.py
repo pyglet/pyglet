@@ -202,7 +202,7 @@ def draw(size, mode, **data):
         attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
+        buffer = BufferObject(size * attribute.stride)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -252,7 +252,7 @@ def draw_indexed(size, mode, indices, **data):
         attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
+        buffer = BufferObject(size * attribute.stride)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
