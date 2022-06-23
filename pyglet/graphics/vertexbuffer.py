@@ -194,8 +194,8 @@ class BufferObject(AbstractBuffer):
     def invalidate(self):
         glBufferData(self.target, self.size, None, self.usage)
 
-    def bind(self):
-        glBindBuffer(self.target, self.id)
+    def bind(self, target=None):
+        glBindBuffer(target or self.target, self.id)
 
     def unbind(self):
         glBindBuffer(self.target, 0)
