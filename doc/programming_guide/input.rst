@@ -267,12 +267,11 @@ ControllerManager
 ^^^^^^^^^^^^^^^^^
 
 To simplify hot-plugging of Controllers, the :py:class:`~pyglet.input.ControllerManager`
-class is available. This class has a `get_controllers()` method
-which will return a list of all currently connected Controllers.
-There are also `on_connect` and `on_disconnect` events, which will
-dispatch a Controller instance whenever one is connected or disconnected.
-If case a previously connected Controller is re-connected, the same
-instance will be returned when possible.
+class is available. This class has a `get_controllers()` method to be used
+in place of `pyglet.input.get_controllers()`. There are also `on_connect`
+and `on_disconnect` events, which dispatch a Controller instance
+whenever one is connected or disconnected. If case a previously connected
+Controller is re-connected, the same instance will be returned when possible.
 
 To use a ControllerManager, first create an instance::
 
@@ -299,6 +298,11 @@ To handle controller connections, attach handlers to the following methods::
     @manager.event
     def on_disconnect(controller):
         print(f"Disconnected:  {controller}")
+
+
+.. note:: If you are using a ControllerManager, then you should not use
+          `pyglet.input.get_controllers()` directly. The results are
+          undefined. Use `ControllerManager.get_controllers()` instead.
 
 
 Using Joysticks
