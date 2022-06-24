@@ -385,7 +385,7 @@ class Batch:
 
     def get_domain(self, indexed, mode, group, program, attributes):
         if group is None:
-            group = get_default_group()
+            group = ShaderGroup(program=program)
 
         # Batch group
         if group not in self.group_map:
