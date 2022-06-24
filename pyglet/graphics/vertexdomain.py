@@ -127,7 +127,7 @@ class VertexDomain:
             attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
             self.attributes.append(attribute)
             # Create buffer:
-            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity, GL_ARRAY_BUFFER)
+            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity)
             attribute.buffer.element_size = attribute.stride
             attribute.buffer.attributes = (attribute,)
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
@@ -370,8 +370,7 @@ class IndexedVertexDomain(VertexDomain):
         self.index_gl_type = index_gl_type
         self.index_c_type = vertexattribute._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = BufferObject(
-            self.index_allocator.capacity * self.index_element_size, GL_ELEMENT_ARRAY_BUFFER)
+        self.index_buffer = BufferObject(self.index_allocator.capacity * self.index_element_size)
 
     def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
@@ -454,7 +453,7 @@ class IndexedVertexDomain(VertexDomain):
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind()
+        self.index_buffer.bind_to_index_buffer()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -494,7 +493,7 @@ class IndexedVertexDomain(VertexDomain):
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind()
+        self.index_buffer.bind_to_index_buffer()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +

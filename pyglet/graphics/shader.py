@@ -729,7 +729,7 @@ class UniformBufferObject:
     __slots__ = 'buffer', 'view', '_view_ptr', 'index'
 
     def __init__(self, view_class, buffer_size, index):
-        self.buffer = BufferObject(buffer_size, GL_UNIFORM_BUFFER)
+        self.buffer = BufferObject(buffer_size)
         self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.index = index
@@ -743,10 +743,10 @@ class UniformBufferObject:
 
     def read(self):
         """Read the byte contents of the buffer"""
-        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer.id)
-        ptr = glMapBufferRange(GL_UNIFORM_BUFFER, 0, self.buffer.size, GL_MAP_READ_BIT)
+        glBindBuffer(GL_ARRAY_BUFFER, self.buffer.id)
+        ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, self.buffer.size, GL_MAP_READ_BIT)
         data = string_at(ptr, size=self.buffer.size)
-        glUnmapBuffer(GL_UNIFORM_BUFFER)
+        glUnmapBuffer(GL_ARRAY_BUFFER)
         return data
 
     def __enter__(self):
