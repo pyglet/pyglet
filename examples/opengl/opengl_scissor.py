@@ -27,7 +27,7 @@ class ScissorGroup(pyglet.graphics.Group):
     """A Custom Group that defines a "Scissor" area.
 
     If a Sprite/Label is in this Group, any parts of it that
-    fall outside of the specified area will not be drawn.
+    fall outside the specified area will not be drawn.
     NOTE: You should use the same exact group instance
     for every object that will use the group, equal groups
     will still be kept seperate.
@@ -72,8 +72,8 @@ class ScissorGroup(pyglet.graphics.Group):
 # Create an instance of the ScissorGroup that defines the center of the window:
 scissor_group = ScissorGroup(x=50, y=50, width=300, height=300)
 
-# Create a bunch of Sprites assigned to our custom Group. Any parts of these
-# Sprites that is outside of the specified area will not be drawn.
+# Create a bunch of Sprites, and assign them to our custom Group. Any parts
+# of these Sprites that are outside the specified area will not be drawn.
 sprites = []
 img = pyglet.resource.image('pyglet.png')
 for x in range(5):
@@ -85,10 +85,8 @@ for x in range(5):
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, *etc):
-    scissor_x, scissor_y, width, height = scissor_group.area
-    scissor_x += dx
-    scissor_y += dy
-    scissor_group.area = scissor_x, scissor_y, width, height
+    scissor_group.x += dx
+    scissor_group.y += dy
 
 
 pyglet.app.run()
