@@ -44,7 +44,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.dev19'
+version = '2.0.dev20'
 __version__ = version
 
 if sys.version_info < (3, 6):
