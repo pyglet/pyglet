@@ -337,7 +337,7 @@ def get_xinput_guids():
                         if sdl_guid not in guids_found:
                             guids_found.append(sdl_guid)
 
-    oleaut32.VariantClear(var)
+    oleaut32.VariantClear(byref(var))
     return guids_found
 
 
