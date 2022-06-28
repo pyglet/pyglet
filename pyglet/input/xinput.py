@@ -12,10 +12,14 @@ from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
 from pyglet.input.base import Device, Controller, Button, AbsoluteAxis, ControllerManager
 
 
-lib = pyglet.lib.load_library('xinput1_4')
-# TODO Add: xinput1_3 and xinput9_1_0 support
-
-library_name = lib._name
+for library_name in ['xinput1_4', 'xinput9_1_0', 'xinput1_3']:
+    try:
+        lib = ctypes.windll.LoadLibrary(library_name)
+        break
+    except OSError:
+        continue
+else:
+    raise OSError('Could not import XInput')
 
 
 XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE = 7849
@@ -159,34 +163,37 @@ class XINPUT_CAPABILITIES_EX(Structure):
     ]
 
 
-XInputGetState = lib.XInputGetState
-XInputGetState.restype = DWORD
-XInputGetState.argtypes = [DWORD, POINTER(XINPUT_STATE)]
-
-XInputGetStateEx = lib[100]
-XInputGetStateEx.restype = DWORD
-XInputGetStateEx.argtypes = [DWORD, POINTER(XINPUT_STATE)]
-
-XInputSetState = lib.XInputSetState
-XInputSetState.argtypes = [DWORD, POINTER(XINPUT_VIBRATION)]
-XInputSetState.restype = DWORD
-
-XInputGetCapabilities = lib.XInputGetCapabilities
-XInputGetCapabilities.restype = DWORD
-XInputGetCapabilities.argtypes = [DWORD, DWORD, POINTER(XINPUT_CAPABILITIES)]
-
-# Hidden function
-XInputGetCapabilitiesEx = lib[108]
-XInputGetCapabilitiesEx.restype = DWORD
-XInputGetCapabilitiesEx.argtypes = [DWORD, DWORD, DWORD, POINTER(XINPUT_CAPABILITIES_EX)]
-
 # Only available for 1.4+
 if library_name == "xinput1_4":
     XInputGetBatteryInformation = lib.XInputGetBatteryInformation
     XInputGetBatteryInformation.argtypes = [DWORD, BYTE, POINTER(XINPUT_BATTERY_INFORMATION)]
     XInputGetBatteryInformation.restype = DWORD
+
+    XInputGetState = lib[100]
+    XInputGetState.restype = DWORD
+    XInputGetState.argtypes = [DWORD, POINTER(XINPUT_STATE)]
+
+    # Hidden function
+    XInputGetCapabilities = lib[108]
+    XInputGetCapabilities.restype = DWORD
+    XInputGetCapabilities.argtypes = [DWORD, DWORD, DWORD, POINTER(XINPUT_CAPABILITIES_EX)]
+
 else:
     XInputGetBatteryInformation = None
+
+    XInputGetState = lib.XInputGetState
+    XInputGetState.restype = DWORD
+    XInputGetState.argtypes = [DWORD, POINTER(XINPUT_STATE)]
+
+    XInputGetCapabilities = lib.XInputGetCapabilities
+    XInputGetCapabilities.restype = DWORD
+    XInputGetCapabilities.argtypes = [DWORD, DWORD, POINTER(XINPUT_CAPABILITIES)]
+
+
+XInputSetState = lib.XInputSetState
+XInputSetState.argtypes = [DWORD, POINTER(XINPUT_VIBRATION)]
+XInputSetState.restype = DWORD
+
 
 # wbemcli #################################################
 
@@ -420,7 +427,7 @@ class XInputDeviceManager(EventDispatcher):
 
         for i in range(XUSER_MAX_COUNT):
             device = self.all_devices[i]
-            if XInputGetStateEx(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
+            if XInputGetState(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                 continue
             device.connected = True
             self._connected_devices.add(i)
@@ -452,7 +459,7 @@ class XInputDeviceManager(EventDispatcher):
                 # Only check if not currently connected:
                 for i in xuser_max_count - self._connected_devices:
                     device = self.all_devices[i]
-                    if XInputGetStateEx(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
+                    if XInputGetState(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                         continue
 
                     # Found a new connection:
@@ -467,7 +474,7 @@ class XInputDeviceManager(EventDispatcher):
             # opened devices. Skip unopened devices to save CPU:
             for i in self._connected_devices.copy():
                 device = self.all_devices[i]
-                result = XInputGetStateEx(i, byref(device.xinput_state))
+                result = XInputGetState(i, byref(device.xinput_state))
 
                 if result == ERROR_DEVICE_NOT_CONNECTED:
                     # Newly disconnected device:
