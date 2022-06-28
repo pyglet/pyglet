@@ -44,8 +44,7 @@ __all__ = ['link_GL', 'link_WGL']
 
 _debug_trace = pyglet.options['debug_trace']
 
-# gl_lib = ctypes.windll.opengl32
-gl_lib = pyglet.lib.load_library('opengl32')
+gl_lib = ctypes.windll.opengl32
 wgl_lib = gl_lib
 
 if _debug_trace:
