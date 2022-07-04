@@ -171,7 +171,6 @@ def parse_obj_file(filename, file=None):
 
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])
-            print(material)
             if mesh is not None:
                 mesh.material = material
 
