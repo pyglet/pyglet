@@ -600,7 +600,7 @@ class Controller(EventDispatcher):
             `dpleft` : bool
             `dpright` : bool
 
-        .. versionadded:: 1.2
+        .. versionadded:: 2.0
         """
 
         self.device = device

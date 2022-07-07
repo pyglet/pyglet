@@ -388,6 +388,7 @@ class EvdevDevice(XlibSelectDevice, Device):
                         self.control_map[(event_type, event_code)] = control
                         self.controls.append(control)
 
+        self.controls.sort(key=lambda c: c._event_code)
         os.close(fileno)
 
         super().__init__(display, name)
