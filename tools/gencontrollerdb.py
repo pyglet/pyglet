@@ -34,7 +34,7 @@ mac_end = raw.find('#endif', mac_start)
 mac_raw = raw[mac_start+len(mac_string):mac_end]
 
 # Parse the Linux section:
-lin_string = '#if defined(__LINUX__)'
+lin_string = '#ifdef SDL_JOYSTICK_LINUX'
 lin_start = raw.find(lin_string)
 lin_end = raw.find('#endif', lin_start)
 lin_raw = raw[lin_start+len(lin_string):lin_end]
@@ -65,17 +65,17 @@ with open(output_file, 'w+') as f:
 
     f.write("""if compat_platform.startswith("linux"):\n    mapping_list = [\n""")
     for lin_line in lin_lines:
-        f.write("{}{}{}".format('"', lin_line, '",\n'))
+        f.write(f'"{lin_line}",\n')
     f.write("]\n")
 
     f.write("""elif compat_platform.startswith("darwin"):\n    mapping_list = [\n""")
     for mac_line in mac_lines:
-        f.write("{}{}{}".format('"', mac_line, '",\n'))
+        f.write(f'"{mac_line}",\n')
     f.write("]\n")
 
     f.write("""elif compat_platform.startswith("win"):\n    mapping_list = [\n""")
     for win_line in win_lines:
-        f.write("{}{}{}".format('"', win_line, '",\n'))
+        f.write(f'"{win_line}",\n')
     f.write("]\n")
 
     f.write("else:\n    mapping_list = []\n")
