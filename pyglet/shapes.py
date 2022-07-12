@@ -381,7 +381,8 @@ class _ShapeBase:
 
 class Arc(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255), batch=None, group=None):
+                 closed=False, color=(255, 255, 255), opacity=255, batch=None,
+                 group=None):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
@@ -409,6 +410,9 @@ class Arc(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the circle, specified as a tuple of
                 three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the arc is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the circle to.
             `group` : `~pyglet.graphics.Group`
@@ -421,6 +425,7 @@ class Arc(_ShapeBase):
         self._num_verts = self._segments * 2 + (2 if closed else 0)
 
         self._rgb = color
+        self._opacity = opacity
         self._angle = angle
         self._start_angle = start_angle
         self._closed = closed
@@ -489,7 +494,8 @@ class Arc(_ShapeBase):
 
 
 class Circle(_ShapeBase):
-    def __init__(self, x, y, radius, segments=None, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, radius, segments=None, color=(255, 255, 255), opacity=255,
+                 batch=None, group=None):
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
@@ -509,6 +515,9 @@ class Circle(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the circle, specified as a tuple of
                 three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the circle is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the circle to.
             `group` : `~pyglet.graphics.Group`
@@ -519,6 +528,7 @@ class Circle(_ShapeBase):
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
         self._rgb = color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -567,7 +577,8 @@ class Circle(_ShapeBase):
 
 
 class Ellipse(_ShapeBase):
-    def __init__(self, x, y, a, b, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, a, b, color=(255, 255, 255), opacity=255,
+                 batch=None, group=None):
         """Create an ellipse.
 
         The ellipse's anchor point (x, y) defaults to the center of the ellipse.
@@ -584,6 +595,9 @@ class Ellipse(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the ellipse. specify as a tuple of
                 three ints in the range of 0~255.
+            `opacity` : int
+                How opaque the ellipse is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the circle to.
             `group` : `~pyglet.graphics.Group`
@@ -594,6 +608,7 @@ class Ellipse(_ShapeBase):
         self._a = a
         self._b = b
         self._rgb = color
+        self._opacity = opacity
         self._rotation = 0
         self._segments = int(max(a, b) / 1.25)
         self._num_verts = self._segments * 2
@@ -685,7 +700,7 @@ class Ellipse(_ShapeBase):
 
 class Sector(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255, 255, 255), batch=None, group=None):
+                 color=(255, 255, 255), opacity=255, batch=None, group=None):
         """Create a Sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
@@ -710,6 +725,9 @@ class Sector(_ShapeBase):
                     `color` : (int, int, int)
                         The RGB color of the sector, specified as a tuple of
                         three ints in the range of 0-255.
+                    `opacity` : int
+                        How opaque the sector is. The default of 255 is fully
+                        visible. 0 is transparent.
                     `batch` : `~pyglet.graphics.Batch`
                         Optional batch to add the sector to.
                     `group` : `~pyglet.graphics.Group`
@@ -721,6 +739,7 @@ class Sector(_ShapeBase):
         self._segments = segments or max(14, int(radius / 1.25))
 
         self._rgb = color
+        self._opacity = opacity
         self._angle = angle
         self._start_angle = start_angle
         self._rotation = 0
@@ -815,7 +834,8 @@ class Sector(_ShapeBase):
 
 
 class Line(_ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255), opacity=255,
+                 batch=None, group=None):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
@@ -835,6 +855,9 @@ class Line(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the line, specified as a tuple of
                 three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the line is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the line to.
             `group` : `~pyglet.graphics.Group`
@@ -848,6 +871,7 @@ class Line(_ShapeBase):
         self._width = width
         self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
         self._rgb = color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -933,7 +957,8 @@ class Line(_ShapeBase):
 
 
 class Rectangle(_ShapeBase):
-    def __init__(self, x, y, width, height, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, width, height, color=(255, 255, 255), opacity=255,
+                 batch=None, group=None):
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
@@ -951,6 +976,9 @@ class Rectangle(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the rectangle, specified as
                 a tuple of three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the rectangle is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
             `group` : `~pyglet.graphics.Group`
@@ -962,6 +990,7 @@ class Rectangle(_ShapeBase):
         self._height = height
         self._rotation = 0
         self._rgb = color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1037,7 +1066,7 @@ class Rectangle(_ShapeBase):
 
 class BorderedRectangle(_ShapeBase):
     def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
-                 border_color=(100, 100, 100), batch=None, group=None):
+                 border_color=(100, 100, 100), opacity=255, batch=None, group=None):
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
@@ -1060,6 +1089,10 @@ class BorderedRectangle(_ShapeBase):
             `border_color` : (int, int, int)
                 The RGB color of the rectangle's border, specified as
                 a tuple of three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the rectangle is. The default of 255 is fully
+                visible. 0 is transparent. This affects the entire shape,
+                not only the fill color.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
             `group` : `~pyglet.graphics.Group`
@@ -1073,6 +1106,7 @@ class BorderedRectangle(_ShapeBase):
         self._border = border
         self._rgb = color
         self._brgb = border_color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1176,7 +1210,8 @@ class BorderedRectangle(_ShapeBase):
 
 
 class Triangle(_ShapeBase):
-    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), opacity=255,
+                 batch=None, group=None):
         """Create a triangle.
 
         The triangle's anchor point defaults to the first vertex point.
@@ -1197,6 +1232,9 @@ class Triangle(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the triangle, specified as
                 a tuple of three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the triangle is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the triangle to.
             `group` : `~pyglet.graphics.Group`
@@ -1210,6 +1248,7 @@ class Triangle(_ShapeBase):
         self._y3 = y3
         self._rotation = 0
         self._rgb = color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1316,7 +1355,7 @@ class Triangle(_ShapeBase):
 
 class Star(_ShapeBase):
     def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
-                 color=(255, 255, 255), batch=None, group=None) -> None:
+                 color=(255, 255, 255), opacity=255, batch=None, group=None) -> None:
         """Create a star.
 
         The star's anchor point (x, y) defaults to the center of the star.
@@ -1339,6 +1378,9 @@ class Star(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the star, specified as
                 a tuple of three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the star is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the star to.
             `group` : `~pyglet.graphics.Group`
@@ -1350,6 +1392,7 @@ class Star(_ShapeBase):
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes
         self._rgb = color
+        self._opacity = opacity
         self._rotation = rotation
 
         program = get_default_shader()
@@ -1437,7 +1480,7 @@ class Star(_ShapeBase):
 
 
 class Polygon(_ShapeBase):
-    def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, *coordinates, color=(255, 255, 255), opacity=255, batch=None, group=None):
         """Create a convex polygon.
 
         The polygon's anchor point defaults to the first vertex point.
@@ -1448,6 +1491,9 @@ class Polygon(_ShapeBase):
             `color` : (int, int, int)
                 The RGB color of the polygon, specified as
                 a tuple of three ints in the range of 0-255.
+            `opacity` : int
+                How opaque the polygon is. The default of 255 is fully
+                visible. 0 is transparent.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the polygon to.
             `group` : `~pyglet.graphics.Group`
@@ -1460,6 +1506,7 @@ class Polygon(_ShapeBase):
         self._rotation = 0
 
         self._rgb = color
+        self._opacity = opacity
 
         program = get_default_shader()
         self._batch = batch or Batch()
