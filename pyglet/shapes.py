@@ -205,8 +205,7 @@ class _ShapeGroup(Group):
 class _ShapeBase:
     """Base class for Shape objects"""
 
-    _rgb = (255, 255, 255)
-    _opacity = 255
+    _rgba = (255, 255, 255, 255)
     _visible = True
     _x = 0
     _y = 0
@@ -337,11 +336,12 @@ class _ShapeBase:
 
         :type: (int, int, int)
         """
-        return self._rgb
+        return self._rgba
 
     @color.setter
     def color(self, values):
-        self._rgb = tuple(map(int, values))
+        r, g, b, *a = tuple(map(int, values))
+        self._rgba = r, g, b, a[0] if a else 255
         self._update_color()
 
     @property
@@ -358,11 +358,11 @@ class _ShapeBase:
 
         :type: int
         """
-        return self._opacity
+        return self._rgba[3]
 
     @opacity.setter
     def opacity(self, value):
-        self._opacity = value
+        self._rgba = (*self._rgba[:3], value)
         self._update_color()
 
     @property
