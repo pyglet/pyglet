@@ -418,7 +418,7 @@ class TextEntry(WidgetBase):
                 The color of the outline box in RGBA format.
             `text_color` : (int, int, int, int)
                 The color of the text in RGBA format.
-            `text_color` : (int, int, int)
+            `caret_color` : (int, int, int)
                 The color of the caret in RGB format.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the text entry widget to.
