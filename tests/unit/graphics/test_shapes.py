@@ -1,6 +1,7 @@
 import pytest
 from pyglet.shapes import (
-    Arc
+    Arc,
+    Circle
 )
 
 # The shapes are tested individually since their RGBA handling is
@@ -8,6 +9,7 @@ from pyglet.shapes import (
 # A typo in one might break it but not the others.
 @pytest.fixture(params=[
     (Arc, (0, 0, 5)),
+    (Circle, (0, 0, 5)),
 ])
 def rgba_shape(request):
     shape_type, required_args = request.param
