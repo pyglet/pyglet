@@ -381,8 +381,7 @@ class _ShapeBase:
 
 class Arc(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255), opacity=255, batch=None,
-                 group=None):
+                 closed=False, color=(255, 255, 255, 255), batch=None, group=None):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
@@ -408,11 +407,9 @@ class Arc(_ShapeBase):
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
             `color` : (int, int, int)
-                The RGB color of the circle, specified as a tuple of
-                three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the arc is. The default of 255 is fully
-                visible. 0 is transparent.
+                The RGB or RGBA color of the arc, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the circle to.
             `group` : `~pyglet.graphics.Group`
@@ -424,8 +421,10 @@ class Arc(_ShapeBase):
         self._segments = segments or max(14, int(radius / 1.25))
         self._num_verts = self._segments * 2 + (2 if closed else 0)
 
-        self._rgb = color
-        self._opacity = opacity
+        # handle both 3 and 4 byte colors
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
         self._angle = angle
         self._start_angle = start_angle
         self._closed = closed
@@ -466,7 +465,7 @@ class Arc(_ShapeBase):
         self._vertex_list.position[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_verts
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     @property
     def rotation(self):
