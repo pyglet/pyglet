@@ -6,7 +6,8 @@ from pyglet.shapes import (
 
 # The shapes are tested individually since their RGBA handling is
 # inlined for maximum speed instead of encapsulated into functions.
-# A typo in one might break it but not the others.
+# A typo in one might break color functionality in one but not the
+# others.
 @pytest.fixture(params=[
     (Arc, (0, 0, 5)),
     (Circle, (0, 0, 5)),
