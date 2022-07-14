@@ -3,6 +3,9 @@ from pyglet.shapes import (
     Arc
 )
 
+# The shapes are tested individually since their RGBA handling is
+# inlined for maximum speed instead of encapsulated into functions.
+# A typo in one might break it but not the others.
 @pytest.fixture(params=[
     (Arc, (0, 0, 5)),
 ])
