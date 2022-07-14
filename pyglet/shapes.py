@@ -574,7 +574,7 @@ class Circle(_ShapeBase):
 
 
 class Ellipse(_ShapeBase):
-    def __init__(self, x, y, a, b, color=(255, 255, 255), opacity=255,
+    def __init__(self, x, y, a, b, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create an ellipse.
 
@@ -590,11 +590,9 @@ class Ellipse(_ShapeBase):
             `b`: float
                 Semi-minor axes of the ellipse.
             `color` : (int, int, int)
-                The RGB color of the ellipse. specify as a tuple of
-                three ints in the range of 0~255.
-            `opacity` : int
-                How opaque the ellipse is. The default of 255 is fully
-                visible. 0 is transparent.
+                The RGB or RGBA color of the ellipse, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the circle to.
             `group` : `~pyglet.graphics.Group`
@@ -604,8 +602,12 @@ class Ellipse(_ShapeBase):
         self._y = y
         self._a = a
         self._b = b
-        self._rgb = color
-        self._opacity = opacity
+
+        # Break with conventions in other _Shape constructors
+        # because a & b are used as meaningful variable names.
+        color_r, color_g, color_b, *color_a = color
+        self._rgba = color_r, color_g, color_b, color_a[0] if color_a else 255
+
         self._rotation = 0
         self._segments = int(max(a, b) / 1.25)
         self._num_verts = self._segments * 2
@@ -642,7 +644,7 @@ class Ellipse(_ShapeBase):
         self._vertex_list.position[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_verts
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     @property
     def a(self):
