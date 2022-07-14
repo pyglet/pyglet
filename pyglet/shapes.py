@@ -406,7 +406,7 @@ class Arc(_ShapeBase):
             `closed` : bool
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
-            `color` : (int, int, int)
+            `color` : (int, int, int, int)
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
@@ -511,7 +511,7 @@ class Circle(_ShapeBase):
                 the circle should be made from. If not specified it will
                 be automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
-            `color` : (int, int, int)
+            `color` : (int, int, int, int)
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
@@ -589,7 +589,7 @@ class Ellipse(_ShapeBase):
                 Semi-major axes of the ellipse.
             `b`: float
                 Semi-minor axes of the ellipse.
-            `color` : (int, int, int)
+            `color` : (int, int, int, int)
                 The RGB or RGBA color of the ellipse, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
