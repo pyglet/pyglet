@@ -699,7 +699,7 @@ class Ellipse(_ShapeBase):
 
 class Sector(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255, 255, 255), opacity=255, batch=None, group=None):
+                 color=(255, 255, 255, 255), batch=None, group=None):
         """Create a Sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
@@ -721,12 +721,10 @@ class Sector(_ShapeBase):
                         which is a full circle.
                     `start_angle` : float
                         The start angle of the sector, in radians. Defaults to 0.
-                    `color` : (int, int, int)
-                        The RGB color of the sector, specified as a tuple of
-                        three ints in the range of 0-255.
-                    `opacity` : int
-                        How opaque the sector is. The default of 255 is fully
-                        visible. 0 is transparent.
+                    `color` : (int, int, int, int)
+                        The RGB or RGBA color of the circle, specified as a
+                        tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                        will be treated as having an opacity of 255.
                     `batch` : `~pyglet.graphics.Batch`
                         Optional batch to add the sector to.
                     `group` : `~pyglet.graphics.Group`
@@ -737,8 +735,9 @@ class Sector(_ShapeBase):
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
 
-        self._rgb = color
-        self._opacity = opacity
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
         self._angle = angle
         self._start_angle = start_angle
         self._rotation = 0
@@ -774,7 +773,7 @@ class Sector(_ShapeBase):
         self._vertex_list.position[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
+        self._vertex_list.colors[:] = self._rgba * self._segments * 3
 
     @property
     def angle(self):
