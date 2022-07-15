@@ -3,7 +3,8 @@ from pyglet.shapes import (
     Arc,
     Circle,
     Ellipse,
-    Sector
+    Sector,
+    Line
 )
 
 # The shapes are tested individually since their RGBA handling is
@@ -17,7 +18,8 @@ from pyglet.shapes import (
     # makes sure the a value is not confused with the RGBA alpha channel
     # internally.
     (Ellipse, (0, 0, 0, 5)),
-    (Sector, (0, 0, 3))
+    (Sector, (0, 0, 3)),
+    (Line, (0, 0, 7, 7))
 ])
 def rgba_shape(request):
     shape_type, required_args = request.param

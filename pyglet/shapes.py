@@ -832,7 +832,7 @@ class Sector(_ShapeBase):
 
 
 class Line(_ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255), opacity=255,
+    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a line.
 
@@ -850,12 +850,10 @@ class Line(_ShapeBase):
                 The second Y coordinate of the line.
             `width` : float
                 The desired width of the line.
-            `color` : (int, int, int)
-                The RGB color of the line, specified as a tuple of
-                three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the line is. The default of 255 is fully
-                visible. 0 is transparent.
+            `color` : (int, int, int, int)
+                The RGB or RGBA color of the line, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the line to.
             `group` : `~pyglet.graphics.Group`
@@ -868,8 +866,9 @@ class Line(_ShapeBase):
 
         self._width = width
         self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
-        self._rgb = color
-        self._opacity = opacity
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -904,7 +903,7 @@ class Line(_ShapeBase):
             self._vertex_list.position[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
+        self._vertex_list.colors[:] = self._rgba * 6
 
     @property
     def x2(self):
