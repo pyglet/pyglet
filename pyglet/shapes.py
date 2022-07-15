@@ -954,7 +954,7 @@ class Line(_ShapeBase):
 
 
 class Rectangle(_ShapeBase):
-    def __init__(self, x, y, width, height, color=(255, 255, 255), opacity=255,
+    def __init__(self, x, y, width, height, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a rectangle or square.
 
@@ -970,12 +970,10 @@ class Rectangle(_ShapeBase):
                 The width of the rectangle.
             `height` : float
                 The height of the rectangle.
-            `color` : (int, int, int)
-                The RGB color of the rectangle, specified as
-                a tuple of three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the rectangle is. The default of 255 is fully
-                visible. 0 is transparent.
+            `color` : (int, int, int, int)
+                The RGB or RGBA color of the circle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
             `group` : `~pyglet.graphics.Group`
@@ -986,8 +984,9 @@ class Rectangle(_ShapeBase):
         self._width = width
         self._height = height
         self._rotation = 0
-        self._rgb = color
-        self._opacity = opacity
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1016,7 +1015,7 @@ class Rectangle(_ShapeBase):
             self._vertex_list.position[:] = tuple(value for vertex in vertices for value in vertex)
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
+        self._vertex_list.colors[:] = self._rgba * 6
 
     @property
     def width(self):
