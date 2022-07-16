@@ -5,7 +5,7 @@ from unittest import mock
 
 
 import pyglet
-from pyglet.media.events import MediaEvent
+from pyglet.media.drivers.base import MediaEvent
 from pyglet.media.codecs.base import *
 
 
