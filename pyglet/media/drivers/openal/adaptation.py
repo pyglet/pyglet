@@ -37,8 +37,7 @@ import weakref
 
 from . import interface
 from pyglet.util import debug_print
-from pyglet.media.events import MediaEvent
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -316,7 +315,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             assert _debug('No audio data left')
             if self._has_underrun():
                 assert _debug('Underrun')
-                MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
+                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
 
     def _queue_audio_data(self, audio_data, length):
         buf = self.alsource.get_buffer()

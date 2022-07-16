@@ -38,9 +38,8 @@ import ctypes
 
 from . import interface
 from pyglet.util import debug_print
-from pyglet.media.events import MediaEvent
 from pyglet.media.mediathreads import PlayerWorkerThread
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -194,7 +193,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                 and self._play_cursor > self._eos_cursor)
 
     def _dispatch_new_event(self, event_name):
-        MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
+        MediaEvent(event_name).sync_dispatch_to_player(self.player)
 
     def _get_audiodata(self):
         if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:

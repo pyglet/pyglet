@@ -36,9 +36,8 @@
 import math
 
 import pyglet
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
-from pyglet.media.events import MediaEvent
 from pyglet.util import debug_print
 from . import interface
 
@@ -204,7 +203,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self.buffer_end_submitted:
             if buffers_queued == 0:
                 self._xa2_source_voice.stop()
-                MediaEvent(0, "on_eos")._sync_dispatch_to_player(self.player)
+                MediaEvent("on_eos").sync_dispatch_to_player(self.player)
         else:
             current_buffers = []
             while buffers_queued < self.max_buffer_count:
@@ -243,12 +242,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._dispatch_pending_events()
 
     def _dispatch_new_event(self, event_name):
-        MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
+        MediaEvent(event_name).sync_dispatch_to_player(self.player)
 
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
-            event_cursor = self._write_cursor + event.timestamp * \
-                           self.source.audio_format.bytes_per_second
+            event_cursor = self._write_cursor + event.timestamp * self.source.audio_format.bytes_per_second
             assert _debug('Adding event', event, 'at', event_cursor)
             self._events.append((event_cursor, event))
 

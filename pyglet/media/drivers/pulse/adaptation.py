@@ -35,8 +35,7 @@
 
 import weakref
 
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
-from pyglet.media.events import MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.util import debug_print
 
@@ -277,7 +276,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def _add_event_at_write_index(self, event_name):
         assert _debug('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
-        self._events.append((self._write_index, MediaEvent(0., event_name)))
+        self._events.append((self._write_index, MediaEvent(event_name)))
 
     def delete(self):
         assert _debug('Delete PulseAudioPlayer')
