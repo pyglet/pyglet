@@ -36,7 +36,7 @@ There are currently 3 types of interactive test cases:
   These tests are decorated with
   :func:`~tests.interactive.interactive_test_base.requires_user_action`.
 - Tests that can run without user interaction, but that cannot validate
-  whether they should pass or fail. These tests are docorated with
+  whether they should pass or fail. These tests are decorated with
   :func:`~tests.interactive.interactive_test_base.requires_user_validation`.
 - Tests that can run without user interaction and that can compare results
   to screenshots from a previous run to determine whether they pass or

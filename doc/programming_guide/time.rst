@@ -39,7 +39,7 @@ To have a function called periodically, for example, once every 0.1 seconds::
 The `dt`, or `delta time` parameter gives the number of "wall clock" seconds
 elapsed since the last call of this function, (or the time the function was
 scheduled, if it's the first period). Due to latency, load and timer
-inprecision, this might be slightly more or less than the requested interval.
+imprecision, this might be slightly more or less than the requested interval.
 Please note that the `dt` parameter is always passed to scheduled functions,
 so be sure to expect it when writing functions even if you don't need to
 use it.
