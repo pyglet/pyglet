@@ -1206,7 +1206,7 @@ class BorderedRectangle(_ShapeBase):
 
 
 class Triangle(_ShapeBase):
-    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), opacity=255,
+    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a triangle.
 
@@ -1225,12 +1225,10 @@ class Triangle(_ShapeBase):
                 The third X coordinate of the triangle.
             `y3` : float
                 The third Y coordinate of the triangle.
-            `color` : (int, int, int)
-                The RGB color of the triangle, specified as
-                a tuple of three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the triangle is. The default of 255 is fully
-                visible. 0 is transparent.
+            `color` : (int, int, int, int)
+                The RGB or RGBA color of the triangle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the triangle to.
             `group` : `~pyglet.graphics.Group`
@@ -1243,8 +1241,9 @@ class Triangle(_ShapeBase):
         self._x3 = x3
         self._y3 = y3
         self._rotation = 0
-        self._rgb = color
-        self._opacity = opacity
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1269,7 +1268,7 @@ class Triangle(_ShapeBase):
             self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 3
+        self._vertex_list.colors[:] = self._rgba * 3
 
     @property
     def x2(self):
