@@ -55,6 +55,7 @@ class ShapesDemo(pyglet.window.Window):
             480,
         )
         self.arc.rotation = self.time * 30
+        self.arc.opacity = int(256 * math.sin(self.time))
         self.star.rotation = self.time * 50
         self.ellipse.b = abs(math.sin(self.time) * 100)
         self.sector.angle = self.time % math.tau

@@ -1350,7 +1350,7 @@ class Triangle(_ShapeBase):
 
 class Star(_ShapeBase):
     def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
-                 color=(255, 255, 255), opacity=255, batch=None, group=None) -> None:
+                 color=(255, 255, 255, 255), batch=None, group=None) -> None:
         """Create a star.
 
         The star's anchor point (x, y) defaults to the center of the star.
@@ -1371,11 +1371,9 @@ class Star(_ShapeBase):
                 will result in one spike lining up with the X axis in
                 positive direction.
             `color` : (int, int, int)
-                The RGB color of the star, specified as
-                a tuple of three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the star is. The default of 255 is fully
-                visible. 0 is transparent.
+                The RGB or RGBA color of the star, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the star to.
             `group` : `~pyglet.graphics.Group`
@@ -1386,9 +1384,10 @@ class Star(_ShapeBase):
         self._outer_radius = outer_radius
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes
-        self._rgb = color
-        self._opacity = opacity
         self._rotation = rotation
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1430,7 +1429,7 @@ class Star(_ShapeBase):
         self._vertex_list.position[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_spikes * 6
+        self._vertex_list.colors[:] = self._rgba * (self._num_spikes * 6)
 
     @property
     def outer_radius(self):
