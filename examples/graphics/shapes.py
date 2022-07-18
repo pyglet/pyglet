@@ -22,7 +22,7 @@ class ShapesDemo(pyglet.window.Window):
         self.square.anchor_y = 100
 
         # Large transparent rectangle
-        self.rectangle = shapes.Rectangle(0, 190, 720, 100, color=(255, 22, 20), opacity=64, batch=self.batch)
+        self.rectangle = shapes.Rectangle(0, 190, 720, 100, color=(255, 22, 20, 64), batch=self.batch)
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
