@@ -1474,7 +1474,7 @@ class Star(_ShapeBase):
 
 
 class Polygon(_ShapeBase):
-    def __init__(self, *coordinates, color=(255, 255, 255), opacity=255, batch=None, group=None):
+    def __init__(self, *coordinates, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a convex polygon.
 
         The polygon's anchor point defaults to the first vertex point.
@@ -1483,11 +1483,9 @@ class Polygon(_ShapeBase):
             `coordinates` : List[[int, int]]
                 The coordinates for each point in the polygon.
             `color` : (int, int, int)
-                The RGB color of the polygon, specified as
-                a tuple of three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the polygon is. The default of 255 is fully
-                visible. 0 is transparent.
+                The RGB or RGBA color of the polygon, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the polygon to.
             `group` : `~pyglet.graphics.Group`
@@ -1499,8 +1497,8 @@ class Polygon(_ShapeBase):
 
         self._rotation = 0
 
-        self._rgb = color
-        self._opacity = opacity
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1535,7 +1533,7 @@ class Polygon(_ShapeBase):
             self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * ((len(self._coordinates) - 2) * 3)
+        self._vertex_list.colors[:] = self._rgba * ((len(self._coordinates) - 2) * 3)
 
     @property
     def x(self):
