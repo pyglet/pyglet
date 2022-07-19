@@ -1062,7 +1062,7 @@ class Rectangle(_ShapeBase):
 
 class BorderedRectangle(_ShapeBase):
     def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
-                 border_color=(100, 100, 100), opacity=255, batch=None, group=None):
+                 border_color=(100, 100, 100), batch=None, group=None):
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
@@ -1085,10 +1085,6 @@ class BorderedRectangle(_ShapeBase):
             `border_color` : (int, int, int)
                 The RGB color of the rectangle's border, specified as
                 a tuple of three ints in the range of 0-255.
-            `opacity` : int
-                How opaque the rectangle is. The default of 255 is fully
-                visible. 0 is transparent. This affects the entire shape,
-                not only the fill color.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
             `group` : `~pyglet.graphics.Group`
@@ -1100,9 +1096,23 @@ class BorderedRectangle(_ShapeBase):
         self._height = height
         self._rotation = 0
         self._border = border
-        self._rgb = color
-        self._brgb = border_color
-        self._opacity = opacity
+
+        fill_r, fill_g, fill_b, *fill_a = color
+        border_r, border_g, border_b, *border_a = border_color
+
+        # Set alpha to 255 if neither the fill nor border color have an
+        # alpha component. Otherwise, choose a value to use from among
+        # the alpha values.
+        alpha = 255
+        if fill_a and border_a:
+            alpha = min(fill_a[0], border_a[0])
+        elif fill_a:
+            alpha = fill_a[0]
+        elif border_a:
+            alpha = border_a[0]
+
+        self._rgba = fill_r, fill_g, fill_b, alpha
+        self._border_rgba = border_r, border_g, border_b, alpha
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -1141,8 +1151,7 @@ class BorderedRectangle(_ShapeBase):
             self._vertex_list.position[:] = tuple(value for vertex in vertices for value in vertex)
 
     def _update_color(self):
-        opacity = int(self._opacity)
-        self._vertex_list.colors[:] = [*self._rgb, opacity] * 4 + [*self._brgb, opacity] * 4
+        self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
 
     @property
     def width(self):
@@ -1192,16 +1201,53 @@ class BorderedRectangle(_ShapeBase):
 
         This property sets the color of the border of a bordered rectangle.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
+        The color is specified as an RGB tuple of integers '(red, green, blue)'
+        or an RGBA tuple of integers '(red, green, blue, alpha)`. Setting the
+        alpha on this property will change the alpha of the entire shape,
+        including both the fill and the border.
+
         Each color component must be in the range 0 (dark) to 255 (saturated).
 
-        :type: (int, int, int)
+        :type: (int, int, int, int)
         """
-        return self._brgb
+        return self._border_rgba
 
     @border_color.setter
     def border_color(self, values):
-        self._brgb = tuple(map(int, values))
+        r, g, b, *a = map(int, values)
+
+        alpha = a[0] if a else 255
+        self._border_rgba = r, g, b, alpha
+        self._rgba = *self._rgba[:3], alpha
+
+        self._update_color()
+
+    @property
+    def color(self):
+        return self._rgba
+
+    @color.setter
+    def color(self, values):
+        """The rectangle's fill color.
+
+        This property sets the color of the inside of a bordered rectangle.
+
+        The color is specified as an RGB tuple of integers '(red, green, blue)'
+        or an RGBA tuple of integers '(red, green, blue, alpha)`. Setting the
+        alpha on this property will change the alpha of the entire shape,
+        including both the fill and the border.
+
+        Each color component must be in the range 0 (dark) to 255 (saturated).
+
+        :type: (int, int, int, int)
+        """
+
+        r, g, b, *a = map(int, values)
+
+        alpha = a[0] if a else 255
+        self._rgba = r, g, b, alpha
+        self._border_rgba = *self._border_rgba[:3], alpha
+
         self._update_color()
 
 

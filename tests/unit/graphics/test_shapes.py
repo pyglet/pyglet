@@ -6,6 +6,7 @@ from pyglet.shapes import (
     Sector,
     Line,
     Rectangle,
+    BorderedRectangle,
     Triangle,
     Star,
     Polygon
@@ -25,6 +26,7 @@ from pyglet.shapes import (
     (Sector, (0, 0, 3)),
     (Line, (0, 0, 7, 7)),
     (Rectangle, (0, 0, 20, 20)),
+    (BorderedRectangle, (0, 0, 30, 10)),
     (Triangle, (0, 0, 2, 2, 5, 5)),
     (Star, (1, 1, 20, 11, 5)),
     (Polygon, ((0, 0), (1, 1), (2, 2)), )
