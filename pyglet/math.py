@@ -62,8 +62,8 @@ class Vec2:
 
     """A two-dimensional vector represented as an X Y coordinate pair.
 
-    :parameters: 
-        `x` : int or float : 
+    :parameters:
+        `x` : int or float :
             The X coordinate of the vector.
         `y`   : int or float :
             The Y coordinate of the vector.
@@ -138,8 +138,8 @@ class Vec2:
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The heading remains unchanged.
 
-        :parameters: 
-            `magnitude` : int or float : 
+        :parameters:
+            `magnitude` : int or float :
                 The magnitude of the new vector.
 
         :returns: A new vector with the magnitude.
@@ -150,10 +150,10 @@ class Vec2:
     def from_heading(self, heading):
         """Create a new vector of the same magnitude with the given heading. I.e. Rotate the vector to the heading.
 
-        :parameters: 
+        :parameters:
             `heading` : int or float :
                 The angle of the new vector in radians.
-        
+
         :returns: A new vector with the given heading.
         :rtype: Vec2
         """
@@ -181,28 +181,28 @@ class Vec2:
     def limit(self, maximum):
         """Limit the magnitude of the vector to the value used for the max parameter.
 
-        :parameters: 
+        :parameters:
             `maximum`  : int or float :
                 The maximum magnitude for the vector.
-        
+
         :returns: Either self or a new vector with the maximum magnitude.
         :rtype: Vec2
         """
         if self.x ** 2 + self.y ** 2 > maximum * maximum:
             return self.from_magnitude(maximum)
         return self
-            
     def lerp(self, other, alpha):
+
         """Create a new vector lineraly interpolated between this vector and another vector.
 
-        :parameters: 
+        :parameters:
             `other`  : Vec2 :
                 The vector to be linerly interpolated to.
             `alpha` : float or int :
                 The amount of interpolation.
-                Some value between 0.0 (this vector) and 1.0 (other vector). 
+                Some value between 0.0 (this vector) and 1.0 (other vector).
                 0.5 is halfway inbetween.
-        
+
         :returns: A new interpolated vector.
         :rtype: Vec2
         """
@@ -212,7 +212,7 @@ class Vec2:
     def scale(self, value):
         """Multiply the vector by a scalar value.
 
-        :parameters: 
+        :parameters:
             `value`  : int or float :
                 The ammount to be scaled by
 
@@ -224,8 +224,8 @@ class Vec2:
     def rotate(self, angle):
         """Create a new Vector rotated by the angle. The magnitude remains unchanged.
 
-        :parameters: 
-            `angle` : int or float : 
+        :parameters:
+            `angle` : int or float :
                 The angle to rotate by
 
         :returns: A new rotated vector of the same magnitude.
@@ -237,10 +237,10 @@ class Vec2:
 
     def distance(self, other):
         """Calculate the distance between this vector and another 2D vector.
-        
+
         :parameters:
             `other`  : Vec2 :
-                The other vector 
+                The other vector
 
         :returns: The distance between the two vectors.
         :rtype: float
@@ -261,8 +261,8 @@ class Vec2:
     def clamp(self, min_val, max_val):
         """Restrict the value of the X and Y components of the vector to be within the given values.
 
-        :parameters: 
-            `min_val` : int or float : 
+        :parameters:
+            `min_val` : int or float :
                 The minimum value
             `max_val` : int or float :
                 The maximum value
@@ -275,10 +275,10 @@ class Vec2:
     def dot(self, other):
         """Calculate the dot product of this vector and another 2D vector.
 
-        :parameters: 
+        :parameters:
             `other`  : Vec2 :
                 The other vector.
-        
+
         :returns: The dot product of the two vectors.
         :rtype: float
         """
@@ -302,8 +302,8 @@ class Vec3:
 
     """A three-dimensional vector represented as X Y Z coordinates.
 
-    :parameters: 
-        `x` : int or float : 
+    :parameters:
+        `x` : int or float :
             The X coordinate of the vector.
         `y`   : int or float :
             The Y coordinate of the vector.
@@ -377,8 +377,8 @@ class Vec3:
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The rotation remains unchanged.
 
-        :parameters: 
-            `magnitude` : int or float : 
+        :parameters:
+            `magnitude` : int or float :
                 The magnitude of the new vector.
 
         :returns: A new vector with the magnitude.
@@ -389,10 +389,10 @@ class Vec3:
     def limit(self, maximum):
         """Limit the magnitude of the vector to the value used for the max parameter.
 
-        :parameters: 
+        :parameters:
             `maximum`  : int or float :
                 The maximum magnitude for the vector.
-        
+
         :returns: Either self or a new vector with the maximum magnitude.
         :rtype: Vec3
         """
@@ -403,10 +403,10 @@ class Vec3:
     def cross(self, other):
         """Calculate the cross product of this vector and another 3D vector.
 
-        :parameters: 
+        :parameters:
             `other`  : Vec3 :
                 The other vector.
-        
+
         :returns: The cross product of the two vectors.
         :rtype: float
         """
@@ -429,14 +429,14 @@ class Vec3:
     def lerp(self, other, alpha):
         """Create a new vector lineraly interpolated between this vector and another vector.
 
-        :parameters: 
+        :parameters:
             `other`  : Vec3 :
                 The vector to be linerly interpolated to.
             `alpha` : float or int :
                 The amount of interpolation.
-                Some value between 0.0 (this vector) and 1.0 (other vector). 
+                Some value between 0.0 (this vector) and 1.0 (other vector).
                 0.5 is halfway inbetween.
-        
+
         :returns: A new interpolated vector.
         :rtype: Vec3
         """
@@ -447,7 +447,7 @@ class Vec3:
     def scale(self, value):
         """Multiply the vector by a scalar value.
 
-        :parameters: 
+        :parameters:
             `value`  : int or float :
                 The ammount to be scaled by
 
@@ -458,10 +458,10 @@ class Vec3:
 
     def distance(self, other):
         """Calculate the distance between this vector and another 3D vector.
-        
+
         :parameters:
             `other`  : Vec3 :
-                The other vector 
+                The other vector
 
         :returns: The distance between the two vectors.
         :rtype: float
@@ -484,8 +484,8 @@ class Vec3:
     def clamp(self, min_val, max_val):
         """Restrict the value of the X,  Y and Z components of the vector to be within the given values.
 
-        :parameters: 
-            `min_val` : int or float : 
+        :parameters:
+            `min_val` : int or float :
                 The minimum value
             `max_val` : int or float :
                 The maximum value
@@ -515,8 +515,8 @@ class Vec4:
 
     """A four-dimensional vector represented as X Y Z W coordinates.
 
-    :parameters: 
-        `x` : int or float : 
+    :parameters:
+        `x` : int or float :
             The X coordinate of the vector.
         `y`   : int or float :
             The Y coordinate of the vector.
