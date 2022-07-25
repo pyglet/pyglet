@@ -824,14 +824,14 @@ class Controller(EventDispatcher):
 
     # Input Event types:
 
-    def on_stick_motion(self, controller, axis, xvalue, yvalue):
+    def on_stick_motion(self, controller, stick, xvalue, yvalue):
         """The value of a controller analogue stick changed.
 
         :Parameters:
             `controller` : `Controller`
                 The controller whose analogue stick changed.
-            `axis` : string
-                The name of the axis that changed.
+            `stick` : string
+                The name of the stick that changed.
             `xvalue` : float
                 The current x axis value, normalized to [-1, 1].
             `yvalue` : float
