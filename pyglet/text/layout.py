@@ -347,7 +347,7 @@ class _GlyphBox(_AbstractBox):
                 v2 += x1
                 v1 += y + baseline
                 v3 += y + baseline
-                vertices.extend(map(int, [v0, v1, v2, v1, v2, v3, v0, v3]))
+                vertices.extend(map(round, [v0, v1, v2, v1, v2, v3, v0, v3]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
                 x1 += glyph.advance
@@ -412,17 +412,19 @@ class _GlyphBox(_AbstractBox):
         if background_vertices:
             background_indices = []
             bg_count = len(background_vertices) // 2
-            for glyph_idx in range(bg_count):
-                background_indices.extend([element + (glyph_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
+            decoration_program = get_default_decoration_shader()
+            for bg_idx in range(bg_count):
+                background_indices.extend([element + (bg_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
 
-            background_list = program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
+            background_list = decoration_program.vertex_list_indexed(bg_count * 4, GL_TRIANGLES, background_indices,
                                                           layout.batch, layout.background_decoration_group,
                                                           position=('f', background_vertices),
                                                           colors=('Bn', background_colors))
             context.add_list(background_list)
 
         if underline_vertices:
-            underline_list = program.vertex_list(len(underline_vertices) // 2, GL_LINES,
+            decoration_program = get_default_decoration_shader()
+            underline_list = decoration_program.vertex_list(len(underline_vertices) // 2, GL_LINES,
                                                  layout.batch, layout.foreground_decoration_group,
                                                  position=('f',underline_vertices),
                                                  colors=('Bn', underline_colors))
@@ -778,6 +780,14 @@ class ScrollableTextDecorationGroup(graphics.Group):
         glDisable(GL_BLEND)
         self.program.stop()
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
+
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return id(self)
 
 class IncrementalTextDecorationGroup(ScrollableTextDecorationGroup):
     # Subclass so that the scissor_area isn't shared with the
@@ -1797,6 +1807,9 @@ class ScrollableTextLayout(TextLayout):
         for group in self.group_cache.values():
             group.scissor_area = area
 
+        self.background_decoration_group.scissor_area = area
+        self.foreground_decoration_group.scissor_area = area
+
     def _update(self):
         super()._update()
         self._update_scissor_area()
@@ -1951,6 +1964,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
         for group in self.group_cache.values():
             group.scissor_area = area
+        self.background_decoration_group.scissor_area = area
+        self.foreground_decoration_group.scissor_area = area
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2532,7 +2547,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x + self._translate_x, line.y + self._translate_y + baseline
+        return x - self._translate_x, line.y + self._translate_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2610,6 +2625,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         :rtype: int
         """
         line = self.lines[line]
+
+        x += self._translate_x
         x -= self._x
 
         if x < line.x:
@@ -2659,6 +2676,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 X coordinate
 
         """
+        x += self.view_x - self._x
+
         if x <= self.view_x + 10:
             self.view_x = x - 10
         elif x >= self.view_x + self.width:

@@ -356,6 +356,7 @@ class Caret:
             m2 = len(self._layout.document.text)
         else:
             m2 = m2.start()
+
         self._position = m2
         self._update(line=line)
         self._next_attributes.clear()
@@ -436,6 +437,7 @@ class Caret:
             elif self._position > 0:
                 self._position -= 1
                 self._layout.document.delete_text(self._position, self._position + 1)
+                self._update()
         elif motion == key.MOTION_DELETE:
             if self.mark is not None:
                 self._delete_selection()
