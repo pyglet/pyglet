@@ -65,11 +65,13 @@ class Win32Screen(Screen):
         self._handle = handle
 
     def get_matching_configs(self, template):
-        canvas = Win32Canvas(self.display, 0, _user32.GetDC(0))
+        hdc = _user32.GetDC(0)
+        canvas = Win32Canvas(self.display, 0, hdc)
         configs = template.match(canvas)
         # XXX deprecate config's being screen-specific
         for config in configs:
             config.screen = self
+        _user32.ReleaseDC(0, hdc)
         return configs
 
     def get_device_name(self):
