@@ -51,6 +51,7 @@ def test_setting_rgba_color_changes_opacity(rgba_shape):
     assert rgba_shape.opacity == 0
 
 
-def test_setting_rgb_color_sets_full_opacity(rgba_shape):
+def test_setting_rgb_color_does_not_change_opacity(rgba_shape):
+    original_opacity = rgba_shape.opacity
     rgba_shape.color = (128, 128, 128)
-    assert rgba_shape.opacity == 255
+    assert rgba_shape.opacity == original_opacity

@@ -339,8 +339,13 @@ class _ShapeBase:
 
     @color.setter
     def color(self, values):
-        r, g, b, *a = tuple(map(int, values))
-        self._rgba = r, g, b, a[0] if a else 255
+        r, g, b, *a = values
+
+        if a:
+            self._rgba = r, g, b, a[0]
+        else:
+            self._rgba = r, g, b, self._rgba[3]
+
         self._update_color()
 
     @property
