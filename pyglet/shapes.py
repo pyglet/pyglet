@@ -73,6 +73,7 @@ A simple example of drawing shapes::
 
 .. versionadded:: 1.5.4
 """
+
 import math
 
 import pyglet
