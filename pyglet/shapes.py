@@ -73,7 +73,6 @@ A simple example of drawing shapes::
 
 .. versionadded:: 1.5.4
 """
-
 import math
 
 import pyglet
@@ -1100,17 +1099,23 @@ class BorderedRectangle(_ShapeBase):
         fill_r, fill_g, fill_b, *fill_a = color
         border_r, border_g, border_b, *border_a = border_color
 
-        # Set alpha to 255 if neither the fill nor border color have an
-        # alpha component. Otherwise, choose a value to use from among
-        # the alpha values.
+        # Start with a default alpha value of 255.
         alpha = 255
-        if fill_a and border_a:
-            alpha = min(fill_a[0], border_a[0])
+        # Raise Exception if we have conflicting alpha values
+        if fill_a and border_a and fill_a[0] != border_a[0]:
+                raise ValueError(
+                    "When color and border_color are both RGBA values,"
+                    "they must both have the same opacity"
+                )
+        # Choose a value to use if there is no conflict
         elif fill_a:
             alpha = fill_a[0]
         elif border_a:
             alpha = border_a[0]
 
+        # Although the shape is only allowed one opacity, the alpha is
+        # stored twice to keep other code concise and reduce cpu usage
+        # from stitching together sequences.
         self._rgba = fill_r, fill_g, fill_b, alpha
         self._border_rgba = border_r, border_g, border_b, alpha
 
@@ -1214,9 +1219,13 @@ class BorderedRectangle(_ShapeBase):
 
     @border_color.setter
     def border_color(self, values):
-        r, g, b, *a = map(int, values)
+        r, g, b, *a = values
 
-        alpha = a[0] if a else 255
+        if a:
+            alpha = a[0]
+        else:
+            alpha = self._rgba[3]
+
         self._border_rgba = r, g, b, alpha
         self._rgba = *self._rgba[:3], alpha
 
@@ -1224,10 +1233,6 @@ class BorderedRectangle(_ShapeBase):
 
     @property
     def color(self):
-        return self._rgba
-
-    @color.setter
-    def color(self, values):
         """The rectangle's fill color.
 
         This property sets the color of the inside of a bordered rectangle.
@@ -1241,13 +1246,19 @@ class BorderedRectangle(_ShapeBase):
 
         :type: (int, int, int, int)
         """
+        return self._rgba
 
-        r, g, b, *a = map(int, values)
+    @color.setter
+    def color(self, values):
+        r, g, b, *a = values
 
-        alpha = a[0] if a else 255
+        if a:
+            alpha = a[0]
+        else:
+            alpha = self._rgba[3]
+
         self._rgba = r, g, b, alpha
         self._border_rgba = *self._border_rgba[:3], alpha
-
         self._update_color()
 
 
