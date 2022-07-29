@@ -1083,12 +1083,19 @@ class BorderedRectangle(_ShapeBase):
                 The height of the rectangle.
             `border` : float
                 The thickness of the border.
-            `color` : (int, int, int)
-                The RGB color of the rectangle, specified as
-                a tuple of three ints in the range of 0-255.
-            `border_color` : (int, int, int)
-                The RGB color of the rectangle's border, specified as
-                a tuple of three ints in the range of 0-255.
+            `color` : (int, int, int, int)
+                The RGB or RGBA fill color of the rectangle, specified
+                as a tuple of 3 or 4 ints in the range of 0-255. RGB
+                colors will be treated as having an opacity of 255.
+            `border_color` : (int, int, int, int)
+                The RGB or RGBA fill color of the rectangle, specified
+                as a tuple of 3 or 4 ints in the range of 0-255. RGB
+                colors will be treated as having an opacity of 255.
+
+                The alpha values must match if you pass RGBA values to
+                both this argument and `border_color`. If they do not,
+                a `ValueError` will be raised informing you of the
+                ambiguity.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
             `group` : `~pyglet.graphics.Group`
