@@ -21,7 +21,7 @@ from . import (
 
 
 # The shapes are tested individually since their RGBA handling is
-# inlined for maximum speed instead of encapsulated their baseclass.
+# inlined for maximum speed instead of encapsulated in their baseclass.
 # A typo might break color functionality in one but not the others.
 @pytest.fixture(params=[
     (Arc, (0, 0, 5)),
