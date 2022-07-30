@@ -1,11 +1,36 @@
 """
-Border color related tests for the BorderedRectangle.
+Tests for behavior unique to BorderedRectangle.
 
-These should only cover behavior not tested by test_shapes.py
+Most color property behavior is tested with the other _ShapeBase
+subclasses in test_shapes.py
 """
 import pytest
 
 from pyglet.shapes import BorderedRectangle
+
+from . import (
+    new_rgb_color,
+    new_rgba_color,
+    new_rgb_or_rgba_color
+)
+
+
+@pytest.fixture
+def bordered_rectangle():
+   return BorderedRectangle(
+        0, 0, 10, 50,
+        color=(0, 0, 0, 31),
+        border_color=(1, 1, 1)
+   )
+
+
+def test_init_raises_value_error_on_conflicting_rgba_alphas():
+    with pytest.raises(ValueError):
+        b = BorderedRectangle(
+            0, 0, 10, 10,
+            color=(1, 1, 1, 2),
+            border_color=(255, 255, 255, 255)
+        )
 
 
 @pytest.mark.parametrize(
@@ -19,39 +44,12 @@ from pyglet.shapes import BorderedRectangle
 def test_init_sets_opacity_for_valid_color_and_border_color_alphas(
         color, border_color, expected_alpha
 ):
-    rect = BorderedRectangle(0, 0, 10, 50, color=color, border_color=border_color)
-    assert rect.opacity == expected_alpha
-
-
-def test_init_raises_value_error_on_conflicting_rgba_alphas():
-    with pytest.raises(ValueError):
-        b = BorderedRectangle(
-            0, 0, 10, 10, color=(1, 1, 1, 2), border_color=(255, 255, 255, 255)
-        )
-
-
-@pytest.fixture
-def bordered_rectangle():
-   return BorderedRectangle(
+    rect = BorderedRectangle(
         0, 0, 10, 50,
-        color=(0, 0, 0, 31),
-        border_color=(1, 1, 1)
-   )
-
-
-@pytest.fixture
-def new_rgb_color():
-    return 1, 2, 3
-
-
-@pytest.fixture
-def new_rgba_color():
-    return 5, 6, 7, 59
-
-
-@pytest.fixture(params=[(1, 2, 3), (5, 6, 7, 59)])
-def new_rgb_or_rgba_color(request):
-    return request.param
+        color=color,
+        border_color=border_color
+    )
+    assert rect.opacity == expected_alpha
 
 
 def test_setting_border_color_sets_border_color_rgb_channels(bordered_rectangle, new_rgb_or_rgba_color):
@@ -81,37 +79,25 @@ def test_setting_border_color_to_rgba_value_sets_opacity(bordered_rectangle, new
     assert bordered_rectangle.border_color[3] == new_opacity
 
 
-def test_setting_color_sets_color_rgb_channels(bordered_rectangle, new_rgb_or_rgba_color):
-    bordered_rectangle.color = new_rgb_or_rgba_color
-    assert bordered_rectangle.color[:3] == new_rgb_or_rgba_color[:3]
-
-
-def test_setting_color_to_rgb_value_does_not_change_opacity(bordered_rectangle, new_rgb_color):
+def test_setting_color_to_rgb_value_does_not_change_alpha_channel_on_border_color(bordered_rectangle, new_rgb_color):
     original_opacity = bordered_rectangle.opacity
     bordered_rectangle.color = new_rgb_color
-    assert bordered_rectangle.opacity == original_opacity
-    assert bordered_rectangle.color[3] == original_opacity
     assert bordered_rectangle.border_color[3] == original_opacity
 
 
-def test_setting_color_to_rgba_value_does_not_change_border_color_rgb_channels(bordered_rectangle, new_rgba_color):
-    original_border_rgb_color = bordered_rectangle.border_color[:3]
+def test_setting_color_to_rgba_value_does_not_change_rgb_channels_on_border_color(bordered_rectangle, new_rgba_color):
+    original_border_rgb = bordered_rectangle.border_color[:3]
     bordered_rectangle.color = new_rgba_color
-    assert bordered_rectangle.border_color[:3] == original_border_rgb_color
+    assert bordered_rectangle.border_color[:3] == original_border_rgb
 
 
-def test_setting_color_to_rgba_value_sets_opacity(bordered_rectangle, new_rgba_color):
+def test_setting_color_to_rgba_value_sets_alpha_channel_on_border_color(bordered_rectangle, new_rgba_color):
     new_opacity = new_rgba_color[3]
     bordered_rectangle.color = new_rgba_color
-    assert bordered_rectangle.opacity == new_opacity
-    assert bordered_rectangle.color[3] == new_opacity
     assert bordered_rectangle.border_color[3] == new_opacity
 
 
-def test_setting_opacity_does_not_change_rgb_channels(bordered_rectangle):
-    original_color_rgb = bordered_rectangle.color[:3]
-    original_border_color_rgb = bordered_rectangle.border_color[:3]
-
+def test_setting_opacity_does_not_change_border_color_rgb_channels(bordered_rectangle):
+    original_border_rgb = bordered_rectangle.border_color[:3]
     bordered_rectangle.opacity = 47
-    assert bordered_rectangle.color[:3] == original_color_rgb
-    assert bordered_rectangle.border_color[:3] == original_border_color_rgb
+    assert bordered_rectangle.border_color[:3] == original_border_rgb
