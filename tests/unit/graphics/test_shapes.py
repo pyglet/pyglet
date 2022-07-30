@@ -25,7 +25,7 @@ from . import (
 # The shapes are tested individually since their RGBA handling is
 # inlined for maximum speed instead of encapsulated in their baseclass.
 # A typo might break color functionality in one but not the others.
-@pytest.fixture(params=[
+@pytest.fixture(scope="module", params=[
     (Arc, (0, 0, 5)),
     (Circle, (0, 0, 5)),
     # Ellipse's a value below is nonsensical in normal use, but here it
@@ -45,6 +45,16 @@ def shape_keywords_only(request):
     return partial(class_, *positional_args)
 
 
+@pytest.fixture(params=[(0, 0, 0), (0, 255, 0, 37)])
+def original_color(request):
+    return request.param
+
+
+@pytest.fixture()
+def rgb_or_rgba_shape(shape_keywords_only, original_color):
+    return shape_keywords_only(color=original_color)
+
+
 @pytest.fixture
 def rgba_shape(shape_keywords_only):
     return shape_keywords_only(color=(0, 255, 0, 37))
@@ -58,24 +68,24 @@ def test_init_sets_opacity_to_255_for_rgb_value_as_color_argument(shape_keywords
     assert shape_keywords_only(color=(0, 0, 0)).opacity == 255
 
 
-def test_setting_color_sets_color_rgb_channels(rgba_shape, new_rgb_or_rgba_color):
-    rgba_shape.color = new_rgb_or_rgba_color
-    assert rgba_shape.color[:3] == new_rgb_or_rgba_color[:3]
+def test_setting_color_sets_color_rgb_channels(rgb_or_rgba_shape, new_rgb_or_rgba_color):
+    rgb_or_rgba_shape.color = new_rgb_or_rgba_color
+    assert rgb_or_rgba_shape.color[:3] == new_rgb_or_rgba_color[:3]
 
 
-def test_setting_color_to_rgb_value_does_not_change_opacity(rgba_shape, new_rgb_color):
-    original_opacity = rgba_shape.opacity
-    rgba_shape.color = new_rgb_color
-    assert rgba_shape.opacity == original_opacity
+def test_setting_color_to_rgb_value_does_not_change_opacity(rgb_or_rgba_shape, new_rgb_color):
+    original_opacity = rgb_or_rgba_shape.opacity
+    rgb_or_rgba_shape.color = new_rgb_color
+    assert rgb_or_rgba_shape.opacity == original_opacity
 
 
-def test_setting_color_to_rgba_value_changes_opacity(rgba_shape, new_rgba_color):
-    rgba_shape.color = new_rgba_color
-    assert rgba_shape.opacity == new_rgba_color[3]
-    assert rgba_shape.color[3] == new_rgba_color[3]
+def test_setting_color_to_rgba_value_changes_opacity(rgb_or_rgba_shape, new_rgba_color):
+    rgb_or_rgba_shape.color = new_rgba_color
+    assert rgb_or_rgba_shape.opacity == new_rgba_color[3]
+    assert rgb_or_rgba_shape.color[3] == new_rgba_color[3]
 
 
-def test_setting_opacity_does_not_change_rgb_channels_on_color(rgba_shape):
-    original_color = rgba_shape.color[:3]
-    rgba_shape.opacity = 255
-    assert rgba_shape.color[:3] == original_color
+def test_setting_opacity_does_not_change_rgb_channels_on_color(rgb_or_rgba_shape):
+    original_color = rgb_or_rgba_shape.color[:3]
+    rgb_or_rgba_shape.opacity = 255
+    assert rgb_or_rgba_shape.color[:3] == original_color
