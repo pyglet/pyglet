@@ -1,3 +1,5 @@
+from functools import partial
+
 import pytest
 
 from pyglet.shapes import (
@@ -38,13 +40,22 @@ from . import (
     (Star, (1, 1, 20, 11, 5)),
     (Polygon, ((0, 0), (1, 1), (2, 2)))
 ])
-def rgba_shape(request):
-    shape_type, required_args = request.param
-    return shape_type(*required_args, color=(0, 255, 0, 37))
+def shape_keywords_only(request):
+    class_, positional_args = request.param
+    return partial(class_, *positional_args)
 
 
-def test_init_sets_opacity_from_rgba_value_for_color_argument(rgba_shape):
+@pytest.fixture
+def rgba_shape(shape_keywords_only):
+    return shape_keywords_only(color=(0, 255, 0, 37))
+
+
+def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_shape):
     assert rgba_shape.opacity == 37
+
+
+def test_init_sets_opacity_to_255_for_rgb_value_as_color_argument(shape_keywords_only):
+    assert shape_keywords_only(color=(0, 0, 0)).opacity == 255
 
 
 def test_setting_color_sets_color_rgb_channels(rgba_shape, new_rgb_or_rgba_color):
