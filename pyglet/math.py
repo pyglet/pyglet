@@ -712,7 +712,7 @@ class Mat3(tuple[float, float, float, float, float, float, float, float, float])
 
     def __sub__(self, other: Mat3) -> Mat3:
         if not isinstance(other, Mat3):
-            raise TypeError("Can only add to other Mat3 types")
+            raise TypeError("Can only subtract from other Mat3 types")
         return Mat3(s - o for s, o in zip(self, other))
 
     def __pos__(self) -> Mat3:
