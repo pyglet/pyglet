@@ -75,6 +75,7 @@ A simple example of drawing shapes::
 """
 
 import math
+from abc import ABC, abstractmethod
 
 import pyglet
 
@@ -202,8 +203,16 @@ class _ShapeGroup(Group):
         return hash((id(self.parent), self.blend_src, self.blend_dest, self.order, self.program))
 
 
-class _ShapeBase:
-    """Base class for Shape objects"""
+class ShapeBase(ABC):
+    """Base class for all shape objects.
+
+    A number of default shapes are provided in this module. Curves are
+    approximated using multiple vertices.
+
+    If you need shapes or functionality not provided in this module,
+    you can write your own custom subclass of `ShapeBase` by using
+    the provided shapes as reference.
+    """
 
     _rgba = (255, 255, 255, 255)
     _visible = True
@@ -219,11 +228,36 @@ class _ShapeBase:
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
+    @abstractmethod
     def _update_position(self):
-        raise NotImplementedError
+        """
+        Generate up-to-date vertex positions & send them to the GPU.
 
+        This method must set the contents of `self._vertex_list.position`
+        using a list or tuple that contains the new position values for
+        each vertex in the shape. See the `ShapeBase` subclasses in this
+        module for examples of how to do this.
+        """
+        raise NotImplementedError(
+            "_update_position must be defined"
+            "for every ShapeBase subclass"
+        )
+
+    @abstractmethod
     def _update_color(self):
-        raise NotImplementedError
+        """
+        Send the new colors for each vertex to the GPU.
+
+        This method must set the contents of `self._vertex_list.colors`
+        using a list or tuple that contains the RGBA color components
+        for each vertex in the shape. This is usually done by repeating
+        `self._rgba` for each vertex. See the `ShapeBase` subclasses in
+        this module for examples of how to do this.
+        """
+        raise NotImplementedError(
+            "_update_color must be defined"
+            "for every ShapeBase subclass"
+        )
 
     def draw(self):
         """Draw the shape at its current position.
@@ -384,7 +418,7 @@ class _ShapeBase:
         self._update_position()
 
 
-class Arc(_ShapeBase):
+class Arc(ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
                  closed=False, color=(255, 255, 255, 255), batch=None, group=None):
         """Create an Arc.
@@ -497,7 +531,7 @@ class Arc(_ShapeBase):
         self._vertex_list.draw(GL_LINES)
 
 
-class Circle(_ShapeBase):
+class Circle(ShapeBase):
     def __init__(self, x, y, radius, segments=None, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a circle.
@@ -578,7 +612,7 @@ class Circle(_ShapeBase):
         self._update_position()
 
 
-class Ellipse(_ShapeBase):
+class Ellipse(ShapeBase):
     def __init__(self, x, y, a, b, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create an ellipse.
@@ -702,7 +736,7 @@ class Ellipse(_ShapeBase):
         self._vertex_list.draw(GL_LINES)
 
 
-class Sector(_ShapeBase):
+class Sector(ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
                  color=(255, 255, 255, 255), batch=None, group=None):
         """Create a Sector of a circle.
@@ -836,7 +870,7 @@ class Sector(_ShapeBase):
         self._update_position()
 
 
-class Line(_ShapeBase):
+class Line(ShapeBase):
     def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a line.
@@ -958,7 +992,7 @@ class Line(_ShapeBase):
         self._update_position()
 
 
-class Rectangle(_ShapeBase):
+class Rectangle(ShapeBase):
     def __init__(self, x, y, width, height, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a rectangle or square.
@@ -1065,7 +1099,7 @@ class Rectangle(_ShapeBase):
         self._update_position()
 
 
-class BorderedRectangle(_ShapeBase):
+class BorderedRectangle(ShapeBase):
     def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
                  border_color=(100, 100, 100), batch=None, group=None):
         """Create a rectangle or square.
@@ -1275,7 +1309,7 @@ class BorderedRectangle(_ShapeBase):
         self._update_color()
 
 
-class Triangle(_ShapeBase):
+class Triangle(ShapeBase):
     def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create a triangle.
@@ -1418,7 +1452,7 @@ class Triangle(_ShapeBase):
         self._update_position()
 
 
-class Star(_ShapeBase):
+class Star(ShapeBase):
     def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
                  color=(255, 255, 255, 255), batch=None, group=None) -> None:
         """Create a star.
@@ -1543,7 +1577,7 @@ class Star(_ShapeBase):
         self._update_position()
 
 
-class Polygon(_ShapeBase):
+class Polygon(ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a convex polygon.
 
