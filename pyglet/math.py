@@ -673,7 +673,9 @@ class Mat3(tuple[float, float, float, float, float, float, float, float, float])
     the "@" operator.
     """
 
-    def __new__(cls, values: Iterable[float] | None = None) -> Mat3:
+    def __new__(
+        cls, values: Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
+    ) -> Mat3:
         """Create a 3x3 Matrix
 
         A Mat3 can be created with a list or tuple of 9 values.
@@ -685,13 +687,8 @@ class Mat3(tuple[float, float, float, float, float, float, float, float, float])
             `values` : tuple of float or int
                 A tuple or list containing 9 floats or ints.
         """
-        if values is None:
-            values = (1.0, 0.0, 0.0,
-                      0.0, 1.0, 0.0,
-                      0.0, 0.0, 1.0)
         new = super().__new__(Mat3, values)
-        if len(new) != 9:
-            raise ValueError("A 3x3 Matrix requires 9 values")
+        assert len(new) == 9, "A 3x3 Matrix requires 9 values"
         return new
 
     def scale(self, sx: float, sy: float) -> Mat3:
@@ -797,7 +794,15 @@ class Mat4(
     and perspective projections matrixes.
     """
 
-    def __new__(cls, values: Iterable[float] | None = None) -> Mat4:
+    def __new__(
+        cls,
+        values: Iterable[float] = (
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ),
+    ) -> Mat4:
         """Create a 4x4 Matrix
 
         A Matrix can be created with a list or tuple of 16 values.
@@ -810,15 +815,8 @@ class Mat4(
                 A tuple or list containing 16 floats or ints.
         """
 
-        if values is None:
-            values = (1.0, 0.0, 0.0, 0.0,
-                      0.0, 1.0, 0.0, 0.0,
-                      0.0, 0.0, 1.0, 0.0,
-                      0.0, 0.0, 0.0, 1.0)
         new = super().__new__(Mat4, values)
-
-        if len(new) != 16:
-            raise ValueError("A 4x4 Matrix requires 16 values")
+        assert len(new) == 16, "A 4x4 Matrix requires 16 values"
         return new
 
     @classmethod
