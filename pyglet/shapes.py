@@ -226,28 +226,34 @@ class ShapeBase(ABC):
         `self._rgba` for each vertex. See the `ShapeBase` subclasses in
         this module for examples of how to do this.
         """
-        raise NotImplementedError(
-            "_update_color must be defined"
-            "for every ShapeBase subclass"
-        )
+        raise NotImplementedError("_update_color must be defined"
+                                  "for every ShapeBase subclass")
 
     @abstractmethod
     def _update_position(self):
         """
         Generate up-to-date vertex positions & send them to the GPU.
 
-        This method must set the contents of `self._vertex_list.position`
-        using a list or tuple that contains the new position values for
+        This method must set the contents of `self._vertex_list.translation`
+        using a list or tuple that contains the new translation values for
         each vertex in the shape. See the `ShapeBase` subclasses in this
         module for examples of how to do this.
         """
-        raise NotImplementedError(
-            "_update_position must be defined"
-            "for every ShapeBase subclass"
-        )
+        raise NotImplementedError("_update_position must be defined"
+                                  "for every ShapeBase subclass")
 
+    @abstractmethod
     def _update_vertices(self):
-        raise NotImplementedError
+        """
+        Generate up-to-date vertex positions & send them to the GPU.
+
+        This method must set the contents of `self._vertex_list.vertices`
+        using a list or tuple that contains the new vertex coordinates for
+        each vertex in the shape. See the `ShapeBase` subclasses in this
+        module for examples of how to do this.
+        """
+        raise NotImplementedError("_update_vertices must be defined"
+                                  "for every ShapeBase subclass")
 
     def draw(self):
         """Draw the shape at its current position.
@@ -1367,7 +1373,7 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._x2
+        return self._x + self._x2
 
     @x2.setter
     def x2(self, value):
@@ -1380,7 +1386,7 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._y2
+        return self._y + self._y2
 
     @y2.setter
     def y2(self, value):
@@ -1393,7 +1399,7 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._x3
+        return self._x + self._x3
 
     @x3.setter
     def x3(self, value):
@@ -1406,7 +1412,7 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._y3
+        return self._y + self._y3
 
     @y3.setter
     def y3(self, value):
