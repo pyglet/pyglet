@@ -70,11 +70,16 @@ A simple example of drawing shapes::
     pyglet.app.run()
 
 
+.. note:: Some Shapes, such as Lines and Triangles, have multiple coordinates.
+          If you update the x, y coordinate, this will also affect the secondary
+          coordinates. This allows you to move the shape without affecting it's
+          overall dimensions.
 
 .. versionadded:: 1.5.4
 """
 
 import math
+
 from abc import ABC, abstractmethod
 
 import pyglet
