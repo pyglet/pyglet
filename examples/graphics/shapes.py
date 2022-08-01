@@ -22,12 +22,18 @@ class ShapesDemo(pyglet.window.Window):
         self.square.anchor_y = 100
 
         # Large transparent rectangle
-        self.rectangle = shapes.Rectangle(0, 190, 720, 100, color=(255, 22, 20), opacity=64, batch=self.batch)
+        self.rectangle = shapes.Rectangle(0, 190, 720, 100, color=(255, 22, 20, 64), batch=self.batch)
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
         self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255), batch=self.batch)
         self.triangle.opacity = 175
+
+        septagon_step = math.pi * 2 / 7
+        self.fading_septagon = shapes.Polygon(
+            *[[50 + 40 * math.sin(i * septagon_step), 200 + 40 * math.cos(i * septagon_step)] for i in range(7)],
+            batch=self.batch
+        )
 
         self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=4, color=(255, 255, 255), batch=self.batch)
 
@@ -55,6 +61,9 @@ class ShapesDemo(pyglet.window.Window):
             480,
         )
         self.arc.rotation = self.time * 30
+
+        self.fading_septagon.opacity = int(255 * (0.5 + (0.5 * math.cos(self.time))))
+
         self.star.rotation = self.time * 50
         self.ellipse.b = abs(math.sin(self.time) * 100)
         self.sector.angle = self.time % math.tau

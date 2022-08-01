@@ -1850,6 +1850,16 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(-self.font.descent, 0, int(math.ceil(layout_metrics.width)))
         return glyph
 
+    def create_zero_glyph(self):
+        """Zero glyph is a 1x1 image that has a -1 advance. This is to fill in for ligature substitutions since
+        font system requires 1 glyph per character in a string."""
+        self._create_bitmap(1, 1)
+        image = wic_decoder.get_image(self._bitmap)
+
+        glyph = self.font.create_glyph(image)
+        glyph.set_bearings(-self.font.descent, 0, -1)
+        return glyph
+
     def _create_bitmap(self, width, height):
         """Creates a bitmap using Direct2D and WIC."""
         # Create a new bitmap, try to re-use the bitmap as much as we can to minimize creations.
@@ -1896,6 +1906,7 @@ class Win32DirectWriteFont(base.Font):
 
     _glyph_renderer = None
     _empty_glyph = None
+    _zero_glyph = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
@@ -2032,21 +2043,19 @@ class Win32DirectWriteFont(base.Font):
         new_glyph.set_bearings(
             glyph.baseline,
             glyph.lsb,
-            advance * self.font_scale_ratio,
-            offset.advanceOffset * self.font_scale_ratio,
-            offset.ascenderOffset * self.font_scale_ratio
+            advance,
+            offset.advanceOffset,
+            offset.ascenderOffset
         )
         return new_glyph
 
     def _render_layout_glyph(self, text_buffer, i, clusters, check_color=True):
-        formatted_clusters = clusters[:]
-
         # Some glyphs can be more than 1 char. We use the clusters to determine how many of an index exist.
-        text_length = formatted_clusters.count(i)
+        text_length = clusters.count(i)
 
         # Amount of glyphs don't always match 1:1 with text as some can be substituted or omitted. Get
         # actual text buffer index.
-        text_index = formatted_clusters.index(i)
+        text_index = clusters.index(i)
 
         # Get actual text based on the index and length.
         actual_text = text_buffer[text_index:text_index + text_length]
@@ -2142,11 +2151,14 @@ class Win32DirectWriteFont(base.Font):
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
             self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
+            self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
         text_buffer, actual_count, indices, advances, offsets, clusters = self._glyph_renderer.get_string_info(text,
                                                                                                                self.font_face)
 
         metrics = self._glyph_renderer.get_glyph_metrics(self.font_face, indices, actual_count)
+
+        formatted_clusters = list(clusters)
 
         # Convert to real sizes.
         for i in range(actual_count):
@@ -2157,19 +2169,30 @@ class Win32DirectWriteFont(base.Font):
             offsets[i].ascenderOffset *= self.font_scale_ratio
 
         glyphs = []
+
+        # Pyglet expects 1 glyph for every string. However, ligatures can combine 1 or more glyphs, leading
+        # to issues with multilines producing wrong output.
+        substitutions = {}
+        for idx in clusters:
+            ct = formatted_clusters.count(idx)
+            if ct > 1:
+                substitutions[idx] = ct-1
+
         for i in range(actual_count):
             indice = indices[i]
+
             if indice == 0:
                 # If an indice is 0, it will return no glyph. In this case we attempt to render leveraging
                 # the built in text layout from MS. Which depending on version can use fallback fonts and other tricks
                 # to possibly get something of use.
-                glyph = self._render_layout_glyph(text_buffer, i, clusters)
+                glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters)
                 glyphs.append(glyph)
             else:
+                advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
+
                 # Glyphs can vary depending on shaping. We will cache it by indice, advance, and offset.
                 # Possible to just cache without offset and set them each time. This may be faster?
                 if indice in self.glyphs:
-                    advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
                     if advance_key in self._advance_cache:
                         glyph = self._advance_cache[advance_key]
                     else:
@@ -2179,14 +2202,17 @@ class Win32DirectWriteFont(base.Font):
                     glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, advances[i], offsets[i],
                                                                      metrics[i])
                     if glyph is None:  # Will only return None if a color glyph is found. Use DW to render it directly.
-                        glyph = self._render_layout_glyph(text_buffer, i, clusters, check_color=False)
+                        glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters, check_color=False)
                         glyph.colored = True
 
                     self.glyphs[indice] = glyph
-                    self._advance_cache[
-                        (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)] = glyph
+                    self._advance_cache[advance_key] = glyph
 
                 glyphs.append(glyph)
+
+            if i in substitutions:
+                for _ in range(substitutions[i]):
+                    glyphs.append(self._zero_glyph)
 
         return glyphs
 
