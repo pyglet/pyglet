@@ -13,8 +13,7 @@ class ShapesDemo(pyglet.window.Window):
         self.time = 0
         self.batch = pyglet.graphics.Batch()
 
-        self.circle = shapes.Circle(360, 240, 75, color=(255, 225, 255), batch=self.batch)
-        self.circle.opacity = 127
+        self.circle = shapes.Circle(360, 240, 75, color=(255, 225, 255, 127), batch=self.batch)
 
         # Rectangle with center as anchor
         self.square = shapes.BorderedRectangle(360, 240, 100, 100, border=5, color=(55, 55, 255),
@@ -22,12 +21,11 @@ class ShapesDemo(pyglet.window.Window):
         self.square.anchor_position = 50, 50
 
         # Large transparent rectangle
-        self.rectangle = shapes.Rectangle(100, 190, 500, 100, color=(255, 22, 20), opacity=64, batch=self.batch)
+        self.rectangle = shapes.Rectangle(100, 190, 500, 100, color=(255, 22, 20, 64), batch=self.batch)
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
-        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255), batch=self.batch)
-        self.triangle.opacity = 175
+        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255, 175), batch=self.batch)
 
         septagon_step = math.pi * 2 / 7
         self.fading_septagon = shapes.Polygon(
