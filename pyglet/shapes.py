@@ -934,33 +934,30 @@ class Line(ShapeBase):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
-        self._update_vertices()
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
             self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
-            x1 = -self._anchor_y
-            y1 = self._anchor_x - self._width / 2
-            x = self._x
-            y = self._y
-            x2 = x1 + math.hypot(self._y2 - y, self._x2 - x)
+            x1 = -self._anchor_x
+            y1 = self._anchor_y - self._width / 2
+            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
             y2 = y1 + self._width
 
-            r = math.atan2(self._y2 - y, self._x2 - x)
+            r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
             sr = math.sin(r)
-            ax = x1 * cr - y1 * sr + x
-            ay = x1 * sr + y1 * cr + y
-            bx = x2 * cr - y1 * sr + x
-            by = x2 * sr + y1 * cr + y
-            cx = x2 * cr - y2 * sr + x
-            cy = x2 * sr + y2 * cr + y
-            dx = x1 * cr - y2 * sr + x
-            dy = x1 * sr + y2 * cr + y
+            ax = x1 * cr - y1 * sr
+            ay = x1 * sr + y1 * cr
+            bx = x2 * cr - y1 * sr
+            by = x2 * sr + y1 * cr
+            cx = x2 * cr - y2 * sr
+            cy = x2 * sr + y2 * cr
+            dx = x1 * cr - y2 * sr
+            dy = x1 * sr + y2 * cr
 
-            self._vertex_list.vertices[:] = (ax, ay,  bx, by,  cx, cy,
-                                             ax, ay,  cx, cy,  dx, dy)
+            self._vertex_list.vertices[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
 
     @property
     def x2(self):
@@ -1146,10 +1143,9 @@ class BorderedRectangle(ShapeBase):
         alpha = 255
         # Raise Exception if we have conflicting alpha values
         if fill_a and border_a and fill_a[0] != border_a[0]:
-                raise ValueError(
-                    "When color and border_color are both RGBA values,"
-                    "they must both have the same opacity"
-                )
+            raise ValueError("When color and border_color are both RGBA values,"
+                             "they must both have the same opacity")
+
         # Choose a value to use if there is no conflict
         elif fill_a:
             alpha = fill_a[0]
@@ -1626,4 +1622,4 @@ class Polygon(ShapeBase):
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
-__all__ = ('Arc', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector')
+__all__ = 'Arc', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector'
