@@ -52,7 +52,7 @@ import math as _math
 import warnings as _warnings
 from collections.abc import Iterable, Iterator
 from operator import mul as _mul
-from typing import Literal, NoReturn, TypeVar, cast, overload
+from typing import NoReturn, TypeVar, cast, overload
 
 
 def clamp(num: float, min_val: float, max_val: float) -> float:
@@ -81,7 +81,7 @@ class Vec2:
         yield self.x
         yield self.y
 
-    def __len__(self) -> Literal[2]:
+    def __len__(self) -> int:
         return 2
 
     @overload
@@ -116,7 +116,7 @@ class Vec2:
     def __round__(self, ndigits: int | None = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec2 | Literal[0]) -> Vec2:
+    def __radd__(self, other: Vec2 | int) -> Vec2:
         """Reverse add. Required for functionality with sum()
         """
         if other == 0:
@@ -346,7 +346,7 @@ class Vec3:
     def __getitem__(self, item):
         return (self.x, self.y, self.z)[item]
 
-    def __len__(self) -> Literal[3]:
+    def __len__(self) -> int:
         return 3
 
     @property
@@ -380,7 +380,7 @@ class Vec3:
     def __round__(self, ndigits: int | None = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec3 | Literal[0]) -> Vec3:
+    def __radd__(self, other: Vec3 | int) -> Vec3:
         """Reverse add. Required for functionality with sum()
         """
         if other == 0:
@@ -573,7 +573,7 @@ class Vec4:
     def __getitem__(self, item):
         return (self.x, self.y, self.z, self.w)[item]
 
-    def __len__(self) -> Literal[4]:
+    def __len__(self) -> int:
         return 4
 
     def __add__(self, other: Vec4) -> Vec4:
@@ -597,7 +597,7 @@ class Vec4:
     def __round__(self, ndigits: int | None = None) -> Vec4:
         return Vec4(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec4 | Literal[0]) -> Vec4:
+    def __radd__(self, other: Vec4 | int) -> Vec4:
         if other == 0:
             return self
         else:
