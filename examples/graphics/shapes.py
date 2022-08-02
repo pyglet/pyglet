@@ -68,19 +68,6 @@ class ShapesDemo(pyglet.window.Window):
         self.ellipse.b = abs(math.sin(self.time) * 100)
         self.sector.angle = self.time % math.tau
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        shape = self.line
-
-        if button == 1:
-            shape.x = x
-            shape.y = y
-
-        if button == 4:
-            shape.x2 = x
-            shape.y2 = y
-
-        print(x, y, shape.position, shape.x2, shape.y2)
-
 
 if __name__ == "__main__":
     demo = ShapesDemo(720, 480)
