@@ -70,11 +70,16 @@ A simple example of drawing shapes::
     pyglet.app.run()
 
 
+.. note:: Some Shapes, such as Lines and Triangles, have multiple coordinates.
+          If you update the x, y coordinate, this will also affect the secondary
+          coordinates. This allows you to move the shape without affecting it's
+          overall dimensions.
 
 .. versionadded:: 1.5.4
 """
 
 import math
+
 from abc import ABC, abstractmethod
 
 import pyglet
@@ -86,8 +91,11 @@ from pyglet.graphics import shader, Batch, Group
 
 
 vertex_source = """#version 150 core
-    in vec2 position;
+    in vec2 vertices;
+    in vec2 translation;
     in vec4 colors;
+    in float rotation;
+
 
     out vec4 vertex_colors;
 
@@ -97,9 +105,19 @@ vertex_source = """#version 150 core
         mat4 view;
     } window;
 
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position, 0.0, 1.0);
+        m_translate[3][0] = translation.x;
+        m_translate[3][1] = translation.y;
+        m_rotation[0][0] =  cos(-radians(rotation)); 
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(vertices, 0.0, 1.0);
         vertex_colors = colors;
     }
 """
@@ -124,32 +142,6 @@ def get_default_shader():
         default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
         return default_shader_program
-
-
-def _rotate(vertices, angle, x, y):
-    """Rotate the vertices by the angle around x, y.
-
-    :Parameters:
-        `vertices` : list
-            A list of (x, y) tuples, representing each vertex to rotate.
-        `angle` : float
-            The angle of the rotation in degrees.
-        `x` : int or float
-            X coordinate of the center of rotation.
-        `y` : int or float
-            Y coordinate of the center of rotation.
-    """
-    r = -math.radians(angle)
-    cr = math.cos(r)
-    sr = math.sin(r)
-
-    rotated_vertices = []
-    for vertex in vertices:
-        rotated_x = (vertex[0] - x) * cr - (vertex[1] - y) * sr + x
-        rotated_y = (vertex[1] - y) * cr + (vertex[0] - x) * sr + y
-        rotated_vertices.append((rotated_x, rotated_y))
-
-    return rotated_vertices
 
 
 class _ShapeGroup(Group):
@@ -229,21 +221,6 @@ class ShapeBase(ABC):
             self._vertex_list.delete()
 
     @abstractmethod
-    def _update_position(self):
-        """
-        Generate up-to-date vertex positions & send them to the GPU.
-
-        This method must set the contents of `self._vertex_list.position`
-        using a list or tuple that contains the new position values for
-        each vertex in the shape. See the `ShapeBase` subclasses in this
-        module for examples of how to do this.
-        """
-        raise NotImplementedError(
-            "_update_position must be defined"
-            "for every ShapeBase subclass"
-        )
-
-    @abstractmethod
     def _update_color(self):
         """
         Send the new colors for each vertex to the GPU.
@@ -254,10 +231,34 @@ class ShapeBase(ABC):
         `self._rgba` for each vertex. See the `ShapeBase` subclasses in
         this module for examples of how to do this.
         """
-        raise NotImplementedError(
-            "_update_color must be defined"
-            "for every ShapeBase subclass"
-        )
+        raise NotImplementedError("_update_color must be defined"
+                                  "for every ShapeBase subclass")
+
+    @abstractmethod
+    def _update_position(self):
+        """
+        Generate up-to-date vertex positions & send them to the GPU.
+
+        This method must set the contents of `self._vertex_list.translation`
+        using a list or tuple that contains the new translation values for
+        each vertex in the shape. See the `ShapeBase` subclasses in this
+        module for examples of how to do this.
+        """
+        raise NotImplementedError("_update_position must be defined"
+                                  "for every ShapeBase subclass")
+
+    @abstractmethod
+    def _update_vertices(self):
+        """
+        Generate up-to-date vertex positions & send them to the GPU.
+
+        This method must set the contents of `self._vertex_list.vertices`
+        using a list or tuple that contains the new vertex coordinates for
+        each vertex in the shape. See the `ShapeBase` subclasses in this
+        module for examples of how to do this.
+        """
+        raise NotImplementedError("_update_vertices must be defined"
+                                  "for every ShapeBase subclass")
 
     def draw(self):
         """Draw the shape at its current position.
@@ -327,7 +328,7 @@ class ShapeBase(ABC):
     @anchor_x.setter
     def anchor_x(self, value):
         self._anchor_x = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def anchor_y(self):
@@ -340,7 +341,7 @@ class ShapeBase(ABC):
     @anchor_y.setter
     def anchor_y(self, value):
         self._anchor_y = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def anchor_position(self):
@@ -357,7 +358,7 @@ class ShapeBase(ABC):
     @anchor_position.setter
     def anchor_position(self, values):
         self._anchor_x, self._anchor_y = values
-        self._update_position()
+        self._update_vertices()
 
     @property
     def color(self):
@@ -415,7 +416,7 @@ class ShapeBase(ABC):
     @visible.setter
     def visible(self, value):
         self._visible = value
-        self._update_position()
+        self._update_vertices()
 
 
 class Arc(ShapeBase):
@@ -473,16 +474,23 @@ class Arc(ShapeBase):
         program = get_default_shader()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * self._segments * 4
         else:
-            x = self._x + self._anchor_x
-            y = self._y + self._anchor_y
+            x = -self._anchor_x
+            y = -self._anchor_y
             r = self._radius
             tau_segs = self._angle / self._segments
             start_angle = self._start_angle - math.radians(self._rotation)
@@ -501,10 +509,7 @@ class Arc(ShapeBase):
                 chord_points = *points[-1], *points[0]
                 vertices.extend(chord_points)
 
-        self._vertex_list.position[:] = vertices
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
+        self._vertex_list.vertices[:] = vertices
 
     @property
     def rotation(self):
@@ -520,7 +525,7 @@ class Arc(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     def draw(self):
         """Draw the shape at its current position.
@@ -563,6 +568,7 @@ class Circle(ShapeBase):
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
+        self._num_verts = self._segments * 3
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
@@ -570,16 +576,23 @@ class Circle(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(self._segments*3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list(self._segments*3, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * self._segments * 6
         else:
-            x = self._x + self._anchor_x
-            y = self._y + self._anchor_y
+            x = -self._anchor_x
+            y = -self._anchor_y
             r = self._radius
             tau_segs = math.pi * 2 / self._segments
 
@@ -593,10 +606,7 @@ class Circle(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._segments * 3
+        self._vertex_list.vertices[:] = vertices
 
     @property
     def radius(self):
@@ -609,7 +619,7 @@ class Circle(ShapeBase):
     @radius.setter
     def radius(self, value):
         self._radius = value
-        self._update_position()
+        self._update_vertices()
 
 
 class Ellipse(ShapeBase):
@@ -655,35 +665,36 @@ class Ellipse(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * self._num_verts * 4
         else:
-            x = self._x + self._anchor_x
-            y = self._y + self._anchor_y
+            x = -self._anchor_x
+            y = -self._anchor_y
             tau_segs = math.pi * 2 / self._segments
 
             # Calculate the points of the ellipse by formula:
             points = [(x + self._a * math.cos(i * tau_segs),
                        y + self._b * math.sin(i * tau_segs)) for i in range(self._segments + 1)]
 
-            # Rotate all points:
-            if self._rotation:
-                points = _rotate(points, self._rotation, x, y)
-
             # Create a list of lines from the points:
             vertices = []
             for i in range(len(points) - 1):
                 line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
-        self._vertex_list.position[:] = vertices
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
+        self._vertex_list.vertices[:] = vertices
 
     @property
     def a(self):
@@ -696,7 +707,7 @@ class Ellipse(ShapeBase):
     @a.setter
     def a(self, value):
         self._a = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def b(self):
@@ -709,7 +720,7 @@ class Ellipse(ShapeBase):
     @b.setter
     def b(self, value):
         self._b = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def rotation(self):
@@ -725,7 +736,7 @@ class Ellipse(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     def draw(self):
         """Draw the shape at its current position.
@@ -773,6 +784,7 @@ class Sector(ShapeBase):
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
+        self._num_verts = self._segments * 3
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -785,16 +797,23 @@ class Sector(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(self._segments*3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list(self._num_verts, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * self._segments * 6
         else:
-            x = self._x + self._anchor_x
-            y = self._y + self._anchor_y
+            x = -self._anchor_x
+            y = -self._anchor_y
             r = self._radius
             tau_segs = self._angle / self._segments
             start_angle = self._start_angle - math.radians(self._rotation)
@@ -809,10 +828,7 @@ class Sector(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._segments * 3
+        self._vertex_list.vertices[:] = vertices
 
     @property
     def angle(self):
@@ -825,7 +841,7 @@ class Sector(ShapeBase):
     @angle.setter
     def angle(self, value):
         self._angle = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def start_angle(self):
@@ -838,7 +854,7 @@ class Sector(ShapeBase):
     @start_angle.setter
     def start_angle(self, angle):
         self._start_angle = angle
-        self._update_position()
+        self._update_vertices()
 
     @property
     def radius(self):
@@ -851,7 +867,7 @@ class Sector(ShapeBase):
     @radius.setter
     def radius(self, value):
         self._radius = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def rotation(self):
@@ -867,7 +883,7 @@ class Sector(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 class Line(ShapeBase):
@@ -905,6 +921,7 @@ class Line(ShapeBase):
 
         self._width = width
         self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
+        self._num_verts = 6
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -913,36 +930,39 @@ class Line(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
-
-    def _update_position(self):
-        if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        else:
-            x1 = -self._anchor_y
-            y1 = self._anchor_x - self._width / 2
-            x = self._x
-            y = self._y
-            x2 = x1 + math.hypot(self._y2 - y, self._x2 - x)
-            y2 = y1 + self._width
-
-            r = math.atan2(self._y2 - y, self._x2 - x)
-            cr = math.cos(r)
-            sr = math.sin(r)
-            ax = x1 * cr - y1 * sr + x
-            ay = x1 * sr + y1 * cr + y
-            bx = x2 * cr - y1 * sr + x
-            by = x2 * sr + y1 * cr + y
-            cx = x2 * cr - y2 * sr + x
-            cy = x2 * sr + y2 * cr + y
-            dx = x1 * cr - y2 * sr + x
-            dy = x1 * sr + y2 * cr + y
-            self._vertex_list.position[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
 
     def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * 6
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
+
+    def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
+        if not self._visible:
+            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        else:
+            x1 = -self._anchor_x
+            y1 = self._anchor_y - self._width / 2
+            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
+            y2 = y1 + self._width
+
+            r = math.atan2(self._y2 - self._y, self._x2 - self._x)
+            cr = math.cos(r)
+            sr = math.sin(r)
+            ax = x1 * cr - y1 * sr
+            ay = x1 * sr + y1 * cr
+            bx = x2 * cr - y1 * sr
+            by = x2 * sr + y1 * cr
+            cx = x2 * cr - y2 * sr
+            cy = x2 * sr + y2 * cr
+            dx = x1 * cr - y2 * sr
+            dy = x1 * sr + y2 * cr
+
+            self._vertex_list.vertices[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
 
     @property
     def x2(self):
@@ -955,7 +975,7 @@ class Line(ShapeBase):
     @x2.setter
     def x2(self, value):
         self._x2 = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def y2(self):
@@ -968,28 +988,7 @@ class Line(ShapeBase):
     @y2.setter
     def y2(self, value):
         self._y2 = value
-        self._update_position()
-
-    @property
-    def position(self):
-        """The (x, y, x2, y2) coordinates of the line, as a tuple.
-
-        :Parameters:
-            `x` : int or float
-                X coordinate of the line.
-            `y` : int or float
-                Y coordinate of the line.
-            `x2` : int or float
-                X2 coordinate of the line.
-            `y2` : int or float
-                Y2 coordinate of the line.
-        """
-        return self._x, self._y, self._x2, self._y2
-
-    @position.setter
-    def position(self, values):
-        self._x, self._y, self._x2, self._y2 = values
-        self._update_position()
+        self._update_vertices()
 
 
 class Rectangle(ShapeBase):
@@ -1023,6 +1022,7 @@ class Rectangle(ShapeBase):
         self._width = width
         self._height = height
         self._rotation = 0
+        self._num_verts = 6
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -1031,30 +1031,27 @@ class Rectangle(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
-
-    def _update_position(self):
-        if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        else:
-            x1 = self._x - self._anchor_x
-            y1 = self._y - self._anchor_y
-            x2 = x1 + self._width
-            y2 = y1 + self._height
-            x = self._x
-            y = self._y
-
-            vertices = [(x1, y1), (x2, y1), (x2, y2), (x1, y1), (x2, y2), (x1, y2)]
-
-            if self._rotation:
-                vertices = _rotate(vertices, self._rotation, x, y)
-
-            self._vertex_list.position[:] = tuple(value for vertex in vertices for value in vertex)
+        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
 
     def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * 6
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
+
+    def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
+        if not self._visible:
+            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        else:
+            x1 = -self._anchor_x
+            y1 = -self._anchor_y
+            x2 = x1 + self._width
+            y2 = y1 + self._height
+
+            self._vertex_list.vertices[:] = x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
 
     @property
     def width(self):
@@ -1067,7 +1064,7 @@ class Rectangle(ShapeBase):
     @width.setter
     def width(self, value):
         self._width = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def height(self):
@@ -1080,7 +1077,7 @@ class Rectangle(ShapeBase):
     @height.setter
     def height(self, value):
         self._height = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def rotation(self):
@@ -1096,7 +1093,7 @@ class Rectangle(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 class BorderedRectangle(ShapeBase):
@@ -1142,6 +1139,7 @@ class BorderedRectangle(ShapeBase):
         self._height = height
         self._rotation = 0
         self._border = border
+        self._num_verts = 8
 
         fill_r, fill_g, fill_b, *fill_a = color
         border_r, border_g, border_b, *border_a = border_color
@@ -1150,10 +1148,9 @@ class BorderedRectangle(ShapeBase):
         alpha = 255
         # Raise Exception if we have conflicting alpha values
         if fill_a and border_a and fill_a[0] != border_a[0]:
-                raise ValueError(
-                    "When color and border_color are both RGBA values,"
-                    "they must both have the same opacity"
-                )
+            raise ValueError("When color and border_color are both RGBA values,"
+                             "they must both have the same opacity")
+
         # Choose a value to use if there is no conflict
         elif fill_a:
             alpha = fill_a[0]
@@ -1171,39 +1168,33 @@ class BorderedRectangle(ShapeBase):
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
-        self._vertex_list = program.vertex_list_indexed(
-            8, GL_TRIANGLES, indices, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list_indexed(8, GL_TRIANGLES, indices, self._batch, self._group,
+                                                        colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
+                                                        translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
 
     def _update_position(self):
-        if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        else:
-            b = self._border
-            x = self._x
-            y = self._y
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
-            bx1 = x - self._anchor_x
-            by1 = y - self._anchor_y
+    def _update_vertices(self):
+        if not self._visible:
+            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        else:
+            bx1 = -self._anchor_x
+            by1 = -self._anchor_y
             bx2 = bx1 + self._width
             by2 = by1 + self._height
+            b = self._border
             ix1 = bx1 + b
             iy1 = by1 + b
             ix2 = bx2 - b
             iy2 = by2 - b
 
-            vertices = [(ix1, iy1), (ix2, iy1), (ix2, iy2), (ix1, iy2),
-                        (bx1, by1), (bx2, by1), (bx2, by2), (bx1, by2)]
-
-            if self._rotation:
-                vertices = _rotate(vertices, self._rotation, x, y)
-
-            # Flattening the list.
-            self._vertex_list.position[:] = tuple(value for vertex in vertices for value in vertex)
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
+            self._vertex_list.vertices[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+                                             bx1, by1, bx2, by1, bx2, by2, bx1, by2)
 
     @property
     def width(self):
@@ -1216,7 +1207,7 @@ class BorderedRectangle(ShapeBase):
     @width.setter
     def width(self, value):
         self._width = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def height(self):
@@ -1229,7 +1220,7 @@ class BorderedRectangle(ShapeBase):
     @height.setter
     def height(self, value):
         self._height = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def rotation(self):
@@ -1243,9 +1234,9 @@ class BorderedRectangle(ShapeBase):
         return self._rotation
 
     @rotation.setter
-    def rotation(self, value):
-        self._rotation = value
-        self._update_position()
+    def rotation(self, rotation):
+        self._rotation = rotation
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     @property
     def border_color(self):
@@ -1345,6 +1336,7 @@ class Triangle(ShapeBase):
         self._x3 = x3
         self._y3 = y3
         self._rotation = 0
+        self._num_verts = 3
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -1353,26 +1345,28 @@ class Triangle(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
-
-    def _update_position(self):
-        if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0)
-        else:
-            anchor_x = self._anchor_x
-            anchor_y = self._anchor_y
-            x1 = self._x - anchor_x
-            y1 = self._y - anchor_y
-            x2 = self._x2 - anchor_x
-            y2 = self._y2 - anchor_y
-            x3 = self._x3 - anchor_x
-            y3 = self._y3 - anchor_y
-            self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
+        self._vertex_list = program.vertex_list(3, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
 
     def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * 3
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
+
+    def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * 3
+
+    def _update_vertices(self):
+        if not self._visible:
+            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0)
+        else:
+            x1 = -self._anchor_x
+            y1 = -self._anchor_y
+            x2 = self._x2 + x1 - self._x
+            y2 = self._y2 + y1 - self._y
+            x3 = self._x3 + x1 - self._x
+            y3 = self._y3 + y1 - self._y
+            self._vertex_list.vertices[:] = (x1, y1, x2, y2, x3, y3)
 
     @property
     def x2(self):
@@ -1380,12 +1374,12 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._x2
+        return self._x + self._x2
 
     @x2.setter
     def x2(self, value):
         self._x2 = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def y2(self):
@@ -1393,12 +1387,12 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._y2
+        return self._y + self._y2
 
     @y2.setter
     def y2(self, value):
         self._y2 = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def x3(self):
@@ -1406,12 +1400,12 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._x3
+        return self._x + self._x3
 
     @x3.setter
     def x3(self, value):
         self._x3 = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def y3(self):
@@ -1419,37 +1413,12 @@ class Triangle(ShapeBase):
 
         :type: int or float
         """
-        return self._y3
+        return self._y + self._y3
 
     @y3.setter
     def y3(self, value):
         self._y3 = value
-        self._update_position()
-
-    @property
-    def position(self):
-        """The (x, y, x2, y2, x3, y3) coordinates of the triangle, as a tuple.
-
-        :Parameters:
-            `x` : int or float
-                X coordinate of the triangle.
-            `y` : int or float
-                Y coordinate of the triangle.
-            `x2` : int or float
-                X2 coordinate of the triangle.
-            `y2` : int or float
-                Y2 coordinate of the triangle.
-            `x3` : int or float
-                X3 coordinate of the triangle.
-            `y3` : int or float
-                Y3 coordinate of the triangle.
-        """
-        return self._x, self._y, self._x2, self._y2, self._x3, self._y3
-
-    @position.setter
-    def position(self, values):
-        self._x, self._y, self._x2, self._y2, self._x3, self._y3 = values
-        self._update_position()
+        self._update_vertices()
 
 
 class Star(ShapeBase):
@@ -1488,6 +1457,7 @@ class Star(ShapeBase):
         self._outer_radius = outer_radius
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes
+        self._num_verts = num_spikes * 6
         self._rotation = rotation
 
         r, g, b, *a = color
@@ -1497,32 +1467,37 @@ class Star(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = program.vertex_list(self._num_spikes*6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-        self._update_position()
-        self._update_color()
+        self._vertex_list = program.vertex_list(self._num_verts, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                rotation=('f', (rotation,) * self._num_verts),
+                                                translation=('f', (x, y) * self._num_verts))
+        self._update_vertices()
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
             vertices = (0, 0) * self._num_spikes * 6
         else:
-            x = self._x + self._anchor_x
-            y = self._y + self._anchor_y
+            x = -self._anchor_x
+            y = -self._anchor_y
             r_i = self._inner_radius
             r_o = self._outer_radius
 
             # get angle covered by each line (= half a spike)
             d_theta = math.pi / self._num_spikes
 
-            # phase shift rotation
-            phi = self._rotation / 180 * math.pi
-
             # calculate alternating points on outer and outer circles
             points = []
             for i in range(self._num_spikes):
-                points.append((x + (r_o * math.cos(2*i * d_theta + phi)),
-                               y + (r_o * math.sin(2*i * d_theta + phi))))
-                points.append((x + (r_i * math.cos((2*i+1) * d_theta + phi)),
-                               y + (r_i * math.sin((2*i+1) * d_theta + phi))))
+                points.append((x + (r_o * math.cos(2*i * d_theta)),
+                               y + (r_o * math.sin(2*i * d_theta))))
+                points.append((x + (r_i * math.cos((2*i+1) * d_theta)),
+                               y + (r_i * math.sin((2*i+1) * d_theta))))
 
             # create a list of doubled-up points from the points
             vertices = []
@@ -1530,10 +1505,7 @@ class Star(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * (self._num_spikes * 6)
+        self._vertex_list.vertices[:] = vertices
 
     @property
     def outer_radius(self):
@@ -1543,7 +1515,7 @@ class Star(ShapeBase):
     @outer_radius.setter
     def outer_radius(self, value):
         self._outer_radius = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def inner_radius(self):
@@ -1553,7 +1525,7 @@ class Star(ShapeBase):
     @inner_radius.setter
     def inner_radius(self, value):
         self._inner_radius = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def num_spikes(self):
@@ -1563,7 +1535,7 @@ class Star(ShapeBase):
     @num_spikes.setter
     def num_spikes(self, value):
         self._num_spikes = value
-        self._update_position()
+        self._update_vertices()
 
     @property
     def rotation(self):
@@ -1574,7 +1546,7 @@ class Star(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 class Polygon(ShapeBase):
@@ -1597,9 +1569,9 @@ class Polygon(ShapeBase):
         """
 
         # len(self._coordinates) = the number of vertices and sides in the shape.
-        self._coordinates = list(coordinates)
-
         self._rotation = 0
+        self._coordinates = list(coordinates)
+        self._num_verts = (len(self._coordinates) - 2) * 3
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -1608,25 +1580,27 @@ class Polygon(ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        length = (len(self._coordinates) - 2) * 3
-        self._vertex_list = program.vertex_list(length, GL_TRIANGLES, self._batch, self._group, colors='Bn')
-
-        self._update_position()
+        self._vertex_list = program.vertex_list(self._num_verts, GL_TRIANGLES, self._batch, self._group,
+                                                colors=('Bn', self._rgba * self._num_verts),
+                                                translation=('f', (coordinates[0]) * self._num_verts))
+        self._update_vertices()
         self._update_color()
 
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
+
     def _update_position(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+
+    def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = tuple([0] * ((len(self._coordinates) - 2) * 6))
+            self._vertex_list.vertices[:] = tuple([0] * ((len(self._coordinates) - 2) * 6))
         else:
             # Adjust all coordinates by the anchor.
-            anchor_x = self._anchor_x
-            anchor_y = self._anchor_y
-            coords = [[x - anchor_x, y - anchor_y] for x, y in self._coordinates]
-
-            if self._rotation:
-                # Rotate the polygon around its first vertex.
-                x, y = self._coordinates[0]
-                coords = _rotate(coords, self._rotation, x, y)
+            trans_x, trans_y = self._coordinates[0]
+            trans_x += self._anchor_x
+            trans_y += self._anchor_y
+            coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
             # Triangulate the convex polygon.
             triangles = []
@@ -1634,53 +1608,7 @@ class Polygon(ShapeBase):
                 triangles += [coords[0], coords[n + 1], coords[n + 2]]
 
             # Flattening the list before setting vertices to it.
-            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * ((len(self._coordinates) - 2) * 3)
-
-    @property
-    def x(self):
-        """X coordinate of the shape.
-
-        :type: int or float
-        """
-        return self._coordinates[0][0]
-
-    @x.setter
-    def x(self, value):
-        self._coordinates[0][0] = value
-        self._update_position()
-
-    @property
-    def y(self):
-        """Y coordinate of the shape.
-
-        :type: int or float
-        """
-        return self._coordinates[0][1]
-
-    @y.setter
-    def y(self, value):
-        self._coordinates[0][1] = value
-        self._update_position()
-
-    @property
-    def position(self):
-        """The (x, y) coordinates of the shape, as a tuple.
-
-        :Parameters:
-            `x` : int or float
-                X coordinate of the shape.
-            `y` : int or float
-                Y coordinate of the shape.
-        """
-        return self._coordinates[0][0], self._coordinates[0][1]
-
-    @position.setter
-    def position(self, values):
-        self._coordinates[0][0], self._coordinates[0][1] = values
-        self._update_position()
+            self._vertex_list.vertices[:] = tuple(value for coordinate in triangles for value in coordinate)
 
     @property
     def rotation(self):
@@ -1696,7 +1624,7 @@ class Polygon(ShapeBase):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
-__all__ = ('Arc', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector')
+__all__ = 'Arc', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector'
