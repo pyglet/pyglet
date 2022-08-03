@@ -1,25 +1,13 @@
+import pytest
 from functools import partial
 
-import pytest
+import pyglet
+from pyglet.shapes import *
+from . import get_fake_shader_program
 
-from pyglet.shapes import (
-    Arc,
-    Circle,
-    Ellipse,
-    Sector,
-    Line,
-    Rectangle,
-    BorderedRectangle,
-    Triangle,
-    Star,
-    Polygon
-)
 
-from . import (
-    new_rgb_color,
-    new_rgba_color,
-    new_rgb_or_rgba_color
-)
+# A real OpenGL context is not needed for these tests
+pyglet.shapes.get_default_shader = get_fake_shader_program
 
 
 # The shapes are tested individually since their RGBA handling is
@@ -29,7 +17,7 @@ from . import (
     (Arc, (0, 0, 5)),
     (Circle, (0, 0, 5)),
     # Ellipse's a value below is nonsensical in normal use, but here it
-    # makes sure the a value is not confused with the RGBA alpha channel
+    # makes sure the value is not confused with the RGBA alpha channel
     # internally.
     (Ellipse, (0, 0, 0, 5)),
     (Sector, (0, 0, 3)),

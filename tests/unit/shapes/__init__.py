@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 
@@ -14,3 +15,7 @@ def new_rgba_color():
 @pytest.fixture(scope="module", params=[(1, 2, 3), (5, 6, 7, 59)])
 def new_rgb_or_rgba_color(request):
     return request.param
+
+
+def get_fake_shader_program():
+    return mock.MagicMock()
