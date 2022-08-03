@@ -52,7 +52,7 @@ import math as _math
 import warnings as _warnings
 from collections.abc import Iterable, Iterator
 from operator import mul as _mul
-from typing import NoReturn, TypeVar, cast, overload
+from typing import NoReturn, TypeVar, cast, overload, Tuple
 
 
 def clamp(num: float, min_val: float, max_val: float) -> float:
@@ -665,7 +665,7 @@ class Vec4:
         return f"Vec4({self.x}, {self.y}, {self.z}, {self.w})"
 
 
-class Mat3(tuple[float, float, float, float, float, float, float, float, float]):
+class Mat3(Tuple[float, float, float, float, float, float, float, float, float]):
     """A 3x3 Matrix class
 
     `Mat3` is an immutable 3x3 Matrix, including most common
@@ -778,7 +778,7 @@ Mat4T = TypeVar("Mat4T", bound="Mat4")
 
 
 class Mat4(
-    tuple[
+    Tuple[
         float, float, float, float,
         float, float, float, float,
         float, float, float, float,
