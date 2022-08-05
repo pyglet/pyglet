@@ -3,12 +3,7 @@ from functools import partial
 
 import pyglet
 from pyglet.shapes import *
-from . import (
-    new_rgba_color,
-    new_rgb_color,
-    new_rgb_or_rgba_color,
-    get_fake_shader_program
-)
+from . import *
 
 
 # A real OpenGL context is not needed for these tests

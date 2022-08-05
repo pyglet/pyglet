@@ -8,12 +8,7 @@ import pytest
 
 import pyglet
 from pyglet.shapes import BorderedRectangle
-from . import (
-    new_rgba_color,
-    new_rgb_color,
-    new_rgb_or_rgba_color,
-    get_fake_shader_program
-)
+from . import *
 
 pyglet.shapes.get_default_shader = get_fake_shader_program
 
