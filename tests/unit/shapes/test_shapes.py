@@ -3,7 +3,7 @@ from functools import partial
 
 import pyglet
 from pyglet.shapes import *
-from . import get_fake_shader_program
+from . import *
 
 
 # A real OpenGL context is not needed for these tests
