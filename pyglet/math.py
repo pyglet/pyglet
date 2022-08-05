@@ -286,7 +286,7 @@ class Vec2:
 
     def __getattr__(self, attrs):
         try:
-            # Allow swizzed getting of attrs
+            # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xy'.index(c)] for c in attrs))
         except Exception:
@@ -499,7 +499,7 @@ class Vec3:
 
     def __getattr__(self, attrs):
         try:
-            # Allow swizzed getting of attrs
+            # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyz'.index(c)] for c in attrs))
         except Exception:
@@ -610,7 +610,7 @@ class Vec4:
 
     def __getattr__(self, attrs):
         try:
-            # Allow swizzed getting of attrs
+            # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyzw'.index(c)] for c in attrs))
         except Exception:
@@ -618,6 +618,7 @@ class Vec4:
 
     def __repr__(self):
         return f"Vec4({self.x}, {self.y}, {self.z}, {self.w})"
+
 
 
 class Mat3(tuple):
