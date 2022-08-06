@@ -42,7 +42,7 @@ Some features of pyglet are:
 
 ## Requirements
 
-pyglet runs under Python 3.6+. Being written in pure Python, it also works on other Python
+pyglet runs under Python 3.7+. Being written in pure Python, it also works on other Python
 interpreters such as PyPy. Supported platforms are:
 
 * Windows 7 or later
