@@ -60,6 +60,7 @@ except ImportError:
 # substitutions within link text by default.
 rst_prolog = """
 .. |min_python_version| replace:: {min_python_version}
+.. |min_python_version_package_name| replace:: ``python{min_python_version}``
 .. |min_python_version_fancy_str| replace:: Python {min_python_version}+
 """.format(
     min_python_version=pyglet.MIN_PYTHON_VERSION_STR

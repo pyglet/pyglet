@@ -59,8 +59,8 @@ You may want to check which command runs python 3 on your system::
     python3 --version
 
 For the rest of the guide, use whichever gives you the correct python version on your system.
-Some linux distros may install python with version numbers such as `python3.7`, so you may need
-to set up an alias.
+Some linux distros may install python with version numbers such as
+|min_python_version_package_name|, so you may need to set up an alias.
 
 Next, we'll create a virtual environment.
 Choose the appropriate command for your system to create a virtual environment::
