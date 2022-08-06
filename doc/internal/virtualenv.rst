@@ -3,7 +3,7 @@ Development environment
 
 To develop pyglet, you need an environment with at least the following:
 
-    - Python 3.6+
+    - Python 3.7+
     - `pytest <https://pytest.org>`_
     - Your favorite Python editor or IDE
 
@@ -47,7 +47,7 @@ Setting up a virtual environment is almost the same for Linux and OS X.
 First, use your OS's package manager (apt, brew, etc) to install the
 following dependencies:
 
-    - Python 3.6+
+    - Python 3.7+
 
 To create virtual environments, ``venv`` is included in the standard
 library since Python 3.3.
@@ -59,7 +59,7 @@ You may want to check which command runs python 3 on your system::
     python3 --version
 
 For the rest of the guide, use whichever gives you the correct python version on your system.
-Some linux distros may install python with version numbers such as `python3.6`, so you may need
+Some linux distros may install python with version numbers such as `python3.7`, so you may need
 to set up an alias.
 
 Next, we'll create a virtual environment.
