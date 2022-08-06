@@ -56,9 +56,9 @@ Make sure of the following when running tests:
 test is active.
 2. You are running tests against currently supported Python versions.
 
-Ideally, you should also test against the minimum supported version
-(currently |min_python_version|) to make sure your changes are
-compatible with all supported Python versions.
+Ideally, you should also test against the minimum supported Python
+version (currently |min_python_version|) to make sure your changes
+are compatible with all supported Python versions.
 
 To run all tests, execute pytest in the root of the pyglet repository::
 
