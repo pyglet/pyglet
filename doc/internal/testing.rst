@@ -50,8 +50,10 @@ The pyglet test suite is based on the `pytest framework <http://pytest.org>`_.
 It is preferred to use a virtual environment to run the tests.
 For instructions to set up virtual environments see :doc:`virtualenv`.
 Make sure the virtual environment for the Python version you want to
-test is active. It is preferred to run the tests on 3.7+
-to make sure changes are compatible with all supported Python versions.
+test is active. Additionally, make sure that you are running the tests
+against currently supported Python versions. Ideally, you should also
+test against the minimum supported version to make sure changes are
+compatible with all supported Python versions.
 
 To run all tests, execute pytest in the root of the pyglet repository::
 
