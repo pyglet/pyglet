@@ -104,7 +104,7 @@ Setting up
 
 Make sure you download and install:
 
-    - `Python 3.6+  <http://www.python.org/downloads/windows/>`_
+    - `Python 3.7+  <http://www.python.org/downloads/windows/>`_
 
 Pip should be installed by default with the latest Python installers.
 Make sure that the boxes for installing PIP and adding python to PATH are checked.
