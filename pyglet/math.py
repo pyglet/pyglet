@@ -225,7 +225,7 @@ class Vec2:
 
         :parameters:
             `value`  : int or float :
-                The ammount to be scaled by
+                The value to scale the vector by.
 
         :returns: A new vector scaled by the value.
         :rtype: Vec2
@@ -470,7 +470,7 @@ class Vec3:
 
         :parameters:
             `value`  : int or float :
-                The ammount to be scaled by
+                The value to scale the vector by.
 
         :returns: A new vector scaled by the value.
         :rtype: Vec3
@@ -641,6 +641,15 @@ class Vec4:
                     self.w + (alpha * (other.w - self.w)))
 
     def scale(self, value: float) -> Vec4:
+        """Multiply the vector by a scalar value.
+
+        :parameters:
+            `value`  : int or float :
+                The value to scale the vector by.
+
+        :returns: A new vector scaled by the value.
+        :rtype: Vec4
+        """
         return Vec4(self.x * value, self.y * value, self.z * value, self.w * value)
 
     def distance(self, other: Vec4) -> float:
