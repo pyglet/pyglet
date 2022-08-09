@@ -622,7 +622,7 @@ class Vec4:
         )
 
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
-        """Create a new Vec4 interpolated between this one and another Vec4.
+        """Create a new Vec4 linearly interpolated between this one and another Vec4.
 
         :parameters:
             `other`  : Vec4 :
