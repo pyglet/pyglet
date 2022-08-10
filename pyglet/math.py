@@ -204,11 +204,11 @@ class Vec2:
         return self
 
     def lerp(self, other: Vec2, alpha: float) -> Vec2:
-        """Create a new vector lineraly interpolated between this vector and another vector.
+        """Create a new Vec2 linearly interpolated between this vector and another Vec2.
 
         :parameters:
             `other`  : Vec2 :
-                The vector to be linerly interpolated to.
+                The vector to linearly interpolate with.
             `alpha` : float or int :
                 The amount of interpolation.
                 Some value between 0.0 (this vector) and 1.0 (other vector).
@@ -225,7 +225,7 @@ class Vec2:
 
         :parameters:
             `value`  : int or float :
-                The ammount to be scaled by
+                The value to scale the vector by.
 
         :returns: A new vector scaled by the value.
         :rtype: Vec2
@@ -448,11 +448,11 @@ class Vec3:
         return self.x * other.x + self.y * other.y + self.z * other.z
 
     def lerp(self, other: Vec3, alpha: float) -> Vec3:
-        """Create a new vector lineraly interpolated between this vector and another vector.
+        """Create a new Vec3 linearly interpolated between this vector and another Vec3.
 
         :parameters:
             `other`  : Vec3 :
-                The vector to be linerly interpolated to.
+                The vector to linearly interpolate with.
             `alpha` : float or int :
                 The amount of interpolation.
                 Some value between 0.0 (this vector) and 1.0 (other vector).
@@ -470,7 +470,7 @@ class Vec3:
 
         :parameters:
             `value`  : int or float :
-                The ammount to be scaled by
+                The value to scale the vector by.
 
         :returns: A new vector scaled by the value.
         :rtype: Vec3
@@ -622,12 +622,34 @@ class Vec4:
         )
 
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
+        """Create a new Vec4 linearly interpolated between this one and another Vec4.
+
+        :parameters:
+            `other`  : Vec4 :
+                The vector to linearly interpolate with.
+            `alpha` : float or int :
+                The amount of interpolation.
+                Some value between 0.0 (this vector) and 1.0 (other vector).
+                0.5 is halfway inbetween.
+
+        :returns: A new interpolated vector.
+        :rtype: Vec4
+        """
         return Vec4(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
                     self.z + (alpha * (other.z - self.z)),
                     self.w + (alpha * (other.w - self.w)))
 
     def scale(self, value: float) -> Vec4:
+        """Multiply the vector by a scalar value.
+
+        :parameters:
+            `value`  : int or float :
+                The value to scale the vector by.
+
+        :returns: A new vector scaled by the value.
+        :rtype: Vec4
+        """
         return Vec4(self.x * value, self.y * value, self.z * value, self.w * value)
 
     def distance(self, other: Vec4) -> float:
