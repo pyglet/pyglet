@@ -119,6 +119,7 @@ def update(dt):
     # Get rid of dead objects
     for to_remove in [obj for obj in game_objects if obj.dead]:
         if to_remove == player_ship:
+            player_ship.dead = True
             player_dead = True
         # If the dying object spawned any new objects, add those to the 
         # game_objects list later

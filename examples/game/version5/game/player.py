@@ -6,6 +6,8 @@ from . import bullet, physicalobject, resources
 class Player(physicalobject.PhysicalObject):
     """Physical object that responds to user input"""
 
+    dead = False
+
     def __init__(self, *args, **kwargs):
         super(Player, self).__init__(img=resources.player_image, *args, **kwargs)
 
@@ -52,6 +54,10 @@ class Player(physicalobject.PhysicalObject):
             self.engine_sprite.visible = False
 
     def on_key_press(self, symbol, modifiers):
+        # Stop listening any event if dead
+        if self.dead:
+            return
+        
         if symbol == key.SPACE:
             self.fire()
 
