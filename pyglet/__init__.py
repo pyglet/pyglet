@@ -44,17 +44,14 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.dev21'
+version = '2.0.dev22'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 7
 MIN_PYTHON_VERSION_STR = '.'.join([str(v) for v in MIN_PYTHON_VERSION])
 
 if sys.version_info < MIN_PYTHON_VERSION:
-    raise Exception(
-        f"pyglet {version} requires Python "
-        f"{MIN_PYTHON_VERSION_STR}"
-        f" or newer.")
+    raise Exception(f"pyglet {version} requires Python {MIN_PYTHON_VERSION_STR} or newer.")
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
