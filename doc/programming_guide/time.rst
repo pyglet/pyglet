@@ -66,7 +66,7 @@ as frequently as possible (and will likely cause heavy CPU usage)::
     pyglet.clock.schedule(benchmark)
 
 .. note:: By default pyglet window buffer swaps are synchronised to the display refresh
-rate, so you may also want to disable vsync if you are running a benchmark.
+          rate, so you may also want to disable vsync if you are running a benchmark.
 
 For one-shot events, use :py:func:`~pyglet.clock.schedule_once`::
 

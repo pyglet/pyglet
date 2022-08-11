@@ -123,7 +123,7 @@ class AudioData:
         length (int): Size of sample data, in bytes.
         timestamp (float): Time of the first sample, in seconds.
         duration (float): Total data duration, in seconds.
-        events (List[:class:`pyglet.media.events.MediaEvent`]): List of events
+        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]): List of events
             contained within this packet. Events are timestamped relative to
             this audio packet.
     """
