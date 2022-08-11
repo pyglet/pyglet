@@ -95,4 +95,8 @@ Instead of doing `Batch.add(...)`, you would instead start with a ShaderProgram.
 You can then use the `ShaderProgram.vertex_list(...)` method to create VertexLists.
 These can still be Batched, but you would pass in your Batch as an argument (the
 same way as you would when creating a Sprite, or other object). This is similar
-to how things worked before, but you start with the ShaderProgram first.
+to how things worked before, but you start with the ShaderProgram first::
+
+    vertex_list = shader_program.vertex_list(4, GL_TRIANGLES, batch, group,
+                                             position=('f', vertex_positions),
+                                             tex_coords=('f', tex.tex_coords))
