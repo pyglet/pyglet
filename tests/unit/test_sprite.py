@@ -10,107 +10,119 @@ pyglet.sprite.get_default_shader = get_fake_shader_program
 
 
 @pytest.fixture
-def dummy_sprite():
-    """A sprite at 0, 0 with no image data.
+def sprite():
+    """A sprite with no image data.
 
-    The fact that there's no image data doesn't matter because these
-    tests never touch a real GL context which would check for it.
+    It is created at a non-zero position so that the update method can
+    be verified as working when passed zero positions (Issue #673).
+    Scale values do not need to be set to 0 in the fixture as they are
+    all 1.0 by default.
+
+    The lack of image data doesn't matter because these tests never touch
+    a real GL context which would require it.
     """
-    return pyglet.sprite.Sprite(MagicMock())
+    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3)
+    sprite.rotation = 90
+
+    return sprite
 
 
-def _new_val_or_none(dimension_index: int = 0) -> Tuple[float, None]:
-    return float(dimension_index + 1), None
+def _new_or_none(new_value: float = 0.0) -> Tuple[float, None]:
+    return new_value, None
 
 
-@pytest.fixture(params=_new_val_or_none())
+@pytest.fixture(params=_new_or_none())
 def x(request):
     return request.param
 
 
-@pytest.fixture(params=_new_val_or_none(1))
+@pytest.fixture(params=_new_or_none())
 def y(request):
     return request.param
 
 
-@pytest.fixture(params=_new_val_or_none(2))
+@pytest.fixture(params=_new_or_none())
 def z(request):
     return request.param
 
 
-@pytest.fixture(params=_new_val_or_none(3))
+@pytest.fixture(params=_new_or_none())
 def scale(request):
     return request.param
 
 
-@pytest.fixture(params=_new_val_or_none(4))
+@pytest.fixture(params=_new_or_none())
 def scale_x(request):
     return request.param
 
 
-@pytest.fixture(params=_new_val_or_none(5))
+@pytest.fixture(params=_new_or_none())
 def scale_y(request):
     return request.param
 
 
-def test_update_sets_passed_positions(dummy_sprite, x, y, z):
+def test_update_sets_passed_positions(sprite, x, y, z):
 
-    dummy_sprite.update(x=x, y=y, z=z)
+    sprite.update(x=x, y=y, z=z)
 
     if x is not None:
-        assert dummy_sprite.x == x
+        assert sprite.x == x
 
     if y is not None:
-        assert dummy_sprite.y == y
+        assert sprite.y == y
 
     if z is not None:
-        assert dummy_sprite.z == z
+        assert sprite.z == z
 
 
-def test_update_leaves_unpassed_translations_alone(dummy_sprite, x, y, z):
-    dummy_sprite.update(x=x, y=y, z=z)
+def test_update_leaves_none_translations_alone(sprite, x, y, z):
+    o_x, o_y, o_z = sprite.x, sprite.y, sprite.z
+
+    sprite.update(x=x, y=y, z=z)
 
     if x is None:
-        assert dummy_sprite.x == 0
+        assert sprite.x == o_x
 
     if y is None:
-        assert dummy_sprite.y == 0
+        assert sprite.y == o_y
 
     if z is None:
-        assert dummy_sprite.z == 0
+        assert sprite.z == o_z
 
 
-def test_update_sets_passed_scales(dummy_sprite, scale, scale_x, scale_y):
-    dummy_sprite.update(scale=scale, scale_x=scale_x, scale_y=scale_y)
+def test_update_sets_passed_scales(sprite, scale, scale_x, scale_y):
+    sprite.update(scale=scale, scale_x=scale_x, scale_y=scale_y)
 
     if scale is not None:
-        assert dummy_sprite.scale == scale
+        assert sprite.scale == scale
 
     if scale_x is not None:
-        assert dummy_sprite.scale_x == scale_x
+        assert sprite.scale_x == scale_x
 
     if scale_y is not None:
-        assert dummy_sprite.scale_y == scale_y
+        assert sprite.scale_y == scale_y
 
 
-def test_update_leaves_unpassed_scales_alone(dummy_sprite, x, y, z):
-    dummy_sprite.update(x=x, y=y, z=z)
+def test_update_leaves_none_scales_alone(sprite, scale, scale_x, scale_y):
+    o_scale, o_scale_x, o_scale_y = sprite.scale, sprite.scale_x, sprite.scale_y
 
-    if x is None:
-        assert dummy_sprite.x == 0
+    sprite.update(x=x, y=y, z=z)
 
-    if y is None:
-        assert dummy_sprite.y == 0
+    if scale is None:
+        assert sprite.scale == o_scale
 
-    if z is None:
-        assert dummy_sprite.z == 0
+    if scale_x is None:
+        assert sprite.scale_x == o_scale_x
 
-
-def test_update_sets_rotation_when_passed(dummy_sprite):
-    dummy_sprite.update(rotation=3.0)
-    assert dummy_sprite.rotation == 3.0
+    if scale_y is None:
+        assert sprite.scale_y == o_scale_y
 
 
-def test_update_leaves_rotation_alone_when_none(dummy_sprite):
-    dummy_sprite.update()
-    assert dummy_sprite.rotation == 0
+def test_update_sets_rotation_when_passed(sprite):
+    sprite.update(rotation=0.0)
+    assert sprite.rotation == 0.0
+
+
+def test_update_leaves_rotation_alone_when_none(sprite):
+    sprite.update()
+    assert sprite.rotation == 90
