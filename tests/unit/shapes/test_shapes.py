@@ -4,6 +4,7 @@ from functools import partial
 import pyglet
 from pyglet.shapes import *
 from . import *
+from .. import get_fake_shader_program
 
 
 # A real OpenGL context is not needed for these tests
