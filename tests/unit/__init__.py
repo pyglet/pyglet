@@ -14,7 +14,7 @@ def get_fake_shader_program(*args, **kwargs):
 
     This will often be a `get_default_shader` method found at the top of
     a module. When testing a module, you can turn off GL context creation
-    near the top of the file as follows:
+    near the top of the file as follows::
 
         # At the end of the imports section. You may need to change the
         # relative import to account for nesting of test folders.
