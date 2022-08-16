@@ -321,6 +321,7 @@ class Win32Window(BaseWindow):
             return
 
         _user32.DestroyWindow(self._hwnd)
+        _user32.UnregisterClassW(self._view_window_class.lpszClassName, 0)
         _user32.UnregisterClassW(self._window_class.lpszClassName, 0)
 
         self._window_class = None

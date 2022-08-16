@@ -35,6 +35,7 @@ except OSError as err:
 
 _debug_font = debug_print('debug_font')
 
+
 def DWRITE_MAKE_OPENTYPE_TAG(a, b, c, d):
     return ord(d) << 24 | ord(c) << 16 | ord(b) << 8 | ord(a)
 
@@ -121,13 +122,13 @@ DWRITE_MEASURING_MODE_GDI_CLASSIC = 1
 DWRITE_MEASURING_MODE_GDI_NATURAL = 2
 
 DWRITE_GLYPH_IMAGE_FORMATS_ALL = DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_CFF | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_COLR | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_SVG | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_PNG | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_JPEG | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_TIFF | \
-                                    DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8
+                                 DWRITE_GLYPH_IMAGE_FORMATS_CFF | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_COLR | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_SVG | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_PNG | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_JPEG | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_TIFF | \
+                                 DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8
 
 DWRITE_FONT_STYLE = UINT
 DWRITE_FONT_STYLE_NORMAL = 0
@@ -169,8 +170,6 @@ class D2D1_COLOR_F(Structure):
         ('b', FLOAT),
         ('a', FLOAT),
     )
-
-
 
 
 class DWRITE_TEXT_METRICS(ctypes.Structure):
@@ -315,6 +314,7 @@ class DWRITE_GLYPH_RUN(ctypes.Structure):
         ('isSideways', BOOL),
         ('bidiLevel', UINT32),
     )
+
 
 DWRITE_SCRIPT_SHAPES = UINT
 DWRITE_SCRIPT_SHAPES_DEFAULT = 0
@@ -1061,6 +1061,21 @@ class LegacyCollectionLoader(com.COMObject):
 IID_IDWriteFactory = com.GUID(0xb859ee5a, 0xd838, 0x4b5b, 0xa2, 0xe8, 0x1a, 0xdc, 0x7d, 0x93, 0xdb, 0x48)
 
 
+class IDWriteRenderingParams(com.pIUnknown):
+    _methods_ = [
+        ('GetGamma',
+         com.METHOD(FLOAT)),
+        ('GetEnhancedContrast',
+         com.METHOD(FLOAT)),
+        ('GetClearTypeLevel',
+         com.METHOD(FLOAT)),
+        ('GetPixelGeometry',
+         com.METHOD(UINT)),
+        ('GetRenderingMode',
+         com.METHOD(UINT)),
+    ]
+
+
 class IDWriteFactory(com.pIUnknown):
     _methods_ = [
         ('GetSystemFontCollection',
@@ -1078,11 +1093,11 @@ class IDWriteFactory(com.pIUnknown):
         ('CreateFontFace',
          com.STDMETHOD()),
         ('CreateRenderingParams',
-         com.STDMETHOD()),
+         com.STDMETHOD(POINTER(IDWriteRenderingParams))),
         ('CreateMonitorRenderingParams',
          com.STDMETHOD()),
         ('CreateCustomRenderingParams',
-         com.STDMETHOD()),
+         com.STDMETHOD(FLOAT, FLOAT, FLOAT, UINT, UINT, POINTER(IDWriteRenderingParams))),
         ('RegisterFontFileLoader',
          com.STDMETHOD(c_void_p)),  # Ambigious as newer is a pIUnknown and legacy is IUnknown.
         ('UnregisterFontFileLoader',
@@ -1116,7 +1131,7 @@ class IDWriteFactory1(IDWriteFactory, com.pIUnknown):
     _methods_ = [
         ('GetEudcFontCollection',
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams',
+        ('CreateCustomRenderingParams1',
          com.STDMETHOD()),
     ]
 
@@ -1139,7 +1154,7 @@ class IDWriteFactory2(IDWriteFactory1, com.pIUnknown):
          com.STDMETHOD()),
         ('TranslateColorGlyphRun',
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams',
+        ('CreateCustomRenderingParams2',
          com.STDMETHOD()),
         ('CreateGlyphRunAnalysis',
          com.STDMETHOD()),
@@ -1191,7 +1206,7 @@ class IDWriteFactory3(IDWriteFactory2, com.pIUnknown):
     _methods_ = [
         ('CreateGlyphRunAnalysis',
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams',
+        ('CreateCustomRenderingParams3',
          com.STDMETHOD()),
         ('CreateFontFaceReference',
          com.STDMETHOD()),
@@ -1207,7 +1222,7 @@ class IDWriteFactory3(IDWriteFactory2, com.pIUnknown):
          com.STDMETHOD()),
         ('GetFontDownloadQueue',
          com.STDMETHOD()),
-        #('GetSystemFontSet',
+        # ('GetSystemFontSet',
         # com.STDMETHOD()),
     ]
 
@@ -1220,10 +1235,12 @@ class IDWriteColorGlyphRunEnumerator1(com.pIUnknown):
          com.STDMETHOD()),
     ]
 
+
 class IDWriteFactory4(IDWriteFactory3, com.pIUnknown):
     _methods_ = [
         ('TranslateColorGlyphRun4',  # Renamed to prevent clash from previous factories.
-         com.STDMETHOD(D2D_POINT_2F, DWRITE_GLYPH_RUN, c_void_p, DWRITE_GLYPH_IMAGE_FORMATS, DWRITE_MEASURING_MODE, c_void_p, UINT32, POINTER(IDWriteColorGlyphRunEnumerator1))),
+         com.STDMETHOD(D2D_POINT_2F, DWRITE_GLYPH_RUN, c_void_p, DWRITE_GLYPH_IMAGE_FORMATS, DWRITE_MEASURING_MODE,
+                       c_void_p, UINT32, POINTER(IDWriteColorGlyphRunEnumerator1))),
         ('ComputeGlyphOrigins_',
          com.STDMETHOD()),
         ('ComputeGlyphOrigins',
@@ -1257,7 +1274,6 @@ class IDWriteFactory5(IDWriteFactory4, IDWriteFactory3, IDWriteFactory2, IDWrite
         ('AnalyzeContainerType',
          com.STDMETHOD())
     ]
-
 
 
 DWriteCreateFactory = dwrite_lib.DWriteCreateFactory
@@ -1424,7 +1440,7 @@ class ID2D1RenderTarget(ID2D1Resource, com.pIUnknown):
         ('GetTransform',
          com.STDMETHOD()),
         ('SetAntialiasMode',
-         com.STDMETHOD()),
+         com.METHOD(c_void, D2D1_TEXT_ANTIALIAS_MODE)),
         ('GetAntialiasMode',
          com.STDMETHOD()),
         ('SetTextAntialiasMode',
@@ -1432,7 +1448,7 @@ class ID2D1RenderTarget(ID2D1Resource, com.pIUnknown):
         ('GetTextAntialiasMode',
          com.STDMETHOD()),
         ('SetTextRenderingParams',
-         com.STDMETHOD()),
+         com.STDMETHOD(IDWriteRenderingParams)),
         ('GetTextRenderingParams',
          com.STDMETHOD()),
         ('SetTags',
@@ -1444,7 +1460,7 @@ class ID2D1RenderTarget(ID2D1Resource, com.pIUnknown):
         ('PopLayer',
          com.STDMETHOD()),
         ('Flush',
-         com.STDMETHOD()),
+         com.STDMETHOD(c_void_p, c_void_p)),
         ('SaveDrawingState',
          com.STDMETHOD()),
         ('RestoreDrawingState',
@@ -1535,6 +1551,7 @@ if not wic_decoder:
 class DirectWriteGlyphRenderer(base.GlyphRenderer):
     antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
     draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT
+    measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 
     def __init__(self, font):
         self._render_target = None
@@ -1679,7 +1696,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         font_face.GetDesignGlyphMetrics(indices, count, glyph_metrics, False)
 
         metrics_out = []
-        i = 0
         for metric in glyph_metrics:
             glyph_width = (metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing)
 
@@ -1696,7 +1712,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             advance_width = metric.advanceWidth
 
             metrics_out.append((glyph_width, glyph_height, lsb, advance_width, bsb))
-            i += 1
 
         return metrics_out
 
@@ -1721,7 +1736,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                                                                      run,
                                                                      None,
                                                                      DWRITE_GLYPH_IMAGE_FORMATS_ALL,
-                                                                     DWRITE_MEASURING_MODE_NATURAL,
+                                                                     self.measuring_mode,
                                                                      None,
                                                                      0,
                                                                      enumerator)
@@ -1735,7 +1750,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
     def render_single_glyph(self, font_face, indice, advance, offset, metrics):
         """Renders a single glyph using D2D DrawGlyphRun"""
-        glyph_width, glyph_height, lsb, font_advance, bsb = metrics  # We use a shaped advance instead of the fonts.
+        glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics  # We use a shaped advance instead of the fonts.
 
         # Slicing an array turns it into a python object. Maybe a better way to keep it a ctypes value?
         new_indice = (UINT16 * 1)(indice)
@@ -1748,19 +1763,24 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             new_advance,  # advance,
             pointer(offset),  # offset,
             False,
-            False
+            0
         )
 
         # If it's colored, return to render it using layout.
         if self.draw_options & D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT and self.is_color_run(run):
             return None
 
-        render_width = int(math.ceil((glyph_width) * self.font.font_scale_ratio))
-        render_offset_x = int(math.floor(abs(lsb * self.font.font_scale_ratio)))
-        if lsb < 0:
-            # Negative LSB: we shift the layout rect to the right
-            # Otherwise we will cut the left part of the glyph
-            render_offset_x = -(render_offset_x)
+        # Use the glyph's advance as a width as bitmap width.
+        # Some characters such as diacritics (̃) may have 0 advance width. In that case, just use glyph_width
+        if glyph_advance:
+            render_width = int(math.ceil(glyph_advance * self.font.font_scale_ratio))
+        else:
+            render_width = int(math.ceil(glyph_width * self.font.font_scale_ratio))
+
+        render_offset_x = 0
+        if glyph_lsb < 0:
+            # Negative LSB: we shift the offset, otherwise the glyph will be cut off.
+            render_offset_x = glyph_lsb * self.font.font_scale_ratio
 
         # Create new bitmap.
         # TODO: We can probably adjust bitmap/baseline to reduce the whitespace and save a lot of texture space.
@@ -1769,10 +1789,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                             int(math.ceil(self.font.max_glyph_height)))
 
         # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
-        # Offsets are actually based on pixels somehow???
         baseline_offset = D2D_POINT_2F(-render_offset_x - offset.advanceOffset,
                                        self.font.ascent + offset.ascenderOffset)
-
 
         self._render_target.BeginDraw()
 
@@ -1781,17 +1799,17 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         self._render_target.DrawGlyphRun(baseline_offset,
                                          run,
                                          self._brush,
-                                         DWRITE_MEASURING_MODE_NATURAL)
+                                         self.measuring_mode)
 
         self._render_target.EndDraw(None, None)
         image = wic_decoder.get_image(self._bitmap)
 
         glyph = self.font.create_glyph(image)
 
-        glyph.set_bearings(self.font.descent, render_offset_x,
-                           advance * self.font.font_scale_ratio,
-                           offset.advanceOffset * self.font.font_scale_ratio,
-                           offset.ascenderOffset * self.font.font_scale_ratio)
+        glyph.set_bearings(-self.font.descent, render_offset_x,
+                           advance,
+                           offset.advanceOffset,
+                           offset.ascenderOffset)
 
         return glyph
 
@@ -1829,7 +1847,17 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         image = wic_decoder.get_image(self._bitmap)
 
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(self.font.descent, 0, int(math.ceil(layout_metrics.width)))
+        glyph.set_bearings(-self.font.descent, 0, int(math.ceil(layout_metrics.width)))
+        return glyph
+
+    def create_zero_glyph(self):
+        """Zero glyph is a 1x1 image that has a -1 advance. This is to fill in for ligature substitutions since
+        font system requires 1 glyph per character in a string."""
+        self._create_bitmap(1, 1)
+        image = wic_decoder.get_image(self._bitmap)
+
+        glyph = self.font.create_glyph(image)
+        glyph.set_bearings(-self.font.descent, 0, -1)
         return glyph
 
     def _create_bitmap(self, width, height):
@@ -1878,6 +1906,7 @@ class Win32DirectWriteFont(base.Font):
 
     _glyph_renderer = None
     _empty_glyph = None
+    _zero_glyph = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
@@ -1973,10 +2002,10 @@ class Win32DirectWriteFont(base.Font):
 
         self.font_scale_ratio = (self._real_size / self._font_metrics.designUnitsPerEm)
 
-        self.ascent = self._font_metrics.ascent * self.font_scale_ratio
-        self.descent = self._font_metrics.descent * self.font_scale_ratio
-
+        self.ascent = math.ceil(self._font_metrics.ascent * self.font_scale_ratio)
+        self.descent = -round(self._font_metrics.descent * self.font_scale_ratio)
         self.max_glyph_height = (self._font_metrics.ascent + self._font_metrics.descent) * self.font_scale_ratio
+
         self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
 
         self._fallback = None
@@ -1985,7 +2014,6 @@ class Win32DirectWriteFont(base.Font):
             self._write_factory.GetSystemFontFallback(byref(self._fallback))
         else:
             assert _debug_font("Windows 8.1+ is required for font fallback. Colored glyphs cannot be omitted.")
-
 
     @property
     def name(self):
@@ -2015,21 +2043,19 @@ class Win32DirectWriteFont(base.Font):
         new_glyph.set_bearings(
             glyph.baseline,
             glyph.lsb,
-            advance * self.font_scale_ratio,
-            offset.advanceOffset * self.font_scale_ratio,
-            offset.ascenderOffset * self.font_scale_ratio
+            advance,
+            offset.advanceOffset,
+            offset.ascenderOffset
         )
         return new_glyph
 
     def _render_layout_glyph(self, text_buffer, i, clusters, check_color=True):
-        formatted_clusters = clusters[:]
-
         # Some glyphs can be more than 1 char. We use the clusters to determine how many of an index exist.
-        text_length = formatted_clusters.count(i)
+        text_length = clusters.count(i)
 
         # Amount of glyphs don't always match 1:1 with text as some can be substituted or omitted. Get
         # actual text buffer index.
-        text_index = formatted_clusters.index(i)
+        text_index = clusters.index(i)
 
         # Get actual text based on the index and length.
         actual_text = text_buffer[text_index:text_index + text_length]
@@ -2125,25 +2151,48 @@ class Win32DirectWriteFont(base.Font):
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
             self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
+            self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
-        text_buffer, actual_count, indices, advances, offsets, clusters = self._glyph_renderer.get_string_info(text, self.font_face)
+        text_buffer, actual_count, indices, advances, offsets, clusters = self._glyph_renderer.get_string_info(text,
+                                                                                                               self.font_face)
 
         metrics = self._glyph_renderer.get_glyph_metrics(self.font_face, indices, actual_count)
 
+        formatted_clusters = list(clusters)
+
+        # Convert to real sizes.
+        for i in range(actual_count):
+            advances[i] *= self.font_scale_ratio
+
+        for i in range(actual_count):
+            offsets[i].advanceOffset *= self.font_scale_ratio
+            offsets[i].ascenderOffset *= self.font_scale_ratio
+
         glyphs = []
+
+        # Pyglet expects 1 glyph for every string. However, ligatures can combine 1 or more glyphs, leading
+        # to issues with multilines producing wrong output.
+        substitutions = {}
+        for idx in clusters:
+            ct = formatted_clusters.count(idx)
+            if ct > 1:
+                substitutions[idx] = ct-1
+
         for i in range(actual_count):
             indice = indices[i]
+
             if indice == 0:
                 # If an indice is 0, it will return no glyph. In this case we attempt to render leveraging
                 # the built in text layout from MS. Which depending on version can use fallback fonts and other tricks
                 # to possibly get something of use.
-                glyph = self._render_layout_glyph(text_buffer, i, clusters)
+                glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters)
                 glyphs.append(glyph)
             else:
+                advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
+
                 # Glyphs can vary depending on shaping. We will cache it by indice, advance, and offset.
                 # Possible to just cache without offset and set them each time. This may be faster?
                 if indice in self.glyphs:
-                    advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
                     if advance_key in self._advance_cache:
                         glyph = self._advance_cache[advance_key]
                     else:
@@ -2153,13 +2202,17 @@ class Win32DirectWriteFont(base.Font):
                     glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, advances[i], offsets[i],
                                                                      metrics[i])
                     if glyph is None:  # Will only return None if a color glyph is found. Use DW to render it directly.
-                        glyph = self._render_layout_glyph(text_buffer, i, clusters, check_color=False)
+                        glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters, check_color=False)
                         glyph.colored = True
 
                     self.glyphs[indice] = glyph
-                    self._advance_cache[(indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)] = glyph
+                    self._advance_cache[advance_key] = glyph
 
                 glyphs.append(glyph)
+
+            if i in substitutions:
+                for _ in range(substitutions[i]):
+                    glyphs.append(self._zero_glyph)
 
         return glyphs
 

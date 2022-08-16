@@ -49,6 +49,22 @@ except ImportError:
 
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
 
+# Set up substitutions that can be referenced later.
+# IMPORTANT:
+# Substitutions are moody and NEED control-like characters to be escaped
+# after them. For example, in |min_python_version|\+ , escaping the plus
+# sign is crucial to avoiding incomprehensible errors.
+# For convenience, |min_python_version_fancy_str| is defined below to
+# avoid having to deal with syntax errors.
+# Also, please note that there does not appear to be a good way to use
+# substitutions within link text by default.
+rst_prolog = """
+.. |min_python_version| replace:: {min_python_version}
+.. |min_python_version_package_name| replace:: ``python{min_python_version}``
+.. |min_python_version_fancy_str| replace:: Python {min_python_version}+
+""".format(
+    min_python_version=pyglet.MIN_PYTHON_VERSION_STR
+)
 
 implementations = ["cocoa", "win32", "xlib"]
 

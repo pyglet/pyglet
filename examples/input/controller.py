@@ -69,10 +69,10 @@ class ControllerDisplay:
             position[0] += 25
         self.d_pad.position = position
 
-    def on_stick_motion(self, controller, axis, xvalue, yvalue):
-        if axis == "leftstick":
+    def on_stick_motion(self, controller, stick, xvalue, yvalue):
+        if stick == "leftstick":
             self.left_stick.position = 180+xvalue*50, 240+yvalue*50
-        elif axis == "rightstick":
+        elif stick == "rightstick":
             self.right_stick.position = 540+xvalue*50, 240+yvalue*50
 
     def on_trigger_motion(self, controller, trigger, value):

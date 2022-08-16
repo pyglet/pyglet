@@ -55,12 +55,13 @@ To query which GameControllers are available, call :py:func:`get_controllers`.
 
 .. versionadded:: 2.0
 """
-import os
+import os as _os
+import warnings as _warnings
 
 from .controller_db import mapping_list
 
 
-_env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
+_env_config = _os.environ.get('SDL_GAMECONTROLLERCONFIG')
 if _env_config:
     # insert at the front of the list
     mapping_list.insert(0, _env_config)
@@ -101,12 +102,11 @@ def _parse_mapping(mapping_string):
         if ':' not in item:
             continue
 
-        key, relation_string = item.split(':')
+        key, relation_string, *etc = item.split(':')
 
         if key not in valid_keys:
             continue
 
-        inverted = False
         # Look for specific flags to signify inverted axis:
         if "+" in relation_string:
             relation_string = relation_string.strip('+')
@@ -114,9 +114,11 @@ def _parse_mapping(mapping_string):
         elif "-" in relation_string:
             relation_string = relation_string.strip('-')
             inverted = True
-        if "~" in relation_string:
+        elif "~" in relation_string:
             relation_string = relation_string.strip('~')
             inverted = True
+        else:
+            inverted = False
 
         # All relations will be one of (Button, Axis, or Hat).
         if relation_string.startswith("b"):  # Button
@@ -141,7 +143,11 @@ def get_mapping(guid):
     """
     for mapping in mapping_list:
         if mapping.startswith(guid):
-            return _parse_mapping(mapping)
+            try:
+                return _parse_mapping(mapping)
+            except ValueError:
+                _warnings.warn(f"Unable to parse Controller mapping: {mapping}")
+                continue
 
 
 def add_mappings_from_file(filename) -> None:

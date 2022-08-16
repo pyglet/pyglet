@@ -120,7 +120,18 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
                               'A',
                               self._data,
                               abs(self._pitch))
-        glyph = self.font.create_glyph(img)
+
+        # HACK: Get text working in GLES until image data can be converted properly
+        #       GLES don't support coversion during pixel transfer so we have to
+        #       force specify the glyph format to be GL_ALPHA. This format is not
+        #       supported in 3.3+ core, but are present in ES because of pixel transfer
+        #       limitations.
+        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
+            GL_ALPHA = 0x1906
+            glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
+        else:
+            glyph = self.font.create_glyph(img)
+
         glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
         if self._pitch > 0:
             t = list(glyph.tex_coords)
