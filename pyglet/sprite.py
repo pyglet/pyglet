@@ -655,13 +655,13 @@ class Sprite(event.EventDispatcher):
         translations_outdated = False
 
         # only bother updating if the translation actually changed
-        if x is not None and x != self._x:
+        if x is not None:
             self._x = x
             translations_outdated = True
-        if y is not None and y != self._y:
+        if y is not None:
             self._y = y
             translations_outdated = True
-        if z is not None and z != self._z:
+        if z is not None:
             self._z = z
             translations_outdated = True
 
@@ -675,13 +675,13 @@ class Sprite(event.EventDispatcher):
         scales_outdated = False
 
         # only bother updating if the scale actually changed
-        if scale is not None and scale != self._scale:
+        if scale is not None:
             self._scale = scale
             scales_outdated = True
-        if scale_x is not None and scale_x != self._scale_x:
+        if scale_x is not None:
             self._scale_x = scale_x
             scales_outdated = True
-        if scale_y is not None and scale_x != self._scale_y:
+        if scale_y is not None:
             self._scale_y = scale_y
             scales_outdated = True
 
