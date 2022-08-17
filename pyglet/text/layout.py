@@ -285,7 +285,7 @@ class _AbstractBox:
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y, context):
+    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -322,7 +322,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.advance = advance
 
-    def place(self, layout, i, x, y, context):
+    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
         assert self.glyphs
         program = get_default_layout_shader()
 
@@ -369,7 +369,9 @@ class _GlyphBox(_AbstractBox):
         vertex_list = program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
                                                   position=('f', vertices),
                                                   colors=('Bn', colors),
-                                                  tex_coords=('f', tex_coords))
+                                                  tex_coords=('f', tex_coords),
+                                                  rotation=('f', ((rotation,) * 4) * n_glyphs),
+                                                  anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
 
         context.add_list(vertex_list)
 
@@ -419,7 +421,9 @@ class _GlyphBox(_AbstractBox):
             background_list = decoration_program.vertex_list_indexed(bg_count * 4, GL_TRIANGLES, background_indices,
                                                           layout.batch, layout.background_decoration_group,
                                                           position=('f', background_vertices),
-                                                          colors=('Bn', background_colors))
+                                                          colors=('Bn', background_colors),
+                                                          rotation=('f', (rotation,) * 4),
+                                                          anchor=('f', (anchor_x, anchor_y) * 4))
             context.add_list(background_list)
 
         if underline_vertices:
@@ -427,7 +431,9 @@ class _GlyphBox(_AbstractBox):
             underline_list = decoration_program.vertex_list(len(underline_vertices) // 2, GL_LINES,
                                                  layout.batch, layout.foreground_decoration_group,
                                                  position=('f',underline_vertices),
-                                                 colors=('Bn', underline_colors))
+                                                 colors=('Bn', underline_colors),
+                                                 rotation=('f', (rotation,) * 4),
+                                                 anchor=('f', (anchor_x, anchor_y) * 4))
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -465,7 +471,7 @@ class _InlineElementBox(_AbstractBox):
         self.element = element
         self.placed = False
 
-    def place(self, layout, i, x, y, context):
+    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
         self.element.place(layout, x, y)
         self.placed = True
         context.add_box(self)
@@ -537,6 +543,8 @@ layout_vertex_source = """#version 330 core
     in vec4 colors;
     in vec3 tex_coords;
     in vec2 translation;
+    in vec2 anchor;
+    in float rotation;
 
     out vec4 text_colors;
     out vec2 texture_coords;
@@ -548,9 +556,22 @@ layout_vertex_source = """#version 330 core
         mat4 view;
     } window;
 
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_neganchor = mat4(1.0);
+
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
+        m_anchor[3][0] = anchor.x;
+        m_anchor[3][1] = anchor.y;
+        m_neganchor[3][0] = -anchor.x;
+        m_neganchor[3][1] = -anchor.y;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 0.0, 1.0);
 
         vert_position = vec4(position + translation, 0.0, 1.0);
         text_colors = colors;
@@ -585,6 +606,8 @@ decoration_vertex_source = """#version 330 core
     in vec2 position;
     in vec4 colors;
     in vec2 translation;
+    in vec2 anchor;
+    in float rotation;
 
     out vec4 vert_colors;
     out vec4 vert_position;
@@ -595,9 +618,22 @@ decoration_vertex_source = """#version 330 core
         mat4 view;
     } window;
 
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_neganchor = mat4(1.0);
+
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
+        m_anchor[3][0] = anchor.x;
+        m_anchor[3][1] = anchor.y;
+        m_neganchor[3][0] = -anchor.x;
+        m_neganchor[3][1] = -anchor.y;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 0.0, 1.0);
 
         vert_position = vec4(position + translation, 0.0, 1.0);
         vert_colors = colors;
@@ -839,6 +875,7 @@ class TextLayout:
 
     _x = 0
     _y = 0
+    _rotation = 0
     _width = None
     _height = None
     _anchor_x = 'left'
@@ -1022,6 +1059,22 @@ class TextLayout:
                 vertices[1::2] = [y + dy for y in vertices[1::2]]
                 vertex_list.position[:] = vertices
             self._y = y
+
+    @property
+    def rotation(self):
+        """Rotation of the layout.
+        
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._set_rotation(rotation)
+
+    def _set_rotation(self, rotation):
+        self._rotation = rotation
+        self._update()
 
     @property
     def position(self):
@@ -1774,7 +1827,7 @@ class TextLayout:
 
     def _create_vertex_lists(self, x, y, i, boxes, context):
         for box in boxes:
-            box.place(self, i, x, y, context)
+            box.place(self, i, x, y, self._rotation, self._x, self._y, context)
             x += box.advance
             i += box.length
 

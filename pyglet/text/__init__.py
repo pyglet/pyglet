@@ -236,7 +236,7 @@ class DocumentLabel(layout.TextLayout):
     def __init__(self, document=None,
                  x=0, y=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a label for a given document.
 
         :Parameters:
@@ -265,11 +265,16 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
         super().__init__(document, width, height, multiline, dpi, batch, group)
         self._x = x
         self._y = y
+        self._rotation = rotation
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._update()
@@ -413,7 +418,7 @@ class Label(DocumentLabel):
                  x=0, y=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
                  align='left',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a plain text label.
 
         :Parameters:
@@ -459,10 +464,14 @@ class Label(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
         doc = decode_text(text)
-        super().__init__(doc, x, y, width, height, anchor_x, anchor_y, multiline, dpi, batch, group)
+        super().__init__(doc, x, y, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
