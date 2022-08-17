@@ -651,24 +651,41 @@ class Sprite(event.EventDispatcher):
             `scale_y` : float
                 Vertical scaling factor.
         """
-        if x:
+
+        translations_outdated = False
+
+        # only bother updating if the translation actually changed
+        if x is not None:
             self._x = x
-        if y:
+            translations_outdated = True
+        if y is not None:
             self._y = y
-        if z:
+            translations_outdated = True
+        if z is not None:
             self._z = z
-        if x or y or z:
+            translations_outdated = True
+
+        if translations_outdated:
             self._vertex_list.translate[:] = (self._x, self._y, self._z) * 4
-        if rotation:
+
+        if rotation is not None and rotation != self._rotation:
             self._rotation = rotation
             self._vertex_list.rotation[:] = (rotation,) * 4
-        if scale:
+
+        scales_outdated = False
+
+        # only bother updating if the scale actually changed
+        if scale is not None:
             self._scale = scale
-        if scale_x:
+            scales_outdated = True
+        if scale_x is not None:
             self._scale_x = scale_x
-        if scale_y:
+            scales_outdated = True
+        if scale_y is not None:
             self._scale_y = scale_y
-        if scale or scale_x or scale_y:
+            scales_outdated = True
+
+        if scales_outdated:
             self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     @property
