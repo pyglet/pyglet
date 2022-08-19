@@ -1464,7 +1464,9 @@ class Polygon(_ShapeBase):
 
     @position.setter
     def position(self, values):
-        self._coordinates[0][0], self._coordinates[0][1] = values
+        dx = self._coordinates[0][0] - values[0]
+        dy = self._coordinates[0][1] - values[1]
+        self._coordinates = [[x - dx, y - dy] for x, y in self._coordinates]
         self._update_position()
 
     @property
