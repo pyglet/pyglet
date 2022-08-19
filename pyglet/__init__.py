@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
 #: (i.e. not cloned from Git).
-version = '1.5.21'
+version = '1.5.26'
 
 
 if sys.version_info < (3, 6):
@@ -165,6 +165,7 @@ options = {
     'advanced_font_features': False,
     'headless': False,
     'headless_device': 0,
+    'win32_disable_shaping': False,
 }
 
 _option_types = {
@@ -190,7 +191,8 @@ _option_types = {
     'xlib_fullscreen_override_redirect': bool,
     'advanced_font_features': bool,
     'headless': bool,
-    'headless_device': int
+    'headless_device': int,
+    'win32_disable_shaping': bool
 }
 
 

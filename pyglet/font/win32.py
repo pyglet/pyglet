@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -227,7 +227,7 @@ class Win32Font(base.Font):
         super(Win32Font, self).__init__()
 
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
-        self.hfont = gdi32.CreateFontIndirectA(byref(self.logfont))
+        self.hfont = gdi32.CreateFontIndirectW(byref(self.logfont))
 
         # Create a dummy DC for coordinate mapping
         dc = user32.GetDC(0)
@@ -250,7 +250,7 @@ class Win32Font(base.Font):
             dpi = 96
         logpixelsy = dpi
 
-        logfont = LOGFONT()
+        logfont = LOGFONTW()
         # Conversion of point size to device pixels
         logfont.lfHeight = int(-size * logpixelsy // 72)
         if bold:
@@ -258,7 +258,7 @@ class Win32Font(base.Font):
         else:
             logfont.lfWeight = FW_NORMAL
         logfont.lfItalic = italic
-        logfont.lfFaceName = asbytes(name)
+        logfont.lfFaceName = name
         logfont.lfQuality = ANTIALIASED_QUALITY
         user32.ReleaseDC(0, dc)
         return logfont
@@ -351,30 +351,29 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         self._bitmap_height = height
 
     def render(self, text):
-        
         ch = ctypes.create_unicode_buffer(text)
         len_ch = len(text)
 
         # Layout rectangle; not clipped against so not terribly important.
         width = 10000
         height = self._bitmap_height
-        rect = Rectf(0, self._bitmap_height 
-                        - self.font.ascent + self.font.descent, 
+        rect = Rectf(0, self._bitmap_height
+                        - self.font.ascent + self.font.descent,
                      width, height)
 
         # Set up GenericTypographic with 1 character measure range
         generic = ctypes.c_void_p()
         gdiplus.GdipStringFormatGetGenericTypographic(ctypes.byref(generic))
-        format = ctypes.c_void_p()
-        gdiplus.GdipCloneStringFormat(generic, ctypes.byref(format))
+        fmt = ctypes.c_void_p()
+        gdiplus.GdipCloneStringFormat(generic, ctypes.byref(fmt))
         gdiplus.GdipDeleteStringFormat(generic)
 
-        # Measure advance
-        
+        # --- Measure advance
+
         # XXX HACK HACK HACK
         # Windows GDI+ is a filthy broken toy.  No way to measure the bounding
         # box of a string, or to obtain LSB.  What a joke.
-        # 
+        #
         # For historical note, GDI cannot be used because it cannot composite
         # into a bitmap with alpha.
         #
@@ -382,7 +381,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # supporting accurate text measurement with alpha composition in .NET
         # 2.0 (WinForms) via the TextRenderer class; this has no C interface
         # though, so we're entirely screwed.
-        # 
+        #
         # So anyway, we first try to get the width with GdipMeasureString.
         # Then if it's a TrueType font, we use GetCharABCWidthsW to get the
         # correct LSB. If it's a negative LSB, we move the layoutRect `rect`
@@ -391,65 +390,77 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # space and we don't pass the LSB info to the Glyph.set_bearings
 
         bbox = Rectf()
-        flags = (StringFormatFlagsMeasureTrailingSpaces | 
-                 StringFormatFlagsNoClip | 
+        flags = (StringFormatFlagsMeasureTrailingSpaces |
+                 StringFormatFlagsNoClip |
                  StringFormatFlagsNoFitBlackBox)
-        gdiplus.GdipSetStringFormatFlags(format, flags)
-        gdiplus.GdipMeasureString(self._graphics, 
-                                  ch, 
+        gdiplus.GdipSetStringFormatFlags(fmt, flags)
+        gdiplus.GdipMeasureString(self._graphics,
+                                  ch,
                                   len_ch,
-                                  self.font._gdipfont, 
-                                  ctypes.byref(rect), 
-                                  format,
+                                  self.font._gdipfont,
+                                  ctypes.byref(rect),
+                                  fmt,
                                   ctypes.byref(bbox),
-                                  None, 
+                                  None,
                                   None)
-        lsb = 0
-        advance = int(math.ceil(bbox.width))
-        width = advance
 
-        # This hack bumps up the width if the font is italic;
-        # this compensates for some common fonts.  It's also a stupid 
-        # waste of texture memory.
-        if self.font.italic:
-            width += width // 2
-            # Do not enlarge more than the _rect width.
-            width = min(width, self._rect.Width) 
-        
+        # We only care about the advance from this whole thing.
+        advance = int(math.ceil(bbox.width))
+
         # GDI functions only work for a single character so we transform
         # grapheme \r\n into \r
         if text == '\r\n':
             text = '\r'
 
-        abc = ABC()
-        # Check if ttf font.
-        if gdi32.GetCharABCWidthsW(self._dc, 
-            ord(text), ord(text), byref(abc)):
-            
-            lsb = abc.abcA
-            width = abc.abcB
-            if lsb < 0:
-                # Negative LSB: we shift the layout rect to the right
-                # Otherwise we will cut the left part of the glyph
-                rect.x = -lsb
-                width -= lsb
-            else:
-                width += lsb
-
         # XXX END HACK HACK HACK
 
+        abc = ABC()
+        width = 0
+        lsb = 0
+        ttf_font = True
+        # Use GDI to get code points for the text passed. This is almost always 1.
+        # For special unicode characters it may be comprised of 2+ codepoints. Get the width/lsb of each.
+        # Function only works on TTF fonts.
+        for codepoint in [ord(c) for c in text]:
+            if gdi32.GetCharABCWidthsW(self._dc, codepoint, codepoint, byref(abc)):
+                lsb += abc.abcA
+                width += abc.abcB
+
+                if lsb < 0:
+                    # Negative LSB: we shift the layout rect to the right
+                    # Otherwise we will cut the left part of the glyph
+                    rect.x = -lsb
+                    width -= lsb
+                else:
+                    width += lsb
+            else:
+                ttf_font = False
+                break
+
+        # Almost always a TTF font. Haven't seen a modern font that GetCharABCWidthsW fails on.
+        # For safety, just use the advance as the width.
+        if not ttf_font:
+            width = advance
+
+            # This hack bumps up the width if the font is italic;
+            # this compensates for some common fonts.  It's also a stupid
+            # waste of texture memory.
+            if self.font.italic:
+                width += width // 2
+                # Do not enlarge more than the _rect width.
+                width = min(width, self._rect.Width)
+
         # Draw character to bitmap
-        
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
         gdiplus.GdipDrawString(self._graphics, 
                                ch,
                                len_ch,
                                self.font._gdipfont, 
                                ctypes.byref(rect), 
-                               format,
+                               fmt,
                                self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
-        gdiplus.GdipDeleteStringFormat(format)
+        gdiplus.GdipDeleteStringFormat(fmt)
 
         bitmap_data = BitmapData()
         gdiplus.GdipBitmapLockBits(self._bitmap, 

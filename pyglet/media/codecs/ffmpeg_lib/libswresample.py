@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,19 +34,26 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libswresample/swresample.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
-from ctypes import create_string_buffer, memmove
+from ctypes import c_int, c_int64
+from ctypes import c_uint8
+from ctypes import c_void_p, POINTER, Structure
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
+
+_debug = debug_print('debug_media')
 
 swresample = pyglet.lib.load_library(
     'swresample',
-    win32='swresample-3',
-    darwin='swresample.3'
+    win32=('swresample-4', 'swresample-3'),
+    darwin=('swresample.4', 'swresample.3')
 )
+
+swresample.swresample_version.restype = c_int
+
+compat.set_version('swresample', swresample.swresample_version() >> 16)
+
 
 SWR_CH_MAX = 32
 

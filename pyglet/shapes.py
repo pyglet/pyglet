@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -455,7 +455,7 @@ class Circle(_ShapeBase):
             `segments` : int
                 You can optionally specify how many distinct triangles
                 the circle should be made from. If not specified it will
-                be automatically calculated based using the formula:
+                be automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
             `color` : (int, int, int)
                 The RGB color of the circle, specified as a tuple of
@@ -649,7 +649,7 @@ class Sector(_ShapeBase):
                     `segments` : int
                         You can optionally specify how many distinct triangles
                         the sector should be made from. If not specified it will
-                        be automatically calculated based using the formula:
+                        be automatically calculated using the formula:
                         `max(14, int(radius / 1.25))`.
                     `angle` : float
                         The angle of the sector, in radians. Defaults to tau (pi * 2),
@@ -705,6 +705,24 @@ class Sector(_ShapeBase):
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, angle):
+        self._angle = angle
+        self._update_position()
+
+    @property
+    def start_angle(self):
+        return self._start_angle
+
+    @start_angle.setter
+    def start_angle(self, angle):
+        self._start_angle = angle
+        self._update_position()
 
     @property
     def radius(self):

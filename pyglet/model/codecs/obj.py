@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,7 @@ def load_material_library(filename):
             name = values[1]
 
         elif name is None:
-            raise ModelDecodeException('Expected "newmtl" in '.format(filename))
+            raise ModelDecodeException(f'Expected "newmtl" in {filename}')
 
         try:
             if values[0] == 'Kd':
@@ -97,7 +97,8 @@ def load_material_library(filename):
             elif values[0] == 'Ke':
                 emission = list(map(float, values[1:]))
             elif values[0] == 'Ns':
-                shininess = float(values[1])
+                shininess = float(values[1])            # Blender exports 1~1000
+                shininess = (shininess * 128) / 1000    # Normalize to 1~128 for OpenGL
             elif values[0] == 'd':
                 opacity = float(values[1])
             elif values[0] == 'map_Kd':

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -107,6 +107,8 @@ _gdi32.CreateDIBSection.restype = HBITMAP
 _gdi32.CreateDIBSection.argtypes = [HDC, c_void_p, UINT, c_void_p, HANDLE, DWORD]  # POINTER(BITMAPINFO)
 _gdi32.CreateFontIndirectA.restype = HFONT
 _gdi32.CreateFontIndirectA.argtypes = [POINTER(LOGFONT)]
+_gdi32.CreateFontIndirectW.restype = HFONT
+_gdi32.CreateFontIndirectW.argtypes = [POINTER(LOGFONTW)]
 _gdi32.DeleteDC.restype = BOOL
 _gdi32.DeleteDC.argtypes = [HDC]
 _gdi32.DeleteObject.restype = BOOL

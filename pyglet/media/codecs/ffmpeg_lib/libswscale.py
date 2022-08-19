@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,19 +34,27 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libswscale/swscale.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
-from ctypes import create_string_buffer, memmove
+from ctypes import POINTER, Structure
+from ctypes import c_int
+from ctypes import c_uint8, c_double
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
+
+_debug = debug_print('debug_media')
+
 
 swscale = pyglet.lib.load_library(
     'swscale',
-    win32='swscale-5',
-    darwin='swscale.5'
+    win32=('swscale-6', 'swscale-5'),
+    darwin=('swscale.6', 'swscale.5')
 )
+
+swscale.swscale_version.restype = c_int
+
+compat.set_version('swscale', swscale.swscale_version() >> 16)
+
 
 SWS_FAST_BILINEAR = 1
 

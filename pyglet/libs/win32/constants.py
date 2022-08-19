@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -5092,3 +5092,7 @@ CLSCTX_INPROC_SERVER = 0x1
 DWM_BB_ENABLE = 0x00000001
 DWM_BB_BLURREGION = 0x00000002
 DWM_BB_TRANSITIONONMAXIMIZED = 0x00000004
+
+STREAM_SEEK_SET = 0
+STREAM_SEEK_CUR = 1
+STREAM_SEEK_END = 2

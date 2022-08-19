@@ -1,3 +1,65 @@
+pyglet 1.5.26
+
+Bugfixes
+--------
+- Windows - Backport WIC codec changes from 2.0
+- Fix library loading when passing multiple library names.
+
+
+pyglet 1.5.25
+
+Bugfixes
+--------
+- Windows - Prevent ImportError when attempting to load more than one DLL version.
+
+
+pyglet 1.5.24
+
+Features
+--------
+- Add initial support for FFmpeg 5.0
+- Windows - The GDI font renderer now supports Unicode font names.
+
+Bugfixes
+--------
+- Windows - Fix `on_resize` event not dispatched when `set_size` is called.
+- Documentation updates, fixed links, and corrections.
+- Windows - Fix crash when font characters are more than one codepoint in length.
+
+
+pyglet 1.5.23
+
+Features
+--------
+- Windows - Add `win32_disable_shaping` option. This can improve font performance when shaping isn't required.
+- Backport the latest pyglet.math module changes from the development branch.
+
+Bugfixes
+--------
+- Linux - Fix crash when Gstreamer Gst bindings are not installed.
+- Fix math.Vec4.clamp method.
+
+
+pyglet 1.5.22
+
+Features
+--------
+- If the PyOgg module is installed, it can be used for loading various Vorbis audio formats.
+- Add a new CameraGroup example, to show implementing a Camera with pyglet's Groups.
+- Add `angle` and `start_angle` property/setter to `shapes.Sector`.
+- Windows - new WMF based encoder for faster saving of common image formats.
+
+Bugfixes
+--------
+- Fix indexing error when setting text.Label.opacity (#481)
+- Windows - Fix shift modifier + exclusive mouse mode (#472)
+- Linux - Prevent non-Tablet devices from being detected as Tablets (#491)
+- Windows - Prevent distortion with multiple XAudio2 audio sources (#515)
+- Fix frame dropping bug with FFMpeg decoder.
+- Windows - Fix Video alpha channel for WMF decoder.
+- Varios documentation and docstring fixes. Thanks everyone!
+
+
 pyglet 1.5.21
 
 Features

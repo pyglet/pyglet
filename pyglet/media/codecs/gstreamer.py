@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,9 +46,12 @@ from ..exceptions import MediaDecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
-import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GLib
+try:
+    import gi
+    gi.require_version('Gst', '1.0')
+    from gi.repository import Gst, GLib
+except (ValueError, ImportError) as e:
+    raise ImportError(e)
 
 
 class GStreamerDecodeException(MediaDecodeException):

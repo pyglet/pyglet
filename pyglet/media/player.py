@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -478,6 +478,11 @@ class Player(pyglet.event.EventDispatcher):
 
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
+        elif ts > time:
+            # update_texture called too early (probably manually!)
+            pyglet.clock.schedule_once(self.update_texture, ts - time)
+            return
+
 
         image = source.get_next_video_frame()
         if image is not None:

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,18 +52,71 @@ def clamp(num, min_val, max_val):
 
 
 class Vec2(tuple):
+    """A two dimensional vector represented as an X Y coordinate pair.
+
+    :parameters:
+        `x` : int or float :
+            The X coordinate of the vector.
+        `y`   : int or float :
+            The Y coordinate of the vector.
+
+    Vectors must be created with either 0 or 2 values. If no arguments are provided a vector with the coordinates 0, 0 is created.
+
+    Vectors are stored as a tuple and therefore immutable and cannot be modified directly
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 2), "0 or 2 values are required for Vec2 types."
         return super().__new__(Vec2, args or (0, 0))
 
+    @staticmethod
+    def from_polar(mag, angle):
+        """Create a new vector from the given polar coodinates.
+
+        :parameters:
+            `mag`   : int or float :
+                The magnitude of the vector.
+            `angle` : int or float :
+                The angle of the vector in radians.
+
+        :returns: A new vector with the given angle and magnitude.
+        :rtype: Vec2
+        """
+        return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
+
     @property
     def x(self):
+        """The X coordinate of the vector.
+
+        :type: float
+        """
         return self[0]
 
     @property
     def y(self):
+        """The Y coordinate of the vector.
+
+        :type: float
+        """
         return self[1]
+
+    @property
+    def heading(self):
+        """The angle of the vector in radians.
+
+        :type: float
+        """
+        return _math.atan2(self[1], self[0])
+
+    @property
+    def mag(self):
+        """The magnitude, or length of the vector. The distance between the coordinates and the origin.
+
+        Alias of abs(self).
+
+        :type: float
+        """
+        return self.__abs__()
 
     def __add__(self, other):
         return Vec2(self[0] + other[0], self[1] + other[1])
@@ -86,38 +139,172 @@ class Vec2(tuple):
     def __round__(self, ndigits=None):
         return Vec2(*(round(v, ndigits) for v in self))
 
+    def __radd__(self, other):
+        """Reverse add. Required for functionality with sum()
+        """
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def from_magnitude(self, magnitude):
+        """Create a new Vector of the given magnitude by normalizing, then scaling the vector. The heading remains unchanged.
+
+        :parameters:
+            `magnitude` : int or float :
+                The magnitude of the new vector.
+
+        :returns: A new vector with the magnitude.
+        :rtype: Vec2
+        """
+        return self.normalize().scale(magnitude)
+
+    def from_heading(self, heading):
+        """Create a new vector of the same magnitude with the given heading. I.e. Rotate the vector to the heading.
+
+        :parameters:
+            `heading` : int or float :
+                The angle of the new vector in radians.
+
+        :returns: A new vector with the given heading.
+        :rtype: Vec2
+        """
+        mag = self.__abs__()
+        return Vec2(mag * _math.cos(heading), mag * _math.sin(heading))
+
+    def limit(self, max):
+        """Limit the magnitude of the vector to the value used for the max parameter.
+
+        :parameters:
+            `max`  : int or float :
+                The maximum magnitude for the vector.
+
+        :returns: Either self or a new vector with the maximum magnitude.
+        :rtype: Vec2
+        """
+        if self[0] ** 2 + self[1] ** 2 > max * max:
+            return self.from_magnitude(max)
+        return self
+
     def lerp(self, other, alpha):
+        """Create a new vector lineraly interpolated between this vector and another vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The vector to be linerly interpolated to.
+            `alpha` : float or int :
+                The amount of interpolation.
+                Some value between 0.0 (this vector) and 1.0 (other vector).
+                0.5 is halfway inbetween.
+
+        :returns: A new interpolated vector.
+        :rtype: Vec2
+        """
         return Vec2(self[0] + (alpha * (other[0] - self[0])),
                     self[1] + (alpha * (other[1] - self[1])))
 
     def scale(self, value):
+        """Multiply the vector by a scalar value.
+
+        :parameters:
+            `value`  : int or float :
+                The ammount to be scaled by
+
+        :returns: A new vector scaled by the value.
+        :rtype: Vec2
+        """
         return Vec2(self[0] * value, self[1] * value)
 
+    def rotate(self, angle):
+        """Create a new Vector rotated by the angle. The magnitude remains unchanged.
+
+        :parameters:
+            `angle` : int or float :
+                The angle to rotate by
+
+        :returns: A new rotated vector of the same magnitude.
+        :rtype: Vec2
+        """
+        mag = self.mag
+        heading = self.heading
+        return Vec2(mag * _math.cos(heading + angle), mag * _math.sin(heading+angle))
+
     def distance(self, other):
+        """Calculate the distance between this vector and another 2D vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The other vector
+
+        :returns: The distance between the two vectors.
+        :rtype: float
+        """
         return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self):
+        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector.
+
+        :returns: A unit vector with the same heading.
+        :rtype: Vec2
+        """
         d = self.__abs__()
         if d:
             return Vec2(self[0] / d, self[1] / d)
         return self
 
     def clamp(self, min_val, max_val):
+        """Restrict the value of the X and Y components of the vector to be within the given values.
+
+        :parameters:
+            `min_val` : int or float :
+                The minimum value
+            `max_val` : int or float :
+                The maximum value
+
+        :returns: A new vector with clamped X and Y components.
+        :rtype: Vec2
+        """
         return Vec2(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val))
 
     def dot(self, other):
+        """Calculate the dot product of this vector and another 2D vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The other vector.
+
+        :returns: The dot product of the two vectors.
+        :rtype: float
+        """
         return self[0] * other[0] + self[1] * other[1]
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xy'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xy'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec2({self[0]}, {self[1]})"
 
 
 class Vec3(tuple):
+    """A three dimensional vector represented as a X Y Z coordinates.
+
+    :parameters:
+        `x` : int or float :
+            The X coordinate of the vector.
+        `y`   : int or float :
+            The Y coordinate of the vector.
+        `z`   : int or float :
+            The Z coordinate of the vector.
+
+    3D Vectors must be created with either 0 or 3 values. If no arguments are provided a vector with the coordinates 0, 0, 0 is created.
+
+    Vectors are stored as a tuple and therefore immutable and cannot be modified directly
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 3), "0 or 3 values are required for Vec3 types."
@@ -125,15 +312,37 @@ class Vec3(tuple):
 
     @property
     def x(self):
+        """The X coordinate of the vector.
+
+        :type: float
+        """
         return self[0]
 
     @property
     def y(self):
+        """The Y coordinate of the vector.
+
+        :type: float
+        """
         return self[1]
 
     @property
     def z(self):
+        """The Z coordinate of the vector.
+
+        :type: float
+        """
         return self[2]
+
+    @property
+    def mag(self):
+        """The magnitude, or length of the vector. The distance between the coordinates and the origin.
+
+        Alias of abs(self).
+
+        :type: float
+        """
+        return self.__abs__()
 
     def __add__(self, other):
         return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
@@ -156,42 +365,144 @@ class Vec3(tuple):
     def __round__(self, ndigits=None):
         return Vec3(*(round(v, ndigits) for v in self))
 
+    def __radd__(self, other):
+        """Reverse add. Required for functionality with sum()
+        """
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def from_magnitude(self, magnitude):
+        """Create a new Vector of the given magnitude by normalizing, then scaling the vector. The rotation remains unchanged.
+
+        :parameters:
+            `magnitude` : int or float :
+                The magnitude of the new vector.
+
+        :returns: A new vector with the magnitude.
+        :rtype: Vec3
+        """
+        return self.normalize().scale(magnitude)
+
+    def limit(self, max):
+        """Limit the magnitude of the vector to the value used for the max parameter.
+
+        :parameters:
+            `max`  : int or float :
+                The maximum magnitude for the vector.
+
+        :returns: Either self or a new vector with the maximum magnitude.
+        :rtype: Vec3
+        """
+        if self[0] ** 2 + self[1] ** 2 + self[2] **2 > max * max * max:
+            return self.from_magnitude(max)
+        return self
+
     def cross(self, other):
+        """Calculate the cross product of this vector and another 3D vector.
+
+        :parameters:
+            `other`  : Vec3 :
+                The other vector.
+
+        :returns: The cross product of the two vectors.
+        :rtype: float
+        """
         return Vec3((self[1] * other[2]) - (self[2] * other[1]),
                     (self[2] * other[0]) - (self[0] * other[2]),
                     (self[0] * other[1]) - (self[1] * other[0]))
 
     def dot(self, other):
+        """Calculate the dot product of this vector and another 3D vector.
+
+        :parameters:
+            `other`  : Vec3 :
+                The other vector.
+
+        :returns: The dot product of the two vectors.
+        :rtype: float
+        """
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
 
     def lerp(self, other, alpha):
+        """Create a new vector lineraly interpolated between this vector and another vector.
+
+        :parameters:
+            `other`  : Vec3 :
+                The vector to be linerly interpolated to.
+            `alpha` : float or int :
+                The amount of interpolation.
+                Some value between 0.0 (this vector) and 1.0 (other vector).
+                0.5 is halfway inbetween.
+
+        :returns: A new interpolated vector.
+        :rtype: Vec3
+        """
         return Vec3(self[0] + (alpha * (other[0] - self[0])),
                     self[1] + (alpha * (other[1] - self[1])),
                     self[2] + (alpha * (other[2] - self[2])))
 
     def scale(self, value):
+        """Multiply the vector by a scalar value.
+
+        :parameters:
+            `value`  : int or float :
+                The ammount to be scaled by
+
+        :returns: A new vector scaled by the value.
+        :rtype: Vec3
+        """
         return Vec3(self[0] * value, self[1] * value, self[2] * value)
 
     def distance(self, other):
+        """Calculate the distance between this vector and another 3D vector.
+
+        :parameters:
+            `other`  : Vec3 :
+                The other vector
+
+        :returns: The distance between the two vectors.
+        :rtype: float
+        """
         return _math.sqrt(((other[0] - self[0]) ** 2) +
                           ((other[1] - self[1]) ** 2) +
                           ((other[2] - self[2]) ** 2))
 
     def normalize(self):
+        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector.
+
+        :returns: A unit vector with the same rotation.
+        :rtype: Vec3
+        """
         d = self.__abs__()
         if d:
             return Vec3(self[0] / d, self[1] / d, self[2] / d)
         return self
 
     def clamp(self, min_val, max_val):
+        """Restrict the value of the X,  Y and Z components of the vector to be within the given values.
+
+        :parameters:
+            `min_val` : int or float :
+                The minimum value
+            `max_val` : int or float :
+                The maximum value
+
+        :returns: A new vector with clamped X, Y and Z components.
+        :rtype: Vec3
+        """
         return Vec3(clamp(self[0], min_val, max_val),
                     clamp(self[1], min_val, max_val),
                     clamp(self[2], min_val, max_val))
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xyz'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xyz'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec3({self[0]}, {self[1]}, {self[2]})"
@@ -240,6 +551,12 @@ class Vec4(tuple):
     def __round__(self, ndigits=None):
         return Vec4(*(round(v, ndigits) for v in self))
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
     def lerp(self, other, alpha):
         return Vec4(self[0] + (alpha * (other[0] - self[0])),
                     self[1] + (alpha * (other[1] - self[1])),
@@ -262,7 +579,7 @@ class Vec4(tuple):
         return self
 
     def clamp(self, min_val, max_val):
-        return Vec3(clamp(self[0], min_val, max_val),
+        return Vec4(clamp(self[0], min_val, max_val),
                     clamp(self[1], min_val, max_val),
                     clamp(self[2], min_val, max_val),
                     clamp(self[3], min_val, max_val))
@@ -271,9 +588,12 @@ class Vec4(tuple):
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xyzw'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xyzw'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec4({self[0]}, {self[1]}, {self[2]}, {self[3]})"
@@ -373,7 +693,7 @@ class Mat3(tuple):
                      sum(map(_mul, r2, c2))))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
+        return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
 
 
 class Mat4(tuple):
@@ -464,6 +784,17 @@ class Mat4(tuple):
                     vector[0], vector[1], vector[2], 1.0))
 
     @classmethod
+    def from_rotation(cls, angle: float, vector: Vec3) -> 'Mat4':
+        """Create a rotation matrix from an angle and Vec3.
+
+        :Parameters:
+            `angle` : A `float`
+            `vector` : A `Vec3`, or 3 component tuple of float or int
+                Vec3 or tuple with x, y and z translaton values
+        """
+        return cls().rotate(angle, vector)
+
+    @classmethod
     def look_at_direction(cls, direction: Vec3, up: Vec3) -> 'Mat4':
         vec_z = direction.normalize()
         vec_x = direction.cross_product(up).normalize()
@@ -489,21 +820,22 @@ class Mat4(tuple):
         """Get a specific column as a tuple."""
         return self[index::4]
 
-    def scale(self, x=1, y=1, z=1) -> 'Mat4':
+    def scale(self, vector: Vec3) -> 'Mat4':
         """Get a scale Matrix on x, y, or z axis."""
         temp = list(self)
-        temp[0] *= x
-        temp[5] *= y
-        temp[10] *= z
+        temp[0] *= vector[0]
+        temp[5] *= vector[1]
+        temp[10] *= vector[2]
         return Mat4(temp)
 
-    def translate(self, x=0, y=0, z=0) -> 'Mat4':
+    def translate(self, vector: Vec3) -> 'Mat4':
         """Get a translate Matrix along x, y, and z axis."""
-        return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
+        return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
 
-    def rotate(self, angle=0, x=0, y=0, z=0) -> 'Mat4':
+    def rotate(self, angle: float, vector: Vec3) -> 'Mat4':
         """Get a rotation Matrix on x, y, or z axis."""
-        assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
+        assert all(abs(n) <= 1 for n in vector), "vector must be normalized (<=1)"
+        x, y, z = vector
         c = _math.cos(angle)
         s = _math.sin(angle)
         t = 1 - c

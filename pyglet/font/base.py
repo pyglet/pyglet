@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -148,12 +148,16 @@ class Glyph(image.TextureRegion):
         `vertices` : (int, int, int, int)
             The vertices of this glyph, with (0,0) originating at the
             left-side bearing at the baseline.
+        `colored` : bool
+            If a glyph is colored by the font renderer, such as an emoji, it may
+            be treated differently by pyglet. For example, being omitted from text color shaders.
 
     """
     baseline = 0
     lsb = 0
     advance = 0
     vertices = (0, 0, 0, 0)
+    colored = False
 
     def set_bearings(self, baseline, left_side_bearing, advance, x_offset=0, y_offset=0):
         """Set metrics for this glyph.

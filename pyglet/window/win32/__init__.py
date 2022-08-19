@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2021 pyglet contributors
+# Copyright (c) 2008-2022 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -267,18 +267,14 @@ class Win32Window(BaseWindow):
                                    GWL_EXSTYLE,
                                    self._ex_ws_style)
 
-        if self._fullscreen:
-            hwnd_after = HWND_TOPMOST
-        else:
-            hwnd_after = HWND_NOTOPMOST
-
         # Position and size window
         if self._fullscreen:
+            hwnd_after = HWND_TOPMOST if self.style == "overlay" else HWND_NOTOPMOST
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  self._screen.x, self._screen.y, width, height, SWP_FRAMECHANGED)
         elif False:  # TODO location not in pyglet API
             x, y = self._client_to_window_pos(*factory.get_location())
-            _user32.SetWindowPos(self._hwnd, hwnd_after,
+            _user32.SetWindowPos(self._hwnd, HWND_NOTOPMOST,
                                  x, y, width, height, SWP_FRAMECHANGED)
         elif self.style == 'transparent' or self.style == "overlay":
             _user32.SetLayeredWindowAttributes(self._hwnd, 0, 254, LWA_ALPHA)
@@ -286,7 +282,7 @@ class Win32Window(BaseWindow):
                 _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
                                      0, width, height, SWP_NOMOVE | SWP_NOSIZE)
         else:
-            _user32.SetWindowPos(self._hwnd, hwnd_after,
+            _user32.SetWindowPos(self._hwnd, HWND_NOTOPMOST,
                                  0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
 
         self._update_view_location(self._width, self._height)
@@ -429,7 +425,7 @@ class Win32Window(BaseWindow):
 
     def set_visible(self, visible=True):
         if visible:
-            insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
+            insertAfter = HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
                                  SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             self.dispatch_event('on_resize', self._width, self._height)
@@ -832,12 +828,6 @@ class Win32Window(BaseWindow):
         else:
             return None
 
-    @Win32EventHandler(WM_WINDOWPOSCHANGED)
-    def _event_window_pos_changed(self, msg, wParam, lParam):
-        if self._exclusive_mouse:
-            self._update_clipped_cursor()
-        return 0
-
     @Win32EventHandler(WM_NCLBUTTONDOWN)
     def _event_ncl_button_down(self, msg, wParam, lParam):
         self._in_title_bar = True
@@ -1098,6 +1088,10 @@ class Win32Window(BaseWindow):
         if not self._fullscreen:
             self._width, self._height = w, h
         self._update_view_location(self._width, self._height)
+
+        if self._exclusive_mouse:
+            self._update_clipped_cursor()
+
         self.switch_to()
         self.dispatch_event('on_resize', self._width, self._height)
         return 0
@@ -1134,7 +1128,7 @@ class Win32Window(BaseWindow):
                 return 1
 
     @Win32EventHandler(WM_ENTERSIZEMOVE)
-    def _event_exitsizemove(self, msg, wParam, lParam):
+    def _event_entersizemove(self, msg, wParam, lParam):
         self._moving = True
         from pyglet import app
         if app.event_loop is not None:
