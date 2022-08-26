@@ -825,6 +825,7 @@ class ScrollableTextDecorationGroup(graphics.Group):
     def __hash__(self):
         return id(self)
 
+
 class IncrementalTextDecorationGroup(ScrollableTextDecorationGroup):
     # Subclass so that the scissor_area isn't shared with the
     # ScrollableTextDecorationGroup. We use a class variable here so
@@ -2111,10 +2112,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update_visible_lines()
         self._update_vertex_lists()
 
-        # Reclamp view_y in case content height has changed and reset top of content.
-        # self.view_y = self._translate_y
-        # self._update_translation()
-
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
 
@@ -2399,6 +2396,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.invalid_flow.invalidate(0, len(self.document.text))
         self._multiline = multiline
         self._wrap_lines_invariant()
+        self._update()
+
+    def _set_rotation(self, rotation):
+        self._rotation = rotation
+        self.invalid_flow.invalidate(0, len(self.document.text))
         self._update()
 
     # Offset of content within viewport

@@ -494,7 +494,7 @@ class HTMLLabel(DocumentLabel):
     def __init__(self, text='', location=None,
                  x=0, y=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a label with an HTML string.
 
         :Parameters:
@@ -526,12 +526,16 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
         self._text = text
         self._location = location
         doc = decode_html(text, location)
-        super().__init__(doc, x, y, width, height, anchor_x, anchor_y, multiline, dpi, batch, group)
+        super().__init__(doc, x, y, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
 
     @property
     def text(self):
