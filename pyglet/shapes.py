@@ -1388,6 +1388,7 @@ class Polygon(_ShapeBase):
 
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._coordinates = list(coordinates)
+        self._x, self._y = self._coordinates[0]
 
         self._rotation = 0
 
@@ -1434,7 +1435,7 @@ class Polygon(_ShapeBase):
 
     @x.setter
     def x(self, value):
-        self._coordinates[0][0] = value
+        self._x = self._coordinates[0][0] = value
         self._update_position()
 
     @property
@@ -1447,7 +1448,7 @@ class Polygon(_ShapeBase):
 
     @y.setter
     def y(self, value):
-        self._coordinates[0][1] = value
+        self._y = self._coordinates[0][1] = value
         self._update_position()
 
     @property
@@ -1464,7 +1465,11 @@ class Polygon(_ShapeBase):
 
     @position.setter
     def position(self, values):
-        self._coordinates[0][0], self._coordinates[0][1] = values
+        dx = self._coordinates[0][0] - values[0]
+        dy = self._coordinates[0][1] - values[1]
+
+        self._coordinates = [[x - dx, y - dy] for x, y in self._coordinates]
+        self._x, self._y = self._coordinates[0]
         self._update_position()
 
     @property
