@@ -189,10 +189,10 @@ def noise_generator(frequency, sample_rate):
 
 
 def sine_generator(frequency, sample_rate):
-    step = 2 * _math.pi * frequency
+    step = 2 * _math.pi * frequency / sample_rate
     i = 0
     while True:
-        yield _math.sin(step * i / sample_rate)
+        yield _math.sin(i * step)
         i += 1
 
 
@@ -249,19 +249,23 @@ class _SynthesisSource(Source):
         self._generator = generator
         self._duration = duration
         self._frequency = frequency
+        self.audio_format = AudioFormat(channels=1, sample_size=16, sample_rate=sample_rate)
 
         self.envelope = envelope or FlatEnvelope(amplitude=1.0)
         self._envelope_generator = self.envelope.get_generator(sample_rate, duration)
 
-        self.audio_format = AudioFormat(channels=1, sample_size=16, sample_rate=sample_rate)
-
+        # Two bytes per sample (16-bit):
+        self._bytes_per_second = sample_rate * 2
+        # Maximum offset, aligned to sample:
+        self._max_offset = int(self._bytes_per_second * duration) & 0xfffffffe
         self._offset = 0
-        self._sample_rate = sample_rate
-        self._bytes_per_sample = 2
-        self._bytes_per_second = self._bytes_per_sample * sample_rate
-        self._max_offset = int(self._bytes_per_second * duration)
-        # Align to sample:
-        self._max_offset &= 0xfffffffe
+
+    def _generate_data(self, num_bytes):
+        samples = num_bytes >> 1
+        generator = self._generator
+        envelope = self._envelope_generator
+        data = (int(next(generator) * next(envelope) * 0x7fff) for _ in range(samples))
+        return _struct.pack(f"{samples}h", *data)
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Return `num_bytes` bytes of audio data."""
@@ -277,23 +281,8 @@ class _SynthesisSource(Source):
 
         return AudioData(data, num_bytes, timestamp, duration, [])
 
-    def _generate_data(self, num_bytes):
-        samples = num_bytes >> 1
-        amplitude = 32767
-        generator = self._generator
-        envelope = self._envelope_generator
-        data = (int(next(generator) * next(envelope) * amplitude) for _ in range(samples))
-        return _struct.pack(f"{samples}h", *data)
-
     def seek(self, timestamp):
-        self._offset = int(timestamp * self._bytes_per_second)
-
-        # Bound within duration
-        self._offset = min(max(self._offset, 0), self._max_offset)
-
-        # Align to sample
-        self._offset &= 0xfffffffe
-        self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
+        raise NotImplemented('SynthesisSources cannot seek.')
 
 
 class Silence(_SynthesisSource):
@@ -336,20 +325,42 @@ class Sawtooth(_SynthesisSource):
 #   Experimental multi-operator FM synthesis:
 #############################################
 
-def sine_operator(samplerate=44800, frequency=440, index=1, modulator=None, envelope=None):
-    # A sine generator that can be optionally modulated with another generator.
+def sine_operator(sample_rate=44800, frequency=440, index=1, modulator=None, envelope=None):
+    """A sine wave generator that can be optionally modulated with another generator.
+
+    This generator represents a single FM Operator. It can be used by itself as a
+    simple sine wave, or modulated by another waveform generator. Multiple operators
+    can be linked together in this way. For example::
+
+        operator1 = sine_operator(samplerate=44800, frequency=1.22)
+        operator2 = sine_operator(samplerate=44800, frequency=99, modulator=operator1)
+        operator3 = sine_operator(samplerate=44800, frequency=333, modulator=operator2)
+        operator4 = sine_operator(samplerate=44800, frequency=545, modulator=operator3)
+
+    :Parameters:
+        `sample_rate` : int
+            Audio samples per second. (CD quality is 44100).
+        `frequency` : float
+            The frequency, in Hz, of the waveform you wish to generate.
+        `index` : float
+            The modulation index. Defaults to 1
+        `modulator` : sine_operator
+            An optional operator to modulate this one.
+        `envelope` : :py:class:`pyglet.media.synthesis._Envelope`
+            An optional Envelope to apply to the waveform.
+    """
     # FM equation:  sin((i * 2 * pi * carrier_frequency) + sin(i * 2 * pi * modulator_frequency))
+    envelope = envelope or FlatEnvelope(1).get_generator(sample_rate, duration=None)
     sin = _math.sin
-    step = 2 * _math.pi * frequency / samplerate
+    step = 2 * _math.pi * frequency / sample_rate
     i = 0
-    envelope = envelope or FlatEnvelope(1).get_generator(samplerate, duration=None)
     if modulator:
         while True:
             yield sin(i * step + index * next(modulator)) * next(envelope)
             i += 1
     else:
         while True:
-            yield _math.sin(i * step) * next(envelope)
+            yield sin(i * step) * next(envelope)
             i += 1
 
 

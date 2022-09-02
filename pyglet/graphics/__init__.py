@@ -287,6 +287,44 @@ def draw_indexed(size, mode, indices, **data):
     glDeleteVertexArrays(1, vao_id)
 
 
+# Default Shader source:
+
+_vertex_source = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+    in vec3 tex_coords;
+    out vec4 vertex_colors;
+    out vec3 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;  
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+_fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec3 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
+    }
+"""
+
+
 def get_default_batch():
     try:
         return pyglet.gl.current_context.pyglet_graphics_default_batch
@@ -651,6 +689,9 @@ class Group:
 # Example Groups.
 
 class ShaderGroup(Group):
+    """A group that enables and binds a ShaderProgram.
+    """
+
     def __init__(self, program, order=0, parent=None):
         super().__init__(order, parent)
         self.program = program
@@ -674,7 +715,7 @@ class ShaderGroup(Group):
 class TextureGroup(Group):
     """A group that enables and binds a texture.
 
-    Texture groups are equal if their textures' targets and names are equal.
+    TextureGroups are equal if their textures' targets and names are equal.
     """
 
     def __init__(self, texture, order=0, parent=None):
@@ -707,41 +748,3 @@ class TextureGroup(Group):
 
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
-
-
-# The default Shader source:
-
-_vertex_source = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 tex_coords;
-    out vec4 vertex_colors;
-    out vec3 texture_coords;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;  
-
-    void main()
-    {
-        gl_Position = window.projection * window.view * vec4(position, 1.0);
-
-        vertex_colors = colors;
-        texture_coords = tex_coords;
-    }
-"""
-
-_fragment_source = """#version 330 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D our_texture;
-
-    void main()
-    {
-        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
-    }
-"""
