@@ -129,6 +129,7 @@ import warnings
 
 import pyglet
 import pyglet.window.key
+import pyglet.window.mouse
 import pyglet.window.event
 
 from pyglet import gl
