@@ -282,7 +282,10 @@ class _SynthesisSource(Source):
         return AudioData(data, num_bytes, timestamp, duration, [])
 
     def seek(self, timestamp):
-        raise NotImplemented('SynthesisSources cannot seek.')
+        # Bound within duration & align to sample:
+        offset = int(timestamp * self._bytes_per_second)
+        self._offset = min(max(offset, 0), self._max_offset) & 0xfffffffe
+        self._envelope_generator = self.envelope.get_generator(self.audio_format.sample_rate, self._duration)
 
 
 class Silence(_SynthesisSource):
