@@ -20,6 +20,7 @@ You can also clone the repository using **git** and install from source:
 
     git clone https://github.com/pyglet/pyglet.git
     cd pyglet
+    git checkout pyglet-1.5-maintenance
     python setup.py install --user
 
 
@@ -46,4 +47,5 @@ As mentioned above, you can also clone the repository using Git:
 
     git clone https://github.com/pyglet/pyglet.git
     cd pyglet
+    git checkout pyglet-1.5-maintenance
     python examples/hello_world.py

@@ -589,12 +589,12 @@ Ticking the clock
 
 If you are using pyglet's media libraries outside of a pyglet app, you will need 
 to use some kind of loop to tick the pyglet clock periodically (perhaps every 
-200ms or so), otherwise only the first small sample of media will be played:
+200ms or so), otherwise only the first small sample of media will be played::
 
     pyglet.clock.tick()
 
 If you wish to have a media source loop continuously (`player.loop = True`) you will
-also need to ensure Pyglet's events are dispatched inside your loop:
+also need to ensure Pyglet's events are dispatched inside your loop::
 
     pyglet.app.platform_event_loop.dispatch_posted_events()
 
