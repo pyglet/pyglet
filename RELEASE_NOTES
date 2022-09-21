@@ -1,3 +1,13 @@
+pyglet 1.5.27
+
+Bugfixes
+--------
+- Windows - stop setting HWND_TOPMOST for fullscreen windows
+- obj decoder - Fix GL_SHININESS (Ns) value parsing
+- Fix broken property setter for shapes.Polygon (#676)
+- Fix keys getting "stuck" in KeyStateHandler when Window loses focus (#682)
+
+
 pyglet 1.5.26
 
 Bugfixes
