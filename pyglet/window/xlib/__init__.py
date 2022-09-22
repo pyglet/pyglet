@@ -1203,6 +1203,7 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
+        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
@@ -1223,6 +1224,7 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
+        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
