@@ -928,16 +928,20 @@ class TextLayout:
 
         self._width = width
         self._height = height
-        self._multiline = multiline
-
-        # Alias the correct flow method:
-        self._flow_glyphs = self._flow_glyphs_wrap if multiline else self._flow_glyphs_single_line
+        self._multiline = multiline       
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
         self._dpi = dpi or 96
         self.document = document
+        
+    @property
+    def _flow_glyphs(self):
+        if self._multiline:
+            return self._flow_glyphs_wrap
+        else:
+            return self._flow_glyphs_single_line
 
     def _initialize_groups(self):
         decoration_shader = get_default_decoration_shader()
