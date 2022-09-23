@@ -40,6 +40,8 @@
 class MouseStateHandler:
     """Simple handler that tracks the state of buttons from the mouse. If a
     button is pressed then this handler holds a True value for it.
+    If the window loses focus, all buttons will be reset to False in order
+    to avoid a "sticky" button state.
 
     For example::
 
@@ -67,6 +69,9 @@ class MouseStateHandler:
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.data[button] = False
+
+    def on_deactivate(self):
+        self.data.clear()
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.data["x"] = x
@@ -96,15 +101,21 @@ def buttons_string(buttons):
     """
     button_names = []
     if buttons & LEFT:
-        button_names.append('LEFT')
+        button_names.append("LEFT")
     if buttons & MIDDLE:
-        button_names.append('MIDDLE')
+        button_names.append("MIDDLE")
     if buttons & RIGHT:
-        button_names.append('RIGHT')
-    return '|'.join(button_names)
+        button_names.append("RIGHT")
+    if buttons & MOUSE4:
+        button_names.append("MOUSE4")
+    if buttons & MOUSE5:
+        button_names.append("MOUSE5")
+    return "|".join(button_names)
 
 
 # Symbolic names for the mouse buttons
 LEFT = 1 << 0
 MIDDLE = 1 << 1
 RIGHT = 1 << 2
+MOUSE4 = 1 << 3
+MOUSE5 = 1 << 4
