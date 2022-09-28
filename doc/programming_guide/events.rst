@@ -234,7 +234,7 @@ not need an event handler.
 Implementing the Observer pattern
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `Observer design pattern`_, also known as Publisher/Subscriber, is a
+The Observer design pattern, also known as Publisher/Subscriber, is a
 simple way to decouple software components.  It is used extensively in many
 large software projects; for example, Java's AWT and Swing GUI toolkits and the
 Python ``logging`` module; and is fundamental to any Model-View-Controller
@@ -249,6 +249,7 @@ without needing the bulky ``Attach``, ``Detach`` and ``Notify`` methods::
     class ClockTimer(pyglet.event.EventDispatcher):
         def tick(self):
             self.dispatch_event('on_update')
+
     ClockTimer.register_event_type('on_update')
 
     # Abstract observer class
@@ -274,5 +275,3 @@ The two clock objects will be notified whenever the timer is "ticked", though
 neither the timer nor the clocks needed prior knowledge of the other.  During
 object construction any relationships between subjects and observers can be
 created.
-
-.. _Observer design pattern: Gamma, et al., `Design Patterns` Addison-Wesley 1994

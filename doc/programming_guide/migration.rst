@@ -34,21 +34,23 @@ Sprites
 Sprites now have a `z` position, in addition to `x` and `y`. This can be useful
 for some sorting techniques, or even for advanced uses like positioning 2D
 sprites on a 3D background. If you are using the `Sprite.position` property,
-make sure to account for the additional `z` value::
+make sure to account for the additional `z` value (leave it at 0 if unsure)::
 
     sprx, spry, sprz = my_sprite.position
     my_sprite.position = 10, 10, 0
 
 
-Window Projection
-^^^^^^^^^^^^^^^^^
+Window Projection and Cameras
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Windows now have `projection` and `view` properties, which are 4x4 matrixes.
 These two matrixes are used internally to determine the final screen projection.
-In legacy pyglet, you may have used OpenGL commands like `glMatrixMode`,
-`glOrtho`, `glTranslate`, etc. to manipulate the projection and translation
-matrices. In pyglet 2.0+, you can simply set the matrixes directly without
-having to deal with OpenGL's internal Matrix stack.
+In pyglet 1.X, you may have used OpenGL commands like `glOrtho`, `glTranslate`,
+etc. to manipulate the "Camera". Or, if working with the OpenGL matrixes
+directly, commands such as `glMatrixMode`, `glPushMatrix`, `glPopMatrix`, etc.
+to manipulate the matrixes. In pyglet 2.0+, you can simply set the matrixes
+directly on the Window.
 
+For example:
 If you want to set a perspective (3D) projection instead of the default
 orthographic (2D) projection, simply set the `Window.projection` matrix.
 If you want to scroll the viewport, simply set the `Window.view` matrix.
@@ -60,12 +62,12 @@ deep mathematical knowledge.
 
 Application Event Loop
 ^^^^^^^^^^^^^^^^^^^^^^
-In previous releases, the Window was redrawn (The `Window.on_draw()` event)
-whenever any event was dispatched, or scheduled function was called. This
-often lead to unpredictability for users. In pyglet 2.0, a new `interval`
-argument has been added to `pyglet.app.run`. Windows will now always be
-redrawn at this interval. It defaults to 60fps (1/60), but can be set as
-desired::
+In previous releases, the Window was redrawn (and the `Window.on_draw()` event
+dispatched) whenever any scheduled function was called, or event dispatched.
+This often lead to unpredictability and potentially unstable frame rates. In
+pyglet 2.0, a new `interval` argument has been added to `pyglet.app.run`.
+Windows will now always be redrawn at this interval. It defaults to 60fps (1/60),
+but can be set as desired::
 
     @mywindow.event
     def on_draw():
