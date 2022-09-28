@@ -670,8 +670,7 @@ class Controller(EventDispatcher):
                         self.dpright = True
                     if normalized_value < -0.1:
                         self.dpleft = True
-                    self.dispatch_event('on_dpad_motion', self,
-                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+                    self.dispatch_event('on_dpad_motion', self, self.dpleft, self.dpright, self.dpup, self.dpdown)
 
             elif axis_name in ("lefttrigger", "righttrigger"):
                 @control.event
@@ -716,7 +715,6 @@ class Controller(EventDispatcher):
                 def on_release():
                     self.dispatch_event('on_button_release', self, button_name)
 
-        # TODO: Test this on Windows and Mac:
         def add_dedicated_hat(control):
             # 8-directional hat encoded as a single control (Windows/Mac)
             @control.event
@@ -833,9 +831,9 @@ class Controller(EventDispatcher):
             `stick` : string
                 The name of the stick that changed.
             `xvalue` : float
-                The current x axis value, normalized to [-1, 1].
+                The current X axis value, normalized to [-1, 1].
             `yvalue` : float
-                The current y axis value, normalized to [-1, 1].
+                The current Y axis value, normalized to [-1, 1].
         """
 
     def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
@@ -977,7 +975,7 @@ class AppleRemote(EventDispatcher):
 
         The 'select_hold' and 'menu_hold' button release events are sent
         immediately after the corresponding press events regardless of
-        whether or not the user has released the button.
+        whether the user has released the button.
 
         :Parameters:
             `button` : str

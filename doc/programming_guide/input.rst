@@ -5,19 +5,18 @@ pyglet's :py:mod:`~pyglet.input` module allows you to accept input
 from any USB human interface device (HID). High-level abstractions are
 provided for working with game controllers, joysticks, and the Apple
 Remote. The game controller abstraction is suited for modern gamepads,
-such as are found on home video game consoles. These types of controllers
-have a strictly defined set of inputs. The joystick abstraction is more
-generalized, and works with devices with an arbitrary number of buttons,
-axis, and hats. This includes devices like steering wheels, joysticks
-used for flight simulators, and just about anything else. For most types
-of games, the Controller abstraction is usually the better choice.
-For advanced use cases, it's also possible to access the low-level
+such as are found on home video game consoles. The joystick abstraction
+is more generalized, and works with devices with an arbitrary number of
+buttons, axis, and hats. This includes devices like steering wheels,
+joysticks used for flight simulators, and just about anything else. For
+most types of games, the Controller abstraction is usually the better
+choice. For advanced use cases, it's also possible to access the low-level
 devices directly.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
-devices, and a ControllerManager class for hot-plugging of Controllers::
+devices, and a ControllerManager class to support hot-plugging of Controllers::
 
-    # get a list of all low-level devices:
+    # get a list of all low-level input devices:
     devices = pyglet.input.get_devices()
 
     # get a list of all controllers:

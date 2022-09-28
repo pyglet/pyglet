@@ -227,12 +227,12 @@ def get_devices(display=None):
     _init_directinput()
     _devices = []
     _xinput_devices = []
-    if pyglet.options["xinput_controllers"]:
-        try:
-            from .xinput import get_xinput_guids
-            _xinput_devices = get_xinput_guids()
-        except ImportError:
-            pass
+
+    try:
+        from .xinput import get_xinput_guids
+        _xinput_devices = get_xinput_guids()
+    except ImportError:
+        pass
 
     def _device_enum(device_instance, arg):
         guid_id = format(device_instance.contents.guidProduct.Data1, "08x")

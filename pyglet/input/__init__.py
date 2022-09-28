@@ -192,19 +192,15 @@ else:
             from .wintab import get_tablets
         except:
             pass
-        if options["xinput_controllers"] is False:
-            get_devices = dinput_get_devices
-            get_controllers = dinput_get_controllers
-        else:
-            from .xinput import get_devices as xinput_get_devices
-            from .xinput import get_controllers as xinput_get_controllers
-            from .xinput import XInputControllerManager as ControllerManager
+        from .xinput import get_devices as xinput_get_devices
+        from .xinput import get_controllers as xinput_get_controllers
+        from .xinput import XInputControllerManager as ControllerManager
 
-            def get_devices(display=None):
-                return xinput_get_devices() + dinput_get_devices(display)
+        def get_devices(display=None):
+            return xinput_get_devices() + dinput_get_devices(display)
 
-            def get_controllers(display=None):
-                return xinput_get_controllers() + dinput_get_controllers(display)
+        def get_controllers(display=None):
+            return xinput_get_controllers() + dinput_get_controllers(display)
 
     elif compat_platform == 'darwin':
         from .darwin_hid import get_devices
