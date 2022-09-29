@@ -360,10 +360,10 @@ class Vec3:
             return self.__add__(_typing.cast(Vec3, other))
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(object, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
+        return isinstance(other, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
 
     def __ne__(self, other: object) -> bool:
-        return not isinstance(object, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
+        return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
 
     def from_magnitude(self, magnitude: float) -> Vec3:
         """Create a new Vector of the given magnitude by normalizing,
