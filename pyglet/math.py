@@ -107,6 +107,9 @@ class Vec2:
     def __truediv__(self, other: Vec2) -> Vec2:
         return Vec2(self.x / other.x, self.y / other.y)
 
+    def __floordiv__(self, other: Vec2) -> Vec2:
+        return Vec2(self.x // other.x, self.y // other.y)
+
     def __abs__(self) -> float:
         return _math.sqrt(self.x ** 2 + self.y ** 2)
 
@@ -371,6 +374,9 @@ class Vec3:
     def __truediv__(self, other: Vec3) -> Vec3:
         return Vec3(self.x / other.x, self.y / other.y, self.z / other.z)
 
+    def __floordiv__(self, other: Vec3) -> Vec3:
+        return Vec3(self.x // other.x, self.y // other.y, self.z // other.z)
+
     def __abs__(self) -> float:
         return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
 
@@ -587,6 +593,9 @@ class Vec4:
 
     def __truediv__(self, other: Vec4) -> Vec4:
         return Vec4(self.x / other.x, self.y / other.y, self.z / other.z, self.w / other.w)
+
+    def __floordiv__(self, other: Vec4) -> Vec4:
+        return Vec4(self.x // other.x, self.y // other.y, self.z // other.z, self.w // other.w)
 
     def __abs__(self) -> float:
         return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2 + self.w ** 2)
