@@ -1,7 +1,5 @@
 include LICENSE
-include NOTICE
 include README.md
-include CHANGELOG
 include RELEASE_NOTES
 
 # Public tools
@@ -15,11 +13,6 @@ prune examples/**/dist
 recursive-include tests *
 recursive-exclude tests/regression/images *.png
 recursive-exclude tests *.log
-
-# Docs
-# removed - docs available separately
-#recursive-include doc/html *
-#recursive-include doc/pdf *
 
 # Development artifacts
 prune **/.svn
