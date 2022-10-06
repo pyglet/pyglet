@@ -395,6 +395,8 @@ class XlibContextARB(XlibContext13):
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
         elif self.config.opengl_api == "gles":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
+        else:
+            raise ValueError(f"Unknown OpenGL API: {self.opengl_api}")
 
         flags = 0
         if self.config.forward_compatible:

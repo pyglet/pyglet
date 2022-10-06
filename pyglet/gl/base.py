@@ -120,7 +120,7 @@ class Config:
     major_version = None
     minor_version = None
     forward_compatible = None
-    opengl_api = None
+    opengl_api = "gl"
     debug = None
 
     def __init__(self, **kwargs):
@@ -220,7 +220,7 @@ class CanvasConfig(Config):
         self.major_version = base_config.major_version
         self.minor_version = base_config.minor_version
         self.forward_compatible = base_config.forward_compatible
-        self.opengl_api = base_config.opengl_api
+        self.opengl_api = base_config.opengl_api or self.opengl_api
         self.debug = base_config.debug
 
     def compatible(self, canvas):

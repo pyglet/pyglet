@@ -73,6 +73,8 @@ class HeadlessConfig(Config):
             attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT])
         elif self.opengl_api == "gles":
             attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT])
+        else:
+            raise ValueError(f"Unknown OpenGL API: {self.opengl_api}")
         attrs.extend([EGL_NONE])
         attrs_list = (egl.EGLint * len(attrs))(*attrs)
 
