@@ -8,9 +8,13 @@
 and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
-> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many new exciting features, but also some necessary breaking changes. If your game/application has suddenly stopped working, please read the [migration section in the development guide](https://pyglet.readthedocs.io/en/master/programming_guide/migration.html)
+> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
+> new exciting features, but also some necessary breaking changes. If your game/application has suddenly 
+> stopped working, please read the [migration section in the documentation](https://pyglet.readthedocs.io/en/master/programming_guide/migration.html)
 
-> :warning: The `master` branch contains the latest major release. The previous version pyglet is tracked in the `pyglet-1.5-maintenance` branch. **If you want to do a pull request for the previous release, please target the appropriate maintenance branch**. 
+> :warning: The `master` branch contains the latest major release. The previous version pyglet is tracked
+> in the `pyglet-1.5-maintenance` branch. **If you want to do a pull request for the previous release,
+> please target the appropriate maintenance branch**. 
 
 * pyglet [documentation]
 * pyglet on [PyPI]
