@@ -8,7 +8,9 @@
 and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
-> :warning: The `pyglet-1.5-maintenance` branch is the current stable release. The `master` branch contains the development code for the upcoming 2.0 release, and may be unstable. **If you want to do a pull request, please target the `pyglet-1.5-maintenance` branch where appropriate**. 
+> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many new exciting features, but also some necessary breaking changes. If your game/application has suddenly stopped working, please read the [migration section in the development guide](https://pyglet.readthedocs.io/en/master/programming_guide/migration.html)
+
+> :warning: The `master` branch contains the latest major release. The previous version pyglet is tracked in the `pyglet-1.5-maintenance` branch. **If you want to do a pull request for the previous release, please target the appropriate maintenance branch**. 
 
 * pyglet [documentation]
 * pyglet on [PyPI]
@@ -41,8 +43,7 @@ Some features of pyglet are:
 
 ## Requirements
 
-pyglet runs under Python 3.7+. Being written in pure Python, it also works on other Python
-interpreters such as PyPy. Supported platforms are:
+pyglet runs under Python 3.7+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
 
 * Windows 7 or later
 * Mac OS X 10.3 or later
@@ -52,12 +53,10 @@ interpreters such as PyPy. Supported platforms are:
   * GDK 2.0+ or Pillow (required for loading images other than PNG and BMP)
   * OpenAL or Pulseaudio (required for playing audio)
 
-**Please note that pyglet v1.5 will likely be the last version to support
-legacy OpenGL**. Future releases of pyglet will be targeting OpenGL 3.3+.
-Previous releases will remain available for download.
+**As of pyglet 2.0, OpenGL 3.3+ is required**. 
 
-Starting with version 1.4, to play compressed audio and video files,
-you will also need [FFmpeg](https://ffmpeg.org/).
+To play a large variety of compressed audio and video files,
+pyglet can optionally take advantage of [FFmpeg](https://ffmpeg.org/).
 
 ## Installation
 
