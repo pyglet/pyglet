@@ -6,7 +6,7 @@ Migrating from pyglet 1.5
 pyglet 2.0 includes a number of breaking changes, so some effort may be needed
 to be upgrade your application or game. Primarily, pyglet 2.0 is now built
 around modern OpenGL (3.3+), wheras previous releases used legacy OpenGL 2.0
-contexts. While much has changed internally, the user facing API remains
+contexts. While much has changed internally, the user facing APIs remain
 mostly the same. This means that if your program does not use much OpenGL
 directly, migrating to pyglet 2.0 will be fairly easy. If your program *does*
 make heavy use of OpenGL, then all of the caveats that go with modernizing an
@@ -21,6 +21,11 @@ support for common Vector and Matrix types.
 
 pyglet 2.0 should be just as easy to use, but will allow more flexibility due
 to the highly programmable nature of modern OpenGL.
+
+If you maintain a project that relies on pyglet, and are unable to update right
+away, you may want to pin your pyglet version (in requirements.txt or setup.py)::
+
+    pyglet<2
 
 
 General Changes
