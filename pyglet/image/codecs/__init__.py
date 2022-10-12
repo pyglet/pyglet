@@ -92,13 +92,15 @@ class _ImageCodecRegistry(CodecRegistry):
             except DecodeException as e:
                 if not first_exception:
                     first_exception = e
-                file.seek(0)
+                if file:
+                    file.seek(0)
 
         for decoder in self.get_animation_decoders():   # Try ALL codecs
             try:
                 return decoder.decode_animation(filename, file, **kwargs)
             except DecodeException:
-                file.seek(0)
+                if file:
+                    file.seek(0)
 
         if not first_exception:
             raise DecodeException(f"No decoders available for this file type: {filename}")
