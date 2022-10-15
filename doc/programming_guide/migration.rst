@@ -4,7 +4,7 @@ Migrating from pyglet 1.5
 =========================
 
 pyglet 2.0 includes a number of breaking changes, so some effort may be needed
-to be upgrade your application or game. Primarily, pyglet 2.0 is now built
+to upgrade your application or game. Primarily, pyglet 2.0 is now built
 around modern OpenGL (3.3+), wheras previous releases used legacy OpenGL 2.0
 contexts. While much has changed internally, the user facing APIs remain
 mostly the same. This means that if your program does not use much OpenGL
@@ -12,7 +12,7 @@ directly, migrating to pyglet 2.0 will be fairly easy. If your program *does*
 make heavy use of OpenGL, then all of the caveats that go with modernizing an
 OpenGL program will apply.
 
-In addition to changes, pyglet 2.0 also includes quite a few nice improvments.
+In addition to changes, pyglet 2.0 also includes quite a few nice improvements.
 For games, user input has been improved with a new Controller API. This is a
 modern compliment to the Joystick API, specifically for game controllers.
 Internally, a lot of work has been done to improve the platform abstractions.
