@@ -451,7 +451,7 @@ class TextEntry(WidgetBase):
         super().__init__(x, y, width, height)
 
     def _update_position(self):
-        self._layout.position = self._x, self._y
+        self._layout.position = self._x, self._y, 0
         self._outline.position = self._x - self._pad, self._y - self._pad
 
     @property

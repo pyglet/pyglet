@@ -285,7 +285,7 @@ class _AbstractBox:
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -322,7 +322,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.advance = advance
 
-    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
         assert self.glyphs
         program = get_default_layout_shader()
 
@@ -347,7 +347,7 @@ class _GlyphBox(_AbstractBox):
                 v2 += x1
                 v1 += y + baseline
                 v3 += y + baseline
-                vertices.extend(map(round, [v0, v1, v2, v1, v2, v3, v0, v3]))
+                vertices.extend(map(round, [v0, v1, z, v2, v1, z, v2, v3, z, v0, v3, z]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
                 x1 += glyph.advance
@@ -399,14 +399,14 @@ class _GlyphBox(_AbstractBox):
                 if len(bg) != 4:
                     raise ValueError("Background color requires 4 values (R, G, B, A). Value received: {}".format(bg))
 
-                background_vertices.extend([x1, y1, x2, y1, x2, y2, x1, y2])
+                background_vertices.extend([x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
                 if len(underline) != 4:
                     raise ValueError("Underline color requires 4 values (R, G, B, A). Value received: {}".format(underline))
 
-                underline_vertices.extend([x1, y + baseline - 2, x2, y + baseline - 2])
+                underline_vertices.extend([x1, y + baseline - 2, z, x2, y + baseline - 2, z])
                 underline_colors.extend(underline * 2)
 
             x1 = x2
@@ -471,8 +471,8 @@ class _InlineElementBox(_AbstractBox):
         self.element = element
         self.placed = False
 
-    def place(self, layout, i, x, y, rotation, anchor_x, anchor_y, context):
-        self.element.place(layout, x, y)
+    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+        self.element.place(layout, x, y, z)
         self.placed = True
         context.add_box(self)
 
@@ -539,10 +539,10 @@ class _InvalidRange:
 
 
 layout_vertex_source = """#version 330 core
-    in vec2 position;
+    in vec3 position;
     in vec4 colors;
     in vec3 tex_coords;
-    in vec2 translation;
+    in vec3 translation;
     in vec2 anchor;
     in float rotation;
 
@@ -571,9 +571,9 @@ layout_vertex_source = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 0.0, 1.0);
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
 
-        vert_position = vec4(position + translation, 0.0, 1.0);
+        vert_position = vec4(position + translation, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -603,9 +603,9 @@ layout_fragment_source = """#version 330 core
 """
 
 decoration_vertex_source = """#version 330 core
-    in vec2 position;
+    in vec3 position;
     in vec4 colors;
-    in vec2 translation;
+    in vec3 translation;
     in vec2 anchor;
     in float rotation;
 
@@ -633,9 +633,9 @@ decoration_vertex_source = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 0.0, 1.0);
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
 
-        vert_position = vec4(position + translation, 0.0, 1.0);
+        vert_position = vec4(position + translation, 1.0);
         vert_colors = colors;
     }
 """
@@ -876,6 +876,7 @@ class TextLayout:
 
     _x = 0
     _y = 0
+    _z = 0
     _rotation = 0
     _width = None
     _height = None
@@ -1035,7 +1036,7 @@ class TextLayout:
             dx = x - self._x
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.position[:]
-                vertices[::2] = [x + dx for x in vertices[::2]]
+                vertices[::3] = [x + dx for x in vertices[::3]]
                 vertex_list.position[:] = vertices
             self._x = x
 
@@ -1061,9 +1062,33 @@ class TextLayout:
             dy = y - self._y
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.position[:]
-                vertices[1::2] = [y + dy for y in vertices[1::2]]
+                vertices[1::3] = [y + dy for y in vertices[1::3]]
                 vertex_list.position[:] = vertices
             self._y = y
+
+    @property
+    def z(self):
+        """Z coordinate of the layout.
+
+        :type: int
+        """
+        return self._z
+
+    @z.setter
+    def z(self, z):
+        self._set_z(z)
+
+    def _set_z(self, z):
+        if self._boxes:
+            self._z = z
+            self._update()
+        else:
+            dz = z - self.z
+            for vertex_list in self._vertex_lists:
+                vertices = vertex_list.position[:]
+                vertices[2::3] = [z + dz for z in vertices[2::3]]
+                vertex_list.position[:] = vertices
+            self._z = z
 
     @property
     def rotation(self):
@@ -1083,32 +1108,36 @@ class TextLayout:
 
     @property
     def position(self):
-        """The (X, Y) coordinates of the layout, as a tuple.
+        """The (X, Y, Z) coordinates of the layout, as a tuple.
 
         See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`,
         and :py:attr:`~pyglet.text.layout.TextLayout.anchor_y`.
 
-        :type: (int, int)
+        :type: (int, int, int)
         """
-        return self._x, self._y
+        return self._x, self._y, self._z
 
     @position.setter
     def position(self, values):
-        x, y = values
+        x, y, z = values
         if self._boxes:
             self._x = x
             self._y = y
+            self._z = z
             self._update()
         else:
             dx = x - self._x
             dy = y - self._y
+            dz = z - self._z
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.position[:]
                 vertices[::2] = [x + dx for x in vertices[::2]]
                 vertices[1::2] = [y + dy for y in vertices[1::2]]
+                vertices[2::3] = [z + dz for z in vertices[2::3]]
                 vertex_list.position[:] = vertices
             self._x = x
             self._y = y
+            self._z = z
 
     @property
     def visible(self):
@@ -1353,7 +1382,7 @@ class TextLayout:
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(left + line.x, top + line.y, line.start, line.boxes, context)
+            self._create_vertex_lists(left + line.x, top + line.y, self._z, line.start, line.boxes, context)
 
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
@@ -1830,9 +1859,9 @@ class TextLayout:
 
         return line_index
 
-    def _create_vertex_lists(self, x, y, i, boxes, context):
+    def _create_vertex_lists(self, x, y, z, i, boxes, context):
         for box in boxes:
-            box.place(self, i, x, y, self._rotation, self._x, self._y, context)
+            box.place(self, i, x, y, z, self._rotation, self._x, self._y, context)
             x += box.advance
             i += box.length
 
@@ -1894,11 +1923,11 @@ class ScrollableTextLayout(TextLayout):
 
     @property
     def position(self):
-        return self._x, self._y
+        return self._x, self._y, self._z
 
     @position.setter
     def position(self, position):
-        self.x, self.y = position
+        self.x, self.y, self.z = position
 
     @property
     def anchor_x(self):
@@ -1924,7 +1953,7 @@ class ScrollableTextLayout(TextLayout):
 
     def _update_translation(self):
         for _vertex_list in self._vertex_lists:
-            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y) * _vertex_list.count
+            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y, 0) * _vertex_list.count
 
     @property
     def view_x(self):
@@ -2309,7 +2338,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             elif y + line.ascent < self._translate_y - self.height:
                 break
 
-            self._create_vertex_lists(left + line.x, top + y, line.start, line.boxes, context)
+            self._create_vertex_lists(left + line.x, top + y, self._z, line.start, line.boxes, context)
 
     @property
     def x(self):
@@ -2335,11 +2364,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @property
     def position(self):
-        return self._x, self._y
+        return self._x, self._y, self._z
 
     @position.setter
     def position(self, position):
-        self._x, self._y = position
+        self._x, self._y, self._z = position
         self._uninit_document()
         self._init_document()
         self._update_scissor_area()
@@ -2412,7 +2441,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def _update_translation(self):
         for line in self.lines:
             for vlist in line.vertex_lists:
-                vlist.translation[:] = (-self._translate_x, -self._translate_y) * vlist.count
+                vlist.translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
 
     @property
     def view_x(self):
