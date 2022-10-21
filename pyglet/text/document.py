@@ -487,7 +487,7 @@ class AbstractDocument(event.EventDispatcher):
         for element in self._elements:
             if element._position == position:
                 return element
-        raise RuntimeError('No element at position %d' % position)
+        raise RuntimeError(f'No element at position {position}')
 
     def set_style(self, start, end, attributes):
         """Set text style of some or all of the document.

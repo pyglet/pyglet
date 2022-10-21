@@ -236,7 +236,7 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'A':
                 mark = mark.upper()
-            return '%s%s%s' % (self.prefix, mark, self.suffix)
+            return f'{self.prefix}{mark}{self.suffix}'
         elif self.numbering in 'iI':
             try:
                 mark = _int_to_roman(value)
@@ -244,9 +244,9 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'i':
                 mark = mark.lower()
-            return '%s%s%s' % (self.prefix, mark, self.suffix)
+            return f'{self.prefix}{mark}{self.suffix}'
         else:
-            return '%s%d%s' % (self.prefix, value, self.suffix)
+            return f'{self.prefix}{value}{self.suffix}'
 
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
