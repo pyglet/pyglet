@@ -274,7 +274,8 @@ class XlibScreen(Screen):
             self.set_mode(self._initial_mode)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(display={self.display!r}, x={self.x}, y={self.y}, width={self.width}, height={self.height}, xinerama={self._xinerama})"
+        return f"{self.__class__.__name__}(display={self.display!r}, x={self.x}, y={self.y}, " \
+               f"width={self.width}, height={self.height}, xinerama={self._xinerama})"
 
 
 

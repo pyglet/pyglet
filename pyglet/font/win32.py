@@ -142,9 +142,9 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 
         if _debug_font:
             _debug('%r.render(%s)' % (self, text))
-            _debug('abc.abcA = %r' % abc.abcA)
-            _debug('abc.abcB = %r' % abc.abcB)
-            _debug('abc.abcC = %r' % abc.abcC)
+            _debug(f'abc.abcA = {abc.abcA}')
+            _debug(f'abc.abcB = {abc.abcB}')
+            _debug(f'abc.abcC = {abc.abcC}')
             _debug('width = %r' % width)
             _debug('height = %r' % height)
             _debug('lsb = %r' % lsb)

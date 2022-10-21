@@ -213,7 +213,7 @@ class FreeTypeFont(base.Font):
     def _load_font_face_from_system(self):
         match = get_fontconfig().find_font(self._name, self.size, self.bold, self.italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % self._name)
+            raise base.FontException(f'Could not match font "{self._name}"')
         self.face = FreeTypeFace.from_fontconfig(match)
 
     @classmethod
@@ -258,7 +258,7 @@ class FreeTypeFace:
             return cls(match.face)
         else:
             if not match.file:
-                raise base.FontException('No filename for "%s"' % match.name)
+                raise base.FontException(f'No filename for "{match.name}"')
             return cls.from_file(match.file)
 
     @property
