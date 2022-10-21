@@ -79,7 +79,7 @@ def dump_python():
     print('os.getcwd():', os.getcwd())
     for key, value in os.environ.items():
         if key.startswith('PYGLET_'):
-            print("os.environ['%s']: %s" % (key, value))
+            print(f"os.environ['{key}']: {value}")
 
 
 def dump_pyglet():

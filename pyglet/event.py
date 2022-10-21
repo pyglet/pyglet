@@ -398,7 +398,7 @@ class EventDispatcher:
             "EventDispatcher.register_event_type('event_name')."
         )
         assert event_type in self.event_types, \
-            "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
+            f"{event_type} not found in {self}.event_types == {self.event_types}"
 
         invoked = False
 

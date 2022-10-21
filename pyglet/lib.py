@@ -272,7 +272,7 @@ class MachOLibraryLoader(LibraryLoader):
                 lib = _TraceLibrary(lib)
             return lib
 
-        raise ImportError("Can't find framework %s." % name)
+        raise ImportError(f"Can't find framework {name}.")
 
 
 class LinuxLibraryLoader(LibraryLoader):
