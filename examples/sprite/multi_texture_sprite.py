@@ -103,7 +103,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glActiveTexture(GL_TEXTURE0)
 
     def __repr__(self):
-        return '%s(%r-%d)' % (self.__class__.__name__, self.texture, self.texture.id)
+        return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and

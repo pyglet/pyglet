@@ -53,9 +53,9 @@ class RegionAllocator:
                 region = next(regions)
                 block_used = True
                 if region.start < block_start:
-                    raise Exception('Start of %r was not covered at %d' % (region, block_start))
+                    raise Exception(f'Start of {region!r} was not covered at {block_start}')
                 # elif region.start > block_start:
-                #     raise Exception('Uncovered block from %d to %r' % (block_start, region))
+                #     raise Exception(f'Uncovered block from {block_start} to {region!r}')
                 block_start += region.size
                 block_size -= region.size
                 if block_size < 0:
@@ -67,17 +67,17 @@ class RegionAllocator:
             pass
 
         if not block_used:
-            raise Exception('Uncovered block(s) from %d' % block_start)
+            raise Exception(f'Uncovered block(s) from {block_start}')
 
         try:
             block_start, block_size = next(blocks)
-            raise Exception('Uncovered block(s) from %d' % block_start)
+            raise Exception(f'Uncovered block(s) from {block_start}')
         except StopIteration:
             pass
 
         try:
             region = next(regions)
-            raise Exception('%r was not covered')
+            raise Exception(f'{region!r} was not covered')
         except StopIteration:
             pass
 
@@ -88,9 +88,9 @@ class RegionAllocator:
         last = -1
         for start, size in zip(starts, sizes):
             if start < last:
-                raise Exception('Block at %d is out of order' % start)
+                raise Exception(f'Block at {start} is out of order')
             if start == last:
-                raise Exception('Block at %d is redundant' % start)
+                raise Exception(f'Block at {start} is redundant')
             last = start + size
 
     def alloc(self, size):

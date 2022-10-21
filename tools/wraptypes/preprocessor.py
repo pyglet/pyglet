@@ -780,7 +780,7 @@ class PreprocessorGrammar(Grammar):
             # TODO
             print('%s:%d Syntax error at %r' % \
                 (t.lexer.filename, t.lexer.lineno, t.value), file=sys.stderr)
-            #t.lexer.cparser.handle_error('Syntax error at %r' % t.value,
+            # t.lexer.cparser.handle_error(f'Syntax error at {t.value!r}',
             #     t.lexer.filename, t.lexer.lineno)
         # Don't alter lexer: default behaviour is to pass error production
         # up until it hits the catch-all at declaration, at which point

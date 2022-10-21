@@ -198,7 +198,7 @@ _option_types = {
 for key in options:
     """Read defaults for options from environment"""
     assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
-    env = 'PYGLET_%s' % key.upper()
+    env = f'PYGLET_{key.upper()}'
     try:
         value = os.environ[env]
         if _option_types[key] is tuple:
@@ -265,10 +265,10 @@ def _trace_frame(thread, frame, indent):
                 filename = os.path.join('...', filename)
             _trace_filename_abbreviations[path] = filename
 
-        location = '(%s:%d)' % (filename, line)
+        location = f'({filename}:{line})'
 
     if indent:
-        name = 'Called from %s' % name
+        name = f'Called from {name}'
     print('[%d] %s%s %s' % (thread, indent, name, location))
 
     if _trace_args:

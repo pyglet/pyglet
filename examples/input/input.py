@@ -17,16 +17,16 @@ devices = pyglet.input.get_devices()
 def watch_control(device, control):
     @control.event
     def on_change(value):
-        print('%r: %r.on_change(%r)' % (device, control, value))
+        print(f'{device!r}: {control!r}.on_change({value!r})')
 
     if isinstance(control, pyglet.input.base.Button):
         @control.event
         def on_press():
-            print('%r: %r.on_press()' % (device, control))
+            print(f"{device!r}: {control!r}.on_press()")
 
         @control.event
         def on_release():
-            print('%r: %r.on_release()' % (device, control))
+            print(f'{device!r}: {control!r}.on_release()')
 
 
 print('Devices:')
