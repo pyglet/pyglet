@@ -30,7 +30,7 @@ def require_platform(platform):
         :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform not in platform,
-                              reason='requires platform: %s' % str(platform))
+                              reason=f'requires platform: {platform!s}')
 
 
 def skip_platform(platform):
@@ -41,7 +41,7 @@ def skip_platform(platform):
         :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform in platform,
-                              reason='not supported for platform: %s' % str(platform))
+                              reason=f'not supported for platform: {platform!s}')
 
 
 def require_gl_extension(extension):

@@ -87,7 +87,7 @@ def get_audio_driver():
                 break
         except Exception:
             if _debug:
-                print('Error importing driver %s:' % driver_name)
+                print(f'Error importing driver {driver_name}:')
                 import traceback
                 traceback.print_exc()
     else:

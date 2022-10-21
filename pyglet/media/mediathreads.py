@@ -101,7 +101,7 @@ class MediaThread:
                 Time to wait, in seconds.
 
         """
-        assert _debug('MediaThread.sleep(%r)' % timeout)
+        assert _debug(f'MediaThread.sleep({timeout!r})')
         with self._condition:
             if not self._stopped:
                 self._condition.wait(timeout)
