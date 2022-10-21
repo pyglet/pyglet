@@ -269,17 +269,17 @@ def _trace_frame(thread, frame, indent):
 
     if indent:
         name = f'Called from {name}'
-    print('[%d] %s%s %s' % (thread, indent, name, location))
+    print(f'[{thread}] {indent}{name} {location}')
 
     if _trace_args:
         if is_ctypes:
             args = [_trace_repr(arg) for arg in frame.f_locals['args']]
-            print('  %sargs=(%s)' % (indent, ', '.join(args)))
+            print(f'  {indent}args=({", ".join(args)})')
         else:
             for argname in code.co_varnames[:code.co_argcount]:
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
-                    print('  %s%s=%s' % (indent, argname, argvalue))
+                    print(f'  {indent}{argname}={argvalue}')
                 except:
                     pass
 
@@ -335,7 +335,7 @@ class _ModuleProxy:
             if self._module is not None:
                 raise
 
-            import_name = 'pyglet.%s' % self._module_name
+            import_name = f'pyglet.{self._module_name}'
             __import__(import_name)
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)
@@ -349,7 +349,7 @@ class _ModuleProxy:
             if self._module is not None:
                 raise
 
-            import_name = 'pyglet.%s' % self._module_name
+            import_name = f'pyglet.{self._module_name}'
             __import__(import_name)
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)

@@ -89,7 +89,7 @@ def dump_pyglet():
     print('pyglet.compat_platform:', pyglet.compat_platform)
     print('pyglet.__file__:', pyglet.__file__)
     for key, value in pyglet.options.items():
-        print("pyglet.options['%s'] = %r" % (key, value))
+        print(f"pyglet.options['{key}'] = {value!r}")
 
 
 def dump_window():
@@ -103,10 +103,10 @@ def dump_window():
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):
-        print('screens[%d]: %r' % (i, screen))
+        print(f'screens[{i}]: {screen!r}')
     window = pyglet.window.Window(visible=False)
     for key, value in window.config.get_gl_attributes():
-        print("config['%s'] = %r" % (key, value))
+        print(f"config['{key}'] = {value!r}")
     print('context:', repr(window.context))
 
     _heading('window.context._info')
@@ -207,9 +207,9 @@ def dump_wintab():
     impl_version = wintab.get_implementation_version()
     spec_version = wintab.get_spec_version()
 
-    print('WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
-                                             impl_version >> 8, impl_version & 0xff,
-                                             spec_version >> 8, spec_version & 0xff))
+    print('WinTab: {0} {1}.{2} (Spec {3}.{4})'.format(interface_name,
+                                                      impl_version >> 8, impl_version & 0xff,
+                                                      spec_version >> 8, spec_version & 0xff))
 
 
 def _try_dump(heading, func):
