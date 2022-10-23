@@ -385,6 +385,7 @@ class Caret:
         else:
             self._ideal_line = line
         x, y = self._layout.get_point_from_position(self._position, line)
+        z = self._layout.z
         if update_ideal_x:
             self._ideal_x = x
 
@@ -392,7 +393,7 @@ class Caret:
         y += self._layout.y + self._layout.height
 
         font = self._layout.document.get_font(max(0, self._position - 1))
-        self._list.position[:] = [x, y + font.descent, x, y + font.ascent]
+        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
 
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))

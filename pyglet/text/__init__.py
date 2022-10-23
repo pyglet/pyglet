@@ -246,6 +246,8 @@ class DocumentLabel(layout.TextLayout):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the label in pixels, or None
             `height` : int

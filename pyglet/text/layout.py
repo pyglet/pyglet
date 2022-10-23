@@ -372,7 +372,6 @@ class _GlyphBox(_AbstractBox):
                                                   tex_coords=('f', tex_coords),
                                                   rotation=('f', ((rotation,) * 4) * n_glyphs),
                                                   anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
-
         context.add_list(vertex_list)
 
         # Decoration (background color and underline)
@@ -397,14 +396,14 @@ class _GlyphBox(_AbstractBox):
 
             if bg is not None:
                 if len(bg) != 4:
-                    raise ValueError("Background color requires 4 values (R, G, B, A). Value received: {}".format(bg))
+                    raise ValueError(f"Background color requires 4 values (R, G, B, A). Value received: {bg}")
 
                 background_vertices.extend([x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
                 if len(underline) != 4:
-                    raise ValueError("Underline color requires 4 values (R, G, B, A). Value received: {}".format(underline))
+                    raise ValueError(f"Underline color requires 4 values (R, G, B, A). Value received: {underline}")
 
                 underline_vertices.extend([x1, y + baseline - 2, z, x2, y + baseline - 2, z])
                 underline_colors.extend(underline * 2)
@@ -419,21 +418,22 @@ class _GlyphBox(_AbstractBox):
                 background_indices.extend([element + (bg_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
 
             background_list = decoration_program.vertex_list_indexed(bg_count * 4, GL_TRIANGLES, background_indices,
-                                                          layout.batch, layout.background_decoration_group,
-                                                          position=('f', background_vertices),
-                                                          colors=('Bn', background_colors),
-                                                          rotation=('f', (rotation,) * 4),
-                                                          anchor=('f', (anchor_x, anchor_y) * 4))
+                                                                     layout.batch, layout.background_decoration_group,
+                                                                     position=('f', background_vertices),
+                                                                     colors=('Bn', background_colors),
+                                                                     rotation=('f', (rotation,) * 4),
+                                                                     anchor=('f', (anchor_x, anchor_y) * 4))
             context.add_list(background_list)
 
         if underline_vertices:
+            ul_count = len(underline_vertices) // 3
             decoration_program = get_default_decoration_shader()
-            underline_list = decoration_program.vertex_list(len(underline_vertices) // 2, GL_LINES,
-                                                 layout.batch, layout.foreground_decoration_group,
-                                                 position=('f',underline_vertices),
-                                                 colors=('Bn', underline_colors),
-                                                 rotation=('f', (rotation,) * 4),
-                                                 anchor=('f', (anchor_x, anchor_y) * 4))
+            underline_list = decoration_program.vertex_list(ul_count, GL_LINES,
+                                                            layout.batch, layout.foreground_decoration_group,
+                                                            position=('f', underline_vertices),
+                                                            colors=('Bn', underline_colors),
+                                                            rotation=('f', (rotation,) * ul_count),
+                                                            anchor=('f', (anchor_x, anchor_y) * ul_count))
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -2649,7 +2649,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         :rtype: int
         """
         x -= self._translate_x
-        y -= self._translate_y
+        y -= self._translate_y + self._height
 
         line_index = 0
         for line in self.lines:
