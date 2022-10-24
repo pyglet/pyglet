@@ -120,12 +120,14 @@ class VertexDomain:
         self.buffer_attributes = []  # list of (buffer, attributes)
 
         for name, meta in attribute_meta.items():
+            assert meta['format'] in _gl_types, f"'{meta['format']}' is not a valid atrribute format for '{name}'."
             location = meta['location']
             count = meta['count']
             gl_type = _gl_types[meta['format'][0]]
             normalize = 'n' in meta['format']
             attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
             self.attributes.append(attribute)
+
             # Create buffer:
             attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity)
             attribute.buffer.element_size = attribute.stride

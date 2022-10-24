@@ -1,3 +1,21 @@
+pyglet 2.0.0
+Major Release
+
+Changes
+-------
+- pyglet has been upgraded to use use OpenGL 3.3+ core functionality.
+- All high level modules have been internally updated to use modern OpenGL.
+- A large number of cleanups and optimizations.
+
+Features
+--------
+- New `pyglet.math` module including common Matrix and Vector operations.
+- New `pyglet.graphics.shader` module for easily managing Shader objects.
+- New OpenGL bindings, and binding tools.
+- New Game Controller API for modern game controllers, including rumble and automapping.
+- New Framebuffer classes.
+
+
 pyglet 1.5.27
 
 Bugfixes
