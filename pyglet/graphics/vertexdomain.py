@@ -120,7 +120,7 @@ class VertexDomain:
         self.buffer_attributes = []  # list of (buffer, attributes)
 
         for name, meta in attribute_meta.items():
-            assert meta['format'] in _gl_types, f"'{meta['format']}' is not a valid atrribute format for '{name}'."
+            assert meta['format'][0] in _gl_types, f"'{meta['format']}' is not a valid atrribute format for '{name}'."
             location = meta['location']
             count = meta['count']
             gl_type = _gl_types[meta['format'][0]]
