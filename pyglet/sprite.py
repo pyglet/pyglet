@@ -63,7 +63,7 @@ properties determine the sprite's :py:attr:`~pyglet.sprite.Sprite.rotation`,
 :py:attr:`~pyglet.sprite.Sprite.scale` and
 :py:attr:`~pyglet.sprite.Sprite.opacity`.
 
-By default sprite coordinates are restricted to integer values to avoid
+By default, sprite coordinates are restricted to integer values to avoid
 sub-pixel artifacts.  If you require to use floats, for example for smoother
 animations, you can set the ``subpixel`` parameter to ``True`` when creating
 the sprite (:since: pyglet 1.2).
@@ -256,7 +256,7 @@ class SpriteGroup(graphics.Group):
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
-                self.parent is other.parent and
+                self.parent == other.parent and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id and
                 self.blend_src == other.blend_src and
