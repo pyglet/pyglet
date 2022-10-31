@@ -1,9 +1,12 @@
 pyglet Documentation
 ====================
 
-.. DANGER::
-   This documentation is for the upcoming 2.0 release, and is not complete.
-   Please see the `latest` documentation for the current stable release of pyglet.
+.. ATTENTION::
+   This documentation is for the pyglet 2.x series, which has incompatible
+   changes from the 1.5 and older releases. If you are looking for documentation
+   for the previous stable release, please see
+   `1.5 maintenance <https://pyglet.readthedocs.io/en/pyglet-1.5-maintenance/>`_.
+
 
 **pyglet** is a cross-platform windowing and multimedia library for Python,
 intended for developing games and other visually rich applications. It supports

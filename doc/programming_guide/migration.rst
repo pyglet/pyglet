@@ -98,12 +98,24 @@ in Shader Programs. Shaders can be as complex or simple as needed, only defining
 the attributes that are necessary. For instance pyglet objects, such as Sprites and
 Shapes, both have their own custom Shaders with attributes that suite them.
 
-Instead of doing `Batch.add(...)`, you would instead start with a ShaderProgram.
-You can then use the `ShaderProgram.vertex_list(...)` method to create VertexLists.
-These can still be Batched, but you would pass in your Batch as an argument (the
-same way as you would when creating a Sprite, or other object). This is similar
-to how things worked before, but you start with the ShaderProgram first::
+For the above reason, `Batch.add` and `Batch.add_indexed` have been removed.
+Instead you start with a ShaderProgram, and use the `ShaderProgram.vertex_list`
+or `ShaderProgram.vertex_list_indexed` methods. The resulting VertexLists
+can still be Batched, but you pass in your Batch instance as an argument (the
+same way as you would when creating a Sprite, or other object).
+
+In legacy pyglet versions you would do something like this::
+
+    vertex_list = batch.add(4, GL_TRIANGLES, group,
+                            ('v3f', vertex_positions),
+                            ('t3f', tex.tex_coords))
+
+
+In pyglet 2+ you start with the ShaderProgram, and the syntax has changed slightly::
 
     vertex_list = shader_program.vertex_list(4, GL_TRIANGLES, batch, group,
                                              position=('f', vertex_positions),
                                              tex_coords=('f', tex.tex_coords))
+
+Please see the :ref:`guide_graphics` section for more detailed information on the new
+interface.
