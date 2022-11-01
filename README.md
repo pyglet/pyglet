@@ -11,10 +11,8 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 > :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
 > new exciting features, but also some necessary breaking changes. If your game/application has suddenly 
 > stopped working, please read the [migration section in the documentation](https://pyglet.readthedocs.io/en/master/programming_guide/migration.html)
-
-> :warning: The `master` branch contains the latest major release. The previous version pyglet is tracked
-> in the `pyglet-1.5-maintenance` branch. **If you want to do a pull request for the previous release,
-> please target the appropriate maintenance branch**. 
+> The previous version of pyglet is tracked in the `pyglet-1.5-maintenance` branch.
+> **If you want to do a pull request for the previous release, please target the appropriate branch**. 
 
 * pyglet [documentation]
 * pyglet on [PyPI]
@@ -47,7 +45,7 @@ Some features of pyglet are:
 
 ## Requirements
 
-pyglet runs under Python 3.7+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
+pyglet runs under Python 3.8+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
 
 * Windows 7 or later
 * Mac OS X 10.3 or later
