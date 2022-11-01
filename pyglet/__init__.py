@@ -44,7 +44,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.b3'
+version = '2.0.0'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
