@@ -61,7 +61,7 @@ import ctypes
 import pyglet
 
 from pyglet.gl import *
-from pyglet.graphics import allocation, vertexattribute, vertexarray
+from pyglet.graphics import allocation, shader, vertexarray
 from pyglet.graphics.vertexbuffer import BufferObject, MappableBufferObject
 
 
@@ -125,7 +125,7 @@ class VertexDomain:
             count = meta['count']
             gl_type = _gl_types[meta['format'][0]]
             normalize = 'n' in meta['format']
-            attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
+            attribute = shader.Attribute(name, location, count, gl_type, normalize)
             self.attributes.append(attribute)
 
             # Create buffer:
@@ -370,7 +370,7 @@ class IndexedVertexDomain(VertexDomain):
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 
         self.index_gl_type = index_gl_type
-        self.index_c_type = vertexattribute._c_types[index_gl_type]
+        self.index_c_type = shader._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         self.index_buffer = BufferObject(self.index_allocator.capacity * self.index_element_size)
 

@@ -14,6 +14,17 @@ class ShaderException(BaseException):
     pass
 
 
+_c_types = {
+    GL_BYTE: c_byte,
+    GL_UNSIGNED_BYTE: c_ubyte,
+    GL_SHORT: c_short,
+    GL_UNSIGNED_SHORT: c_ushort,
+    GL_INT: c_int,
+    GL_UNSIGNED_INT: c_uint,
+    GL_FLOAT: c_float,
+    GL_DOUBLE: c_double,
+}
+
 # TODO: test other shader types, and update if necessary.
 _shader_types = {
     'vertex': GL_VERTEX_SHADER,
@@ -89,6 +100,102 @@ _attribute_types = {
     GL_DOUBLE_VEC3: (3, 'd'),
     GL_DOUBLE_VEC4: (4, 'd'),
 }
+
+
+class Attribute:
+    """Abstract accessor for an attribute in a mapped buffer."""
+
+    def __init__(self, name, location, count, gl_type, normalize):
+        """Create the attribute accessor.
+
+        :Parameters:
+            `name` : str
+                Name of the vertex attribute.
+            `location` : int
+                Location (index) of the vertex attribute.
+            `count` : int
+                Number of components in the attribute.
+            `gl_type` : int
+                OpenGL type enumerant; for example, ``GL_FLOAT``
+            `normalize`: bool
+                True if OpenGL should normalize the values
+
+        """
+        self.name = name
+        self.location = location
+        self.count = count
+
+        self.gl_type = gl_type
+        self.c_type = _c_types[gl_type]
+        self.normalize = normalize
+
+        self.align = sizeof(self.c_type)
+        self.size = count * self.align
+        self.stride = self.size
+
+    def enable(self):
+        """Enable the attribute."""
+        glEnableVertexAttribArray(self.location)
+
+    def set_pointer(self, ptr):
+        """Setup this attribute to point to the currently bound buffer at
+        the given offset.
+
+        ``offset`` should be based on the currently bound buffer's ``ptr``
+        member.
+
+        :Parameters:
+            `offset` : int
+                Pointer offset to the currently bound buffer for this
+                attribute.
+
+        """
+        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
+
+    def get_region(self, buffer, start, count):
+        """Map a buffer region using this attribute as an accessor.
+
+        The returned region consists of a contiguous array of component
+        data elements.  For example, if this attribute uses 3 floats per
+        vertex, and the `count` parameter is 4, the number of floats mapped
+        will be ``3 * 4 = 12``.
+
+        :Parameters:
+            `buffer` : `AbstractMappable`
+                The buffer to map.
+            `start` : int
+                Offset of the first vertex to map.
+            `count` : int
+                Number of vertices to map
+
+        :rtype: `AbstractBufferRegion`
+        """
+        byte_start = self.stride * start
+        byte_size = self.stride * count
+        array_count = self.count * count
+        ptr_type = POINTER(self.c_type * array_count)
+        return buffer.get_region(byte_start, byte_size, ptr_type)
+
+    def set_region(self, buffer, start, count, data):
+        """Set the data over a region of the buffer.
+
+        :Parameters:
+            `buffer` : AbstractMappable`
+                The buffer to modify.
+            `start` : int
+                Offset of the first vertex to set.
+            `count` : int
+                Number of vertices to set.
+            `data` : A sequence of data components.
+        """
+        byte_start = self.stride * start
+        byte_size = self.stride * count
+        array_count = self.count * count
+        data = (self.c_type * array_count)(*data)
+        buffer.set_data_region(data, byte_start, byte_size)
+
+    def __repr__(self):
+        return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 
 class _Uniform:
