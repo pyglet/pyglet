@@ -34,15 +34,27 @@ If your program only uses pyglet's high level objects (Sprites, Text, Shapes),
 then very little needs to be done. The most prominent changes are described
 in the following sections.
 
-Sprites
-^^^^^^^
-Sprites now have a `z` position, in addition to `x` and `y`. This can be useful
-for some sorting techniques, or even for advanced uses like positioning 2D
-sprites on a 3D background. If you are using the `Sprite.position` property,
-make sure to account for the additional `z` value (leave it at 0 if unsure)::
+Sprites and Labels
+^^^^^^^^^^^^^^^^^^
+Sprites and Labels now have a `z` position, in addition to `x` and `y`. This
+can be useful for some sorting techniques, or even for advanced uses like
+positioning 2D sprites on a 3D background. If you are using `position` property,
+make sure to account for the additional `z` value (leave it at 0 if unneeded)::
 
     sprx, spry, sprz = my_sprite.position
     my_sprite.position = 10, 10, 0
+
+
+Groups
+^^^^^^
+`OrderedGroup` has been removed. Instead, all Groups now have an `order`
+parameter. You can mimic the behavior by creating a Group instance with
+order parameter::
+
+    from pyglet.graphics import Group
+
+    bg_group = Group(order=0)
+    fg_group = Group(order=1)
 
 
 Window Projection and Cameras
