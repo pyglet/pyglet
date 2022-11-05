@@ -819,6 +819,31 @@ class Mat4(tuple):
                     0, 0, qn, 0))
 
     @classmethod
+    def from_rotation(cls, angle: float, vector: Vec3) -> Mat4:
+        """Create a rotation matrix from an angle and Vec3.
+
+        :Parameters:
+            `angle` : A `float` :
+                The angle as a float.
+            `vector` : A `Vec3`, or 3 component tuple of float or int :
+                Vec3 or tuple with x, y and z translation values
+        """
+        return cls().rotate(angle, vector)
+
+    @classmethod
+    def from_scale(cls: type[Mat4T], vector: Vec3) -> Mat4T:
+        """Create a scale matrix from a Vec3.
+
+        :Parameters:
+            `vector` : A `Vec3`, or 3 component tuple of float or int
+                Vec3 or tuple with x, y and z scale values
+        """
+        return cls((vector[0], 0.0, 0.0, 0.0,
+                    0.0, vector[1], 0.0, 0.0,
+                    0.0, 0.0, vector[2], 0.0,
+                    0.0, 0.0, 0.0, 1.0))
+
+    @classmethod
     def from_translation(cls: type[Mat4T], vector: Vec3) -> Mat4T:
         """Create a translation matrix from a Vec3.
 
@@ -830,18 +855,6 @@ class Mat4(tuple):
                     0.0, 1.0, 0.0, 0.0,
                     0.0, 0.0, 1.0, 0.0,
                     vector[0], vector[1], vector[2], 1.0))
-
-    @classmethod
-    def from_rotation(cls, angle: float, vector: Vec3) -> Mat4:
-        """Create a rotation matrix from an angle and Vec3.
-
-        :Parameters:
-            `angle` : A `float` :
-                The angle as a float.
-            `vector` : A `Vec3`, or 3 component tuple of float or int :
-                Vec3 or tuple with x, y and z translation values
-        """
-        return cls().rotate(angle, vector)
 
     @classmethod
     def look_at_direction(cls: type[Mat4T], direction: Vec3, up: Vec3) -> Mat4T:
@@ -869,18 +882,6 @@ class Mat4(tuple):
         """Get a specific column as a tuple."""
         return self[index::4]
 
-    def scale(self, vector: Vec3) -> Mat4:
-        """Get a scale Matrix on x, y, or z axis."""
-        temp = list(self)
-        temp[0] *= vector[0]
-        temp[5] *= vector[1]
-        temp[10] *= vector[2]
-        return Mat4(temp)
-
-    def translate(self, vector: Vec3) -> Mat4:
-        """Get a translation Matrix along x, y, and z axis."""
-        return self @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
-
     def rotate(self, angle: float, vector: Vec3) -> Mat4:
         """Get a rotation Matrix on x, y, or z axis."""
         if not all(abs(n) <= 1 for n in vector):
@@ -907,6 +908,18 @@ class Mat4(tuple):
         # --, --, --, --
 
         return Mat4(self) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
+
+    def scale(self, vector: Vec3) -> Mat4:
+        """Get a scale Matrix on x, y, or z axis."""
+        temp = list(self)
+        temp[0] *= vector[0]
+        temp[5] *= vector[1]
+        temp[10] *= vector[2]
+        return Mat4(temp)
+
+    def translate(self, vector: Vec3) -> Mat4:
+        """Get a translation Matrix along x, y, and z axis."""
+        return self @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
 
     def transpose(self) -> Mat4:
         """Get a transpose of this Matrix."""

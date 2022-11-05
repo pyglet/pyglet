@@ -139,12 +139,10 @@ The mode should be passed using one of the following constants:
 * ``pyglet.gl.GL_LINE_STRIP``
 * ``pyglet.gl.GL_TRIANGLES``
 * ``pyglet.gl.GL_TRIANGLE_STRIP``
-* ``pyglet.gl.GL_QUADS``
-* ``pyglet.gl.GL_QUAD_STRIP``
 
-When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
-must be taken to insert degenerate vertices at the beginning and end of each
-vertex list.  For example, given the vertex list::
+When using ``GL_LINE_STRIP`` and ``GL_TRIANGLE_STRIP``, care must be taken to
+insert degenerate vertices at the beginning and end of each vertex list.
+For example, given the vertex list::
 
     A, B, C, D
 
@@ -164,9 +162,9 @@ From examining the ShaderProgram.attributes above, we know `position` and `color
 attributes are available. The underlying arrays can be accessed directly::
 
     >>> vlist.position
-    <pyglet.graphics.vertexattribute.c_float_Array_6 object at 0x7f6d3a30b1c0>
+    <pyglet.graphics.shader.c_float_Array_6 object at 0x7f6d3a30b1c0>
     >>> vlist.colors
-    <pyglet.graphics.vertexattribute.c_float_Array_12 object at 0x7f6d3a30b0c0>
+    <pyglet.graphics.shader.c_float_Array_12 object at 0x7f6d3a30b0c0>
     >>>
     >>> vlist.position[:]
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

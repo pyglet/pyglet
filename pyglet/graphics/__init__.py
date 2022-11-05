@@ -91,46 +91,13 @@ possible.  If the drawing of sprites or text objects need to be interleaved
 with other drawing that does not use the graphics API, multiple batches will
 be required.
 
-Data item parameters
-====================
-
-Many of the functions and methods in this module accept any number of ``data``
-parameters as their final parameters.  In the documentation these are notated
-as ``*data`` in the formal parameter list.
-
-A data parameter describes a vertex attribute format and an optional sequence
-to initialise that attribute.  Examples of common attribute formats are:
-
-``"v3f"``
-    Vertex position, specified as three floats.
-``"c4B"``
-    Vertex color, specified as four unsigned bytes.
-``"t2f"``
-    Texture coordinate, specified as two floats.
-
-See `pyglet.graphics.vertexattribute` for the complete syntax of the vertex
-format string.
-
-When no initial data is to be given, the data item is just the format string.
-For example, the following creates a 2 element vertex list with position and
-color attributes::
-
-    vertex_list = pyglet.graphics.vertex_list(2, 'v2f', 'c4B')
-
-When initial data is required, wrap the format string and the initial data in
-a tuple, for example::
-
-    vertex_list = pyglet.graphics.vertex_list(2, 
-                                              ('v2f', (0.0, 1.0, 1.0, 0.0)),
-                                              ('c4B', (255, 255, 255, 255) * 2))
-
 Drawing modes
 =============
 
 Methods in this module that accept a ``mode`` parameter will accept any value
 in the OpenGL drawing mode enumeration: ``GL_POINTS``, ``GL_LINE_STRIP``,
 ``GL_LINE_LOOP``, ``GL_LINES``, ``GL_TRIANGLE_STRIP``, ``GL_TRIANGLE_FAN``,
-``GL_TRIANGLES``, ``GL_QUAD_STRIP``, ``GL_QUADS``, and ``GL_POLYGON``.
+``GL_TRIANGLES``, and ``GL_POLYGON``.
 
 :: 
 
@@ -140,8 +107,8 @@ However, because of the way the graphics API renders multiple primitives with
 shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot
 be used --- the results are undefined.
 
-When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
-must be taken to insert degenerate vertices at the beginning and end of each
+When using ``GL_LINE_STRIP`` or ``GL_TRIANGLE_STRIP``, care must be taken to
+insert degenerate vertices at the beginning and end of each
 vertex list.  For example, given the vertex list::
 
     A, B, C, D
@@ -163,7 +130,7 @@ import weakref
 
 import pyglet
 from pyglet.gl import *
-from pyglet.graphics import vertexattribute, vertexdomain
+from pyglet.graphics import shader, vertexdomain
 from pyglet.graphics.vertexarray import VertexArray
 from pyglet.graphics.vertexbuffer import BufferObject
 
@@ -199,7 +166,7 @@ def draw(size, mode, **data):
         count = program.attributes[name]['count']
         gl_type = vertexdomain._gl_types[fmt[0]]
         normalize = 'n' in fmt
-        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
+        attribute = shader.Attribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)
@@ -249,7 +216,7 @@ def draw_indexed(size, mode, indices, **data):
         count = program.attributes[name]['count']
         gl_type = vertexdomain._gl_types[fmt[0]]
         normalize = 'n' in fmt
-        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
+        attribute = shader.Attribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)

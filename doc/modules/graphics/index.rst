@@ -8,7 +8,6 @@ pyglet.graphics
 
    allocation
    shader
-   vertexattribute
    vertexbuffer
    vertexdomain
 
