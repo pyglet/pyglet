@@ -163,7 +163,10 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
-        self.clock.schedule_interval(self._redraw_windows, interval)
+        if not interval:
+            self.clock.schedule(self._redraw_windows)
+        else:
+            self.clock.schedule_interval(self._redraw_windows, interval)
 
         self.has_exit = False
 
