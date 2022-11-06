@@ -1550,7 +1550,7 @@ if not wic_decoder:
 
 class DirectWriteGlyphRenderer(base.GlyphRenderer):
     antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
-    draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT
+    draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT if WINDOWS_8_1_OR_GREATER else D2D1_DRAW_TEXT_OPTIONS_NONE
     measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 
     def __init__(self, font):
