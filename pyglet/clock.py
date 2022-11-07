@@ -35,26 +35,13 @@
 
 """Precise framerate calculation function scheduling.
 
-Measuring time
-==============
+The :py:mod:`~pyglet.clock` module allows you to schedule functions
+to run periodically, or for one-shot future execution. pyglet's default
+event loop (:py:func:`~pyglet.app.run`) keeps an internal instance of
+a :py:class:`~pyglet.clock.Clock`, which is ticked automatically.
 
-The `tick` and `get_frequency` functions can be used in conjunction to fulfil most
-games' basic requirements::
-
-    from pyglet import clock
-    while True:
-        dt = clock.tick()
-        # ... update and render ...
-        print(f"FPS is {clock.get_frequency()}")
-
-The ``dt`` value returned gives the number of seconds (as a float) since the
-last "tick".
-
-The `get_frequency` function averages the framerate over a sliding window of
-approximately 1 second.  (You can calculate the instantaneous framerate by
-taking the reciprocal of ``dt``).
-
-Always remember to `tick` the clock!
+..note:: Some internal modules will schedule items on the clock. If you
+         are using a custom event loop, always remember to `tick` the clock!
 
 Scheduling
 ==========
@@ -69,18 +56,18 @@ You can schedule a function to be called every time the clock is ticked::
 The `schedule_interval` method causes a function to be called every "n"
 seconds::
 
-    clock.schedule_interval(callback, .5)   # called twice a second
+    clock.schedule_interval(callback, 0.5)   # called twice a second
 
 The `schedule_once` method causes a function to be called once "n" seconds
 in the future::
 
     clock.schedule_once(callback, 5)        # called in 5 seconds
 
-All of the `schedule` methods will pass on any additional args or keyword args
+All the `schedule` methods will pass on any additional args or keyword args
 you specify to the callback function::
 
     def move(dt, velocity, sprite):
-       sprite.position += dt * velocity
+        sprite.position += dt * velocity
 
     clock.schedule(move, velocity=5.0, sprite=alien)
 
@@ -96,14 +83,14 @@ The clock functions are all relayed to an instance of
 :py:class:`~pyglet.clock.Clock` which is initialised with the module.  You can
 get this instance to use directly::
 
-    clk = clock.get_default()
+    clk = pyglet.clock.get_default()
 
 You can also replace the default clock with your own:
 
-    myclk = clock.Clock()
-    clock.set_default(myclk)
+    myclk = pyglet.clock.Clock()
+    pyglet.clock.set_default(myclk)
 
-Each clock maintains its own set of scheduled functions and FPS
+Each clock maintains its own set of scheduled functions and frequency
 measurement.  Each clock must be "ticked" separately.
 
 Multiple and derived clocks potentially allow you to separate "game-time" and
@@ -113,6 +100,7 @@ of the system clock.
 
 import time as _time
 
+from typing import Callable
 from heapq import heappop as _heappop
 from heapq import heappush as _heappush
 from heapq import heappushpop as _heappushpop
@@ -164,14 +152,11 @@ class Clock:
     def __init__(self, time_function=_time.perf_counter):
         """Initialise a Clock, with optional custom time function.
 
-        :Parameters:
-            `time_function` : function
-                Function to return the elapsed time of the application,
-                in seconds.  Defaults to time.time, but can be replaced
-                to allow for easy time dilation effects or game pausing.
-
+        You can provide a custom time function to return the elapsed
+        time of the application, in seconds. Defaults to time.perf_counter,
+        but can be replaced to allow for easy time dilation effects or game
+        pausing.
         """
-        super(Clock, self).__init__()
         self.time = time_function
         self.next_ts = self.time()
         self.last_ts = None
@@ -263,7 +248,7 @@ class Clock:
             else:
                 item = _heappushpop(interval_items, item)
 
-            # a scheduled function may try and unschedule itself
+            # a scheduled function may try to unschedule itself,
             # so we need to keep a reference to the current
             # item no longer on heap to be able to check
             self._current_interval_item = item
@@ -288,15 +273,15 @@ class Clock:
 
                 # test the schedule for the next execution
                 if item.next_ts <= now:
-                    # the scheduled time of this item has already passed
-                    # so it must be rescheduled
+                    # the scheduled time of this item has already
+                    # passed, so it must be rescheduled
                     if now - item.next_ts < 0.05:
                         # missed execution time by 'reasonable' amount, so
                         # reschedule at normal interval
                         item.next_ts = now + item.interval
                     else:
                         # missed by significant amount, now many events have
-                        # likely missed execution. do a soft reschedule to
+                        # likely missed execution. do a soft re-schedule to
                         # avoid lumping many events together.
                         # in this case, the next dt will not be accurate
                         item.next_ts = get_soft_next_ts(now, item.interval)
@@ -400,6 +385,7 @@ class Clock:
         return last_ts
 
     def _get_soft_next_ts(self, last_ts, interval):
+
         def taken(ts, e):
             """Check if `ts` has already got an item scheduled nearby."""
             # TODO this function is slow and called very often.
@@ -412,9 +398,9 @@ class Clock:
 
             return False
 
-        # sorted list is required required to produce expected results
+        # sorted list is required to produce expected results
         # taken() will iterate through the heap, expecting it to be sorted
-        # and will not always catch smallest value, so sort here.
+        # and will not always catch the smallest value, so sort here.
         # do not remove the sort key...it is faster than relaying comparisons
         # NOTE: do not rewrite as popping from heap, as that is super slow!
         self._schedule_interval_items.sort(key=_attrgetter('next_ts'))
@@ -512,7 +498,7 @@ class Clock:
 
         This method is similar to `schedule_interval`, except that the
         clock will move the interval out of phase with other scheduled
-        functions so as to distribute CPU more load evenly over time.
+        functions in order to distribute CPU load more evenly.
 
         This is useful for functions that need to be called regularly,
         but not relative to the initial start time.  :py:mod:`pyglet.media`
@@ -572,14 +558,10 @@ class Clock:
 _default = Clock()
 
 
-def set_default(default):
+def set_default(default) -> None:
     """Set the default clock to use for all module-level functions.
 
-    By default an instance of :py:class:`~pyglet.clock.Clock` is used.
-
-    :Parameters:
-        `default` : `Clock`
-            The default clock to use.
+    By default, an instance of :py:class:`~pyglet.clock.Clock` is used.
     """
     global _default
     _default = default
@@ -590,17 +572,16 @@ def get_default():
 
     Return the :py:class:`~pyglet.clock.Clock` instance that is used by all
     module-level clock functions.
-
-    :rtype: `Clock`
-    :return: The default clock.
     """
     return _default
 
 
-def tick(poll=False):
+def tick(poll: bool = False) -> float:
     """Signify that one frame has passed on the default clock.
 
-    This will call any scheduled functions that have elapsed.
+    This will call any scheduled functions that have elapsed,
+    and return the elapsed seconds since the last tick. The
+    return value will be 0.0 if this is the first tick.
 
     :Parameters:
         `poll` : bool
@@ -610,16 +591,15 @@ def tick(poll=False):
             only.
 
             Since pyglet 1.1.
-
-    :rtype: float
-    :return: The number of seconds since the last "tick", or 0 if this was the
-        first frame.
     """
     return _default.tick(poll)
 
 
-def get_sleep_time(sleep_idle):
+def get_sleep_time(sleep_idle: bool) -> float:
     """Get the time until the next item is scheduled on the default clock.
+
+    Returns the time until the next scheduled event in seconds, or
+    ``None`` if there is no event scheduled.
 
     See `Clock.get_sleep_time` for details.
 
@@ -628,17 +608,11 @@ def get_sleep_time(sleep_idle):
             If True, the application intends to sleep through its idle
             time; otherwise it will continue ticking at the maximum
             frame rate allowed.
-
-    :rtype: float
-    :return: Time until the next scheduled event in seconds, or ``None``
-        if there is no event scheduled.
-
-    .. versionadded:: 1.1
     """
     return _default.get_sleep_time(sleep_idle)
 
 
-def get_frequency():
+def get_frequency() -> float:
     """Get the average clock update frequency.
 
     The result is the sliding average of the last "n" updates,
@@ -646,65 +620,43 @@ def get_frequency():
     second. This is the internal clock update rate, **not** the
     Window redraw rate. Platform events, such as moving the
     mouse rapidly, will cause the clock to refresh more often.
-
-    :rtype: float
-    :return: The measured updates per second.
     """
     return _default.get_frequency()
 
 
-def schedule(func, *args, **kwargs):
+def schedule(func: Callable, *args, **kwargs) -> None:
     """Schedule 'func' to be called every frame on the default clock.
 
     The arguments passed to func are ``dt``, followed by any ``*args`` and
     ``**kwargs`` given here.
-
-    :Parameters:
-        `func` : callable
-            The function to call each frame.
     """
     _default.schedule(func, *args, **kwargs)
 
 
-def schedule_interval(func, interval, *args, **kwargs):
-    """Schedule ``func`` on the default clock every interval seconds.
+def schedule_interval(func: Callable, interval: float, *args, **kwargs) -> None:
+    """Schedule ``func`` on the default clock every ``interval`` seconds.
 
     The arguments passed to ``func`` are ``dt`` (time since last function
     call), followed by any ``*args`` and ``**kwargs`` given here.
-
-    :Parameters:
-        `func` : callable
-            The function to call when the timer lapses.
-        `interval` : float
-            The number of seconds to wait between each call.
     """
     _default.schedule_interval(func, interval, *args, **kwargs)
 
 
-def schedule_interval_soft(func, interval, *args, **kwargs):
+def schedule_interval_soft(func: Callable, interval: float, *args, **kwargs) -> None:
     """Schedule ``func`` on the default clock every interval seconds.
 
     The clock will move the interval out of phase with other scheduled
-    functions so as to distribute CPU more load evenly over time.
+    functions in order to distribute CPU load more evenly.
 
     The arguments passed to ``func`` are ``dt`` (time since last function
     call), followed by any ``*args`` and ``**kwargs`` given here.
 
     :see: `Clock.schedule_interval_soft`
-
-    .. versionadded:: 1.1
-
-    :Parameters:
-        `func` : callable
-            The function to call when the timer lapses.
-        `interval` : float
-            The number of seconds to wait between each call.
-
     """
     _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 
-def schedule_once(func, delay, *args, **kwargs):
+def schedule_once(func: Callable, delay: float, *args, **kwargs) -> None:
     """Schedule ``func`` to be called once after ``delay`` seconds.
 
     This function uses the default clock. ``delay`` can be a float. The
@@ -713,23 +665,13 @@ def schedule_once(func, delay, *args, **kwargs):
 
     If no default clock is set, the func is queued and will be scheduled
     on the default clock as soon as it is created.
-
-    :Parameters:
-        `func` : callable
-            The function to call when the timer lapses.
-        `delay` : float
-            The number of seconds to wait before the timer lapses.
     """
     _default.schedule_once(func, delay, *args, **kwargs)
 
 
-def unschedule(func):
+def unschedule(func: Callable) -> None:
     """Remove ``func`` from the default clock's schedule.
 
     No error is raised if the ``func`` was never scheduled.
-
-    :Parameters:
-        `func` : callable
-            The function to remove from the schedule.
     """
     _default.unschedule(func)
