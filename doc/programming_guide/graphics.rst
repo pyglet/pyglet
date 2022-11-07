@@ -340,7 +340,6 @@ method. Likewise, you can only update a VertexList's vertex data if you have
 kept a reference to it. For that reason, you should keep a reference to any
 objects that you might want to modify or delete from your scene after creation.
 
-
 .. _guide_batched-rendering:
 
 Batched rendering
@@ -424,10 +423,10 @@ the vertex lists that use them.
 
 shader state
 ^^^^^^^^^^^^
-:py:class:`~pyglet.graphics.shader.ShaderProgram` can be binded (:py:class:`~pyglet.graphics.shader.ShaderProgram.use`)
-and unbinded (:py:class:`~pyglet.graphics.shader.ShaderProgram.stop`) manually. As a convenience method, it can also act
+:py:class:`~pyglet.graphics.shader.ShaderProgram` can be binded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.use`)
+and unbinded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.stop`) manually. As a convenience method, it can also act
 as a context manager that handles the binding and unbinding process automatically. This may be useful if you want to
-ensure the state of :py:class:`~pyglet.graphics.shader.ShaderProgram` is active during some edge case scenarios while
+ensure the state of a :py:class:`~pyglet.graphics.shader.ShaderProgram` is active during some edge case scenarios while
 also being more Pythonic.
 
 For example::
