@@ -1,3 +1,10 @@
+pyglet 2.0.1
+
+Bugfixes
+--------
+- Windows: only enable DirectWrite color font for supported OSes.
+
+
 pyglet 2.0.0
 Major Release
 
