@@ -1,7 +1,7 @@
 .. _guide_graphics:
 
-Graphics
-========
+Shaders and Rendering
+=====================
 
 At the lowest level, pyglet uses OpenGL to draw graphics in program windows.
 The OpenGL interface is exposed via the :py:mod:`pyglet.gl` module
@@ -15,10 +15,10 @@ a lot of the OpenGL boilerplate code that would otherwise be necessary to write
 yourself.
 
 pyglet's rendering abstractions cosist of three major components:
-"VertexDomains", "VertexLists", and "ShaderPrograms". These will be explained
+"VertexDomains", "VertexLists", and ":py:class:`~pyglet.graphics.shader.ShaderProgram`". These will be explained
 in more detail in the following sections, but a rough overview is as follows:
 
-* ShaderPrograms are at the highest level, and are simple abstractions over
+* :py:class:`~pyglet.graphics.shader.ShaderProgram` are at the highest level, and are simple abstractions over
   standard OpenGL Shader Programs. pyglet does full attribute and uniform
   introspection, and provides methods for automatically generating buffers
   that match the attribute formats.
@@ -27,18 +27,18 @@ in more detail in the following sections, but a rough overview is as follows:
   array buffers, that match a specific collection of vertex attributes.
   Buffers are resized automatically as needed. Access to these buffers is
   usually not done directly, but instead through the use of VertexLists.
-* VertexLists sit in-between The VertexDomains and the ShaderPrograms. They
+* VertexLists sit in-between The VertexDomains and the :py:class:`~pyglet.graphics.shader.ShaderProgram`. They
   provide a simple "view" into a portion of a VertexDomain's buffers. A
-  ShaderProgram is able to generate VertexLists directly.
+  :py:class:`~pyglet.graphics.shader.ShaderProgram` is able to generate VertexLists directly.
 
 In summary, the process is as follows:
 
-1. User creates a ShaderProgram. Vertex attribute metadata is introspected
+1. User creates a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Vertex attribute metadata is introspected
    automatically.
-2. User creates a new VertexList with the `ShaderProgram.vertex_list(...)` method.
+2. User creates a new VertexList with the :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list` method.
    Users do not need to worry about creating the internal buffers themselves.
 3. When the VertexList is created in step 2, pyglet automatically matches the
-   ShaderProgram's attributes to an appropriate VertexDomain. (If no existing
+   :py:class:`~pyglet.graphics.shader.ShaderProgram`'s attributes to an appropriate VertexDomain. (If no existing
    domain is available, a new one is created). A VertexList is generated from
    the matching VertexDomain, and returned.
 
@@ -84,10 +84,10 @@ is simplistic Vertex and Fragment source::
         }
     """
 
-The source strings are then used to create `Shader` objects, which are
-then linked together in a `ShaderProgram`. Shader objects are automatically
-detached after linking the ShaderProgram, so they can be discarded
-afterwards (or used again in other ShaderPrograms)::
+The source strings are then used to create :py:class:`~pyglet.graphics.shader.Shader` objects, which are
+then linked together in a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Shader objects are automatically
+detached after linking the :py:class:`~pyglet.graphics.shader.ShaderProgram`, so they can be discarded
+afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProgram`s)::
 
     from pyglet.graphics.shader import Shader, ShaderProgram
 
@@ -95,8 +95,8 @@ afterwards (or used again in other ShaderPrograms)::
     frag_shader = Shader(fragment_source, 'fragment')
     program = ShaderProgram(vert_shader, frag_shader)
 
-ShaderPrograms internally introspect on creation. There are several properties
-that can be queried to inspect the varios vertex attributes, uniforms, and uniform
+:py:class:`~pyglet.graphics.shader.ShaderProgram`s internally introspect on creation. There are several properties
+that can be queried to inspect the various vertex attributes, uniforms, and uniform
 blocks that are available::
 
     >>> for attribute in program.attributes.items():
@@ -111,8 +111,63 @@ blocks that are available::
     ('projection', Uniform('projection', location=0, length=16, count=1))
 
 
-.. note:: Most OpenGL drivers will optimize shaders during compilation. If an
-          attribute or a uniform is not being used, it will often be optimized out.
+.. note::
+    Most OpenGL drivers will optimize shaders during compilation. If an
+    attribute or a uniform is not being used, it will often be optimized out.
+
+
+Uniforms
+^^^^^^^^
+
+Uniforms are variables that can be modified after a :py:class:`~pyglet.graphics.shader.ShaderProgram` has been compiled
+to change functionality during run time.
+
+.. warning::
+
+    When setting uniforms, the program must be binded at the time of setting. This restriction does not exist in
+    OpenGL 4.1+, but if you plan to support older contexts (such as 3.3), this must be accounted for.
+
+Uniform's can be accessed either as a key or as a property on the :py:class:`~pyglet.graphics.shader.ShaderProgram`
+itself.
+
+For example if your uniform in your shader is::
+
+    uniform float time;
+
+Then you can set (or get) the value using the property: `program.time = 1.5` or as a key using a string
+`program['time'] = 1.5`.
+
+
+Uniform Buffer Objects (Uniform Blocks)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pyglet also offers access to Uniform Buffer Objects or Uniform Blocks. These are special objects that can be used to
+share uniforms between different programs. For example, by default, Pyglet's `projection` and `view` matrix
+are both contained in the `WindowBlock` uniform block. Which looks like this in the vertex shader::
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+You can view what uniform blocks exist in a :py:class:`~pyglet.graphics.shader.ShaderProgram` using the `uniform_blocks`
+property. This is a dictionary containing a Uniform Block name key to a :py:class:`~pyglet.graphics.shader.UniformBlock`
+object value. In the above example, the name would be `WindowBlock` while the `window` identifier is used in the GLSL
+shader itself.
+
+To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
+:py:class:`~pyglet.graphics.shader.UniformBufferObject` using the
+:py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method.::
+
+    ubo = program.uniform_blocks['WindowBlock'].create_ubo()
+
+The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used, and acts as a context manager for easy
+access to its uniforms::
+
+        with ubo as window_block:
+            window_block.projection[:] = new_matrix
+
 
 Creating Vertex Lists
 ^^^^^^^^^^^^^^^^^^^^^
@@ -328,7 +383,7 @@ Setting the OpenGL state
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Before drawing in OpenGL, it's necessary to set certain state. You might need
-to activate a ShaderProgram, or bind a Texture. For example, to enable and bind
+to activate a :py:class:`~pyglet.graphics.shader.ShaderProgram`, or bind a Texture. For example, to enable and bind
 a texture requires the following before drawing::
 
     from pyglet.gl import *
@@ -365,6 +420,20 @@ An instance of this group can now be attached to vertex lists::
 The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate
 ``set_state`` and ``unset_state`` methods are called before and after
 the vertex lists that use them.
+
+shader state
+^^^^^^^^^^^^
+:py:class:`~pyglet.graphics.shader.ShaderProgram` can be binded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.use`)
+and unbinded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.stop`) manually. As a convenience method, it can also act
+as a context manager that handles the binding and unbinding process automatically. This may be useful if you want to
+ensure the state of a :py:class:`~pyglet.graphics.shader.ShaderProgram` is active during some edge case scenarios while
+also being more Pythonic.
+
+For example::
+
+    with shaderprogram as my_shader:
+        my_shader.my_uniform = 1.0
+
 
 hierarchical state
 ^^^^^^^^^^^^^^^^^^
