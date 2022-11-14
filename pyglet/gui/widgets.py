@@ -327,6 +327,10 @@ class Slider(WidgetBase):
         self._value = 0
         self._in_update = False
 
+    def _update_position(self):
+        self._base_spr.position = self._x, self._y, 0
+        self._knob_spr.position = self._x + self._edge, self._y + self._base_img.height / 2, 0
+
     @property
     def value(self):
         return self._value
@@ -477,8 +481,6 @@ class TextEntry(WidgetBase):
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.enabled:
             return
-        if not self._check_hit(x, y):
-            self._set_focus(False)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if not self.enabled:
@@ -497,6 +499,7 @@ class TextEntry(WidgetBase):
         if not self.enabled:
             return
         if self._focus:
+            # Commit on Enter/Return:
             if text in ('\r', '\n'):
                 self.dispatch_event('on_commit', self._layout.document.text)
                 self._set_focus(False)
