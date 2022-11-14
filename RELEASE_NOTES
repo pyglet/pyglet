@@ -3,7 +3,8 @@ pyglet 2.0.1
 Bugfixes
 --------
 - Windows: only enable DirectWrite color font for supported OSes.
-
+- gui: don't unset TextEntry widget focus on mouse motion.
+- macOS input: fix broken get_guid link for Controllers.
 
 pyglet 2.0.0
 Major Release
