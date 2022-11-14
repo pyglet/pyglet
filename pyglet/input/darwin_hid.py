@@ -318,9 +318,9 @@ class HIDDevice:
 
         if self.transport == 'USB':
             bustype = 0x03
-            vendor = self.vendorID
-            product = self.productID
-            version = self.versionNumber
+            vendor = self.vendorID or 0
+            product = self.productID or 0
+            version = self.versionNumber or 0
             # Byte swap (ABCD --> CDAB):
             bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
             vendor = ((vendor << 8) | (vendor >> 8)) & 0xFFFF
@@ -726,10 +726,11 @@ def get_apple_remote(display=None):
 
 
 def _create_controller(device, display):
-    mapping = get_mapping(device.get_guid())
-    if not mapping:
-        return
-    return Controller(PygletDevice(display, device, _hid_manager), mapping)
+    if device.transport in ('USB', 'BLUETOOTH'):
+        mapping = get_mapping(device.get_guid())
+        if not mapping:
+            return
+        return Controller(PygletDevice(display, device, _hid_manager), mapping)
 
 
 def get_controllers(display=None):
