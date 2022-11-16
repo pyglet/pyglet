@@ -376,7 +376,7 @@ class HIDDevice:
         return elements
 
     # Page and usage IDs are from the HID usage tables located at
-    # http://www.usb.org/developers/devclass_docs/Hut1_12.pdf
+    # https://usb.org/sites/default/files/hut1_3_0.pdf
     def conforms_to(self, page, usage):
         return bool(iokit.IOHIDDeviceConformsTo(self.deviceRef, page, usage))
 

@@ -119,6 +119,7 @@ def ffmpeg_init():
     protocols."""
     pass
 
+
 class MemoryFileObject:
     """A class to manage reading and seeking of a ffmpeg file object."""
     buffer_size = 32768
@@ -210,98 +211,6 @@ def ffmpeg_open_memory_file(filename, file_object):
 
     return file, memory_file
 
-class MemoryFileObject:
-    """A class to manage reading and seeking of a ffmpeg file object."""
-    buffer_size = 32768
-
-    def __init__(self, file):
-        self.file = file
-        self.fmt_context = None
-        self.buffer = None
-
-        print("File object:", file)
-
-        if not getattr(self.file, 'seek', None) or not getattr(self.file, 'tell', None):
-            raise Exception("File object does not support seeking.")
-
-        # Seek to end of file to get the filesize.
-        self.file.seek(0, 2)
-        self.file_size = self.file.tell()
-        self.file.seek(0)  # Put cursor back at the beginning.
-
-        def read_data_cb(_, buff, buf_size):
-            data = self.file.read(buf_size)
-            read_size = len(data)
-            memmove(buff, data, read_size)
-            return read_size
-
-        def seek_data_cb(_, offset, whence):
-            if whence == libavformat.AVSEEK_SIZE:
-                return self.file_size
-
-            pos = self.file.seek(offset, whence)
-            return pos
-
-        self.read_func = libavformat.ffmpeg_read_func(read_data_cb)
-        self.seek_func = libavformat.ffmpeg_seek_func(seek_data_cb)
-
-    def __del__(self):
-        """These are usually freed when the source is, but no guarantee."""
-        if self.buffer:
-            try:
-                avutil.av_freep(self.buffer)
-            except OSError:
-                pass
-
-        if self.fmt_context:
-            try:
-                avutil.av_freep(self.fmt_context)
-            except OSError:
-                pass
-
-
-def ffmpeg_open_memory_file(filename, file_object):
-    """Open a media file from a file object.
-    :rtype: FFmpegFile
-    :return: The structure containing all the information for the media.
-    """
-    file = FFmpegFile()
-
-    file.context = libavformat.avformat.avformat_alloc_context()
-    file.context.contents.seekable = 1
-
-    memory_file = MemoryFileObject(file_object)
-
-    av_buf = libavutil.avutil.av_malloc(memory_file.buffer_size)
-    memory_file.buffer = cast(av_buf, c_char_p)
-
-    ptr = create_string_buffer(memory_file.buffer_size)
-
-    memory_file.fmt_context = libavformat.avformat.avio_alloc_context(
-        memory_file.buffer,
-        memory_file.buffer_size,
-        0,
-        ptr,
-        memory_file.read_func,
-        None,
-        memory_file.seek_func
-    )
-
-    file.context.contents.pb = memory_file.fmt_context
-    file.context.contents.flags |= libavformat.AVFMT_FLAG_CUSTOM_IO
-
-    result = avformat.avformat_open_input(byref(file.context), filename, None, None)
-
-    if result != 0:
-        raise FFmpegException('avformat_open_input in ffmpeg_open_filename returned an error opening file '
-                              + filename.decode("utf8")
-                              + ' Error code: ' + str(result))
-
-    result = avformat.avformat_find_stream_info(file.context, None)
-    if result < 0:
-        raise FFmpegException('Could not find stream info')
-
-    return file, memory_file
 
 def ffmpeg_open_filename(filename):
     """Open the media file.
@@ -355,8 +264,7 @@ def ffmpeg_file_info(file):
         info.title = asstr(entry.contents.value)
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('artist'), None, 0) \
-            or \
-            avutil.av_dict_get(file.context.contents.metadata, asbytes('album_artist'), None, 0)
+        or avutil.av_dict_get(file.context.contents.metadata, asbytes('album_artist'), None, 0)
     if entry:
         info.author = asstr(entry.contents.value)
 
