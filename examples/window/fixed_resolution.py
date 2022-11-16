@@ -56,7 +56,7 @@ class FixedResolution:
 
         self._target_area = 0, 0, 0, 0, 0
 
-        self.framebuffer = pyglet.image.buffer.Framebuffer()
+        self.framebuffer = pyglet.image.Framebuffer()
         self.texture = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
         self.framebuffer.attach_texture(self.texture)
 
@@ -102,7 +102,7 @@ window = pyglet.window.Window(960, 540, resizable=True)
 
 # Create an instance of the FixedResolution class. Use
 # 320x180 resolution to make the effect completely obvious:
-viewport = FixedResolution(window, width=320, height=180)
+fixed_res = FixedResolution(window, width=320, height=180)
 
 
 def update(dt):
@@ -114,14 +114,14 @@ def update(dt):
 def on_draw():
     window.clear()
 
-    # The viewport can be used as a context manager:
-    with viewport:
+    # The FixedResolution instance can be used as a context manager:
+    with fixed_res:
         rectangle.draw()
 
     # # Alternatively, you can do it manually:
-    # viewport.begin()
+    # fixed_res.begin()
     # rectangle.draw()
-    # viewport.end()
+    # fixed_res.end()
 
 
 # Create a simple Rectangle to show the effect

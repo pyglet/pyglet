@@ -1985,19 +1985,11 @@ class BufferManager:
     def __init__(self):
         self.color_buffer = None
         self.depth_buffer = None
-
-        stencil_bits = GLint()
-        glGetFramebufferAttachmentParameteriv(
-            GL_DRAW_FRAMEBUFFER,
-            GL_STENCIL,
-            GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE,
-            stencil_bits,
-        )
-        self.free_stencil_bits = list(range(stencil_bits.value))
-
+        self.free_stencil_bits = None
         self.refs = []
 
-    def get_viewport(self):
+    @staticmethod
+    def get_viewport():
         """Get the current OpenGL viewport dimensions.
 
         :rtype: 4-tuple of float.
@@ -2044,20 +2036,31 @@ class BufferManager:
 
         :rtype: :py:class:`~pyglet.image.BufferImageMask`
         """
+        if self.free_stencil_bits is None:
+            try:
+                stencil_bits = GLint()
+                glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER,
+                                                      GL_STENCIL,
+                                                      GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE,
+                                                      stencil_bits)
+                self.free_stencil_bits = list(range(stencil_bits.value))
+            except GLException:
+                pass
+
         if not self.free_stencil_bits:
             raise ImageException('No free stencil bits are available.')
 
         stencil_bit = self.free_stencil_bits.pop(0)
         x, y, width, height = self.get_viewport()
-        buffer = BufferImageMask(x, y, width, height)
-        buffer.stencil_bit = stencil_bit
+        bufimg = BufferImageMask(x, y, width, height)
+        bufimg.stencil_bit = stencil_bit
 
-        def release_buffer(ref, self=self):
-            self.free_stencil_bits.insert(0, stencil_bit)
+        def release_buffer(ref, owner=self):
+            owner.free_stencil_bits.insert(0, stencil_bit)
 
-        self.refs.append(weakref.ref(buffer, release_buffer))
+        self.refs.append(weakref.ref(bufimg, release_buffer))
 
-        return buffer
+        return bufimg
 
 
 def get_buffer_manager():
