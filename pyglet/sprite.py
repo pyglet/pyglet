@@ -263,7 +263,7 @@ class SpriteGroup(graphics.Group):
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((id(self.parent), id(self.program),
+        return hash((self.parent, id(self.program),
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
