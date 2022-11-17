@@ -2,11 +2,12 @@ from typing import Tuple
 from unittest.mock import MagicMock
 import pytest
 import pyglet
-from . import get_fake_shader_program
 
 
-# We don't need a real GL context for unit tests
-pyglet.sprite.get_default_shader = get_fake_shader_program
+@pytest.fixture(autouse=True)
+def monkeypatch_default_sprite_shader(monkeypatch, get_dummy_shader_program):
+    """Use a dummy shader when testing non-drawing functionality"""
+    monkeypatch.setattr('pyglet.sprite.get_default_shader', get_dummy_shader_program)
 
 
 @pytest.fixture
