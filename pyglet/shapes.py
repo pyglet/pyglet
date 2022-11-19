@@ -487,7 +487,7 @@ class Arc(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._segments * 4
+            vertices = (0,) * (self._segments + 1) * 4
         else:
             x = -self._anchor_x
             y = -self._anchor_y
