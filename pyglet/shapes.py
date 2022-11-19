@@ -527,6 +527,32 @@ class Arc(ShapeBase):
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
+    @property
+    def angle(self):
+        """The angle of the arc.
+
+        :type: float
+        """
+        return self._angle
+
+    @angle.setter
+    def angle(self, value):
+        self._angle = value
+        self._update_vertices()
+
+    @property
+    def start_angle(self):
+        """The start angle of the arc.
+
+        :type: float
+        """
+        return self._start_angle
+
+    @start_angle.setter
+    def start_angle(self, angle):
+        self._start_angle = angle
+        self._update_vertices()
+
     def draw(self):
         """Draw the shape at its current position.
 
