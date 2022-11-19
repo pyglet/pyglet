@@ -230,9 +230,9 @@ class Vec2:
         :returns: A new rotated vector of the same magnitude.
         :rtype: Vec2
         """
-        mag = self.mag
-        heading = self.heading
-        return Vec2(mag * _math.cos(heading + angle), mag * _math.sin(heading + angle))
+        s = _math.sin(angle)
+        c = _math.cos(angle)
+        return Vec2(c * self.x - s * self.y, s * self.x + c * self.y)
 
     def distance(self, other: Vec2) -> float:
         """Calculate the distance between this vector and another 2D vector."""
