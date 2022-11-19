@@ -214,38 +214,25 @@ class ShapeBase(ABC):
     _anchor_y = 0
     _batch = None
     _group = None
+    _num_verts = 0
     _vertex_list = None
 
     def __del__(self):
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
-    @abstractmethod
     def _update_color(self):
-        """
-        Send the new colors for each vertex to the GPU.
+        """Send the new colors for each vertex to the GPU.
 
         This method must set the contents of `self._vertex_list.colors`
         using a list or tuple that contains the RGBA color components
         for each vertex in the shape. This is usually done by repeating
-        `self._rgba` for each vertex. See the `ShapeBase` subclasses in
-        this module for examples of how to do this.
+        `self._rgba` for each vertex.
         """
-        raise NotImplementedError("_update_color must be defined"
-                                  "for every ShapeBase subclass")
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    @abstractmethod
-    def _update_position(self):
-        """
-        Generate up-to-date vertex positions & send them to the GPU.
-
-        This method must set the contents of `self._vertex_list.translation`
-        using a list or tuple that contains the new translation values for
-        each vertex in the shape. See the `ShapeBase` subclasses in this
-        module for examples of how to do this.
-        """
-        raise NotImplementedError("_update_position must be defined"
-                                  "for every ShapeBase subclass")
+    def _update_translation(self):
+        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     @abstractmethod
     def _update_vertices(self):
@@ -285,7 +272,7 @@ class ShapeBase(ABC):
     @x.setter
     def x(self, value):
         self._x = value
-        self._update_position()
+        self._update_translation()
 
     @property
     def y(self):
@@ -298,7 +285,7 @@ class ShapeBase(ABC):
     @y.setter
     def y(self, value):
         self._y = value
-        self._update_position()
+        self._update_translation()
 
     @property
     def position(self):
@@ -315,7 +302,7 @@ class ShapeBase(ABC):
     @position.setter
     def position(self, values):
         self._x, self._y = values
-        self._update_position()
+        self._update_translation()
 
     @property
     def anchor_x(self):
@@ -479,12 +466,6 @@ class Arc(ShapeBase):
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
-
     def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * (self._segments + 1) * 4
@@ -607,12 +588,6 @@ class Circle(ShapeBase):
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
-
     def _update_vertices(self):
         if not self._visible:
             vertices = (0,) * self._segments * 6
@@ -695,12 +670,6 @@ class Ellipse(ShapeBase):
                                                 colors=('Bn', self._rgba * self._num_verts),
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
@@ -827,12 +796,6 @@ class Sector(ShapeBase):
                                                 colors=('Bn', self._rgba * self._num_verts),
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
@@ -961,12 +924,6 @@ class Line(ShapeBase):
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
-
     def _update_vertices(self):
         if not self._visible:
             self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -1061,12 +1018,6 @@ class Rectangle(ShapeBase):
                                                 colors=('Bn', self._rgba * self._num_verts),
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
@@ -1201,9 +1152,6 @@ class BorderedRectangle(ShapeBase):
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
@@ -1376,12 +1324,6 @@ class Triangle(ShapeBase):
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * 3
-
     def _update_vertices(self):
         if not self._visible:
             self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0)
@@ -1499,12 +1441,6 @@ class Star(ShapeBase):
                                                 translation=('f', (x, y) * self._num_verts))
         self._update_vertices()
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
-
     def _update_vertices(self):
         if not self._visible:
             vertices = (0, 0) * self._num_spikes * 6
@@ -1611,12 +1547,6 @@ class Polygon(ShapeBase):
                                                 translation=('f', (coordinates[0]) * self._num_verts))
         self._update_vertices()
         self._update_color()
-
-    def _update_color(self):
-        self._vertex_list.colors[:] = self._rgba * self._num_verts
-
-    def _update_position(self):
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
     def _update_vertices(self):
         if not self._visible:
