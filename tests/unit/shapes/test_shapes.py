@@ -1,14 +1,7 @@
 import pytest
 from functools import partial
 
-import pyglet
 from pyglet.shapes import *
-from . import *
-from .. import get_fake_shader_program
-
-
-# A real OpenGL context is not needed for these tests
-pyglet.shapes.get_default_shader = get_fake_shader_program
 
 
 # The shapes are tested individually since their RGBA handling is
