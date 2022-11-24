@@ -33,11 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import sys
 import ctypes
-from pyglet import com
+
 from ctypes import *
 from ctypes.wintypes import *
+
+from . import com
 
 
 _int_types = (c_int16, c_int32)
@@ -51,11 +52,6 @@ for t in _int_types:
         c_ptrdiff_t = t
 del t
 del _int_types
-
-
-# PUINT is defined only from >= python 3.2
-if sys.version_info < (3, 2)[:2]:
-    PUINT = POINTER(UINT)
 
 
 class c_void(Structure):
@@ -76,6 +72,7 @@ def POINTER_(obj):
                 return cls()
             else:
                 return x
+
         p.from_param = classmethod(from_param)
 
     return p
@@ -394,7 +391,7 @@ class DEVMODE(Structure):
         ('dmSize', WORD),
         ('dmDriverExtra', WORD),
         ('dmFields', DWORD),
-        # Just using largest union member here
+        # Just using the largest union member here
         ('_dummyUnion', _DUMMYDEVUNION),
         # End union
         ('dmColor', c_short),
@@ -407,7 +404,7 @@ class DEVMODE(Structure):
         ('dmBitsPerPel', DWORD),
         ('dmPelsWidth', DWORD),
         ('dmPelsHeight', DWORD),
-        ('dmDisplayFlags', DWORD), # union with dmNup
+        ('dmDisplayFlags', DWORD),  # union with dmNup
         ('dmDisplayFrequency', DWORD),
         ('dmICMMethod', DWORD),
         ('dmICMIntent', DWORD),
@@ -514,7 +511,7 @@ class RAWINPUT(Structure):
 
 
 # PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
-class _VarTable(ctypes.Union):
+class _VarTable(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
         ('llVal', ctypes.c_longlong),
@@ -522,7 +519,7 @@ class _VarTable(ctypes.Union):
     ]
 
 
-class PROPVARIANT(ctypes.Structure):
+class PROPVARIANT(Structure):
     _anonymous_ = ['union']
 
     _fields_ = [
@@ -534,14 +531,14 @@ class PROPVARIANT(ctypes.Structure):
     ]
 
 
-class _VarTableVariant(ctypes.Union):
+class _VarTableVariant(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
         ('bstrVal', LPCWSTR)
     ]
 
 
-class VARIANT(ctypes.Structure):
+class VARIANT(Structure):
     _anonymous_ = ['union']
 
     _fields_ = [
@@ -553,7 +550,7 @@ class VARIANT(ctypes.Structure):
     ]
 
 
-class DWM_BLURBEHIND(ctypes.Structure):
+class DWM_BLURBEHIND(Structure):
     _fields_ = [
         ("dwFlags", DWORD),
         ("fEnable", BOOL),
@@ -562,7 +559,7 @@ class DWM_BLURBEHIND(ctypes.Structure):
     ]
 
 
-class STATSTG(ctypes.Structure):
+class STATSTG(Structure):
     _fields_ = [
         ('pwcsName', LPOLESTR),
         ('type', DWORD),
@@ -576,6 +573,11 @@ class STATSTG(ctypes.Structure):
         ('grfStateBits', DWORD),
         ('reserved', DWORD),
     ]
+
+
+class TIMECAPS(Structure):
+    _fields_ = (('wPeriodMin', UINT),
+                ('wPeriodMax', UINT))
 
 
 class IStream(com.pIUnknown):
