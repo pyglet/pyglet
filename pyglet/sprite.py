@@ -209,7 +209,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program, order=0, parent=None):
+    def __init__(self, texture, blend_src, blend_dest, program, parent=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -231,7 +231,7 @@ class SpriteGroup(graphics.Group):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(order, parent)
+        super().__init__(parent=parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
@@ -263,7 +263,7 @@ class SpriteGroup(graphics.Group):
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((self.parent, id(self.program),
+        return hash((self.program, self.parent,
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
@@ -335,7 +335,7 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, 0, group)
+        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
         self._subpixel = subpixel
         self._create_vertex_list()
 
@@ -434,7 +434,6 @@ class Sprite(event.EventDispatcher):
                                        self._group.blend_src,
                                        self._group.blend_dest,
                                        self._group.program,
-                                       0,
                                        group)
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
@@ -871,7 +870,6 @@ class AdvancedSprite(pyglet.sprite.Sprite):
                                        self._group.blend_src,
                                        self._group.blend_dest,
                                        program,
-                                       0,
                                        self._group)
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
         self._program = program

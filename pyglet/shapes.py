@@ -185,14 +185,13 @@ class _ShapeGroup(Group):
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
+                self.program == other.program and
                 self.parent == other.parent and
-                self.order == other.order and
                 self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest and
-                self.program == other.program)
+                self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((id(self.parent), self.blend_src, self.blend_dest, self.order, self.program))
+        return hash((self.program, self.parent, self.blend_src, self.blend_dest))
 
 
 class ShapeBase(ABC):
