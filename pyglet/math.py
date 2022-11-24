@@ -456,10 +456,11 @@ class Vec3:
         :returns: A unit vector with the same rotation.
         :rtype: Vec3
         """
-        d = self.__abs__()
-        if d:
+        try:
+            d = self.__abs__()
             return Vec3(self.x / d, self.y / d, self.z / d)
-        return self
+        except ZeroDivisionError:
+            return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec3:
         """Restrict the value of the X,  Y and Z components of the vector to be within the given values.
@@ -868,11 +869,16 @@ class Mat4(tuple):
                     0.0, 0.0, 0.0, 1.0))
 
     @classmethod
-    def look_at(cls, position: Vec3, target: Vec3, up: Vec3) -> Mat4:
-        direction = target - position
-        direction_mat4 = cls.look_at_direction(direction, up)
-        position_mat4 = cls.from_translation(-position)
-        return direction_mat4 @ position_mat4
+    def look_at(cls: type[Mat4T], position: Vec3, target: Vec3, up: Vec3):
+        f = (target - position).normalize()
+        u = up.normalize()
+        s = f.cross(u)
+        u = s.cross(f)
+
+        return cls([s.x, u.x, -f.x, 0.0,
+                    s.y, u.y, -f.y, 0.0,
+                    s.z, u.z, -f.z, 0.0,
+                    -s.dot(position), -u.dot(position), f.dot(position), 1.0])
 
     def row(self, index: int) -> tuple:
         """Get a specific row as a tuple."""

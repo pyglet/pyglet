@@ -6,6 +6,7 @@ Bugfixes
 - gui: don't unset TextEntry widget focus on mouse motion.
 - image: Prevent BufferManager crash when stencil buffer query fails #703
 - macOS input: fix broken get_guid link for Controllers.
+- math: fix Mat4.look_at. #708
 
 
 pyglet 2.0.0

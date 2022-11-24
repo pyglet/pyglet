@@ -47,8 +47,8 @@ if __name__ == "__main__":
     model_logo = pyglet.resource.model("logo3d.obj", batch=batch)
     model_box = pyglet.resource.model("box.obj", batch=batch)
 
-    # Set the application wide view matrix to "zoom out" (camera):
-    window.view = Mat4.from_translation(Vec3(0, 0, -5))
+    # Set the application wide view matrix (camera):
+    window.view = Mat4.look_at(position=Vec3(0, 0, 5), target=Vec3(0, 0, 0), up=Vec3(0, 1, 0))
 
     pyglet.clock.schedule_interval(animate, 1 / 60)
     pyglet.app.run()
