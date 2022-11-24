@@ -52,7 +52,6 @@ class PlatformEventLoop:
     def __init__(self):
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
-        self._is_running.clear()
 
     def is_running(self):
         """Return True if the event loop is currently processing, or False

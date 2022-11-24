@@ -33,6 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import ctypes
+
 from .base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
@@ -41,7 +43,7 @@ from pyglet.libs.win32.types import *
 
 class Win32EventLoop(PlatformEventLoop):
     def __init__(self):
-        super(Win32EventLoop, self).__init__()
+        super().__init__()
 
         self._next_idle_time = None
 
@@ -50,7 +52,7 @@ class Win32EventLoop(PlatformEventLoop):
         # imports pyglet.app _must_ own the main run loop.
         msg = types.MSG()
         _user32.PeekMessageW(ctypes.byref(msg), 0,
-                             constants.WM_USER, constants.WM_USER, 
+                             constants.WM_USER, constants.WM_USER,
                              constants.PM_NOREMOVE)
 
         self._event_thread = _kernel32.GetCurrentThreadId()
@@ -60,8 +62,14 @@ class Win32EventLoop(PlatformEventLoop):
 
         self._timer_proc = types.TIMERPROC(self._timer_proc_func)
         self._timer = _user32.SetTimer(0, 0, constants.USER_TIMER_MAXIMUM, self._timer_proc)
-
         self._timer_func = None
+
+        # Windows Multimedia timer precision functions
+        # https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod
+        self._winmm = ctypes.windll.LoadLibrary('winmm')
+        timecaps = TIMECAPS()
+        self._winmm.timeGetDevCaps(ctypes.byref(timecaps), ctypes.sizeof(timecaps))
+        self._timer_precision = min(max(1, timecaps.wPeriodMin), timecaps.wPeriodMax)
 
     def add_wait_object(self, obj, func):
         self._wait_objects.append((obj, func))
@@ -81,8 +89,7 @@ class Win32EventLoop(PlatformEventLoop):
             return
 
         self._wait_objects_n = len(self._wait_objects)
-        self._wait_objects_array = \
-            (HANDLE * self._wait_objects_n)(*[o for o, f in self._wait_objects])
+        self._wait_objects_array = (HANDLE * self._wait_objects_n)(*[o for o, f in self._wait_objects])
 
     def start(self):
         if _kernel32.GetCurrentThreadId() != self._event_thread:
@@ -90,8 +97,8 @@ class Win32EventLoop(PlatformEventLoop):
                                'thread that imports pyglet.app')
 
         self._timer_func = None
-        self._polling = False
-        self._allow_polling = True
+
+        self._winmm.timeBeginPeriod(self._timer_precision)
 
     def step(self, timeout=None):
         self.dispatch_posted_events()
@@ -100,7 +107,7 @@ class Win32EventLoop(PlatformEventLoop):
         if timeout is None:
             timeout = constants.INFINITE
         else:
-            timeout = int(timeout * 1000) # milliseconds
+            timeout = int(timeout * 1000)  # milliseconds
 
         result = _user32.MsgWaitForMultipleObjects(
             self._wait_objects_n,
@@ -122,6 +129,9 @@ class Win32EventLoop(PlatformEventLoop):
         # Return True if timeout was interrupted.
         return result <= self._wait_objects_n
 
+    def stop(self):
+        self._winmm.timeEndPeriod(self._timer_precision)
+
     def notify(self):
         # Nudge the event loop with a message it will discard.  Note that only
         # user events are actually posted.  The posted event will not
@@ -133,11 +143,11 @@ class Win32EventLoop(PlatformEventLoop):
         if func is None or interval is None:
             interval = constants.USER_TIMER_MAXIMUM
         else:
-            interval = int(interval * 1000) # milliseconds
-        
+            interval = int(interval * 1000)  # milliseconds
+
         self._timer_func = func
         _user32.SetTimer(0, self._timer, interval, self._timer_proc)
-     
+
     def _timer_proc_func(self, hwnd, msg, timer, t):
         if self._timer_func:
             self._timer_func()
