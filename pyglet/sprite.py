@@ -471,7 +471,6 @@ class Sprite(event.EventDispatcher):
                                                 self._group.blend_src,
                                                 self._group.blend_dest,
                                                 self._group.program,
-                                                0,
                                                 self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
