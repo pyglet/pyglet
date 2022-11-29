@@ -687,7 +687,7 @@ class ShaderProgram:
                 raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(False, mode, group, self._id, attributes)
+        domain = batch.get_domain(False, mode, group, self, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count)
@@ -731,7 +731,7 @@ class ShaderProgram:
                 raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(True, mode, group, self._id, attributes)
+        domain = batch.get_domain(True, mode, group, self, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
