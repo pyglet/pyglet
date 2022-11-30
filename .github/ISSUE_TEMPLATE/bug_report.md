@@ -7,19 +7,14 @@ assignees: ''
 
 ---
 
-> **_ATTENTION:_**  If you are experiencing issues migrating from pyglet 1.5 --> 2.0, please first read the [migration](https://pyglet.readthedocs.io/en/latest/programming_guide/migration.html) section of the documentation.
+ATTENTION!:
+If you are experiencing issues migrating from pyglet 1.5 --> 2.0, please first read the migration
+section in the documentation. https://pyglet.readthedocs.io/en/latest/programming_guide/migration.html
 
 
 **Describe the bug**
-Please provide a clear and concise description of what the bug is.
-
-
-**Expected behavior**
-Please describe what you expected to happen.
-
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+Please provide a clear and concise description of what the bug is. 
+What is happening, and what do you expect to happen. 
 
 
 **System Information:**
@@ -31,7 +26,3 @@ GPU (ie. Windows 10, AMD xxxx GPU).
 
 **How To Reproduce**
 A small code example that illustrates the bug is very useful to help triage.
-
-
-**Additional context**
-Add any other context or comments about the problem here.
