@@ -7,6 +7,13 @@ Bugfixes
 - image: Prevent BufferManager crash when stencil buffer query fails #703
 - macOS input: fix broken get_guid link for Controllers.
 - math: fix Mat4.look_at. #708
+- shader: fix vertex_list passing id instead of self to Batch.get_domain
+- shapes: fix crash when setting Arc.visible = False
+
+Changes
+-------
+- shapes: add Arc.start_angle setter
+- graphics: Various default Group changes to help improve Group consolidation
 
 
 pyglet 2.0.0
