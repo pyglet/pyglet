@@ -87,7 +87,7 @@ is simplistic Vertex and Fragment source::
 The source strings are then used to create :py:class:`~pyglet.graphics.shader.Shader` objects, which are
 then linked together in a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Shader objects are automatically
 detached after linking the :py:class:`~pyglet.graphics.shader.ShaderProgram`, so they can be discarded
-afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProgram`s)::
+afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProgram`)::
 
     from pyglet.graphics.shader import Shader, ShaderProgram
 
@@ -95,7 +95,7 @@ afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProg
     frag_shader = Shader(fragment_source, 'fragment')
     program = ShaderProgram(vert_shader, frag_shader)
 
-:py:class:`~pyglet.graphics.shader.ShaderProgram`s internally introspect on creation. There are several properties
+:py:class:`~pyglet.graphics.shader.ShaderProgram` internally introspect on creation. There are several properties
 that can be queried to inspect the various vertex attributes, uniforms, and uniform
 blocks that are available::
 
@@ -510,7 +510,7 @@ drawing order
 to keep vertex lists in any particular order. So, any vertex lists sharing
 the same primitive mode, attribute formats and group will be drawn in an
 arbitrary order.  However, :py:class:`~pyglet.graphics.Group` objects do
-have an `order` parameter that allows `:py:class:`~pyglet.graphics.Batch`
+have an `order` parameter that allows :py:class:`~pyglet.graphics.Batch`
 to sort objects sharing the same parent. In summary, inside of a Batch:
 
 1. Groups are sorted by their parent (if any). (Parent Groups may also be ordered).
