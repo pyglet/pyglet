@@ -30,6 +30,7 @@ _shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'geometry': GL_GEOMETRY_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
+    'compute': GL_COMPUTE_SHADER,
 }
 
 _uniform_getters = {
@@ -568,13 +569,15 @@ class ShaderProgram:
 
     def _introspect_uniforms(self):
         program = self._id
+        have_dsa = self._dsa
         uniforms = {}
+
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
             u_name, u_type, u_size = self._query_uniform(index)
             loc = glGetUniformLocation(program, create_string_buffer(u_name.encode('utf-8')))
             if loc == -1:      # Skip uniforms that may be inside a Uniform Block
                 continue
-            uniforms[u_name] = _Uniform(program, u_name, u_type, loc, self._dsa)
+            uniforms[u_name] = _Uniform(program, u_name, u_type, loc, have_dsa)
 
         if _debug_gl_shaders:
             for uniform in uniforms.values():

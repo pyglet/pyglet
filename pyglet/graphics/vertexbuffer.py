@@ -134,6 +134,7 @@ class AbstractBuffer:
 
 
 class AbstractMappable:
+
     def get_region(self, start, size, ptr_type):
         """Map a region of the buffer into a ctypes array of the desired
         type.  This region does not need to be unmapped, but will become
