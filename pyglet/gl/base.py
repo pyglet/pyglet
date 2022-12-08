@@ -120,7 +120,7 @@ class Config:
     major_version = None
     minor_version = None
     forward_compatible = None
-    opengl_api = "gl"
+    opengl_api = None
     debug = None
 
     def __init__(self, **kwargs):
@@ -137,13 +137,7 @@ class Config:
             else:
                 setattr(self, name, None)
 
-    def requires_gl_3(self):
-        # TODO: remove deprecated
-        if self.major_version is not None and self.major_version >= 3:
-            return True
-        if self.forward_compatible or self.debug:
-            return True
-        return False
+        self.opengl_api = self.opengl_api or "gl"
 
     def get_gl_attributes(self):
         """Return a list of attributes set on this config.
@@ -263,15 +257,6 @@ class Context:
             GL objects.
 
     """
-
-    #: Context share behaviour indicating that objects should not be
-    #: shared with existing contexts.
-    CONTEXT_SHARE_NONE = None
-
-    #: Context share behaviour indicating that objects are shared with
-    #: the most recently created context (the default).
-    CONTEXT_SHARE_EXISTING = 1
-
     # gl_info.GLInfo instance, filled in on first set_current
     _info = None
 
