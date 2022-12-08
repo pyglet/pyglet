@@ -1,3 +1,15 @@
+pyglet 2.0.2
+
+Bugfixes
+--------
+- Fix Config.opengl_api being always set to None.
+- Windows: fix Display.get_default_screen() always returning the first index.
+
+Changes
+-------
+- Remove legacy Xlib backends
+
+
 pyglet 2.0.1
 
 Bugfixes
