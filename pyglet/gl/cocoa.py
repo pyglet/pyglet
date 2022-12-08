@@ -288,7 +288,7 @@ class CocoaContext(Context):
 
     def attach(self, canvas):
         # See if we want OpenGL 3 in a non-Lion OS
-        if _os_x_version < os_x_release['lion'] and self.config.requires_gl_3():
+        if _os_x_version < os_x_release['lion']:
             raise ContextException('OpenGL 3 not supported')
 
         super(CocoaContext, self).attach(canvas)

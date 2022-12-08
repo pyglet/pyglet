@@ -33,7 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import warnings
 from ctypes import *
 
 from pyglet import gl
@@ -52,6 +51,7 @@ _fake_gl_attributes = {
     'accum_blue_size': 0,
     'accum_alpha_size': 0
 }
+
 
 class HeadlessConfig(Config):
     def match(self, canvas):

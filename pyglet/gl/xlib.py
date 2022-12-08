@@ -36,7 +36,7 @@
 import warnings
 from ctypes import *
 
-from .base import Config, CanvasConfig, Context, OpenGLAPI
+from .base import Config, CanvasConfig, Context
 from pyglet.canvas.xlib import XlibCanvas
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
