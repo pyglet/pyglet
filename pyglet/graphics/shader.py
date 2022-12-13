@@ -3,8 +3,8 @@ from weakref import proxy
 
 import pyglet
 
-from pyglet.graphics.vertexbuffer import BufferObject
 from pyglet.gl import *
+from pyglet.graphics.vertexbuffer import BufferObject
 
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
@@ -27,10 +27,12 @@ _c_types = {
 
 # TODO: test other shader types, and update if necessary.
 _shader_types = {
-    'vertex': GL_VERTEX_SHADER,
-    'geometry': GL_GEOMETRY_SHADER,
-    'fragment': GL_FRAGMENT_SHADER,
-    'compute': GL_COMPUTE_SHADER,
+    'compute':        GL_COMPUTE_SHADER,
+    'fragment':       GL_FRAGMENT_SHADER,
+    'geometry':       GL_GEOMETRY_SHADER,
+    'tesscontrol':    GL_TESS_CONTROL_SHADER,
+    'tessevaluation': GL_TESS_EVALUATION_SHADER,
+    'vertex':         GL_VERTEX_SHADER,
 }
 
 _uniform_getters = {
@@ -73,6 +75,21 @@ _uniform_setters = {
     # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glProgramUniformMatrix3x4fv,
     # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
     # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
+
+    GL_IMAGE_1D:       (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_IMAGE_2D:       (GLint, glUniform1iv, glProgramUniform1iv, 2, 1),
+    GL_IMAGE_2D_RECT:  (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+    GL_IMAGE_3D:       (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+
+    GL_IMAGE_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 2, 1),
+    GL_IMAGE_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+
+    GL_IMAGE_2D_MULTISAMPLE:       (GLint, glUniform1iv, glProgramUniform1iv, 2, 1),
+    GL_IMAGE_2D_MULTISAMPLE_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+
+    GL_IMAGE_BUFFER:         (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+    GL_IMAGE_CUBE:           (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_IMAGE_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
 }
 
 _attribute_types = {
@@ -258,7 +275,7 @@ class _Uniform:
                     c_array[:] = values
                     gl_setter(program, location, count, ptr)
             else:
-                raise NotImplementedError("Uniform type not yet supported.")
+                raise ShaderException("Uniform type not yet supported.")
 
             return setter_func
 
@@ -280,7 +297,7 @@ class _Uniform:
                     c_array[:] = values
                     gl_setter(location, count, ptr)
             else:
-                raise NotImplementedError("Uniform type not yet supported.")
+                raise ShaderException("Uniform type not yet supported.")
 
             return setter_func
 
@@ -297,13 +314,13 @@ class ShaderSource:
     this way and don't contain several statements in one line.
     """
 
-    def __init__(self, source: str, source_type: gl.GLenum):
+    def __init__(self, source: str, source_type: GLenum):
         """Create a shader source wrapper."""
         self._lines = source.strip().splitlines()
         self._type = source_type
 
         if not self._lines:
-            raise ValueError("Shader source is empty")
+            raise ShaderException("Shader source is empty")
 
         self._version = self._find_glsl_version()
 
@@ -311,10 +328,10 @@ class ShaderSource:
             self._lines[0] = "#version 310 es"
             self._lines.insert(1, "precision mediump float;")
 
-            if self._type == gl.GL_GEOMETRY_SHADER:
+            if self._type == GL_GEOMETRY_SHADER:
                 self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
 
-            if self._type == gl.GL_COMPUTE_SHADER:
+            if self._type == GL_COMPUTE_SHADER:
                 self._lines.insert(1, "precision mediump image2D;")
 
             self._version = self._find_glsl_version()
@@ -327,7 +344,7 @@ class ShaderSource:
         if self._lines[0].strip().startswith("#version"):
             try:
                 return int(self._lines[0].split()[1])
-            except Exception:
+            except (ValueError, IndexError):
                 pass
 
         source = "\n".join(f"{str(i+1).zfill(3)}: {line} " for i, line in enumerate(self._lines))
@@ -341,30 +358,32 @@ class ShaderSource:
 class Shader:
     """OpenGL Shader object"""
 
-    def __init__(self, source_string, shader_type):
+    def __init__(self, source_string: str, shader_type: str):
         """Create an instance of a Shader object.
 
-        Shader objects are compiled on instantiation. You can
-        reuse a Shader object in multiple `ShaderProgram`s.
+        Shader source code should be provided as a Python string.
+        The shader_type should be a string indicating the type.
+        Valid types are: 'compute', 'fragment', 'geometry', 'tesscontrol',
+        'tessevaluation', and 'vertex'.
 
-        :Parameters:
-            `source_string` : str
-                A string containing the Shader source code.
-            `shader_type` : str
-                The Shader type, such as "vertex", "fragment", "geometry", etc.
+        Shader objects are compiled on instantiation.
+        You can reuse a Shader object in multiple `ShaderProgram`s.
         """
         self._id = None
-
-        if shader_type not in _shader_types:
-            raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self.type = shader_type
 
-        source_string = ShaderSource(source_string, _shader_types[shader_type]).validate()
+        try:
+            shader_type = _shader_types[shader_type]
+        except KeyError as err:
+            raise ShaderException(f"shader_type '{shader_type}' is invalid."
+                                  f"Valid types are: {list(_shader_types)}") from err
+
+        source_string = ShaderSource(source_string, shader_type).validate()
         shader_source_utf8 = source_string.encode("utf8")
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(_shader_types[shader_type])
+        shader_id = glCreateShader(shader_type)
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -375,15 +394,13 @@ class Shader:
             source = self._get_shader_source(shader_id)
             source_lines = "{0}".format("\n".join(f"{str(i+1).zfill(3)}: {line} "
                                         for i, line in enumerate(source.split("\n"))))
-            raise GLException(
-                (
-                    f"The {self.type} shader failed to compile.\n"
-                    f"{self._get_shader_log(shader_id)}"
-                    "------------------------------------------------------------\n"
-                    f"{source_lines}\n"
-                    "------------------------------------------------------------"
-                )
-            )
+
+            raise ShaderException(f"Shader compilation failed.\n"
+                                  f"{self._get_shader_log(shader_id)}"
+                                  "------------------------------------------------------------\n"
+                                  f"{source_lines}\n"
+                                  "------------------------------------------------------------")
+
         elif _debug_gl_shaders:
             print(self._get_shader_log(shader_id))
 
@@ -399,7 +416,7 @@ class Shader:
         result_str = create_string_buffer(log_length.value)
         glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
-            return ("OpenGL returned the following message when compiling the {0} shader: "
+            return ("OpenGL returned the following message when compiling the '{0}' shader: "
                     "\n{1}".format(self.type, result_str.value.decode('utf8')))
         else:
             return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
@@ -418,6 +435,7 @@ class Shader:
             glDeleteShader(self._id)
             if _debug_gl_shaders:
                 print(f"Destroyed {self.type} Shader '{self._id}'")
+
         except Exception:
             # Interpreter is shutting down,
             # or Shader failed to compile.
@@ -504,7 +522,8 @@ class ShaderProgram:
     def use(self):
         glUseProgram(self._id)
 
-    def stop(self):
+    @staticmethod
+    def stop():
         glUseProgram(0)
 
     __enter__ = use
@@ -525,26 +544,26 @@ class ShaderProgram:
     def __setitem__(self, key, value):
         try:
             uniform = self._uniforms[key]
-        except KeyError:
-            raise Exception(f"A Uniform with the name `{key}` was not found.\n"
-                            f"The spelling may be incorrect, or if not in use it "
-                            f"may have been optimized out by the OpenGL driver.")
+        except KeyError as err:
+            raise ShaderException(f"A Uniform with the name `{key}` was not found.\n"
+                                  f"The spelling may be incorrect, or if not in use it "
+                                  f"may have been optimized out by the OpenGL driver.") from err
         try:
             uniform.set(value)
-        except GLException:
-            raise
+        except GLException as err:
+            raise ShaderException from err
 
     def __getitem__(self, item):
         try:
             uniform = self._uniforms[item]
-        except KeyError:
-            raise Exception(f"A Uniform with the name `{item}` was not found.\n"
-                            f"The spelling may be incorrect, or if not in use it "
-                            f"may have been optimized out by the OpenGL driver.")
+        except KeyError as err:
+            raise ShaderException(f"A Uniform with the name `{item}` was not found.\n"
+                                  f"The spelling may be incorrect, or if not in use it "
+                                  f"may have been optimized out by the OpenGL driver.") from err
         try:
             return uniform.get()
-        except GLException:
-            raise
+        except GLException as err:
+            raise ShaderException from err
 
     def _get_number(self, variable_type):
         """Get the number of active variables of the passed GL type."""
@@ -644,8 +663,8 @@ class ShaderProgram:
         try:
             glGetActiveAttrib(self._id, index, buf_size, None, asize, atype, aname)
             return aname.value.decode(), atype.value, asize.value
-        except GLException:
-            raise
+        except GLException as exc:
+            raise ShaderException from exc
 
     def _query_uniform(self, index):
         usize = GLint()
@@ -655,8 +674,8 @@ class ShaderProgram:
         try:
             glGetActiveUniform(self._id, index, buf_size, None, usize, utype, uname)
             return uname.value.decode(), utype.value, usize.value
-        except GLException:
-            raise
+        except GLException as exc:
+            raise ShaderException from exc
 
     def vertex_list(self, count, mode, batch=None, group=None, **data):
         """Create a VertexList.
@@ -768,7 +787,7 @@ class UniformBlock:
         :Parameters:
             `index` : int
                 The uniform buffer index the returned UBO will bind itself to.
-                By default this is 0.
+                By default, this is 0.
 
         :rtype: :py:class:`~pyglet.graphics.shader.UniformBufferObject`
         """
@@ -827,7 +846,9 @@ class UniformBlock:
         # Custom ctypes Structure for Uniform access:
         class View(Structure):
             _fields_ = view_fields
-            __repr__ = lambda self: str(dict(self._fields_))
+
+            def __repr__(self):
+                return str(dict(self._fields_))
 
         return View
 
