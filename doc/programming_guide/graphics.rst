@@ -421,7 +421,7 @@ The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate
 ``set_state`` and ``unset_state`` methods are called before and after
 the vertex lists that use them.
 
-shader state
+Shader state
 ^^^^^^^^^^^^
 :py:class:`~pyglet.graphics.shader.ShaderProgram` can be binded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.use`)
 and unbinded (:py:meth:`~pyglet.graphics.shader.ShaderProgram.stop`) manually. As a convenience method, it can also act
@@ -435,7 +435,7 @@ For example::
         my_shader.my_uniform = 1.0
 
 
-hierarchical state
+Hierarchical state
 ^^^^^^^^^^^^^^^^^^
 
 Groups have a `parent` attribute that allows them to be implicitly organised
@@ -503,7 +503,7 @@ example demonstrates this::
           For optimal performance, always take care to ensure your custom Groups have
           correct ``__eq__`` and ``__hash__`` methods defined.
 
-drawing order
+Drawing order
 ^^^^^^^^^^^^^
 
 :py:class:`~pyglet.graphics.vertexdomain.VertexDomain` does not attempt
@@ -529,7 +529,7 @@ By combining hierarchical groups with ordered groups it is possible to
 describe an entire scene within a single :py:class:`~pyglet.graphics.Batch`,
 which then renders it as efficiently as possible.
 
-visibility
+Visibility
 ^^^^^^^^^^
 
 Groups have a boolean `visible` property. By setting this to `False`, any
