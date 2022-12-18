@@ -936,8 +936,10 @@ class ComputeShaderProgram:
         self._uniform_blocks = _introspect_uniform_blocks(self)
 
     @staticmethod
-    def dispatch(x: int, y: int, z: int):
+    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier=GL_ALL_BARRIER_BITS):
         glDispatchCompute(x, y, z)
+        if barrier:
+            glMemoryBarrier(barrier)
 
     @property
     def id(self):
