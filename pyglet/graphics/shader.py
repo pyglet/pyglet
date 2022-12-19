@@ -920,16 +920,13 @@ class ComputeShaderProgram:
                                   "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension.")
 
         self._shader = Shader(source, 'compute')
-
         self._context = pyglet.gl.current_context
         self._id = _link_program(self._shader)
 
         if _debug_gl_shaders:
             print(_get_program_log(self._id))
 
-        # Query if Direct State Access is available:
-        have_dsa = gl_info.have_version(4, 1) or gl_info.have_extension("GL_ARB_separate_shader_objects")
-        self._uniforms = _introspect_uniforms(self._id, have_dsa)
+        self._uniforms = _introspect_uniforms(self._id, True)
         self._uniform_blocks = _introspect_uniform_blocks(self)
 
         self.limits = {
@@ -955,24 +952,30 @@ class ComputeShaderProgram:
         return val.value
 
     @staticmethod
-    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier=GL_ALL_BARRIER_BITS):
+    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier: int = GL_ALL_BARRIER_BITS) -> None:
+        """Launch one or more compute work groups.
+
+        The ComputeShaderProgram should be active (bound) before calling
+        this method. The x, y, and z parameters specify the number of local
+        work groups that will be  dispatched in the X, Y and Z dimensions.
+        """
         glDispatchCompute(x, y, z)
         if barrier:
             glMemoryBarrier(barrier)
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
 
     @property
-    def uniforms(self):
+    def uniforms(self) -> dict:
         return self._uniforms
 
     @property
-    def uniform_blocks(self):
+    def uniform_blocks(self) -> dict:
         return self._uniform_blocks
 
-    def use(self):
+    def use(self) -> None:
         glUseProgram(self._id)
 
     @staticmethod
