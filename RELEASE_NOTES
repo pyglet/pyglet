@@ -7,7 +7,9 @@ Bugfixes
 
 Changes
 -------
-- Remove legacy Xlib backends
+- Remove legacy Xlib backend code.
+- Add initial support for Compute Shaders.
+- Windows: a high performance event timer is requested by the PlatformEventLoop.
 
 
 pyglet 2.0.1
