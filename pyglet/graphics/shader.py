@@ -911,7 +911,7 @@ class ShaderProgram:
 class ComputeShaderProgram:
     """OpenGL Compute Shader Program"""
 
-    __slots__ = '_shader', '_id', '_context', '_uniforms', '_uniform_blocks', '__weakref__'
+    __slots__ = '_shader', '_id', '_context', '_uniforms', '_uniform_blocks', '__weakref__', 'limits'
 
     def __init__(self, source: str):
         """Create an OpenGL ComputeShaderProgram from source."""
@@ -920,9 +920,6 @@ class ComputeShaderProgram:
                                   "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension.")
 
         self._shader = Shader(source, 'compute')
-        # self.local_size_x
-        # self.local_size_y
-        # self.local_size_z
 
         self._context = pyglet.gl.current_context
         self._id = _link_program(self._shader)
@@ -934,6 +931,28 @@ class ComputeShaderProgram:
         have_dsa = gl_info.have_version(4, 1) or gl_info.have_extension("GL_ARB_separate_shader_objects")
         self._uniforms = _introspect_uniforms(self._id, have_dsa)
         self._uniform_blocks = _introspect_uniform_blocks(self)
+
+        self.limits = {
+            'work_group_count':       self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_COUNT),
+            'work_group_size':        self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_SIZE),
+            'work_group_invocations': self._get_value(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS),
+            'shared_memory_size':     self._get_value(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE),
+        }
+
+    @staticmethod
+    def _get_tuple(parameter: int) -> tuple[int, int, int]:
+        val_x = GLint()
+        val_y = GLint()
+        val_z = GLint()
+        for i, value in enumerate((val_x, val_y, val_z)):
+            glGetIntegeri_v(parameter, i, byref(value))
+        return val_x.value, val_y.value, val_z.value
+
+    @staticmethod
+    def _get_value(parameter: int) -> int:
+        val = GLint()
+        glGetIntegerv(parameter, byref(val))
+        return val.value
 
     @staticmethod
     def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier=GL_ALL_BARRIER_BITS):
