@@ -1299,14 +1299,13 @@ class Texture(AbstractImage):
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         if internalformat is not None:
-            blank = (GLubyte * (width * height * 4))()
             glTexImage2D(target, 0,
                          internalformat,
                          width, height,
                          0,
                          fmt,
                          GL_UNSIGNED_BYTE,
-                         blank)
+                         None)
             glFlush()
 
         texture = cls(width, height, target, tex_id.value)
@@ -1532,13 +1531,12 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.images = depth
 
-        blank = (GLubyte * (texture.width * texture.height * texture.images))()
         glBindTexture(texture.target, texture.id)
         glTexImage3D(texture.target, texture.level,
                      internalformat,
                      texture.width, texture.height, texture.images, 0,
                      GL_ALPHA, GL_UNSIGNED_BYTE,
-                     blank)
+                     None)
 
         items = []
         for i, image in enumerate(images):
