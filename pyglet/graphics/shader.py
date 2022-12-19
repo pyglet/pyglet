@@ -505,7 +505,7 @@ def _get_program_log(program_id: int) -> str:
         return f"Program '{program_id}' linked successfully."
 
 
-def _query_uniform(program_id: int, index: int) -> tuple[str, int, int]:
+def _query_uniform(program_id: int, index: int):
     """Query the name, type, and size of a Uniform by index."""
     usize = GLint()
     utype = GLenum()
