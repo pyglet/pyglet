@@ -937,7 +937,7 @@ class ComputeShaderProgram:
         }
 
     @staticmethod
-    def _get_tuple(parameter: int) -> tuple[int, int, int]:
+    def _get_tuple(parameter: int):
         val_x = GLint()
         val_y = GLint()
         val_z = GLint()
