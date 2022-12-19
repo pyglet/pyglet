@@ -438,7 +438,7 @@ def _get_number(program_id: int, variable_type: int) -> int:
     return number.value
 
 
-def _query_attribute(program_id: int, index: int) -> tuple[str, int, int]:
+def _query_attribute(program_id: int, index: int):
     """Query the name, type, and size of an Attribute by index."""
     asize = GLint()
     atype = GLenum()
