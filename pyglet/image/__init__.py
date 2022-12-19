@@ -350,14 +350,9 @@ class AbstractImage:
     def get_texture(self, rectangle=False):
         """A :py:class:`~pyglet.image.Texture` view of this image.
 
-        The Texture target will be (``GL_TEXTURE_RECTANGLE``) if the `rectangle`
-        parameter is ``True``, otherwise it will be (``GL_TEXTURE_2D``).
-        Changes to the returned instance may or may not be reflected in this
-        image.
-
         :Parameters:
             `rectangle` : bool
-                True if the texture can be created as a rectangle.
+                Unused. Kept for compatibility.
 
                 .. versionadded:: 1.1.4.
         :rtype: :py:class:`~pyglet.image.Texture`
@@ -711,16 +706,14 @@ class ImageData(AbstractImage):
             `cls` : class (subclass of Texture)
                 Class to construct.
             `rectangle` : bool
-                ``True`` if a rectangle can be created; see
-                `AbstractImage.get_texture`.
+                Unused. kept for compatibility.
 
                 .. versionadded:: 1.1
 
         :rtype: cls or cls.region_class
         """
-        target = GL_TEXTURE_RECTANGLE if rectangle else GL_TEXTURE_2D
         internalformat = self._get_internalformat(self._desired_format)
-        texture = cls.create(self.width, self.height, target, internalformat)
+        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -730,7 +723,7 @@ class ImageData(AbstractImage):
         return texture
 
     def get_texture(self, rectangle=False):
-        if not self._current_texture or (not self._current_texture.target == GL_TEXTURE_RECTANGLE and rectangle):
+        if not self._current_texture:
             self._current_texture = self.create_texture(Texture, rectangle)
         return self._current_texture
 
@@ -1311,10 +1304,7 @@ class Texture(AbstractImage):
         texture = cls(width, height, target, tex_id.value)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
-        if target is GL_TEXTURE_RECTANGLE:
-            texture.tex_coords = (0, 0, 0,  width, 0, 0,  width, height, 0,  0, height, 0)
-        else:
-            texture.tex_coords = cls.tex_coords
+        texture.tex_coords = cls.tex_coords
 
         return texture
 
@@ -1360,8 +1350,6 @@ class Texture(AbstractImage):
         return data
 
     def get_texture(self, rectangle=False):
-        if rectangle and not self.target == GL_TEXTURE_RECTANGLE:
-            raise ImageException('Texture is not a rectangle, it must be created as a rectangle.')
         return self
 
     # no implementation of blit_to_texture yet
@@ -2141,8 +2129,7 @@ class ColorBufferImage(BufferImage):
     format = 'RGBA'
 
     def get_texture(self, rectangle=False):
-        target = GL_TEXTURE_RECTANGLE if rectangle else GL_TEXTURE_2D
-        texture = Texture.create(self.width, self.height, target, GL_RGBA)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 
