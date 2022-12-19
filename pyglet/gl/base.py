@@ -352,8 +352,7 @@ class Context:
 
         """
         if self.object_space is gl.current_context.object_space:
-            tex_id = gl.GLuint(texture_id)
-            gl.glDeleteTextures(1, tex_id)
+            gl.glDeleteTextures(1, gl.GLuint(texture_id))
         else:
             self.object_space.doomed_textures.append(texture_id)
 
@@ -370,8 +369,7 @@ class Context:
         .. versionadded:: 1.1
         """
         if self.object_space is gl.current_context.object_space and False:
-            buf_id = gl.GLuint(buffer_id)
-            gl.glDeleteBuffers(1, buf_id)
+            gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
         else:
             self.object_space.doomed_buffers.append(buffer_id)
 
@@ -388,8 +386,7 @@ class Context:
         .. versionadded:: 2.0
         """
         if gl.current_context and self.object_space is gl.current_context.object_space and False:
-            v_id = gl.GLuint(vao_id)
-            gl.glDeleteVertexArrays(1, v_id)
+            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
         else:
             self.object_space.doomed_vaos.append(vao_id)
 

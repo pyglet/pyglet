@@ -1208,7 +1208,7 @@ class Texture(AbstractImage):
     """An image loaded into video memory that can be efficiently drawn
     to the framebuffer.
 
-    Typically you will get an instance of Texture by accessing the `texture`
+    Typically, you will get an instance of Texture by accessing the `texture`
     member of any other AbstractImage.
 
     :Parameters:
@@ -1247,6 +1247,18 @@ class Texture(AbstractImage):
             self._context.delete_texture(self.id)
         except Exception:
             pass
+
+    def bind(self, texture_unit: int = 0):
+        """Bind to a specific Texture Unit by number."""
+        glActiveTexture(GL_TEXTURE0 + texture_unit)
+        glBindTexture(self.target, self.id)
+
+    def bind_image_texture(self, unit, level=0, layered=False, layer=0, access=GL_READ_WRITE, fmt=GL_RGBA32F):
+        """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
+
+        ..note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
+        """
+        glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
     def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA):
