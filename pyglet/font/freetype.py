@@ -183,7 +183,7 @@ class FreeTypeFont(base.Font):
         self.size = size
         self.bold = bold
         self.italic = italic
-        self.dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
+        self.dpi = dpi or 96
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
@@ -213,7 +213,9 @@ class FreeTypeFont(base.Font):
     def _load_font_face_from_system(self):
         match = get_fontconfig().find_font(self._name, self.size, self.bold, self.italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % self._name)
+            raise base.FontException(f"Could not match font '{self._name}'")
+        self.filename = match.file
+        print(match)
         self.face = FreeTypeFace.from_fontconfig(match)
 
     @classmethod
