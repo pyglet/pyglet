@@ -46,10 +46,13 @@ to see all.
 Don't include tabs in the text sample (see
 http://pyglet.org/doc-current/programming_guide/text.html#id9 )
 """
+import warnings
 
 import pyglet
-import pyglet.font.win32query as wq
 
+pyglet.options["win32_gdi_font"] = True
+warnings.warn("This example uses a deprecated font renderer.")
+import pyglet.font.win32query as wq
 
 if pyglet.compat_platform != 'win32':
     print("This example is only for Windows")

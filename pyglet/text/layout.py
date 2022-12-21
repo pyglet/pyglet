@@ -602,6 +602,31 @@ layout_fragment_source = """#version 330 core
     }
 """
 
+layout_fragment_image_source = """#version 330 core
+    in vec4 text_colors;
+    in vec2 texture_coords;
+    in vec4 vert_position;
+    
+    uniform sampler2D image_texture;
+
+    out vec4 final_colors;
+
+    uniform sampler2D text;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
+
+    void main()
+    {
+        final_colors = texture(image_texture, texture_coords.xy);
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
 decoration_vertex_source = """#version 330 core
     in vec3 position;
     in vec4 colors;
@@ -671,6 +696,17 @@ def get_default_layout_shader():
             shader.Shader(layout_fragment_source, 'fragment'),
         )
         return pyglet.gl.current_context.pyglet_text_layout_shader
+
+
+def get_default_image_layout_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_text_layout_image_shader
+    except AttributeError:
+        pyglet.gl.current_context.pyglet_text_layout_image_shader = shader.ShaderProgram(
+            shader.Shader(layout_vertex_source, 'vertex'),
+            shader.Shader(layout_fragment_image_source, 'fragment'),
+        )
+        return pyglet.gl.current_context.pyglet_text_layout_image_shader
 
 
 def get_default_decoration_shader():

@@ -217,7 +217,7 @@ class InlineElement:
         """
         return self._position
 
-    def place(self, layout, x, y):
+    def place(self, layout, x, y, z):
         """Construct an instance of the element at the given coordinates.
 
         Called when the element's position within a layout changes, either

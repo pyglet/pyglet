@@ -87,8 +87,8 @@ class ImageElement(pyglet.text.document.InlineElement):
         descent = min(0, -anchor_y)
         super().__init__(ascent, descent, self.width)
 
-    def place(self, layout, x, y):
-        program = pyglet.text.layout.get_default_layout_shader()
+    def place(self, layout, x, y, z):
+        program = pyglet.text.layout.get_default_image_layout_shader()
         group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
         x1 = x
         y1 = y + self.descent
@@ -96,7 +96,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         y2 = y + self.height + self.descent
         vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
-                                                  position=('f', (x1, y1,  x2, y1,  x2, y2,  x1, y2)),
+                                                  position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
                                                   tex_coords=('f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
