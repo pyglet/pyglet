@@ -2134,8 +2134,8 @@ class Win32DirectWriteFont(base.Font):
         path_len = UINT32()
         local_loader.GetFilePathLengthFromKey(key_data, ff_key_size, byref(path_len))
 
-        buffer = create_unicode_buffer(path_len.value)
-        local_loader.GetFilePathFromKey(key_data, ff_key_size, buffer, path_len.value + 1)
+        buffer = create_unicode_buffer(path_len.value + 1)
+        local_loader.GetFilePathFromKey(key_data, ff_key_size, buffer, len(buffer))
 
         loader.Release()
         local_loader.Release()
