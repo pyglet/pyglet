@@ -722,7 +722,10 @@ class Mat3(tuple):
                      sum(map(_mul, r2, c0)), sum(map(_mul, r2, c1)), sum(map(_mul, r2, c2))))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
+        array = [str(num)[:12] for num in self]
+        return (f"| {array[0]:>12s} | {array[3]:>12s} | {array[6]:>12s} |\n"
+                f"| {array[1]:>12s} | {array[4]:>12s} | {array[7]:>12s} |\n"
+                f"| {array[2]:>12s} | {array[5]:>12s} | {array[8]:>12s} |\n")
 
 
 class Mat4(tuple):
@@ -882,11 +885,11 @@ class Mat4(tuple):
 
     def row(self, index: int) -> tuple:
         """Get a specific row as a tuple."""
-        return self[index * 4: index * 4 + 4]
+        return self[index::4]
 
     def column(self, index: int) -> tuple:
         """Get a specific column as a tuple."""
-        return self[index::4]
+        return self[index * 4: index * 4 + 4]
 
     def rotate(self, angle: float, vector: Vec3) -> Mat4:
         """Get a rotation Matrix on x, y, or z axis."""
@@ -1046,4 +1049,8 @@ class Mat4(tuple):
     #     return super().__getitem__(row)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
+        array = [str(num)[:12] for num in self]
+        return (f"| {array[0]:>12s} | {array[4]:>12s} | {array[8] :>12s} | {array[12]:>12s} |\n"
+                f"| {array[1]:>12s} | {array[5]:>12s} | {array[9] :>12s} | {array[13]:>12s} |\n"
+                f"| {array[2]:>12s} | {array[6]:>12s} | {array[10]:>12s} | {array[14]:>12s} |\n"
+                f"| {array[3]:>12s} | {array[7]:>12s} | {array[11]:>12s} | {array[15]:>12s} |\n")
