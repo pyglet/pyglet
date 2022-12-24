@@ -31,13 +31,13 @@ def animate(dt):
     rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/3, Vec3(0, 0, 1))
     trans = Mat4.from_translation(Vec3(1.25, 0, 2))
-    model_logo.matrix = rot_x @ rot_y @ rot_z @ trans
+    model_logo.matrix = trans @ rot_x @ rot_y @ rot_z
 
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
     rot_y = Mat4.from_rotation(time/3, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/2, Vec3(0, 0, 1))
     trans = Mat4.from_translation(Vec3(-1.75, 0, 0))
-    model_box.matrix = rot_x @ rot_y @ rot_z @ trans
+    model_box.matrix = trans @ rot_x @ rot_y @ rot_z
 
 
 if __name__ == "__main__":
