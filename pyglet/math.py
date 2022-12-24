@@ -771,7 +771,11 @@ class Mat4(tuple):
         z_near: float,
         z_far: float
     ) -> Mat4T:
-        """Create a Mat4 orthographic projection matrix."""
+        """Create a Mat4 orthographic projection matrix for use with OpenGL.
+
+        This matrix doesn't actually perform the projection; it transforms the
+        space so that OpenGL's vertex processing performs it.
+        """
         width = right - left
         height = top - bottom
         depth = z_far - z_near
@@ -798,7 +802,10 @@ class Mat4(tuple):
         fov: float = 60
     ) -> Mat4T:
         """
-        Create a Mat4 perspective projection matrix.
+        Create a Mat4 perspective projection matrix for use with OpenGL.
+
+        This matrix doesn't actually perform the projection; it transforms the
+        space so that OpenGL's vertex processing performs it.
 
         :Parameters:
             `aspect` : The aspect ratio as a `float`
