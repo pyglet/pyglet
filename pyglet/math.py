@@ -696,30 +696,30 @@ class Mat3(tuple):
 
     def __matmul__(self, other):
         if isinstance(other, Vec3):
-            # Columns:
-            c0 = self[0::3]
-            c1 = self[1::3]
-            c2 = self[2::3]
-            return Vec3(sum(map(_mul, c0, other)),
-                        sum(map(_mul, c1, other)),
-                        sum(map(_mul, c2, other)))
+            # Rows:
+            r0 = self[0::3]
+            r1 = self[1::3]
+            r2 = self[2::3]
+            return Vec3(sum(map(_mul, r0, other)),
+                        sum(map(_mul, r1, other)),
+                        sum(map(_mul, r2, other)))
 
         if not isinstance(other, Mat3):
             raise TypeError("Can only multiply with Mat3 or Vec3 types")
 
         # Rows:
-        r0 = self[0:3]
-        r1 = self[3:6]
-        r2 = self[6:9]
+        r0 = self[0::3]
+        r1 = self[1::3]
+        r2 = self[2::3]
         # Columns:
-        c0 = other[0::3]
-        c1 = other[1::3]
-        c2 = other[2::3]
+        c0 = other[0:3]
+        c1 = other[3:6]
+        c2 = other[6:9]
 
-        # Multiply and sum rows * colums:
-        return Mat3((sum(map(_mul, r0, c0)), sum(map(_mul, r0, c1)), sum(map(_mul, r0, c2)),
-                     sum(map(_mul, r1, c0)), sum(map(_mul, r1, c1)), sum(map(_mul, r1, c2)),
-                     sum(map(_mul, r2, c0)), sum(map(_mul, r2, c1)), sum(map(_mul, r2, c2))))
+        # Multiply and sum rows * columns:
+        return Mat3((sum(map(_mul, c0, r0)), sum(map(_mul, c0, r1)), sum(map(_mul, c0, r2)),
+                     sum(map(_mul, c1, r0)), sum(map(_mul, c1, r1)), sum(map(_mul, c1, r2)),
+                     sum(map(_mul, c2, r0)), sum(map(_mul, c2, r1)), sum(map(_mul, c2, r2))))
 
     def __repr__(self) -> str:
         array = [str(num)[:12] for num in self]
@@ -1015,34 +1015,34 @@ class Mat4(tuple):
 
     def __matmul__(self, other):
         if isinstance(other, Vec4):
-            # Columns:
-            c0 = self[0::4]
-            c1 = self[1::4]
-            c2 = self[2::4]
-            c3 = self[3::4]
-            return Vec4(sum(map(_mul, c0, other)),
-                        sum(map(_mul, c1, other)),
-                        sum(map(_mul, c2, other)),
-                        sum(map(_mul, c3, other)))
+            # Rows:
+            r0 = self[0::4]
+            r1 = self[1::4]
+            r2 = self[2::4]
+            r3 = self[3::4]
+            return Vec4(sum(map(_mul, r0, other)),
+                        sum(map(_mul, r1, other)),
+                        sum(map(_mul, r2, other)),
+                        sum(map(_mul, r3, other)))
 
         if not isinstance(other, Mat4):
             raise TypeError("Can only multiply with Mat4 or Vec4 types")
         # Rows:
-        r0 = self[0:4]
-        r1 = self[4:8]
-        r2 = self[8:12]
-        r3 = self[12:16]
+        r0 = self[0::4]
+        r1 = self[1::4]
+        r2 = self[2::4]
+        r3 = self[3::4]
         # Columns:
-        c0 = other[0::4]
-        c1 = other[1::4]
-        c2 = other[2::4]
-        c3 = other[3::4]
+        c0 = other[0:4]
+        c1 = other[4:8]
+        c2 = other[8:12]
+        c3 = other[12:16]
 
         # Multiply and sum rows * columns:
-        return Mat4((sum(map(_mul, r0, c0)), sum(map(_mul, r0, c1)), sum(map(_mul, r0, c2)), sum(map(_mul, r0, c3)),
-                     sum(map(_mul, r1, c0)), sum(map(_mul, r1, c1)), sum(map(_mul, r1, c2)), sum(map(_mul, r1, c3)),
-                     sum(map(_mul, r2, c0)), sum(map(_mul, r2, c1)), sum(map(_mul, r2, c2)), sum(map(_mul, r2, c3)),
-                     sum(map(_mul, r3, c0)), sum(map(_mul, r3, c1)), sum(map(_mul, r3, c2)), sum(map(_mul, r3, c3))))
+        return Mat4((sum(map(_mul, c0, r0)), sum(map(_mul, c0, r1)), sum(map(_mul, c0, r2)), sum(map(_mul, c0, r3)),
+                     sum(map(_mul, c1, r0)), sum(map(_mul, c1, r1)), sum(map(_mul, c1, r2)), sum(map(_mul, c1, r3)),
+                     sum(map(_mul, c2, r0)), sum(map(_mul, c2, r1)), sum(map(_mul, c2, r2)), sum(map(_mul, c2, r3)),
+                     sum(map(_mul, c3, r0)), sum(map(_mul, c3, r1)), sum(map(_mul, c3, r2)), sum(map(_mul, c3, r3))))
 
     # def __getitem__(self, item):
     #     row = [slice(0, 4), slice(4, 8), slice(8, 12), slice(12, 16)][item]
