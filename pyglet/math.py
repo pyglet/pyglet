@@ -41,6 +41,9 @@ supported. Helper methods are included for rotating, scaling, and
 transforming. The :py:class:`~pyglet.matrix.Mat4` includes class methods
 for creating orthographic and perspective projection matrixes.
 
+Matrices behave just like they do in GLSL: they are specified in column-major
+order and multiply on the left of vectors, which are treated as columns.
+
 :note: For performance, Matrixes subclass the `tuple` type. They
     are therefore immutable - all operations return a new object;
     the object is not updated in-place.
