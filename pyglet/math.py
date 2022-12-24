@@ -861,17 +861,6 @@ class Mat4(tuple):
                     vector[0], vector[1], vector[2], 1.0))
 
     @classmethod
-    def look_at_direction(cls: type[Mat4T], direction: Vec3, up: Vec3) -> Mat4T:
-        vec_z = direction.normalize()
-        vec_x = direction.cross(up).normalize()
-        vec_y = direction.cross(vec_z).normalize()
-
-        return cls((vec_x.x, vec_y.x, vec_z.x, 0.0,
-                    vec_x.y, vec_y.y, vec_z.y, 0.0,
-                    vec_x.z, vec_z.z, vec_z.z, 0.0,
-                    0.0, 0.0, 0.0, 1.0))
-
-    @classmethod
     def look_at(cls: type[Mat4T], position: Vec3, target: Vec3, up: Vec3):
         f = (target - position).normalize()
         u = up.normalize()
