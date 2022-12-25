@@ -441,6 +441,20 @@ class ShapeBase(ABC):
         """User assigned :class:`Batch` object."""
         return self._batch
 
+    @batch.setter
+    def batch(self, batch):
+        if self._batch == batch:
+            return
+
+        if batch is not None and self._batch is not None:
+            self._batch.migrate(self._vertex_list, self._draw_mode,
+                                self._group, batch)
+            self._batch = batch
+        else:
+            self._vertex_list.delete()
+            self._batch = batch
+            self._create_vertex_list()
+
 
 class Arc(ShapeBase):
     _draw_mode = GL_LINES
