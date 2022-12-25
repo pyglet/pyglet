@@ -404,6 +404,16 @@ class ShapeBase(ABC):
         self._visible = value
         self._update_vertices()
 
+    @property
+    def group(self):
+        """User assigned :class:`Group` object."""
+        return self._group.parent
+
+    @property
+    def batch(self):
+        """User assigned :class:`Batch` object."""
+        return self._batch
+
 
 class Arc(ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
