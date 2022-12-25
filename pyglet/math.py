@@ -725,10 +725,7 @@ class Mat3(tuple):
                      sum(map(_mul, c2, r0)), sum(map(_mul, c2, r1)), sum(map(_mul, c2, r2))))
 
     def __repr__(self) -> str:
-        array = [str(num)[:12] for num in self]
-        return (f"| {array[0]:>12s} | {array[3]:>12s} | {array[6]:>12s} |\n"
-                f"| {array[1]:>12s} | {array[4]:>12s} | {array[7]:>12s} |\n"
-                f"| {array[2]:>12s} | {array[5]:>12s} | {array[8]:>12s} |\n")
+        return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
 
 
 class Mat4(tuple):
@@ -1048,8 +1045,4 @@ class Mat4(tuple):
     #     return super().__getitem__(row)
 
     def __repr__(self) -> str:
-        array = [str(num)[:12] for num in self]
-        return (f"| {array[0]:>12s} | {array[4]:>12s} | {array[8] :>12s} | {array[12]:>12s} |\n"
-                f"| {array[1]:>12s} | {array[5]:>12s} | {array[9] :>12s} | {array[13]:>12s} |\n"
-                f"| {array[2]:>12s} | {array[6]:>12s} | {array[10]:>12s} | {array[14]:>12s} |\n"
-                f"| {array[3]:>12s} | {array[7]:>12s} | {array[11]:>12s} | {array[15]:>12s} |\n")
+        return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
