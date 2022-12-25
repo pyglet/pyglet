@@ -246,7 +246,8 @@ class ShapeBase(ABC):
         namely `batch` and `group`) rely on this method to properly
         recreate the vertex list.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('_create_vertex_list must be defined in '
+                                  'order to use group or batch properties')
 
     @abstractmethod
     def _update_vertices(self):
@@ -423,6 +424,17 @@ class ShapeBase(ABC):
     def group(self):
         """User assigned :class:`Group` object."""
         return self._group.parent
+
+    @group.setter
+    def group(self, group):
+        if self._group.parent == group:
+            return
+        self._group = _ShapeGroup(self._group.blend_src,
+                                  self._group.blend_dest,
+                                  self._group.program,
+                                  group)
+        self._batch.migrate(self._vertex_list, self._draw_mode, self._group,
+                            self._batch)
 
     @property
     def batch(self):
