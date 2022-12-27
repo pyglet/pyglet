@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.math import Mat3, Mat4
+from pyglet.math import Mat3, Mat4, Vec3
 
 
 @pytest.fixture()
@@ -132,3 +132,10 @@ def test_mat4_inversion(mat4):
     assert round(mat4 @ inverse_1, 9) == Mat4()
     assert round(mat4 @ inverse_2, 9) == Mat4()
 
+
+def test_mat3_associative_mul():
+    swap_xy = Mat3((0,1,0, 1,0,0, 0,0,1))
+    scale_x = Mat3((2,0,0, 0,1,0, 0,0,1))
+    v1 = (swap_xy @ scale_x) @ Vec3(0,1,0)
+    v2 = swap_xy @ (scale_x @ Vec3(0,1,0))
+    assert v1 == v2 and abs(v1) != 0

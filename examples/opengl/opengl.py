@@ -82,7 +82,7 @@ def update(dt):
     rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/4, Vec3(0, 0, 1))
     trans = Mat4.from_translation((0, 0, -3.0))
-    torus_model.matrix = rot_x @ rot_y @ rot_z @ trans
+    torus_model.matrix = trans @ rot_x @ rot_y @ rot_z
 
 def setup():
     # One-time GL setup
