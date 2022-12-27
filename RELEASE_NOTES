@@ -1,3 +1,10 @@
+pyglet 2.0.3
+
+Bugfixes
+--------
+- macOS: fix crash when supplying OpenGL Config without explicit major/minor versions #739
+
+
 pyglet 2.0.2
 
 Bugfixes

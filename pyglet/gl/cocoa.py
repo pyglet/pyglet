@@ -194,10 +194,9 @@ class CocoaConfig(Config):
         elif _os_x_version >= os_x_release['lion']:
             # check for opengl profile
             # This requires OS-X Lion (Darwin 11) or higher
-            version = (
-                getattr(self, 'major_version', None) or 2,
-                getattr(self, 'minor_version', None)
-                )
+            version = (getattr(self, 'major_version', None) or 3,
+                       getattr(self, 'minor_version', None) or 3)
+
             # tell os-x we want to request a profile
             attrs.append(cocoapy.NSOpenGLPFAOpenGLProfile)
 
