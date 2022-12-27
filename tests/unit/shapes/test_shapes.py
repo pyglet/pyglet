@@ -1,6 +1,7 @@
 import pytest
 from functools import partial
 
+from pyglet.graphics import Group, Batch
 from pyglet.shapes import *
 
 
@@ -71,3 +72,19 @@ def test_setting_opacity_does_not_change_rgb_channels_on_color(rgb_or_rgba_shape
     original_color = rgb_or_rgba_shape.color[:3]
     rgb_or_rgba_shape.opacity = 255
     assert rgb_or_rgba_shape.color[:3] == original_color
+
+
+def test_group_setter(shape_keywords_only):
+    shape = shape_keywords_only()
+
+    new_group = Group()
+    shape.group = new_group
+    assert shape.group is new_group
+
+
+def test_batch_setter(shape_keywords_only):
+    shape = shape_keywords_only()
+
+    new_batch = Batch()
+    shape.batch = new_batch
+    assert shape.batch is new_batch
