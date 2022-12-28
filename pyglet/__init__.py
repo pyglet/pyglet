@@ -35,7 +35,7 @@
 
 """pyglet is a cross-platform games and multimedia package.
 
-Detailed documentation is available at http://www.pyglet.org
+More information is available at http://www.pyglet.org
 """
 
 import os
@@ -154,6 +154,7 @@ options = {
     'debug_trace_depth': 1,
     'debug_trace_flush': True,
     'debug_win32': False,
+    'debug_input': False,
     'debug_x11': False,
     'graphics_vbo': True,
     'shadow_window': True,
@@ -166,6 +167,7 @@ options = {
     'headless': False,
     'headless_device': 0,
     'win32_disable_shaping': False,
+    'dw_legacy_naming': False
 }
 
 _option_types = {
@@ -189,14 +191,16 @@ _option_types = {
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
-    'advanced_font_features': bool,
+    'search_local_libs': bool,
+    'win32_gdi_font': bool,
     'headless': bool,
     'headless_device': int,
-    'win32_disable_shaping': bool
+    'win32_disable_shaping': bool,
+    'dw_legacy_naming': bool
 }
 
 
-def _read_environment():
+for key in options:
     """Read defaults for options from environment"""
     for key in options:
         env = 'PYGLET_%s' % key.upper()
@@ -366,7 +370,6 @@ if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
-    from . import com
     from . import event
     from . import font
     from . import gl
@@ -387,7 +390,6 @@ else:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')
