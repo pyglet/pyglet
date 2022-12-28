@@ -81,9 +81,6 @@ class Vec2:
         yield self.x
         yield self.y
 
-    def __len__(self) -> int:
-        return 2
-
     @_typing.overload
     def __getitem__(self, item: int) -> float:
         ...
@@ -94,6 +91,16 @@ class Vec2:
 
     def __getitem__(self, item):
         return (self.x, self.y)[item]
+
+    def __setitem__(self, key, value):
+        if type(key) is slice:
+            for i, attr in enumerate(['x', 'y'][key]):
+                setattr(self, attr, value[i])
+        else:
+            setattr(self, ['x', 'y'][key], value)
+
+    def __len__(self) -> int:
+        return 2
 
     def __add__(self, other: Vec2) -> Vec2:
         return Vec2(self.x + other.x, self.y + other.y)
@@ -318,6 +325,13 @@ class Vec3:
     def __getitem__(self, item):
         return (self.x, self.y, self.z)[item]
 
+    def __setitem__(self, key, value):
+        if type(key) is slice:
+            for i, attr in enumerate(['x', 'y', 'z'][key]):
+                setattr(self, attr, value[i])
+        else:
+            setattr(self, ['x', 'y', 'z'][key], value)
+
     def __len__(self) -> int:
         return 3
 
@@ -522,6 +536,13 @@ class Vec4:
 
     def __getitem__(self, item):
         return (self.x, self.y, self.z, self.w)[item]
+
+    def __setitem__(self, key, value):
+        if type(key) is slice:
+            for i, attr in enumerate(['x', 'y', 'z', 'w'][key]):
+                setattr(self, attr, value[i])
+        else:
+            setattr(self, ['x', 'y', 'z', 'w'][key], value)
 
     def __len__(self) -> int:
         return 4
