@@ -1,8 +1,19 @@
 pyglet 2.0.3
 
+Changes and Improvements
+------------------------
+- shapes: Batch and Group can now be changed on shapes after instantiation, similar to Sprites.
+- font: DirectWrite & Freetype fonts now expose a `filename` attribute. macOS not yet implemented.
+- Windows: DirectWrite fonts parse font names in a more correct manner. Setting `pyglet.options['dw_legacy_naming']`
+  to True will restore the old behavior, but this may be removed at a later date.
+- math: Vec types can now be updated with slices (`velocity[:] = 1, 2`)
+- math: Matrix operations now behave more like GLSL.
+
 Bugfixes
 --------
 - macOS: fix crash when supplying OpenGL Config without explicit major/minor versions #739
+- To prevent crashing on many OpenGL drivers, Textures are no longer initialized with empty data.
+- fixed `font_comparison.py` example.
 
 
 pyglet 2.0.2
