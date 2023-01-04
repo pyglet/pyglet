@@ -14,6 +14,9 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 > The previous version of pyglet is tracked in the `pyglet-1.5-maintenance` branch.
 > **If you want to do a pull request for the previous release, please target the appropriate branch**. 
 
+> :exclamation: `pyglet.graphics.draw` and `pyglet.graphics.draw_indexed` will be removed
+> in pyglet v2.1. The `shapes` module is an alternative for for an alternative. 
+
 * pyglet [documentation]
 * pyglet on [PyPI]
 * pyglet [discord] server

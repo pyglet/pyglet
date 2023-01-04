@@ -33,27 +33,26 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Low-level graphics rendering.
+"""Low-level graphics rendering and abstractions.
 
-This module provides an efficient low-level abstraction over OpenGL.  It gives
-very good performance for rendering OpenGL primitives. The module is used
-internally by other areas of pyglet.
+This module provides efficient abstractions over OpenGL objects, such as
+Shaders and Buffers. It also provides classes for highly performant batched
+rendering and grouping.
 
 See the :ref:`guide_graphics` for details on how to use this graphics API.
 
 Batches and groups
 ==================
 
-Without even needing to understand the details on how to draw primitives with
-the graphics API, developers can make use of :py:class:`~pyglet.graphics.Batch`
-and :py:class:`~pyglet.graphics.Group` objects to improve performance of sprite
-and text rendering.
+Developers can make use of :py:class:`~pyglet.graphics.Batch` and
+:py:class:`~pyglet.graphics.Group` objects to improve performance when
+rendering a large number of objects.
 
-The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and
-:py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
-``group`` parameter in their constructors.  A batch manages a set of objects
-that will be drawn all at once, and a group describes the manner in which an
-object is drawn.
+The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label`,
+:py:func:`~pyglet.text.layout.TextLayout`, and other classes all accept a
+``batch`` and ``group`` parameter in their constructors. A Batch manages
+a set of objects that will be drawn all at once, and a Group can be used
+to set OpenGL state and further sort the draw operation.
 
 The following example creates a batch, adds two sprites to the batch, and then
 draws the entire batch::
@@ -65,64 +64,29 @@ draws the entire batch::
     def on_draw()
         batch.draw()
 
-Drawing a complete batch is much faster than drawing the items in the batch
+Drawing a complete Batch is much faster than drawing the items in the batch
 individually, especially when those items belong to a common group.  
 
-Groups describe the OpenGL state required for an item.  This is for the most
-part managed by the sprite and text classes, however you can also use custom
-groups to ensure items are drawn in a particular order. For example, the
+Groups describe the OpenGL state required for an item. This is for the most
+part managed by the sprite, text, and other classes, however you can also use
+custom groups to ensure items are drawn in a particular order. For example, the
 following example adds a background sprite which is guaranteed to be drawn
 before the car and the boat::
 
     batch = pyglet.graphics.Batch()
-    background = pyglet.sprite.SpriteGroup(0)
-    foreground = pyglet.sprite.SpriteGroup(1)
+    background = pyglet.graphics.Group(order=0)
+    foreground = pyglet.graphics.Group(order=1)
 
-    background = pyglet.sprite.Sprite(background_image,
-                                      batch=batch, group=background)
+    background = pyglet.sprite.Sprite(background_image, batch=batch, group=background)
     car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
     boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
     
     def on_draw()
         batch.draw()
 
-It's preferable to manage sprites and text objects within as few batches as
-possible.  If the drawing of sprites or text objects need to be interleaved
-with other drawing that does not use the graphics API, multiple batches will
-be required.
-
-Drawing modes
-=============
-
-Methods in this module that accept a ``mode`` parameter will accept any value
-in the OpenGL drawing mode enumeration: ``GL_POINTS``, ``GL_LINE_STRIP``,
-``GL_LINE_LOOP``, ``GL_LINES``, ``GL_TRIANGLE_STRIP``, ``GL_TRIANGLE_FAN``,
-``GL_TRIANGLES``, and ``GL_POLYGON``.
-
-:: 
-
-    pyglet.graphics.draw(1, GL_POINTS, ('v2i',(10,20)))
-
-However, because of the way the graphics API renders multiple primitives with 
-shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot
-be used --- the results are undefined.
-
-When using ``GL_LINE_STRIP`` or ``GL_TRIANGLE_STRIP``, care must be taken to
-insert degenerate vertices at the beginning and end of each
-vertex list.  For example, given the vertex list::
-
-    A, B, C, D
-
-the correct vertex list to provide the vertex list is::
-
-    A, A, B, C, D, D
-
-Alternatively, the ``NV_primitive_restart`` extension can be used if it is
-present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
-``GL_TRIANGLE_FAN``.   Unfortunately the extension is not provided by older
-video drivers, and requires indexed vertex lists.
-
-.. versionadded:: 1.1
+It's preferable to manage pyglet objects within as few batches as possible. If
+the drawing of sprites or text objects need to be interleaved with other
+drawing that does not use the graphics API, multiple batches will be required.
 """
 
 import ctypes
@@ -139,6 +103,9 @@ _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
 def draw(size, mode, **data):
     """Draw a primitive immediately.
+
+    :warning: This function is deprecated as of 2.0.4, and will be removed
+              in the next release.
 
     :Parameters:
         `size` : int
@@ -188,6 +155,9 @@ def draw(size, mode, **data):
 
 def draw_indexed(size, mode, indices, **data):
     """Draw a primitive with indexed vertices immediately.
+
+    :warning: This function is deprecated as of 2.0.4, and will be removed
+              in the next release.
 
     :Parameters:
         `size` : int
