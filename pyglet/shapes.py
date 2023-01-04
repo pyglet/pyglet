@@ -659,11 +659,15 @@ class BezierCurve(ShapeBase):
             # Calculate the points of the curve:
             points = [(x + self._make_curve(t / self._segments)[0],
                        y + self._make_curve(t / self._segments)[1]) for t in range(self._segments + 1)]
+            trans_x, trans_y = points[0]
+            trans_x += self._anchor_x
+            trans_y += self._anchor_y
+            coords = [[x - trans_x, y - trans_y] for x, y in points]
 
             # Create a list of doubled-up points from the points:
             vertices = []
-            for i in range(len(points) - 1):
-                line_points = *points[i], *points[i + 1]
+            for i in range(len(coords) - 1):
+                line_points = *coords[i], *coords[i + 1]
                 vertices.extend(line_points)
 
         self._vertex_list.vertices[:] = vertices
