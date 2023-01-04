@@ -215,7 +215,6 @@ class FreeTypeFont(base.Font):
         if not match:
             raise base.FontException(f"Could not match font '{self._name}'")
         self.filename = match.file
-        print(match)
         self.face = FreeTypeFace.from_fontconfig(match)
 
     @classmethod
