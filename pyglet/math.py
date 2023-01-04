@@ -230,6 +230,10 @@ class Vec2:
         return Vec2(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)))
 
+    def reflect(self, normal: Vec2) -> Vec2:
+        """Create a new Vec2 reflected (ricochet) from the given normal."""
+        return self - normal * 2 * normal.dot(self)
+
     def rotate(self, angle: float) -> Vec2:
         """Create a new Vector rotated by the angle. The magnitude remains unchanged.
 
