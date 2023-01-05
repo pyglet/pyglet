@@ -602,10 +602,10 @@ class Arc(ShapeBase):
 class BezierCurve(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, *points, segments=None, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, *points, t=1.0, segments=None, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a Bézier curve.
 
-        The Curve's anchor point (x, y) defaults to its first control point.
+        The curve's anchor point (x, y) defaults to its first control point.
 
         :Parameters:
             `points` : List[[int, int]]
@@ -623,6 +623,7 @@ class BezierCurve(ShapeBase):
                 Optional parent group of the curve.
         """
         self._points = list(points)
+        self._t = t
         self._segments = segments or 100
         self._num_verts = self._segments * 2
         r, g, b, *a = color
@@ -639,8 +640,9 @@ class BezierCurve(ShapeBase):
         n = len(self._points) - 1
         p = [0, 0]
         for i in range(n + 1):
-            p[0] += (math.perm(n, i) / math.perm(i)) * (1 - t) ** (n - i) * t ** i * self._points[i][0]
-            p[1] += (math.perm(n, i) / math.perm(i)) * (1 - t) ** (n - i) * t ** i * self._points[i][1]
+            m = math.comb(n, i) * (1 - t) ** (n - i) * t ** i
+            p[0] += m * self._points[i][0]
+            p[1] += m * self._points[i][1]
         return p
 
     def _create_vertex_list(self):
@@ -657,8 +659,8 @@ class BezierCurve(ShapeBase):
             y = -self._anchor_y
 
             # Calculate the points of the curve:
-            points = [(x + self._make_curve(t / self._segments)[0],
-                       y + self._make_curve(t / self._segments)[1]) for t in range(self._segments + 1)]
+            points = [(x + self._make_curve(self._t * t / self._segments)[0],
+                       y + self._make_curve(self._t * t / self._segments)[1]) for t in range(self._segments + 1)]
             trans_x, trans_y = points[0]
             trans_x += self._anchor_x
             trans_y += self._anchor_y
@@ -671,6 +673,28 @@ class BezierCurve(ShapeBase):
                 vertices.extend(line_points)
 
         self._vertex_list.vertices[:] = vertices
+
+    @property
+    def points(self):
+        """Control points of the curve.
+
+        :type: List[[int, int]]
+        """
+        return self._points
+
+    @points.setter
+    def points(self, value):
+        self._points = value
+        self._update_vertices()
+    
+    @property
+    def t(self):
+        return self._t
+    
+    @t.setter
+    def t(self, value):
+        self._t = value
+        self._update_vertices()
 
 
 class Circle(ShapeBase):
