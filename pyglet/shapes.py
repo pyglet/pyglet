@@ -602,7 +602,7 @@ class Arc(ShapeBase):
 class BezierCurve(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, *points, t=1.0, segments=None, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, *points, t=1.0, segments=100, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
@@ -610,9 +610,12 @@ class BezierCurve(ShapeBase):
         :Parameters:
             `points` : List[[int, int]]
                 Control points of the curve.
+            `t` : float
+                Draw `100*t` percent of the curve. 0.5 means the curve
+                is half drawn and 1.0 means draw the whole curve.
             `segments` : int
-                You can optionally specify how many lines the curve
-                should be made from. Default to 100.
+                You can optionally specify how many line segments the
+                curve should be made from.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -624,7 +627,7 @@ class BezierCurve(ShapeBase):
         """
         self._points = list(points)
         self._t = t
-        self._segments = segments or 100
+        self._segments = segments
         self._num_verts = self._segments * 2
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -686,11 +689,15 @@ class BezierCurve(ShapeBase):
     def points(self, value):
         self._points = value
         self._update_vertices()
-    
+
     @property
     def t(self):
+        """Draw `100*t` percent of the curve.
+
+        :type: float
+        """
         return self._t
-    
+
     @t.setter
     def t(self, value):
         self._t = value
