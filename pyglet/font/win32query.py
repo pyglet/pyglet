@@ -392,7 +392,8 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
 
         # if pitch == FIXED_PITCH:
         if 1:
-            print('%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName))
+            # print('%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName))
+            print(f'{info} CHARSET: {lf.lfCharSet}  {lf.lfFaceName}')
 
     return 1  # non-0 to continue enumeration
 
