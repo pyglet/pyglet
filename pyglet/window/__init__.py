@@ -642,7 +642,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             pass
 
     def __repr__(self):
-        return '%s(width=%d, height=%d)' % (self.__class__.__name__, self.width, self.height)
+        return f'{self.__class__.__name__}=(width={self.width}, height={self.height})'
 
     def _create(self):
         raise NotImplementedError('abstract')
@@ -769,7 +769,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 self.screen.set_mode(mode)
             elif self.screen.get_modes():
                 # Only raise exception if mode switching is at all possible.
-                raise NoSuchScreenModeException('No mode matching %dx%d' % (width, height))
+                raise NoSuchScreenModeException(f'No mode matching {width}x{height}')
         else:
             width = self.screen.width
             height = self.screen.height
