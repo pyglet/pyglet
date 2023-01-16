@@ -2,7 +2,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2022 pyglet contributors
+# Copyright (c) 2008-2023 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
