@@ -316,7 +316,7 @@ class HIDDevice:
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
 
-        if self.transport == 'USB':
+        if self.transport.upper() == 'USB':
             bustype = 0x03
             vendor = self.vendorID or 0
             product = self.productID or 0
@@ -328,7 +328,7 @@ class HIDDevice:
             version = ((version << 8) | (version >> 8)) & 0xFFFF
             return "{:04x}0000{:04x}0000{:04x}0000{:04x}0000".format(bustype, vendor, product, version)
 
-        elif self.transport == 'BLUETOOTH':
+        elif self.transport.upper() == 'BLUETOOTH':
             bustype = 0x05
             # Byte swap (ABCD --> CDAB):
             bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
@@ -726,7 +726,7 @@ def get_apple_remote(display=None):
 
 
 def _create_controller(device, display):
-    if device.transport in ('USB', 'BLUETOOTH'):
+    if device.transport.upper() in ('USB', 'BLUETOOTH'):
         mapping = get_mapping(device.get_guid())
         if not mapping:
             return
