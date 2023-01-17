@@ -56,19 +56,19 @@ def main():
         version="4.6",
         extensions=extensions,
     )
-    es_profile = registry.get_profile(
-        api="gles2",
-        profile="core",
-        version="3.2",
-        extensions=extensions,
-    )
+    # es_profile = registry.get_profile(
+    #     api="gles2",
+    #     profile="core",
+    #     version="3.2",
+    #     extensions=extensions,
+    # )
 
     core_writer = PygletGLWriter(registry=core_profile, out_file=DEST_PATH / "gl.py")
     core_writer.run()
     compat_writer = PygletGLWriter(registry=compat_profile, out_file=DEST_PATH / "gl_compat.py")
     compat_writer.run()
-    es_writer = PygletGLWriter(registry=es_profile, out_file=DEST_PATH / "gl_es.py")
-    es_writer.run()
+    # es_writer = PygletGLWriter(registry=es_profile, out_file=DEST_PATH / "gl_es.py")
+    # es_writer.run()
 
 
 def parse_args(args):
@@ -104,18 +104,10 @@ class PygletGLWriter:
         "GLsizeiptr": "c_ptrdiff_t",
         "GLint64": "c_int64",
         "GLuint64": "c_uint64",
+        "GLsync": "POINTER(struct___GLsync)",
+        "GLDEBUGPROC": "CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))",
     }
-    exclude_commands = {
-        # TODO: These are using the GLsync struct type.
-        #       Needs to be looked into in the future.
-        "glClientWaitSync",
-        "glDebugMessageCallback",
-        "glDeleteSync",
-        "glGetSynciv",
-        "glIsSync",
-        "glWaitSync",
-        "glFenceSync",
-    }
+    exclude_commands = set()
 
     def __init__(self, *, registry: Registry, out_file: Path):
         self._registry = registry

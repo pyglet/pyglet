@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2022 pyglet contributors
+# Copyright (c) 2008-2023 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,13 @@ from ctypes import *
 from pyglet.gl.lib import link_GL as _link_function
 from pyglet.gl.lib import c_ptrdiff_t
 
+class struct___GLsync(Structure):
+    __slots__ = [
+    ]
+struct___GLsync._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
 # END OF gl.template
 
 # GL type definitions
@@ -66,6 +73,8 @@ GLintptr = c_ptrdiff_t
 GLsizeiptr = c_ptrdiff_t
 GLint64 = c_int64
 GLuint64 = c_uint64
+GLsync = POINTER(struct___GLsync)
+GLDEBUGPROC = CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))
 
 # GL enumerant (token) definitions
 GL_FALSE = 0
@@ -2021,6 +2030,7 @@ glClearStencil = _link_function('glClearStencil', None, [GLint], requires='OpenG
 glClearTexImage = _link_function('glClearTexImage', None, [GLuint, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
 glClearTexSubImage = _link_function('glClearTexSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
 glClientActiveTexture = _link_function('glClientActiveTexture', None, [GLenum], requires='OpenGL 1.3')
+glClientWaitSync = _link_function('glClientWaitSync', GLenum, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')
 glClipControl = _link_function('glClipControl', None, [GLenum, GLenum], requires='OpenGL 4.5')
 glClipPlane = _link_function('glClipPlane', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
 glColor3b = _link_function('glColor3b', None, [GLbyte, GLbyte, GLbyte], requires='OpenGL 1.0')
@@ -2098,6 +2108,7 @@ glCreateTextures = _link_function('glCreateTextures', None, [GLenum, GLsizei, PO
 glCreateTransformFeedbacks = _link_function('glCreateTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCreateVertexArrays = _link_function('glCreateVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCullFace = _link_function('glCullFace', None, [GLenum], requires='OpenGL 1.0')
+glDebugMessageCallback = _link_function('glDebugMessageCallback', None, [GLDEBUGPROC, POINTER(GLvoid)], requires='OpenGL 4.3')
 glDebugMessageControl = _link_function('glDebugMessageControl', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLuint), GLboolean], requires='OpenGL 4.3')
 glDebugMessageInsert = _link_function('glDebugMessageInsert', None, [GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
 glDeleteBuffers = _link_function('glDeleteBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
@@ -2111,6 +2122,7 @@ glDeleteRenderbuffers = _link_function('glDeleteRenderbuffers', None, [GLsizei, 
 glDeleteRenderbuffersEXT = _link_function('glDeleteRenderbuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
 glDeleteSamplers = _link_function('glDeleteSamplers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.3')
 glDeleteShader = _link_function('glDeleteShader', None, [GLuint], requires='OpenGL 2.0')
+glDeleteSync = _link_function('glDeleteSync', None, [GLsync], requires='OpenGL 3.2')
 glDeleteTextures = _link_function('glDeleteTextures', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.1')
 glDeleteTransformFeedbacks = _link_function('glDeleteTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.0')
 glDeleteVertexArrays = _link_function('glDeleteVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
@@ -2175,6 +2187,7 @@ glEvalMesh2 = _link_function('glEvalMesh2', None, [GLenum, GLint, GLint, GLint, 
 glEvalPoint1 = _link_function('glEvalPoint1', None, [GLint], requires='OpenGL 1.0')
 glEvalPoint2 = _link_function('glEvalPoint2', None, [GLint, GLint], requires='OpenGL 1.0')
 glFeedbackBuffer = _link_function('glFeedbackBuffer', None, [GLsizei, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glFenceSync = _link_function('glFenceSync', GLsync, [GLenum, GLbitfield], requires='OpenGL 3.2')
 glFinish = _link_function('glFinish', None, [], requires='OpenGL 1.0')
 glFlush = _link_function('glFlush', None, [], requires='OpenGL 1.0')
 glFlushMappedBufferRange = _link_function('glFlushMappedBufferRange', None, [GLenum, GLintptr, GLsizeiptr], requires='OpenGL 3.0')
@@ -2314,6 +2327,7 @@ glGetString = _link_function('glGetString', POINTER(GLubyte), [GLenum], requires
 glGetStringi = _link_function('glGetStringi', POINTER(GLubyte), [GLenum, GLuint], requires='OpenGL 3.0')
 glGetSubroutineIndex = _link_function('glGetSubroutineIndex', GLuint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
 glGetSubroutineUniformLocation = _link_function('glGetSubroutineUniformLocation', GLint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
+glGetSynciv = _link_function('glGetSynciv', None, [GLsync, GLenum, GLsizei, POINTER(GLsizei), POINTER(GLint)], requires='OpenGL 3.2')
 glGetTexEnvfv = _link_function('glGetTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
 glGetTexEnviv = _link_function('glGetTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glGetTexGendv = _link_function('glGetTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
@@ -2410,6 +2424,7 @@ glIsRenderbuffer = _link_function('glIsRenderbuffer', GLboolean, [GLuint], requi
 glIsRenderbufferEXT = _link_function('glIsRenderbufferEXT', GLboolean, [GLuint], requires='None')
 glIsSampler = _link_function('glIsSampler', GLboolean, [GLuint], requires='OpenGL 3.3')
 glIsShader = _link_function('glIsShader', GLboolean, [GLuint], requires='OpenGL 2.0')
+glIsSync = _link_function('glIsSync', GLboolean, [GLsync], requires='OpenGL 3.2')
 glIsTexture = _link_function('glIsTexture', GLboolean, [GLuint], requires='OpenGL 1.1')
 glIsTransformFeedback = _link_function('glIsTransformFeedback', GLboolean, [GLuint], requires='OpenGL 4.0')
 glIsVertexArray = _link_function('glIsVertexArray', GLboolean, [GLuint], requires='OpenGL 3.0')
@@ -2985,6 +3000,7 @@ glViewport = _link_function('glViewport', None, [GLint, GLint, GLsizei, GLsizei]
 glViewportArrayv = _link_function('glViewportArrayv', None, [GLuint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glViewportIndexedf = _link_function('glViewportIndexedf', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
 glViewportIndexedfv = _link_function('glViewportIndexedfv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
+glWaitSync = _link_function('glWaitSync', None, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')
 glWindowPos2d = _link_function('glWindowPos2d', None, [GLdouble, GLdouble], requires='OpenGL 1.4')
 glWindowPos2dv = _link_function('glWindowPos2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.4')
 glWindowPos2f = _link_function('glWindowPos2f', None, [GLfloat, GLfloat], requires='OpenGL 1.4')
@@ -3025,6 +3041,8 @@ __all__ = [
     'GLsizeiptr',
     'GLint64',
     'GLuint64',
+    'GLsync',
+    'GLDEBUGPROC',
     'GL_DEPTH_BUFFER_BIT',
     'GL_STENCIL_BUFFER_BIT',
     'GL_COLOR_BUFFER_BIT',
@@ -4976,6 +4994,7 @@ __all__ = [
     'glClearTexImage',
     'glClearTexSubImage',
     'glClientActiveTexture',
+    'glClientWaitSync',
     'glClipControl',
     'glClipPlane',
     'glColor3b',
@@ -5053,6 +5072,7 @@ __all__ = [
     'glCreateTransformFeedbacks',
     'glCreateVertexArrays',
     'glCullFace',
+    'glDebugMessageCallback',
     'glDebugMessageControl',
     'glDebugMessageInsert',
     'glDeleteBuffers',
@@ -5066,6 +5086,7 @@ __all__ = [
     'glDeleteRenderbuffersEXT',
     'glDeleteSamplers',
     'glDeleteShader',
+    'glDeleteSync',
     'glDeleteTextures',
     'glDeleteTransformFeedbacks',
     'glDeleteVertexArrays',
@@ -5130,6 +5151,7 @@ __all__ = [
     'glEvalPoint1',
     'glEvalPoint2',
     'glFeedbackBuffer',
+    'glFenceSync',
     'glFinish',
     'glFlush',
     'glFlushMappedBufferRange',
@@ -5269,6 +5291,7 @@ __all__ = [
     'glGetStringi',
     'glGetSubroutineIndex',
     'glGetSubroutineUniformLocation',
+    'glGetSynciv',
     'glGetTexEnvfv',
     'glGetTexEnviv',
     'glGetTexGendv',
@@ -5365,6 +5388,7 @@ __all__ = [
     'glIsRenderbufferEXT',
     'glIsSampler',
     'glIsShader',
+    'glIsSync',
     'glIsTexture',
     'glIsTransformFeedback',
     'glIsVertexArray',
@@ -5940,6 +5964,7 @@ __all__ = [
     'glViewportArrayv',
     'glViewportIndexedf',
     'glViewportIndexedfv',
+    'glWaitSync',
     'glWindowPos2d',
     'glWindowPos2dv',
     'glWindowPos2f',
