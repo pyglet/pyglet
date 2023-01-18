@@ -20,6 +20,7 @@ NSCursor = cocoapy.ObjCClass('NSCursor')
 NSAutoreleasePool = cocoapy.ObjCClass('NSAutoreleasePool')
 NSColor = cocoapy.ObjCClass('NSColor')
 NSEvent = cocoapy.ObjCClass('NSEvent')
+NSArray = cocoapy.ObjCClass('NSArray')
 NSImage = cocoapy.ObjCClass('NSImage')
 
 quartz = cocoapy.quartz
@@ -170,9 +171,9 @@ class CocoaWindow(BaseWindow):
         if self._maximum_size is not None:
             self.set_maximum_size(*self._maximum_size)
 
-        # TODO: Add support for file drops.
         if self._file_drops:
-            raise NotImplementedError("File drops are not implemented on MacOS")
+            array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeURL)
+            self._nsview.registerForDraggedTypes_(array)
 
         self.context.update_geometry()
         self.switch_to()

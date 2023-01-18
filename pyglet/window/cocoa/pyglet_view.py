@@ -1,11 +1,15 @@
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, NSPasteboardURLReadingFileURLsOnlyKey
 from .pyglet_textview import PygletTextView
 
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
+NSURL = cocoapy.ObjCClass('NSURL')
+NSArray = cocoapy.ObjCClass('NSArray')
+NSDictionary = cocoapy.ObjCClass('NSDictionary')
+NSNumber = cocoapy.ObjCClass('NSNumber')
 
 # Event data helper functions.
 
@@ -346,6 +350,32 @@ class PygletView_Implementation:
         self._window._mouse_in_window = True
         if not self._window._mouse_exclusive:
             self._window.set_mouse_platform_visible()
+
+    @PygletView.method('Q@')
+    def draggingEntered_(self, draginfo):
+        return cocoapy.NSDragOperationGeneric
+
+    @PygletView.method('B@')
+    def performDragOperation_(self, sender):
+        pos = sender.draggingLocation()
+
+        pasteboard = sender.draggingPasteboard()
+
+        classes = NSArray.arrayWithObject_(NSURL)
+
+        options = NSDictionary.dictionaryWithObject_forKey_(
+            NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey
+        )
+
+        urls = pasteboard.readObjectsForClasses_options_(classes, options)
+
+        url_count = urls.count()
+        paths = []
+        for i in range(url_count):
+            fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
+            paths.append(fpath.decode())
+
+        self._window.dispatch_event('on_file_drop', pos.x, pos.y, paths)
 
 
 PygletView = cocoapy.ObjCClass('PygletView')
