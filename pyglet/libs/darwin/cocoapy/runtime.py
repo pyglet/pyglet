@@ -408,6 +408,11 @@ objc.sel_registerName.restype = c_void_p
 objc.sel_registerName.argtypes = [c_char_p]
 
 ######################################################################
+# Constants
+OBJC_ASSOCIATION_ASSIGN = 0  # Weak reference to the associated object.
+OBJC_ASSOCIATION_RETAIN = 0x0301  # Strong reference to the associated object. The association is made atomically.
+OBJC_ASSOCIATION_COPY = 0x0303  # Specifies that the associated object is copied. The association is made atomically.
+
 
 def ensure_bytes(x):
     if isinstance(x, bytes):
@@ -690,6 +695,7 @@ class ObjCMethod:
     def __init__(self, method):
         """Initialize with an Objective-C Method pointer.  We then determine
         the return type and argument type information of the method."""
+        self.cache = True
         self.selector = c_void_p(objc.method_getName(method))
         self.name = objc.sel_getName(self.selector)
         self.pyname = self.name.replace(b':', b'_')
@@ -775,7 +781,7 @@ class ObjCMethod:
             result = f(objc_id, self.selector, *args)
             # Convert result to python type if it is a instance or class pointer.
             if self.restype == ObjCInstance:
-                result = ObjCInstance(result)
+                result = ObjCInstance(result, self.cache)
             elif self.restype == ObjCClass:
                 result = ObjCClass(result)
             return result
@@ -796,6 +802,13 @@ class ObjCBoundMethod:
         """Initialize with a method and ObjCInstance or ObjCClass object."""
         self.method = method
         self.objc_id = objc_id
+
+    def no_cached_return(self):
+        """Disables the return type from being registered in DeallocationObserver.
+        Some return types do not get observed and will cause a memory leak.
+        Ex: NDate return types can be __NSTaggedDate
+        """
+        self.method.cache = False
 
     def __repr__(self):
         return '<ObjCBoundMethod %s (%s)>' % (self.method.name, self.objc_id)
@@ -934,7 +947,7 @@ class ObjCInstance:
 
     _cached_objects = {}
 
-    def __new__(cls, object_ptr):
+    def __new__(cls, object_ptr, cache=True):
         """Create a new ObjCInstance or return a previously created one
         for the given object_ptr which should be an Objective-C id."""
         # Make sure that object_ptr is wrapped in a c_void_p.
@@ -950,7 +963,7 @@ class ObjCInstance:
         # be created for any object pointer when it is first encountered.
         # This same ObjCInstance will then persist until the object is
         # deallocated.
-        if object_ptr.value in cls._cached_objects:
+        if cache and object_ptr.value in cls._cached_objects:
             return cls._cached_objects[object_ptr.value]
 
         # Otherwise, create a new ObjCInstance.
@@ -963,18 +976,20 @@ class ObjCInstance:
 
         # Store new object in the dictionary of cached objects, keyed
         # by the (integer) memory address pointed to by the object_ptr.
-        cls._cached_objects[object_ptr.value] = objc_instance
+        if cache:
+            cls._cached_objects[object_ptr.value] = objc_instance
 
-        # Create a DeallocationObserver and associate it with this object.
-        # When the Objective-C object is deallocated, the observer will remove
-        # the ObjCInstance corresponding to the object from the cached objects
-        # dictionary, effectively destroying the ObjCInstance.
-        observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_instance)
-        objc.objc_setAssociatedObject(objc_instance, observer, observer, 0x301)
-        # The observer is retained by the object we associate it to.  We release
-        # the observer now so that it will be deallocated when the associated
-        # object is deallocated.
-        send_message(observer, 'release')
+            # Create a DeallocationObserver and associate it with this object.
+            # When the Objective-C object is deallocated, the observer will remove
+            # the ObjCInstance corresponding to the object from the cached objects
+            # dictionary, effectively destroying the ObjCInstance.
+            observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_instance)
+            objc.objc_setAssociatedObject(objc_instance, observer, observer, OBJC_ASSOCIATION_RETAIN)
+
+            # The observer is retained by the object we associate it to.  We release
+            # the observer now so that it will be deallocated when the associated
+            # object is deallocated.
+            send_message(observer, 'release')
 
         return objc_instance
 
@@ -1008,6 +1023,10 @@ class ObjCInstance:
         # Otherwise raise an exception.
         raise AttributeError('ObjCInstance %s has no attribute %s' % (self.objc_class.name, name))
 
+def get_cached_instances():
+    """For debug purposes, return a list of instance names.
+    Useful for debugging if an object is leaking."""
+    return [obj.objc_class.name for obj in ObjCInstance._cached_objects.values()]
 ######################################################################
 
 def convert_method_arguments(encoding, args):
