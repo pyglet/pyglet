@@ -2,7 +2,8 @@ import sys
 
 from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .controller import get_mapping
+import pyglet.app
+from .controller import get_mapping, create_guid
 from .base import Device, AbsoluteAxis, RelativeAxis, Button
 from .base import Joystick, Controller, AppleRemote, ControllerManager
 
@@ -281,27 +282,16 @@ class HIDDevice:
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
 
-        if self.transport.upper() == 'USB':
-            bustype = 0x03
-            vendor = self.vendorID or 0
-            product = self.productID or 0
-            version = self.versionNumber or 0
-            # Byte swap (ABCD --> CDAB):
-            bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
-            vendor = ((vendor << 8) | (vendor >> 8)) & 0xFFFF
-            product = ((product << 8) | (product >> 8)) & 0xFFFF
-            version = ((version << 8) | (version >> 8)) & 0xFFFF
-            return "{:04x}0000{:04x}0000{:04x}0000{:04x}0000".format(bustype, vendor, product, version)
+        # TODO: in what situation should 0x05 be used?
+        # 0x03: USB
+        # 0x05: Bluetooth
+        bustype = 0x03
+        vendor = self.vendorID or 0
+        product = self.productID or 0
+        version = self.versionNumber or 0
+        name = self.product or ""
 
-        elif self.transport.upper() == 'BLUETOOTH':
-            bustype = 0x05
-            # Byte swap (ABCD --> CDAB):
-            bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
-
-            # TODO: test fallback to vendor id if no product name:
-            name = self.product or str(self.vendorID)
-            name = name.encode().hex()
-            return "{:04x}0000{:0<24}".format(bustype, name)
+        return create_guid(bustype, vendor, product, version, name, 0, 0)
 
     def get_property(self, name):
         cfname = CFSTR(name)
@@ -666,14 +656,14 @@ class DarwinControllerManager(ControllerManager):
         def on_connect(hiddevice):
             if _controller := _create_controller(hiddevice, display):
                 self._controllers[device] = _controller
-                self.dispatch_event('on_connect', _controller)
+                pyglet.app.platform_event_loop.post_event(self, 'on_connect', _controller)
 
         @_hid_manager.event
         def on_disconnect(hiddevice):
             if hiddevice in self._controllers:
                 _controller = self._controllers[hiddevice]
                 del self._controllers[hiddevice]
-                self.dispatch_event('on_disconnect', _controller)
+                pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', _controller)
 
     def get_controllers(self):
         return list(self._controllers.values())
