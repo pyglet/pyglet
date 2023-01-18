@@ -282,7 +282,7 @@ class HIDDevice:
         _device_lookup[deviceRef.value] = self
         self.deviceRef = deviceRef
         # Set attributes from device properties.
-        self.transport = self.get_property("Transport")
+        self.transport = self.get_property("Transport") or "unknown"
         self.vendorID = self.get_property("VendorID")
         self.vendorIDSource = self.get_property("VendorIDSource")
         self.productID = self.get_property("ProductID")
@@ -694,20 +694,24 @@ class DarwinControllerManager(ControllerManager):
         self._controllers = {}
 
         for device in _hid_manager.devices:
-            controller = _create_controller(device, display)
-            if controller:
+            if controller := _create_controller(device, display):
                 self._controllers[device] = controller
 
         @_hid_manager.event
         def on_connect(hiddevice):
-            self.dispatch_event('on_connect', self._controllers[hiddevice])
+            if _controller := _create_controller(hiddevice, display):
+                self._controllers[device] = _controller
+                self.dispatch_event('on_connect', _controller)
 
         @_hid_manager.event
         def on_disconnect(hiddevice):
-            self.dispatch_event('on_disconnect', self._controllers[hiddevice])
+            if hiddevice in self._controllers:
+                _controller = self._controllers[hiddevice]
+                del self._controllers[hiddevice]
+                self.dispatch_event('on_disconnect', _controller)
 
     def get_controllers(self):
-        pass
+        return list(self._controllers.values())
 
 
 def get_devices(display=None):
