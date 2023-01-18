@@ -80,6 +80,11 @@ class CocoaEventLoop(PlatformEventLoop):
             ignoreState = cocoapy.CFSTR("ApplePersistenceIgnoreState")
             if not defaults.objectForKey_(ignoreState):
                 defaults.setBool_forKey_(True, ignoreState)
+
+            holdEnabled = cocoapy.CFSTR("ApplePressAndHoldEnabled")
+            if not defaults.objectForKey_(holdEnabled):
+                defaults.setBool_forKey_(False, holdEnabled)
+
             self._finished_launching = False
 
     def start(self):
