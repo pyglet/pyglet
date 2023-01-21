@@ -15,10 +15,10 @@ from typing import List
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
-from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
-from .base import DeviceOpenException, ControllerManager
+from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
+from pyglet.input.base import DeviceOpenException, ControllerManager
 from .evdev_constants import *
-from .controller import get_mapping, Relation
+from pyglet.input.controller import get_mapping, Relation
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8

@@ -52,10 +52,10 @@ provides a convenient way to handle hot-plugging of controllers.
 
 import sys
 
+import pyglet
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
-
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -90,6 +90,7 @@ if _is_pyglet_doc_run:
         :rtype: list of :py:class:`Device`
         """
 
+
     def get_joysticks(display=None):
         """Get a list of attached joysticks.
 
@@ -102,6 +103,7 @@ if _is_pyglet_doc_run:
         :rtype: list of :py:class:`Joystick`
         """
 
+
     def get_controllers(display=None):
         """Get a list of attached controllers.
 
@@ -113,6 +115,7 @@ if _is_pyglet_doc_run:
 
         :rtype: list of :py:class:`Controller`
         """
+
 
     def get_tablets(display=None):
         """Get a list of tablets.
@@ -136,40 +139,58 @@ else:
     def get_tablets(display=None):
         return []
 
-    from pyglet import compat_platform, options
+
+    from pyglet import compat_platform
 
     if compat_platform.startswith('linux'):
-        from .x11_xinput_tablet import get_tablets
-        from .x11_xinput import get_devices as x11xinput_get_devices
-        from .evdev import get_devices as evdev_get_devices
-        from .evdev import get_joysticks
-        from .evdev import get_controllers
-        from .evdev import EvdevControllerManager as ControllerManager
+        from .linux.x11_xinput_tablet import get_tablets
+        from .linux.x11_xinput import get_devices as x11xinput_get_devices
+        from .linux.evdev import get_devices as evdev_get_devices
+        from .linux.evdev import get_joysticks
+        from .linux.evdev import get_controllers
+        from .linux.evdev import EvdevControllerManager as ControllerManager
+
 
         def get_devices(display=None):
             return evdev_get_devices(display) + x11xinput_get_devices(display)
 
     elif compat_platform in ('cygwin', 'win32'):
-        from .directinput import get_devices as dinput_get_devices
-        from .directinput import get_controllers as dinput_get_controllers
-        from .directinput import get_joysticks
+        from .win32.directinput import get_devices as dinput_get_devices
+        from .win32.directinput import get_controllers as dinput_get_controllers
+        from .win32.directinput import get_joysticks
+
         try:
-            from .wintab import get_tablets
+            from .win32.wintab import get_tablets
         except:
             pass
-        from .xinput import get_devices as xinput_get_devices
-        from .xinput import get_controllers as xinput_get_controllers
-        from .xinput import XInputControllerManager as ControllerManager
+
+
+        def xinput_get_devices():
+            return []
+
+
+        def xinput_get_controllers():
+            return []
+
+
+        if not pyglet.options["win32_disable_xinput"]:
+            from .win32.xinput import get_devices as xinput_get_devices
+            from .win32.xinput import get_controllers as xinput_get_controllers
+
 
         def get_devices(display=None):
             return xinput_get_devices() + dinput_get_devices(display)
 
+
         def get_controllers(display=None):
             return xinput_get_controllers() + dinput_get_controllers(display)
 
+
+        from .win32 import Win32ControllerManager as ControllerManager
+
     elif compat_platform == 'darwin':
-        from .darwin_hid import get_devices
-        from .darwin_hid import get_joysticks
-        from .darwin_hid import get_apple_remote
-        from .darwin_hid import get_controllers
-        from .darwin_hid import DarwinControllerManager as ControllerManager
+        from .macos.darwin_hid import get_devices
+        from .macos.darwin_hid import get_joysticks
+        from .macos.darwin_hid import get_apple_remote
+        from .macos.darwin_hid import get_controllers
+        from .macos.darwin_hid import DarwinControllerManager as ControllerManager

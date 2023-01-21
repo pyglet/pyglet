@@ -2,9 +2,9 @@ import sys
 
 from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .controller import get_mapping
-from .base import Device, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, Controller, AppleRemote, ControllerManager
+from pyglet.input.controller import get_mapping
+from pyglet.input.base import Device, AbsoluteAxis, RelativeAxis, Button
+from pyglet.input.base import Joystick, Controller, AppleRemote, ControllerManager
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf

@@ -128,7 +128,8 @@ options = {
     'headless': False,
     'headless_device': 0,
     'win32_disable_shaping': False,
-    'dw_legacy_naming': False
+    'dw_legacy_naming': False,
+    'win32_disable_xinput': False,
 }
 
 _option_types = {
@@ -158,7 +159,8 @@ _option_types = {
     'headless': bool,
     'headless_device': int,
     'win32_disable_shaping': bool,
-    'dw_legacy_naming': bool
+    'dw_legacy_naming': bool,
+    'win32_disable_xinput': bool
 }
 
 
