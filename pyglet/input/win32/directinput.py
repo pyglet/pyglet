@@ -77,15 +77,6 @@ class DirectInputDevice(base.Device):
     def __del__(self):
         self._device.Release()
 
-    def matches(self, guid_id, device_instance):
-        if self.id_product_guid == guid_id and \
-                self.id_name == device_instance.contents.tszProductName and \
-                self._type == device_instance.contents.dwDevType & 0xff and \
-                self._subtype == device_instance.contents.dwDevType & 0xff00:
-            return True
-
-        return False
-
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
         first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
@@ -292,11 +283,6 @@ class DIManager(EventDispatcher):
             hdr_ptr = ctypes.cast(lParam, ctypes.POINTER(DEV_BROADCAST_HDR))
             if hdr_ptr.contents.dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE:
                 self._recheck_devices()
-                # bci_ptr = ctypes.cast(lParam, ctypes.POINTER(DEV_BROADCAST_DEVICEINTERFACE))
-                # if wParam == DBT_DEVICEARRIVAL:
-                #     _di_manager.event_device_added(bci_ptr.contents.dbcc_classguid, bci_ptr.contents.dbcc_name)
-                # elif wParam == DBT_DEVICEREMOVECOMPLETE:
-                #     _di_manager.event_device_removed(bci_ptr.contents.dbcc_classguid, bci_ptr.contents.dbcc_name)
 
 
 DIManager.register_event_type('on_connect')
