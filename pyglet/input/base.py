@@ -495,6 +495,9 @@ class Joystick(EventDispatcher):
                 (centered) or 1 (top).
         """
 
+    def __repr__(self):
+        return f"Joystick(device={self.device.name})"
+
 
 Joystick.register_event_type('on_joyaxis_motion')
 Joystick.register_event_type('on_joybutton_press')
