@@ -136,61 +136,27 @@ if _is_pyglet_doc_run:
         """
 
 else:
-    def get_tablets(display=None):
-        return []
-
 
     from pyglet import compat_platform
 
     if compat_platform.startswith('linux'):
-        from .linux.x11_xinput_tablet import get_tablets
-        from .linux.x11_xinput import get_devices as x11xinput_get_devices
-        from .linux.evdev import get_devices as evdev_get_devices
-        from .linux.evdev import get_joysticks
-        from .linux.evdev import get_controllers
-        from .linux.evdev import EvdevControllerManager as ControllerManager
-
-
-        def get_devices(display=None):
-            return evdev_get_devices(display) + x11xinput_get_devices(display)
+        from .linux import get_devices
+        from .linux import get_joysticks
+        from .linux import get_controllers
+        from .linux import get_tablets
+        from .linux import ControllerManager
 
     elif compat_platform in ('cygwin', 'win32'):
-        from .win32.directinput import get_devices as dinput_get_devices
-        from .win32.directinput import get_controllers as dinput_get_controllers
-        from .win32.directinput import get_joysticks
-
-        try:
-            from .win32.wintab import get_tablets
-        except:
-            pass
-
-
-        def xinput_get_devices():
-            return []
-
-
-        def xinput_get_controllers():
-            return []
-
-
-        if not pyglet.options["win32_disable_xinput"]:
-            from .win32.xinput import get_devices as xinput_get_devices
-            from .win32.xinput import get_controllers as xinput_get_controllers
-
-
-        def get_devices(display=None):
-            return xinput_get_devices() + dinput_get_devices(display)
-
-
-        def get_controllers(display=None):
-            return xinput_get_controllers() + dinput_get_controllers(display)
-
-
+        from .win32 import get_devices
+        from .win32 import get_joysticks
+        from .win32 import get_controllers
+        from .win32 import get_tablets
         from .win32 import Win32ControllerManager as ControllerManager
 
     elif compat_platform == 'darwin':
-        from .macos.darwin_hid import get_devices
-        from .macos.darwin_hid import get_joysticks
-        from .macos.darwin_hid import get_apple_remote
-        from .macos.darwin_hid import get_controllers
-        from .macos.darwin_hid import DarwinControllerManager as ControllerManager
+        from .macos import get_devices
+        from .macos import get_joysticks
+        from .macos import get_apple_remote
+        from .macos import get_controllers
+        from .macos import get_tablets
+        from .macos import ControllerManager

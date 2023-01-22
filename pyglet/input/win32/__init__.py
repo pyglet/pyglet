@@ -1,27 +1,42 @@
 from typing import Dict, Optional
 
 import pyglet
+
 from pyglet.input import base
+from pyglet.input.win32.directinput import DirectInputDevice, _create_controller
+from pyglet.input.win32.directinput import _di_manager as _di_device_manager
+
+from pyglet.input.win32.directinput import get_devices as dinput_get_devices
+from pyglet.input.win32.directinput import get_controllers as dinput_get_controllers
+from pyglet.input.win32.directinput import get_joysticks
+
+try:
+    from pyglet.input.win32.wintab import get_tablets
+except:
+    def get_tablets(display=None):
+        import warnings
+        warnings.warn("Failed to initialize wintab framework.")
+        return []
+
 
 _xinput_enabled = False
 if not pyglet.options["win32_disable_xinput"]:
     try:
         from pyglet.input.win32.xinput import XInputControllerManager, XInputController, XInputDevice
         from pyglet.input.win32.xinput import _device_manager as _xinput_device_manager
+        from pyglet.input.win32.xinput import get_devices as xinput_get_devices
+        from pyglet.input.win32.xinput import get_controllers as xinput_get_controllers
 
         _xinput_enabled = True
     except OSError:
         # Fail to import XInput.
         pass
 
-from pyglet.input.win32.directinput import DirectInputDevice, _create_controller
-from pyglet.input.win32.directinput import _di_manager as _di_device_manager
-
 
 class Win32ControllerManager(base.ControllerManager):
     """This class manages XInput and DirectInput as a combined manager.
        XInput will override any XInput compatible DirectInput devices.
-       Any devices not supported by XInput will fallback to DirectInput.
+       Any devices not supported by XInput will fall back to DirectInput.
     """
 
     def __init__(self):
@@ -76,3 +91,19 @@ class Win32ControllerManager(base.ControllerManager):
 
     def get_controllers(self):
         return self._get_xinput_controllers() + self._get_di_controllers()
+
+
+def xinput_get_devices():
+    return []
+
+
+def xinput_get_controllers():
+    return []
+
+
+def get_devices(display=None):
+    return xinput_get_devices() + dinput_get_devices(display)
+
+
+def get_controllers(display=None):
+    return xinput_get_controllers() + dinput_get_controllers(display)
