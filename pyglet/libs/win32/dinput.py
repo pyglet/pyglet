@@ -208,6 +208,7 @@ DISCL_BACKGROUND = 0x00000008
 DISCL_NOWINKEY = 0x00000010
 
 DIPROP_BUFFERSIZE = 1
+DIPROP_GUIDANDPATH = com.GUID(12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 GUID_XAxis = \
     com.GUID(0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00)
@@ -310,7 +311,7 @@ class IDirectInputDevice8(com.pIUnknown):
         ('EnumObjects',
          com.STDMETHOD(LPDIENUMDEVICEOBJECTSCALLBACK, LPVOID, DWORD)),
         ('GetProperty',
-         com.STDMETHOD()),
+         com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
         ('SetProperty',
          com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
         ('Acquire',

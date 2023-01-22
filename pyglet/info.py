@@ -163,7 +163,7 @@ def dump_al():
 def dump_wintab():
     """Dump WinTab info."""
     try:
-        from pyglet.input import wintab
+        from pyglet.input.win32 import wintab
     except:
         print('WinTab not available.')
         return

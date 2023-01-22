@@ -531,6 +531,7 @@ XInputDeviceManager.register_event_type('on_connect')
 XInputDeviceManager.register_event_type('on_disconnect')
 
 
+
 _device_manager = XInputDeviceManager()
 
 
