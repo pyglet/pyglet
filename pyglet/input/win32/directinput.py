@@ -1,4 +1,6 @@
 import ctypes
+import warnings
+
 from typing import List, Dict, Optional
 
 from pyglet.libs.win32.constants import WM_DEVICECHANGE, DBT_DEVICEARRIVAL, DBT_DEVICEREMOVECOMPLETE, \
@@ -371,8 +373,8 @@ def _create_controller(device):
         if mapping is not None:
             return base.Controller(device, mapping)
         else:
-            print(
-                f"Warning: {device} (GUID: {device.get_guid()}) has no controller mappings. Update the mappings in the Controller DB.")
+            warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
+                          f"has no controller mappings. Update the mappings in the Controller DB.")
 
 
 def _create_joystick(device):

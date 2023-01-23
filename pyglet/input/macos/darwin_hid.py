@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
@@ -249,7 +250,7 @@ class HIDDevice:
         _device_lookup[deviceRef.value] = self
         self.deviceRef = deviceRef
         # Set attributes from device properties.
-        self.transport = self.get_property("Transport") or "unknown"
+        self.transport = self.get_property("Transport")
         self.vendorID = self.get_property("VendorID")
         self.vendorIDSource = self.get_property("VendorIDSource")
         self.productID = self.get_property("ProductID")
@@ -686,11 +687,13 @@ def get_apple_remote(display=None):
 
 
 def _create_controller(device, display):
-    if device.transport.upper() in ('USB', 'BLUETOOTH'):
+    if device.transport and device.transport.upper() in ('USB', 'BLUETOOTH'):
         mapping = get_mapping(device.get_guid())
-        if not mapping:
-            return
-        return Controller(PygletDevice(display, device, _hid_manager), mapping)
+        if mapping:
+            return Controller(PygletDevice(display, device, _hid_manager), mapping)
+        else:
+            warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
+                          f"has no controller mappings. Update the mappings in the Controller DB.")
 
 
 def get_controllers(display=None):

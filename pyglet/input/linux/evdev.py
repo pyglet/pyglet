@@ -2,6 +2,7 @@ import os
 import time
 import fcntl
 import ctypes
+import warnings
 
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
@@ -637,6 +638,9 @@ def _create_controller(device):
 
     mapping = get_mapping(device.get_guid())
     if not mapping:
+        warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
+                      f"has no controller mappings. Update the mappings in the Controller DB.\n"
+                      f"Auto-detecting as defined by the 'Linux gamepad specification'")
         mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:
