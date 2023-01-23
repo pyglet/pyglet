@@ -97,6 +97,6 @@ if __name__ == '__main__':
                           options.spread, options.bidirectional)
     if not options.output:
         base, _ = os.path.splitext(filename)
-        options.output = '%s.df.png' % base
+        options.output = f'{base}.df.png'
     img2.save(options.output)
 

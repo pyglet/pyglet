@@ -57,7 +57,7 @@ def errcheck(result, func, arguments):
             name = repr(func)
         if _debug_gl_trace_args:
             trace_args = ', '.join([repr(arg)[:20] for arg in arguments])
-            print('%s(%s)' % (name, trace_args))
+            print(f'{name}({trace_args})')
         else:
             print(name)
 
@@ -76,7 +76,7 @@ def errcheck(result, func, arguments):
             gl.GL_OUT_OF_MEMORY: "Out of memory. There is not enough memory left to execute the command.",
         }
         msg = error_types.get(error, "Unknown error")
-        raise GLException('(0x%x): %s' % (error, msg))
+        raise GLException(f'(0x{error}): {msg}')
     return result
 
 

@@ -145,7 +145,7 @@ def _parse_distance(distance, dpi):
         return int(distance)
 
     match = _distance_re.match(distance)
-    assert match, 'Could not parse distance %s' % distance
+    assert match, f'Could not parse distance {distance}'
     if not match:
         return 0
 
@@ -164,7 +164,7 @@ def _parse_distance(distance, dpi):
     elif unit == 'cm':
         return int(value * dpi * 0.393700787)
     else:
-        assert False, 'Unknown distance unit %s' % unit
+        assert False, f'Unknown distance unit {unit}'
 
 
 class _Line:
@@ -190,7 +190,7 @@ class _Line:
         self.boxes = []
 
     def __repr__(self):
-        return '_Line(%r)' % self.boxes
+        return f'_Line({self.boxes})'
 
     def add_box(self, box):
         self.boxes.append(box)
@@ -425,7 +425,7 @@ class _GlyphBox(_AbstractBox):
         return position
 
     def __repr__(self):
-        return '_GlyphBox(%r)' % self.glyphs
+        return f'_GlyphBox({self.glyphs})'
 
 
 class _InlineElementBox(_AbstractBox):
@@ -460,7 +460,7 @@ class _InlineElementBox(_AbstractBox):
             return 1
 
     def __repr__(self):
-        return '_InlineElementBox(%r)' % self.element
+        return f'_InlineElementBox({self.element})'
 
 
 class _InvalidRange:

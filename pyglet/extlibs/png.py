@@ -254,17 +254,17 @@ def check_palette(palette):
     for i, t in enumerate(p):
         if len(t) not in (3, 4):
             raise ProtocolError(
-                "palette entry %d: entries must be 3- or 4-tuples." % i)
+                f"palette entry {i}: entries must be 3- or 4-tuples.")
         if len(t) == 3:
             seen_triple = True
         if seen_triple and len(t) == 4:
             raise ProtocolError(
-                "palette entry %d: all 4-tuples must precede all 3-tuples" % i)
+                f"palette entry {i}: all 4-tuples must precede all 3-tuples")
         for x in t:
             if int(x) != x or not(0 <= x <= 255):
                 raise ProtocolError(
-                    "palette entry %d: "
-                    "values must be integer: 0 <= x <= 255" % i)
+                    f"palette entry {i}: "
+                    "values must be integer: 0 <= x <= 255")
     return p
 
 
@@ -282,12 +282,10 @@ def check_sizes(size, width, height):
             "size argument should be a pair (width, height)")
     if width is not None and width != size[0]:
         raise ProtocolError(
-            "size[0] (%r) and width (%r) should match when both are used."
-            % (size[0], width))
+            f"size[0] ({size[0]}) and width ({width}) should match when both are used.")
     if height is not None and height != size[1]:
         raise ProtocolError(
-            "size[1] (%r) and height (%r) should match when both are used."
-            % (size[1], height))
+            f"size[1] ({size[1]}) and height ({height}) should match when both are used.")
     return size
 
 
@@ -307,17 +305,17 @@ def check_color(c, greyscale, which):
         except TypeError:
             c = (c,)
         if len(c) != 1:
-            raise ProtocolError("%s for greyscale must be 1-tuple" % which)
+            raise ProtocolError(f"{which} for greyscale must be 1-tuple")
         if not is_natural(c[0]):
             raise ProtocolError(
-                "%s colour for greyscale must be integer" % which)
+                f"{which} colour for greyscale must be integer")
     else:
         if not (len(c) == 3 and
                 is_natural(c[0]) and
                 is_natural(c[1]) and
                 is_natural(c[2])):
             raise ProtocolError(
-                "%s colour must be a triple of integers" % which)
+                f"{which} colour must be a triple of integers")
     return c
 
 
@@ -553,8 +551,7 @@ class Writer:
             valid = is_natural(b) and 1 <= b <= 16
             if not valid:
                 raise ProtocolError(
-                    "each bitdepth %r must be a positive integer <= 16" %
-                    (bitdepth,))
+                    f"each bitdepth {bitdepth} must be a positive integer <= 16")
 
         # Calculate channels, and
         # expand bitdepth to be one element per channel.
@@ -656,8 +653,7 @@ class Writer:
                 if wrong_length:
                     # Note: row numbers start at 0.
                     raise ProtocolError(
-                        "Expected %d values but got %d values, in row %d" %
-                        (vpr, len(row), i))
+                        f"Expected {vpr} values but got {len(row)} values, in row {i}")
                 yield row
 
         if self.interlace:
@@ -668,8 +664,7 @@ class Writer:
         nrows = self.write_passes(outfile, check_rows(rows))
         if nrows != self.height:
             raise ProtocolError(
-                "rows supplied (%d) does not match height (%d)" %
-                (nrows, self.height))
+                f"rows supplied ({nrows}) does not match height ({self.height})")
         return nrows
 
     def write_passes(self, outfile, rows):
@@ -780,8 +775,7 @@ class Writer:
         if self.rescale:
             write_chunk(
                 outfile, b'sBIT',
-                struct.pack('%dB' % self.planes,
-                            * [s[0] for s in self.rescale]))
+                struct.pack(f'{self.planes,* [s[0] for s in self.rescale]}B' ))
 
         # :chunk:order: Without a palette (PLTE chunk),
         # ordering is relatively relaxed.
@@ -997,7 +991,7 @@ def unpack_rows(rows):
     to being a sequence of bytes.
     """
     for row in rows:
-        fmt = '!%dH' % len(row)
+        fmt = f'!{len(row)}'
         yield bytearray(struct.pack(fmt, *row))
 
 
@@ -1187,8 +1181,7 @@ def from_array(a, mode=None, info={}):
     if bitdepth:
         if info.get("bitdepth") and bitdepth != info['bitdepth']:
             raise ProtocolError(
-                "bitdepth (%d) should match bitdepth of info (%d)." %
-                (bitdepth, info['bitdepth']))
+                f"bitdepth ({bitdepth}) should match bitdepth of info ({info[bitdepth]}).")
         info['bitdepth'] = bitdepth
 
     # Fill in and/or check entries in *info*.
@@ -1383,19 +1376,17 @@ class Reader:
         data = self.file.read(length)
         if len(data) != length:
             raise ChunkError(
-                'Chunk %s too short for required %i octets.'
-                % (type, length))
+                f'Chunk {type} too short for required {length} octets.')
         checksum = self.file.read(4)
         if len(checksum) != 4:
-            raise ChunkError('Chunk %s too short for checksum.' % type)
+            raise ChunkError(f'Chunk {type} too short for checksum.')
         verify = zlib.crc32(type)
         verify = zlib.crc32(data, verify)
         verify = struct.pack('!I', verify)
         if checksum != verify:
             (a, ) = struct.unpack('!I', checksum)
             (b, ) = struct.unpack('!I', verify)
-            message = ("Checksum error in %s chunk: 0x%08X != 0x%08X."
-                       % (type.decode('ascii'), a, b))
+            message = f"Checksum error in {type.decode('ascii')} chunk: 0x{a:08X} != 0x{b:08X}."
             if lenient:
                 warnings.warn(message, RuntimeWarning)
             else:
@@ -1539,7 +1530,7 @@ class Reader:
             return bytearray(bs)
         if self.bitdepth == 16:
             return array('H',
-                         struct.unpack('!%dH' % (len(bs) // 2), bs))
+                         struct.unpack(f'!{(len(bs) // 2)}H' , bs))
 
         assert self.bitdepth < 8
         if width is None:
@@ -1634,14 +1625,13 @@ class Reader:
                 'End of file whilst reading chunk length and type.')
         length, type = struct.unpack('!I4s', x)
         if length > 2 ** 31 - 1:
-            raise FormatError('Chunk %s is too large: %d.' % (type, length))
+            raise FormatError(f'Chunk {type} is too large: {length}.')
         # Check that all bytes are in valid ASCII range.
         # https://www.w3.org/TR/2003/REC-PNG-20031110/#5Chunk-layout
         type_bytes = set(bytearray(type))
         if not(type_bytes <= set(range(65, 91)) | set(range(97, 123))):
             raise FormatError(
-                'Chunk %r has invalid Chunk Type.'
-                % list(type))
+                f'Chunk {list(type)} has invalid Chunk Type.')
         return length, type
 
     def process_chunk(self, lenient=False):
@@ -1673,18 +1663,17 @@ class Reader:
 
         if self.compression != 0:
             raise FormatError(
-                "Unknown compression method %d" % self.compression)
+                f"Unknown compression method {self.compression}")
         if self.filter != 0:
             raise FormatError(
-                "Unknown filter method %d,"
+                f"Unknown filter method {self.filter},"
                 " see http://www.w3.org/TR/2003/REC-PNG-20031110/#9Filters ."
-                % self.filter)
+                )
         if self.interlace not in (0, 1):
             raise FormatError(
-                "Unknown interlace method %d, see "
+                f"Unknown interlace method {self.interlace}, see "
                 "http://www.w3.org/TR/2003/REC-PNG-20031110/#8InterlaceMethods"
-                " ."
-                % self.interlace)
+                " .")
 
         # Derived values
         # http://www.w3.org/TR/PNG/#6Colour-values
@@ -1733,7 +1722,7 @@ class Reader:
                         "PLTE chunk is required before bKGD chunk.")
                 self.background = struct.unpack('B', data)
             else:
-                self.background = struct.unpack("!%dH" % self.color_planes,
+                self.background = struct.unpack(f"!{self.color_planes}",
                                                 data)
         except struct.error:
             raise FormatError("bKGD chunk has incorrect length.")
@@ -1752,11 +1741,10 @@ class Reader:
         else:
             if self.alpha:
                 raise FormatError(
-                    "tRNS chunk is not valid with colour type %d." %
-                    self.color_type)
+                    f"tRNS chunk is not valid with colour type {self.color_type}.")
             try:
                 self.transparent = \
-                    struct.unpack("!%dH" % self.color_planes, data)
+                    struct.unpack(f"!{self.color_planes}", data)
             except struct.error:
                 raise FormatError("tRNS chunk has incorrect length.")
 
@@ -1989,13 +1977,12 @@ class Reader:
             pixels = itertrns(pixels)
         targetbitdepth = None
         if self.sbit:
-            sbit = struct.unpack('%dB' % len(self.sbit), self.sbit)
+            sbit = struct.unpack(f'{len(self.sbit)}', self.sbit)
             targetbitdepth = max(sbit)
             if targetbitdepth > info['bitdepth']:
-                raise Error('sBIT chunk %r exceeds bitdepth %d' %
-                            (sbit, self.bitdepth))
+                raise Error(f'sBIT chunk {sbit!r} exceeds bitdepth {self.bitdepth}')
             if min(sbit) <= 0:
-                raise Error('sBIT chunk %r has a 0-entry' % sbit)
+                raise Error(f'sBIT chunk {sbit} has a 0-entry')
         if targetbitdepth:
             shift = info['bitdepth'] - targetbitdepth
             info['bitdepth'] = targetbitdepth
@@ -2181,24 +2168,23 @@ def check_bitdepth_colortype(bitdepth, colortype):
     """
 
     if bitdepth not in (1, 2, 4, 8, 16):
-        raise FormatError("invalid bit depth %d" % bitdepth)
+        raise FormatError(f"invalid bit depth {bitdepth}")
     if colortype not in (0, 2, 3, 4, 6):
-        raise FormatError("invalid colour type %d" % colortype)
+        raise FormatError(f"invalid colour type {colortype}")
     # Check indexed (palettized) images have 8 or fewer bits
     # per pixel; check only indexed or greyscale images have
     # fewer than 8 bits per pixel.
     if colortype & 1 and bitdepth > 8:
         raise FormatError(
-            "Indexed images (colour type %d) cannot"
-            " have bitdepth > 8 (bit depth %d)."
+            f"Indexed images (colour type {bitdepth}) cannot"
+            f" have bitdepth > 8 (bit depth {colortype})."
             " See http://www.w3.org/TR/2003/REC-PNG-20031110/#table111 ."
-            % (bitdepth, colortype))
+            )
     if bitdepth < 8 and colortype not in (0, 3):
         raise FormatError(
-            "Illegal combination of bit depth (%d)"
-            " and colour type (%d)."
-            " See http://www.w3.org/TR/2003/REC-PNG-20031110/#table111 ."
-            % (bitdepth, colortype))
+            f"Illegal combination of bit depth ({bitdepth})"
+            f" and colour type ({colortype})."
+            " See http://www.w3.org/TR/2003/REC-PNG-20031110/#table111 .")
 
 
 def is_natural(x):

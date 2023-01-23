@@ -243,7 +243,7 @@ class Context:
         if self.canvas is not None:
             self.detach()
         if not self.config.compatible(canvas):
-            raise RuntimeError('Cannot attach %r to %r' % (canvas, self))
+            raise RuntimeError(f'Cannot attach {canvas} to {self}')
         self.canvas = canvas
 
     def detach(self):
