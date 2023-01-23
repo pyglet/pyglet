@@ -178,6 +178,15 @@ class DirectInputDevice(base.Device):
             index = event.dwOfs // 4
             self.controls[index].value = event.dwData
 
+    def matches(self, guid_id, device_instance):
+        if (self.id_product_guid == guid_id and
+                self.id_name == device_instance.contents.tszProductName and
+                self._type == device_instance.contents.dwDevType & 0xff and
+                self._subtype == device_instance.contents.dwDevType & 0xff00):
+            return True
+
+        return False
+
 
 def _init_directinput():
     _i_dinput = dinput.IDirectInput8()
