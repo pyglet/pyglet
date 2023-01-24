@@ -609,7 +609,8 @@ class PygletDevice(Device):
         control.value = hid_value.intvalue
 
     def _create_controls(self):
-        self._controls = {}
+        controls = []
+
         for element in self.device.elements:
             raw_name = element.name or '0x%x:%x' % (element.usagePage, element.usage)
             if element.type in (kIOHIDElementTypeInput_Misc, kIOHIDElementTypeInput_Axis):
@@ -625,8 +626,11 @@ class PygletDevice(Device):
                 continue
 
             control._cookie = element.cookie
-
-            self._controls[control._cookie] = control
+            control._usage = element.usage
+            controls.append(control)
+        
+        controls.sort(key=lambda c: c._usage)
+        self._controls = {control._cookie: control for control in controls}
 
     def _set_initial_control_values(self):
         # Must be called AFTER the device has been opened.
@@ -698,5 +702,6 @@ def _create_controller(device, display):
 
 def get_controllers(display=None):
     return [controller for controller in
-            [_create_controller(device, display) for device in _hid_manager.devices]
+            [_create_controller(device, display) for device in _hid_manager.devices
+            if device.is_joystick() or device.is_gamepad() or device.is_multi_axis()]
             if controller is not None]
