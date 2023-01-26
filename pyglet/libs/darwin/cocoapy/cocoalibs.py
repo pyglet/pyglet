@@ -19,6 +19,9 @@ kCFStringEncodingUTF8 = 0x08000100
 
 CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
+CFURLRef = c_void_p
+CFStringRef = c_void_p
+CFURLPathStyle = c_int
 
 cf.CFStringCreateWithCString.restype = c_void_p
 cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
@@ -96,6 +99,10 @@ cf.CFNumberGetTypeID.argtypes = []
 
 cf.CFGetTypeID.restype = CFTypeID
 cf.CFGetTypeID.argtypes = [c_void_p]
+
+cf.CFURLCreateWithFileSystemPath.restype = CFURLRef
+cf.CFURLCreateWithFileSystemPath.argtypes = [CFAllocatorRef, CFStringRef, CFURLPathStyle, c_bool]
+
 
 # CFNumber.h
 kCFNumberSInt8Type     = 1
