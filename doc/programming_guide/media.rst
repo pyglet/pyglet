@@ -216,9 +216,7 @@ For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
 to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
-fix errors in the current implementation. Currently a C bindings was written
-with ctypes using FFmpeg v4.X. This means that this version of pyglet will
-support all FFmpeg binaries with the major version set to 4.
+fix errors in the current implementation.
 
 FFmpeg installation
 -------------------
@@ -228,8 +226,9 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-This means that the major version must be 4.X. All minor versions are
-supported. Choose the correct architecture depending on the targeted
+Currently Pyglet supports versions 4.x and 5.x of FFmpeg.
+
+Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
 interpreter, you must download the 32 bits shared binaries.
 
