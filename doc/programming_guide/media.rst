@@ -24,7 +24,7 @@ small number of short sounds, in which case those applications need not distribu
 Audio drivers
 -------------
 
-pyglet can use OpenAL, XAudio2, DirectSound or Pulseaudio to play back audio. Only one
+pyglet can use OpenAL, XAudio2, DirectSound, or Pulseaudio to play back audio. Only one
 of these drivers can be used in an application. In most cases you won't need
 to concern yourself with choosing a driver, but you can manually select one if
 desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
@@ -241,6 +241,8 @@ Finally make sure you download the **shared** builds, not the static or the
 dev builds.
 
 For Mac OS and Linux, the library is usually already installed system-wide.
+It may be easiest to list FFmpeg as a requirement for your project,
+and leave it up to the user to ensure that it is installed.
 For Windows users, it's not recommended to install the library in one of the
 windows sub-folders.
 
@@ -261,6 +263,13 @@ add the dll location to the PATH::
 For Linux and Mac OS::
 
     os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
+
+..note:: If your project is going to reply on FFmpeg, it's a good idea to
+         check at runtime that FFmpeg is being properly detected. This can be
+         done with a call to :py:func:`pyglet.media.have_ffmpeg`. If not `True`
+         you can show a message and exit gracefully, rather than crashing later
+         when failing to load media files.
+
 
 Loading media
 -------------
