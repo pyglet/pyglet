@@ -229,16 +229,19 @@ class HIDValue:
             # e.g. the PS3 controller has a 39-byte HIDValue element.
             # We currently do not try to handle these cases.
             self.intvalue = None
-
-        element_ref = c_void_p(iokit.IOHIDValueGetElement(valueRef))
-
-        if element_ref.value in _element_lookup:
-            self.element = _element_lookup[element_ref.value]
-        else:
-            self.element = HIDDeviceElement(element_ref)
+        elementRef = c_void_p(iokit.IOHIDValueGetElement(valueRef))
+        self.element = HIDDeviceElement.get_element(elementRef)
 
 
 class HIDDevice:
+    @classmethod
+    def get_device(cls, deviceRef):
+        # deviceRef is a c_void_p pointing to an IOHIDDeviceRef
+        if deviceRef.value in _device_lookup:
+            return _device_lookup[deviceRef.value]
+        else:
+            device = HIDDevice(deviceRef)
+            return device
 
     def __init__(self, deviceRef):
         # Check that we've got a valid IOHIDDevice.
@@ -405,6 +408,14 @@ class HIDDevice:
 
 
 class HIDDeviceElement:
+    @classmethod
+    def get_element(cls, elementRef):
+        # elementRef is a c_void_p pointing to an IOHIDDeviceElementRef
+        if elementRef.value in _element_lookup:
+            return _element_lookup[elementRef.value]
+        else:
+            element = HIDDeviceElement(elementRef)
+            return element
 
     def __init__(self, elementRef):
         # Check that we've been passed a valid IOHIDElement.
@@ -483,13 +494,7 @@ class HIDManager(EventDispatcher):
             kCFRunLoopDefaultMode)
 
     def _py_matching_callback(self, context, result, sender, device):
-        device_ref = c_void_p(device)
-
-        if device_ref.value in _device_lookup:
-            d = _device_lookup[device_ref.value]
-        else:
-            d = HIDDevice(device_ref)
-
+        d = HIDDevice.get_device(c_void_p(device))
         if d not in self.devices:
             self.devices.add(d)
             for x in self.matching_observers:
@@ -505,6 +510,13 @@ class HIDManager(EventDispatcher):
 HIDManager.register_event_type('on_connect')
 HIDManager.register_event_type('on_disconnect')
 
+
+######################################################################
+# Add conversion methods for IOHIDDevices and IOHIDDeviceElements
+# to the list of known types used by cftype_to_value.
+known_cftypes[iokit.IOHIDDeviceGetTypeID()] = HIDDevice.get_device
+known_cftypes[iokit.IOHIDElementGetTypeID()] = HIDDeviceElement.get_element
+######################################################################
 
 # Pyglet interface to HID
 
