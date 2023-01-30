@@ -215,40 +215,40 @@ _element_lookup = {}  # IOHIDElementRef to python HIDDeviceElement object
 
 
 class HIDValue:
-    def __init__(self, valueRef):
+    def __init__(self, value_ref):
         # Check that this is a valid IOHIDValue.
-        assert valueRef
-        assert cf.CFGetTypeID(valueRef) == iokit.IOHIDValueGetTypeID()
-        self.valueRef = valueRef
-        self.timestamp = iokit.IOHIDValueGetTimeStamp(valueRef)
-        self.length = iokit.IOHIDValueGetLength(valueRef)
+        assert value_ref
+        assert cf.CFGetTypeID(value_ref) == iokit.IOHIDValueGetTypeID()
+        self.value_ref = value_ref
+        self.timestamp = iokit.IOHIDValueGetTimeStamp(value_ref)
+        self.length = iokit.IOHIDValueGetLength(value_ref)
         if self.length <= 4:
-            self.intvalue = iokit.IOHIDValueGetIntegerValue(valueRef)
+            self.intvalue = iokit.IOHIDValueGetIntegerValue(value_ref)
         else:
             # Values may be byte data rather than integers.
             # e.g. the PS3 controller has a 39-byte HIDValue element.
             # We currently do not try to handle these cases.
             self.intvalue = None
-        elementRef = c_void_p(iokit.IOHIDValueGetElement(valueRef))
-        self.element = HIDDeviceElement.get_element(elementRef)
+        element_ref = c_void_p(iokit.IOHIDValueGetElement(value_ref))
+        self.element = HIDDeviceElement.get_element(element_ref)
 
 
 class HIDDevice:
     @classmethod
-    def get_device(cls, deviceRef):
-        # deviceRef is a c_void_p pointing to an IOHIDDeviceRef
-        if deviceRef.value in _device_lookup:
-            return _device_lookup[deviceRef.value]
+    def get_device(cls, device_ref):
+        # device_ref is a c_void_p pointing to an IOHIDDeviceRef
+        if device_ref.value in _device_lookup:
+            return _device_lookup[device_ref.value]
         else:
-            device = HIDDevice(deviceRef)
+            device = HIDDevice(device_ref)
             return device
 
-    def __init__(self, deviceRef):
+    def __init__(self, device_ref):
         # Check that we've got a valid IOHIDDevice.
-        assert deviceRef
-        assert cf.CFGetTypeID(deviceRef) == iokit.IOHIDDeviceGetTypeID()
-        _device_lookup[deviceRef.value] = self
-        self.deviceRef = deviceRef
+        assert device_ref
+        assert cf.CFGetTypeID(device_ref) == iokit.IOHIDDeviceGetTypeID()
+        _device_lookup[device_ref.value] = self
+        self.device_ref = device_ref
         # Set attributes from device properties.
         self.transport = self.get_property("Transport")
         self.vendorID = self.get_property("VendorID")
@@ -297,7 +297,7 @@ class HIDDevice:
 
     def get_property(self, name):
         cfname = CFSTR(name)
-        cfvalue = c_void_p(iokit.IOHIDDeviceGetProperty(self.deviceRef, cfname))
+        cfvalue = c_void_p(iokit.IOHIDDeviceGetProperty(self.device_ref, cfname))
         cf.CFRelease(cfname)
         return cftype_to_value(cfvalue)
 
@@ -306,25 +306,25 @@ class HIDDevice:
             options = kIOHIDOptionsTypeSeizeDevice
         else:
             options = kIOHIDOptionsTypeNone
-        return bool(iokit.IOHIDDeviceOpen(self.deviceRef, options))
+        return bool(iokit.IOHIDDeviceOpen(self.device_ref, options))
 
     def close(self):
-        return bool(iokit.IOHIDDeviceClose(self.deviceRef, kIOHIDOptionsTypeNone))
+        return bool(iokit.IOHIDDeviceClose(self.device_ref, kIOHIDOptionsTypeNone))
 
     def schedule_with_run_loop(self):
         iokit.IOHIDDeviceScheduleWithRunLoop(
-            self.deviceRef,
+            self.device_ref,
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def unschedule_from_run_loop(self):
         iokit.IOHIDDeviceUnscheduleFromRunLoop(
-            self.deviceRef,
+            self.device_ref,
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def _get_elements(self):
-        cfarray = c_void_p(iokit.IOHIDDeviceCopyMatchingElements(self.deviceRef, None, 0))
+        cfarray = c_void_p(iokit.IOHIDDeviceCopyMatchingElements(self.device_ref, None, 0))
         if not cfarray:
             # requires "Security & Privacy / Input Monitoring", see #95
             return []
@@ -335,7 +335,7 @@ class HIDDevice:
     # Page and usage IDs are from the HID usage tables located at
     # https://usb.org/sites/default/files/hut1_3_0.pdf
     def conforms_to(self, page, usage):
-        return bool(iokit.IOHIDDeviceConformsTo(self.deviceRef, page, usage))
+        return bool(iokit.IOHIDDeviceConformsTo(self.device_ref, page, usage))
 
     def is_pointer(self):
         return self.conforms_to(0x01, 0x01)
@@ -373,7 +373,7 @@ class HIDDevice:
 
     def _register_removal_callback(self):
         removal_callback = HIDDeviceCallback(self.py_removal_callback)
-        iokit.IOHIDDeviceRegisterRemovalCallback(self.deviceRef, removal_callback, None)
+        iokit.IOHIDDeviceRegisterRemovalCallback(self.device_ref, removal_callback, None)
         return removal_callback
 
     def add_removal_observer(self, observer):
@@ -388,7 +388,7 @@ class HIDDevice:
 
     def _register_input_value_callback(self):
         value_callback = HIDDeviceValueCallback(self.py_value_callback)
-        iokit.IOHIDDeviceRegisterInputValueCallback(self.deviceRef, value_callback, None)
+        iokit.IOHIDDeviceRegisterInputValueCallback(self.device_ref, value_callback, None)
         return value_callback
 
     def add_value_observer(self, observer):
@@ -396,10 +396,10 @@ class HIDDevice:
 
     def get_value(self, element):
         # If the device is not open, then returns None
-        valueRef = c_void_p()
-        iokit.IOHIDDeviceGetValue(self.deviceRef, element.elementRef, byref(valueRef))
-        if valueRef:
-            return HIDValue(valueRef)
+        value_ref = c_void_p()
+        iokit.IOHIDDeviceGetValue(self.device_ref, element.element_ref, byref(value_ref))
+        if value_ref:
+            return HIDValue(value_ref)
         else:
             return None
 
@@ -409,54 +409,54 @@ class HIDDevice:
 
 class HIDDeviceElement:
     @classmethod
-    def get_element(cls, elementRef):
-        # elementRef is a c_void_p pointing to an IOHIDDeviceElementRef
-        if elementRef.value in _element_lookup:
-            return _element_lookup[elementRef.value]
+    def get_element(cls, element_ref):
+        # element_ref is a c_void_p pointing to an IOHIDDeviceElementRef
+        if element_ref.value in _element_lookup:
+            return _element_lookup[element_ref.value]
         else:
-            element = HIDDeviceElement(elementRef)
+            element = HIDDeviceElement(element_ref)
             return element
 
-    def __init__(self, elementRef):
+    def __init__(self, element_ref):
         # Check that we've been passed a valid IOHIDElement.
-        assert elementRef
-        assert cf.CFGetTypeID(elementRef) == iokit.IOHIDElementGetTypeID()
-        _element_lookup[elementRef.value] = self
-        self.elementRef = elementRef
+        assert element_ref
+        assert cf.CFGetTypeID(element_ref) == iokit.IOHIDElementGetTypeID()
+        _element_lookup[element_ref.value] = self
+        self.element_ref = element_ref
         # Set element properties as attributes.
-        self.cookie = iokit.IOHIDElementGetCookie(elementRef)
-        self.type = iokit.IOHIDElementGetType(elementRef)
+        self.cookie = iokit.IOHIDElementGetCookie(element_ref)
+        self.type = iokit.IOHIDElementGetType(element_ref)
         if self.type == kIOHIDElementTypeCollection:
-            self.collectionType = iokit.IOHIDElementGetCollectionType(elementRef)
+            self.collectionType = iokit.IOHIDElementGetCollectionType(element_ref)
         else:
             self.collectionType = None
-        self.usagePage = iokit.IOHIDElementGetUsagePage(elementRef)
-        self.usage = iokit.IOHIDElementGetUsage(elementRef)
-        self.isVirtual = bool(iokit.IOHIDElementIsVirtual(elementRef))
-        self.isRelative = bool(iokit.IOHIDElementIsRelative(elementRef))
-        self.isWrapping = bool(iokit.IOHIDElementIsWrapping(elementRef))
-        self.isArray = bool(iokit.IOHIDElementIsArray(elementRef))
-        self.isNonLinear = bool(iokit.IOHIDElementIsNonLinear(elementRef))
-        self.hasPreferredState = bool(iokit.IOHIDElementHasPreferredState(elementRef))
-        self.hasNullState = bool(iokit.IOHIDElementHasNullState(elementRef))
-        self.name = cftype_to_value(iokit.IOHIDElementGetName(elementRef))
-        self.reportID = iokit.IOHIDElementGetReportID(elementRef)
-        self.reportSize = iokit.IOHIDElementGetReportSize(elementRef)
-        self.reportCount = iokit.IOHIDElementGetReportCount(elementRef)
-        self.unit = iokit.IOHIDElementGetUnit(elementRef)
-        self.unitExponent = iokit.IOHIDElementGetUnitExponent(elementRef)
-        self.logicalMin = iokit.IOHIDElementGetLogicalMin(elementRef)
-        self.logicalMax = iokit.IOHIDElementGetLogicalMax(elementRef)
-        self.physicalMin = iokit.IOHIDElementGetPhysicalMin(elementRef)
-        self.physicalMax = iokit.IOHIDElementGetPhysicalMax(elementRef)
+        self.usagePage = iokit.IOHIDElementGetUsagePage(element_ref)
+        self.usage = iokit.IOHIDElementGetUsage(element_ref)
+        self.isVirtual = bool(iokit.IOHIDElementIsVirtual(element_ref))
+        self.isRelative = bool(iokit.IOHIDElementIsRelative(element_ref))
+        self.isWrapping = bool(iokit.IOHIDElementIsWrapping(element_ref))
+        self.isArray = bool(iokit.IOHIDElementIsArray(element_ref))
+        self.isNonLinear = bool(iokit.IOHIDElementIsNonLinear(element_ref))
+        self.hasPreferredState = bool(iokit.IOHIDElementHasPreferredState(element_ref))
+        self.hasNullState = bool(iokit.IOHIDElementHasNullState(element_ref))
+        self.name = cftype_to_value(iokit.IOHIDElementGetName(element_ref))
+        self.reportID = iokit.IOHIDElementGetReportID(element_ref)
+        self.reportSize = iokit.IOHIDElementGetReportSize(element_ref)
+        self.reportCount = iokit.IOHIDElementGetReportCount(element_ref)
+        self.unit = iokit.IOHIDElementGetUnit(element_ref)
+        self.unitExponent = iokit.IOHIDElementGetUnitExponent(element_ref)
+        self.logicalMin = iokit.IOHIDElementGetLogicalMin(element_ref)
+        self.logicalMax = iokit.IOHIDElementGetLogicalMax(element_ref)
+        self.physicalMin = iokit.IOHIDElementGetPhysicalMin(element_ref)
+        self.physicalMax = iokit.IOHIDElementGetPhysicalMax(element_ref)
 
 
 class HIDManager(EventDispatcher):
     def __init__(self):
         # Create the HID Manager.
-        self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
-        assert self.managerRef
-        assert cf.CFGetTypeID(self.managerRef) == iokit.IOHIDManagerGetTypeID()
+        self.manager_ref = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
+        assert self.manager_ref
+        assert cf.CFGetTypeID(self.manager_ref) == iokit.IOHIDManagerGetTypeID()
         self.schedule_with_run_loop()
         self.matching_observers = set()
         self.matching_callback = self._register_matching_callback()
@@ -466,9 +466,9 @@ class HIDManager(EventDispatcher):
         try:
             # Tell manager that we are willing to match *any* device.
             # (Alternatively, we could restrict by device usage, or usage page.)
-            iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
+            iokit.IOHIDManagerSetDeviceMatching(self.manager_ref, None)
             # Copy the device set and convert it to python.
-            cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.managerRef))
+            cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.manager_ref))
             devices = cfset_to_set(cfset)
             cf.CFRelease(cfset)
         except:
@@ -476,20 +476,20 @@ class HIDManager(EventDispatcher):
         return devices
 
     def open(self):
-        iokit.IOHIDManagerOpen(self.managerRef, kIOHIDOptionsTypeNone)
+        iokit.IOHIDManagerOpen(self.manager_ref, kIOHIDOptionsTypeNone)
 
     def close(self):
-        iokit.IOHIDManagerClose(self.managerRef, kIOHIDOptionsTypeNone)
+        iokit.IOHIDManagerClose(self.manager_ref, kIOHIDOptionsTypeNone)
 
     def schedule_with_run_loop(self):
         iokit.IOHIDManagerScheduleWithRunLoop(
-            self.managerRef,
+            self.manager_ref,
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def unschedule_from_run_loop(self):
         iokit.IOHIDManagerUnscheduleFromRunLoop(
-            self.managerRef,
+            self.manager_ref,
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
@@ -503,7 +503,7 @@ class HIDManager(EventDispatcher):
 
     def _register_matching_callback(self):
         matching_callback = HIDManagerCallback(self._py_matching_callback)
-        iokit.IOHIDManagerRegisterDeviceMatchingCallback(self.managerRef, matching_callback, None)
+        iokit.IOHIDManagerRegisterDeviceMatchingCallback(self.manager_ref, matching_callback, None)
         return matching_callback
 
 
