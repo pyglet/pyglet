@@ -88,6 +88,7 @@ class DirectInputDevice(base.Device):
     def _init_controls(self):
         self.controls = []
         self._device.EnumObjects(dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum), None, dinput.DIDFT_ALL)
+        self.controls.sort(key=lambda c: c._type)
 
     def _object_enum(self, object_instance, arg):
         control = _create_control(object_instance.contents)
@@ -207,7 +208,7 @@ _i_dinput = _init_directinput()
 GUID_DEVINTERFACE_HID = com.GUID(0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30)
 
 
-class DIManager(EventDispatcher):
+class DIDeviceManager(EventDispatcher):
     def __init__(self):
         # Pick any open window, or the shadow window if no windows have been created yet.
         window = pyglet.gl._shadow_window
@@ -296,10 +297,10 @@ class DIManager(EventDispatcher):
                 self._recheck_devices()
 
 
-DIManager.register_event_type('on_connect')
-DIManager.register_event_type('on_disconnect')
+DIDeviceManager.register_event_type('on_connect')
+DIDeviceManager.register_event_type('on_disconnect')
 
-_di_manager = DIManager()
+_di_manager = DIDeviceManager()
 
 
 class DIControllerManager(ControllerManager):
