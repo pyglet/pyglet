@@ -2,6 +2,24 @@ pyglet 2.0.3
 
 Changes and Improvements
 ------------------------
+- input.win32: ControlManager now supports both DirectInput and XInput devices.
+- input: Many cleanups and reorganization.
+- math: Add Vec2.reflect method.
+- shapes: Add new BezierCurve shape.
+- gl: Add support for GL sync functions.
+
+Bugfixes
+--------
+- gui: Prevent two TextEntry widgets from being active at the same time. #747
+- win32: Fix broken lib debug, and multiple related bugs due to depreacted functions.
+- input: Controller mappings now indexed correctly on macOS and Windows.
+
+
+
+pyglet 2.0.3
+
+Changes and Improvements
+------------------------
 - shapes: Batch and Group can now be changed on shapes after instantiation, similar to Sprites.
 - font: DirectWrite & Freetype fonts now expose a `filename` attribute. macOS not yet implemented.
 - Windows: DirectWrite fonts parse font names in a more correct manner. Setting `pyglet.options['dw_legacy_naming']`
