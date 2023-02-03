@@ -79,12 +79,12 @@ If you are migrating from an older version of pyglet, please read through
    modules/event
    modules/font
    modules/gl
-   modules/math
    modules/graphics/index
    modules/gui
    modules/image/index
    modules/info
    modules/input
+   modules/math
    modules/media
    modules/resource
    modules/sprite

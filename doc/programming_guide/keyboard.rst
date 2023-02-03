@@ -1,7 +1,7 @@
-.. _guide_working-with-the-keyboard:
+.. _guide_keyboard-input:
 
-Working with the keyboard
-=========================
+Keyboard input
+==============
 
 pyglet has support for low-level keyboard input suitable for games as well as
 locale- and device-independent Unicode text entry.
