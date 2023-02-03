@@ -7,9 +7,9 @@ abstractions are provided for working with game controllers, joysticks,
 and the Apple Remote, with named and normalized inputs. The game controller
 abstraction is suited for modern gamepads, such as are found on home video game
 consoles. The joystick abstraction is more generalized, and suits devices with
-an arbitrary number of buttons, axis, and hats. This flight sticks, steering
-wheels, and just about anything else with buttons and axis inputs. For most
-types of games, the Controller abstraction is usually the easier choice.
+an arbitrary number of buttons, axis, and hats. This includes flight sticks,
+steering wheels, and just about anything else with buttons and axis inputs. For
+most types of games, the Controller abstraction is usually the easier choice.
 
 For advanced use cases, it's also possible to access the low-level input
 devices directly. The only read advantage to doing things is way, is that you
