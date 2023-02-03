@@ -696,6 +696,7 @@ class Loader:
                 return media.load(path, streaming=streaming)
             else:
                 file = location.open(name)
+
                 return media.load(name, file=file, streaming=streaming)
         except KeyError:
             raise ResourceNotFoundException(name)
@@ -791,9 +792,12 @@ class Loader:
         :rtype: A compiled `Shader` object.
         """
         # https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
-        shader_extensions = {'vert': "vertex",
+        shader_extensions = {'comp': "compute",
+                             'frag': "fragment",
                              'geom': "geometry",
-                             'frag': "fragment"}
+                             'tesc': "tescontrol",
+                             'tese': "tesevaluation",
+                             'vert': "vertex"}
         fileobj = self.file(name, 'r')
         source_string = fileobj.read()
 
