@@ -150,9 +150,12 @@ class CoreAudioSource(StreamingSource):
 
             data = cast(self._bl.mBuffers[0].mData, POINTER(c_char))
             slice = data[:size]
-            return AudioData(slice, size, 0.0, 0.0, [])
+            return AudioData(slice, size, 0.0, size / self.audio_format.sample_rate, [])
+
+        return None
 
     def seek(self, timestamp):
+        self._bl = None  # invalidate buffer list.
         timestamp = max(0.0, min(timestamp, self._duration))
         position = int(timestamp / self._duration_per_frame)
         ca.ExtAudioFileSeek(self._audref, position)
