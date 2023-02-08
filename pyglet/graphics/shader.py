@@ -825,6 +825,7 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                This determines how the list is drawn in the given batch.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
                 Using a Batch is strongly recommended.
@@ -867,6 +868,7 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                This determines how the list is drawn in the given batch.
             `indices` : sequence of int
                 Sequence of integers giving indices into the vertex list.
             `batch` : `~pyglet.graphics.Batch`
