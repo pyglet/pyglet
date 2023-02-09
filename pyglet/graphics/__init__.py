@@ -26,7 +26,7 @@ draws the entire batch::
     car = pyglet.sprite.Sprite(car_image, batch=batch)
     boat = pyglet.sprite.Sprite(boat_image, batch=batch)
     
-    def on_draw()
+    def on_draw():
         batch.draw()
 
 Drawing a complete Batch is much faster than drawing the items in the batch
@@ -46,7 +46,7 @@ before the car and the boat::
     car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
     boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
     
-    def on_draw()
+    def on_draw():
         batch.draw()
 
 It's preferable to manage pyglet objects within as few batches as possible. If
