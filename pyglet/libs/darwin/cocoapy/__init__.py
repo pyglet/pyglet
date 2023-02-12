@@ -35,3 +35,15 @@ from .runtime import ObjCClass, ObjCInstance, ObjCSubclass
 
 from .cocoatypes import *
 from .cocoalibs import *
+
+NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
+
+class AutoReleasePool:
+    """Helper context function to more easily manage NSAutoreleasePool"""
+    def __enter__(self):
+        self.pool = NSAutoreleasePool.alloc().init()
+        return self.pool
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.pool.drain()
+        del self.pool

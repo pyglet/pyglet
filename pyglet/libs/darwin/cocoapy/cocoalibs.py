@@ -47,8 +47,7 @@ cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 # Core Foundation type to Python type conversion functions
 
 def CFSTR(string):
-    return ObjCInstance(c_void_p(cf.CFStringCreateWithCString(
-            None, string.encode('utf8'), kCFStringEncodingUTF8)))
+    return cf.CFStringCreateWithCString(None, string.encode('utf8'), kCFStringEncodingUTF8)
 
 # Other possible names for this method:
 # at, ampersat, arobe, apenstaartje (little monkey tail), strudel,
@@ -57,7 +56,7 @@ def CFSTR(string):
 # kukac (caterpillar).
 def get_NSString(string):
     """Autoreleased version of CFSTR"""
-    return CFSTR(string).autorelease()
+    return ObjCInstance(c_void_p(CFSTR(string))).autorelease()
 
 def cfstring_to_string(cfstring):
     length = cf.CFStringGetLength(cfstring)
