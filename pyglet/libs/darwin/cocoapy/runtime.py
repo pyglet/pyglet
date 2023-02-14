@@ -1034,6 +1034,8 @@ class ObjCInstance:
         if cache:
             cls._cached_objects[object_ptr.value] = objc_instance
 
+            print(f"name={objc_instance.objc_class.name}, pool={_arp_manager.current}, ptr={objc_instance.ptr}")
+
             # Creation of NSAutoreleasePool instance does not technically mean it was allocated and initialized, but
             # it's standard practice, so this should not be an issue.
             if objc_instance.objc_class.name == b"NSAutoreleasePool":
@@ -1307,6 +1309,7 @@ def _obj_observer_dealloc(objc_obs, selector_name):
     objc_ptr = get_instance_variable(objc_obs, 'observed_object', c_void_p)
     objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
     objc_i = ObjCInstance._cached_objects.pop(objc_ptr, None)
+    print("dealloced", objc_i, objc_ptr)
     if objc_i:
         _clear_arp_objects(objc_i)
 
