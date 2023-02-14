@@ -686,7 +686,7 @@ def add_ivar(cls, name, vartype):
 
 def set_instance_variable(obj, varname, value, vartype):
     objc.object_setInstanceVariable.argtypes = [c_void_p, c_char_p, vartype]
-    objc.object_setInstanceVariable(obj, ensure_bytes(varname), value)
+    return objc.object_setInstanceVariable(obj, ensure_bytes(varname), value)
 
 
 def get_instance_variable(obj, varname, vartype):
@@ -1285,8 +1285,8 @@ class DeallocationObserver_Implementation:
     def initWithObject_(self, cmd, anObject):
         self = send_super(self, 'init')
         self = self.value
-        print("init object", anObject)
-        set_instance_variable(self, 'observed_object', anObject, c_void_p)
+        success = set_instance_variable(self, 'observed_object', anObject, c_void_p)
+        print("init object", anObject, success)
         return self
 
     @DeallocationObserver.rawmethod('v')
