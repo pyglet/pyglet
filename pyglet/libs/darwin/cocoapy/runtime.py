@@ -1285,6 +1285,7 @@ class DeallocationObserver_Implementation:
     def initWithObject_(self, cmd, anObject):
         self = send_super(self, 'init')
         self = self.value
+        print("init object", anObject)
         set_instance_variable(self, 'observed_object', anObject, c_void_p)
         return self
 
