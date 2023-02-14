@@ -1,3 +1,11 @@
+pyglet 2.0.5
+
+Bugfixes
+--------
+- input.macos: Fix ControllerManager hot-plugging on macOS.
+- font.windows: Fix 32bit crashes with DirectWrite font backend.
+
+
 pyglet 2.0.4
 
 Changes and Improvements
@@ -13,7 +21,6 @@ Bugfixes
 - gui: Prevent two TextEntry widgets from being active at the same time. #747
 - win32: Fix broken lib debug, and multiple related bugs due to depreacted functions.
 - input: Controller mappings now indexed correctly on macOS and Windows.
-
 
 
 pyglet 2.0.3
