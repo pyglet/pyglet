@@ -91,6 +91,8 @@ class CocoaEventLoop(PlatformEventLoop):
                 # Using distantFuture as untilDate means that nextEventMatchingMask
                 # will wait until the next event comes along.
                 timeout_date = NSDate.distantFuture()
+            elif timeout == 0.0:
+                timeout_date = NSDate.distantPast()
             else:
                 timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 
