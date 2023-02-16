@@ -986,7 +986,7 @@ def _set_dealloc_observer(objc_ptr):
     # When the Objective-C object is deallocated, the observer will remove
     # the ObjCInstance corresponding to the object from the cached objects
     # dictionary, effectively destroying the ObjCInstance.
-    observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_ptr)
+    observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_ptr, argtypes=[c_void_p])
     objc.objc_setAssociatedObject(objc_ptr, observer, observer, OBJC_ASSOCIATION_RETAIN)
 
     # The observer is retained by the object we associate it to.  We release
