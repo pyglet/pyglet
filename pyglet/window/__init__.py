@@ -1284,6 +1284,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def projection(self):
         """The OpenGL window projection matrix. Read-write.
 
+        This matrix is used to transform vertices when using any of the built-in
+        drawable classes. `view` is done first, then `projection`.
+
         The default projection matrix is orthographic (2D),
         but a custom :py:class:`pyglet.math.Mat4` instance
         can be set. Alternatively, you can supply a flat
@@ -1307,6 +1310,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     @property
     def view(self):
         """The OpenGL window view matrix. Read-write.
+
+        This matrix is used to transform vertices when using any of the built-in
+        drawable classes. `view` is done first, then `projection`.
 
         The default view is an identity matrix, but a custom
         :py:class:`pyglet.math.Mat4` instance can be set.
