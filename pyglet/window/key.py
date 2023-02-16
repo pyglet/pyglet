@@ -293,7 +293,10 @@ F17           = 0xffce
 F18           = 0xffcf
 F19           = 0xffd0
 F20           = 0xffd1
-
+F21           = 0xffd2
+F22           = 0xffd3
+F23           = 0xffd4
+F24           = 0xffd5
 # Modifiers
 LSHIFT        = 0xffe1
 RSHIFT        = 0xffe2
