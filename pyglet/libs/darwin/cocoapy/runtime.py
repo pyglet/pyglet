@@ -479,6 +479,8 @@ def should_use_fpret(restype):
 # change these values.  restype should be a ctypes type
 # and argtypes should be a list of ctypes types for
 # the arguments of the message only.
+# Note: kwarg 'argtypes' required if using args, or will fail on ARM64.
+
 def send_message(receiver, selName, *args, **kwargs):
     if isinstance(receiver, str):
         receiver = get_class(receiver)
@@ -686,7 +688,7 @@ def add_ivar(cls, name, vartype):
 
 def set_instance_variable(obj, varname, value, vartype):
     objc.object_setInstanceVariable.argtypes = [c_void_p, c_char_p, vartype]
-    return objc.object_setInstanceVariable(obj, ensure_bytes(varname), value)
+    objc.object_setInstanceVariable(obj, ensure_bytes(varname), value)
 
 
 def get_instance_variable(obj, varname, vartype):
@@ -980,13 +982,15 @@ class _AutoreleasepoolManager:
 
 _arp_manager = _AutoreleasepoolManager()
 
+_dealloc_argtype = [c_void_p]  # Just to prevent list creation every call.
 
 def _set_dealloc_observer(objc_ptr):
     # Create a DeallocationObserver and associate it with this object.
     # When the Objective-C object is deallocated, the observer will remove
     # the ObjCInstance corresponding to the object from the cached objects
     # dictionary, effectively destroying the ObjCInstance.
-    observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_ptr, argtypes=[c_void_p])
+    observer = send_message('DeallocationObserver', 'alloc')
+    observer = send_message(observer,  'initWithObject:', objc_ptr, argtypes=_dealloc_argtype)
     objc.objc_setAssociatedObject(objc_ptr, observer, observer, OBJC_ASSOCIATION_RETAIN)
 
     # The observer is retained by the object we associate it to.  We release
@@ -1033,8 +1037,6 @@ class ObjCInstance:
         # by the (integer) memory address pointed to by the object_ptr.
         if cache:
             cls._cached_objects[object_ptr.value] = objc_instance
-
-            print(f"name={objc_instance.objc_class.name}, pool={_arp_manager.current}, ptr={objc_instance.ptr}")
 
             # Creation of NSAutoreleasePool instance does not technically mean it was allocated and initialized, but
             # it's standard practice, so this should not be an issue.
@@ -1282,11 +1284,10 @@ class DeallocationObserver_Implementation:
     DeallocationObserver.register()
 
     @DeallocationObserver.rawmethod('@@')
-    def initWithObject_(self, cmd, anObject):
+    def initWithObject_(self, cmd, objc_ptr):
         self = send_super(self, 'init')
         self = self.value
-        success = set_instance_variable(self, 'observed_object', anObject, c_void_p)
-        print("init object", anObject, success)
+        set_instance_variable(self, 'observed_object', objc_ptr, c_void_p)
         return self
 
     @DeallocationObserver.rawmethod('v')
@@ -1308,11 +1309,11 @@ def _obj_observer_dealloc(objc_obs, selector_name):
     although we do not use the object after.
     """
     objc_ptr = get_instance_variable(objc_obs, 'observed_object', c_void_p)
-    objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
-    objc_i = ObjCInstance._cached_objects.pop(objc_ptr, None)
-    print("dealloced", objc_i, objc_ptr)
-    if objc_i:
-        _clear_arp_objects(objc_i)
+    if objc_ptr:
+        objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
+        objc_i = ObjCInstance._cached_objects.pop(objc_ptr, None)
+        if objc_i:
+            _clear_arp_objects(objc_i)
 
     send_super(objc_obs, selector_name)
 
