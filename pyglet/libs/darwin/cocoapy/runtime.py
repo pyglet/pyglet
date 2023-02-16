@@ -981,13 +981,13 @@ class _AutoreleasepoolManager:
 _arp_manager = _AutoreleasepoolManager()
 
 
-def _set_dealloc_observer(objc_instance):
+def _set_dealloc_observer(objc_ptr):
     # Create a DeallocationObserver and associate it with this object.
     # When the Objective-C object is deallocated, the observer will remove
     # the ObjCInstance corresponding to the object from the cached objects
     # dictionary, effectively destroying the ObjCInstance.
-    observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_instance)
-    objc.objc_setAssociatedObject(objc_instance, observer, observer, OBJC_ASSOCIATION_RETAIN)
+    observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_ptr)
+    objc.objc_setAssociatedObject(objc_ptr, observer, observer, OBJC_ASSOCIATION_RETAIN)
 
     # The observer is retained by the object we associate it to.  We release
     # the observer now so that it will be deallocated when the associated
@@ -1041,11 +1041,11 @@ class ObjCInstance:
             if objc_instance.objc_class.name == b"NSAutoreleasePool":
                 _arp_manager.create(objc_instance)
                 objc_instance.pool = _arp_manager.current
-                _set_dealloc_observer(objc_instance)
+                _set_dealloc_observer(object_ptr)
             elif _arp_manager.current:
                 objc_instance.pool = _arp_manager.current
             else:
-                _set_dealloc_observer(objc_instance)
+                _set_dealloc_observer(object_ptr)
 
         return objc_instance
 
