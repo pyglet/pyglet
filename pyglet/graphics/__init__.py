@@ -5,53 +5,6 @@ Shaders and Buffers. It also provides classes for highly performant batched
 rendering and grouping.
 
 See the :ref:`guide_graphics` for details on how to use this graphics API.
-
-Batches and groups
-==================
-
-Developers can make use of :py:class:`~pyglet.graphics.Batch` and
-:py:class:`~pyglet.graphics.Group` objects to improve performance when
-rendering a large number of objects.
-
-The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label`,
-:py:func:`~pyglet.text.layout.TextLayout`, and other classes all accept a
-``batch`` and ``group`` parameter in their constructors. A Batch manages
-a set of objects that will be drawn all at once, and a Group can be used
-to set OpenGL state and further sort the draw operation.
-
-The following example creates a batch, adds two sprites to the batch, and then
-draws the entire batch::
-    
-    batch = pyglet.graphics.Batch()
-    car = pyglet.sprite.Sprite(car_image, batch=batch)
-    boat = pyglet.sprite.Sprite(boat_image, batch=batch)
-    
-    def on_draw():
-        batch.draw()
-
-Drawing a complete Batch is much faster than drawing the items in the batch
-individually, especially when those items belong to a common group.  
-
-Groups describe the OpenGL state required for an item. This is for the most
-part managed by the sprite, text, and other classes, however you can also use
-custom groups to ensure items are drawn in a particular order. For example, the
-following example adds a background sprite which is guaranteed to be drawn
-before the car and the boat::
-
-    batch = pyglet.graphics.Batch()
-    background = pyglet.graphics.Group(order=0)
-    foreground = pyglet.graphics.Group(order=1)
-
-    background = pyglet.sprite.Sprite(background_image, batch=batch, group=background)
-    car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
-    boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
-    
-    def on_draw():
-        batch.draw()
-
-It's preferable to manage pyglet objects within as few batches as possible. If
-the drawing of sprites or text objects need to be interleaved with other
-drawing that does not use the graphics API, multiple batches will be required.
 """
 
 import ctypes
@@ -255,15 +208,31 @@ def get_default_shader():
 
 
 class Batch:
-    """Manage a collection of vertex lists for batched rendering.
+    """Manage a collection of drawables for batched rendering.
 
-    Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the
-    `add` and `add_indexed` methods. An optional group can be specified along
-    with the vertex list, which gives the OpenGL state required for its rendering.
-    Vertex lists with shared mode and group are allocated into adjacent areas of
-    memory and sent to the graphics card in a single operation.
+    Many drawable pyglet objects accept an optional `Batch` argument in their
+    constructors. By giving a `Batch` to multiple objects, you can tell pyglet
+    that you expect to draw all of these objects at once, so it can optimise its
+    use of OpenGL. Hence, drawing a `Batch` is often much faster than drawing
+    each contained drawable separately.
 
-    Call `VertexList.delete` to remove a vertex list from the batch.
+    The following example creates a batch, adds two sprites to the batch, and
+    then draws the entire batch::
+
+        batch = pyglet.graphics.Batch()
+        car = pyglet.sprite.Sprite(car_image, batch=batch)
+        boat = pyglet.sprite.Sprite(boat_image, batch=batch)
+
+        def on_draw():
+            batch.draw()
+
+    While any drawables can be added to a `Batch`, only those with the same
+    draw mode, shader program, and group can be optimised together.
+
+    Internally, a `Batch` manages a set of VertexDomains along with
+    information about how the domains are to be drawn. To implement batching on
+    a custom drawable, get your vertex domains from the given batch instead of
+    setting them up yourself.
     """
 
     def __init__(self):
@@ -325,6 +294,7 @@ class Batch:
         vertex_list.migrate(domain)
 
     def get_domain(self, indexed, mode, group, program, attributes):
+        """Get, or create, the vertex domain corresponding to the given arguments."""
         if group is None:
             group = ShaderGroup(program=program)
 
@@ -496,27 +466,43 @@ class Batch:
 class Group:
     """Group of common OpenGL state.
 
-    Before a VertexList is rendered, its Group's OpenGL state is set.
-    This includes binding textures, shaders, or setting any other parameters.
+    `Group` provides extra control over how drawables are handled within a
+    `Batch`. When a batch draws a drawable, it ensures its group's state is set;
+    this can include binding textures, shaders, or setting any other parameters.
+    It also sorts the groups before drawing.
+
+    In the following example, the background sprite is guaranteed to be drawn
+    before the car and the boat::
+
+        batch = pyglet.graphics.Batch()
+        background = pyglet.graphics.Group(order=0)
+        foreground = pyglet.graphics.Group(order=1)
+
+        background = pyglet.sprite.Sprite(background_image, batch=batch, group=background)
+        car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
+        boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
+
+        def on_draw():
+            batch.draw()
+
+    :Parameters:
+        `order` : int
+            Set the order to render above or below other Groups.
+            Lower orders are drawn first.
+        `parent` : `~pyglet.graphics.Group`
+            Group to contain this Group; its state will be set before this
+            Group's state.
+
+    :Variables:
+        `visible` : bool
+            Determines whether this Group is visible in any of the Batches
+            it is assigned to. If ``False``, objects in this Group will not
+            be rendered.
+        `batches` : list
+            Read Only. A list of which Batches this Group is a part of.
     """
     def __init__(self, order=0, parent=None):
-        """Create a Group.
 
-        :Parameters:
-            `order` : int
-                Set the order to render above or below other Groups.
-            `parent` : `~pyglet.graphics.Group`
-                Group to contain this Group; its state will be set before this
-                Group's state.
-
-        :Ivariables:
-            `visible` : bool
-                Determines whether this Group is visible in any of the Batches
-                it is assigned to. If False, objects in this Group will not
-                be rendered.
-            `batches` : list
-                Read Only. A list of which Batches this Group is a part of.
-        """
         self._order = order
         self.parent = parent
         self._visible = True
