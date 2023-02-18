@@ -636,8 +636,8 @@ def parse_type_encoding(encoding):
 def cfunctype_for_encoding(encoding):
     # Check if we've already created a CFUNCTYPE for this encoding.
     # If so, then return the cached CFUNCTYPE.
-    #if encoding in cfunctype_table:
-    #    return cfunctype_table[encoding]
+    if encoding in cfunctype_table:
+        return cfunctype_table[encoding]
 
     # Otherwise, create a new CFUNCTYPE for the encoding.
     typecodes = {b'c': c_char, b'i': c_int, b's': c_short, b'l': c_long, b'q': c_longlong,
@@ -660,7 +660,7 @@ def cfunctype_for_encoding(encoding):
     # Cache the new CFUNCTYPE in the cfunctype_table.
     # We do this mainly because it prevents the CFUNCTYPE
     # from being garbage-collected while we need it.
-    #cfunctype_table[encoding] = cfunctype
+    cfunctype_table[encoding] = cfunctype
     return cfunctype
 
 
