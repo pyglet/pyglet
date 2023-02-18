@@ -905,7 +905,7 @@ class ObjCClass:
         cls._registered_classes[name] = objc_class
 
         # Not sure this is necessary...
-        #objc_class.cache_instance_methods()
+        objc_class.cache_instance_methods()
         objc_class.cache_class_methods()
 
         return objc_class
@@ -943,7 +943,6 @@ class ObjCClass:
         either by looking it up in the cached list of methods or by searching
         for and creating a new method object."""
         if name in self.instance_methods:
-            #print("NAME!", name)
             return self.instance_methods[name]
         else:
             # If method name isn't in the cached list, it might be a method of
@@ -952,7 +951,7 @@ class ObjCClass:
             method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
-                #self.instance_methods[name] = objc_method
+                self.instance_methods[name] = objc_method
                 return objc_method
         return None
 
