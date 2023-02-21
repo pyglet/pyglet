@@ -130,6 +130,7 @@ options = {
     'win32_disable_shaping': False,
     'dw_legacy_naming': False,
     'win32_disable_xinput': False,
+    'com_mta': False,
 }
 
 _option_types = {
@@ -160,7 +161,8 @@ _option_types = {
     'headless_device': int,
     'win32_disable_shaping': bool,
     'dw_legacy_naming': bool,
-    'win32_disable_xinput': bool
+    'win32_disable_xinput': bool,
+    'com_mta': bool
 }
 
 

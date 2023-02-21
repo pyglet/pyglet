@@ -278,11 +278,17 @@ if _debug_win32:
     set_errchecks(_ole32)
     set_errchecks(_oleaut32)
 
-# Initialize COM in MTA mode. Required for: WIC (DirectWrite), WMF, and XInput
+# Initialize COM. Required for: WIC (DirectWrite), WMF, and XInput
 try:
-    _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
+    if pyglet.options["com_mta"] is True:
+        _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
+    else:
+        _ole32.CoInitializeEx(None, constants.COINIT_APARTMENTTHREADED)
 except OSError as err:
-    warnings.warn("Could not set COM MTA mode. Unexpected behavior may occur.")
+    if err.winerror == constants.RPC_E_CHANGED_MODE:
+        warnings.warn("COM mode set by another library in a different mode. Unexpected behavior may occur.")
+    else:
+        warnings.warn("COM was already initialized by another library.")
 
 
 def _uninitialize():
