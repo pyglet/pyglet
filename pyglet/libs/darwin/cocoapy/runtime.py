@@ -557,7 +557,7 @@ def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
     if argtypes:
         objc.objc_msgSendSuper.argtypes = [OBJC_SUPER_PTR, c_void_p] + argtypes
     else:
-        objc.objc_msgSendSuper.argtypes = None
+        objc.objc_msgSendSuper.argtypes = [OBJC_SUPER_PTR, c_void_p]
     result = objc.objc_msgSendSuper(byref(super_struct), selector, *args)
     if restype == c_void_p:
         result = c_void_p(result)
