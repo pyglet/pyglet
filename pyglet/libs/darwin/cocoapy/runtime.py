@@ -962,7 +962,7 @@ class ObjCClass:
             method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
-                self.instance_methods[name] = objc_method
+                #self.instance_methods[name] = objc_method
                 return objc_method
         return None
 
