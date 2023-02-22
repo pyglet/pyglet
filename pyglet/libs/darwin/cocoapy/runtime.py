@@ -916,8 +916,8 @@ class ObjCClass:
         #cls._registered_classes[name] = objc_class
 
         # Not sure this is necessary...
-        objc_class.cache_instance_methods()
-        objc_class.cache_class_methods()
+        #objc_class.cache_instance_methods()
+        #objc_class.cache_class_methods()
 
         return objc_class
 
