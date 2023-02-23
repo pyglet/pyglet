@@ -569,10 +569,16 @@ class PygletWidget(QOpenGLWidget):
 
         self._view_matrix = matrix
 
+      
+def excepthook(exc_type, exc_value, exc_tb):
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    print(tb)
 
+   
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     ui = Ui_MainWindow()
+    sys.excepthook = excepthook
     window = QtWidgets.QMainWindow()
     ui.setupUi(window)
     window.show()
