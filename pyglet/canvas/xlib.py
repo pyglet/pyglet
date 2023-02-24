@@ -215,6 +215,30 @@ class XlibScreen(Screen):
         super(XlibScreen, self).__init__(display, x, y, width, height)
         self._xinerama = xinerama
 
+    def get_dpi(self):
+        resource = xlib.XResourceManagerString(self.display)
+        if resource:
+            xlib.XrmInitialize()
+
+            db = xlib.XrmGetStringDatabase(resource)
+            if db:
+                rs_type = c_char_p()
+                value = xlib.XrmValue()
+                test = xlib.XrmGetResource(db, "Xft.dpi", "String", byref(rs_type), byref(value))
+                if test:
+                    if value.addr:
+                        print(value.addr)
+
+                print("TEST", test)
+
+
+
+        pass
+
+    def get_scale(self):
+        # TODO
+        pass
+
     def get_matching_configs(self, template):
         canvas = XlibCanvas(self.display, None)
         configs = template.match(canvas)

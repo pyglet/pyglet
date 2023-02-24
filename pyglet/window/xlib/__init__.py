@@ -315,6 +315,9 @@ class XlibWindow(BaseWindow):
                                      xlib.PropModeReplace,
                                      cast(ptr, POINTER(c_ubyte)), 1)
 
+            self._dpi  # TODO
+            self._scale  # TODO
+
             # Atoms required for Xdnd
             self._create_xdnd_atoms(self._x_display)
 

@@ -161,13 +161,20 @@ class Win32Window(BaseWindow):
         else:
             self._ws_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX)
 
+        self._dpi = self._screen.get_dpi()
+        self._scale = self._dpi / USER_DEFAULT_SCREEN_DPI
+
         if self._fullscreen:
             width = self.screen.width
             height = self.screen.height
         else:
-            x_dpi, y_dpi = self._screen.get_dpi()
+            if pyglet.options["scale_with_dpi"]:
+                if self._scale > 1.0:
+                    self._width = int(self._width * self._scale)
+                    self._height = int(self._height * self._scale)
+
             width, height = \
-                self._client_to_window_size(self._width, self._height, x_dpi)
+                self._client_to_window_size(self._width, self._height, self._dpi)
 
         if not self._window_class:
             module = _kernel32.GetModuleHandleW(None)
@@ -1270,7 +1277,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_GETDPISCALEDSIZE)
     def _event_dpi_scaled_size(self, msg, wParam, lParam):
-        if pyglet.options["scale_to_monitor"]:
+        if pyglet.options["scale_with_dpi"]:
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1297,11 +1304,9 @@ class Win32Window(BaseWindow):
     def _event_dpi_change(self, msg, wParam, lParam):
         y_dpi, x_dpi = self._get_location(wParam)
 
-        scale = (x_dpi / USER_DEFAULT_SCREEN_DPI,
-                 y_dpi / USER_DEFAULT_SCREEN_DPI)
-
+        scale = x_dpi / USER_DEFAULT_SCREEN_DPI
         if not self._fullscreen and\
-                (pyglet.options["scale_to_monitor"] or WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+                (pyglet.options["scale_with_dpi"] or WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left
@@ -1313,9 +1318,9 @@ class Win32Window(BaseWindow):
                                  x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE)
 
         self._scale = scale
-        self._dpi = x_dpi, y_dpi
+        self._dpi = x_dpi
 
         self.switch_to()
-        self.dispatch_event('on_scale', *scale, x_dpi, y_dpi)
+        self.dispatch_event('on_scale', scale, x_dpi)
         return 1
 

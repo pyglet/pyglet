@@ -810,6 +810,7 @@ class TextLayout:
         self._dpi = dpi
         self.document = document
 
+
     @property
     def batch(self):
         """The Batch that this Layout is assigned to.
@@ -869,13 +870,20 @@ class TextLayout:
         self._update_enabled = True
         self._update()
 
-    dpi = property(lambda self: self._dpi,
-                   doc="""Get DPI used by this layout.
+    @property
+    def dpi(self):
+        """Get DPI used by this layout.
 
-    Read-only.
+            Read-only.
 
-    :type: float
-    """)
+            :type: float
+        """
+        return self._dpi
+
+    @dpi.setter
+    def dpi(self, value):
+        self._dpi = value
+        self._update()
 
     def delete(self):
         """Remove this layout from its batch.

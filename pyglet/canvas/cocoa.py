@@ -87,6 +87,13 @@ class CocoaScreen(Screen):
     #         if displayID == self._cg_display_id:
     #             return nsscreen
     #     return None
+    def get_dpi(self):
+        # TODO
+        pass
+
+    def get_scale(self):
+        # TODO
+        pass
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self, None)

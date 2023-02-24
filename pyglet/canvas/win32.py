@@ -103,11 +103,11 @@ class Win32Screen(Screen):
             ydpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSY)
             _user32.ReleaseDC(0, dc)
 
-        return xdpi, ydpi
+        return xdpi
 
-    def get_dpi_scale(self):
-        xdpi, ydpi = self.get_dpi()
-        return xdpi / 96, ydpi / 96
+    def get_scale(self):
+        xdpi = self.get_dpi()
+        return xdpi / USER_DEFAULT_SCREEN_DPI
 
     def get_modes(self):
         device_name = self.get_device_name()

@@ -470,7 +470,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     _width = None
     _height = None
-    _scale = (1.0, 1.0)
+    _dpi = 96
+    _scale = 1.0
     _caption = None
     _resizable = False
     _style = WINDOW_STYLE_DEFAULT
@@ -813,7 +814,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         self._projection.set(width, height, *self.get_framebuffer_size())
 
-    def on_scale(self, scale_x, scale_y, x_dpi, y_dpi):
+    def on_scale(self, scale, dpi):
         """A default scale event handler.
 
         This default handler is called if the screen or system's DPI changes
@@ -1007,11 +1008,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @property
     def dpi(self):
-        """DPI values of the window, inherited from the screen.  Read only.
+        """DPI values of the Window.  Read only.
 
         :type: list
         """
-        return self._screen.get_dpi()
+        return self._dpi
 
     @property
     def projection(self):
@@ -1107,23 +1108,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def get_pixel_ratio(self):
-        """Return the framebuffer/window size ratio.
-
-        Some platforms and/or window systems support subpixel scaling,
-        making the framebuffer size larger than the window size.
-        Retina screens on OS X and Gnome on Linux are some examples.
-
-        On a Retina systems the returned ratio would usually be 2.0 as a
-        window of size 500 x 500 would have a frambuffer of 1000 x 1000.
-        Fractional values between 1.0 and 2.0, as well as values above
-        2.0 may also be encountered.
-
-        :rtype: float
-        :return: The framebuffer/window size ratio
-        """
-        return self.get_framebuffer_size()[0] / self.width
-
     def get_size(self):
         """Return the current size of the window.
 
@@ -1133,24 +1117,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :return: The width and height of the window, in pixels.
         """
         raise NotImplementedError('abstract')
-
-    def get_framebuffer_size(self):
-        """Return the size in actual pixels of the Window framebuffer.
-
-        When using HiDPI screens, the size of the Window's framebuffer
-        can be higher than that of the Window size requested. If you
-        are performing operations that require knowing the actual number
-        of pixels in the window, this method should be used instead of
-        :py:func:`Window.get_size()`. For example, setting the Window
-        projection or setting the glViewport size.
-
-        :rtype: (int, int)
-        :return: The width and height of the Window viewport, in pixels.
-        """
-        return self.get_size()
-
-    # :deprecated: Use Window.get_framebuffer_size
-    get_viewport_size = get_framebuffer_size
 
     def set_location(self, x, y):
         """Set the position of the window.
@@ -1165,6 +1131,19 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         """
         raise NotImplementedError('abstract')
+
+    def get_framebuffer_size(self):
+        """Return the size in actual pixels of the Window framebuffer.
+        When using HiDPI screens, the size of the Window's framebuffer
+        can be higher than that of the Window size requested. If you
+        are performing operations that require knowing the actual number
+        of pixels in the window, this method should be used instead of
+        :py:func:`Window.get_size()`. For example, setting the Window
+        projection or setting the glViewport size.
+        :rtype: (int, int)
+        :return: The width and height of the Window's framebuffer, in pixels.
+        """
+        return self.get_size()
 
     def get_location(self):
         """Return the current position of the window.
