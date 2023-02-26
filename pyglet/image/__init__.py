@@ -1266,13 +1266,14 @@ class Texture(AbstractImage):
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         if internalformat is not None:
+            blank = (GLubyte * (width * height * 4))()
             glTexImage2D(target, 0,
                          internalformat,
                          width, height,
                          0,
                          fmt,
                          GL_UNSIGNED_BYTE,
-                         None)
+                         blank)
             glFlush()
 
         texture = cls(width, height, target, tex_id.value)
