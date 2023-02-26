@@ -818,10 +818,15 @@ class ImageData(AbstractImage):
 
         # Unset GL_UNPACK_ROW_LENGTH:
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+        self._default_region_unpack()
+
         # Flush image upload before data get GC'd:
         glFlush()
 
     def _apply_region_unpack(self):
+        pass
+
+    def _default_region_unpack(self):
         pass
 
     def _convert(self, fmt, pitch):
@@ -996,6 +1001,10 @@ class ImageDataRegion(ImageData):
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
         glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
+
+    def _default_region_unpack(self):
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
 
     def get_region(self, x, y, width, height):
         x += self.x
@@ -1302,7 +1311,7 @@ class Texture(AbstractImage):
             glPixelStorei(GL_PACK_ALIGNMENT, 1)
             glCheckFramebufferStatus(GL_FRAMEBUFFER)
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
-            glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
+            glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glDeleteFramebuffers(1, fbo)
         else:
