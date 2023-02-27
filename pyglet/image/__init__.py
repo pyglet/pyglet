@@ -678,7 +678,7 @@ class ImageData(AbstractImage):
         :rtype: cls or cls.region_class
         """
         internalformat = self._get_internalformat(self._desired_format)
-        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat)
+        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, False, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -706,7 +706,7 @@ class ImageData(AbstractImage):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -1228,7 +1228,7 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA):
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1253,6 +1253,9 @@ class Texture(AbstractImage):
                 GL constant giving format of texture; for example, ``GL_RGBA``.
                 The format specifies what format the pixel data we're expecting to write
                 to the texture and should ideally be the same as for internal format.
+            `blank_data` : bool
+                Setting to True will initialize the texture data with all zeros. Setting False, will initialize Texture
+                with no data.
 
         :rtype: :py:class:`~pyglet.image.Texture`
         """
@@ -1266,13 +1269,14 @@ class Texture(AbstractImage):
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         if internalformat is not None:
+            blank = (GLubyte * (width * height * 4))() if blank_data else None
             glTexImage2D(target, 0,
                          internalformat,
                          width, height,
                          0,
                          fmt,
                          GL_UNSIGNED_BYTE,
-                         None)
+                         blank)
             glFlush()
 
         texture = cls(width, height, target, tex_id.value)
@@ -1477,7 +1481,7 @@ class Texture3D(Texture, UniformTextureSequence):
     items = ()
 
     @classmethod
-    def create_for_images(cls, images, internalformat=GL_RGBA):
+    def create_for_images(cls, images, internalformat=GL_RGBA, blank_data=True):
         item_width = images[0].width
         item_height = images[0].height
         for image in images:
@@ -1493,12 +1497,13 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.images = depth
 
+        blank = (GLubyte * (texture.width * texture.height * texture.images))() if blank_data else None
         glBindTexture(texture.target, texture.id)
         glTexImage3D(texture.target, texture.level,
                      internalformat,
                      texture.width, texture.height, texture.images, 0,
                      GL_ALPHA, GL_UNSIGNED_BYTE,
-                     None)
+                     blank)
 
         items = []
         for i, image in enumerate(images):
@@ -2103,7 +2108,7 @@ class ColorBufferImage(BufferImage):
     format = 'RGBA'
 
     def get_texture(self, rectangle=False):
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA, blank_data=False)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 
