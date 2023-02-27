@@ -678,7 +678,7 @@ class ImageData(AbstractImage):
         :rtype: cls or cls.region_class
         """
         internalformat = self._get_internalformat(self._desired_format)
-        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat)
+        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, False, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -706,7 +706,7 @@ class ImageData(AbstractImage):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -2108,7 +2108,7 @@ class ColorBufferImage(BufferImage):
     format = 'RGBA'
 
     def get_texture(self, rectangle=False):
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA, blank_data=False)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 
