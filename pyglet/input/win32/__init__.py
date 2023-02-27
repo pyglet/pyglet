@@ -57,8 +57,7 @@ class Win32ControllerManager(base.ControllerManager):
             def on_disconnect(xdevice):
                 self.dispatch_event('on_disconnect', self._xinput_controllers[xdevice])
 
-        for device in _di_device_manager.devices:
-            self._add_di_controller(device)
+        self._set_initial_didevices()
 
         @_di_device_manager.event
         def on_connect(di_device):
@@ -72,6 +71,14 @@ class Win32ControllerManager(base.ControllerManager):
                 _controller = self._di_controllers[di_device]
                 del self._di_controllers[di_device]
                 pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', _controller)
+
+    def _set_initial_didevices(self):
+        if not _di_device_manager.registered:
+            _di_device_manager.register_device_events()
+            _di_device_manager.set_current_devices()
+
+        for device in _di_device_manager.devices:
+            self._add_di_controller(device)
 
     def _add_di_controller(self, device: DirectInputDevice) -> Optional[base.Controller]:
         controller = _create_controller(device)
