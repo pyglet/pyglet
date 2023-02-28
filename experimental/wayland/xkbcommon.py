@@ -34,13 +34,13 @@ struct_xkb_keymap._fields_ = [
 
 
 class struct_xkb_rule_names(Structure):
-    __slots__ = [
+    _fields_ = [
+        ('rules', c_char_p),
+        ('model', c_char_p),
+        ('layout', c_char_p),
+        ('variant', c_char_p),
+        ('options', c_char_p),
     ]
-
-
-struct_xkb_rule_names._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 
 class struct_xkb_state(Structure):
