@@ -207,8 +207,11 @@ _user32.GetRawInputData.restype = UINT
 _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
 _user32.ChangeWindowMessageFilterEx.restype = BOOL
 _user32.ChangeWindowMessageFilterEx.argtypes = [HWND, UINT, DWORD, c_void_p]
-_user32.RegisterDeviceNotificationW.restype = LPVOID
+_user32.RegisterDeviceNotificationW.restype = HANDLE
 _user32.RegisterDeviceNotificationW.argtypes = [HANDLE, LPVOID, DWORD]
+_user32.UnregisterDeviceNotification.restype = BOOL
+_user32.UnregisterDeviceNotification.argtypes = [HANDLE]
+
 
 # dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
