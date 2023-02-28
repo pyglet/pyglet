@@ -1,9 +1,17 @@
 pyglet 2.0.5
 
+Changes and Improvements
+------------------------
+- windows.key: add support for extended function keys
+- Windows now uses "Apartment Threaded" mode for better compatibility with other libraries.
+- image: allow blanking newly created Textures (skipped by default when creating from image).
+
 Bugfixes
 --------
 - input.macos: Fix ControllerManager hot-plugging on macOS.
 - font.windows: Fix 32bit crashes with DirectWrite font backend.
+- math: Fix incorrect calculation in Mat4.look_at method.
+- image: Fix blitting from regions, caused by invalid unpacking settings.
 
 
 pyglet 2.0.4
