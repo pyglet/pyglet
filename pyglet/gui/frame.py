@@ -63,6 +63,7 @@ class Frame:
         self._cell_size = cell_size
         self._cells = {}
         self._active_widgets = set()
+        self._active_entry = None
         self._order = order
         self._mouse_pos = 0, 0
 
@@ -87,49 +88,84 @@ class Frame:
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
+
+        if self._active_entry: 
+            self._active_entry.on_mouse_press(x, y, buttons, modifiers)
+            self._active_entry = self._active_entry if self._active_entry._focus else None
+        
+
         for widget in self._cells.get(self._hash(x, y), set()):
-            widget.on_mouse_press(x, y, buttons, modifiers)
+            if type(widget).__name__ == 'TextEntry':
+                if self._active_entry == widget: continue
+                widget.on_mouse_press(x, y, buttons, modifiers)
+                self._active_entry = widget if widget._check_hit(x, y) else self._active_entry
+
+            else: widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
+
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
+        if self._active_entry: self._active_entry.on_mouse_release(x, y, buttons, modifiers)
+
         for widget in self._active_widgets:
             widget.on_mouse_release(x, y, buttons, modifiers)
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
+        if self._active_entry: self._active_entry.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+
         for widget in self._active_widgets:
+            if widget == self._active_entry: continue
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
         """Pass the event to any widgets within range of the mouse"""
+        if self._active_entry: self._active_entry.on_mouse_scroll(x, y, index, direction)
+
         for widget in self._cells.get(self._hash(x, y), set()):
+            if widget == self._active_entry: continue
             widget.on_mouse_scroll(x, y, index, direction)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Pass the event to any widgets within range of the mouse"""
+        if self._active_entry: self._active_entry.on_mouse_motion(x, y, dx, dy)
+
         for widget in self._active_widgets:
+            if widget == self._active_entry: continue
             widget.on_mouse_motion(x, y, dx, dy)
         for widget in self._cells.get(self._hash(x, y), set()):
+            if widget == self._active_entry: continue
             widget.on_mouse_motion(x, y, dx, dy)
             self._active_widgets.add(widget)
         self._mouse_pos = x, y
 
     def on_text(self, text):
+        if self._active_entry: 
+            self._active_entry.on_text(text)
+            if not self._active_entry._focus: self._active_entry = None
+
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            if self._active_entry == widget: continue
             widget.on_text(text)
 
     def on_text_motion(self, motion):
+        if self._active_entry: self._active_entry.on_text_motion(motion)
+
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            if self._active_entry == widget: continue
             widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion):
+        if self._active_entry: self._active_entry.on_text_motion_select(motion)
+
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            if self._active_entry == widget: continue
             widget.on_text_motion_select(motion)
 
 

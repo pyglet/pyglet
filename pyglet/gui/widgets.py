@@ -477,8 +477,6 @@ class TextEntry(WidgetBase):
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.enabled:
             return
-        if not self._check_hit(x, y):
-            self._set_focus(False)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if not self.enabled:
@@ -492,6 +490,7 @@ class TextEntry(WidgetBase):
         if self._check_hit(x, y):
             self._set_focus(True)
             self._caret.on_mouse_press(x, y, buttons, modifiers)
+        else: self._set_focus(False)
 
     def on_text(self, text):
         if not self.enabled:
