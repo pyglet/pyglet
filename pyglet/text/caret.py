@@ -357,14 +357,17 @@ class Caret:
         x += self._layout.x
         y += self._layout.y + self._layout.height
 
-        font = self._layout.document.get_font(max(0, self._position - 1))
-        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
-
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))
 
         self._layout.ensure_line_visible(line)
         self._layout.ensure_x_visible(x)
+
+        font = self._layout.document.get_font(max(0, self._position - 1))
+        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
+
+    def on_translation_update(self):
+        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
 
     def on_layout_update(self):
         """Handler for the `IncrementalTextLayout.on_layout_update` event.
