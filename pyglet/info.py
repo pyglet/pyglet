@@ -88,11 +88,6 @@ def dump_gl(context=None):
     print('gl_info.get_version():', info.get_version())
     print('gl_info.get_vendor():', info.get_vendor())
     print('gl_info.get_renderer():', info.get_renderer())
-    print('gl_info.get_extensions():')
-    extensions = list(info.get_extensions())
-    extensions.sort()
-    for name in extensions:
-        print('  ', name)
 
 
 def dump_glx():
