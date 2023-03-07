@@ -567,6 +567,11 @@ ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
 ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
 ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
 
+ct.CTFontDescriptorCopyAttribute.restype = c_void_p
+ct.CTFontDescriptorCopyAttribute.argtypes = [c_void_p, CFStringRef]
+
+kCTFontURLAttribute = c_void_p.in_dll(ct, 'kCTFontURLAttribute')
+
 ######################################################################
 
 # FOUNDATION

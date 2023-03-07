@@ -2,12 +2,13 @@
 
 import math
 import warnings
-from ctypes import c_void_p, c_int32, byref, c_byte
+from ctypes import c_void_p, c_int32, byref, c_byte, c_buffer
 
 from pyglet.font import base
 import pyglet.image
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, kCTFontURLAttribute, kCFStringEncodingUTF8
+from pyglet.window.cocoa.pyglet_view import NSURL
 
 cf = cocoapy.cf
 ct = cocoapy.ct
@@ -183,6 +184,7 @@ class QuartzFont(base.Font):
             traits |= cocoapy.kCTFontItalicTrait
 
         name = str(name)
+        self.traits = traits
         # First see if we can find an appropriate font from our table of loaded fonts.
         cgFont = self._lookup_font_with_family_and_traits(name, traits)
         if cgFont:
@@ -192,7 +194,6 @@ class QuartzFont(base.Font):
             # Create a font descriptor for given name and traits and use it to create font.
             descriptor = self._create_font_descriptor(name, traits)
             self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, size, None))
-
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
 
@@ -202,6 +203,19 @@ class QuartzFont(base.Font):
 
         self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
         self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
+
+    @property
+    def filename(self):
+        descriptor = self._create_font_descriptor(self.name, self.traits)
+        ref = c_void_p(ct.CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute))
+        if ref:
+            url = cocoapy.ObjCInstance(ref, cache=False)  # NSURL
+            filepath = url.fileSystemRepresentation().decode()
+            cf.CFRelease(ref)
+            return filepath
+
+        cf.CFRelease(descriptor)
+        return 'Unknown'
 
     @property
     def name(self):
