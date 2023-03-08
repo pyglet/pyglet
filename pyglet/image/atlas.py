@@ -275,11 +275,13 @@ class TextureArrayBin:
         :rtype: :py:class:`~pyglet.image.TextureArrayRegion`
         :return: The region of an array containing the newly added image.
         """
-        for array in self.arrays[-1]:
-            try:
-                return array.add(img)
-            except pyglet.image.TextureArrayDepthExceeded:
-                pass
+        try:
+            array = self.arrays[-1]
+            return array.add(img)
+        except pyglet.image.TextureArrayDepthExceeded:
+            pass
+        except IndexError:
+            pass
 
         array = pyglet.image.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
         self.arrays.append(array)
