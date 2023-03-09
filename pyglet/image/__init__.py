@@ -118,6 +118,16 @@ class ImageException(Exception):
     pass
 
 
+class TextureArraySizeExceeded(Exception):
+    """Exception occurs ImageData dimensions are larger than the array supports."""
+    pass
+
+
+class TextureArrayDepthExceeded(Exception):
+    """Exception occurs when depth has hit the maximum supported of the array."""
+    pass
+
+
 def load(filename, file=None, decoder=None):
     """Load an image from a file.
 
@@ -1542,32 +1552,17 @@ class Texture3D(Texture, UniformTextureSequence):
 class TextureArrayRegion(TextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture.
     """
-    def __init__(self, x, y, z, width, height, owner):
-        super().__init__(width, height, owner.target, owner.id)
-
-        self.x = x
-        self.y = y
-        self.z = z
-        self.owner = owner
-        owner_u1 = owner.tex_coords[0]
-        owner_v1 = owner.tex_coords[1]
-        owner_u2 = owner.tex_coords[3]
-        owner_v2 = owner.tex_coords[7]
-        scale_u = owner_u2 - owner_u1
-        scale_v = owner_v2 - owner_v1
-        u1 = x / owner.width * scale_u + owner_u1
-        v1 = y / owner.height * scale_v + owner_v1
-        u2 = (x + width) / owner.width * scale_u + owner_u1
-        v2 = (y + height) / owner.height * scale_v + owner_v1
-        z = float(z)
-        self.tex_coords = (u1, v1, z, u2, v1, z, u2, v2, z, u1, v2, z)
 
     def __repr__(self):
-        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height, self.z)
+        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height,
+                                                        self.z)
 
 
 class TextureArray(Texture, UniformTextureSequence):
-    allow_smaller_pack = True
+    def __init__(self, width, height, target, tex_id, max_depth):
+        super().__init__(width, height, target, tex_id)
+        self.max_depth = max_depth
+        self.items = []
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
@@ -1614,9 +1609,7 @@ class TextureArray(Texture, UniformTextureSequence):
                      0)
         glFlush()
 
-        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value)
-        texture.items = []  # No items on creation
-        texture.max_depth = max_depth
+        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value, max_depth)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
 
@@ -1624,22 +1617,30 @@ class TextureArray(Texture, UniformTextureSequence):
 
     def _verify_size(self, image):
         if image.width > self.width or image.height > self.height:
-            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(
-                image.width, image.height, self.width, self.height))
+            raise TextureArraySizeExceeded(f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x{self.height})')
+
+    def add(self, image: pyglet.image.ImageData):
+        if len(self.items) >= self.max_depth:
+            raise TextureArrayDepthExceeded(f"TextureArray is full.")
+
+        self._verify_size(image)
+        start_length = len(self.items)
+        item = self.region_class(0, 0, start_length, image.width, image.height, self)
+        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length)
+        self.items.append(item)
+        return item
 
     def allocate(self, *images):
+        """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
-            raise Exception("The amount of images being added exceeds the depth of this TextureArray.")
+            raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
 
-        textures = []
         start_length = len(self.items)
         for i, image in enumerate(images):
             self._verify_size(image)
             item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
             self.items.append(item)
             image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
-
-        glFlush()
 
         return self.items[start_length:]
 
