@@ -367,16 +367,16 @@ class TruetypeInfo:
         # a fuckwit. 
         header = _read_cmap_format4Header(self._data, offset)
         seg_count = header.seg_count_x2 // 2
-        array_size = struct.calcsize('>%dH' % seg_count)
-        end_count = self._read_array('>%dH' % seg_count,
+        array_size = struct.calcsize(f'>{seg_count}')
+        end_count = self._read_array(f'>{seg_count}',
                                      offset + header.size)
-        start_count = self._read_array('>%dH' % seg_count,
+        start_count = self._read_array(f'>{seg_count}',
                                        offset + header.size + array_size + 2)
-        id_delta = self._read_array('>%dh' % seg_count,
+        id_delta = self._read_array(f'>{seg_count}',
                                     offset + header.size + array_size + 2 + array_size)
         id_range_offset_address = \
             offset + header.size + array_size + 2 + array_size + array_size
-        id_range_offset = self._read_array('>%dH' % seg_count,
+        id_range_offset = self._read_array(f'>{seg_count}',
                                            id_range_offset_address)
         character_map = {}
         for i in range(0, seg_count):
@@ -440,7 +440,7 @@ def _read_table(*entries):
                 setattr(self, pname, pvalue)
 
         def __repr__(self):
-            return '{'+', '.join(['%s = %s' % (pname, pvalue) for pname, pvalue in self.pairs])+'}'
+            return '{'+', '.join([f'{pname} = {pvalue}' for pname, pvalue in self.pairs])+'}'
 
         @staticmethod
         def array(data, offset, count):

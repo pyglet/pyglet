@@ -13,7 +13,7 @@ from urllib.request import urlopen
 
 
 # Get the raw database header file:
-DB_URL = "https://hg.libsdl.org/SDL/raw-file/default/src/joystick/SDL_gamecontrollerdb.h"
+DB_URL = "https://hg.libsdl.org/SDL/raw-file/default/src/joystick/SDL_gamepad_db.h"
 raw = urlopen(DB_URL).read().decode('ascii')
 
 # Format the output directory for the pyglet module:
@@ -28,7 +28,7 @@ win_end = raw.find('#endif', win_start)
 win_raw = raw[win_start:win_end]
 
 # Parse the Mac OSX section:
-mac_string = '#if defined(__MACOSX__)'
+mac_string = '#if defined(__MACOS__)'
 mac_start = raw.find(mac_string) + len(mac_string)
 mac_end = raw.find('#endif', mac_start)
 mac_raw = raw[mac_start:mac_end]

@@ -199,10 +199,9 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
             print(file=self.file)
 
     def handle_ctypes_variable(self, name, ctype, filename, lineno):
-        # This doesn't work.
+        # This doesn't work.  (but I(shenjackyuanjie) still remove the '%' content
         #self.all_names.append(name)
-        #print >> self.file, '%s = %s.indll(_lib, %r)' % \
-        #    (name, str(ctype), name)
+        #print >> self.file, f'{name} = {str(ctype)}.indll(_lib, {name!r})'
         pass
 
 def main(*argv):

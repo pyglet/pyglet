@@ -645,19 +645,16 @@ class ShaderSource:
 
 
 class Shader:
-    """OpenGL Shader object"""
+    """OpenGL shader.
+
+    Shader objects are compiled on instantiation.
+    You can reuse a Shader object in multiple ShaderPrograms.
+
+    `shader_type` is one of ``'compute'``, ``'fragment'``, ``'geometry'``,
+    ``'tesscontrol'``, ``'tessevaluation'``, or ``'vertex'``.
+    """
 
     def __init__(self, source_string: str, shader_type: str):
-        """Create an instance of a Shader object.
-
-        Shader source code should be provided as a Python string.
-        The shader_type should be a string indicating the type.
-        Valid types are: 'compute', 'fragment', 'geometry', 'tesscontrol',
-        'tessevaluation', and 'vertex'.
-
-        Shader objects are compiled on instantiation.
-        You can reuse a Shader object in multiple `ShaderProgram`s.
-        """
         self._id = None
         self.type = shader_type
 
@@ -735,12 +732,11 @@ class Shader:
 
 
 class ShaderProgram:
-    """OpenGL Shader Program"""
+    """OpenGL shader program."""
 
     __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
     def __init__(self, *shaders: Shader):
-        """Create an OpenGL ShaderProgram from one or more Shader objects."""
         assert shaders, "At least one Shader object is required."
         self._id = _link_program(*shaders)
         self._context = pyglet.gl.current_context
@@ -825,6 +821,7 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                This determines how the list is drawn in the given batch.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
                 Using a Batch is strongly recommended.
@@ -867,6 +864,7 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                This determines how the list is drawn in the given batch.
             `indices` : sequence of int
                 Sequence of integers giving indices into the vertex list.
             `batch` : `~pyglet.graphics.Batch`

@@ -10,7 +10,7 @@ canvases = []
 if tablets:
     print('Tablets:')
     for i, tablet in enumerate(tablets):
-        print('  (%d) %s' % (i + 1, tablet.name))
+        print(f'  ({i + 1}) {tablet.name}')
     print('Press number key to open corresponding tablet device.')
 else:
     print('No tablets found.')
@@ -31,22 +31,23 @@ def on_text(text):
     try:
         canvas = tablets[index].open(window)
     except pyglet.input.DeviceException:
-        print('Failed to open tablet %d on window' % index)
+        print(f'Failed to open tablet {index} on window')
         return
 
-    print('Opened %s' % name)
+    print(f'Opened {name}')
 
     @canvas.event
     def on_enter(cursor):
-        print('%s: on_enter(%r)' % (name, cursor))
+        print(f'{name}: on_enter({cursor!r})')
+        
 
     @canvas.event
     def on_leave(cursor):
-        print('%s: on_leave(%r)' % (name, cursor))
+        print(f'{name}: on_leave({cursor!r})')
 
     @canvas.event
     def on_motion(cursor, x, y, pressure, tilt_x, tilt_y, buttons):
-        print('%s: on_motion(%r, %r, %r, %r, %r, %r, %r)' % (name, cursor, x, y, pressure, tilt_x, tilt_y, buttons))
+        print(f'{name}: on_motion({cursor!r}, {x!r}, {y!r}, {pressure!r}, {tilt_x!r}, {tilt_y!r}, {buttons!r})')
 
     # If ExpressKey is supported for the OS, the events will be supported.
     if 'on_express_key_press' in canvas.event_types:
@@ -60,12 +61,12 @@ def on_text(text):
 
 @window.event
 def on_mouse_press(x, y, button, modifiers):
-    print('on_mouse_press(%r, %r, %r, %r' % (x, y, button, modifiers))
+    print(f'on_mouse_press({x!r}, {y!r}, {button!r}, {modifiers!r}')
 
 
 @window.event
 def on_mouse_release(x, y, button, modifiers):
-    print('on_mouse_release(%r, %r, %r, %r' % (x, y, button, modifiers))
+    print(f'on_mouse_release{x!r}, {y!r}, {button!r}, {modifiers!r}')
 
 
 pyglet.app.run()

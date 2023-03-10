@@ -570,3 +570,19 @@ class IStream(com.pIUnknown):
         ('Clone',
          com.STDMETHOD()),
     ]
+
+class DEV_BROADCAST_HDR(Structure):
+    _fields_ = (
+        ('dbch_size', DWORD),
+        ('dbch_devicetype', DWORD),
+        ('dbch_reserved', DWORD),
+    )
+
+class DEV_BROADCAST_DEVICEINTERFACE(Structure):
+    _fields_ = (
+        ('dbcc_size', DWORD),
+        ('dbcc_devicetype', DWORD),
+        ('dbcc_reserved', DWORD),
+        ('dbcc_classguid', com.GUID),
+        ('dbcc_name', ctypes.c_wchar * 256)
+    )

@@ -145,7 +145,7 @@ def _parse_distance(distance, dpi):
         return int(distance)
 
     match = _distance_re.match(distance)
-    assert match, 'Could not parse distance %s' % distance
+    assert match, f'Could not parse distance {distance}'
     if not match:
         return 0
 
@@ -164,7 +164,7 @@ def _parse_distance(distance, dpi):
     elif unit == 'cm':
         return int(value * dpi * 0.393700787)
     else:
-        assert False, 'Unknown distance unit %s' % unit
+        assert False, f'Unknown distance unit {unit}'
 
 
 class _Line:
@@ -190,7 +190,7 @@ class _Line:
         self.boxes = []
 
     def __repr__(self):
-        return '_Line(%r)' % self.boxes
+        return f'_Line({self.boxes})'
 
     def add_box(self, box):
         self.boxes.append(box)
@@ -425,7 +425,7 @@ class _GlyphBox(_AbstractBox):
         return position
 
     def __repr__(self):
-        return '_GlyphBox(%r)' % self.glyphs
+        return f'_GlyphBox({self.glyphs})'
 
 
 class _InlineElementBox(_AbstractBox):
@@ -460,7 +460,7 @@ class _InlineElementBox(_AbstractBox):
             return 1
 
     def __repr__(self):
-        return '_InlineElementBox(%r)' % self.element
+        return f'_InlineElementBox({self.element})'
 
 
 class _InvalidRange:
@@ -2262,7 +2262,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                     line.delete(self)
                 del self.lines[line_index:]
 
-        if content_width_invalid:
+        if content_width_invalid or len(self.lines) == 1:
             # Rescan all lines to look for the new maximum content width
             content_width = 0
             for line in self.lines:
@@ -2302,7 +2302,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.visible_lines.start = start
         self.visible_lines.end = end
 
-    def _update_vertex_lists(self):
+    def _update_vertex_lists(self, update_translation=True):
         # Find lines that have been affected by style changes
         style_invalid_start, style_invalid_end = self.invalid_style.validate()
         self.invalid_vertex_lines.invalidate(
@@ -2345,6 +2345,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
             self._create_vertex_lists(left + line.x, top + y, self._z, line.start, line.boxes, context)
 
+        # Update translation as new and old lines aren't guaranteed to update the translation after.
+        if update_translation:
+            self._update_translation()
+
     @property
     def x(self):
         return self._x
@@ -2386,7 +2390,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
         self._update_scissor_area()
-        self._init_document()
 
     @property
     def anchor_y(self):
@@ -2396,7 +2399,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
         self._update_scissor_area()
-        self._init_document()
 
     @property
     def width(self):
@@ -2448,6 +2450,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             for vlist in line.vertex_lists:
                 vlist.translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
 
+        self.dispatch_event('on_translation_update')
+
     @property
     def view_x(self):
         """Horizontal scroll offset.
@@ -2487,9 +2491,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         # Invalidate invisible/visible lines when y scrolls
         # view_y must be negative.
         self._translate_y = min(0, max(self.height - self.content_height, view_y))
-        self._update_translation()
         self._update_visible_lines()
-        self._update_vertex_lists()
+        self._update_vertex_lists(update_translation=False)
+        self._update_translation()
 
     # Visible selection
 
@@ -2640,7 +2644,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x - self._translate_x, line.y + self._translate_y + baseline
+        return x, line.y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2653,8 +2657,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :rtype: int
         """
+
         x -= self._translate_x
-        y -= self._translate_y + self._height
+        y -= self._height + self._y - self._translate_y
 
         line_index = 0
         for line in self.lines:
@@ -2769,14 +2774,19 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 X coordinate
 
         """
-        x += self.view_x - self._x
+        x -= self._x
 
-        if x <= self.view_x + 10:
-            self.view_x = x - 10
+        if x <= self.view_x:
+            self.view_x = x
+
         elif x >= self.view_x + self.width:
-            self.view_x = x - self.width + 10
-        elif x >= self.view_x + self.width - 10 and self.content_width > self.width:
-            self.view_x = x - self.width + 10
+            self.view_x = x - self.width
+
+        elif (x >= self.view_x + self.width) and (self.content_width > self.width):
+            self.view_x = x - self.width
+
+        elif self.view_x + self.width > self.content_width:
+            self.view_x = self.content_width
 
     if _is_pyglet_doc_run:
         def on_layout_update(self):
@@ -2794,3 +2804,4 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
 
 IncrementalTextLayout.register_event_type('on_layout_update')
+IncrementalTextLayout.register_event_type('on_translation_update')

@@ -31,31 +31,30 @@ def print_ffmpeg_info():
 def print_source_info(source):
     if source.info:
         if source.info.title:
-            print('Title: %s' % source.info.title)
+            print(f'Title: {source.info.title}')
         if source.info.album:
-            print('Album: %s' % source.info.album)
+            print(f'Album: {source.info.album}')
         if source.info.author:
-            print('Author: %s' % source.info.author)
+            print(f'Author: {source.info.author}')
         if source.info.year:
-            print('Year: %d' % source.info.year)
+            print(f'Year: {source.info.year}')
         if source.info.track:
-            print('Track: %d' % source.info.track)
+            print(f'Track: {source.info.track}')
         if source.info.genre:
-            print('Genre: %s' % source.info.genre)
+            print(f'Genre: {source.info.genre}')
         if source.info.copyright:
-            print('Copyright: %s' % source.info.copyright)
+            print(f'Copyright: {source.info.copyright}')
         if source.info.comment:
-            print('Comment: %s' % source.info.comment)
+            print(f'Comment: {source.info.comment}')
 
     if source.audio_format:
         af = source.audio_format
-        print('Audio: %d channel(s), %d bits, %.02f Hz' % (
-            af.channels, af.sample_size, af.sample_rate))
+        print(f'Audio: {af.channels} channel(s), {af.sample_size} bits, {af.sample_rate:.02f} Hz')
 
     if source.video_format:
         vf = source.video_format
         if vf.frame_rate:
-            frame_rate = '%.02f' % vf.frame_rate
+            frame_rate = f'{vf.frame_rate:.02f}'
         else:
             frame_rate = 'unknown'
         if vf.sample_aspect >= 1:
@@ -64,15 +63,13 @@ def print_source_info(source):
         else:
             display_width = vf.width
             display_height = vf.sample_aspect / vf.height
-        print('Video: %dx%d at aspect %r (displays at %dx%d), %s fps' % (
-            vf.width, vf.height, vf.sample_aspect,
-            display_width, display_height, frame_rate))
+        print(f'Video: {vf.width}x{vf.height} at aspect {vf.sample_aspect!r} (displays at {display_width}x{display_height}), {frame_rate} fps')
 
     hours = int(source.duration / 3600)
     minutes = int(source.duration / 60) % 60
     seconds = int(source.duration) % 60
     milliseconds = int(source.duration * 1000) % 1000
-    print('Duration: %d:%02d:%02d.%03d' % (hours, minutes, seconds, milliseconds))
+    print(f'Duration: {hours}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}')
 
 
 if __name__ == '__main__':
@@ -89,4 +86,4 @@ if __name__ == '__main__':
         print_source_info(source)
         del source
     except pyglet.media.MediaDecodeException:
-        print('Codec not available to open: %s' % filename)
+        print(f'Codec not available to open: {filename}')

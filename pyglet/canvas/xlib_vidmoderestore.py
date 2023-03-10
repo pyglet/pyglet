@@ -58,9 +58,8 @@ class ModePacket:
         return cls(display.strip(asbytes('\0')), screen, width, height, rate)
 
     def __repr__(self):
-        return '%s(%r, %r, %r, %r, %r)' % (
-            self.__class__.__name__, self.display, self.screen,
-            self.width, self.height, self.rate)
+        return f'{self.__class__.__name__}({self.display}, ' \
+               f'{self.screen}, {self.width}, {self.height}, {self.rate})'
 
     def set(self):
         display = xlib.XOpenDisplay(self.display)

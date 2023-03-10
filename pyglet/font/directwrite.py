@@ -1209,19 +1209,32 @@ class IDWriteFontFallback(com.pIUnknown):
     ]
 
 
-class IDWriteFactory2(IDWriteFactory1, com.pIUnknown):
+class IDWriteColorGlyphRunEnumerator(com.pIUnknown):
+    _methods_ = [
+        ('MoveNext',
+         com.STDMETHOD()),
+        ('GetCurrentRun',
+         com.STDMETHOD()),
+    ]
+
+
+class IDWriteFactory2(IDWriteFactory1, IDWriteFactory, com.pIUnknown):
     _methods_ = [
         ('GetSystemFontFallback',
          com.STDMETHOD(POINTER(IDWriteFontFallback))),
         ('CreateFontFallbackBuilder',
          com.STDMETHOD()),
         ('TranslateColorGlyphRun',
-         com.STDMETHOD()),
+         com.STDMETHOD(FLOAT, FLOAT, POINTER(DWRITE_GLYPH_RUN), c_void_p, DWRITE_MEASURING_MODE, c_void_p, UINT32,
+                       POINTER(IDWriteColorGlyphRunEnumerator))),
         ('CreateCustomRenderingParams2',
          com.STDMETHOD()),
         ('CreateGlyphRunAnalysis',
          com.STDMETHOD()),
     ]
+
+
+IID_IDWriteFactory2 = com.GUID(0x0439fc60, 0xca44, 0x4994, 0x8d, 0xee, 0x3a, 0x9a, 0xf7, 0xb7, 0x32, 0xec)
 
 
 class IDWriteFontSet(com.pIUnknown):
@@ -1290,20 +1303,17 @@ class IDWriteFactory3(IDWriteFactory2, com.pIUnknown):
     ]
 
 
-class IDWriteColorGlyphRunEnumerator1(com.pIUnknown):
+class IDWriteColorGlyphRunEnumerator1(IDWriteColorGlyphRunEnumerator, com.pIUnknown):
     _methods_ = [
-        ('MoveNext',
-         com.STDMETHOD()),
-        ('GetCurrentRun',
+        ('GetCurrentRun1',
          com.STDMETHOD()),
     ]
-
 
 class IDWriteFactory4(IDWriteFactory3, com.pIUnknown):
     _methods_ = [
         ('TranslateColorGlyphRun4',  # Renamed to prevent clash from previous factories.
-         com.STDMETHOD(D2D_POINT_2F, DWRITE_GLYPH_RUN, c_void_p, DWRITE_GLYPH_IMAGE_FORMATS, DWRITE_MEASURING_MODE,
-                       c_void_p, UINT32, POINTER(IDWriteColorGlyphRunEnumerator1))),
+         com.STDMETHOD(D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), c_void_p, DWRITE_GLYPH_IMAGE_FORMATS,
+                       DWRITE_MEASURING_MODE, c_void_p, UINT32, POINTER(IDWriteColorGlyphRunEnumerator1))),
         ('ComputeGlyphOrigins_',
          com.STDMETHOD()),
         ('ComputeGlyphOrigins',
@@ -1800,21 +1810,38 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
     def is_color_run(self, run):
         """Will return True if the run contains a colored glyph."""
-        enumerator = IDWriteColorGlyphRunEnumerator1()
         try:
-            color = self.font._write_factory.TranslateColorGlyphRun4(no_offset,
-                                                                     run,
-                                                                     None,
-                                                                     DWRITE_GLYPH_IMAGE_FORMATS_ALL,
-                                                                     self.measuring_mode,
-                                                                     None,
-                                                                     0,
-                                                                     enumerator)
+            if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
+                enumerator = IDWriteColorGlyphRunEnumerator1()
+                color = self.font._write_factory.TranslateColorGlyphRun4(
+                    no_offset,
+                    run,
+                    None,
+                    DWRITE_GLYPH_IMAGE_FORMATS_ALL,
+                    self.measuring_mode,
+                    None,
+                    0,
+                    byref(enumerator)
+                )
+            elif WINDOWS_8_1_OR_GREATER:
+                enumerator = IDWriteColorGlyphRunEnumerator()
+                color = self.font._write_factory.TranslateColorGlyphRun(
+                    0.0, 0.0,
+                    run,
+                    None,
+                    self.measuring_mode,
+                    None,
+                    0,
+                    byref(enumerator)
+                )
+            else:
+                return False
 
             return True
-        except OSError:
-            # HRESULT returns -2003283956 (DWRITE_E_NOCOLOR) if no color run is detected.
-            pass
+        except OSError as dw_err:
+            # HRESULT returns -2003283956 (DWRITE_E_NOCOLOR) if no color run is detected. Anything else is unexpected.
+            if dw_err.winerror != -2003283956:
+                raise dw_err
 
         return False
 
@@ -2363,12 +2390,16 @@ class Win32DirectWriteFont(base.Font):
     def _initialize_direct_write(cls):
         """ All direct write fonts needs factory access as well as the loaders."""
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
-            cls._write_factory = IDWriteFactory5()
-            DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IID_IDWriteFactory5, byref(cls._write_factory))
+             cls._write_factory = IDWriteFactory5()
+             guid = IID_IDWriteFactory5
+        elif WINDOWS_8_1_OR_GREATER:
+            cls._write_factory = IDWriteFactory2()
+            guid = IID_IDWriteFactory2
         else:
-            # Windows 7 and 8 we need to create our own font loader, collection, enumerator, file streamer... Sigh.
             cls._write_factory = IDWriteFactory()
-            DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IID_IDWriteFactory, byref(cls._write_factory))
+            guid = IID_IDWriteFactory
+
+        DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, guid, byref(cls._write_factory))
 
     @classmethod
     def _initialize_custom_loaders(cls):

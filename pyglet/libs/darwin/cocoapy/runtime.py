@@ -415,6 +415,7 @@ objc.sel_isEqual.argtypes = [c_void_p, c_void_p]
 objc.sel_registerName.restype = c_void_p
 objc.sel_registerName.argtypes = [c_char_p]
 
+
 ######################################################################
 # void *objc_autoreleasePoolPush(void)
 objc.objc_autoreleasePoolPush.restype = c_void_p
@@ -423,14 +424,6 @@ objc.objc_autoreleasePoolPush.argtypes = []
 # void objc_autoreleasePoolPop(void *pool)
 objc.objc_autoreleasePoolPop.restype = None
 objc.objc_autoreleasePoolPop.argtypes = [c_void_p]
-
-# id objc_autoreleaseReturnValue(id value)
-objc.objc_autoreleaseReturnValue.restype = c_void_p
-objc.objc_autoreleaseReturnValue.argtypes = [c_void_p]
-
-# id objc_autoreleaseReturnValue(id value)
-objc.objc_autorelease.restype = c_void_p
-objc.objc_autorelease.argtypes = [c_void_p]
 
 ######################################################################
 # Constants
@@ -557,7 +550,7 @@ def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
     if argtypes:
         objc.objc_msgSendSuper.argtypes = [OBJC_SUPER_PTR, c_void_p] + argtypes
     else:
-        objc.objc_msgSendSuper.argtypes = [OBJC_SUPER_PTR, c_void_p]
+        objc.objc_msgSendSuper.argtypes = None
     result = objc.objc_msgSendSuper(byref(super_struct), selector, *args)
     if restype == c_void_p:
         result = c_void_p(result)
@@ -751,7 +744,6 @@ class ObjCMethod:
 
         self.nargs = objc.method_getNumberOfArguments(method)
         self.imp = c_void_p(objc.method_getImplementation(method))
-
         self.argument_types = []
         for i in range(self.nargs):
             buffer = c_buffer(512)
@@ -762,9 +754,10 @@ class ObjCMethod:
         try:
             self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
         except:
-            # print('no argtypes encoding for %s (%s)' % (self.name, self.argument_types))
+            # print(f'no argtypes encoding for {self.name} ({self.argument_types})')
             self.argtypes = None
         # Get types for the return type.
+
         try:
             if self.return_type == b'@':
                 self.restype = ObjCInstance
@@ -773,7 +766,7 @@ class ObjCMethod:
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
         except:
-            # print('no restype encoding for %s (%s)' % (self.name, self.return_type))
+            # print(f'no restype encoding for {self.name} ({self.return_type})')
             self.restype = None
 
         self.func = None
@@ -809,7 +802,6 @@ class ObjCMethod:
             self.prototype = CFUNCTYPE(c_void_p, *self.argtypes)
         else:
             self.prototype = CFUNCTYPE(self.restype, *self.argtypes)
-
         return self.prototype
 
     def __repr__(self):
@@ -834,15 +826,12 @@ class ObjCMethod:
         f = self.get_callable()
         try:
             result = f(objc_id, self.selector, *args)
-            # if result != None:
-            #     print("result1", self, result, self.restype)
+
             # Convert result to python type if it is a instance or class pointer.
             if self.restype == ObjCInstance:
                 result = ObjCInstance(result)
             elif self.restype == ObjCClass:
                 result = ObjCClass(result)
-            # if result != None:
-            #     print("result2", self, result, self.restype)
             return result
         except ArgumentError as error:
             # Add more useful info to argument error exceptions, then reraise.
@@ -901,8 +890,8 @@ class ObjCClass:
 
         # Check if we've already created a Python object for this class
         # and if so, return it rather than making a new one.
-        #if name in cls._registered_classes:
-        #    return cls._registered_classes[name]
+        if name in cls._registered_classes:
+            return cls._registered_classes[name]
 
         # Otherwise create a new Python object and then initialize it.
         objc_class = super(ObjCClass, cls).__new__(cls)
@@ -913,11 +902,11 @@ class ObjCClass:
         objc_class._as_parameter_ = ptr  # for ctypes argument passing
 
         # Store the new class in dictionary of registered classes.
-        #cls._registered_classes[name] = objc_class
+        cls._registered_classes[name] = objc_class
 
         # Not sure this is necessary...
-        #objc_class.cache_instance_methods()
-        #objc_class.cache_class_methods()
+        objc_class.cache_instance_methods()
+        objc_class.cache_class_methods()
 
         return objc_class
 
@@ -962,7 +951,7 @@ class ObjCClass:
             method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
-                #self.instance_methods[name] = objc_method
+                self.instance_methods[name] = objc_method
                 return objc_method
         return None
 
@@ -979,7 +968,7 @@ class ObjCClass:
             method = c_void_p(objc.class_getClassMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
-                #self.class_methods[name] = objc_method
+                self.class_methods[name] = objc_method
                 return objc_method
         return None
 
@@ -1124,9 +1113,6 @@ def get_cached_instances():
     """For debug purposes, return a list of instance names.
     Useful for debugging if an object is leaking."""
     return [obj.objc_class.name for obj in ObjCInstance._cached_objects.values()]
-
-
-######################################################################
 
 
 def convert_method_arguments(encoding, args):
@@ -1293,8 +1279,6 @@ class ObjCSubclass:
                     result = result.ptr.value
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
-
-                print("objc_class_method", py_cls)
                 return result
 
             name = f.__name__.replace('_', ':')
@@ -1351,7 +1335,7 @@ def _obj_observer_dealloc(objc_obs, selector_name):
     objc_ptr = get_instance_variable(objc_obs, 'observed_object', c_void_p)
     if objc_ptr:
         objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
-        objc_i = ObjCInstance._cached_objects.pop(objc_ptr, None)
+        ObjCInstance._cached_objects.pop(objc_ptr, None)
 
     send_super(objc_obs, selector_name)
 
@@ -1367,7 +1351,6 @@ def _clear_arp_objects(pool_id):
     2) Some objects such as ObjCSubclass's must be retained.
     3) When a pool is drained and dealloc'd, clear all ObjCInstances in that pool that are not retained.
     """
-    #if objc_i.objc_class.name == b"NSAutoreleasePool":
     for cobjc_ptr in list(ObjCInstance._cached_objects.keys()):
         cobjc_i = ObjCInstance._cached_objects[cobjc_ptr]
         if cobjc_i.retained is False and cobjc_i.pool == pool_id:

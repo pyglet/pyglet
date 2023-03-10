@@ -175,7 +175,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def _write_to_stream(self, nbytes=None):
         if nbytes is None:
             nbytes = self.stream.writable_size
-        assert _debug('PulseAudioPlayer: Requested to write %d bytes to stream' % nbytes)
+        assert _debug(f'PulseAudioPlayer: Requested to write {nbytes} bytes to stream')
 
         seek_mode = pa.PA_SEEK_RELATIVE
         if self._clear_write:

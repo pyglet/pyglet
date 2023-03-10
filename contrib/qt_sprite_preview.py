@@ -5,13 +5,22 @@
 
    To load images, choose File -> Open Image.
    Images loaded will be listed in the Images menu.
-   By unchecking an image (or clicking on it), it will be deleted from the list.
+   By selecting an image in the menu list, it will be unloaded.
 
    Names in parentheses will be used for the sampler2D name.
+
+   You can open a shader (both vert and frag) at the same time. Text is allowed, but will load into the fragment shader.
+   Saving a shader saves both frag and vertex (IE: test becomes test.vert and test.frag)
+
+   Scrolling mouswheel also zooms in
 """
 
 import os
 import sys
+import traceback
+
+from PyQt5.QtGui import QWheelEvent
+
 import pyglet
 
 from PyQt5.QtWidgets import QFileDialog
@@ -82,7 +91,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """A sprite group that uses multiple active textures.
     """
 
-    def __init__(self, textures, blend_src, blend_dest, program=None, order=0, parent=None):
+    def __init__(self, textures, blend_src, blend_dest, program=None, parent=None):
         """Create a sprite group for multiple textures and samplers.
            All textures must share the same target type.
 
@@ -101,7 +110,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         self.images = textures
         texture = list(self.images.values())[0]
         self.target = texture.target
-        super().__init__(texture, blend_src, blend_dest, program, order, parent)
+        super().__init__(texture, blend_src, blend_dest, program, parent)
 
         self.program.use()
         for idx, name in enumerate(self.images):
@@ -128,7 +137,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glActiveTexture(GL_TEXTURE0)
 
     def __repr__(self):
-        return '%s(%r-%d)' % (self.__class__.__name__, self.texture, self.texture.id)
+        return f'{self.__class__.__name__}({self.texture!r}-{int(self.texture.id)})'
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
@@ -167,7 +176,7 @@ class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
 
         self._batch = batch or pyglet.graphics.get_default_batch()
 
-        self._group = MultiTextureSpriteGroup(imgs, blend_src, blend_dest, self.program, 0, group)
+        self._group = MultiTextureSpriteGroup(imgs, blend_src, blend_dest, self.program, group)
 
         self._subpixel = subpixel
         self._create_vertex_list()
@@ -242,10 +251,26 @@ class Ui_MainWindow:
         self.actionOpen_Image = QtWidgets.QAction(MainWindow)
         self.actionOpen_Image.setObjectName("actionOpen_Image")
         self.actionOpen_Image.triggered.connect(self.loadImages)
+        self.actionOpen_Image.setShortcut("Ctrl+I")
+
+        self.actionOpen_Shader = QtWidgets.QAction(MainWindow)
+        self.actionOpen_Shader.setObjectName("actionOpen_Shader")
+        self.actionOpen_Shader.triggered.connect(self.loadShaders)
+        self.actionOpen_Shader.setShortcut("Ctrl+O")
+
+        self.actionSave_Shader = QtWidgets.QAction(MainWindow)
+        self.actionSave_Shader.setObjectName("actionSave_Shader")
+        self.actionSave_Shader.triggered.connect(self.saveShaders)
+        self.actionSave_Shader.setStatusTip('Saves both Shader Files')
+        self.actionSave_Shader.setShortcut("Ctrl+S")
+
         self.actionExit = QtWidgets.QAction(MainWindow)
         self.actionExit.triggered.connect(self.closeProgram)
         self.actionExit.setObjectName("actionExit")
         self.menuFile.addAction(self.actionOpen_Image)
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionOpen_Shader)
+        self.menuFile.addAction(self.actionSave_Shader)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExit)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -300,10 +325,10 @@ class Ui_MainWindow:
 
     def loadImages(self):
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self._window, "Select Image File", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
+        #options |= QFileDialog.DontUseNativeDialog
+        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
                                                   options=options)
-        if fileName:
+        for fileName in fileNames:
             if not self.images:
                 self.imageMenu.removeAction(self.noImageAction)
 
@@ -319,6 +344,42 @@ class Ui_MainWindow:
             action.image = image
             self.images.append(image)
             self.imageMenu.addAction(action)
+
+    def loadShaders(self):
+        options = QFileDialog.Options()
+
+        #options |= QFileDialog.DontUseNativeDialog
+        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
+                                                  options=options)
+        for fileName in fileNames:
+            ext = os.path.splitext(fileName)[1]
+            if ext == '.vert':
+                dest = self.vertex_source_edit
+            elif ext in ('.txt', '.frag'):
+                dest = self.fragSourceEdit
+            else:
+                dest = self.fragSourceEdit
+
+            with open(fileName, 'r') as f:
+                text = f.read()
+                dest.setText(text)
+
+    def saveShaders(self):
+        options = QFileDialog.Options()
+
+        # options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self._window, "Saving Both Shader Files (vert and frag)", "",
+
+                                                  options=options)
+        if fileName:
+            vert_filename = f"{fileName}.vert"
+            frag_filename = f"{fileName}.frag"
+
+            with open(vert_filename, 'w') as f:
+                f.write(self.vertex_source_edit.toPlainText())
+
+            with open(frag_filename, 'w') as f:
+                f.write(self.fragSourceEdit.toPlainText())
 
     def removeImage(self, actionWidget):
         if self.imageMenu:
@@ -347,7 +408,9 @@ class Ui_MainWindow:
         self.label_2.setText(_translate("MainWindow", "Fragment Source:"))
         self.compileShaderBtn.setText(_translate("MainWindow", "Compile Shaders"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.actionOpen_Image.setText(_translate("MainWindow", "Open Image"))
+        self.actionOpen_Image.setText(_translate("MainWindow", "Open Images"))
+        self.actionOpen_Shader.setText(_translate("MainWindow", "Open Shader"))
+        self.actionSave_Shader.setText(_translate("MainWindow", "Save Shader"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.imageMenu.setTitle(_translate("MainWindow", "Images"))
         self.noImageAction.setText(_translate("MainWindow", "No Images Loaded"))
@@ -390,9 +453,23 @@ class PygletWidget(QOpenGLWidget):
         self.timer.setInterval(0)
         self.timer.start()
 
+        self.zoom = 1.0
+
         self.elapsed = 0
 
         pyglet.clock.schedule_interval(self.update_time_uniform, 1 / 60.0)
+
+    def wheelEvent(self, event: QWheelEvent):
+        super().wheelEvent(event)
+        if event.angleDelta().y() > 0:
+            self.zoom *= 2
+        else:
+            self.zoom /= 2
+
+        self.zoom = pyglet.math.clamp(self.zoom, 0.125, 40.0)
+
+        self.view = pyglet.math.Mat4().scale((self.zoom, self.zoom, 1.0))
+        event.accept()
 
     def update_time_uniform(self, dt):
         self.elapsed += dt
@@ -493,10 +570,16 @@ class PygletWidget(QOpenGLWidget):
 
         self._view_matrix = matrix
 
+      
+def excepthook(exc_type, exc_value, exc_tb):
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    print(tb)
 
+   
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     ui = Ui_MainWindow()
+    sys.excepthook = excepthook
     window = QtWidgets.QMainWindow()
     ui.setupUi(window)
     window.show()

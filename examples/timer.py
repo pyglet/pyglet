@@ -30,7 +30,7 @@ class Timer:
         if self.running:
             self.time += dt
             m, s = divmod(self.time, 60)
-            self.label.text = '%02d:%02d' % (m, s)
+            self.label.text = f'{m:02d}{s:02d}'
             if m >= 5:
                 self.label.color = (180, 0, 0, 255)
 

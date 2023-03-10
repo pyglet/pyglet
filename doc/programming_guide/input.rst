@@ -1,17 +1,19 @@
-Working with other input devices
-================================
+Controllers & Joysticks
+=======================
 
 pyglet's :py:mod:`~pyglet.input` module allows you to accept input
-from any USB human interface device (HID). High-level abstractions are
-provided for working with game controllers, joysticks, and the Apple
-Remote. The game controller abstraction is suited for modern gamepads,
-such as are found on home video game consoles. The joystick abstraction
-is more generalized, and works with devices with an arbitrary number of
-buttons, axis, and hats. This includes devices like steering wheels,
-joysticks used for flight simulators, and just about anything else. For
-most types of games, the Controller abstraction is usually the better
-choice. For advanced use cases, it's also possible to access the low-level
-devices directly.
+from any USB or Bluetooth human interface device (HID). High-level
+abstractions are provided for working with game controllers, joysticks,
+and the Apple Remote, with named and normalized inputs. The game controller
+abstraction is suited for modern gamepads, such as are found on home video game
+consoles. The joystick abstraction is more generalized, and suits devices with
+an arbitrary number of buttons, axis, and hats. This includes flight sticks,
+steering wheels, and just about anything else with buttons and axis inputs. For
+most types of games, the Controller abstraction is usually the easier choice.
+
+For advanced use cases, it's also possible to access the low-level input
+devices directly. The only read advantage to doing things is way, is that you
+access the raw input values without normalization.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
 devices, and a ControllerManager class to support hot-plugging of Controllers::
@@ -38,12 +40,12 @@ devices, and a ControllerManager class to support hot-plugging of Controllers::
 Using Controllers
 -----------------
 
-Controllers have a strictly defined set of inputs that mimic the
-layout of popular video game console Controllers. This includes two
-analog sticks, a directional pad (dpad), face and shoulder buttons,
-as well as start/back/guide and stick press buttons. Many controllers
-also include the ability to play rumble effects (vibration).
-The following platform interfaces are used for Controller support:
+Controllers have a strictly defined set of inputs that mimic the layout of
+popular video game console Controllers. This includes two analog sticks, analog
+triggers, a directional pad (dpad), face and shoulder buttons, and
+start/back/guide and stick press buttons. Many controllers also include the
+ability to play rumble effects (vibration). The following platform interfaces
+are used for Controller support:
 
     .. list-table::
         :header-rows: 1
@@ -64,9 +66,11 @@ The following platform interfaces are used for Controller support:
           - IOKit
           - rumble not yet implemented
 
-Before using a controller, you must find it and open it. A ControllerManager
-class is provided to allow hot-plugging of Controllers, but they can also
-be opened manually. To manually get a list of all controllers currently
+Before using a controller, you must find it and open it. You can either list
+and open Controllers manually, or use a :ref:`guide_controller-manager`.
+A ControllerManager provides useful events for easily handling hot-plugging
+of Controllers, which  is described in a following section. First, however,
+lets look at how to do this manually. To get a list of all controllers currently
 connected to your computer, call pyglet.input.get_controllers()::
 
     controllers = pyglet.input.get_controllers()
@@ -75,8 +79,8 @@ Then choose a controller from the list and call `Controller.open()` to open it::
 
     if controllers:
         controller = controllers[0]
+        controller.open()
 
-    controller.open()
 
 Once opened, you you can start receiving data from the the inputs.
 A variety of analog and digital :py:class:`~pyglet.input.Control` types
@@ -110,7 +114,7 @@ following analog controls are available:
           - float
           - 0,1
 
-        * - lefttrigger
+        * - righttrigger
           - float
           - 0,1
 
@@ -140,9 +144,9 @@ The following digital controls are available:
         * - guide
           - usually in the center, with a company logo
         * - leftstick
-          - pressing in the left analog stick
+          - pressing in on the left analog stick
         * - rightstick
-          - pressing in the right analog stick
+          - pressing in on the right analog stick
         * - dpleft
           -
         * - dpright
@@ -152,15 +156,19 @@ The following digital controls are available:
         * - dpdown
           -
 
-These values can be read in two ways. All controls listed above are properties
-on the controller instance, so they can be manually queried in your game loop::
+These values can be read in two ways. First, you can just query them manually
+in your game loop. All control names listed above are properties on the
+controller instance::
 
-    controller_instance.a       # boolean
-    controller_instance.leftx   # float
+    # controller_instance.a       (boolean)
+    # controller_instance.leftx   (float)
+
+    if controller_instance.a == True:
+        # do something
 
 
 Alternatively, since controllers are a subclass of :py:class:`~pyglet.event.EventDispatcher`,
-events will be dispatched when any of the values change. This is generally the
+events will be dispatched when any of the values change. This is usually the
 recommended way to handle input, since it reduces the chance of "missed" button
 presses due to slow polling. The different controls are grouped into the following
 event types:
@@ -193,11 +201,10 @@ event types:
           - :py:class:`~pyglet.input.Controller`, `str`, `float`
 
 
-Here is how you would handle the analog events::
+Analog events can be handled like this::
 
     @controller.event
     def on_stick_motion(controller, name, x_value, y_value):
-        # Optionally enforce a "deadzone"
 
         if name == "leftstick":
             # Do something with the x/y_values
@@ -212,7 +219,7 @@ Here is how you would handle the analog events::
         elif name == "righttrigger":
             # Do something with the value
 
-Here is how you would handle the digital events::
+Digital events can be handled like this::
 
     @controller.event
     def on_button_press(controller, button_name):
@@ -254,13 +261,15 @@ are both strong and weak effects, which can be played independently::
 The `strength` parameter should be on a scale of 0-1. Values outside of
 this range will be clamped. The optional `duration` parameter is in seconds.
 The maximum duration can vary from platform to platform, but is usually
-at least 5 seconds. If you call play again while an existing effect is
-still playing, it will replace the current one. You can also stop
-playback of a rumble effect at any time::
+at least 5 seconds. If you play another effect while an existing effect is
+still playing, it will replace it. You can also stop playback of a rumble
+effect at any time::
 
     controller.rumble_stop_weak()
     controller.rumble_stop_strong()
 
+
+.. _guide_controller-manager:
 
 ControllerManager
 ^^^^^^^^^^^^^^^^^
@@ -268,25 +277,23 @@ ControllerManager
 To simplify hot-plugging of Controllers, the :py:class:`~pyglet.input.ControllerManager`
 class is available. This class has a `get_controllers()` method to be used
 in place of `pyglet.input.get_controllers()`. There are also `on_connect`
-and `on_disconnect` events, which dispatch a Controller instance
-whenever one is connected or disconnected. If case a previously connected
-Controller is re-connected, the same instance will be returned when possible.
+and `on_disconnect` events, which dispatch a Controller instance whenever one
+is connected or disconnected. First lets review the basic functionality.
 
 To use a ControllerManager, first create an instance::
 
     manager = pyglet.input.ControllerManager()
 
-You can then query the currently connected controllers, similar to
-doing it directly::
+You can then query the currently connected controllers from this instance.
+(An empty list is returned if no controllers are detected)::
 
     controllers = manager.get_controllers()
 
-As usual, choose a controller from the list and call `Controller.open()` to open it::
+Choose a controller from the list and call `Controller.open()` to open it::
 
     if controllers:
         controller = controllers[0]
-
-    controller.open()
+        controller.open()
 
 To handle controller connections, attach handlers to the following methods::
 
@@ -299,6 +306,11 @@ To handle controller connections, attach handlers to the following methods::
         print(f"Disconnected:  {controller}")
 
 
+Those are the basics, and provide the building blocks necessary to implement
+hot-plugging of Controllers in your game. For an example of bringing these
+concepts together, have a look at ``examples/input/controller.py`` in the
+repository.
+
 .. note:: If you are using a ControllerManager, then you should not use
           `pyglet.input.get_controllers()` directly. The results are
           undefined. Use `ControllerManager.get_controllers()` instead.
@@ -307,7 +319,7 @@ To handle controller connections, attach handlers to the following methods::
 Using Joysticks
 ---------------
 
-Before using a joystick, you must find it and open it.  To get a list
+Before using a joystick, you must find it and open it. To get a list
 of all joystick devices currently connected to your computer, call
 :py:func:`pyglet.input.get_joysticks`::
 
@@ -318,22 +330,19 @@ the device::
 
     if joysticks:
         joystick = joysticks[0]
-    joystick.open()
+        joystick.open()
 
 The current position of the joystick is recorded in its 'x' and 'y'
 attributes, both of which are normalized to values within the range
 of -1 to 1.  For the x-axis, `x` = -1 means the joystick is pushed
 all the way to the left and `x` = 1 means the joystick is pushed to the right.
 For the y-axis, a value of `y` = -1 means that the joystick is pushed up
-and a value of `y` = 1 means that the joystick is pushed down.
-
-If your joystick has two analog controllers, the position of the
-second controller is typically given by `z` and `rz`, where `z` is the
-horizontal axis position and `rz` is the vertical axis position.
+and a value of `y` = 1 means that the joystick is pushed down. If other
+axis exist, they will be labeled `z`, `rx`, `ry`, or `rz`.
 
 The state of the joystick buttons is contained in the `buttons`
-attribute as a list of boolean values.  A True value indicates that
-the corresponding button is being pressed.  While buttons may be
+attribute as a list of boolean values. A True value indicates that
+the corresponding button is being pressed. While buttons may be
 labeled A, B, X, or Y on the physical joystick, they are simply
 referred to by their index when accessing the `buttons` list. There
 is no easy way to know which button index corresponds to which

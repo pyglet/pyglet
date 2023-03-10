@@ -130,7 +130,7 @@ in the constructor.  If you do this, you may also want to handle the
 
     @window.event
     def on_resize(width, height):
-        print('The window was resized to %dx%d' % (width, height))
+        print(f'The window was resized to {width},{height}')
 
 You can specify a minimum and maximum size that the window can be resized to
 by the user with the :py:meth:`~pyglet.window.Window.set_minimum_size` and

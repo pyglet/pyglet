@@ -68,7 +68,7 @@ class GLXInfo:
         minor = c_int()
         if not glXQueryVersion(self.display, byref(major), byref(minor)):
             raise GLXInfoException('Could not determine GLX server version')
-        return '%s.%s' % (major.value, minor.value)
+        return f'{major.value}.{minor.value}'
 
     def get_server_extensions(self):
         self.check_display()

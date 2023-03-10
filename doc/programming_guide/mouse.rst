@@ -1,5 +1,5 @@
-Working with the mouse
-======================
+Mouse input
+===========
 
 All pyglet windows can receive input from a 3 button mouse with a
 2 dimensional scroll wheel.  The mouse pointer is typically drawn by the
@@ -70,7 +70,7 @@ The `x`, `y`, `dx` and `dy` parameters are as for the
 :py:meth:`~pyglet.window.Window.on_mouse_motion` event.
 The press and release events do not require `dx` and `dy` parameters as they
 would be zero in this case.  The `modifiers` parameter is as for the keyboard
-events, see :ref:`guide_working-with-the-keyboard`.
+events, see :ref:`guide_keyboard-input`.
 
 The `button` parameter signifies which mouse button was pressed, and is one of
 the following constants::

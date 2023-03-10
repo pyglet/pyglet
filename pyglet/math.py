@@ -861,7 +861,7 @@ class Mat4(tuple):
     def look_at(cls: type[Mat4T], position: Vec3, target: Vec3, up: Vec3):
         f = (target - position).normalize()
         u = up.normalize()
-        s = f.cross(u)
+        s = f.cross(u).normalize()
         u = s.cross(f)
 
         return cls([s.x, u.x, -f.x, 0.0,

@@ -163,8 +163,8 @@ class XINPUT_CAPABILITIES_EX(Structure):
     ]
 
 
-# Only available for 1.4+
 if library_name == "xinput1_4":
+    # Only available for 1.4+
     XInputGetBatteryInformation = lib.XInputGetBatteryInformation
     XInputGetBatteryInformation.argtypes = [DWORD, BYTE, POINTER(XINPUT_BATTERY_INFORMATION)]
     XInputGetBatteryInformation.restype = DWORD
@@ -480,6 +480,7 @@ class XInputDeviceManager(EventDispatcher):
                     # Newly disconnected device:
                     if device.connected:
                         device.connected = False
+                        device.close()
                         self._connected_devices.remove(i)
                         # Dispatch event in main thread:
                         pyglet.app.platform_event_loop.post_event(self, 'on_disconnect', device)
