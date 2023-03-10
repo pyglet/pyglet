@@ -1,5 +1,5 @@
-import ctypes
-from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64
+from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
+    CFUNCTYPE
 
 from pyglet.libs.darwin import CFURLRef
 
@@ -74,8 +74,8 @@ ca.ExtAudioFileOpenURL.argtypes = [CFURLRef, ExtAudioFileRef]
 AudioFileTypeID = c_uint32
 AudioFileID = c_void_p
 
-AudioFile_ReadProc = ctypes.CFUNCTYPE(c_int, c_void_p, ctypes.c_int64, c_uint32, c_void_p, POINTER(c_uint32))
-AudioFile_GetSizeProc = ctypes.CFUNCTYPE(ctypes.c_int64, c_void_p)
+AudioFile_ReadProc = CFUNCTYPE(c_int, c_void_p, c_int64, c_uint32, c_void_p, POINTER(c_uint32))
+AudioFile_GetSizeProc = CFUNCTYPE(c_int64, c_void_p)
 
 ca.AudioFileOpenWithCallbacks.restype = OSStatus
 ca.AudioFileOpenWithCallbacks.argtypes = [c_void_p, AudioFile_ReadProc, c_void_p, AudioFile_GetSizeProc, c_void_p,

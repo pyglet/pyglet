@@ -2,13 +2,12 @@
 
 import math
 import warnings
-from ctypes import c_void_p, c_int32, byref, c_byte, c_buffer
+from ctypes import c_void_p, c_int32, byref, c_byte
 
 from pyglet.font import base
 import pyglet.image
 
-from pyglet.libs.darwin import cocoapy, kCTFontURLAttribute, kCFStringEncodingUTF8
-from pyglet.window.cocoa.pyglet_view import NSURL
+from pyglet.libs.darwin import cocoapy, kCTFontURLAttribute
 
 cf = cocoapy.cf
 ct = cocoapy.ct
