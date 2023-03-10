@@ -831,7 +831,6 @@ class ObjCMethod:
                 result = ObjCInstance(result)
             elif self.restype == ObjCClass:
                 result = ObjCClass(result)
-            #print("result", self, result, self.restype)
             return result
         except ArgumentError as error:
             # Add more useful info to argument error exceptions, then reraise.
@@ -1282,8 +1281,6 @@ class ObjCSubclass:
                     result = result.ptr.value
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
-
-                print("objc_class_method", py_cls)
                 return result
 
             name = f.__name__.replace('_', ':')
@@ -1340,7 +1337,7 @@ def _obj_observer_dealloc(objc_obs, selector_name):
     objc_ptr = get_instance_variable(objc_obs, 'observed_object', c_void_p)
     if objc_ptr:
         objc.objc_setAssociatedObject(objc_ptr, objc_obs, None, OBJC_ASSOCIATION_ASSIGN)
-        objc_i = ObjCInstance._cached_objects.pop(objc_ptr, None)
+        ObjCInstance._cached_objects.pop(objc_ptr, None)
 
     send_super(objc_obs, selector_name)
 
@@ -1356,12 +1353,9 @@ def _clear_arp_objects(pool_id):
     2) Some objects such as ObjCSubclass's must be retained.
     3) When a pool is drained and dealloc'd, clear all ObjCInstances in that pool that are not retained.
     """
-    #if objc_i.objc_class.name == b"NSAutoreleasePool":
     for cobjc_ptr in list(ObjCInstance._cached_objects.keys()):
         cobjc_i = ObjCInstance._cached_objects[cobjc_ptr]
         if cobjc_i.retained is False and cobjc_i.pool == pool_id:
-            #if cobjc_i.objc_class.name != b"__NSTaggedDate":
-            #    print("DELETING", cobjc_i, cobjc_i.retained, c_objc_i.type())
             del ObjCInstance._cached_objects[cobjc_ptr]
 
 
