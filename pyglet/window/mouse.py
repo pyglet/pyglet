@@ -78,9 +78,23 @@ def buttons_string(buttons):
     return "|".join(button_names)
 
 
-# Symbolic names for the mouse buttons
+#: Constant for the left mouse button.
+#:
+#: :meta hide-value:
 LEFT = 1 << 0
+#: Constant for the middle mouse button.
+#:
+#: :meta hide-value:
 MIDDLE = 1 << 1
+#: Constant for the right mouse button.
+#:
+#: :meta hide-value:
 RIGHT = 1 << 2
+#: Constant for the mouse4 button.
+#:
+#: :meta hide-value:
 MOUSE4 = 1 << 3
+#: Constant for the mouse5 button.
+#:
+#: :meta hide-value:
 MOUSE5 = 1 << 4

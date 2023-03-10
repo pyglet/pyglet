@@ -222,7 +222,7 @@ class PlayerWindow(pyglet.window.Window):
             screen_button.y = self.GUI_PADDING
             screen_button.height = self.GUI_BUTTON_HEIGHT
             screen_button.width = 80
-            screen_button.text = 'Screen %d' % (i + 1)
+            screen_button.text = f'Screen {i + 1}'
             screen_button.on_press = lambda screen=screen: self.set_fullscreen(True, screen)
             self.controls.append(screen_button)
             i += 1

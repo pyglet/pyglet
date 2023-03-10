@@ -184,7 +184,7 @@ class EventDispatcher:
                 # Single magically named function
                 name = obj.__name__
                 if name not in self.event_types:
-                    raise EventException('Unknown event "%s"' % name)
+                    raise EventException(f'Unknown event "{name}"')
                 if inspect.ismethod(obj):
                     yield name, WeakMethod(obj, partial(self._remove_handler, name))
                 else:
@@ -199,7 +199,7 @@ class EventDispatcher:
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
-                raise EventException('Unknown event "%s"' % name)
+                raise EventException(f'Unknown event "{name}"')
             if inspect.ismethod(handler):
                 yield name, WeakMethod(handler, partial(self._remove_handler, name))
             else:
@@ -363,7 +363,7 @@ class EventDispatcher:
             "EventDispatcher.register_event_type('event_name')."
         )
         assert event_type in self.event_types, \
-            "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
+            f"{event_type} not found in {self}.event_types == {self.event_types}"
 
         invoked = False
 

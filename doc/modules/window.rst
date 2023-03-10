@@ -28,7 +28,9 @@ Classes
   .. automethod:: dispatch_events
   .. automethod:: draw_mouse_cursor
   .. automethod:: flip
+  .. automethod:: get_framebuffer_size
   .. automethod:: get_location
+  .. automethod:: get_pixel_ratio
   .. automethod:: get_size
   .. automethod:: get_system_mouse_cursor
   .. automethod:: maximize
@@ -57,6 +59,7 @@ Classes
   .. automethod:: on_deactivate
   .. automethod:: on_draw
   .. automethod:: on_expose
+  .. automethod:: on_file_drop
   .. automethod:: on_hide
   .. automethod:: on_key_press
   .. automethod:: on_key_release
@@ -68,6 +71,7 @@ Classes
   .. automethod:: on_mouse_release
   .. automethod:: on_mouse_scroll
   .. automethod:: on_move
+  .. automethod:: on_refresh
   .. automethod:: on_resize
   .. automethod:: on_show
   .. automethod:: on_text
@@ -76,6 +80,7 @@ Classes
 
   .. rubric:: Attributes
 
+  .. autoattribute:: aspect_ratio
   .. autoattribute:: caption
   .. autoattribute:: config
   .. autoattribute:: context
@@ -84,9 +89,13 @@ Classes
   .. autoattribute:: has_exit
   .. autoattribute:: height
   .. autoattribute:: invalid
+  .. autoattribute:: projection
   .. autoattribute:: resizeable
   .. autoattribute:: screen
+  .. autoattribute:: size
   .. autoattribute:: style
+  .. autoattribute:: view
+  .. autoattribute:: viewport
   .. autoattribute:: visible
   .. autoattribute:: vsync
   .. autoattribute:: width
@@ -118,7 +127,9 @@ Classes
   .. autoattribute:: WINDOW_STYLE_BORDERLESS
   .. autoattribute:: WINDOW_STYLE_DEFAULT
   .. autoattribute:: WINDOW_STYLE_DIALOG
+  .. autoattribute:: WINDOW_STYLE_OVERLAY
   .. autoattribute:: WINDOW_STYLE_TOOL
+  .. autoattribute:: WINDOW_STYLE_TRANSPARENT
 
 
 .. autoclass:: FPSDisplay

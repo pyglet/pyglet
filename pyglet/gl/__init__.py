@@ -86,7 +86,7 @@ if _pyglet.options['debug_texture']:
         _debug_texture_sizes[texture] = size
         _debug_texture_total += size
 
-        print('%d (+%d)' % (_debug_texture_total, size))
+        print(f'{_debug_texture_total} (+{size})')
 
 
     def _debug_texture_dealloc(texture):
@@ -96,7 +96,7 @@ if _pyglet.options['debug_texture']:
         del _debug_texture_sizes[texture]
         _debug_texture_total -= size
 
-        print('%d (-%d)' % (_debug_texture_total, size))
+        print(f'{_debug_texture_total} (-{size})')
 
 
     _glBindTexture = glBindTexture

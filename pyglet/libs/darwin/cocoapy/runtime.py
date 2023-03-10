@@ -415,6 +415,7 @@ objc.sel_isEqual.argtypes = [c_void_p, c_void_p]
 objc.sel_registerName.restype = c_void_p
 objc.sel_registerName.argtypes = [c_char_p]
 
+
 ######################################################################
 # void *objc_autoreleasePoolPush(void)
 objc.objc_autoreleasePoolPush.restype = c_void_p
@@ -753,7 +754,7 @@ class ObjCMethod:
         try:
             self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
         except:
-            # print('no argtypes encoding for %s (%s)' % (self.name, self.argument_types))
+            # print(f'no argtypes encoding for {self.name} ({self.argument_types})')
             self.argtypes = None
         # Get types for the return type.
 
@@ -765,7 +766,7 @@ class ObjCMethod:
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
         except:
-            # print('no restype encoding for %s (%s)' % (self.name, self.return_type))
+            # print(f'no restype encoding for {self.name} ({self.return_type})')
             self.restype = None
 
         self.func = None
@@ -1112,9 +1113,6 @@ def get_cached_instances():
     """For debug purposes, return a list of instance names.
     Useful for debugging if an object is leaking."""
     return [obj.objc_class.name for obj in ObjCInstance._cached_objects.values()]
-
-
-######################################################################
 
 
 def convert_method_arguments(encoding, args):

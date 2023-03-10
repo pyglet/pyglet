@@ -82,7 +82,7 @@ class WidgetBase(EventDispatcher):
     def aabb(self):
         """Bounding box of the widget.
 
-        Expresesed as (x, y, x + width, y + height)
+        Expressed as (x, y, x + width, y + height)
 
         :type: (int, int, int, int)
         """

@@ -22,6 +22,7 @@ To query which GameControllers are available, call :py:func:`get_controllers`.
 .. versionadded:: 2.0
 """
 import os as _os
+import sys as _sys
 import warnings as _warnings
 
 from .controller_db import mapping_list
@@ -31,6 +32,24 @@ _env_config = _os.environ.get('SDL_GAMECONTROLLERCONFIG')
 if _env_config:
     # insert at the front of the list
     mapping_list.insert(0, _env_config)
+
+
+def _swap_le16(value):
+    """Ensure 16bit value is in Big Endian format"""
+    if _sys.byteorder == "little":
+        return ((value << 8) | (value >> 8)) & 0xFFFF
+    return value
+
+
+def create_guid(bus: int, vendor: int, product: int, version: int, name: str, signature: int, data: int) -> str:
+    # byte size      16           16            16            16         str             8          8
+    """Create an SDL2 style GUID string from a device's identifiers."""
+    bus = _swap_le16(bus)
+    vendor = _swap_le16(vendor)
+    product = _swap_le16(product)
+    version = _swap_le16(version)
+
+    return f"{bus:04x}0000{vendor:04x}0000{product:04x}0000{version:04x}0000"
 
 
 class Relation:

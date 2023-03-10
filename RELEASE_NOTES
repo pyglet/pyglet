@@ -1,3 +1,36 @@
+pyglet 2.0.5
+
+Changes and Improvements
+------------------------
+- windows.key: add support for extended function keys
+- Windows now uses "Apartment Threaded" mode for better compatibility with other libraries.
+- image: allow blanking newly created Textures (skipped by default when creating from image).
+
+Bugfixes
+--------
+- input.macos: Fix ControllerManager hot-plugging on macOS.
+- font.windows: Fix 32bit crashes with DirectWrite font backend.
+- math: Fix incorrect calculation in Mat4.look_at method.
+- image: Fix blitting from regions, caused by invalid unpacking settings.
+
+
+pyglet 2.0.4
+
+Changes and Improvements
+------------------------
+- input.win32: ControlManager now supports both DirectInput and XInput devices.
+- input: Many cleanups and reorganization.
+- math: Add Vec2.reflect method.
+- shapes: Add new BezierCurve shape.
+- gl: Add support for GL sync functions.
+
+Bugfixes
+--------
+- gui: Prevent two TextEntry widgets from being active at the same time. #747
+- win32: Fix broken lib debug, and multiple related bugs due to depreacted functions.
+- input: Controller mappings now indexed correctly on macOS and Windows.
+
+
 pyglet 2.0.3
 
 Changes and Improvements

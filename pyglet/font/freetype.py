@@ -224,7 +224,7 @@ class FreeTypeFace:
             return cls(match.face)
         else:
             if not match.file:
-                raise base.FontException('No filename for "%s"' % match.name)
+                raise base.FontException(f'No filename for "{match.name}"')
             return cls.from_file(match.file)
 
     @property

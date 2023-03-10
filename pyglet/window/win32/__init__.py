@@ -371,7 +371,7 @@ class Win32Window(BaseWindow):
         width, height = self._client_to_window_size(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
                              (SWP_NOZORDER | SWP_NOMOVE | SWP_NOOWNERZORDER))
-        self.dispatch_event('on_resize', width, height)
+        self.dispatch_event('on_resize', self._width, self._height)
 
     def get_size(self):
         # rect = RECT()

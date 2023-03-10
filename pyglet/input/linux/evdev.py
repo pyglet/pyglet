@@ -2,6 +2,7 @@ import os
 import time
 import fcntl
 import ctypes
+import warnings
 
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
@@ -14,11 +15,11 @@ from typing import List
 
 import pyglet
 
-from pyglet.app.xlib import XlibSelectDevice
-from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
-from .base import DeviceOpenException, ControllerManager
 from .evdev_constants import *
-from .controller import get_mapping, Relation
+from pyglet.app.xlib import XlibSelectDevice
+from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
+from pyglet.input.base import DeviceOpenException, ControllerManager
+from pyglet.input.controller import get_mapping, Relation, create_guid
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -359,18 +360,9 @@ class EvdevDevice(XlibSelectDevice, Device):
         super().__init__(display, name)
 
     def get_guid(self):
-        """Generate an SDL2 style GUID from the device ID"""
-        hex_bustype = format(self._id.bustype & 0xFF, '02x')
-        hex_vendor = format(self._id.vendor & 0xFF, '02x')
-        hex_product = format(self._id.product & 0xFF, '02x')
-        hex_version = format(self._id.version & 0xFF, '02x')
-        shifted_bustype = format(self._id.bustype >> 8, '02x')
-        shifted_vendor = format(self._id.vendor >> 8, '02x')
-        shifted_product = format(self._id.product >> 8, '02x')
-        shifted_version = format(self._id.version >> 8, '02x')
-        slug = "{:0>2}{:0>2}0000{:0>2}{:0>2}0000{:0>2}{:0>2}0000{:0>2}{:0>2}0000"
-        return slug.format(hex_bustype, shifted_bustype, hex_vendor, shifted_vendor,
-                           hex_product, shifted_product, hex_version, shifted_version)
+        """Get the device's SDL2 style GUID string"""
+        _id = self._id
+        return create_guid(_id.bustype, _id.vendor, _id.product, _id.version, self.name, 0, 0)
 
     def open(self, window=None, exclusive=False):
         super().open(window, exclusive)
@@ -646,6 +638,9 @@ def _create_controller(device):
 
     mapping = get_mapping(device.get_guid())
     if not mapping:
+        warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
+                      f"has no controller mappings. Update the mappings in the Controller DB.\n"
+                      f"Auto-detecting as defined by the 'Linux gamepad specification'")
         mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:
