@@ -1,23 +1,14 @@
 from pyglet.app.base import PlatformEventLoop
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, AutoReleasePool
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSMenu = cocoapy.ObjCClass('NSMenu')
 NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
-NSAutoreleasePool = cocoapy.ObjCClass('NSAutoreleasePool')
 NSDate = cocoapy.ObjCClass('NSDate')
 NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
 
 
-class AutoReleasePool:
-    def __enter__(self):
-        self.pool = NSAutoreleasePool.alloc().init()
-        return self.pool
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.pool.drain()
-        del self.pool
 
 
 def add_menu_item(menu, title, action, key):
@@ -30,8 +21,6 @@ def add_menu_item(menu, title, action, key):
         menu.addItem_(menuItem)
 
         # cleanup
-        title.release()
-        key.release()
         menuItem.release()
 
 
@@ -77,6 +66,11 @@ class CocoaEventLoop(PlatformEventLoop):
             ignoreState = cocoapy.CFSTR("ApplePersistenceIgnoreState")
             if not defaults.objectForKey_(ignoreState):
                 defaults.setBool_forKey_(True, ignoreState)
+
+            holdEnabled = cocoapy.CFSTR("ApplePressAndHoldEnabled")
+            if not defaults.objectForKey_(holdEnabled):
+                defaults.setBool_forKey_(False, holdEnabled)
+
             self._finished_launching = False
 
     def start(self):
@@ -97,6 +91,8 @@ class CocoaEventLoop(PlatformEventLoop):
                 # Using distantFuture as untilDate means that nextEventMatchingMask
                 # will wait until the next event comes along.
                 timeout_date = NSDate.distantFuture()
+            elif timeout == 0.0:
+                timeout_date = NSDate.distantPast()
             else:
                 timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 

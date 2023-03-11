@@ -75,6 +75,13 @@ def add_default_codecs():
     except ImportError:
         pass
 
+    if pyglet.compat_platform.startswith("darwin"):
+        try:
+            from . import coreaudio
+            registry.add_decoders(coreaudio)
+        except ImportError:
+            pass
+
 
 def have_ffmpeg():
     """Check if FFmpeg library is available.

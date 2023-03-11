@@ -29,10 +29,11 @@ class PygletTextView_Implementation:
     def dealloc(self):
         self.empty_string.release()
 
-    @PygletTextView.method('v@')
-    def keyDown_(self, nsevent):
-        array = NSArray.arrayWithObject_(nsevent)
-        self.interpretKeyEvents_(array)
+    # Other functions still seem to work?
+    # @PygletTextView.method('v@')
+    # def keyDown_(self, nsevent):
+    #     array = NSArray.arrayWithObject_(nsevent)
+    #     self.interpretKeyEvents_(array)
 
     @PygletTextView.method('v@')
     def insertText_(self, text):
