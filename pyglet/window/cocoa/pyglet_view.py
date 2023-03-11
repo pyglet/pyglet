@@ -1,44 +1,15 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2022 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, NSPasteboardURLReadingFileURLsOnlyKey
+from .pyglet_textview import PygletTextView
 
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
+NSURL = cocoapy.ObjCClass('NSURL')
+NSArray = cocoapy.ObjCClass('NSArray')
+NSDictionary = cocoapy.ObjCClass('NSDictionary')
+NSNumber = cocoapy.ObjCClass('NSNumber')
 
 # Event data helper functions.
 
@@ -117,7 +88,6 @@ class PygletView_Implementation:
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        PygletTextView = cocoapy.ObjCClass('PygletTextView')
         self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
         # Add text view to the responder chain.
         self.addSubview_(self._textview)
@@ -179,6 +149,7 @@ class PygletView_Implementation:
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
         self._window.context.update_geometry()
+        self._window._width, self._window._height = width, height
         self._window.dispatch_event("on_resize", width, height)
         self._window.dispatch_event("on_expose")
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
@@ -379,6 +350,32 @@ class PygletView_Implementation:
         self._window._mouse_in_window = True
         if not self._window._is_mouse_exclusive:
             self._window.set_mouse_platform_visible()
+
+    @PygletView.method('Q@')
+    def draggingEntered_(self, draginfo):
+        return cocoapy.NSDragOperationGeneric
+
+    @PygletView.method('B@')
+    def performDragOperation_(self, sender):
+        pos = sender.draggingLocation()
+
+        pasteboard = sender.draggingPasteboard()
+
+        classes = NSArray.arrayWithObject_(NSURL)
+
+        options = NSDictionary.dictionaryWithObject_forKey_(
+            NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey
+        )
+
+        urls = pasteboard.readObjectsForClasses_options_(classes, options)
+
+        url_count = urls.count()
+        paths = []
+        for i in range(url_count):
+            fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
+            paths.append(fpath.decode())
+
+        self._window.dispatch_event('on_file_drop', pos.x, pos.y, paths)
 
 
 PygletView = cocoapy.ObjCClass('PygletView')

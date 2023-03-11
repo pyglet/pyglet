@@ -15,18 +15,20 @@ for driver_name in pyglet.options['audio']:
             _audio_driver = pulse.create_audio_driver()
             break
         elif driver_name == 'xaudio2':
-            from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
+            if pyglet.compat_platform in ('win32', 'cygwin'):
+                from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
 
-            if WINDOWS_8_OR_GREATER:
-                from . import xaudio2
+                if WINDOWS_8_OR_GREATER:
+                    from . import xaudio2
 
-                _audio_driver = xaudio2.create_audio_driver()
-                break
+                    _audio_driver = xaudio2.create_audio_driver()
+                    break
         elif driver_name == 'directsound':
-            from . import directsound
+            if pyglet.compat_platform in ('win32', 'cygwin'):
+                from . import directsound
 
-            _audio_driver = directsound.create_audio_driver()
-            break
+                _audio_driver = directsound.create_audio_driver()
+                break
         elif driver_name == 'openal':
             from . import openal
 
