@@ -42,7 +42,8 @@ if _is_pyglet_doc_run:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':
-        from pyglet.app.cocoa import CocoaEventLoop as PlatformEventLoop
+        from pyglet.app.cocoa import CocoaPlatformEventLoop as PlatformEventLoop
+        from pyglet.app.cocoa import CocoaEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:

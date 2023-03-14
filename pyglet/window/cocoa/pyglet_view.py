@@ -124,6 +124,10 @@ class PygletView_Implementation:
         self.addTrackingArea_(self._tracking_area)
 
     @PygletView.method('B')
+    def acceptsFirstResponder (self):
+        return True
+
+    @PygletView.method('B')
     def canBecomeKeyView(self):
         return True
 
@@ -164,19 +168,20 @@ class PygletView_Implementation:
                 app.event_loop.idle()
 
     @PygletView.method('v@')
-    def pygletKeyDown_(self, nsevent):
-        symbol = getSymbol(nsevent)
-        modifiers = getModifiers(nsevent)
-        self._window.dispatch_event('on_key_press', symbol, modifiers)
+    def keyDown_(self, nsevent):
+        if not nsevent.isARepeat():
+            symbol = getSymbol(nsevent)
+            modifiers = getModifiers(nsevent)
+            self._window.dispatch_event('on_key_press', symbol, modifiers)
 
     @PygletView.method('v@')
-    def pygletKeyUp_(self, nsevent):
+    def keyUp_(self, nsevent):
         symbol = getSymbol(nsevent)
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_key_release', symbol, modifiers)
 
     @PygletView.method('v@')
-    def pygletFlagsChanged_(self, nsevent):
+    def flagsChanged_(self, nsevent):
         # Handles on_key_press and on_key_release events for modifier keys.
         # Note that capslock is handled differently than other keys; it acts
         # as a toggle, so on_key_release is only sent when it's turned off.

@@ -215,6 +215,7 @@ NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, 'NSEventTrackingRunLoopMode')
 NSApplicationDidHideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidHideNotification')
 NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUnhideNotification')
+NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
 NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
 NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
 NSDragOperationGeneric = 4
