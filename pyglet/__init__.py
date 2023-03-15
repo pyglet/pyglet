@@ -131,6 +131,7 @@ options = {
     'dw_legacy_naming': False,
     'win32_disable_xinput': False,
     'com_mta': False,
+    'osx_alt_loop': False
 }
 
 _option_types = {
@@ -162,7 +163,8 @@ _option_types = {
     'win32_disable_shaping': bool,
     'dw_legacy_naming': bool,
     'win32_disable_xinput': bool,
-    'com_mta': bool
+    'com_mta': bool,
+    'osx_alt_loop': bool,
 }
 
 
