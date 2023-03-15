@@ -215,6 +215,7 @@ NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, 'NSEventTrackingRunLoopMode')
 NSApplicationDidHideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidHideNotification')
 NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUnhideNotification')
+NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
 NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
 NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
 NSDragOperationGeneric = 4
@@ -226,6 +227,17 @@ NSKeyDown            = 10
 NSKeyUp              = 11
 NSFlagsChanged       = 12
 NSApplicationDefined = 15
+
+# Undocumented left/right modifier masks found by experimentation:
+NSLeftShiftKeyMask = 1 << 1
+NSRightShiftKeyMask = 1 << 2
+NSLeftControlKeyMask = 1 << 0
+NSRightControlKeyMask = 1 << 13
+NSLeftAlternateKeyMask = 1 << 5
+NSRightAlternateKeyMask = 1 << 6
+NSLeftCommandKeyMask = 1 << 3
+NSRightCommandKeyMask = 1 << 4
+
 
 NSAlphaShiftKeyMask         = 1 << 16
 NSShiftKeyMask              = 1 << 17

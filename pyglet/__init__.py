@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2022 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """pyglet is a cross-platform games and multimedia package.
 
 More information is available at http://www.pyglet.org
@@ -167,7 +132,10 @@ options = {
     'headless': False,
     'headless_device': 0,
     'win32_disable_shaping': False,
-    'dw_legacy_naming': False
+    'dw_legacy_naming': False,
+    'win32_disable_xinput': False,
+    'com_mta': False,
+    'osx_alt_loop': False
 }
 
 _option_types = {
@@ -196,27 +164,28 @@ _option_types = {
     'headless': bool,
     'headless_device': int,
     'win32_disable_shaping': bool,
-    'dw_legacy_naming': bool
+    'dw_legacy_naming': bool,
+    'win32_disable_xinput': bool,
+    'com_mta': bool,
+    'osx_alt_loop': bool,
 }
 
 
 for key in options:
     """Read defaults for options from environment"""
-    for key in options:
-        env = 'PYGLET_%s' % key.upper()
-        try:
-            value = os.environ[env]
-            if _option_types[key] is tuple:
-                options[key] = value.split(',')
-            elif _option_types[key] is bool:
-                options[key] = value in ('true', 'TRUE', 'True', '1')
-            elif _option_types[key] is int:
-                options[key] = int(value)
-        except KeyError:
-            pass
+    assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
+    env = f'PYGLET_{key.upper()}'
+    try:
+        value = os.environ[env]
+        if _option_types[key] is tuple:
+            options[key] = value.split(',')
+        elif _option_types[key] is bool:
+            options[key] = value in ('true', 'TRUE', 'True', '1')
+        elif _option_types[key] is int:
+            options[key] = int(value)
+    except KeyError:
+        pass
 
-
-_read_environment()
 
 if compat_platform == 'cygwin':
     # This hack pretends that the posix-like ctypes provides windows
@@ -272,21 +241,21 @@ def _trace_frame(thread, frame, indent):
                 filename = os.path.join('...', filename)
             _trace_filename_abbreviations[path] = filename
 
-        location = '(%s:%d)' % (filename, line)
+        location = f'({filename}:{line})'
 
     if indent:
-        name = 'Called from %s' % name
-    print('[%d] %s%s %s' % (thread, indent, name, location))
+        name = f'Called from {name}'
+    print(f'[{thread}] {indent}{name} {location}')
 
     if _trace_args:
         if is_ctypes:
             args = [_trace_repr(arg) for arg in frame.f_locals['args']]
-            print('  %sargs=(%s)' % (indent, ', '.join(args)))
+            print(f'  {indent}args=({", ".join(args)})')
         else:
             for argname in code.co_varnames[:code.co_argcount]:
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
-                    print('  %s%s=%s' % (indent, argname, argvalue))
+                    print(f'  {indent}{argname}={argvalue}')
                 except:
                     pass
 
@@ -342,7 +311,7 @@ class _ModuleProxy:
             if self._module is not None:
                 raise
 
-            import_name = 'pyglet.%s' % self._module_name
+            import_name = f'pyglet.{self._module_name}'
             __import__(import_name)
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)
@@ -356,7 +325,7 @@ class _ModuleProxy:
             if self._module is not None:
                 raise
 
-            import_name = 'pyglet.%s' % self._module_name
+            import_name = f'pyglet.{self._module_name}'
             __import__(import_name)
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)
