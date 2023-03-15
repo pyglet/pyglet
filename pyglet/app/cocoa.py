@@ -1,5 +1,8 @@
-from pyglet.app.base import PlatformEventLoop
-from pyglet.libs.darwin import cocoapy, AutoReleasePool
+import signal
+from pyglet import app
+from pyglet.app.base import PlatformEventLoop, EventLoop
+from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
+    ObjCClass, get_selector
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSMenu = cocoapy.ObjCClass('NSMenu')
@@ -7,7 +10,7 @@ NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
 NSDate = cocoapy.ObjCClass('NSDate')
 NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
-
+NSTimer = cocoapy.ObjCClass('NSTimer')
 
 
 
@@ -46,10 +49,77 @@ def create_menu():
         appMenuItem.release()
 
 
-class CocoaEventLoop(PlatformEventLoop):
+class _AppDelegate_Implementation:
+    _AppDelegate = ObjCSubclass('NSObject', '_AppDelegate')
+
+    @_AppDelegate.method(b'@' + PyObjectEncoding)
+    def init(self, pyglet_loop):
+        objc = ObjCInstance(send_super(self, 'init'))
+        self._pyglet_loop = pyglet_loop
+        return objc  # objc is self
+
+    @_AppDelegate.method('v')
+    def updatePyglet_(self):
+        self._pyglet_loop.nsapp_step()
+
+    @_AppDelegate.method('v@')
+    def applicationWillTerminate_(self, notification):
+        self._pyglet_loop.is_running = False
+        self._pyglet_loop.has_exit = True
+
+    @_AppDelegate.method('v@')
+    def applicationDidFinishLaunching_(self, notification):
+        self._pyglet_loop._finished_launching = True
+
+_AppDelegate = ObjCClass('_AppDelegate')  # the actual class
+
+class CocoaAlternateEventLoop(EventLoop):
+    """This is an alternate loop developed mainly for ARM64 variants of macOS.
+    nextEventMatchingMask_untilDate_inMode_dequeue_ is very broken with ctypes calls. Events eventually stop
+    working properly after X returns. This event loop differs in that it uses the built-in NSApplication event
+    loop. We tie our schedule into it via timer.
+    """
+    def run(self, interval=1/60):
+        if not interval:
+            self.clock.schedule(self._redraw_windows)
+        else:
+            self.clock.schedule_interval(self._redraw_windows, interval)
+
+        self.has_exit = False
+
+        from pyglet.window import Window
+        Window._enable_event_queue = False
+
+        # Dispatch pending events
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_pending_events()
+
+        self.platform_event_loop = app.platform_event_loop
+
+        self.dispatch_event('on_enter')
+        self.is_running = True
+        self.platform_event_loop.nsapp_start(interval)
+
+    def exit(self):
+        """Safely exit the event loop at the end of the current iteration.
+
+        This method is a thread-safe equivalent for setting
+        :py:attr:`has_exit` to ``True``.  All waiting threads will be
+        interrupted (see :py:meth:`sleep`).
+        """
+        self.has_exit = True
+        self.platform_event_loop.notify()
+
+        self.is_running = False
+        self.dispatch_event('on_exit')
+
+        self.platform_event_loop.nsapp_stop()
+
+class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def __init__(self):
-        super(CocoaEventLoop, self).__init__()
+        super(CocoaPlatformEventLoop, self).__init__()
         with AutoReleasePool():
             # Prepare the default application.
             self.NSApp = NSApplication.sharedApplication()
@@ -82,6 +152,44 @@ class CocoaEventLoop(PlatformEventLoop):
                 self.NSApp.activateIgnoringOtherApps_(True)
                 self._finished_launching = True
 
+    def nsapp_start(self, interval):
+        """Used only for CocoaAlternateEventLoop"""
+        from pyglet.app import event_loop
+        self._event_loop = event_loop
+
+        def term_received(*args):
+            if self.timer:
+                self.timer.invalidate()
+                self.timer = None
+
+            self.nsapp_stop()
+
+        # Force NSApp to close if Python receives sig events.
+        signal.signal(signal.SIGINT, term_received)
+        signal.signal(signal.SIGTERM, term_received)
+
+        self.appdelegate = _AppDelegate.alloc().init(self)
+        self.NSApp.setDelegate_(self.appdelegate)
+
+        self.timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+             interval,  # Clamped internally to 0.0001 (including 0)
+             self.appdelegate,
+             get_selector('updatePyglet:'),
+             False,
+             True
+         )
+
+        self.NSApp.run()
+
+    def nsapp_step(self):
+        """Used only for CocoaAlternateEventLoop"""
+        self._event_loop.idle()
+        self.dispatch_posted_events()
+
+    def nsapp_stop(self):
+        """Used only for CocoaAlternateEventLoop"""
+        self.NSApp.terminate_(None)
+
     def step(self, timeout=None):
         with AutoReleasePool():
             self.dispatch_posted_events()
@@ -107,24 +215,7 @@ class CocoaEventLoop(PlatformEventLoop):
             if event is not None:
                 event_type = event.type()
                 if event_type != cocoapy.NSApplicationDefined:
-                    # Send out event as normal.  Responders will still receive
-                    # keyUp:, keyDown:, and flagsChanged: events.
                     self.NSApp.sendEvent_(event)
-
-                    # Resend key events as special pyglet-specific messages
-                    # which supplant the keyDown:, keyUp:, and flagsChanged: messages
-                    # because NSApplication translates multiple key presses into key
-                    # equivalents before sending them on, which means that some keyUp:
-                    # messages are never sent for individual keys.   Our pyglet-specific
-                    # replacements ensure that we see all the raw key presses & releases.
-                    # We also filter out key-down repeats since pyglet only sends one
-                    # on_key_press event per key press.
-                    if event_type == cocoapy.NSKeyDown and not event.isARepeat():
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyDown:"), None, event)
-                    elif event_type == cocoapy.NSKeyUp:
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyUp:"), None, event)
-                    elif event_type == cocoapy.NSFlagsChanged:
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletFlagsChanged:"), None, event)
 
                 self.NSApp.updateWindows()
                 did_time_out = False
