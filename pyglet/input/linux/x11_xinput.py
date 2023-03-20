@@ -107,20 +107,20 @@ class XInputDevice(DeviceResponder, Device):
         super(XInputDevice, self).open(window, exclusive)
 
         if window is None:
-            self.is_open = False
+            self._is_open = False
             raise DeviceOpenException('XInput devices require a window')
 
         if window.display._display != self.display._display:
-            self.is_open = False
+            self._is_open = False
             raise DeviceOpenException('Window and device displays differ')
 
         if exclusive:
-            self.is_open = False
+            self._is_open = False
             raise DeviceOpenException('Cannot open XInput device exclusive')
 
         self._device = xi.XOpenDevice(self.display._display, self._device_id)
         if not self._device:
-            self.is_open = False
+            self._is_open = False
             raise DeviceOpenException('Cannot open device')
 
         self._install_events(window)
