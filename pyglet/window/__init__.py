@@ -1410,7 +1410,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_draw(self, dt):
+        def on_draw(self):
             """The window contents must be redrawn.
 
             The `EventLoop` will dispatch this event when the window
