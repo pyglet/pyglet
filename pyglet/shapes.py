@@ -56,7 +56,7 @@ from pyglet.graphics import Batch, Group
 
 
 vertex_source = """#version 150 core
-    in vec2 vertices;
+    in vec2 position;
     in vec2 translation;
     in vec4 colors;
     in float rotation;
@@ -82,7 +82,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(vertices, 0.0, 1.0);
+        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
         vertex_colors = colors;
     }
 """
@@ -181,6 +181,7 @@ class ShapeBase(ABC):
     _num_verts = 0
     _vertex_list = None
     _draw_mode = GL_TRIANGLES
+    group_class = _ShapeGroup
 
     def __del__(self):
         if self._vertex_list is not None:
@@ -394,7 +395,7 @@ class ShapeBase(ABC):
     def group(self, group):
         if self._group.parent == group:
             return
-        self._group = _ShapeGroup(self._group.blend_src,
+        self._group = self.group_class(self._group.blend_src,
                                   self._group.blend_dest,
                                   self._group.program,
                                   group)
@@ -476,7 +477,7 @@ class Arc(ShapeBase):
 
         self._batch = batch or Batch()
         program = get_default_shader()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -511,7 +512,7 @@ class Arc(ShapeBase):
                 chord_points = *points[-1], *points[0]
                 vertices.extend(chord_points)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def rotation(self):
@@ -599,7 +600,7 @@ class BezierCurve(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -640,7 +641,7 @@ class BezierCurve(ShapeBase):
                 line_points = *coords[i], *coords[i + 1]
                 vertices.extend(line_points)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def points(self):
@@ -707,7 +708,7 @@ class Circle(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -737,7 +738,7 @@ class Circle(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def radius(self):
@@ -796,7 +797,7 @@ class Ellipse(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -825,7 +826,7 @@ class Ellipse(ShapeBase):
                 line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def a(self):
@@ -918,7 +919,7 @@ class Sector(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -949,7 +950,7 @@ class Sector(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def angle(self):
@@ -1049,7 +1050,7 @@ class Line(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1062,7 +1063,7 @@ class Line(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             x1 = -self._anchor_x
             y1 = self._anchor_y - self._width / 2
@@ -1081,7 +1082,7 @@ class Line(ShapeBase):
             dx = x1 * cr - y2 * sr
             dy = x1 * sr + y2 * cr
 
-            self._vertex_list.vertices[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
+            self._vertex_list.position[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
 
     @property
     def x2(self):
@@ -1148,7 +1149,7 @@ class Rectangle(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1161,14 +1162,14 @@ class Rectangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
             x2 = x1 + self._width
             y2 = y1 + self._height
 
-            self._vertex_list.vertices[:] = x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+            self._vertex_list.position[:] = x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
 
     @property
     def width(self):
@@ -1282,7 +1283,7 @@ class BorderedRectangle(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1299,7 +1300,7 @@ class BorderedRectangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             bx1 = -self._anchor_x
             by1 = -self._anchor_y
@@ -1311,7 +1312,7 @@ class BorderedRectangle(ShapeBase):
             ix2 = bx2 - b
             iy2 = by2 - b
 
-            self._vertex_list.vertices[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+            self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
                                              bx1, by1, bx2, by1, bx2, by2, bx1, by2)
 
     @property
@@ -1461,7 +1462,7 @@ class Triangle(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1474,7 +1475,7 @@ class Triangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0)
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1482,7 +1483,7 @@ class Triangle(ShapeBase):
             y2 = self._y2 + y1 - self._y
             x3 = self._x3 + x1 - self._x
             y3 = self._y3 + y1 - self._y
-            self._vertex_list.vertices[:] = (x1, y1, x2, y2, x3, y3)
+            self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
 
     @property
     def x2(self):
@@ -1581,7 +1582,7 @@ class Star(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1619,7 +1620,7 @@ class Star(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     @property
     def outer_radius(self):
@@ -1692,7 +1693,7 @@ class Polygon(ShapeBase):
 
         program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
         self._update_vertices()
@@ -1706,7 +1707,7 @@ class Polygon(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = tuple([0] * ((len(self._coordinates) - 2) * 6))
+            self._vertex_list.position[:] = tuple([0] * ((len(self._coordinates) - 2) * 6))
         else:
             # Adjust all coordinates by the anchor.
             trans_x, trans_y = self._coordinates[0]
@@ -1720,7 +1721,7 @@ class Polygon(ShapeBase):
                 triangles += [coords[0], coords[n + 1], coords[n + 2]]
 
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices[:] = tuple(value for coordinate in triangles for value in coordinate)
+            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
 
     @property
     def rotation(self):

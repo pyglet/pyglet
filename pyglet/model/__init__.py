@@ -215,7 +215,7 @@ class BaseMaterialGroup(graphics.Group):
 
 class TexturedMaterialGroup(BaseMaterialGroup):
     default_vert_src = """#version 330 core
-    in vec3 vertices;
+    in vec3 position;
     in vec3 normals;
     in vec2 tex_coords;
     in vec4 colors;
@@ -235,7 +235,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
     void main()
     {
-        vec4 pos = window.view * model * vec4(vertices, 1.0);
+        vec4 pos = window.view * model * vec4(position, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(model)));
 
@@ -286,7 +286,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
 class MaterialGroup(BaseMaterialGroup):
     default_vert_src = """#version 330 core
-    in vec3 vertices;
+    in vec3 position;
     in vec3 normals;
     in vec4 colors;
 
@@ -304,7 +304,7 @@ class MaterialGroup(BaseMaterialGroup):
 
     void main()
     {
-        vec4 pos = window.view * model * vec4(vertices, 1.0);
+        vec4 pos = window.view * model * vec4(position, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(model)));
 
