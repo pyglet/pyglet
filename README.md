@@ -1,6 +1,6 @@
 [![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
 
-![logo_large.png](https://bitbucket.org/repo/aejyXX/images/3385888514-logo_large.png)
+![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png)
 
 # pyglet
 
@@ -101,7 +101,7 @@ it is a sign that the docs should be improved.
 If you want to contribute to pyglet, we suggest the following:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
-* Checkout the branch you wish to contribute to (such as *pyglet-1.4-maintenance*).
+* Checkout the branch you wish to contribute to (such as *pyglet-1.5-maintenance*).
 * Apply your changes to your fork.
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.
