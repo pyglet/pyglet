@@ -61,7 +61,7 @@ def _print_usage():
 
 
 if __name__ == '__main__':
-    avail_cmds = dict(clean=clean, dist=dist, docs=docs)
+    avail_cmds = {clean=clean, dist=dist, docs=docs}
     try:
         command = avail_cmds[sys.argv[1]]
     except IndexError:
@@ -69,7 +69,6 @@ if __name__ == '__main__':
         _print_usage()
     except KeyError:
         print('Unknown command:', sys.argv[1])
-        print()
         _print_usage()
     else:
         command()
