@@ -68,7 +68,7 @@ if __name__ == '__main__':
         # Invalid number of arguments, just print help
         _print_usage()
     except KeyError:
-        print('Unknown command:', sys.argv[1])
+        print(f"Unknown command: {sys.argv[1]}\n")
         _print_usage()
     else:
         command()
