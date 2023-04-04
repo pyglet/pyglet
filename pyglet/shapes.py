@@ -239,6 +239,12 @@ class ShapeBase(ABC):
         self._group.unset_state_recursive()
 
     def delete(self):
+        """Force immediate removal of the shape from video memory.
+
+        It is recommended to call this whenever you delete a shape,
+        as the Python garbage collector will not necessarily call the
+        finalizer as soon as the sprite falls out of scope.
+        """
         self._vertex_list.delete()
         self._vertex_list = None
 

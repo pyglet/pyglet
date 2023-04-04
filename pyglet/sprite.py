@@ -323,9 +323,9 @@ class Sprite(event.EventDispatcher):
     def delete(self):
         """Force immediate removal of the sprite from video memory.
 
-        This is often necessary when using batches, as the Python garbage
-        collector will not necessarily call the finalizer as soon as the
-        sprite is garbage.
+        It is recommended to call this whenever you delete a sprite,
+        as the Python garbage collector will not necessarily call the
+        finalizer as soon as the sprite falls out of scope.
         """
         if self._animation:
             clock.unschedule(self._animate)
