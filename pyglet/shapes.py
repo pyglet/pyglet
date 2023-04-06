@@ -419,13 +419,13 @@ class ShapeBase(ABC):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, self._draw_mode,
-                                self._group, batch)
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
             self._batch = batch
             self._create_vertex_list()
+            self._update_vertices()
 
 
 class Arc(ShapeBase):
@@ -1703,7 +1703,6 @@ class Polygon(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-        self._update_color()
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
