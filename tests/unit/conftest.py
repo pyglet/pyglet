@@ -1,9 +1,9 @@
 from unittest import mock
 
-import pytest
+from pytest import fixture
 
 
-@pytest.fixture
+@fixture
 def get_dummy_shader_program():
     """
     Provide a dummy getter to monkeypatch getters for default shaders.
@@ -32,3 +32,18 @@ def get_dummy_shader_program():
         return mock.MagicMock()
 
     return _get_dummy_shader_program
+
+
+@fixture(scope="module")
+def new_rgb_color():
+    return 1, 2, 3
+
+
+@fixture(scope="module")
+def new_rgba_color():
+    return 5, 6, 7, 59
+
+
+@fixture(scope="module", params=[(1, 2, 3), (5, 6, 7, 59)])
+def new_rgb_or_rgba_color(request):
+    return request.param
