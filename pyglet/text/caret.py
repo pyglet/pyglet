@@ -116,10 +116,13 @@ class Caret:
     def _blink(self, dt):
         if self.PERIOD:
             self._blink_visible = not self._blink_visible
+
         if self._visible and self._active and self._blink_visible:
             alpha = self._visible_alpha
         else:
             alpha = 0
+
+        # Only set the alpha rather than entire colors
         self._list.colors[3] = alpha
         self._list.colors[7] = alpha
 
