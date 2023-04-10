@@ -55,7 +55,8 @@ class TestWindow(window.Window):
     def on_key_press(self, symbol, modifiers):
         super(TestWindow, self).on_key_press(symbol, modifiers)
         if symbol == key.TAB:
-            self.caret.on_text('\t')
+            # self.caret.on_text('\t')
+            self.caret.color = (0, 255, 0, 10)
 
 
 class _DRYHelperMixin:
@@ -63,6 +64,11 @@ class _DRYHelperMixin:
     def build_window(self, color=(0, 0, 0, 255)):
         self.window = TestWindow(caret_color=color, resizable=False, visible=False)
         self.window.set_visible()
+
+    def build_window_via_setter(self, color):
+        self.build_window()
+        self.window.caret.color = color
+        self.window.layout.document = text.decode_text(template.format(color))
 
     def ask_color(self, color):
         self.user_verify(f"Was the caret color {color}?", take_screenshot=False)
@@ -89,6 +95,31 @@ class CaretColorInitTestCase(InteractiveTestCase, _DRYHelperMixin):
         # ease of telling apart from alpha == 255.
         color = (255, 0, 0, 80)
         self.build_window(color)
+        app.run()
+        self.ask_color(color)
+
+
+@pytest.mark.requires_user_action
+class CaretColorSetterTestCase(InteractiveTestCase, _DRYHelperMixin):
+    """Test if the text area Caret color was set correctly via the setter
+
+    Examine & remember the color of the caret, and type Y + enter if the
+    caret color matched the numbers in the label.
+
+    Press ESC to exit the test.
+    """
+
+    def test_caret_color_setter_rgb(self):
+        color = (0, 0, 255)
+        self.build_window_via_setter(color)
+        app.run()
+        self.ask_color(color)
+
+    def test_caret_color_setter_rgba(self):
+        # 80 seems to be an ok balance between visibility and
+        # ease of telling apart from alpha == 255.
+        color = (0, 0, 255, 0)
+        self.build_window_via_setter(color)
         app.run()
         self.ask_color(color)
 
