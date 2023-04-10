@@ -71,8 +71,8 @@ def test_init_sets_opacity_to_255_when_rgb_color_argument(rgb_caret):
     assert rgb_caret.color[3] == 255
 
 
-def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_caret):
-    assert rgba_caret.color[3] == 37
+def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_caret, original_rgba_color):
+    assert rgba_caret.color[3] == original_rgba_color[3]
 
 
 def test_init_sets_rgb_channels_correctly(rgb_or_rgba_caret, original_rgb_or_rgba_color):
