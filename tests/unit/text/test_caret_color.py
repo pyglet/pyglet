@@ -36,14 +36,15 @@ def mock_layout():
     return _layout
 
 
+# Color fixtures are defined in pyglet's tests/unit/conftest.py
 @pytest.fixture
-def rgba_caret(mock_layout):
-    return caret.Caret(layout=mock_layout, color=(0, 255, 0, 37))
+def rgba_caret(mock_layout, original_rgba_color):
+    return caret.Caret(layout=mock_layout, color=original_rgba_color)
 
 
 @pytest.fixture
-def rgb_caret(mock_layout):
-    return caret.Caret(layout=mock_layout, color=(0, 255, 0))
+def rgb_caret(mock_layout, original_rgb_color):
+    return caret.Caret(layout=mock_layout, color=original_rgb_color)
 
 
 def test_init_sets_opacity_to_255_when_rgb_color_argument(rgb_caret):
