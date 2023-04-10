@@ -77,3 +77,25 @@ def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_caret, origina
 
 def test_init_sets_rgb_channels_correctly(rgb_or_rgba_caret, original_rgb_or_rgba_color):
     assert rgb_or_rgba_caret.color[:3] == original_rgb_or_rgba_color[:3]
+
+
+def test_color_setter_sets_rgb_channels_correctly(rgb_or_rgba_caret, new_rgb_or_rgba_color):
+    rgb_or_rgba_caret.color = new_rgb_or_rgba_color
+    assert rgb_or_rgba_caret.color[:3] == new_rgb_or_rgba_color[:3]
+
+
+def test_color_setter_preserves_alpha_channel_when_setting_rgb_colors(
+    rgb_or_rgba_caret,
+    original_rgb_or_rgba_expected_alpha,
+    new_rgb_color
+):
+    rgb_or_rgba_caret.color = new_rgb_color
+    assert rgb_or_rgba_caret.color[3] == original_rgb_or_rgba_expected_alpha
+
+
+def test_color_setter_changes_alpha_channel_when_setting_rgba_colors(
+    rgb_or_rgba_caret,
+    new_rgba_color
+):
+    rgb_or_rgba_caret.color = new_rgba_color
+    assert rgb_or_rgba_caret.color[3] == new_rgba_color[3]

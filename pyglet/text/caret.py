@@ -169,10 +169,11 @@ class Caret:
     @color.setter
     def color(self, color):
         r, g, b, *_a = color
-        a = _a[0] if _a else self._visible_alpha
 
-        self._list.colors[:3] = color
-        self._list.colors[4:7] = color
+        # Preserve alpha when setting an RGB color
+        a = _a[0] if _a else self._list.colors[3]
+
+        self._list.colors[:] = r, g, b, a, r, g, b, a
 
     @property
     def position(self):

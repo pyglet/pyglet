@@ -1,3 +1,4 @@
+from typing import Tuple
 from unittest import mock
 
 import pytest
@@ -55,6 +56,35 @@ def original_rgba_color():
 @pytest.fixture(params=[ORIGINAL_RGB_COLOR, ORIGINAL_RGBA_COLOR])
 def original_rgb_or_rgba_color(request):
     return request.param
+
+
+def expected_alpha_for_color(color: Tuple[int, ...]):
+    """
+    Slow but readable color helper with validation.
+
+    This uses more readable logic than the main library and will raise
+    clear ValueErrors as part of validation.
+
+    Args:
+        color: An RGB or RGBA color
+
+    Returns:
+
+    """
+    num_channels = len(color)
+
+    if num_channels == 4:
+        return color[3]
+    elif num_channels == 3:
+        return 255
+
+    raise ValueError(
+        f"Expected color tuple with 3 or 4 elements, but got {color!r}.")
+
+
+@fixture
+def original_rgb_or_rgba_expected_alpha(original_rgb_or_rgba_color):
+    return expected_alpha_for_color(original_rgb_or_rgba_color)
 
 
 @fixture(scope="module")
