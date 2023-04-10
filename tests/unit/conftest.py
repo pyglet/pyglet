@@ -35,22 +35,38 @@ def get_dummy_shader_program():
     return _get_dummy_shader_program
 
 
-# Color fixtures for use with Shapes, UI elements, etc.
-@pytest.fixture(params=[(0, 0, 0), (0, 255, 0, 37)])
+# Color constants & fixtures for use with Shapes, UI elements, etc.
+ORIGINAL_RGB_COLOR = 253, 254, 255
+ORIGINAL_RGBA_COLOR = ORIGINAL_RGB_COLOR + (37,)
+NEW_RGB_COLOR = 1, 2, 3
+NEW_RGBA_COLOR = 5, 6, 7, 59
+
+
+@pytest.fixture
+def original_rgb_color():
+    return ORIGINAL_RGB_COLOR
+
+
+@pytest.fixture
+def original_rgba_color():
+    return ORIGINAL_RGBA_COLOR
+
+
+@pytest.fixture(params=[ORIGINAL_RGB_COLOR, ORIGINAL_RGBA_COLOR])
 def original_rgb_or_rgba_color(request):
     return request.param
 
 
 @fixture(scope="module")
 def new_rgb_color():
-    return 1, 2, 3
+    return NEW_RGB_COLOR
 
 
 @fixture(scope="module")
 def new_rgba_color():
-    return 5, 6, 7, 59
+    return NEW_RGBA_COLOR
 
 
-@fixture(scope="module", params=[(1, 2, 3), (5, 6, 7, 59)])
+@fixture(scope="module", params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
