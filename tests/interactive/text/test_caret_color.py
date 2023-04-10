@@ -8,7 +8,7 @@ from pyglet import text
 from pyglet.text import caret
 from pyglet.text import layout
 from pyglet import window
-from pyglet.window import key, mouse
+from pyglet.window import key
 
 
 # old-style str.format for code brevity & lower line length
