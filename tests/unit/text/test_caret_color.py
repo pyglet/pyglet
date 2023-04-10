@@ -32,12 +32,12 @@ def disable_automatic_caret_blinking(monkeypatch):
 def mock_layout():
 
     # Create layout mock
-    _layout = Mock(spec=layout.TextLayout)
-    _layout.foreground_decoration_group = Mock()
+    _layout = NonCallableMock(spec=layout.TextLayout)
+    _layout.foreground_decoration_group = NonCallableMock()
     _layout.attach_mock(Mock(), 'push_handlers')
 
     # Create mock shader program for it
-    program = Mock(spec=ShaderProgram)
+    program = NonCallableMock(spec=ShaderProgram)
     _layout.foreground_decoration_group.attach_mock(program, 'program')
 
     # Allow the shader program to create a mock vertex list on demand
