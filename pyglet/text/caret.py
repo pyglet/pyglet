@@ -151,10 +151,16 @@ class Caret:
 
     @property
     def color(self):
-        """The color of the caret when visible as an RGBA Tuple
+        """An RGBA tuple of the current caret color
 
-        The default caret color is ``[0, 0, 0, 255]`` (opaque black). Each
-        RGBA color component must be between 0 and 255, inclusive.
+        When blinking off, the alpha channel will be set to ``0``.  The
+        default caret color when visible is ``(0, 0, 0, 255)`` (opaque black).
+
+        You may set the color to an RGBA or RGB color tuple. Each color channel
+        must be between 0 and 255, inclusive.
+
+        If the color set to an RGB color, the previous alpha channel
+        value will be used.
 
         :type: (int, int, int, int)
         """
@@ -162,6 +168,9 @@ class Caret:
 
     @color.setter
     def color(self, color):
+        r, g, b, *_a = color
+        a = _a[0] if _a else self._visible_alpha
+
         self._list.colors[:3] = color
         self._list.colors[4:7] = color
 
