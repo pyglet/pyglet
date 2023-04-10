@@ -1,7 +1,6 @@
 from typing import Tuple
 from unittest import mock
 
-import pytest
 from pytest import fixture
 
 
@@ -43,17 +42,17 @@ NEW_RGB_COLOR = 1, 2, 3
 NEW_RGBA_COLOR = 5, 6, 7, 59
 
 
-@pytest.fixture(scope="session")
+@fixture(scope="session")
 def original_rgb_color():
     return ORIGINAL_RGB_COLOR
 
 
-@pytest.fixture(scope="session")
+@fixture(scope="session")
 def original_rgba_color():
     return ORIGINAL_RGBA_COLOR
 
 
-@pytest.fixture(params=[ORIGINAL_RGB_COLOR, ORIGINAL_RGBA_COLOR])
+@fixture(params=[ORIGINAL_RGB_COLOR, ORIGINAL_RGBA_COLOR])
 def original_rgb_or_rgba_color(request):
     return request.param
 
