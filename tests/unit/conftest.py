@@ -43,12 +43,12 @@ NEW_RGB_COLOR = 1, 2, 3
 NEW_RGBA_COLOR = 5, 6, 7, 59
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def original_rgb_color():
     return ORIGINAL_RGB_COLOR
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def original_rgba_color():
     return ORIGINAL_RGBA_COLOR
 
@@ -87,16 +87,16 @@ def original_rgb_or_rgba_expected_alpha(original_rgb_or_rgba_color):
     return expected_alpha_for_color(original_rgb_or_rgba_color)
 
 
-@fixture(scope="module")
+@fixture(scope="session")
 def new_rgb_color():
     return NEW_RGB_COLOR
 
 
-@fixture(scope="module")
+@fixture(scope="session")
 def new_rgba_color():
     return NEW_RGBA_COLOR
 
 
-@fixture(scope="module", params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
+@fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
