@@ -156,11 +156,15 @@ class Caret:
         When blinking off, the alpha channel will be set to ``0``.  The
         default caret color when visible is ``(0, 0, 0, 255)`` (opaque black).
 
-        You may set the color to an RGBA or RGB color tuple. Each color channel
-        must be between 0 and 255, inclusive.
+        You may set the color to an RGBA or RGB color tuple.
 
-        If the color set to an RGB color, the previous alpha channel
-        value will be used.
+        .. warning:: This setter can fail for a short time after layout / window init!
+
+                     Use ``__init__``'s ``color`` keyword argument instead if you
+                     run into this problem.
+
+        Each color channel must be between 0 and 255, inclusive. If the color
+        set to an RGB color, the previous alpha channel value will be used.
 
         :type: (int, int, int, int)
         """
