@@ -111,7 +111,7 @@ class SetterTestWindow(TestWindow):
         "changed to {0}, then close the window."
 
     def on_key_press(self, symbol, modifiers):
-        super(TestWindow, self).on_key_press(symbol, modifiers)
+        super(SetterTestWindow, self).on_key_press(symbol, modifiers)
         if symbol == key.TAB:
             self.caret.color = (0, 255, 0, 10)
 
