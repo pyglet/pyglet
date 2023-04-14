@@ -61,7 +61,7 @@ def _print_usage():
 
 
 if __name__ == '__main__':
-    avail_cmds = {clean=clean, dist=dist, docs=docs}
+    avail_cmds = dict(clean=clean, dist=dist, docs=docs)
     try:
         command = avail_cmds[sys.argv[1]]
     except IndexError:
