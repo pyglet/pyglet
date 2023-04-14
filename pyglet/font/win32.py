@@ -74,10 +74,10 @@ class Win32GlyphRenderer(base.GlyphRenderer):
 
         gdi32.SelectObject(self._dc, self.font.hfont)
 
-    def _create_bitmap(self, width, height):
+    def _create_bitmap(self, width, height) -> None:
         pass
 
-    def render(self, text):
+    def render(self, text: str) -> pyglet.font.base.Glyph:
         raise NotImplementedError('abstract')
 
 
@@ -92,7 +92,7 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
         except:
             pass
 
-    def render(self, text):
+    def render(self, text: str) -> pyglet.font.base.Glyph:
         # Attempt to get ABC widths (only for TrueType)
         abc = ABC()
         if gdi32.GetCharABCWidthsW(
@@ -133,7 +133,7 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 
         return glyph
 
-    def _get_image(self, text, width, height, lsb):
+    def _get_image(self, text: str, width: int, height: int, lsb: int) -> pyglet.image.ImageData:
         # There's no such thing as a greyscale bitmap format in GDI.  We can
         # create an 8-bit palette bitmap with 256 shades of grey, but
         # unfortunately antialiasing will not work on such a bitmap.  So, we
@@ -157,9 +157,10 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
         image = pyglet.image.ImageData(
             width, height,
             'AXXX', self._bitmap_data, self._bitmap_rect.right * 4)
+
         return image
 
-    def _create_bitmap(self, width, height):
+    def _create_bitmap(self, width: int, height: int) -> None:
         self._black = gdi32.GetStockObject(BLACK_BRUSH)
         self._white = gdi32.GetStockObject(WHITE_BRUSH)
 
