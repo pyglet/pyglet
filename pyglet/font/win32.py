@@ -25,7 +25,10 @@ def str_ucs2(text):
         text = text.encode('utf_16_le')   # explicit endian avoids BOM
     return create_string_buffer(text + '\0')
 
+
 _debug_dir = 'debug_font'
+
+
 def _debug_filename(base, extension):
     import os
     if not os.path.exists(_debug_dir):
@@ -36,20 +39,24 @@ def _debug_filename(base, extension):
         num += 1
     return name.format(num, extension)
 
+
 def _debug_image(image, name):
     filename = _debug_filename(name, 'png')
     image.save(filename)
     _debug(f'Saved image {image} to {filename}')
 
+
 _debug_logfile = None
+
+
 def _debug(msg):
     global _debug_logfile
     if not _debug_logfile:
         _debug_logfile = open(_debug_filename('log', 'txt'), 'wt')
     _debug_logfile.write(msg + '\n')
 
-class Win32GlyphRenderer(base.GlyphRenderer):
 
+class Win32GlyphRenderer(base.GlyphRenderer):
 
     def __init__(self, font):
         self._bitmap = None
@@ -73,7 +80,9 @@ class Win32GlyphRenderer(base.GlyphRenderer):
     def render(self, text):
         raise NotImplementedError('abstract')
 
+
 class GDIGlyphRenderer(Win32GlyphRenderer):
+
     def __del__(self):
         try:
             if self._dc:
@@ -86,15 +95,19 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
     def render(self, text):
         # Attempt to get ABC widths (only for TrueType)
         abc = ABC()
-        if gdi32.GetCharABCWidthsW(self._dc,
-            ord(text), ord(text), byref(abc)):
+        if gdi32.GetCharABCWidthsW(
+            self._dc,
+            ord(text), ord(text), byref(abc)
+        ):
             width = abc.abcB
             lsb = abc.abcA
             advance = abc.abcA + abc.abcB + abc.abcC
+
         else:
             width_buf = c_int()
-            gdi32.GetCharWidth32W(self._dc,
-                ord(text), ord(text), byref(width_buf))
+            gdi32.GetCharWidth32W(
+                self._dc, ord(text), ord(text), byref(width_buf))
+
             width = width_buf.value
             lsb = 0
             advance = width
@@ -134,12 +147,15 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 
         # Draw to DC
         user32.FillRect(self._dc, byref(self._bitmap_rect), self._black)
-        gdi32.ExtTextOutA(self._dc, -lsb, 0, 0, None, text,
+        gdi32.ExtTextOutA(
+            self._dc, -lsb, 0, 0, None, text,
             len(text), None)
+
         gdi32.GdiFlush()
 
         # Create glyph object and copy bitmap data to texture
-        image = pyglet.image.ImageData(width, height,
+        image = pyglet.image.ImageData(
+            width, height,
             'AXXX', self._bitmap_data, self._bitmap_rect.right * 4)
         return image
 
@@ -163,7 +179,8 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
         info.bmiHeader.biCompression = BI_RGB
 
         self._dc = gdi32.CreateCompatibleDC(None)
-        self._bitmap = gdi32.CreateDIBSection(None,
+        self._bitmap = gdi32.CreateDIBSection(
+            None,
             byref(info), DIB_RGB_COLORS, byref(data), None,
             0)
         # Spookiness: the above line causes a "not enough storage" error,
@@ -185,6 +202,7 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
             _debug(f'_bitmap = {self._bitmap}')
             _debug(f'pitch = {pitch}')
             _debug(f'info.bmiHeader.biSize = {info.bmiHeader.biSize}')
+
 
 class Win32Font(base.Font):
     glyph_renderer_class = GDIGlyphRenderer
@@ -243,8 +261,8 @@ class Win32Font(base.Font):
             raise ctypes.WinError()
 
 
-# --- GDI+ font rendering ---
 
+# --- GDI+ font rendering ---
 from pyglet.image.codecs.gdiplus import PixelFormat32bppARGB, gdiplus, Rect
 from pyglet.image.codecs.gdiplus import ImageLockModeRead, BitmapData
 
@@ -263,6 +281,7 @@ StringFormatFlagsNoWrap = 0x00001000
 StringFormatFlagsLineLimit = 0x00002000
 StringFormatFlagsNoClip = 0x00004000
 
+
 class Rectf(ctypes.Structure):
     _fields_ = [
         ('x', ctypes.c_float),
@@ -270,6 +289,7 @@ class Rectf(ctypes.Structure):
         ('width', ctypes.c_float),
         ('height', ctypes.c_float),
     ]
+
 
 class GDIPlusGlyphRenderer(Win32GlyphRenderer):
     def __del__(self):
@@ -305,10 +325,8 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipSetTextRenderingHint(self._graphics,
             TextRenderingHintAntiAliasGridFit)
 
-
         self._brush = ctypes.c_void_p()
         gdiplus.GdipCreateSolidFill(0xffffffff, ctypes.byref(self._brush))
-
 
         self._matrix = ctypes.c_void_p()
         gdiplus.GdipCreateMatrix(ctypes.byref(self._matrix))
@@ -429,11 +447,13 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
                                ctypes.byref(rect),
                                fmt,
                                self._brush)
+
         gdiplus.GdipFlush(self._graphics, 1)
         gdiplus.GdipDeleteStringFormat(fmt)
 
         bitmap_data = BitmapData()
-        gdiplus.GdipBitmapLockBits(self._bitmap,
+        gdiplus.GdipBitmapLockBits(
+            self._bitmap,
             byref(self._rect), ImageLockModeRead, self._format,
             byref(bitmap_data))
 
@@ -445,7 +465,8 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(self._bitmap, byref(bitmap_data))
 
-        image = pyglet.image.ImageData(width, height,
+        image = pyglet.image.ImageData(
+            width, height,
             'BGRA', buffer, -bitmap_data.Stride)
 
         glyph = self.font.create_glyph(image)
@@ -454,10 +475,12 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         glyph.set_bearings(-self.font.descent, lsb, advance)
         return glyph
 
+
 FontStyleBold = 1
 FontStyleItalic = 2
 UnitPixel = 2
 UnitPoint = 3
+
 
 class GDIPlusFont(Win32Font):
     glyph_renderer_class = GDIPlusGlyphRenderer
