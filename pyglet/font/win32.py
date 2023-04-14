@@ -206,6 +206,7 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 
 
 class Win32Font(base.Font):
+
     glyph_renderer_class = GDIGlyphRenderer
 
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
@@ -228,15 +229,23 @@ class Win32Font(base.Font):
 
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
+
         # Create a dummy DC for coordinate mapping
         with device_context(None) as dc:
+
+            # Default to 96 DPI unless otherwise specified
             if dpi is None:
                 dpi = 96
             logpixelsy = dpi
 
+            # Create LOGFONTW font description struct
+            # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logfontw
             logfont = LOGFONTW()
-            # Conversion of point size to device pixels
+
+            # Convert point size to actual device pixels
             logfont.lfHeight = int(-size * logpixelsy // 72)
+
+            # Configure the LOGFONTW's font properties
             if bold:
                 logfont.lfWeight = FW_BOLD
             else:
