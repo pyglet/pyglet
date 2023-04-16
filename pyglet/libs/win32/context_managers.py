@@ -28,15 +28,15 @@ After::
 Performance-critical code should avoid using these classes in favor of
 direct win32 API calls.
 """
-import pyglet
-from typing import Optional
+import contextlib
 
+import pyglet
+from typing import Optional, Generator
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
     from ctypes.wintypes import HANDLE
     from ctypes import WinError
     from pyglet.libs.win32 import _user32 as user32
-    from pyglet.libs.win32 import _kernel32 as kernel32
 
 else:  # Nasty local imports for testing on non-Win32 systems
     from ctypes import c_void_p as HANDLE
@@ -47,41 +47,23 @@ else:  # Nasty local imports for testing on non-Win32 systems
     user32.attach_callable_mock('ReleaseDC', Mock())
 
 
-class DeviceContext(HANDLE):
+@contextlib.contextmanager
+def device_context(window_handle: Optional[int] = None) -> Generator[HANDLE, None, None]:
     """
-    A Win32 device context as a Python Context manager.
+    A Windows device context wrapped as a context manager.
 
-    This class sacrifices a tiny bit of speed to gain durability
-    and readability. Performance-critical code should directly acquire
-    & release win32 resources the old-fashioned way.
+    Args:
+        window_handle: A specific window handle to use, if any.
+    Raises:
+        WinError: Raises if a device context cannot be acquired or released
+    Yields:
+        HANDLE: the managed drawing context handle to auto-close.
+
     """
-
-    def __init__(self, handle: Optional[int] = None):
-        super().__init__()
-        self._is_ctx_manager: bool = False
-
-        # Nasty trick: copy the handle value to this one
-        self.value = self._acquire_handle(handle)
-
-    def _acquire_handle(self, window_handle: Optional[int] = None) -> HANDLE:
-
-        handle_dc = user32.GetDC(window_handle)
-        if not handle_dc:
+    if _dc := user32.GetDC(window_handle) is None:
+        raise WinError()
+    try:
+        yield _dc
+    finally:
+        if not user32.ReleaseDC(None, _dc):
             raise WinError()
-
-        return handle_dc
-
-    def _close_handle(self) -> None:
-        user32.ReleaseDC(self)
-
-    def __enter__(self) -> HANDLE:
-        self._is_ctx_manager = True
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close_handle()
-
-    def close(self) -> None:
-        if self._is_ctx_manager:
-            raise AttributeError(
-                "Manual closing not allowed inside context manager")
