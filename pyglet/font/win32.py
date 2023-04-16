@@ -210,22 +210,22 @@ class Win32Font(base.Font):
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
         # Create a dummy DC for coordinate mapping
-        dc = user32.GetDC(0)
-        if dpi is None:
-            dpi = 96
-        logpixelsy = dpi
+        with device_context(0) as dc:
+            if dpi is None:
+                dpi = 96
+            logpixelsy = dpi
 
-        logfont = LOGFONTW()
-        # Conversion of point size to device pixels
-        logfont.lfHeight = int(-size * logpixelsy // 72)
-        if bold:
-            logfont.lfWeight = FW_BOLD
-        else:
-            logfont.lfWeight = FW_NORMAL
-        logfont.lfItalic = italic
-        logfont.lfFaceName = name
-        logfont.lfQuality = ANTIALIASED_QUALITY
-        user32.ReleaseDC(0, dc)
+            logfont = LOGFONTW()
+            # Conversion of point size to device pixels
+            logfont.lfHeight = int(-size * logpixelsy // 72)
+            if bold:
+                logfont.lfWeight = FW_BOLD
+            else:
+                logfont.lfWeight = FW_NORMAL
+            logfont.lfItalic = italic
+            logfont.lfFaceName = name
+            logfont.lfQuality = ANTIALIASED_QUALITY
+
         return logfont
 
     @classmethod
