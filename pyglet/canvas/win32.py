@@ -3,7 +3,7 @@ from .base import Display, Screen, ScreenMode, Canvas
 from pyglet.libs.win32 import _user32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from ..libs.win32.context_managers import device_context
+from pyglet.libs.win32.context_managers import device_context
 
 
 class Win32Display(Display):
