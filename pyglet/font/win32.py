@@ -9,6 +9,7 @@ from pyglet.font import base
 from pyglet.font import win32query
 import pyglet.image
 from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.context_managers import device_context
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
 from pyglet.libs.win32 import _kernel32 as kernel32
@@ -195,14 +196,13 @@ class Win32Font(base.Font):
         self.hfont = gdi32.CreateFontIndirectW(byref(self.logfont))
 
         # Create a dummy DC for coordinate mapping
-        dc = user32.GetDC(0)
-        metrics = TEXTMETRIC()
-        gdi32.SelectObject(dc, self.hfont)
-        gdi32.GetTextMetricsA(dc, byref(metrics))
-        self.ascent = metrics.tmAscent
-        self.descent = -metrics.tmDescent
-        self.max_glyph_width = metrics.tmMaxCharWidth
-        user32.ReleaseDC(0, dc)
+        with device_context(0) as dc:
+            metrics = TEXTMETRIC()
+            gdi32.SelectObject(dc, self.hfont)
+            gdi32.GetTextMetricsA(dc, byref(metrics))
+            self.ascent = metrics.tmAscent
+            self.descent = -metrics.tmDescent
+            self.max_glyph_width = metrics.tmMaxCharWidth
 
     def __del__(self):
         gdi32.DeleteObject(self.hfont)
