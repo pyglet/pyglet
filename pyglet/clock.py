@@ -71,12 +71,12 @@ from heapq import heappush as _heappush
 from heapq import heappushpop as _heappushpop
 from operator import attrgetter as _attrgetter
 from collections import deque as _deque
-
+from __future__ import annotations
 
 class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
-    def __init__(self, func, args, kwargs):
+    def __init__(self, func: Callable, args: tuple, kwargs: dict) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -85,7 +85,7 @@ class _ScheduledItem:
 class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
-    def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
+    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args:tuple, kwargs:dict) -> None:
         self.func = func
         self.interval = interval
         self.last_ts = last_ts
@@ -93,7 +93,7 @@ class _ScheduledIntervalItem:
         self.args = args
         self.kwargs = kwargs
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> None:
         try:
             return self.next_ts < other.next_ts
         except AttributeError:
@@ -114,7 +114,7 @@ class Clock:
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep = False
 
-    def __init__(self, time_function=_time.perf_counter):
+    def __init__(self, time_function=_time.perf_counter) -> None:
         """Initialise a Clock, with optional custom time function.
 
         You can provide a custom time function to return the elapsed
@@ -123,23 +123,23 @@ class Clock:
         pausing.
         """
         self.time = time_function
-        self.next_ts = self.time()
-        self.last_ts = None
+        self.next_ts: float = self.time()
+        self.last_ts: float = None
 
         # Used by self.get_frequency to show update frequency
-        self.times = _deque()
-        self.cumulative_time = 0
-        self.window_size = 60
+        self.times: _deque() = _deque()
+        self.cumulative_time: float = 0
+        self.window_size: int = 60
 
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
 
     @staticmethod
-    def sleep(microseconds):
+    def sleep(microseconds: float) -> None:
         _time.sleep(microseconds * 1e-6)
 
-    def update_time(self):
+    def update_time(self) -> None:
         """Get the elapsed time since the last call to `update_time`.
 
         This updates the clock's internal measure of time and returns
@@ -164,7 +164,7 @@ class Clock:
 
         return delta_t
 
-    def call_scheduled_functions(self, dt):
+    def call_scheduled_functions(self, dt: float) -> None:
         """Call scheduled functions that elapsed on the last `update_time`.
 
         .. versionadded:: 1.2
@@ -260,7 +260,7 @@ class Clock:
 
         return True
 
-    def tick(self, poll=False):
+    def tick(self, poll=False) -> None:
         """Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.
@@ -281,11 +281,11 @@ class Clock:
         if not poll and self._force_sleep:
             self.sleep(0)
 
-        delta_t = self.update_time()
+        delta_t: float = self.update_time()
         self.call_scheduled_functions(delta_t)
         return delta_t
 
-    def get_sleep_time(self, sleep_idle):
+    def get_sleep_time(self, sleep_idle: bool) -> None:
         """Get the time until the next item is scheduled.
 
         Applications can choose to continue receiving updates at the
@@ -319,7 +319,7 @@ class Clock:
 
         return None
 
-    def get_frequency(self):
+    def get_frequency(self) -> None:
         """Get the average clock update frequency of recent history.
 
         The result is the average of a sliding window of the last "n" updates,
@@ -333,7 +333,7 @@ class Clock:
             return 0
         return len(self.times) / self.cumulative_time
 
-    def _get_nearest_ts(self):
+    def _get_nearest_ts(self) -> None:
         """Get the nearest timestamp.
 
         Schedule from now, unless now is sufficiently close to last_ts, in
@@ -342,6 +342,9 @@ class Clock:
         behaviour was to always use self.last_ts, and not look at ts.  The
         new behaviour is needed because clock ticks can now be quite
         irregular, and span several seconds.
+
+        :rtype: float
+        :return: The nearest time stamp
         """
         last_ts = self.last_ts or self.next_ts
         ts = self.time()
@@ -349,10 +352,33 @@ class Clock:
             return ts
         return last_ts
 
-    def _get_soft_next_ts(self, last_ts, interval):
+    def _get_soft_next_ts(self, last_ts: float, interval: float) -> None:
+        """
+        Attempts to return evenly scheduled functions
 
-        def taken(ts, e):
-            """Check if `ts` has already got an item scheduled nearby."""
+        :Parameters:
+            `last_ts` : float
+                The last time stamp
+            `interval` : float
+                Look at the information about scheduling, it is down 
+
+        :rtype: float
+        :return: Best time for the next function calls
+        """
+
+        def taken(ts: float, e: float) -> bool:
+            """
+            Check if `ts` has already got an item scheduled nearby.
+            
+            :Parameters:
+            `ts` : float
+                The time stamp
+            `e` : float
+                How far it can be from other scheduled function calls
+
+            :rtype: bool
+            :return: Whether or not it is too close to other scheduled function calls
+            """
             # TODO this function is slow and called very often.
             # Optimise it, maybe?
             for item in self._schedule_interval_items:
@@ -363,27 +389,31 @@ class Clock:
 
             return False
 
-        # sorted list is required to produce expected results
-        # taken() will iterate through the heap, expecting it to be sorted
-        # and will not always catch the smallest value, so sort here.
-        # do not remove the sort key...it is faster than relaying comparisons
-        # NOTE: do not rewrite as popping from heap, as that is super slow!
+        """ 
+        sorted list is required to produce expected results
+        taken() will iterate through the heap, expecting it to be sorted
+        and will not always catch the smallest value, so sort here.
+        do not remove the sort key...it is faster than relaying comparisons
+        NOTE: do not rewrite as popping from heap, as that is super slow! 
+        """
         self._schedule_interval_items.sort(key=_attrgetter('next_ts'))
 
-        # Binary division over interval:
-        #
-        # 0                          interval
-        # |--------------------------|
-        #   5  3   6   2   7  4  8   1          Order of search
-        #
-        # i.e., first scheduled at interval,
-        #       then at            interval/2
-        #       then at            interval/4
-        #       then at            interval*3/4
-        #       then at            ...
-        #
-        # Schedule is hopefully then evenly distributed for any interval,
-        # and any number of scheduled functions.
+        """ 
+        Binary division over interval:
+        
+        0                          interval
+        |--------------------------|
+          5  3   6   2   7  4  8   1          Order of search
+        
+        i.e., first scheduled at interval,
+              then at            interval/2
+              then at            interval/4
+              then at            interval*3/4
+              then at            ...
+        
+        Schedule is hopefully then evenly distributed for any interval,
+        and any number of scheduled functions. 
+        """
 
         next_ts = last_ts + interval
         if not taken(next_ts, interval / 4):
@@ -404,7 +434,7 @@ class Clock:
             if divs > 16:
                 return next_ts
 
-    def schedule(self, func, *args, **kwargs):
+    def schedule(self, func: Callable, *args: tuple, **kwargs: dict) -> None:
         """Schedule a function to be called every frame.
 
         The function should have a prototype that includes ``dt`` as the
@@ -416,13 +446,17 @@ class Clock:
                 pass
 
         :Parameters:
-            `func` : callable
+            `func` : Callable
                 The function to call each frame.
+            `args` : tuple
+                Passed into function as *args when func is called
+            `kwargs` : dict
+                Passed into function as **kwargs when func is called
         """
         item = _ScheduledItem(func, args, kwargs)
         self._schedule_items.append(item)
 
-    def schedule_once(self, func, delay, *args, **kwargs):
+    def schedule_once(self, func: Callable, delay: float, *args: tuple, **kwargs: dict) -> None:
         """Schedule a function to be called once after `delay` seconds.
 
         The callback function prototype is the same as for `schedule`.
@@ -433,12 +467,12 @@ class Clock:
             `delay` : float
                 The number of seconds to wait before the timer lapses.
         """
-        last_ts = self._get_nearest_ts()
-        next_ts = last_ts + delay
+        last_ts: float = self._get_nearest_ts()
+        next_ts: float = last_ts + delay
         item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
-    def schedule_interval(self, func, interval, *args, **kwargs):
+    def schedule_interval(self, func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
         """Schedule a function to be called every `interval` seconds.
 
         Specifying an interval of 0 prevents the function from being
@@ -453,12 +487,12 @@ class Clock:
                 The number of seconds to wait between each call.
 
         """
-        last_ts = self._get_nearest_ts()
-        next_ts = last_ts + interval
+        last_ts: float = self._get_nearest_ts()
+        next_ts: float = last_ts + interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
-    def schedule_interval_soft(self, func, interval, *args, **kwargs):
+    def schedule_interval_soft(self, func: Callable, interval: float, *args: tuple, **kwargs: list) -> None:
         """Schedule a function to be called every ``interval`` seconds.
 
         This method is similar to `schedule_interval`, except that the
@@ -492,7 +526,7 @@ class Clock:
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
-    def unschedule(self, func):
+    def unschedule(self, func: Callable) -> None:
         """Remove a function from the schedule.
 
         If the function appears in the schedule more than once, all occurrences
@@ -523,13 +557,13 @@ class Clock:
 _default = Clock()
 
 
-def set_default(default) -> None:
+def set_default(default: Clock) -> None:
     """Set the default clock to use for all module-level functions.
 
     By default, an instance of :py:class:`~pyglet.clock.Clock` is used.
     """
     global _default
-    _default = default
+    _default: Clock = default
 
 
 def get_default():
@@ -589,7 +623,7 @@ def get_frequency() -> float:
     return _default.get_frequency()
 
 
-def schedule(func: Callable, *args, **kwargs) -> None:
+def schedule(func: Callable, *args: tuple, **kwargs: dict) -> None:
     """Schedule 'func' to be called every frame on the default clock.
 
     The arguments passed to func are ``dt``, followed by any ``*args`` and
@@ -598,7 +632,7 @@ def schedule(func: Callable, *args, **kwargs) -> None:
     _default.schedule(func, *args, **kwargs)
 
 
-def schedule_interval(func: Callable, interval: float, *args, **kwargs) -> None:
+def schedule_interval(func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
     """Schedule ``func`` on the default clock every ``interval`` seconds.
 
     The arguments passed to ``func`` are ``dt`` (time since last function
@@ -607,7 +641,7 @@ def schedule_interval(func: Callable, interval: float, *args, **kwargs) -> None:
     _default.schedule_interval(func, interval, *args, **kwargs)
 
 
-def schedule_interval_soft(func: Callable, interval: float, *args, **kwargs) -> None:
+def schedule_interval_soft(func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
     """Schedule ``func`` on the default clock every interval seconds.
 
     The clock will move the interval out of phase with other scheduled
@@ -621,7 +655,7 @@ def schedule_interval_soft(func: Callable, interval: float, *args, **kwargs) -> 
     _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 
-def schedule_once(func: Callable, delay: float, *args, **kwargs) -> None:
+def schedule_once(func: Callable, delay: float, *args: tuple, **kwargs: dict) -> None:
     """Schedule ``func`` to be called once after ``delay`` seconds.
 
     This function uses the default clock. ``delay`` can be a float. The
