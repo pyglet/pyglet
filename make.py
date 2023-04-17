@@ -54,8 +54,7 @@ def dist():
 
 def _print_usage():
     print('Usage:', op.basename(sys.argv[0]), '<command>')
-    print('  where commands are:', ', '.join(avail_cmds))
-    print()
+    print('  where commands are:', ', '.join(avail_cmds), "\n")
     for name, cmd in avail_cmds.items():
         print(name, '\t', cmd.__doc__)
 
