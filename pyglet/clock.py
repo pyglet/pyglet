@@ -115,7 +115,8 @@ class Clock:
     _force_sleep = False
 
     def __init__(self, time_function=_time.perf_counter) -> None:
-        """Initialise a Clock, with optional custom time function.
+        """
+        Initialise a Clock, with optional custom time function.
 
         You can provide a custom time function to return the elapsed
         time of the application, in seconds. Defaults to time.perf_counter,
@@ -140,7 +141,8 @@ class Clock:
         _time.sleep(microseconds * 1e-6)
 
     def update_time(self) -> None:
-        """Get the elapsed time since the last call to `update_time`.
+        """
+        Get the elapsed time since the last call to `update_time`.
 
         This updates the clock's internal measure of time and returns
         the difference since the last update (or since the clock was created).
@@ -165,7 +167,8 @@ class Clock:
         return delta_t
 
     def call_scheduled_functions(self, dt: float) -> None:
-        """Call scheduled functions that elapsed on the last `update_time`.
+        """
+        Call scheduled functions that elapsed on the last `update_time`.
 
         .. versionadded:: 1.2
 
@@ -261,7 +264,8 @@ class Clock:
         return True
 
     def tick(self, poll=False) -> None:
-        """Signify that one frame has passed.
+        """
+        Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.
 

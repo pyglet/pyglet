@@ -56,6 +56,7 @@ import zipfile
 import weakref
 
 from io import BytesIO
+from typing import Union, Optional
 
 import pyglet
 
@@ -63,7 +64,7 @@ import pyglet
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         message = ("Resource '{}' was not found on the path.  "
                    "Ensure that the filename has the correct capitalisation.".format(name))
         Exception.__init__(self, message)
@@ -72,15 +73,16 @@ class ResourceNotFoundException(Exception):
 class UndetectableShaderType(Exception):
     """The type of the Shader source could not be identified."""
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         message = ("The Shader type of '{}' could not be determined.  "
                    "Ensure that your source file has a standard extension, "
                    "or provide a valid 'shader_type' parameter.".format(name))
         Exception.__init__(self, message)
 
 
-def get_script_home():
-    """Get the directory containing the program entry module.
+def get_script_home() -> None:
+    """
+    Get the directory containing the program entry module.
 
     For ordinary Python scripts, this is the directory containing the
     ``__main__`` module.  For executables created with py2exe the result is
@@ -97,6 +99,7 @@ def get_script_home():
     full path to the real script can be specified in :py:attr:`pyglet.resource.path`.
 
     :rtype: str
+    :return: Directory path of directory containing program entry module.
     """
     frozen = getattr(sys, 'frozen', None)
     meipass = getattr(sys, '_MEIPASS', None)
@@ -121,8 +124,9 @@ def get_script_home():
                 return os.path.dirname(sys.executable)
 
 
-def get_settings_path(name):
-    """Get a directory to save user preferences.
+def get_settings_path(name: str):
+    """
+    Get a directory to save user preferences.
 
     Different platforms have different conventions for where to save user
     preferences, saved games, and settings.  This function implements those
@@ -143,6 +147,7 @@ def get_settings_path(name):
             The name of the application.
 
     :rtype: str
+    :return: Directory path where the program can save user preferences
     """
 
     if pyglet.compat_platform in ('cygwin', 'win32'):
@@ -161,8 +166,9 @@ def get_settings_path(name):
         return os.path.expanduser(f'~/.{name}')
 
 
-def get_data_path(name):
-    """Get a directory to save user data.
+def get_data_path(name: str) -> None:
+    """
+    Get a directory to save user data.
 
     For a Posix or Linux based system many distributions have a separate
     directory to store user data for a specific application and this 
@@ -184,6 +190,7 @@ def get_data_path(name):
             The name of the application.
 
     :rtype: str
+    :return: Directory path where the program can save user data
     """
 
     if pyglet.compat_platform in ('cygwin', 'win32'):
@@ -203,15 +210,17 @@ def get_data_path(name):
 
 
 class Location:
-    """Abstract resource location.
+    """
+    Abstract resource location.
 
     Given a location, a file can be loaded from that location with the `open`
     method.  This provides a convenient way to specify a path to load files
     from, and not necessarily have that path reside on the filesystem.
     """
 
-    def open(self, filename, mode='rb'):
-        """Open a file at this location.
+    def open(self, filename: str, mode: str='rb'):
+        """
+        Open a file at this location.
 
         :Parameters:
             `filename` : str
@@ -228,11 +237,13 @@ class Location:
 
 
 class FileLocation(Location):
-    """Location on the filesystem.
+    """
+    Location on the filesystem.
     """
 
-    def __init__(self, filepath):
-        """Create a location given a relative or absolute path.
+    def __init__(self, filepath: str) -> None:
+        """
+        Create a location given a relative or absolute path.
 
         :Parameters:
             `filepath` : str
@@ -240,16 +251,30 @@ class FileLocation(Location):
         """
         self.path = filepath
 
-    def open(self, filename, mode='rb'):
+    def open(self, filename: str, mode: str='rb'):
+        """
+        Opens the file
+        
+        :Parameters:
+            `filepath` : str
+                Path on the filesystem.
+            `mode` : str
+                Mode to open file in
+
+        :rtype: object
+        :return: file object returned from open()
+        """
         return open(os.path.join(self.path, filename), mode)
 
 
 class ZIPLocation(Location):
-    """Location within a ZIP file.
+    """
+    Location within a ZIP file.
     """
 
-    def __init__(self, zip, dir):
-        """Create a location given an open ZIP file and a path within that
+    def __init__(self, zip: zipfile.ZipFile, dir: str) -> None:
+        """
+        Create a location given an open ZIP file and a path within that
         file.
 
         :Parameters:
@@ -263,7 +288,19 @@ class ZIPLocation(Location):
         self.zip = zip
         self.dir = dir
 
-    def open(self, filename, mode='rb'):
+    def open(self, filename: str, mode: str='rb') -> BytesIO():
+        """
+        Opens the file
+        
+        :Parameters:
+            `filepath` : str
+                Path on the filesystem.
+            `mode` : str
+                Mode to open file in
+
+        :rtype: BytesIO
+        :return: BytesIO
+        """
         if self.dir:
             path = self.dir + '/' + filename
         else:
@@ -275,14 +312,16 @@ class ZIPLocation(Location):
 
 
 class URLLocation(Location):
-    """Location on the network.
+    """
+    Location on the network.
 
     This class uses the ``urlparse`` and ``urllib2`` modules to open files on
     the network given a URL.
     """
 
-    def __init__(self, base_url):
-        """Create a location given a base URL.
+    def __init__(self, base_url: str) -> None:
+        """
+        Create a location given a base URL.
 
         :Parameters:
             `base_url` : str
@@ -291,7 +330,8 @@ class URLLocation(Location):
         """
         self.base = base_url
 
-    def open(self, filename, mode='rb'):
+    def open(self, filename: str, mode: str='rb') -> None:
+        """Opens the url using urllib.request.urlopen()"""
         import urllib.parse
         import urllib.request
         url = urllib.parse.urljoin(self.base, filename)
@@ -299,7 +339,8 @@ class URLLocation(Location):
 
 
 class Loader:
-    """Load program resource files from disk.
+    """
+    Load program resource files from disk.
 
     The loader contains a search path which can include filesystem
     directories, ZIP archives and Python packages.
@@ -313,8 +354,9 @@ class Loader:
             application script.
 
     """
-    def __init__(self, path=None, script_home=None):
-        """Create a loader for the given path.
+    def __init__(self, path: [str]=None, script_home: str=None) -> None:
+        """
+        Create a loader for the given path.
 
         If no path is specified it defaults to ``['.']``; that is, just the
         program directory.
@@ -345,12 +387,13 @@ class Loader:
         self._cached_images = weakref.WeakValueDictionary()
         self._cached_animations = weakref.WeakValueDictionary()
 
-    def _require_index(self):
+    def _require_index(self) -> None:
         if self._index is None:
             self.reindex()
 
-    def reindex(self):
-        """Refresh the file index.
+    def reindex(self) -> None:
+        """
+        Refresh the file index.
 
         You must call this method if `path` is changed or the filesystem
         layout changes.
@@ -428,7 +471,19 @@ class Loader:
                                 zip_name = zip_name[len(dir) + 1:]
                             self._index_file(zip_name, location)
 
-    def _get_stream(self, path):
+    def _get_stream(self, path: str) -> Union[str, BytesIO, None]:
+        """
+        Attempts to return the path if zipfile.is_zipfile is true
+
+        Used to in reindex to verify that the zip exists and use it if it does.
+
+        :Parameters:
+            `path` : str
+                Path to look for
+
+        :rtype: Union[str, BytesIO, None]
+        :return: Returns if zipfile.is_zipfile becomes true
+        """
         if zipfile.is_zipfile(path):
             return path
         elif not os.path.exists(path + '.001'):
@@ -450,12 +505,14 @@ class Loader:
             else:
                 return None
 
-    def _index_file(self, name, location):
+    def _index_file(self, name: str, location: Union[ZIPLocation, FileLocation]) -> None:
+        """Sets the location at name"""
         if name not in self._index:
             self._index[name] = location
 
-    def file(self, name, mode='rb'):
-        """Load a resource.
+    def file(self, name: str, mode: str='rb') -> None:
+        """
+        Load a resource.
 
         :Parameters:
             `name` : str
@@ -473,8 +530,9 @@ class Loader:
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def location(self, name):
-        """Get the location of a resource.
+    def location(self, name: str) -> Location:
+        """
+        Get the location of a resource.
 
         This method is useful for opening files referenced from a resource.
         For example, an HTML file loaded as a resource might reference some
@@ -493,7 +551,7 @@ class Loader:
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def add_font(self, name):
+    def add_font(self, name: str) -> None:
         """Add a font resource to the application.
 
         Fonts not installed on the system must be added to pyglet before they
@@ -507,14 +565,13 @@ class Loader:
         :Parameters:
             `name` : str
                 Filename of the font resource to add.
-
         """
         self._require_index()
         from pyglet import font
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name, atlas, border):
+    def _alloc_image(self, name: str, atlas: bool, border: int) -> None:
         file = self.file(name)
         try:
             img = pyglet.image.load(name, file=file)
@@ -531,7 +588,7 @@ class Loader:
 
         return bin.add(img, border)
 
-    def _get_texture_atlas_bin(self, width, height, border):
+    def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> pyglet.image.atlas.TextureBin:
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
@@ -556,8 +613,9 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True, border=1):
-        """Load an image with optional transformation.
+    def image(self, name: str, flip_x=False, flip_y=False, rotate=0, atlas=True, border=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+        """
+        Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
         packed into a :py:class:`~pyglet.image.atlas.TextureBin` if it is an appropriate size for packing.
@@ -597,7 +655,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0, border=1):
+    def animation(self, name, flip_x=False, flip_y=False, rotate=0, border=1) -> pyglet.image.Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -637,7 +695,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def get_cached_image_names(self):
+    def get_cached_image_names(self) -> [str]:
         """Get a list of image filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -648,7 +706,7 @@ class Loader:
         self._require_index()
         return list(self._cached_images.keys())
 
-    def get_cached_animation_names(self):
+    def get_cached_animation_names(self) -> [str]:
         """Get a list of animation filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -659,7 +717,7 @@ class Loader:
         self._require_index()
         return list(self._cached_animations.keys())
 
-    def get_texture_bins(self):
+    def get_texture_bins(self) -> [pyglet.image.atlas.TextureBin]:
         """Get a list of texture bins in use.
 
         This is useful for debugging and profiling only.
@@ -670,7 +728,7 @@ class Loader:
         self._require_index()
         return list(self._texture_atlas_bins.values())
 
-    def media(self, name, streaming=True):
+    def media(self, name: name, streaming: bool=True) -> media.Source:
         """Load a sound or video resource.
 
         The meaning of `streaming` is as for `media.load`.  Compressed
@@ -701,7 +759,7 @@ class Loader:
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def texture(self, name):
+    def texture(self, name: str) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
         """Load a texture.
 
         The named image will be loaded as a single OpenGL texture.  If the
@@ -723,7 +781,7 @@ class Loader:
         self._cached_textures[name] = texture
         return texture
 
-    def model(self, name, batch=None):
+    def model(self, name: str, batch: Optional[Batch]=None) -> pyglet.model.Model:
         """Load a 3D model.
 
         :Parameters:
@@ -738,7 +796,7 @@ class Loader:
         abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
         return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
 
-    def html(self, name):
+    def html(self, name: str) -> pyglet.text.FormattedDocument:
         """Load an HTML document.
 
         :Parameters:
@@ -751,7 +809,7 @@ class Loader:
         file = self.file(name)
         return pyglet.text.load(name, file, 'text/html')
 
-    def attributed(self, name):
+    def attributed(self, name: str) -> pyglet.text.FormattedDocument:
         """Load an attributed text document.
 
         See `pyglet.text.formats.attributed` for details on this format.
@@ -766,7 +824,7 @@ class Loader:
         file = self.file(name)
         return pyglet.text.load(name, file, 'text/vnd.pyglet-attributed')
 
-    def text(self, name):
+    def text(self, name: str) -> pyglet.text.UnformattedDocument:
         """Load a plain text document.
 
         :Parameters:
@@ -779,7 +837,7 @@ class Loader:
         fileobj = self.file(name)
         return pyglet.text.load(name, fileobj, 'text/plain')
 
-    def shader(self, name, shader_type=None):
+    def shader(self, name: str, shader_type: Optional[str]=None) -> pyglet.graphics.shader.Shader:
         """Load a Shader object.
 
         :Parameters:
@@ -813,7 +871,7 @@ class Loader:
 
         return pyglet.graphics.shader.Shader(source_string, shader_type)
 
-    def get_cached_texture_names(self):
+    def get_cached_texture_names(self) -> [str]:
         """Get the names of textures currently cached.
 
         :rtype: list of str
@@ -840,7 +898,7 @@ class _DefaultLoader(Loader):
         return path
 
     @path.setter
-    def path(self, value):
+    def path(self, value) -> None:
         global path
         path = value
 
