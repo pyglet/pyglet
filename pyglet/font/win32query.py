@@ -386,7 +386,7 @@ def query(charset=DEFAULT_CHARSET):
     global FONTDB
 
     # 1. Get device context of the entire screen
-    with device_context(0) as hdc:
+    with device_context(None) as hdc:
 
         # 2. Call EnumFontFamiliesExA (ANSI version)
 

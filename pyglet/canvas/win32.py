@@ -31,7 +31,7 @@ class Win32Screen(Screen):
         self._handle = handle
 
     def get_matching_configs(self, template):
-        with device_context(0) as hdc:
+        with device_context(None) as hdc:
             canvas = Win32Canvas(self.display, 0, hdc)
             configs = template.match(canvas)
             # XXX deprecate config's being screen-specific

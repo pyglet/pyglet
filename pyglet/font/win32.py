@@ -196,7 +196,7 @@ class Win32Font(base.Font):
         self.hfont = gdi32.CreateFontIndirectW(byref(self.logfont))
 
         # Create a dummy DC for coordinate mapping
-        with device_context(0) as dc:
+        with device_context(None) as dc:
             metrics = TEXTMETRIC()
             gdi32.SelectObject(dc, self.hfont)
             gdi32.GetTextMetricsA(dc, byref(metrics))
@@ -210,7 +210,7 @@ class Win32Font(base.Font):
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
         # Create a dummy DC for coordinate mapping
-        with device_context(0) as dc:
+        with device_context(None) as dc:
             if dpi is None:
                 dpi = 96
             logpixelsy = dpi
