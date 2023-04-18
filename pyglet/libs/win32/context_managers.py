@@ -48,8 +48,9 @@ def device_context(window_handle: Optional[int] = None) -> Generator[HANDLE, Non
         HANDLE: the managed drawing context handle to auto-close.
 
     """
-    if _dc := user32.GetDC(window_handle) is None:
+    if not (_dc := user32.GetDC(window_handle)):
         raise WinError()
+
     try:
         yield _dc
     finally:
