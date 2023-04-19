@@ -2,12 +2,13 @@
 Win32 resources as handy context managers.
 
 These are intended to help keep loader code clean & stable at the price
-of a tiny bit of execution speed.
+of a tiny bit of execution speed. Performance-critical code should avoid
+using these helpers in favor of direct win32 API calls.
 
 Before::
 
     def loader_function(arg):
-        context_handle = user32.GetResource(0)
+        context_handle = user32.GetResource(None)
 
         result = calculation(arg)
 
@@ -20,13 +21,11 @@ After::
 
     def loader_function(arg):
 
-        with ResourceContext(0) as context_handle:
+        with resource_context() as context_handle:
             result = calculation(arg)
 
         return result
 
-Performance-critical code should avoid using these classes in favor of
-direct win32 API calls.
 """
 from contextlib import contextmanager
 from typing import Optional, Generator
