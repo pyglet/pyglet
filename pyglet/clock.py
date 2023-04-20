@@ -173,7 +173,7 @@ class Clock:
         .. versionadded:: 1.2
 
         :Parameters:
-            dt : float
+            `dt` : float
                 The elapsed time since the last update to pass to each
                 scheduled function.  This is *not* used to calculate which
                 functions have elapsed.
@@ -358,7 +358,7 @@ class Clock:
 
     def _get_soft_next_ts(self, last_ts: float, interval: float) -> None:
         """
-        Attempts to return evenly scheduled functions
+        Attempts to return times for evenly scheduled functions
 
         :Parameters:
             `last_ts` : float
@@ -446,7 +446,7 @@ class Clock:
         last clock tick.  Any additional arguments given to this function
         are passed on to the callback::
 
-            def callback(dt, *args, **kwargs):
+            def callback(dt, *args: tuple, **kwargs: dict):
                 pass
 
         :Parameters:
@@ -466,7 +466,7 @@ class Clock:
         The callback function prototype is the same as for `schedule`.
 
         :Parameters:
-            `func` : callable
+            `func` : Callable
                 The function to call when the timer lapses.
             `delay` : float
                 The number of seconds to wait before the timer lapses.
@@ -485,7 +485,7 @@ class Clock:
         The callback function prototype is the same as for `schedule`.
 
         :Parameters:
-            `func` : callable
+            `func` : Callable
                 The function to call when the timer lapses.
             `interval` : float
                 The number of seconds to wait between each call.
@@ -519,7 +519,7 @@ class Clock:
         .. versionadded:: 1.1
 
         :Parameters:
-            `func` : callable
+            `func` : Callable
                 The function to call when the timer lapses.
             `interval` : float
                 The number of seconds to wait between each call.
@@ -537,7 +537,7 @@ class Clock:
         are removed.  If the function was not scheduled, no error is raised.
 
         :Parameters:
-            `func` : callable
+            `func` : Callable
                 The function to remove from the schedule.
 
         """
@@ -570,7 +570,7 @@ def set_default(default: Clock) -> None:
     _default: Clock = default
 
 
-def get_default():
+def get_default() -> Clock:
     """Get the pyglet default Clock.
 
     Return the :py:class:`~pyglet.clock.Clock` instance that is used by all

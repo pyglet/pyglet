@@ -218,7 +218,7 @@ class Location:
     from, and not necessarily have that path reside on the filesystem.
     """
 
-    def open(self, filename: str, mode: str='rb'):
+    def open(self, filename: str, mode: str='rb') -> None:
         """
         Open a file at this location.
 
@@ -589,7 +589,8 @@ class Loader:
         return bin.add(img, border)
 
     def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> pyglet.image.atlas.TextureBin:
-        """A heuristic for determining the atlas bin to use for a given image
+        """
+        A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
         """
