@@ -261,7 +261,7 @@ class FileLocation(Location):
             `mode` : str
                 Mode to open file in
 
-        :rtype: object
+        :rtype: file object
         :return: file object returned from open()
         """
         return open(os.path.join(self.path, filename), mode)
@@ -288,7 +288,7 @@ class ZIPLocation(Location):
         self.zip = zip
         self.dir = dir
 
-    def open(self, filename: str, mode: str='rb') -> BytesIO():
+    def open(self, filename: str, mode: str='rb') -> BytesIO:
         """
         Opens the file
         
@@ -895,7 +895,7 @@ path = []
 class _DefaultLoader(Loader):
 
     @property
-    def path(self) -> path:
+    def path(self) -> [str]:
         return path
 
     @path.setter
