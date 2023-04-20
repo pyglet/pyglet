@@ -263,7 +263,7 @@ class Clock:
 
         return True
 
-    def tick(self, poll=False) -> None:
+    def tick(self, poll: bool=False) -> None:
         """
         Signify that one frame has passed.
 

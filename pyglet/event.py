@@ -472,7 +472,7 @@ class EventDispatcher:
         else:
             raise exception
 
-    def event(self, *args: list):
+    def event(self, *args: tuple):
         """Function decorator for an event handler.
 
         Usage::

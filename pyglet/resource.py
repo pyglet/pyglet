@@ -613,7 +613,7 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name: str, flip_x=False, flip_y=False, rotate=0, atlas=True, border=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+    def image(self, name: str, flip_x: bool=False, flip_y: bool=False, rotate: int=0, atlas: bool=True, border: int=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
         """
         Load an image with optional transformation.
 
@@ -655,7 +655,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0, border=1) -> pyglet.image.Animation:
+    def animation(self, name: str, flip_x: bool=False, flip_y: bool=False, rotate: int=0, border: int=1) -> pyglet.image.Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -728,7 +728,7 @@ class Loader:
         self._require_index()
         return list(self._texture_atlas_bins.values())
 
-    def media(self, name: name, streaming: bool=True) -> media.Source:
+    def media(self, name: str, streaming: bool=True) -> media.Source:
         """Load a sound or video resource.
 
         The meaning of `streaming` is as for `media.load`.  Compressed
@@ -894,7 +894,7 @@ path = []
 class _DefaultLoader(Loader):
 
     @property
-    def path(self):
+    def path(self) -> path:
         return path
 
     @path.setter
