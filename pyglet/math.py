@@ -568,15 +568,15 @@ class Vec4:
         """Create a new Vec4 linearly interpolated between this one and another Vec4.
 
         :parameters:
-            `other`  : Vec4 :
+            `other`  : Vec4
                 The vector to linearly interpolate with.
-            `alpha` : float or int :
+            `alpha` : float or int
                 The amount of interpolation.
                 Some value between 0.0 (this vector) and 1.0 (other vector).
                 0.5 is halfway inbetween.
 
-        :returns: A new interpolated vector.
         :rtype: Vec4
+        :return: A new interpolated vector.
         """
         return Vec4(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
