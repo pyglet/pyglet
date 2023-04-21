@@ -54,10 +54,10 @@ class Vec2:
     def __getitem__(self, item: slice) -> tuple[float, ...]:
         ...
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> number:
         return (self.x, self.y)[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y'][key]):
                 setattr(self, attr, value[i])
@@ -106,7 +106,7 @@ class Vec2:
         return not isinstance(other, Vec2) or self.x != other.x or self.y != other.y
 
     @staticmethod
-    def from_polar(mag: float, angle: float) -> Vec2:
+    def from_polar(mag: number, angle: number) -> Vec2:
         """Create a new vector from the given polar coordinates.
 
         :parameters:
@@ -120,7 +120,7 @@ class Vec2:
         """
         return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
 
-    def from_magnitude(self, magnitude: float) -> Vec2:
+    def from_magnitude(self, magnitude: number) -> Vec2:
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The heading remains unchanged.
 
@@ -133,7 +133,7 @@ class Vec2:
         """
         return self.normalize() * magnitude
 
-    def from_heading(self, heading: float) -> Vec2:
+    def from_heading(self, heading: number) -> Vec2:
         """Create a new vector of the same magnitude with the given heading. I.e. Rotate the vector to the heading.
 
         :parameters:
@@ -164,7 +164,7 @@ class Vec2:
         """
         return self.__abs__()
 
-    def limit(self, maximum: float) -> Vec2:
+    def limit(self, maximum: number) -> Vec2:
         """Limit the magnitude of the vector to the value used for the max parameter.
 
         :parameters:
@@ -199,7 +199,7 @@ class Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normal."""
         return self - normal * 2 * normal.dot(self)
 
-    def rotate(self, angle: float) -> Vec2:
+    def rotate(self, angle: number) -> Vec2:
         """Create a new Vector rotated by the angle. The magnitude remains unchanged.
 
         :parameters:
@@ -228,7 +228,7 @@ class Vec2:
             return Vec2(self.x / d, self.y / d)
         return self
 
-    def clamp(self, min_val: float, max_val: float) -> Vec2:
+    def clamp(self, min_val: number, max_val: number) -> Vec2:
         """Restrict the value of the X and Y components of the vector to be within the given values.
 
         :parameters:
@@ -254,7 +254,7 @@ class Vec2:
         """
         return self.x * other.x + self.y * other.y
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
@@ -294,7 +294,7 @@ class Vec3:
     def __getitem__(self, item):
         return (self.x, self.y, self.z)[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y', 'z'][key]):
                 setattr(self, attr, value[i])
@@ -335,10 +335,10 @@ class Vec3:
     def __neg__(self) -> Vec3:
         return Vec3(-self.x, -self.y, -self.z)
 
-    def __round__(self, ndigits: int | None = None) -> Vec3:
+    def __round__(self, ndigits: Optional[int] = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec3 | int) -> Vec3:
+    def __radd__(self, other: Union[Vec3, int]) -> Vec3:
         """Reverse add. Required for functionality with sum()"""
         if other == 0:
             return self
@@ -351,7 +351,7 @@ class Vec3:
     def __ne__(self, other: object) -> bool:
         return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
 
-    def from_magnitude(self, magnitude: float) -> Vec3:
+    def from_magnitude(self, magnitude: number) -> Vec3:
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The rotation remains unchanged.
 
@@ -364,7 +364,7 @@ class Vec3:
         """
         return self.normalize() * magnitude
 
-    def limit(self, maximum: float) -> Vec3:
+    def limit(self, maximum: number) -> Vec3:
         """Limit the magnitude of the vector to the value used for the max parameter.
 
         :parameters:
@@ -448,7 +448,7 @@ class Vec3:
         except ZeroDivisionError:
             return self
 
-    def clamp(self, min_val: float, max_val: float) -> Vec3:
+    def clamp(self, min_val: number, max_val: number) -> Vec3:
         """Restrict the value of the X,  Y and Z components of the vector to be within the given values.
 
         :parameters:
@@ -464,7 +464,7 @@ class Vec3:
                     clamp(self.y, min_val, max_val),
                     clamp(self.z, min_val, max_val))
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
@@ -503,10 +503,10 @@ class Vec4:
     def __getitem__(self, item: slice) -> tuple[float, ...]:
         ...
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> None:
         return (self.x, self.y, self.z, self.w)[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y', 'z', 'w'][key]):
                 setattr(self, attr, value[i])
@@ -605,7 +605,7 @@ class Vec4:
     def dot(self, other: Vec4) -> float:
         return self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
@@ -673,7 +673,7 @@ class Mat3(tuple):
     def __neg__(self) -> Mat3:
         return Mat3(-v for v in self)
 
-    def __round__(self, ndigits: int | None = None) -> Mat3:
+    def __round__(self, ndigits: Optional[int] = None) -> Mat3:
         return Mat3(round(v, ndigits) for v in self)
 
     def __mul__(self, other: object) -> _typing.NoReturn:
@@ -728,7 +728,7 @@ class Mat4(tuple):
     and perspective projections matrixes.
     """
 
-    def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
+    def __new__(cls, values: _Iterable[number] = (1.0, 0.0, 0.0, 0.0,
                                                  0.0, 1.0, 0.0, 0.0,
                                                  0.0, 0.0, 1.0, 0.0,
                                                  0.0, 0.0, 0.0, 1.0,)) -> Mat4:
