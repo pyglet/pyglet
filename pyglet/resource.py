@@ -251,7 +251,7 @@ class FileLocation(Location):
         """
         self.path = filepath
 
-    def open(self, filename: str, mode: str='rb') -> _io.TextIOWrapper:
+    def open(self, filename: str, mode: str='rb'):
         """
         Opens the file
         
