@@ -442,7 +442,8 @@ class Arc(ShapeBase):
 
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
                  closed=False, color=(255, 255, 255, 255), batch=None, group=None) -> None:
-        """Create an Arc.
+        """
+        Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
 
@@ -497,13 +498,13 @@ class Arc(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * (self._segments + 1) * 4
         else:
@@ -530,23 +531,23 @@ class Arc(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         """Clockwise rotation of the arc, in degrees.
 
         The arc will be rotated about its (anchor_x, anchor_y)
         position.
 
-        :type: float
+        :rtype: float
         """
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation):
+    def rotation(self, rotation) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     @property
-    def angle(self):
+    def angle(self) -> float:
         """The angle of the arc.
 
         :type: float
@@ -554,24 +555,24 @@ class Arc(ShapeBase):
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
+    def start_angle(self) -> float:
         """The start angle of the arc.
 
-        :type: float
+        :rtype: float
         """
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float) -> None:
         self._start_angle = angle
         self._update_vertices()
 
-    def draw(self):
+    def draw(self) -> None:
         """Draw the shape at its current position.
 
         Using this method is not recommended. Instead, add the
@@ -583,7 +584,7 @@ class Arc(ShapeBase):
 class BezierCurve(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, *points, t=1.0, segments=100, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, *points: [[int, int]], t: float=1.0, segments: int=100, color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
@@ -620,7 +621,7 @@ class BezierCurve(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _make_curve(self, t):
+    def _make_curve(self, t) -> [int, int]:
         n = len(self._points) - 1
         p = [0, 0]
         for i in range(n + 1):
@@ -629,13 +630,13 @@ class BezierCurve(ShapeBase):
             p[1] += m * self._points[i][1]
         return p
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._points[0]) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * self._segments * 4
         else:
@@ -659,35 +660,35 @@ class BezierCurve(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def points(self):
+    def points(self) -> [[int, int]]:
         """Control points of the curve.
 
-        :type: List[[int, int]]
+        :rtype: List[[int, int]]
         """
         return self._points
 
     @points.setter
-    def points(self, value):
+    def points(self, value: [[int, int]]) -> None:
         self._points = value
         self._update_vertices()
 
     @property
-    def t(self):
+    def t(self) -> float:
         """Draw `100*t` percent of the curve.
 
-        :type: float
+        :rtype: float
         """
         return self._t
 
     @t.setter
-    def t(self, value):
+    def t(self, value: float) -> :
         self._t = value
         self._update_vertices()
 
 
 class Circle(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(self, x: float, y: float, radius: float, segments: int=None, color: tuple=(255, 255, 255, 255),
+                 batch: Batch=None, group: Group=None) -> None:
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
@@ -728,13 +729,13 @@ class Circle(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._segments*3, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * self._segments * 6
         else:
@@ -756,15 +757,15 @@ class Circle(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def radius(self):
+    def radius(self) -> float:
         """The radius of the circle.
 
-        :type: float
+        :rtype: float
         """
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
@@ -772,8 +773,8 @@ class Circle(ShapeBase):
 class Ellipse(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, x, y, a, b, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(self, x: float, y: float, a: float, b: float, color: tuple=(255, 255, 255, 255),
+                 batch: Batch=None, group: Group=None) -> :
         """Create an ellipse.
 
         The ellipse's anchor point (x, y) defaults to the center of the ellipse.
@@ -817,13 +818,13 @@ class Ellipse(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * self._num_verts * 4
         else:
@@ -844,51 +845,51 @@ class Ellipse(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def a(self):
+    def a(self) -> float:
         """The semi-major axes of the ellipse.
 
-        :type: float
+        :rtype: float
         """
         return self._a
 
     @a.setter
-    def a(self, value):
+    def a(self, value: float) -> None:
         self._a = value
         self._update_vertices()
 
     @property
-    def b(self):
+    def b(self) -> float:
         """The semi-minor axes of the ellipse.
 
-        :type: float
+        :rtype: float
         """
         return self._b
 
     @b.setter
-    def b(self, value):
+    def b(self, value: float) -> None:
         self._b = value
         self._update_vertices()
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         """Clockwise rotation of the arc, in degrees.
 
         The arc will be rotated about its (anchor_x, anchor_y)
         position.
 
-        :type: float
+        :rtype: float
         """
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation):
+    def rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 class Sector(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, x: float, y: float, radius: float, segments: int=None, angle: float=math.tau, start_angle: float=0,
+                 color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
         """Create a Sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
@@ -939,13 +940,13 @@ class Sector(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * self._segments * 6
         else:
@@ -968,20 +969,20 @@ class Sector(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def angle(self):
+    def angle(self) -> float:
         """The angle of the sector.
 
-        :type: float
+        :rtype: float
         """
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
+    def start_angle(self) -> float:
         """The start angle of the sector.
 
         :type: float
@@ -989,36 +990,36 @@ class Sector(ShapeBase):
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float) -> None:
         self._start_angle = angle
         self._update_vertices()
 
     @property
-    def radius(self):
+    def radius(self) -> None:
         """The radius of the sector.
 
-        :type: float
+        :rtype: float
         """
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         """Clockwise rotation of the sector, in degrees.
 
         The sector will be rotated about its (anchor_x, anchor_y)
         position.
 
-        :type: float
+        :rtype: float
         """
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation):
+    def rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
