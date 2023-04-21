@@ -46,6 +46,7 @@ A simple example of drawing shapes::
 import math
 
 from abc import ABC, abstractmethod
+from __future__ import annotations
 
 import pyglet
 
@@ -116,7 +117,7 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src, blend_dest, program, parent=None):
+    def __init__(self, blend_src, blend_dest, program, parent=None) -> None:
         """Create a Shape group.
 
         The group is created internally. Usually you do not
@@ -139,23 +140,23 @@ class _ShapeGroup(Group):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.bind()
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.unbind()
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program == other.program and
                 self.parent == other.parent and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.program, self.parent, self.blend_src, self.blend_dest))
 
 
@@ -183,11 +184,11 @@ class ShapeBase(ABC):
     _draw_mode = GL_TRIANGLES
     group_class = _ShapeGroup
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         """Send the new colors for each vertex to the GPU.
 
         This method must set the contents of `self._vertex_list.colors`
@@ -197,10 +198,10 @@ class ShapeBase(ABC):
         """
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    def _update_translation(self):
+    def _update_translation(self) -> None:
         self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         """Build internal vertex list.
 
         This method must create a vertex list and assign it to
@@ -216,7 +217,7 @@ class ShapeBase(ABC):
                                   'order to use group or batch properties')
 
     @abstractmethod
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         """
         Generate up-to-date vertex positions & send them to the GPU.
 
@@ -228,7 +229,7 @@ class ShapeBase(ABC):
         raise NotImplementedError("_update_vertices must be defined"
                                   "for every ShapeBase subclass")
 
-    def draw(self):
+    def draw(self) -> None:
         """Draw the shape at its current position.
 
         Using this method is not recommended. Instead, add the
@@ -238,7 +239,7 @@ class ShapeBase(ABC):
         self._vertex_list.draw(self._draw_mode)
         self._group.unset_state_recursive()
 
-    def delete(self):
+    def delete(self) -> None:
         """Force immediate removal of the shape from video memory.
 
         It is recommended to call this whenever you delete a shape,
@@ -249,7 +250,7 @@ class ShapeBase(ABC):
         self._vertex_list = None
 
     @property
-    def x(self):
+    def x(self) -> Union[int, float]:
         """X coordinate of the shape.
 
         :type: int or float
@@ -257,12 +258,12 @@ class ShapeBase(ABC):
         return self._x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: Union[int, float]) -> None:
         self._x = value
         self._update_translation()
 
     @property
-    def y(self):
+    def y(self) -> Union[int, float]:
         """Y coordinate of the shape.
 
         :type: int or float
@@ -270,12 +271,12 @@ class ShapeBase(ABC):
         return self._y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: Union[int, float]):
         self._y = value
         self._update_translation()
 
     @property
-    def position(self):
+    def position(self) -> tuple:
         """The (x, y) coordinates of the shape, as a tuple.
 
         :Parameters:
@@ -287,39 +288,44 @@ class ShapeBase(ABC):
         return self._x, self._y
 
     @position.setter
-    def position(self, values):
+    def position(self, values:tuple) -> None:
         self._x, self._y = values
         self._update_translation()
 
     @property
-    def anchor_x(self):
-        """The X coordinate of the anchor point
+    def anchor_x(self) -> Union[int, float]:
+        """
+        The X coordinate of the anchor point
 
-        :type: int or float
+        :rtype: int or float
         """
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, value):
+    def anchor_x(self, value: Union[int, float]):
+        """Set the X coordinate of the anchor point"""
         self._anchor_x = value
         self._update_vertices()
 
     @property
-    def anchor_y(self):
-        """The Y coordinate of the anchor point
+    def anchor_y(self) -> Union[int, float]:
+        """
+        The Y coordinate of the anchor point
 
-        :type: int or float
+        :rtype: int or float
         """
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value):
+    def anchor_y(self, value: Union[int, float]):
+        """Set the Y coordinate of the anchor point"""
         self._anchor_y = value
         self._update_vertices()
 
     @property
-    def anchor_position(self):
-        """The (x, y) coordinates of the anchor point, as a tuple.
+    def anchor_position(self) -> tuple:
+        """
+        The (x, y) coordinates of the anchor point, as a tuple.
 
         :Parameters:
             `x` : int or float
@@ -330,12 +336,12 @@ class ShapeBase(ABC):
         return self._anchor_x, self._anchor_y
 
     @anchor_position.setter
-    def anchor_position(self, values):
+    def anchor_position(self, values: tuple) -> None:
         self._anchor_x, self._anchor_y = values
         self._update_vertices()
 
     @property
-    def color(self):
+    def color(self) -> tuple(int, int, int):
         """The shape color.
 
         This property sets the color of the shape.
@@ -348,7 +354,7 @@ class ShapeBase(ABC):
         return self._rgba
 
     @color.setter
-    def color(self, values):
+    def color(self, values: tuple(int, int, int)) -> None:
         r, g, b, *a = values
 
         if a:
@@ -359,8 +365,9 @@ class ShapeBase(ABC):
         self._update_color()
 
     @property
-    def opacity(self):
-        """Blend opacity.
+    def opacity(self) -> int:
+        """
+        Blend opacity.
 
         This property sets the alpha component of the color of the shape.
         With the default blend mode (see the constructor), this allows the
@@ -375,12 +382,12 @@ class ShapeBase(ABC):
         return self._rgba[3]
 
     @opacity.setter
-    def opacity(self, value):
+    def opacity(self, value: int) -> None:
         self._rgba = (*self._rgba[:3], value)
         self._update_color()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """True if the shape will be drawn.
 
         :type: bool
@@ -388,17 +395,18 @@ class ShapeBase(ABC):
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         self._visible = value
         self._update_vertices()
 
     @property
-    def group(self):
+    def group(self) -> Group:
         """User assigned :class:`Group` object."""
         return self._group.parent
 
     @group.setter
-    def group(self, group):
+    def group(self, group: Group) -> None:
+        """Set the Group"""
         if self._group.parent == group:
             return
         self._group = self.group_class(self._group.blend_src,
@@ -409,12 +417,13 @@ class ShapeBase(ABC):
                             self._batch)
 
     @property
-    def batch(self):
+    def batch(self) -> Batch:
         """User assigned :class:`Batch` object."""
         return self._batch
 
     @batch.setter
-    def batch(self, batch):
+    def batch(self, batch: Batch) -> Batch:
+        """Set the Batch"""
         if self._batch == batch:
             return
 
@@ -432,7 +441,7 @@ class Arc(ShapeBase):
     _draw_mode = GL_LINES
 
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255, 255), batch=None, group=None):
+                 closed=False, color=(255, 255, 255, 255), batch=None, group=None) -> None:
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
