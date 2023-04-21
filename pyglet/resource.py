@@ -124,7 +124,7 @@ def get_script_home() -> None:
                 return os.path.dirname(sys.executable)
 
 
-def get_settings_path(name: str):
+def get_settings_path(name: str) -> str:
     """
     Get a directory to save user preferences.
 
@@ -251,7 +251,7 @@ class FileLocation(Location):
         """
         self.path = filepath
 
-    def open(self, filename: str, mode: str='rb'):
+    def open(self, filename: str, mode: str='rb') -> _io.TextIOWrapper:
         """
         Opens the file
         
