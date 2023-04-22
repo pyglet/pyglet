@@ -56,6 +56,7 @@ import zipfile
 import weakref
 
 from io import BytesIO
+from __future__ import annotations
 
 import pyglet
 
