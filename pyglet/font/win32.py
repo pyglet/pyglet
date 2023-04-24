@@ -4,6 +4,8 @@ import math
 import warnings
 
 from sys import byteorder
+from typing import Optional
+
 import pyglet
 from pyglet.font import base
 from pyglet.font import win32query
@@ -228,7 +230,20 @@ class Win32Font(base.Font):
         gdi32.DeleteObject(self.hfont)
 
     @staticmethod
-    def get_logfont(name, size, bold, italic, dpi):
+    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: Optional[float] = None) -> LOGFONTW:
+        """
+        Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
+
+        Args:
+            name: The name of the font
+            size: The font size in points
+            bold: Whether to request the font as bold
+            italic: Whether to request the font as italic
+            dpi: The screen dpi
+
+        Returns:
+            LOGFONTW: a ctypes binding of a Win32 LOGFONTW struct
+        """
 
         # Create a dummy DC for coordinate mapping
         with device_context(None) as dc:
@@ -236,14 +251,13 @@ class Win32Font(base.Font):
             # Default to 96 DPI unless otherwise specified
             if dpi is None:
                 dpi = 96
-            logpixelsy = dpi
+            log_pixels_y = dpi
 
             # Create LOGFONTW font description struct
-            # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logfontw
             logfont = LOGFONTW()
 
             # Convert point size to actual device pixels
-            logfont.lfHeight = int(-size * logpixelsy // 72)
+            logfont.lfHeight = int(-size * log_pixels_y // 72)
 
             # Configure the LOGFONTW's font properties
             if bold:
