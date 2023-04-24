@@ -260,8 +260,8 @@ class Sprite(event.EventDispatcher):
     def __init__(self,
                  img: Union[pyglet.image.AbstractImage, pyglet.image.Animation], 
                  x: int=0, y: int=0, z: int=0,
-                 blend_src=GL_SRC_ALPHA,
-                 blend_dest=GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: int=GL_SRC_ALPHA,
+                 blend_dest: int=GL_ONE_MINUS_SRC_ALPHA,
                  batch: Optional[pyglet.graphics.Batch]=None,
                  group: Optional[pyglet.graphics.Group]=None,
                  subpixel: bool=False) -> None:
@@ -812,13 +812,15 @@ class AdvancedSprite(pyglet.sprite.Sprite):
     """Is a sprite that lets you change the shader program during initialization and after
     For advanced users who understand shaders."""
     def __init__(self,
-                 img, x=0, y=0, z=0,
-                 blend_src=GL_SRC_ALPHA,
-                 blend_dest=GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 group=None,
-                 subpixel=False,
-                 program=None):
+                 img: Union[pyglet.image.AbstractImage, pyglet.image.Animation], 
+                 x: int=0, y: int=0, z: int=0,
+                 blend_src: int=GL_SRC_ALPHA,
+                 blend_dest: int=GL_ONE_MINUS_SRC_ALPHA,
+                 batch: Optional[pyglet.graphics.Batch]=None,
+                 group: Optional[pyglet.graphics.Group]=None,
+                 subpixel: bool=False,
+                 program: pyglet.sprite.Sprite.program=None
+                 ) -> None:
 
         self._program = program
 
@@ -831,11 +833,11 @@ class AdvancedSprite(pyglet.sprite.Sprite):
         super().__init__(img, x, y, z, blend_src, blend_dest, batch, group, subpixel)
 
     @property
-    def program(self):
+    def program(self) -> pyglet.sprite.Sprite.program:
         return self._program
 
     @program.setter
-    def program(self, program):
+    def program(self, program: pyglet.sprite.Sprite.program) -> None:
         if self._program == program:
             return
         self._group = self.group_class(self._texture,
