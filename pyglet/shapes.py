@@ -99,7 +99,7 @@ fragment_source: str = """#version 150 core
 """
 
 
-def get_default_shader() -> :
+def get_default_shader():
     try:
         return pyglet.gl.current_context.pyglet_shapes_default_shader
     except AttributeError:
