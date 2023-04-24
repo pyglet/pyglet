@@ -184,7 +184,7 @@ class ShapeBase(ABC):
     _draw_mode = GL_TRIANGLES
     group_class = _ShapeGroup
 
-    def __del__(self) -> None:
+    def __del__(self):
         if self._vertex_list is not None:
             self._vertex_list.delete()
 

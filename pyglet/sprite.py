@@ -318,7 +318,7 @@ class Sprite(event.EventDispatcher):
 
         return program
 
-    def __del__(self) -> None:
+    def __del__(self):
         try:
             if self._vertex_list is not None:
                 self._vertex_list.delete()
