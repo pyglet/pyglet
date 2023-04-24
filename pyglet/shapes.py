@@ -56,7 +56,7 @@ from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
 
 
-vertex_source = """#version 150 core
+vertex_source: str = """#version 150 core
     in vec2 position;
     in vec2 translation;
     in vec4 colors;
@@ -88,7 +88,7 @@ vertex_source = """#version 150 core
     }
 """
 
-fragment_source = """#version 150 core
+fragment_source: str = """#version 150 core
     in vec4 vertex_colors;
     out vec4 final_color;
 
@@ -99,7 +99,7 @@ fragment_source = """#version 150 core
 """
 
 
-def get_default_shader():
+def get_default_shader() -> :
     try:
         return pyglet.gl.current_context.pyglet_shapes_default_shader
     except AttributeError:
@@ -117,7 +117,7 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src, blend_dest, program, parent=None) -> None:
+    def __init__(self, blend_src: int, blend_dest: int, program: pyglet.graphics.shader.ShaderProgram, parent: Group=None) -> None:
         """Create a Shape group.
 
         The group is created internally. Usually you do not
@@ -171,18 +171,18 @@ class ShapeBase(ABC):
     the provided shapes as reference.
     """
 
-    _rgba = (255, 255, 255, 255)
-    _visible = True
-    _x = 0
-    _y = 0
-    _anchor_x = 0
-    _anchor_y = 0
-    _batch = None
-    _group = None
-    _num_verts = 0
-    _vertex_list = None
-    _draw_mode = GL_TRIANGLES
-    group_class = _ShapeGroup
+    _rgba: Tuple[int, int, int, int] = (255, 255, 255, 255)
+    _visible: bool = True
+    _x: int = 0
+    _y: int = 0
+    _anchor_x: float = 0
+    _anchor_y: float = 0
+    _batch: Batch = None
+    _group: Group = None
+    _num_verts: int = 0
+    _vertex_list: List[Tuple[int, int], ...] = None
+    _draw_mode: int = GL_TRIANGLES
+    group_class: _ShapeGroup = _ShapeGroup
 
     def __del__(self):
         if self._vertex_list is not None:
