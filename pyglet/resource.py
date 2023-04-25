@@ -57,6 +57,7 @@ import weakref
 
 from io import BytesIO
 from typing import Union, Optional
+from __future__ import annotations
 
 import pyglet
 
