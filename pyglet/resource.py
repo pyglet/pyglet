@@ -50,14 +50,15 @@ The default path is ``['.']``.  If you modify the path, you must call
 .. versionadded:: 1.1
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import zipfile
 import weakref
 
 from io import BytesIO
-from typing import Union, Optional
-from __future__ import annotations
+from typing import Union, Optional, Tuple, List
 
 import pyglet
 
@@ -81,7 +82,7 @@ class UndetectableShaderType(Exception):
         Exception.__init__(self, message)
 
 
-def get_script_home() -> None:
+def get_script_home() -> str:
     """
     Get the directory containing the program entry module.
 
@@ -167,7 +168,7 @@ def get_settings_path(name: str) -> str:
         return os.path.expanduser(f'~/.{name}')
 
 
-def get_data_path(name: str) -> None:
+def get_data_path(name: str) -> str:
     """
     Get a directory to save user data.
 
@@ -252,7 +253,7 @@ class FileLocation(Location):
         """
         self.path = filepath
 
-    def open(self, filename: str, mode: str='rb'):
+    def open(self, filename: str, mode: str='rb') -> "file object":
         """
         Opens the file
         
@@ -331,7 +332,7 @@ class URLLocation(Location):
         """
         self.base = base_url
 
-    def open(self, filename: str, mode: str='rb') -> None:
+    def open(self, filename: str, mode: str='rb') -> "context manager":
         """Opens the url using urllib.request.urlopen()"""
         import urllib.parse
         import urllib.request
@@ -355,7 +356,7 @@ class Loader:
             application script.
 
     """
-    def __init__(self, path: [str]=None, script_home: str=None) -> None:
+    def __init__(self, path: List[str]=None, script_home: str=None) -> None:
         """
         Create a loader for the given path.
 
@@ -511,7 +512,7 @@ class Loader:
         if name not in self._index:
             self._index[name] = location
 
-    def file(self, name: str, mode: str='rb') -> None:
+    def file(self, name: str, mode: str='rb') -> "file object":
         """
         Load a resource.
 
@@ -589,7 +590,9 @@ class Loader:
 
         return bin.add(img, border)
 
-    def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> pyglet.image.atlas.TextureBin:
+    def _get_texture_atlas_bin(self, 
+                                width: int, height: int, border: int
+                                ) -> pyglet.image.atlas.TextureBin:
         """
         A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
@@ -615,7 +618,10 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name: str, flip_x: bool=False, flip_y: bool=False, rotate: int=0, atlas: bool=True, border: int=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+    def image(self, 
+             name: str, flip_x: bool=False, flip_y: bool=False, 
+             rotate: int=0, atlas: bool=True, border: int=1
+             ) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
         """
         Load an image with optional transformation.
 
@@ -657,7 +663,9 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name: str, flip_x: bool=False, flip_y: bool=False, rotate: int=0, border: int=1) -> pyglet.image.Animation:
+    def animation(self, name: str, flip_x: bool=False, 
+                 flip_y: bool=False, rotate: int=0, border: int=1
+                 ) -> pyglet.image.Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -697,7 +705,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def get_cached_image_names(self) -> [str]:
+    def get_cached_image_names(self) -> List[str]:
         """Get a list of image filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -708,7 +716,7 @@ class Loader:
         self._require_index()
         return list(self._cached_images.keys())
 
-    def get_cached_animation_names(self) -> [str]:
+    def get_cached_animation_names(self) -> List[str]:
         """Get a list of animation filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -719,7 +727,7 @@ class Loader:
         self._require_index()
         return list(self._cached_animations.keys())
 
-    def get_texture_bins(self) -> [pyglet.image.atlas.TextureBin]:
+    def get_texture_bins(self) -> List[pyglet.image.atlas.TextureBin]:
         """Get a list of texture bins in use.
 
         This is useful for debugging and profiling only.
@@ -873,7 +881,7 @@ class Loader:
 
         return pyglet.graphics.shader.Shader(source_string, shader_type)
 
-    def get_cached_texture_names(self) -> [str]:
+    def get_cached_texture_names(self) -> List[str]:
         """Get the names of textures currently cached.
 
         :rtype: list of str
@@ -896,11 +904,11 @@ path = []
 class _DefaultLoader(Loader):
 
     @property
-    def path(self) -> [str]:
+    def path(self) -> List[str]:
         return path
 
     @path.setter
-    def path(self, value) -> None:
+    def path(self, value: str) -> None:
         global path
         path = value
 

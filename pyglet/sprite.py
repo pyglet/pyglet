@@ -64,6 +64,7 @@ sprites within batches.
 
 .. versionadded:: 1.1
 """
+from __future__ import annotations
 
 import sys
 
@@ -74,6 +75,8 @@ from pyglet import clock
 from pyglet import event
 from pyglet import graphics
 from pyglet import image
+
+from typing import Any, Union, Optional
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -145,7 +148,7 @@ fragment_array_source = """#version 150 core
 """
 
 
-def get_default_shader():
+def get_default_shader() -> Union[graphics.shader.ShaderProgram, graphics.shader.ComputeShaderProgram]:
     try:
         return pyglet.gl.current_context.pyglet_sprite_default_shader
     except AttributeError:
@@ -156,7 +159,7 @@ def get_default_shader():
         return pyglet.gl.current_context.pyglet_sprite_default_shader
 
 
-def get_default_array_shader():
+def get_default_array_shader() -> Union[graphics.shader.ShaderProgram, graphics.shader.ComputeShaderProgram]:
     try:
         return pyglet.gl.current_context.pyglet_sprite_default_array_shader
     except AttributeError:
@@ -222,7 +225,7 @@ class SpriteGroup(graphics.Group):
     def __repr__(self) -> str:
         return "{0}({1})".format(self.__class__.__name__, self.texture)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
                 self.parent == other.parent and

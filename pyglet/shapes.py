@@ -43,10 +43,12 @@ A simple example of drawing shapes::
 .. versionadded:: 1.5.4
 """
 
+from __future__ import annotations
+
 import math
 
 from abc import ABC, abstractmethod
-from __future__ import annotations
+from typing import Any, Tuple, Union, Optional
 
 import pyglet
 
@@ -98,6 +100,8 @@ fragment_source: str = """#version 150 core
     }
 """
 
+number = Union[int, float]
+
 
 def get_default_shader():
     try:
@@ -117,7 +121,10 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src: int, blend_dest: int, program: pyglet.graphics.shader.ShaderProgram, parent: Group=None) -> None:
+    def __init__(self, blend_src: int, blend_dest: int, 
+                 program: pyglet.graphics.shader.ShaderProgram, 
+                 parent: Optional[Group]=None
+                 ) -> None:
         """Create a Shape group.
 
         The group is created internally. Usually you do not
@@ -149,7 +156,7 @@ class _ShapeGroup(Group):
         glDisable(GL_BLEND)
         self.program.unbind()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program == other.program and
                 self.parent == other.parent and
@@ -250,7 +257,7 @@ class ShapeBase(ABC):
         self._vertex_list = None
 
     @property
-    def x(self) -> Union[int, float]:
+    def x(self) -> number:
         """X coordinate of the shape.
 
         :type: int or float
@@ -258,12 +265,12 @@ class ShapeBase(ABC):
         return self._x
 
     @x.setter
-    def x(self, value: Union[int, float]) -> None:
+    def x(self, value: number) -> None:
         self._x = value
         self._update_translation()
 
     @property
-    def y(self) -> Union[int, float]:
+    def y(self) -> number:
         """Y coordinate of the shape.
 
         :type: int or float
@@ -271,12 +278,12 @@ class ShapeBase(ABC):
         return self._y
 
     @y.setter
-    def y(self, value: Union[int, float]):
+    def y(self, value: number):
         self._y = value
         self._update_translation()
 
     @property
-    def position(self) -> tuple:
+    def position(self) -> Tuple[number, number]:
         """The (x, y) coordinates of the shape, as a tuple.
 
         :Parameters:
@@ -288,12 +295,12 @@ class ShapeBase(ABC):
         return self._x, self._y
 
     @position.setter
-    def position(self, values:tuple) -> None:
+    def position(self, values:Tuple) -> None:
         self._x, self._y = values
         self._update_translation()
 
     @property
-    def anchor_x(self) -> Union[int, float]:
+    def anchor_x(self) -> number:
         """
         The X coordinate of the anchor point
 
@@ -302,13 +309,13 @@ class ShapeBase(ABC):
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, value: Union[int, float]):
+    def anchor_x(self, value: number):
         """Set the X coordinate of the anchor point"""
         self._anchor_x = value
         self._update_vertices()
 
     @property
-    def anchor_y(self) -> Union[int, float]:
+    def anchor_y(self) -> number:
         """
         The Y coordinate of the anchor point
 
@@ -317,7 +324,7 @@ class ShapeBase(ABC):
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value: Union[int, float]):
+    def anchor_y(self, value: number):
         """Set the Y coordinate of the anchor point"""
         self._anchor_y = value
         self._update_vertices()
@@ -341,7 +348,7 @@ class ShapeBase(ABC):
         self._update_vertices()
 
     @property
-    def color(self) -> tuple(int, int, int):
+    def color(self) -> Tuple[int, int, int]:
         """The shape color.
 
         This property sets the color of the shape.
@@ -354,7 +361,7 @@ class ShapeBase(ABC):
         return self._rgba
 
     @color.setter
-    def color(self, values: tuple(int, int, int)) -> None:
+    def color(self, values: Tuple[int, int, int]) -> None:
         r, g, b, *a = values
 
         if a:
@@ -440,8 +447,13 @@ class ShapeBase(ABC):
 class Arc(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255, 255), batch=None, group=None) -> None:
+    def __init__(self, x: float, y: float, 
+                 radius: float, segments: Optional[int]=None, 
+                 angle: float=math.tau, start_angle: float=0,
+                 closed: Optional[bool]=False, 
+                 color: Tuple[int, int, int, int]=(255, 255, 255, 255), 
+                 batch: Optional[Batch]=None, group: Optional[Group]=None
+                 ) -> None:
         """
         Create an Arc.
 
@@ -555,7 +567,7 @@ class Arc(ShapeBase):
         return self._angle
 
     @angle.setter
-    def angle(self, value) -> None:
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
@@ -584,7 +596,12 @@ class Arc(ShapeBase):
 class BezierCurve(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, *points: [[int, int]], t: float=1.0, segments: int=100, color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, *points: [[int, int]], 
+                 t: float=1.0, segments: int=100, 
+                 color: tuple=(255, 255, 255, 255), 
+                 batch: Optional[Batch]=None, 
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
@@ -660,7 +677,7 @@ class BezierCurve(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def points(self) -> [[int, int]]:
+    def points(self) -> List[[int, int]]:
         """Control points of the curve.
 
         :rtype: List[[int, int]]
@@ -668,7 +685,7 @@ class BezierCurve(ShapeBase):
         return self._points
 
     @points.setter
-    def points(self, value: [[int, int]]) -> None:
+    def points(self, value: List[[int, int]]) -> None:
         self._points = value
         self._update_vertices()
 
@@ -687,8 +704,12 @@ class BezierCurve(ShapeBase):
 
 
 class Circle(ShapeBase):
-    def __init__(self, x: float, y: float, radius: float, segments: int=None, color: tuple=(255, 255, 255, 255),
-                 batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, 
+                 radius: float, segments: int=None, 
+                 color: Tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None, 
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
@@ -773,8 +794,11 @@ class Circle(ShapeBase):
 class Ellipse(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, x: float, y: float, a: float, b: float, color: tuple=(255, 255, 255, 255),
-                 batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, a: float, b: float, 
+                 color: Tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None, 
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create an ellipse.
 
         The ellipse's anchor point (x, y) defaults to the center of the ellipse.
@@ -888,8 +912,12 @@ class Ellipse(ShapeBase):
 
 
 class Sector(ShapeBase):
-    def __init__(self, x: float, y: float, radius: float, segments: int=None, angle: float=math.tau, start_angle: float=0,
-                 color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, radius: float,
+                 segments: int=None, angle: float=math.tau,
+                 start_angle: float=0, color: Tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None,
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create a Sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
@@ -995,7 +1023,7 @@ class Sector(ShapeBase):
         self._update_vertices()
 
     @property
-    def radius(self) -> None:
+    def radius(self) -> float:
         """The radius of the sector.
 
         :rtype: float
@@ -1025,8 +1053,11 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
-    def __init__(self, x: float, y: float, x2: float, y2: float, width: int=1, color: tuple=(255, 255, 255, 255),
-                 batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, x2: float, y2: float, 
+                 width: int=1, color: Tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None, 
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
@@ -1101,7 +1132,7 @@ class Line(ShapeBase):
             self._vertex_list.position[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
 
     @property
-    def x2(self) -> Union[int, float]:
+    def x2(self) -> number:
         """Second X coordinate of the shape.
 
         :rtype: int or float
@@ -1109,12 +1140,12 @@ class Line(ShapeBase):
         return self._x2
 
     @x2.setter
-    def x2(self, value: Union[int, float]) -> None:
+    def x2(self, value: number) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self) -> Union[int, float]:
+    def y2(self) -> number:
         """Second Y coordinate of the shape.
 
         :rtype: int or float
@@ -1122,14 +1153,17 @@ class Line(ShapeBase):
         return self._y2
 
     @y2.setter
-    def y2(self, value: Union[int, float]) -> None:
+    def y2(self, value: number) -> None:
         self._y2 = value
         self._update_vertices()
 
 
 class Rectangle(ShapeBase):
-    def __init__(self, x: float, y: float, width: float, height: float, color: tuple=(255, 255, 255, 255),
-                 batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, width: float, 
+                 height: float, color: tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None, 
+                 group: Optional[Group]=None
+                 ) -> None:
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
@@ -1231,8 +1265,12 @@ class Rectangle(ShapeBase):
 
 
 class BorderedRectangle(ShapeBase):
-    def __init__(self, x: float, y: float, width: float, height: float, border: float=1, color: tuple=(255, 255, 255),
-                 border_color: tuple=(100, 100, 100), batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, 
+                 width: float, height: float, 
+                 border: float=1, color: Tuple=(255, 255, 255),
+                 border_color: tuple=(100, 100, 100), 
+                 batch: Optional[Batch]=None, group: Optional[Group]=None
+                 ) -> None:
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
@@ -1374,7 +1412,7 @@ class BorderedRectangle(ShapeBase):
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     @property
-    def border_color(self) -> (int, int, int, int):
+    def border_color(self) -> Tuple[int, int, int, int]:
         """The rectangle's border color.
 
         This property sets the color of the border of a bordered rectangle.
@@ -1391,7 +1429,7 @@ class BorderedRectangle(ShapeBase):
         return self._border_rgba
 
     @border_color.setter
-    def border_color(self, values: (int, int, int, int)) -> None:
+    def border_color(self, values: Tuple[int, int, int, int]) -> None:
         r, g, b, *a = values
 
         if a:
@@ -1405,7 +1443,7 @@ class BorderedRectangle(ShapeBase):
         self._update_color()
 
     @property
-    def color(self) -> (int, int, int, int):
+    def color(self) -> Tuple[int, int, int, int]:
         """The rectangle's fill color.
 
         This property sets the color of the inside of a bordered rectangle.
@@ -1422,7 +1460,7 @@ class BorderedRectangle(ShapeBase):
         return self._rgba
 
     @color.setter
-    def color(self, values: (int, int, int, int)) -> None:
+    def color(self, values: Tuple[int, int, int, int]) -> None:
         r, g, b, *a = values
 
         if a:
@@ -1436,8 +1474,11 @@ class BorderedRectangle(ShapeBase):
 
 
 class Triangle(ShapeBase):
-    def __init__(self, x: float, y: float, x2: float, y2: float, x3: float, y3: float, color: tuple=(255, 255, 255, 255),
-                 batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, 
+                 x2: float, y2: float, x3: float, y3: float, 
+                 color: Tuple=(255, 255, 255, 255),
+                 batch: Optional[Batch]=None, group: Optional[Group]=None
+                 ) -> None:
         """Create a triangle.
 
         The triangle's anchor point defaults to the first vertex point.
@@ -1502,7 +1543,7 @@ class Triangle(ShapeBase):
             self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
 
     @property
-    def x2(self) -> Union[int, float]:
+    def x2(self) -> number:
         """Second X coordinate of the shape.
 
         :type: int or float
@@ -1510,12 +1551,12 @@ class Triangle(ShapeBase):
         return self._x + self._x2
 
     @x2.setter
-    def x2(self, value: Union[int, float]) -> None:
+    def x2(self, value: number) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self) -> Union[int, float]:
+    def y2(self) -> number:
         """Second Y coordinate of the shape.
 
         :type: int or float
@@ -1523,12 +1564,12 @@ class Triangle(ShapeBase):
         return self._y + self._y2
 
     @y2.setter
-    def y2(self, value: Union[int, float]) -> None:
+    def y2(self, value: number) -> None:
         self._y2 = value
         self._update_vertices()
 
     @property
-    def x3(self) -> Union[int, float]:
+    def x3(self) -> number:
         """Third X coordinate of the shape.
 
         :type: int or float
@@ -1536,12 +1577,12 @@ class Triangle(ShapeBase):
         return self._x + self._x3
 
     @x3.setter
-    def x3(self, value: Union[int, float]) -> None:
+    def x3(self, value: number) -> None:
         self._x3 = value
         self._update_vertices()
 
     @property
-    def y3(self) -> Union[int, float]:
+    def y3(self) -> number:
         """Third Y coordinate of the shape.
 
         :type: int or float
@@ -1549,14 +1590,18 @@ class Triangle(ShapeBase):
         return self._y + self._y3
 
     @y3.setter
-    def y3(self, value: Union[int, float]) -> None:
+    def y3(self, value: number) -> None:
         self._y3 = value
         self._update_vertices()
 
 
 class Star(ShapeBase):
-    def __init__(self, x: float, y: float, outer_radius: float, inner_radius: float, num_spikes: float, rotation: float=0,
-                 color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, x: float, y: float, 
+                 outer_radius: float, inner_radius: float, 
+                 num_spikes: float, rotation: float=0,
+                 color: Tuple=(255, 255, 255, 255), 
+                 batch: Optional[Batch]=None, group: Optional[Group]=None
+                 ) -> None:
         """Create a star.
 
         The star's anchor point (x, y) defaults to the center of the star.
@@ -1681,7 +1726,10 @@ class Star(ShapeBase):
 
 
 class Polygon(ShapeBase):
-    def __init__(self, *coordinates: [[int, int]], color: tuple=(255, 255, 255, 255), batch: Batch=None, group: Group=None) -> None:
+    def __init__(self, *coordinates: List[[int, int]], 
+                 color: Tuple[int, int, int, int]=(255, 255, 255, 255), 
+                 batch: Optional[Batch]=None, group: Optional[Group]=None
+                 ) -> None:
         """Create a convex polygon.
 
         The polygon's anchor point defaults to the first vertex point.

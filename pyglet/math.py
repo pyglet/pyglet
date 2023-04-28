@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import math as _math
 import typing as _typing
+from typing import Optional, Union, Tuple, List, Any 
 import warnings as _warnings
 
 from operator import mul as _mul
@@ -51,13 +52,13 @@ class Vec2:
         ...
 
     @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
+    def __getitem__(self, item: slice) -> Tuple[float, ...]:
         ...
 
-    def __getitem__(self, item) -> number:
+    def __getitem__(self, item: Union[int, slice]) -> Union[float, Tuple[float, ...]]:
         return (self.x, self.y)[item]
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: Union[str, slice], value: Any) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y'][key]):
                 setattr(self, attr, value[i])
@@ -88,10 +89,10 @@ class Vec2:
     def __neg__(self) -> Vec2:
         return Vec2(-self.x, -self.y)
 
-    def __round__(self, ndigits: int | None = None) -> Vec2:
+    def __round__(self, ndigits: Optional[int] = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec2 | int) -> Vec2:
+    def __radd__(self, other: Union[Vec2, int]) -> Vec2:
         """Reverse add. Required for functionality with sum()
         """
         if other == 0:
@@ -99,10 +100,10 @@ class Vec2:
         else:
             return self.__add__(_typing.cast(Vec2, other))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Vec2) and self.x == other.x and self.y == other.y
 
-    def __ne__(self, other: object) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return not isinstance(other, Vec2) or self.x != other.x or self.y != other.y
 
     @staticmethod
@@ -288,13 +289,13 @@ class Vec3:
         ...
 
     @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
+    def __getitem__(self, item: slice) -> Tuple[float, ...]:
         ...
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Union[int, slice]) -> Union[float, Tuple[float, ...]]:
         return (self.x, self.y, self.z)[item]
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: Union[slice, str], value: ANy) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y', 'z'][key]):
                 setattr(self, attr, value[i])
@@ -345,10 +346,10 @@ class Vec3:
         else:
             return self.__add__(_typing.cast(Vec3, other))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
 
-    def __ne__(self, other: object) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
 
     def from_magnitude(self, magnitude: number) -> Vec3:
@@ -386,7 +387,7 @@ class Vec3:
                 The other vector.
 
         :returns: The cross product of the two vectors.
-        :rtype: float
+        :rtype: Vector3
         """
         return Vec3((self.y * other.z) - (self.z * other.y),
                     (self.z * other.x) - (self.x * other.z),
@@ -500,13 +501,13 @@ class Vec4:
         ...
 
     @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
+    def __getitem__(self, item: slice) -> Tuple[float, ...]:
         ...
 
-    def __getitem__(self, item) -> None:
+    def __getitem__(self, item: Union[int, slice]) -> Union[float, Tuple[float, ...]]:
         return (self.x, self.y, self.z, self.w)[item]
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: Union[slice, str], value: Any) -> None:
         if type(key) is slice:
             for i, attr in enumerate(['x', 'y', 'z', 'w'][key]):
                 setattr(self, attr, value[i])
@@ -537,16 +538,16 @@ class Vec4:
     def __neg__(self) -> Vec4:
         return Vec4(-self.x, -self.y, -self.z, -self.w)
 
-    def __round__(self, ndigits: int | None = None) -> Vec4:
+    def __round__(self, ndigits: Optional[int] = None) -> Vec4:
         return Vec4(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec4 | int) -> Vec4:
+    def __radd__(self, other: Union[Vec4, int]) -> Vec4:
         if other == 0:
             return self
         else:
             return self.__add__(_typing.cast(Vec4, other))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (
                 isinstance(other, Vec4)
                 and self.x == other.x
@@ -555,7 +556,7 @@ class Vec4:
                 and self.w == other.w
         )
 
-    def __ne__(self, other: object) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return (
                 not isinstance(other, Vec4)
                 or self.x != other.x
@@ -676,7 +677,7 @@ class Mat3(tuple):
     def __round__(self, ndigits: Optional[int] = None) -> Mat3:
         return Mat3(round(v, ndigits) for v in self)
 
-    def __mul__(self, other: object) -> _typing.NoReturn:
+    def __mul__(self, other: Any) -> _typing.NoReturn:
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
 
     @_typing.overload
@@ -687,7 +688,7 @@ class Mat3(tuple):
     def __matmul__(self, other: Mat3) -> Mat3:
         ...
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: Union[Vec3, Mat3]) -> Union[Vec3, Mat3]:
         if isinstance(other, Vec3):
             # Rows:
             r0 = self[0::3]
@@ -985,7 +986,7 @@ class Mat4(tuple):
                      ndet * (self[0] * i - self[1] * n + self[2] * q),
                      pdet * (self[0] * l - self[1] * p + self[2] * r)))
 
-    def __round__(self, ndigits: int | None = None) -> Mat4:
+    def __round__(self, ndigits: Optional[int] = None) -> Mat4:
         return Mat4(round(v, ndigits) for v in self)
 
     def __mul__(self, other: int) -> _typing.NoReturn:
@@ -999,7 +1000,7 @@ class Mat4(tuple):
     def __matmul__(self, other: Mat4) -> Mat4:
         ...
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: Union[Vec4, Mat4]) -> Union[Vec4, Mat4]:
         if isinstance(other, Vec4):
             # Rows:
             r0 = self[0::4]
