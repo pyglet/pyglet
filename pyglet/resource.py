@@ -58,7 +58,7 @@ import zipfile
 import weakref
 
 from io import BytesIO
-from typing import Union, Optional, Tuple, List
+from typing import Union, Optional, List
 
 import pyglet
 

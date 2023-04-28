@@ -65,7 +65,7 @@ of the system clock.
 from __future__ import annotations
 import time as _time
 
-from typing import Callable, Union, Optional
+from typing import Callable, Union
 from heapq import heappop as _heappop
 from heapq import heappush as _heappush
 from heapq import heappushpop as _heappushpop
@@ -560,7 +560,7 @@ class Clock:
 
 
 # Default clock.
-_default = Clock()
+_default: Clock = Clock()
 
 
 def set_default(default: Clock) -> None:
@@ -569,7 +569,7 @@ def set_default(default: Clock) -> None:
     By default, an instance of :py:class:`~pyglet.clock.Clock` is used.
     """
     global _default
-    _default: Clock = default
+    _default = default
 
 
 def get_default() -> Clock:

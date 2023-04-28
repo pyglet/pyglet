@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import math as _math
 import typing as _typing
-from typing import Optional, Union, Tuple, List, Any 
+from typing import Optional, Union, Tuple, Any 
 import warnings as _warnings
 
 from operator import mul as _mul

@@ -126,10 +126,8 @@ from weakref import WeakMethod
 from typing import (
     Optional,
     Any,
-    Union,
     Callable,
     Dict,
-    List,
     Tuple,
     Generator
 )
