@@ -93,6 +93,8 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
+from __future__ import annotations
+
 import re
 import weakref
 
@@ -113,6 +115,8 @@ from .animation import Animation, AnimationFrame
 from .buffer import *
 from . import atlas
 
+from typing import Optional, Union, Tuple, List, IO
+
 
 class ImageException(Exception):
     pass
@@ -128,7 +132,7 @@ class TextureArrayDepthExceeded(Exception):
     pass
 
 
-def load(filename, file=None, decoder=None):
+def load(filename: str, file: Optional[IO]=None, decoder: Optional[ImageDecoder]=None) -> AbsractImage:
     """Load an image from a file.
 
     :note: You can make no assumptions about the return type; usually it will
@@ -154,7 +158,7 @@ def load(filename, file=None, decoder=None):
         return _codec_registry.decode(filename, file)
 
 
-def load_animation(filename, file=None, decoder=None):
+def load_animation(filename: str, file: Optional[IO]=None, decoder: Optional[ImageDecoder]=None) -> Animation:
     """Load an animation from a file.
 
     Currently, the only supported format is GIF.
@@ -178,7 +182,7 @@ def load_animation(filename, file=None, decoder=None):
         return _codec_registry.decode_animation(filename, file)
 
 
-def create(width, height, pattern=None):
+def create(width: int, height: int, pattern: Optional[ImagePattern]=None) -> AbstractImage:
     """Create an image optionally filled with the given pattern.
 
     :note: You can make no assumptions about the return type; usually it will
@@ -201,21 +205,31 @@ def create(width, height, pattern=None):
     return pattern.create_image(width, height)
 
 
-def get_max_texture_size():
+def get_max_texture_size() -> int:
     """Query the maximum texture size available"""
     size = c_int()
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
     return size.value
 
 
-def get_max_array_texture_layers():
+def get_max_array_texture_layers() -> int:
     """Query the maximum TextureArray depth"""
     max_layers = c_int()
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
     return max_layers.value
 
 
-def _color_as_bytes(color):
+def _color_as_bytes(color: Tuple[int, int, int, int]) -> bytes:
+    """
+    Return the color as a bytes object
+
+    :Parameter:
+        `color`: Tuple[int, int, int, int]
+            Color in RGBA standard
+    
+    :rtype: bytes
+    :return: color as a bytes object
+    """
     if len(color) != 4:
         raise TypeError("color is expected to have 4 components")
     return bytes(color)
@@ -224,7 +238,7 @@ def _color_as_bytes(color):
 class ImagePattern:
     """Abstract image creation class."""
 
-    def create_image(self, width, height):
+    def create_image(self, width: int, height: int) -> AbstractImage:
         """Create an image of the given size.
 
         :Parameters:
@@ -241,28 +255,35 @@ class ImagePattern:
 class SolidColorImagePattern(ImagePattern):
     """Creates an image filled with a solid color."""
 
-    def __init__(self, color=(0, 0, 0, 0)):
+    def __init__(self, 
+                 color: Tuple[int, int, int, int]=(0, 0, 0, 0)
+                 ) -> None:
         """Create a solid image pattern with the given color.
 
         :Parameters:
-            `color` : (int, int, int, int)
+            `color` : Tuple[int, int, int, int]
                 4-tuple of ints in range [0,255] giving RGBA components of
                 color to fill with.
 
         """
         self.color = _color_as_bytes(color)
 
-    def create_image(self, width, height):
+    def create_image(self, width: int, height: int) -> ImageData:
         data = self.color * width * height
         return ImageData(width, height, 'RGBA', data)
 
 
 class CheckerImagePattern(ImagePattern):
-    """Create an image with a tileable checker image.
+    """
+    Create an image with a tileable checker image.
     """
 
-    def __init__(self, color1=(150, 150, 150, 255), color2=(200, 200, 200, 255)):
-        """Initialise with the given colors.
+    def __init__(self, 
+                 color1: Tuple[int, int, int, int]=(150, 150, 150, 255), 
+                 color2: Tuple[int, int, int, int]=(200, 200, 200, 255)
+                 ) -> None:
+        """
+        Initialise with the given colors.
 
         :Parameters:
             `color1` : (int, int, int, int)
@@ -278,7 +299,9 @@ class CheckerImagePattern(ImagePattern):
         self.color1 = _color_as_bytes(color1)
         self.color2 = _color_as_bytes(color2)
 
-    def create_image(self, width, height):
+    def create_image(self, 
+                     width: int, height: int
+                     ) -> ImageData:
         hw = width // 2
         hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw
@@ -303,14 +326,14 @@ class AbstractImage:
     anchor_x = 0
     anchor_y = 0
 
-    def __init__(self, width, height):
+    def __init__(self, width: int, height: int) -> None:
         self.width = width
         self.height = height
 
     def __repr__(self):
         return "{}(size={}x{})".format(self.__class__.__name__, self.width, self.height)
 
-    def get_image_data(self):
+    def get_image_data(self) -> ImageData:
         """Get an ImageData view of this image.
 
         Changes to the returned instance may or may not be reflected in this
@@ -322,7 +345,7 @@ class AbstractImage:
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False) -> Texture:
         """A :py:class:`~pyglet.image.Texture` view of this image.
 
         :Parameters:
@@ -336,7 +359,7 @@ class AbstractImage:
         """
         raise ImageException('Cannot retrieve texture for %r' % self)
 
-    def get_mipmapped_texture(self):
+    def get_mipmapped_texture(self) -> Texture:
         """Retrieve a :py:class:`~pyglet.image.Texture` instance with all mipmap levels filled in.
 
         :rtype: :py:class:`~pyglet.image.Texture`
@@ -345,7 +368,10 @@ class AbstractImage:
         """
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, 
+                    x: int, y: int, 
+                    width: int, height: int
+                    ) -> AbstractImage:
         """Retrieve a rectangular region of this image.
 
         :Parameters:
@@ -362,7 +388,10 @@ class AbstractImage:
         """
         raise ImageException('Cannot get region for %r' % self)
 
-    def save(self, filename=None, file=None, encoder=None):
+    def save(self, filename: Optional[str]=None, 
+             file: Optional[IO]=None, 
+             encoder: Optional[ImageEncoder]=None
+             ) -> None:
         """Save this image to a file.
 
         :Parameters:
