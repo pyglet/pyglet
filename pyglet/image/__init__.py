@@ -395,7 +395,7 @@ class AbstractImage:
                 raise ImageEncodeException('No image encoders are available')
             raise first_exception
 
-    def blit(self, x, y, z=0):
+    def blit(self, x: int, y: int, z: int=0) -> None:
         """Draw this image to the active framebuffers.
 
         The image will be drawn with the lower-left corner at
@@ -403,7 +403,7 @@ class AbstractImage:
         """
         raise ImageException('Cannot blit %r.' % self)
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
         """Draw `source` on this image.
 
         `source` will be copied into this image such that its anchor point
@@ -413,6 +413,16 @@ class AbstractImage:
         Note that if `source` is larger than this image (or the positioning
         would cause the copy to go out of bounds) then you must pass a
         region of `source` to this method, typically using get_region().
+
+        :Parameters:
+            `source` : ImageData
+                Source to blit onto image
+            `x` : int
+                X-Anchor Point
+            `y` : int
+                Y-Anchor Point
+            `z` : int
+                Z-Anchor Point 
         """
         raise ImageException('Cannot blit images onto %r.' % self)
 
@@ -1203,17 +1213,19 @@ class Texture(AbstractImage):
 
     """
 
-    region_class = None  # Set to TextureRegion after it's defined
-    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
-    tex_coords_order = (0, 1, 2, 3)
-    colors = (0, 0, 0, 0) * 4
-    level = 0
-    images = 1
-    x = y = z = 0
+    region_class: Optional[TextureRegion] = None  # Set to TextureRegion after it's defined
+    tex_coords: Tuple = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
+    tex_coords_order: Tuple = (0, 1, 2, 3)
+    colors: Tuple[Tuple] = (0, 0, 0, 0) * 4
+    level: int = 0
+    images: int = 1
+    x: int = 0
+    y: int = 0
+    z: int = 0
     default_min_filter = GL_LINEAR
     default_mag_filter = GL_LINEAR
 
-    def __init__(self, width, height, target, tex_id):
+    def __init__(self, width: int, height: int, target, tex_id: int) -> None:
         super().__init__(width, height)
         self.target = target
         self.id = tex_id
@@ -1296,7 +1308,7 @@ class Texture(AbstractImage):
 
         return texture
 
-    def get_image_data(self, z=0):
+    def get_image_data(self, z: int=0):
         """Get the image data of this texture.
 
         Changes to the returned instance will not be reflected in this
@@ -1337,12 +1349,12 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False):
         return self
 
     # no implementation of blit_to_texture yet
 
-    def blit(self, x, y, z=0, width=None, height=None):
+    def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None):
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
@@ -1359,14 +1371,35 @@ class Texture(AbstractImage):
 
         glBindTexture(self.target, 0)
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
+        """
+        Draw `source` on this image.
+
+        `source` will be copied into this image such that its anchor point
+        is aligned with the `x` and `y` parameters.  If this image is a 3D
+        texture, the `z` coordinate gives the image slice to copy into.
+
+        Note that if `source` is larger than this image (or the positioning
+        would cause the copy to go out of bounds) then you must pass a
+        region of `source` to this method, typically using get_region().
+
+        :Parameters:
+            `source` : ImageData
+                Source to blit onto image
+            `x` : int
+                X-Anchor Point
+            `y` : int
+                Y-Anchor Point
+            `z` : int
+                Z-Anchor Point
+        """
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.target, self.level, x, y, z)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         return self.region_class(x, y, 0, width, height, self)
 
-    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
+    def get_transform(self, flip_x: bool=False, flip_y: bool=False, rotate: int=0) -> TextureRegion:
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
@@ -1416,7 +1449,20 @@ class Texture(AbstractImage):
         transform._set_tex_coords_order(bl, br, tr, tl)
         return transform
 
-    def _set_tex_coords_order(self, bl, br, tr, tl):
+    def _set_tex_coords_order(self, bl: int, br: int, tr: int, tl: int) -> None:
+        """
+        Set/Change the order of the Texture's Cords
+        
+        :Parameters:
+            `bl` : int
+                bottom left cord index
+            `br` : int
+                bottom right cord index
+            `tl` : int
+                top left cord index
+            `tr` : int
+                top right cord index
+        """
         tex_coords = (self.tex_coords[:3],
                       self.tex_coords[3:6],
                       self.tex_coords[6:9],
@@ -1431,10 +1477,13 @@ class Texture(AbstractImage):
 
 
 class TextureRegion(Texture):
-    """A rectangular region of a texture, presented as if it were a separate texture.
+    """
+    A rectangular region of a texture, presented as if it were a separate texture.
     """
 
-    def __init__(self, x, y, z, width, height, owner):
+    def __init__(self, x: int, y: int, z: int, 
+                 width: int, height: int, owner: Texture
+                 ) -> None:
         super().__init__(width, height, owner.target, owner.id)
 
         self.x = x
@@ -1454,18 +1503,20 @@ class TextureRegion(Texture):
         r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
-    def get_image_data(self):
+    def get_image_data(self) -> TextureRegion:
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, 
+                    width: int, height: int
+                    ) -> TextureRegion:
         x += self.x
         y += self.y
         region = self.region_class(x, y, self.z, width, height, self.owner)
         region._set_tex_coords_order(*self.tex_coords_order)
         return region
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
     def __repr__(self):
@@ -1491,7 +1542,10 @@ class Texture3D(Texture, UniformTextureSequence):
     items = ()
 
     @classmethod
-    def create_for_images(cls, images, internalformat=GL_RGBA, blank_data=True):
+    def create_for_images(cls, images: List[AbstractImage], 
+                            internalformat: int=GL_RGBA, 
+                            blank_data: bool=True
+                            ) -> AbstractImage:
         item_width = images[0].width
         item_height = images[0].height
         for image in images:
@@ -1529,7 +1583,7 @@ class Texture3D(Texture, UniformTextureSequence):
         return texture
 
     @classmethod
-    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+    def create_for_image_grid(cls: AbstractImage, grid, internalformat=GL_RGBA) -> AbstractImage:
         return cls.create_for_images(grid[:], internalformat)
 
     def __len__(self):
@@ -1559,7 +1613,8 @@ class TextureArrayRegion(TextureRegion):
 
 
 class TextureArray(Texture, UniformTextureSequence):
-    def __init__(self, width, height, target, tex_id, max_depth):
+    def __init__(self, 
+                width: int, height: int, target, tex_id: int, max_depth: int) -> None:
         super().__init__(width, height, target, tex_id)
         self.max_depth = max_depth
         self.items = []
@@ -1725,7 +1780,8 @@ class TileableTexture(Texture):
 class DepthTexture(Texture):
     """A texture with depth samples (typically 24-bit)."""
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
+        """Blit image data onto this texture"""
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.level, x, y, z)
 
@@ -1750,7 +1806,11 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     _items = ()
     _texture_grid = None
 
-    def __init__(self, image, rows, columns, item_width=None, item_height=None, row_padding=0, column_padding=0):
+    def __init__(self, image: AbstractImage, 
+                 rows: int, columns: int, 
+                 item_width: Optional[int]=None, item_height: Optional[int]=None, 
+                 row_padding: int=0, column_padding: int=0
+                 ) -> None:
         """Construct a grid for the given image.
 
         You can specify parameters for the grid, for example setting
@@ -1786,13 +1846,13 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle=False) -> Texture:
         return self.image.get_texture(rectangle)
 
-    def get_image_data(self):
+    def get_image_data(self) -> TextureRegion:
         return self.image.get_image_data()
 
-    def get_texture_sequence(self):
+    def get_texture_sequence(self) -> TextureGrid:
         if not self._texture_grid:
             self._texture_grid = TextureGrid(self)
         return self._texture_grid
@@ -1800,7 +1860,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def __len__(self):
         return self.rows * self.columns
 
-    def _update_items(self):
+    def _update_items(self) -> None:
         if not self._items:
             self._items = []
             y = 0
@@ -1811,7 +1871,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                     x += self.item_width + self.column_padding
                 y += self.item_height + self.row_padding
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> None:
         self._update_items()
         if type(index) is tuple:
             row, column = index
@@ -1863,7 +1923,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
     item_width = 0
     item_height = 0
 
-    def __init__(self, grid):
+    def __init__(self, grid: ImageGrid):
         image = grid.get_texture()
         if isinstance(image, TextureRegion):
             owner = image.owner
@@ -1887,7 +1947,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         self.item_width = grid.item_width
         self.item_height = grid.item_height
 
-    def get(self, row, column):
+    def get(self, row: int, column: int) -> None:
         return self[(row, column)]
 
     def __getitem__(self, index):
@@ -1960,14 +2020,14 @@ class BufferManager:
     current context.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.color_buffer = None
         self.depth_buffer = None
         self.free_stencil_bits = None
         self.refs = []
 
     @staticmethod
-    def get_viewport():
+    def get_viewport() -> Tuple[float, float, float, float]:
         """Get the current OpenGL viewport dimensions.
 
         :rtype: 4-tuple of float.
@@ -1977,7 +2037,7 @@ class BufferManager:
         glGetIntegerv(GL_VIEWPORT, viewport)
         return viewport
 
-    def get_color_buffer(self):
+    def get_color_buffer(self) -> ColorBufferImage:
         """Get the color buffer.
 
         :rtype: :py:class:`~pyglet.image.ColorBufferImage`
@@ -1991,7 +2051,7 @@ class BufferManager:
             self.color_buffer = ColorBufferImage(*viewport)
         return self.color_buffer
 
-    def get_depth_buffer(self):
+    def get_depth_buffer(self) -> DepthBufferImage:
         """Get the depth buffer.
 
         :rtype: :py:class:`~pyglet.image.DepthBufferImage`
@@ -2005,7 +2065,7 @@ class BufferManager:
             self.depth_buffer = DepthBufferImage(*viewport)
         return self.depth_buffer
 
-    def get_buffer_mask(self):
+    def get_buffer_mask(self) -> BufferImageMask:
         """Get a free bitmask buffer.
 
         A bitmask buffer is a buffer referencing a single bit in the stencil
@@ -2041,7 +2101,7 @@ class BufferManager:
         return bufimg
 
 
-def get_buffer_manager():
+def get_buffer_manager() -> BufferManager:
     """Get the buffer manager for the current OpenGL context.
 
     :rtype: :py:class:`~pyglet.image.BufferManager`
@@ -2068,14 +2128,17 @@ class BufferImage(AbstractImage):
 
     # TODO: enable methods
 
-    def __init__(self, x, y, width, height):
+    def __init__(self, 
+                 x: int, y: int, 
+                 width: int, height: int
+                 ) -> None:
         super().__init__(width, height)
         self.x = x
         self.y = y
         self.width = width
         self.height = height
 
-    def get_image_data(self):
+    def get_image_data(self) -> ImageData:
         buf = (GLubyte * (len(self.format) * self.width * self.height))()
 
         x = self.x
@@ -2089,7 +2152,10 @@ class BufferImage(AbstractImage):
         glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buf)
         return ImageData(self.width, self.height, self.format, buf)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, 
+                    x: int, y: int, 
+                    width: int, height: int
+                    ) -> None:
         if self.owner:
             return self.owner.get_region(x + self.x, y + self.y, width, height)
 
@@ -2108,23 +2174,24 @@ class ColorBufferImage(BufferImage):
     gl_format = GL_RGBA
     format = 'RGBA'
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False) -> Texture:
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA, blank_data=False)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 
-    def blit_to_texture(self, target, level, x, y, z):
+    def blit_to_texture(self, target, level: int, x: int, y: int, z: int) -> None:
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
 
 class DepthBufferImage(BufferImage):
-    """The depth buffer.
+    """
+    The depth buffer.
     """
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False) -> Texture:
         assert rectangle is False, 'Depth textures cannot be rectangular'
 
         texture = DepthTexture.create(self.width, self.height, GL_TEXTURE_2D, None)
@@ -2139,13 +2206,16 @@ class DepthBufferImage(BufferImage):
                          0)
         return texture
 
-    def blit_to_texture(self, target, level, x, y, z):
+    def blit_to_texture(self, target, level: int, 
+                         x: int, y: int, z: int
+                         ) -> None:
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
 
 class BufferImageMask(BufferImage):
-    """A single bit of the stencil buffer.
+    """
+    A single bit of the stencil buffer.
     """
     gl_format = GL_STENCIL_INDEX
     format = 'L'
