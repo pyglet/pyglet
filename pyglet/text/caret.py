@@ -85,8 +85,10 @@ class Caret:
         """
         from pyglet import gl
         self._layout = layout
-        batch = batch or layout.batch
-        group = layout.foreground_decoration_group
+
+        self._custom_batch = True if batch else False
+        self._batch = batch or layout.batch
+        self._group = layout.foreground_decoration_group
 
         # Handle both 3 and 4 byte colors
         r, g, b, *a = color
@@ -96,7 +98,7 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = group.program.vertex_list(2, gl.GL_LINES, batch, group, colors=('Bn', colors))
+        self._list = self._group.program.vertex_list(2, gl.GL_LINES, batch, self._group, colors=('Bn', colors))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -104,6 +106,21 @@ class Caret:
         self.visible = True
 
         layout.push_handlers(self)
+
+    @property
+    def layout(self):
+        return self._layout
+
+    @layout.setter
+    def layout(self, layout):
+        if self._layout == layout and self._group == layout.group:
+            return
+
+        from pyglet import gl
+        self._layout = layout
+        batch = self._batch if self._custom_batch else layout.batch
+        self._group = layout.foreground_decoration_group
+        self._batch.migrate(self._list, gl.GL_LINES, self._group, batch)
 
     def delete(self):
         """Remove the caret from its batch.
