@@ -34,7 +34,7 @@ class RePositionFrame:
         self.caculate_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
         self.random_range = random_range
     
-    def add_call_back_func(self, obj: Repositionable, func: CallBackFunc, index: Optional[IndexType] = None) -> IndexType:
+    def add_callback_func(self, obj: Repositionable, func: CallBackFunc, index: Optional[IndexType] = None) -> IndexType:
         """ Add A callback function to the frame
         
         :param obj: The object that will be repositioned
@@ -43,9 +43,9 @@ class RePositionFrame:
         """
         if index is None:
             index = random.randint(*self.random_range)
-        while self.call_back_dict.get(index) is not None:
+        while self.callback_dict.get(index) is not None:
             index = random.randint(*self.random_range)
-        self.call_back_dict[index] = (obj, func)
+        self.callback_dict[index] = (obj, func)
         return index
     
     def add_caculate_func(self, obj: Repositionable, func: CaculateFunc, index: Optional[IndexType] = None) -> IndexType:
@@ -61,6 +61,14 @@ class RePositionFrame:
             index = random.randint(*self.random_range)
         self.caculate_dict[index] = (obj, func)
         return index
+    
+    def remove_callback_func(self, index: IndexType):
+        if self.callback_dict.get(index) is not None:
+            self.callback_dict.pop(index)
+    
+    def remove_caculate_func(self, index: IndexType):
+        if self.caculate_dict.get(index) is not None:
+            self.caculate_dict.pop(index)
     
     def on_resize(self, width: int, height: int):
         """ Call all the functions when the window is resized """
