@@ -17,9 +17,9 @@ Num = Union[int, float]
 PotitionTuple = Union[Tuple[Num, Num], Tuple[Num, Num, Num]]
 
 CallBackFunc = Callable[[Repositionable, int, int], None]
-CaculateFunc = Callable[[Repositionable, int, int], PotitionTuple]
+CalculateFunc = Callable[[Repositionable, int, int], PotitionTuple]
 
-CallBack = Union[CallBackFunc, CaculateFunc]
+CallBack = Union[CallBackFunc, CalculateFunc]
 IndexType = Union[int, str]
 
 class RePositionFrame:
@@ -33,7 +33,7 @@ class RePositionFrame:
     >>> reposition_frame = RePositionFrame(window)
     
     >>> label = pyglet.text.Label("Hello World", x=0, y=0)
-    >>> repostion_frame.add_caculate_func(label, lambda obj, width, height: (width/2, height/2))
+    >>> repostion_frame.add_calculate_func(label, lambda obj, width, height: (width/2, height/2))
     
     >>> b_label = pyglet.text.Label("Hello World with call back", x=0, y=0)
     >>> def callback(obj, width, height):
@@ -48,7 +48,7 @@ class RePositionFrame:
     def __init__(self, window, random_range: Optional[Tuple[int, int]] = (-1_0000_0000, 1_0000_0000)):
         window.push_handlers(self)
         self.callback_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
-        self.caculate_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
+        self.calculate_dict: Dict[IndexType, Tuple[Repositionable, CalculateFunc]] = {}
         self.random_range = random_range
     
     def add_callback_func(self, obj: Repositionable, func: CallBackFunc, index: Optional[IndexType] = None) -> IndexType:
@@ -65,8 +65,8 @@ class RePositionFrame:
         self.callback_dict[index] = (obj, func)
         return index
     
-    def add_caculate_func(self, obj: Repositionable, func: CaculateFunc, index: Optional[IndexType] = None) -> IndexType:
-        """ Add A caculate function to the frame
+    def add_calculate_func(self, obj: Repositionable, func: CalculateFunc, index: Optional[IndexType] = None) -> IndexType:
+        """ Add A calculate function to the frame
         
         :param obj: The object that will be repositioned
         :param func: The function that will be called
@@ -74,25 +74,25 @@ class RePositionFrame:
         """
         if index is None:
             index = random.randint(*self.random_range)
-        while self.caculate_dict.get(index) is not None:
+        while self.calculate_dict.get(index) is not None:
             index = random.randint(*self.random_range)
-        self.caculate_dict[index] = (obj, func)
+        self.calculate_dict[index] = (obj, func)
         return index
     
     def remove_callback_func(self, index: IndexType):
         if self.callback_dict.get(index) is not None:
             self.callback_dict.pop(index)
     
-    def remove_caculate_func(self, index: IndexType):
-        if self.caculate_dict.get(index) is not None:
-            self.caculate_dict.pop(index)
+    def remove_calculate_func(self, index: IndexType):
+        if self.calculate_dict.get(index) is not None:
+            self.calculate_dict.pop(index)
     
     def on_resize(self, width: int, height: int):
         """ Call all the functions when the window is resized """
         for _, (obj, func) in self.callback_dict.items():
             func(obj, width, height)
         
-        for _, (obj, func) in self.caculate_dict.items():
+        for _, (obj, func) in self.calculate_dict.items():
             obj.position = func(obj, width, height)
 
 
