@@ -390,8 +390,8 @@ class AbstractImage:
 
     def save(self, filename: Optional[str]=None, 
              file: Optional[IO]=None, 
-             encoder: Optional[ImageEncoder]=None
-             ) -> None:
+             encoder: Optional[str]=None
+             ) -> Optional[bytes]:
         """Save this image to a file.
 
         :Parameters:
@@ -405,6 +405,8 @@ class AbstractImage:
                 are tried.  If all fail, the exception from the first one
                 attempted is raised.
 
+        :rtype: None or bytes
+        :return: image encoded as bytes if possible
         """
         if not file:
             file = open(filename, 'wb')
@@ -475,7 +477,7 @@ class AbstractImageSequence:
     `__setitem__`).
     """
 
-    def get_texture_sequence(self):
+    def get_texture_sequence(self) -> TextureSequence:
         """Get a TextureSequence.
 
         :rtype: `TextureSequence`
@@ -484,7 +486,7 @@ class AbstractImageSequence:
         """
         raise NotImplementedError('abstract')
 
-    def get_animation(self, period, loop=True):
+    def get_animation(self, period: float, loop: bool=True) -> Animation:
         """Create an animation over this image sequence for the given constant
         framerate.
 
@@ -538,7 +540,7 @@ class TextureSequence(AbstractImageSequence):
     :py:class:`~pyglet.image.Texture` so as to minimise state changes.
     """
 
-    def get_texture_sequence(self):
+    def get_texture_sequence(self) -> TextureSequence:
         return self
 
 
@@ -553,18 +555,18 @@ class UniformTextureSequence(TextureSequence):
 
     """
 
-    def _get_item_width(self):
+    def _get_item_width(self) -> int:
         raise NotImplementedError('abstract')
 
-    def _get_item_height(self):
+    def _get_item_height(self) -> int:
         raise NotImplementedError('abstract')
 
     @property
-    def item_width(self):
+    def item_width(self) -> int:
         return self._get_item_width()
 
     @property
-    def item_height(self):
+    def item_height(self) -> int:
         return self._get_item_height()
 
 
@@ -589,7 +591,7 @@ class ImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, fmt, data, pitch=None):
+    def __init__(self, width: int, height: int, fmt: str, data: Sequence, pitch: Optional[int]=None) -> None:
         """Initialise image data.
 
         :Parameters:
@@ -615,7 +617,7 @@ class ImageData(AbstractImage):
         self._current_pitch = self.pitch
         self.mipmap_images = []
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict:
         return {
             'width': self.width,
             'height': self.height,
@@ -627,11 +629,11 @@ class ImageData(AbstractImage):
             'mipmap_images': self.mipmap_images
         }
 
-    def get_image_data(self):
+    def get_image_data(self) -> ImageData:
         return self
 
     @property
-    def format(self):
+    def format(self) -> str:
         """Format string of the data.  Read-write.
 
         :type: str
@@ -639,11 +641,11 @@ class ImageData(AbstractImage):
         return self._desired_format
 
     @format.setter
-    def format(self, fmt):
+    def format(self, fmt: str) -> None:
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_data(self, fmt=None, pitch=None):
+    def get_data(self, fmt: Optional[str]=None, pitch: Optional[int]=None) -> Sequence[Union[bytes, str]]:
         """Get the byte data of the image.
 
         :Parameters:
@@ -664,7 +666,7 @@ class ImageData(AbstractImage):
             return self._current_data
         return self._convert(fmt, pitch)
 
-    def set_data(self, fmt, pitch, data):
+    def set_data(self, fmt: str, pitch: int, data: Union[str, Sequence[bytes]]) -> None:
         """Set the byte data of the image.
 
         :Parameters:
@@ -684,7 +686,7 @@ class ImageData(AbstractImage):
         self._current_texture = None
         self._current_mipmap_texture = None
 
-    def set_mipmap_image(self, level, image):
+    def set_mipmap_image(self, level: int, image: AbstractImage) -> None:
         """Set a mipmap image for a particular level.
 
         The mipmap image will be applied to textures obtained via
@@ -713,7 +715,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls, rectangle=False):
+    def create_texture(self, cls: Texture, rectangle: bool=False):
         """Create a texture containing this image.
 
         :Parameters:
@@ -741,7 +743,7 @@ class ImageData(AbstractImage):
             self._current_texture = self.create_texture(Texture, rectangle)
         return self._current_texture
 
-    def get_mipmapped_texture(self):
+    def get_mipmapped_texture(self) -> Texture:
         """Return a Texture with mipmaps.
 
         If :py:class:`~pyglet.image.set_mipmap_Image` has been called with at least one image, the set
@@ -780,7 +782,10 @@ class ImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, 
+                    x: int, y: int, 
+                    width: int, height: int
+                    ) -> TextureRegion:
         """Retrieve a rectangular region of this image data.
 
         :Parameters:
@@ -797,7 +802,7 @@ class ImageData(AbstractImage):
         """
         return ImageDataRegion(x, y, width, height, self)
 
-    def blit(self, x, y, z=0, width=None, height=None):
+    def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None):
         self.get_texture().blit(x, y, z, width, height)
 
     def blit_to_texture(self, target, level, x, y, z, internalformat=None):
@@ -1279,7 +1284,7 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
+    def create(cls: Texture, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1571,7 +1576,7 @@ class Texture3D(Texture, UniformTextureSequence):
     items = ()
 
     @classmethod
-    def create_for_images(cls, images: List[AbstractImage], 
+    def create_for_images(cls: Texture, images: List[AbstractImage], 
                             internalformat: int=GL_RGBA, 
                             blank_data: bool=True
                             ) -> AbstractImage:
@@ -1649,7 +1654,7 @@ class TextureArray(Texture, UniformTextureSequence):
         self.items = []
 
     @classmethod
-    def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
+    def create(cls: Texture, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -1729,7 +1734,7 @@ class TextureArray(Texture, UniformTextureSequence):
         return self.items[start_length:]
 
     @classmethod
-    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+    def create_for_image_grid(cls: Texture, grid, internalformat=GL_RGBA):
         texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
         texture_array.allocate(*grid[:])
         return texture_array
@@ -1801,7 +1806,7 @@ class TileableTexture(Texture):
         glBindTexture(self.target, 0)
 
     @classmethod
-    def create_for_image(cls, image):
+    def create_for_image(cls: Texture, image):
         image = image.get_image_data()
         return image.create_texture(cls)
 
