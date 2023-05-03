@@ -26,6 +26,23 @@ class RePositionFrame:
     """ A Frame Like Object that allows for repositioning of widgets
     you can give A function and A widget/shape to let it reposition itself
     when the function is called
+    
+    >>> import pyglet
+    >>> window = pyglet.window.Window()
+    
+    >>> reposition_frame = RePositionFrame(window)
+    
+    >>> label = pyglet.text.Label("Hello World", x=0, y=0)
+    >>> repostion_frame.add_caculate_func(label, lambda obj, width, height: (width/2, height/2))
+    
+    >>> b_label = pyglet.text.Label("Hello World with call back", x=0, y=0)
+    >>> def callback(obj, width, height):
+    >>>    obj.x = width/2
+    >>>    obj.y = height/2
+    >>>    obj.text = f"Hello World with call back, width: {width}, height: {height}"
+    
+    >>> reposition_frame.add_callback_func(b_label, callback)
+    
     """
     
     def __init__(self, window, random_range: Optional[Tuple[int, int]] = (-1_0000_0000, 1_0000_0000)):
