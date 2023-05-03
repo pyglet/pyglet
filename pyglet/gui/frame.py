@@ -1,3 +1,75 @@
+import random
+
+from typing import Callable, Union, Tuple, Dict, TYPE_CHECKING, TypeVar, Optional
+
+if TYPE_CHECKING:
+    from pyglet.shapes import ShapeBase
+    from pyglet.text import Label
+    from pyglet.sprite import Sprite
+    from pyglet.gui.widgets import WidgetBase
+    
+    Repositionable = Union[ShapeBase, Label, Sprite, WidgetBase]  # just for typing
+else:
+    Repositionable = TypeVar("Repositionable")  # for type checking
+
+Num = Union[int, float]
+
+PotitionTuple = Union[Tuple[Num, Num], Tuple[Num, Num, Num]]
+
+CallBackFunc = Callable[[Repositionable, int, int], None]
+CaculateFunc = Callable[[Repositionable, int, int], PotitionTuple]
+
+CallBack = Union[CallBackFunc, CaculateFunc]
+IndexType = Union[int, str]
+
+class RePositionFrame:
+    """ A Frame Like Object that allows for repositioning of widgets
+    you can give A function and A widget/shape to let it reposition itself
+    when the function is called
+    """
+    
+    def __init__(self, window, random_range: Optional[Tuple[int, int]] = (-1_0000_0000, 1_0000_0000)):
+        window.push_handlers(self)
+        self.callback_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
+        self.caculate_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
+        self.random_range = random_range
+    
+    def add_call_back_func(self, obj: Repositionable, func: CallBackFunc, index: Optional[IndexType] = None) -> IndexType:
+        """ Add A callback function to the frame
+        
+        :param obj: The object that will be repositioned
+        :param func: The function that will be called
+        :param index: The index of the object
+        """
+        if index is None:
+            index = random.randint(*self.random_range)
+        while self.call_back_dict.get(index) is not None:
+            index = random.randint(*self.random_range)
+        self.call_back_dict[index] = (obj, func)
+        return index
+    
+    def add_caculate_func(self, obj: Repositionable, func: CaculateFunc, index: Optional[IndexType] = None) -> IndexType:
+        """ Add A caculate function to the frame
+        
+        :param obj: The object that will be repositioned
+        :param func: The function that will be called
+        :param index: The index of the object
+        """
+        if index is None:
+            index = random.randint(*self.random_range)
+        while self.caculate_dict.get(index) is not None:
+            index = random.randint(*self.random_range)
+        self.caculate_dict[index] = (obj, func)
+        return index
+    
+    def on_resize(self, width: int, height: int):
+        """ Call all the functions when the window is resized """
+        for _, (obj, func) in self.callback_dict.items():
+            func(obj, width, height)
+        
+        for _, (obj, func) in self.caculate_dict.items():
+            obj.position = func(obj, width, height)
+
 
 class Frame:
     """The base Frame object, implementing a 2D spatial hash.
