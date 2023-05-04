@@ -958,6 +958,7 @@ class TextLayout:
     def group(self, group):
         self._user_group = group
         self._initialize_groups()
+        self.group_cache.clear()
         self._update()
 
     @property
