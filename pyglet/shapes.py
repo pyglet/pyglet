@@ -1,4 +1,5 @@
-"""2D shapes.
+"""
+2D shapes.
 
 This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
@@ -55,7 +56,7 @@ import pyglet
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
-from pyglet.graphics import Batch, Group
+from pyglet.graphics import Batch, Group, Shader, ShaderProgram
 
 
 vertex_source: str = """#version 150 core
@@ -103,13 +104,13 @@ fragment_source: str = """#version 150 core
 number = Union[int, float]
 
 
-def get_default_shader():
+def get_default_shader() -> ShaderProgram:
     try:
         return pyglet.gl.current_context.pyglet_shapes_default_shader
     except AttributeError:
-        _default_vert_shader = pyglet.graphics.shader.Shader(vertex_source, 'vertex')
-        _default_frag_shader = pyglet.graphics.shader.Shader(fragment_source, 'fragment')
-        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        _default_vert_shader = Shader(vertex_source, 'vertex')
+        _default_frag_shader = Shader(fragment_source, 'fragment')
+        default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
         return default_shader_program
 
@@ -122,7 +123,7 @@ class _ShapeGroup(Group):
     """
 
     def __init__(self, blend_src: int, blend_dest: int, 
-                 program: pyglet.graphics.shader.ShaderProgram, 
+                 program: ShaderProgram, 
                  parent: Optional[Group]=None
                  ) -> None:
         """Create a Shape group.
@@ -278,7 +279,7 @@ class ShapeBase(ABC):
         return self._y
 
     @y.setter
-    def y(self, value: number):
+    def y(self, value: number) -> None:
         self._y = value
         self._update_translation()
 
@@ -309,7 +310,7 @@ class ShapeBase(ABC):
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, value: number):
+    def anchor_x(self, value: number) -> None:
         """Set the X coordinate of the anchor point"""
         self._anchor_x = value
         self._update_vertices()
@@ -324,7 +325,7 @@ class ShapeBase(ABC):
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value: number):
+    def anchor_y(self, value: number) -> None:
         """Set the Y coordinate of the anchor point"""
         self._anchor_y = value
         self._update_vertices()
@@ -1444,7 +1445,8 @@ class BorderedRectangle(ShapeBase):
 
     @property
     def color(self) -> Tuple[int, int, int, int]:
-        """The rectangle's fill color.
+        """
+        Returns the rectangle's fill color.
 
         This property sets the color of the inside of a bordered rectangle.
 

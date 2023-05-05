@@ -61,12 +61,13 @@ from io import BytesIO
 from typing import Union, Optional, List
 
 import pyglet
+from pyglet.image import Animation, Texture, TextureRegion, TextureBin
 
 
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         message = ("Resource '{}' was not found on the path.  "
                    "Ensure that the filename has the correct capitalisation.".format(name))
         Exception.__init__(self, message)
@@ -75,7 +76,7 @@ class ResourceNotFoundException(Exception):
 class UndetectableShaderType(Exception):
     """The type of the Shader source could not be identified."""
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         message = ("The Shader type of '{}' could not be determined.  "
                    "Ensure that your source file has a standard extension, "
                    "or provide a valid 'shader_type' parameter.".format(name))
@@ -356,7 +357,7 @@ class Loader:
             application script.
 
     """
-    def __init__(self, path: List[str]=None, script_home: str=None) -> None:
+    def __init__(self, path: Optional[List[str]]=None, script_home: Optional[str]=None) -> None:
         """
         Create a loader for the given path.
 
@@ -592,7 +593,7 @@ class Loader:
 
     def _get_texture_atlas_bin(self, 
                                 width: int, height: int, border: int
-                                ) -> pyglet.image.atlas.TextureBin:
+                                ) -> TextureBin:
         """
         A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
@@ -613,7 +614,7 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin()
+            texture_bin = TextureBin()
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
@@ -621,7 +622,7 @@ class Loader:
     def image(self, 
              name: str, flip_x: bool=False, flip_y: bool=False, 
              rotate: int=0, atlas: bool=True, border: int=1
-             ) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+             ) -> Union[Texture, TextureRegion]:
         """
         Load an image with optional transformation.
 
@@ -665,7 +666,7 @@ class Loader:
 
     def animation(self, name: str, flip_x: bool=False, 
                  flip_y: bool=False, rotate: int=0, border: int=1
-                 ) -> pyglet.image.Animation:
+                 ) -> Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -727,7 +728,7 @@ class Loader:
         self._require_index()
         return list(self._cached_animations.keys())
 
-    def get_texture_bins(self) -> List[pyglet.image.atlas.TextureBin]:
+    def get_texture_bins(self) -> List[TextureBin]:
         """Get a list of texture bins in use.
 
         This is useful for debugging and profiling only.
@@ -769,7 +770,7 @@ class Loader:
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def texture(self, name: str) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+    def texture(self, name: str) -> Union[Texture, TextureRegion]:
         """Load a texture.
 
         The named image will be loaded as a single OpenGL texture.  If the
