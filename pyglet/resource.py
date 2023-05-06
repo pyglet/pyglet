@@ -58,10 +58,11 @@ import zipfile
 import weakref
 
 from io import BytesIO
-from typing import Union, Optional, List
+from typing import Union, Optional, List, TYPE_CHECKING
 
 import pyglet
-from pyglet.image import Animation, Texture, TextureRegion, TextureBin
+if TYPE_CHECKING:
+    from pyglet.image import Animation, Texture, TextureRegion, TextureBin
 
 
 class ResourceNotFoundException(Exception):
