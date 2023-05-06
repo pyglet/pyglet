@@ -438,6 +438,7 @@ class TextEntry(WidgetBase):
     def _set_focus(self, value):
         self._focus = value
         self._caret.visible = value
+        self._caret.layout = self._layout
 
     def update_groups(self, order):
         self._outline.group = Group(order=order + 1, parent=self._user_group)

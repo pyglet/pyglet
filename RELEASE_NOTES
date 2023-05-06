@@ -1,3 +1,24 @@
+pyglet 2.0.6
+
+Changes and Improvements
+------------------------
+- Initialize AudioDriver when media module is imported, prevent pause on first sound playback.
+- New TextureArrayBin class for managing TextureArray based atlases.
+- macOS: implement "file_drop" support for Windows.
+- macOS: add support for CoreAudio, allowing native mp3, aiff, etc. support without FFMpeg.
+- macOS: alternative NSApplication based event loop, to avoid missing events on M1 Macs. #794
+- text: Caret supports RGBA color, in line with other pyglet objects.
+- Windows: New context manager for handling of safer handling of platform resources.
+
+Bugfixes
+--------
+- Fix numerous bugs remaining with IncrementalTextLayout, with translation, caret, etc. #786
+- Windows: fix incorrect on_resize values.
+- macOS: numerous memory leak fixes.
+- shader: add missing sampler type definitions.
+- Add missing docstrings, and various documentation fixes.
+
+
 pyglet 2.0.5
 
 Changes and Improvements
