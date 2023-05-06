@@ -56,7 +56,7 @@ import pyglet
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
-from pyglet.graphics import Batch, Group, Shader
+from pyglet.graphics import Batch, Group
 from pyglet.graphics.shader import Shader, ShaderProgram
 
 
