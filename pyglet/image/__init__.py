@@ -805,7 +805,7 @@ class ImageData(AbstractImage):
     def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None):
         self.get_texture().blit(x, y, z, width, height)
 
-    def blit_to_texture(self, target, level, x, y, z, internalformat=None):
+    def blit_to_texture(self, target: Texture, level: int, x: int, y: int, z: int, internalformat=None):
         """Draw this image to to the currently bound texture at `target`.
 
         This image's anchor point will be aligned to the given `x` and `y`
@@ -1136,7 +1136,7 @@ class CompressedImageData(AbstractImage):
         if not self._have_extension():
             raise ImageException('%s is required to decode %r' % (self.extension, self))
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False):
         if rectangle:
             raise ImageException('Compressed texture rectangles not supported')
 
