@@ -715,7 +715,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls: Texture, rectangle: bool=False):
+    def create_texture(self, cls: Texture, rectangle: bool=False) -> Texture:
         """Create a texture containing this image.
 
         :Parameters:
@@ -738,7 +738,7 @@ class ImageData(AbstractImage):
 
         return texture
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool=False) -> Texture:
         if not self._current_texture:
             self._current_texture = self.create_texture(Texture, rectangle)
         return self._current_texture
@@ -802,10 +802,16 @@ class ImageData(AbstractImage):
         """
         return ImageDataRegion(x, y, width, height, self)
 
-    def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None):
+    def blit(self, x: int, y: int, z: int=0, 
+             width: Optional[int]=None, 
+             height: Optional[int]=None
+             ) -> None:
         self.get_texture().blit(x, y, z, width, height)
 
-    def blit_to_texture(self, target: Texture, level: int, x: int, y: int, z: int, internalformat=None):
+    def blit_to_texture(self, target: Texture, 
+                         level: int, x: int, y: int, z: int, 
+                         internalformat=None
+                         ) -> None:
         """Draw this image to to the currently bound texture at `target`.
 
         This image's anchor point will be aligned to the given `x` and `y`
@@ -877,13 +883,13 @@ class ImageData(AbstractImage):
         # Flush image upload before data get GC'd:
         glFlush()
 
-    def _apply_region_unpack(self):
+    def _apply_region_unpack(self) -> None:
         pass
 
-    def _default_region_unpack(self):
+    def _default_region_unpack(self) -> None:
         pass
 
-    def _convert(self, fmt, pitch):
+    def _convert(self, fmt: str, pitch: Optional[int]):
         """Return data in the desired format; does not alter this instance's
         current format or pitch.
         """
@@ -956,12 +962,12 @@ class ImageData(AbstractImage):
 
         return asbytes(data)
 
-    def _ensure_bytes(self):
+    def _ensure_bytes(self) -> None:
         if type(self._current_data) is not bytes:
             self._current_data = asbytes(self._current_data)
 
     @staticmethod
-    def _get_gl_format_and_type(fmt):
+    def _get_gl_format_and_type(fmt) -> Tuple[Optional[int], Optional[int]]:
         if fmt == 'R':
             return GL_RED, GL_UNSIGNED_BYTE
         elif fmt == 'RG':
@@ -983,7 +989,7 @@ class ImageData(AbstractImage):
         return None, None
 
     @staticmethod
-    def _get_internalformat(fmt):
+    def _get_internalformat(fmt) -> int:
         if fmt == 'R':
             return GL_RED
         elif fmt == 'RG':
@@ -1006,7 +1012,7 @@ class ImageData(AbstractImage):
 
 
 class ImageDataRegion(ImageData):
-    def __init__(self, x, y, width, height, image_data):
+    def __init__(self, x: int, y: int, width: int, height: int, image_data: ImageData) -> None:
         super().__init__(width, height,
                          image_data._current_format,
                          image_data._current_data,
@@ -1014,7 +1020,7 @@ class ImageDataRegion(ImageData):
         self.x = x
         self.y = y
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict:
         return {
             'width': self.width,
             'height': self.height,
@@ -1028,7 +1034,9 @@ class ImageDataRegion(ImageData):
             'y': self.y
         }
 
-    def get_data(self, fmt=None, pitch=None):
+    def get_data(self, fmt: Optional[str]=None, 
+                 pitch: Optional[int]=None
+                 ) -> Sequence[Union[bytes, str]]:
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
@@ -1047,20 +1055,20 @@ class ImageDataRegion(ImageData):
         pitch = pitch or self._current_pitch
         return super().get_data(fmt, pitch)
 
-    def set_data(self, fmt, pitch, data):
+    def set_data(self, fmt: str, pitch: int, data: Sequence[Union[bytes, str]]):
         self.x = 0
         self.y = 0
         super().set_data(fmt, pitch, data)
 
-    def _apply_region_unpack(self):
+    def _apply_region_unpack(self) -> None:
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
         glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
 
-    def _default_region_unpack(self):
+    def _default_region_unpack(self) -> None:
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         x += self.x
         y += self.y
         return super().get_region(x, y, width, height)
@@ -1074,7 +1082,10 @@ class CompressedImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, gl_format, data, extension=None, decoder=None):
+    def __init__(self, width: int, height: int, 
+                 gl_forma: int, data: Sequence[Union[bytes, str]], 
+                 extension: Optional[str]=None, decoder: Optional[Callable]=None
+                 ) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
         :Parameters:
@@ -1102,7 +1113,7 @@ class CompressedImageData(AbstractImage):
         self.decoder = decoder
         self.mipmap_data = []
 
-    def set_mipmap_data(self, level, data):
+    def set_mipmap_data(self, level: int, data: Sequence[Union[bytes, str]]):
         """Set data for a mipmap level.
 
         Supplied data gives a compressed image for the given mipmap level.
@@ -1123,10 +1134,10 @@ class CompressedImageData(AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def _have_extension(self):
+    def _have_extension(self) -> bool:
         return self.extension is None or gl_info.have_extension(self.extension)
 
-    def _verify_driver_supported(self):
+    def _verify_driver_supported(self) -> None:
         """Assert that the extension required for this image data is
         supported.
 
@@ -1136,7 +1147,7 @@ class CompressedImageData(AbstractImage):
         if not self._have_extension():
             raise ImageException('%s is required to decode %r' % (self.extension, self))
 
-    def get_texture(self, rectangle: bool=False):
+    def get_texture(self, rectangle: bool=False) -> Texture:
         if rectangle:
             raise ImageException('Compressed texture rectangles not supported')
 
@@ -1168,7 +1179,7 @@ class CompressedImageData(AbstractImage):
         self._current_texture = texture
         return texture
 
-    def get_mipmapped_texture(self):
+    def get_mipmapped_texture(self) -> Texture:
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
@@ -1208,7 +1219,9 @@ class CompressedImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
-    def blit_to_texture(self, target, level, x, y, z):
+    def blit_to_texture(self, target: Texture, 
+                         level: int, x: int, y: int, z: int
+                         ) -> None:
         self._verify_driver_supported()
 
         if target == GL_TEXTURE_3D:
