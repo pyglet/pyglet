@@ -14,7 +14,7 @@ performance. For advanced users, these abstractions can still help to avoid
 a lot of the OpenGL boilerplate code that would otherwise be necessary to write
 yourself.
 
-pyglet's rendering abstractions cosist of three major components:
+pyglet's rendering abstractions consist of three major components:
 "VertexDomains", "VertexLists", and ":py:class:`~pyglet.graphics.shader.ShaderProgram`". These will be explained
 in more detail in the following sections, but a rough overview is as follows:
 
