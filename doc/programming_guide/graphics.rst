@@ -27,7 +27,7 @@ in more detail in the following sections, but a rough overview is as follows:
   array buffers, that match a specific collection of vertex attributes.
   Buffers are resized automatically as needed. Access to these buffers is
   usually not done directly, but instead through the use of VertexLists.
-* VertexLists sit in-between The VertexDomains and the :py:class:`~pyglet.graphics.shader.ShaderProgram`. They
+* VertexLists sit in-between the VertexDomains and the :py:class:`~pyglet.graphics.shader.ShaderProgram`. They
   provide a simple "view" into a portion of a VertexDomain's buffers. A
   :py:class:`~pyglet.graphics.shader.ShaderProgram` is able to generate VertexLists directly.
 
