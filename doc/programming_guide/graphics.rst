@@ -14,7 +14,7 @@ performance. For advanced users, these abstractions can still help to avoid
 a lot of the OpenGL boilerplate code that would otherwise be necessary to write
 yourself.
 
-pyglet's rendering abstractions cosist of three major components:
+pyglet's rendering abstractions consist of three major components:
 "VertexDomains", "VertexLists", and ":py:class:`~pyglet.graphics.shader.ShaderProgram`". These will be explained
 in more detail in the following sections, but a rough overview is as follows:
 
@@ -27,7 +27,7 @@ in more detail in the following sections, but a rough overview is as follows:
   array buffers, that match a specific collection of vertex attributes.
   Buffers are resized automatically as needed. Access to these buffers is
   usually not done directly, but instead through the use of VertexLists.
-* VertexLists sit in-between The VertexDomains and the :py:class:`~pyglet.graphics.shader.ShaderProgram`. They
+* VertexLists sit in-between the VertexDomains and the :py:class:`~pyglet.graphics.shader.ShaderProgram`. They
   provide a simple "view" into a portion of a VertexDomain's buffers. A
   :py:class:`~pyglet.graphics.shader.ShaderProgram` is able to generate VertexLists directly.
 
