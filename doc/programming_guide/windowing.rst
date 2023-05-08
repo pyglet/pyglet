@@ -2,8 +2,8 @@ Windowing
 =========
 
 A :py:class:`~pyglet.window.Window` in pyglet corresponds to a top-level
-window provided by the operating system.  Windows can be floating
-(overlapped with other application windows) or fullscreen.
+window as provided by the operating system. Windows can be floating (with or
+without a border), or fullscreen.
 
 .. _guide_creating-a-window:
 
@@ -108,7 +108,7 @@ however the operating system does not always permit this, and the window may
 have relocated.
 
 Size and position
------------------
+^^^^^^^^^^^^^^^^^
 
 This section applies only to windows that are not fullscreen.  Fullscreen
 windows always have the width and height of the screen they fill.
