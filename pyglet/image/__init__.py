@@ -227,7 +227,6 @@ def _color_as_bytes(color: Tuple[int, int, int, int]) -> bytes:
         `color`: Tuple[int, int, int, int]
             Color in RGBA standard
     
-    :rtype: bytes
     :return: color as a bytes object
     """
     if len(color) != 4:
@@ -645,7 +644,7 @@ class ImageData(AbstractImage):
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_data(self, fmt: Optional[str]=None, pitch: Optional[int]=None) -> Sequence[Union[bytes, str]]:
+    def get_data(self, fmt: Optional[str]=None, pitch: Optional[int]=None) -> bytes:
         """Get the byte data of the image.
 
         :Parameters:
@@ -657,7 +656,7 @@ class ImageData(AbstractImage):
 
         .. versionadded:: 1.1
 
-        :rtype: sequence of bytes, or str
+        :rtype: sequence of bytes
         """
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
@@ -889,7 +888,7 @@ class ImageData(AbstractImage):
     def _default_region_unpack(self) -> None:
         pass
 
-    def _convert(self, fmt: str, pitch: Optional[int]):
+    def _convert(self, fmt: str, pitch: int):
         """Return data in the desired format; does not alter this instance's
         current format or pitch.
         """
@@ -1036,7 +1035,7 @@ class ImageDataRegion(ImageData):
 
     def get_data(self, fmt: Optional[str]=None, 
                  pitch: Optional[int]=None
-                 ) -> Sequence[Union[bytes, str]]:
+                 ) -> bytes:
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
@@ -1083,7 +1082,7 @@ class CompressedImageData(AbstractImage):
     _current_mipmap_texture = None
 
     def __init__(self, width: int, height: int, 
-                 gl_forma: int, data: Sequence[Union[bytes, str]], 
+                 gl_forma: int, data: bytes, 
                  extension: Optional[str]=None, decoder: Optional[Callable]=None
                  ) -> None:
         """Construct a CompressedImageData with the given compressed data.
@@ -1113,7 +1112,7 @@ class CompressedImageData(AbstractImage):
         self.decoder = decoder
         self.mipmap_data = []
 
-    def set_mipmap_data(self, level: int, data: Sequence[Union[bytes, str]]):
+    def set_mipmap_data(self, level: int, data: bytes):
         """Set data for a mipmap level.
 
         Supplied data gives a compressed image for the given mipmap level.
@@ -1263,7 +1262,7 @@ class Texture(AbstractImage):
     region_class: Optional[TextureRegion] = None  # Set to TextureRegion after it's defined
     tex_coords: Tuple = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     tex_coords_order: Tuple = (0, 1, 2, 3)
-    colors: Tuple[Tuple] = (0, 0, 0, 0) * 4
+    colors: Tuple = (0, 0, 0, 0) * 4
     level: int = 0
     images: int = 1
     x: int = 0
@@ -1524,8 +1523,7 @@ class Texture(AbstractImage):
 
 
 class TextureRegion(Texture):
-    """
-    A rectangular region of a texture, presented as if it were a separate texture.
+    """A rectangular region of a texture, presented as if it were a separate texture.
     """
 
     def __init__(self, x: int, y: int, z: int, 
@@ -1550,7 +1548,7 @@ class TextureRegion(Texture):
         r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
-    def get_image_data(self) -> TextureRegion:
+    def get_image_data(self) -> ImageData:
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
@@ -1896,7 +1894,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def get_texture(self, rectangle=False) -> Texture:
         return self.image.get_texture(rectangle)
 
-    def get_image_data(self) -> TextureRegion:
+    def get_image_data(self) -> ImageData:
         return self.image.get_image_data()
 
     def get_texture_sequence(self) -> TextureGrid:
@@ -1918,7 +1916,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                     x += self.item_width + self.column_padding
                 y += self.item_height + self.row_padding
 
-    def __getitem__(self, index: int) -> None:
+    def __getitem__(self, index: int) -> Union[AbstractImage, List[AbstractImage]]:
         self._update_items()
         if type(index) is tuple:
             row, column = index
