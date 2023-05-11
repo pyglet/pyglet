@@ -297,7 +297,7 @@ class ShapeBase(ABC):
         return self._x, self._y
 
     @position.setter
-    def position(self, values:Tuple) -> None:
+    def position(self, values: Tuple) -> None:
         self._x, self._y = values
         self._update_translation()
 
@@ -345,7 +345,7 @@ class ShapeBase(ABC):
         return self._anchor_x, self._anchor_y
 
     @anchor_position.setter
-    def anchor_position(self, values: tuple) -> None:
+    def anchor_position(self, values: Tuple) -> None:
         self._anchor_x, self._anchor_y = values
         self._update_vertices()
 
@@ -556,7 +556,7 @@ class Arc(ShapeBase):
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation) -> None:
+    def rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
