@@ -226,8 +226,7 @@ def _color_as_bytes(color: Tuple[int, int, int, int]) -> bytes:
     :Parameter:
         `color`: Tuple[int, int, int, int]
             Color in RGBA standard
-    
-    :return: color as a bytes object
+
     """
     if len(color) != 4:
         raise TypeError("color is expected to have 4 components")
@@ -573,7 +572,7 @@ class ImageData(AbstractImage):
     """An image represented as a string of unsigned bytes.
 
     :Parameters:
-        `data` : str
+        `data` : bytes
             Pixel data, encoded according to `format` and `pitch`.
         `format` : str
             The format string to use when reading or writing `data`.
@@ -590,7 +589,7 @@ class ImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width: int, height: int, fmt: str, data: Sequence, pitch: Optional[int]=None) -> None:
+    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: Optional[int]=None) -> None:
         """Initialise image data.
 
         :Parameters:
@@ -600,8 +599,8 @@ class ImageData(AbstractImage):
                 Height of image data
             `fmt` : str
                 A valid format string, such as 'RGB', 'RGBA', 'ARGB', etc.
-            `data` : sequence
-                String or array/list of bytes giving the decoded data.
+            `data` : bytes
+                array/list of bytes giving the decoded data.
             `pitch` : int or None
                 If specified, the number of bytes per row.  Negative values
                 indicate a top-to-bottom arrangement.  Defaults to
@@ -665,7 +664,7 @@ class ImageData(AbstractImage):
             return self._current_data
         return self._convert(fmt, pitch)
 
-    def set_data(self, fmt: str, pitch: int, data: Union[str, Sequence[bytes]]) -> None:
+    def set_data(self, fmt: str, pitch: int, data: bytes) -> None:
         """Set the byte data of the image.
 
         :Parameters:
@@ -674,7 +673,7 @@ class ImageData(AbstractImage):
             `pitch` : int
                 Number of bytes per row.  Negative values indicate a
                 top-to-bottom arrangement.
-            `data` : str or sequence of bytes
+            `data` : bytes
                 Image data.
 
         .. versionadded:: 1.1
@@ -1095,8 +1094,8 @@ class CompressedImageData(AbstractImage):
             `gl_format` : int
                 GL constant giving format of compressed data; for example,
                 ``GL_COMPRESSED_RGBA_S3TC_DXT5_EXT``.
-            `data` : sequence
-                String or array/list of bytes giving compressed image data.
+            `data` : bytes
+                array/list of bytes giving compressed image data.
             `extension` : str or None
                 If specified, gives the name of a GL extension to check for
                 before creating a texture.
@@ -1124,8 +1123,8 @@ class CompressedImageData(AbstractImage):
         :Parameters:
             `level` : int
                 Level of mipmap image to set.
-            `data` : sequence
-                String or array/list of bytes giving compressed image data.
+            `data` : bytes
+                array/list of bytes giving compressed image data.
                 Data must be in same format as specified in constructor.
 
         """
