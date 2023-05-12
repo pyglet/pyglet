@@ -960,6 +960,7 @@ class Sector(ShapeBase):
         if angle < 0: angle += 2 * math.pi
         if self._start_angle < angle < self._start_angle + self._angle:
             return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
+        return False
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
