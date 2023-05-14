@@ -821,7 +821,7 @@ class WMFDecoder(MediaDecoder):
             extensions.extend(['.3g2', '.3gp', '.3gp2', '.3gp',
                                '.aac', '.adts',
                                '.avi',
-                               '.m4a', '.m4v', '.mov', '.mp4',
+                               '.m4a', '.m4v',
                                # '.wav'  # Can do wav, but we have a WAVE decoder.
                                ])
 

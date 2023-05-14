@@ -125,8 +125,9 @@ class LibraryLoader:
                         if _debug_trace:
                             lib = _TraceLibrary(lib)
                         return lib
-                    except OSError:
-                        pass
+                    except OSError as e:
+                        if _debug_lib:
+                            print(f"Unexpected error loading library {name}: {str(e)}")
                 elif self.platform == "win32" and o.winerror != 126:
                     if _debug_lib:
                         print(f"Unexpected error loading library {name}: {str(o)}")
