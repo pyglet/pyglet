@@ -47,7 +47,6 @@ def main():
         "GL_ARB_blend_func_extended",
         "GL_ARB_compressed_texture_pixel_storage",
         "GL_ARB_copy_image",
-        "GL_ARB_depth_texture",
         "GL_ARB_gl_spirv",
         "GL_ARB_gpu_shader_int64",
 
