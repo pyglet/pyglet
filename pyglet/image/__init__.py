@@ -1082,7 +1082,8 @@ class CompressedImageData(AbstractImage):
 
     def __init__(self, width: int, height: int, 
                  gl_forma: int, data: bytes, 
-                 extension: Optional[str]=None, decoder: Optional[Callable]=None
+                 extension: Optional[str]=None, 
+                 decoder: Optional[Callable]=None
                  ) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
