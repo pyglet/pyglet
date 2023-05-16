@@ -42,7 +42,6 @@ def main():
         "GL_ARB_multisample",
         "EXT_texture_compression_s3tc",  # For pyglet.image.codecs.dds
         "GL_EXT_framebuffer_object",  # Needed for GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
-        "GL_ARB_arrays_of_arrays",
         "GL_ARB_bindless_texture",
         "GL_ARB_gpu_shader_int64",
     ]
