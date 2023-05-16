@@ -44,6 +44,7 @@ def main():
         "GL_EXT_framebuffer_object",  # Needed for GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
         "GL_ARB_bindless_texture",
         "GL_ARB_gpu_shader_int64",
+        "GL_NV_mesh_shader",
     ]
 
     core_profile = registry.get_profile(
