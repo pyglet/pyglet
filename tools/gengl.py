@@ -45,7 +45,6 @@ def main():
         "GL_ARB_arrays_of_arrays",
         "GL_ARB_bindless_texture",
         "GL_ARB_blend_func_extended",
-        "GL_ARB_compressed_texture_pixel_storage",
         "GL_ARB_gpu_shader_int64",
     ]
 
