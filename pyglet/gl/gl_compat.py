@@ -38,6 +38,7 @@ GLintptr = c_ptrdiff_t
 GLsizeiptr = c_ptrdiff_t
 GLint64 = c_int64
 GLuint64 = c_uint64
+GLuint64EXT = c_uint64
 GLsync = POINTER(struct___GLsync)
 GLDEBUGPROC = CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))
 
@@ -427,6 +428,8 @@ GL_4_BYTES = 5129
 GL_DOUBLE = 5130
 GL_HALF_FLOAT = 5131
 GL_FIXED = 5132
+GL_INT64_ARB = 5134
+GL_UNSIGNED_INT64_ARB = 5135
 GL_CLEAR = 5376
 GL_AND = 5377
 GL_AND_REVERSE = 5378
@@ -705,8 +708,11 @@ GL_TEXTURE_MAX_LEVEL = 33085
 GL_GENERATE_MIPMAP = 33169
 GL_GENERATE_MIPMAP_HINT = 33170
 GL_DEPTH_COMPONENT16 = 33189
+GL_DEPTH_COMPONENT16_ARB = 33189
 GL_DEPTH_COMPONENT24 = 33190
+GL_DEPTH_COMPONENT24_ARB = 33190
 GL_DEPTH_COMPONENT32 = 33191
+GL_DEPTH_COMPONENT32_ARB = 33191
 GL_LIGHT_MODEL_COLOR_CONTROL = 33272
 GL_SINGLE_COLOR = 33273
 GL_SEPARATE_SPECULAR_COLOR = 33274
@@ -1126,7 +1132,9 @@ GL_DRAW_BUFFER14 = 34867
 GL_DRAW_BUFFER15 = 34868
 GL_BLEND_EQUATION_ALPHA = 34877
 GL_TEXTURE_DEPTH_SIZE = 34890
+GL_TEXTURE_DEPTH_SIZE_ARB = 34890
 GL_DEPTH_TEXTURE_MODE = 34891
+GL_DEPTH_TEXTURE_MODE_ARB = 34891
 GL_TEXTURE_COMPARE_MODE = 34892
 GL_TEXTURE_COMPARE_FUNC = 34893
 GL_COMPARE_R_TO_TEXTURE = 34894
@@ -1652,6 +1660,12 @@ GL_RGBA16_SNORM = 36763
 GL_SIGNED_NORMALIZED = 36764
 GL_PRIMITIVE_RESTART = 36765
 GL_PRIMITIVE_RESTART_INDEX = 36766
+GL_INT64_VEC2_ARB = 36841
+GL_INT64_VEC3_ARB = 36842
+GL_INT64_VEC4_ARB = 36843
+GL_UNSIGNED_INT64_VEC2_ARB = 36853
+GL_UNSIGNED_INT64_VEC3_ARB = 36854
+GL_UNSIGNED_INT64_VEC4_ARB = 36855
 GL_DOUBLE_VEC2 = 36860
 GL_DOUBLE_VEC3 = 36861
 GL_DOUBLE_VEC4 = 36862
@@ -1803,6 +1817,7 @@ GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 37494
 GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 37495
 GL_COMPRESSED_RGBA8_ETC2_EAC = 37496
 GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 37497
+GL_PRIMITIVE_BOUNDING_BOX_ARB = 37566
 GL_ATOMIC_COUNTER_BUFFER = 37568
 GL_ATOMIC_COUNTER_BUFFER_BINDING = 37569
 GL_ATOMIC_COUNTER_BUFFER_START = 37570
@@ -1898,8 +1913,12 @@ GL_NEGATIVE_ONE_TO_ONE = 37726
 GL_ZERO_TO_ONE = 37727
 GL_CLEAR_TEXTURE = 37733
 GL_NUM_SAMPLE_COUNTS = 37760
+GL_MULTISAMPLE_LINE_WIDTH_RANGE_ARB = 37761
+GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY_ARB = 37762
 GL_SHADER_BINARY_FORMAT_SPIR_V = 38225
+GL_SHADER_BINARY_FORMAT_SPIR_V_ARB = 38225
 GL_SPIR_V_BINARY = 38226
+GL_SPIR_V_BINARY_ARB = 38226
 GL_SPIR_V_EXTENSIONS = 38227
 GL_NUM_SPIR_V_EXTENSIONS = 38228
 GL_EVAL_BIT = 65536
@@ -2228,6 +2247,7 @@ glGetFramebufferAttachmentParameteriv = _link_function('glGetFramebufferAttachme
 glGetFramebufferAttachmentParameterivEXT = _link_function('glGetFramebufferAttachmentParameterivEXT', None, [GLenum, GLenum, GLenum, POINTER(GLint)], requires='None')
 glGetFramebufferParameteriv = _link_function('glGetFramebufferParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.3')
 glGetGraphicsResetStatus = _link_function('glGetGraphicsResetStatus', GLenum, [], requires='OpenGL 4.5')
+glGetImageHandleARB = _link_function('glGetImageHandleARB', GLuint64, [GLuint, GLint, GLboolean, GLint, GLenum], requires='None')
 glGetInteger64i_v = _link_function('glGetInteger64i_v', None, [GLenum, GLuint, POINTER(GLint64)], requires='OpenGL 3.2')
 glGetInteger64v = _link_function('glGetInteger64v', None, [GLenum, POINTER(GLint64)], requires='OpenGL 3.2')
 glGetIntegeri_v = _link_function('glGetIntegeri_v', None, [GLenum, GLuint, POINTER(GLint)], requires='OpenGL 3.1')
@@ -2305,6 +2325,7 @@ glGetTexParameterIiv = _link_function('glGetTexParameterIiv', None, [GLenum, GLe
 glGetTexParameterIuiv = _link_function('glGetTexParameterIuiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.0')
 glGetTexParameterfv = _link_function('glGetTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
 glGetTexParameteriv = _link_function('glGetTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetTextureHandleARB = _link_function('glGetTextureHandleARB', GLuint64, [GLuint], requires='None')
 glGetTextureImage = _link_function('glGetTextureImage', None, [GLuint, GLint, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
 glGetTextureLevelParameterfv = _link_function('glGetTextureLevelParameterfv', None, [GLuint, GLint, GLenum, POINTER(GLfloat)], requires='OpenGL 4.5')
 glGetTextureLevelParameteriv = _link_function('glGetTextureLevelParameteriv', None, [GLuint, GLint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
@@ -2312,6 +2333,7 @@ glGetTextureParameterIiv = _link_function('glGetTextureParameterIiv', None, [GLu
 glGetTextureParameterIuiv = _link_function('glGetTextureParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 4.5')
 glGetTextureParameterfv = _link_function('glGetTextureParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 4.5')
 glGetTextureParameteriv = _link_function('glGetTextureParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetTextureSamplerHandleARB = _link_function('glGetTextureSamplerHandleARB', GLuint64, [GLuint, GLuint], requires='None')
 glGetTextureSubImage = _link_function('glGetTextureSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
 glGetTransformFeedbackVarying = _link_function('glGetTransformFeedbackVarying', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLsizei), POINTER(GLenum), POINTER(GLchar)], requires='OpenGL 3.0')
 glGetTransformFeedbacki64_v = _link_function('glGetTransformFeedbacki64_v', None, [GLuint, GLenum, GLuint, POINTER(GLint64)], requires='OpenGL 4.5')
@@ -2323,7 +2345,9 @@ glGetUniformLocation = _link_function('glGetUniformLocation', GLint, [GLuint, PO
 glGetUniformSubroutineuiv = _link_function('glGetUniformSubroutineuiv', None, [GLenum, GLint, POINTER(GLuint)], requires='OpenGL 4.0')
 glGetUniformdv = _link_function('glGetUniformdv', None, [GLuint, GLint, POINTER(GLdouble)], requires='OpenGL 4.0')
 glGetUniformfv = _link_function('glGetUniformfv', None, [GLuint, GLint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glGetUniformi64vARB = _link_function('glGetUniformi64vARB', None, [GLuint, GLint, POINTER(GLint64)], requires='None')
 glGetUniformiv = _link_function('glGetUniformiv', None, [GLuint, GLint, POINTER(GLint)], requires='OpenGL 2.0')
+glGetUniformui64vARB = _link_function('glGetUniformui64vARB', None, [GLuint, GLint, POINTER(GLuint64)], requires='None')
 glGetUniformuiv = _link_function('glGetUniformuiv', None, [GLuint, GLint, POINTER(GLuint)], requires='OpenGL 3.0')
 glGetVertexArrayIndexed64iv = _link_function('glGetVertexArrayIndexed64iv', None, [GLuint, GLuint, GLenum, POINTER(GLint64)], requires='OpenGL 4.5')
 glGetVertexArrayIndexediv = _link_function('glGetVertexArrayIndexediv', None, [GLuint, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
@@ -2331,6 +2355,7 @@ glGetVertexArrayiv = _link_function('glGetVertexArrayiv', None, [GLuint, GLenum,
 glGetVertexAttribIiv = _link_function('glGetVertexAttribIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
 glGetVertexAttribIuiv = _link_function('glGetVertexAttribIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 3.0')
 glGetVertexAttribLdv = _link_function('glGetVertexAttribLdv', None, [GLuint, GLenum, POINTER(GLdouble)], requires='OpenGL 4.1')
+glGetVertexAttribLui64vARB = _link_function('glGetVertexAttribLui64vARB', None, [GLuint, GLenum, POINTER(GLuint64EXT)], requires='None')
 glGetVertexAttribPointerv = _link_function('glGetVertexAttribPointerv', None, [GLuint, GLenum, POINTER(GLvoid)], requires='OpenGL 2.0')
 glGetVertexAttribdv = _link_function('glGetVertexAttribdv', None, [GLuint, GLenum, POINTER(GLdouble)], requires='OpenGL 2.0')
 glGetVertexAttribfv = _link_function('glGetVertexAttribfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 2.0')
@@ -2351,7 +2376,9 @@ glGetnSeparableFilter = _link_function('glGetnSeparableFilter', None, [GLenum, G
 glGetnTexImage = _link_function('glGetnTexImage', None, [GLenum, GLint, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
 glGetnUniformdv = _link_function('glGetnUniformdv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.5')
 glGetnUniformfv = _link_function('glGetnUniformfv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetnUniformi64vARB = _link_function('glGetnUniformi64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
 glGetnUniformiv = _link_function('glGetnUniformiv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.5')
+glGetnUniformui64vARB = _link_function('glGetnUniformui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glGetnUniformuiv = _link_function('glGetnUniformuiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glHint = _link_function('glHint', None, [GLenum, GLenum], requires='OpenGL 1.0')
 glIndexMask = _link_function('glIndexMask', None, [GLuint], requires='OpenGL 1.0')
@@ -2381,6 +2408,7 @@ glIsEnabled = _link_function('glIsEnabled', GLboolean, [GLenum], requires='OpenG
 glIsEnabledi = _link_function('glIsEnabledi', GLboolean, [GLenum, GLuint], requires='OpenGL 3.0')
 glIsFramebuffer = _link_function('glIsFramebuffer', GLboolean, [GLuint], requires='OpenGL 3.0')
 glIsFramebufferEXT = _link_function('glIsFramebufferEXT', GLboolean, [GLuint], requires='None')
+glIsImageHandleResidentARB = _link_function('glIsImageHandleResidentARB', GLboolean, [GLuint64], requires='None')
 glIsList = _link_function('glIsList', GLboolean, [GLuint], requires='OpenGL 1.0')
 glIsProgram = _link_function('glIsProgram', GLboolean, [GLuint], requires='OpenGL 2.0')
 glIsProgramPipeline = _link_function('glIsProgramPipeline', GLboolean, [GLuint], requires='OpenGL 4.1')
@@ -2391,6 +2419,7 @@ glIsSampler = _link_function('glIsSampler', GLboolean, [GLuint], requires='OpenG
 glIsShader = _link_function('glIsShader', GLboolean, [GLuint], requires='OpenGL 2.0')
 glIsSync = _link_function('glIsSync', GLboolean, [GLsync], requires='OpenGL 3.2')
 glIsTexture = _link_function('glIsTexture', GLboolean, [GLuint], requires='OpenGL 1.1')
+glIsTextureHandleResidentARB = _link_function('glIsTextureHandleResidentARB', GLboolean, [GLuint64], requires='None')
 glIsTransformFeedback = _link_function('glIsTransformFeedback', GLboolean, [GLuint], requires='OpenGL 4.0')
 glIsVertexArray = _link_function('glIsVertexArray', GLboolean, [GLuint], requires='OpenGL 3.0')
 glLightModelf = _link_function('glLightModelf', None, [GLenum, GLfloat], requires='OpenGL 1.0')
@@ -2412,6 +2441,10 @@ glLoadName = _link_function('glLoadName', None, [GLuint], requires='OpenGL 1.0')
 glLoadTransposeMatrixd = _link_function('glLoadTransposeMatrixd', None, [POINTER(GLdouble)], requires='OpenGL 1.3')
 glLoadTransposeMatrixf = _link_function('glLoadTransposeMatrixf', None, [POINTER(GLfloat)], requires='OpenGL 1.3')
 glLogicOp = _link_function('glLogicOp', None, [GLenum], requires='OpenGL 1.0')
+glMakeImageHandleNonResidentARB = _link_function('glMakeImageHandleNonResidentARB', None, [GLuint64], requires='None')
+glMakeImageHandleResidentARB = _link_function('glMakeImageHandleResidentARB', None, [GLuint64, GLenum], requires='None')
+glMakeTextureHandleNonResidentARB = _link_function('glMakeTextureHandleNonResidentARB', None, [GLuint64], requires='None')
+glMakeTextureHandleResidentARB = _link_function('glMakeTextureHandleResidentARB', None, [GLuint64], requires='None')
 glMap1d = _link_function('glMap1d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], requires='OpenGL 1.0')
 glMap1f = _link_function('glMap1f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], requires='OpenGL 1.0')
 glMap2d = _link_function('glMap2d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], requires='OpenGL 1.0')
@@ -2538,6 +2571,7 @@ glPopClientAttrib = _link_function('glPopClientAttrib', None, [], requires='Open
 glPopDebugGroup = _link_function('glPopDebugGroup', None, [], requires='OpenGL 4.3')
 glPopMatrix = _link_function('glPopMatrix', None, [], requires='OpenGL 1.0')
 glPopName = _link_function('glPopName', None, [], requires='OpenGL 1.0')
+glPrimitiveBoundingBoxARB = _link_function('glPrimitiveBoundingBoxARB', None, [GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat], requires='None')
 glPrimitiveRestartIndex = _link_function('glPrimitiveRestartIndex', None, [GLuint], requires='OpenGL 3.1')
 glPrioritizeTextures = _link_function('glPrioritizeTextures', None, [GLsizei, POINTER(GLuint), POINTER(GLfloat)], requires='OpenGL 1.1')
 glProgramBinary = _link_function('glProgramBinary', None, [GLuint, GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
@@ -2547,33 +2581,51 @@ glProgramUniform1dv = _link_function('glProgramUniform1dv', None, [GLuint, GLint
 glProgramUniform1f = _link_function('glProgramUniform1f', None, [GLuint, GLint, GLfloat], requires='OpenGL 4.1')
 glProgramUniform1fv = _link_function('glProgramUniform1fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProgramUniform1i = _link_function('glProgramUniform1i', None, [GLuint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform1i64ARB = _link_function('glProgramUniform1i64ARB', None, [GLuint, GLint, GLint64], requires='None')
+glProgramUniform1i64vARB = _link_function('glProgramUniform1i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
 glProgramUniform1iv = _link_function('glProgramUniform1iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
 glProgramUniform1ui = _link_function('glProgramUniform1ui', None, [GLuint, GLint, GLuint], requires='OpenGL 4.1')
+glProgramUniform1ui64ARB = _link_function('glProgramUniform1ui64ARB', None, [GLuint, GLint, GLuint64], requires='None')
+glProgramUniform1ui64vARB = _link_function('glProgramUniform1ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glProgramUniform1uiv = _link_function('glProgramUniform1uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
 glProgramUniform2d = _link_function('glProgramUniform2d', None, [GLuint, GLint, GLdouble, GLdouble], requires='OpenGL 4.1')
 glProgramUniform2dv = _link_function('glProgramUniform2dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
 glProgramUniform2f = _link_function('glProgramUniform2f', None, [GLuint, GLint, GLfloat, GLfloat], requires='OpenGL 4.1')
 glProgramUniform2fv = _link_function('glProgramUniform2fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProgramUniform2i = _link_function('glProgramUniform2i', None, [GLuint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform2i64ARB = _link_function('glProgramUniform2i64ARB', None, [GLuint, GLint, GLint64, GLint64], requires='None')
+glProgramUniform2i64vARB = _link_function('glProgramUniform2i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
 glProgramUniform2iv = _link_function('glProgramUniform2iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
 glProgramUniform2ui = _link_function('glProgramUniform2ui', None, [GLuint, GLint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform2ui64ARB = _link_function('glProgramUniform2ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64], requires='None')
+glProgramUniform2ui64vARB = _link_function('glProgramUniform2ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glProgramUniform2uiv = _link_function('glProgramUniform2uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
 glProgramUniform3d = _link_function('glProgramUniform3d', None, [GLuint, GLint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
 glProgramUniform3dv = _link_function('glProgramUniform3dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
 glProgramUniform3f = _link_function('glProgramUniform3f', None, [GLuint, GLint, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
 glProgramUniform3fv = _link_function('glProgramUniform3fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProgramUniform3i = _link_function('glProgramUniform3i', None, [GLuint, GLint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform3i64ARB = _link_function('glProgramUniform3i64ARB', None, [GLuint, GLint, GLint64, GLint64, GLint64], requires='None')
+glProgramUniform3i64vARB = _link_function('glProgramUniform3i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
 glProgramUniform3iv = _link_function('glProgramUniform3iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
 glProgramUniform3ui = _link_function('glProgramUniform3ui', None, [GLuint, GLint, GLuint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform3ui64ARB = _link_function('glProgramUniform3ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64, GLuint64], requires='None')
+glProgramUniform3ui64vARB = _link_function('glProgramUniform3ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glProgramUniform3uiv = _link_function('glProgramUniform3uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
 glProgramUniform4d = _link_function('glProgramUniform4d', None, [GLuint, GLint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
 glProgramUniform4dv = _link_function('glProgramUniform4dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
 glProgramUniform4f = _link_function('glProgramUniform4f', None, [GLuint, GLint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
 glProgramUniform4fv = _link_function('glProgramUniform4fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProgramUniform4i = _link_function('glProgramUniform4i', None, [GLuint, GLint, GLint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform4i64ARB = _link_function('glProgramUniform4i64ARB', None, [GLuint, GLint, GLint64, GLint64, GLint64, GLint64], requires='None')
+glProgramUniform4i64vARB = _link_function('glProgramUniform4i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
 glProgramUniform4iv = _link_function('glProgramUniform4iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
 glProgramUniform4ui = _link_function('glProgramUniform4ui', None, [GLuint, GLint, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform4ui64ARB = _link_function('glProgramUniform4ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64, GLuint64, GLuint64], requires='None')
+glProgramUniform4ui64vARB = _link_function('glProgramUniform4ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glProgramUniform4uiv = _link_function('glProgramUniform4uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glProgramUniformHandleui64ARB = _link_function('glProgramUniformHandleui64ARB', None, [GLuint, GLint, GLuint64], requires='None')
+glProgramUniformHandleui64vARB = _link_function('glProgramUniformHandleui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glProgramUniformMatrix2dv = _link_function('glProgramUniformMatrix2dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
 glProgramUniformMatrix2fv = _link_function('glProgramUniformMatrix2fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProgramUniformMatrix2x3dv = _link_function('glProgramUniformMatrix2x3dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
@@ -2682,6 +2734,7 @@ glShaderBinary = _link_function('glShaderBinary', None, [GLsizei, POINTER(GLuint
 glShaderSource = _link_function('glShaderSource', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLint)], requires='OpenGL 2.0')
 glShaderStorageBlockBinding = _link_function('glShaderStorageBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
 glSpecializeShader = _link_function('glSpecializeShader', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='OpenGL 4.6')
+glSpecializeShaderARB = _link_function('glSpecializeShaderARB', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='None')
 glStencilFunc = _link_function('glStencilFunc', None, [GLenum, GLint, GLuint], requires='OpenGL 1.0')
 glStencilFuncSeparate = _link_function('glStencilFuncSeparate', None, [GLenum, GLenum, GLint, GLuint], requires='OpenGL 2.0')
 glStencilMask = _link_function('glStencilMask', None, [GLuint], requires='OpenGL 1.0')
@@ -2788,34 +2841,52 @@ glUniform1dv = _link_function('glUniform1dv', None, [GLint, GLsizei, POINTER(GLd
 glUniform1f = _link_function('glUniform1f', None, [GLint, GLfloat], requires='OpenGL 2.0')
 glUniform1fv = _link_function('glUniform1fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
 glUniform1i = _link_function('glUniform1i', None, [GLint, GLint], requires='OpenGL 2.0')
+glUniform1i64ARB = _link_function('glUniform1i64ARB', None, [GLint, GLint64], requires='None')
+glUniform1i64vARB = _link_function('glUniform1i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
 glUniform1iv = _link_function('glUniform1iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
 glUniform1ui = _link_function('glUniform1ui', None, [GLint, GLuint], requires='OpenGL 3.0')
+glUniform1ui64ARB = _link_function('glUniform1ui64ARB', None, [GLint, GLuint64], requires='None')
+glUniform1ui64vARB = _link_function('glUniform1ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glUniform1uiv = _link_function('glUniform1uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glUniform2d = _link_function('glUniform2d', None, [GLint, GLdouble, GLdouble], requires='OpenGL 4.0')
 glUniform2dv = _link_function('glUniform2dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniform2f = _link_function('glUniform2f', None, [GLint, GLfloat, GLfloat], requires='OpenGL 2.0')
 glUniform2fv = _link_function('glUniform2fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
 glUniform2i = _link_function('glUniform2i', None, [GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform2i64ARB = _link_function('glUniform2i64ARB', None, [GLint, GLint64, GLint64], requires='None')
+glUniform2i64vARB = _link_function('glUniform2i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
 glUniform2iv = _link_function('glUniform2iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
 glUniform2ui = _link_function('glUniform2ui', None, [GLint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform2ui64ARB = _link_function('glUniform2ui64ARB', None, [GLint, GLuint64, GLuint64], requires='None')
+glUniform2ui64vARB = _link_function('glUniform2ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glUniform2uiv = _link_function('glUniform2uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glUniform3d = _link_function('glUniform3d', None, [GLint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.0')
 glUniform3dv = _link_function('glUniform3dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniform3f = _link_function('glUniform3f', None, [GLint, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
 glUniform3fv = _link_function('glUniform3fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
 glUniform3i = _link_function('glUniform3i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform3i64ARB = _link_function('glUniform3i64ARB', None, [GLint, GLint64, GLint64, GLint64], requires='None')
+glUniform3i64vARB = _link_function('glUniform3i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
 glUniform3iv = _link_function('glUniform3iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
 glUniform3ui = _link_function('glUniform3ui', None, [GLint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform3ui64ARB = _link_function('glUniform3ui64ARB', None, [GLint, GLuint64, GLuint64, GLuint64], requires='None')
+glUniform3ui64vARB = _link_function('glUniform3ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glUniform3uiv = _link_function('glUniform3uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glUniform4d = _link_function('glUniform4d', None, [GLint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.0')
 glUniform4dv = _link_function('glUniform4dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniform4f = _link_function('glUniform4f', None, [GLint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
 glUniform4fv = _link_function('glUniform4fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
 glUniform4i = _link_function('glUniform4i', None, [GLint, GLint, GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform4i64ARB = _link_function('glUniform4i64ARB', None, [GLint, GLint64, GLint64, GLint64, GLint64], requires='None')
+glUniform4i64vARB = _link_function('glUniform4i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
 glUniform4iv = _link_function('glUniform4iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
 glUniform4ui = _link_function('glUniform4ui', None, [GLint, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform4ui64ARB = _link_function('glUniform4ui64ARB', None, [GLint, GLuint64, GLuint64, GLuint64, GLuint64], requires='None')
+glUniform4ui64vARB = _link_function('glUniform4ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glUniform4uiv = _link_function('glUniform4uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glUniformBlockBinding = _link_function('glUniformBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 3.1')
+glUniformHandleui64ARB = _link_function('glUniformHandleui64ARB', None, [GLint, GLuint64], requires='None')
+glUniformHandleui64vARB = _link_function('glUniformHandleui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
 glUniformMatrix2dv = _link_function('glUniformMatrix2dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniformMatrix2fv = _link_function('glUniformMatrix2fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.0')
 glUniformMatrix2x3dv = _link_function('glUniformMatrix2x3dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
@@ -2936,6 +3007,8 @@ glVertexAttribIFormat = _link_function('glVertexAttribIFormat', None, [GLuint, G
 glVertexAttribIPointer = _link_function('glVertexAttribIPointer', None, [GLuint, GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 3.0')
 glVertexAttribL1d = _link_function('glVertexAttribL1d', None, [GLuint, GLdouble], requires='OpenGL 4.1')
 glVertexAttribL1dv = _link_function('glVertexAttribL1dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glVertexAttribL1ui64ARB = _link_function('glVertexAttribL1ui64ARB', None, [GLuint, GLuint64EXT], requires='None')
+glVertexAttribL1ui64vARB = _link_function('glVertexAttribL1ui64vARB', None, [GLuint, POINTER(GLuint64EXT)], requires='None')
 glVertexAttribL2d = _link_function('glVertexAttribL2d', None, [GLuint, GLdouble, GLdouble], requires='OpenGL 4.1')
 glVertexAttribL2dv = _link_function('glVertexAttribL2dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
 glVertexAttribL3d = _link_function('glVertexAttribL3d', None, [GLuint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
@@ -3006,6 +3079,7 @@ __all__ = [
     'GLsizeiptr',
     'GLint64',
     'GLuint64',
+    'GLuint64EXT',
     'GLsync',
     'GLDEBUGPROC',
     'GL_DEPTH_BUFFER_BIT',
@@ -4880,6 +4954,24 @@ __all__ = [
     'GL_RENDERBUFFER_ALPHA_SIZE_EXT',
     'GL_RENDERBUFFER_DEPTH_SIZE_EXT',
     'GL_RENDERBUFFER_STENCIL_SIZE_EXT',
+    'GL_UNSIGNED_INT64_ARB',
+    'GL_DEPTH_COMPONENT16_ARB',
+    'GL_DEPTH_COMPONENT24_ARB',
+    'GL_DEPTH_COMPONENT32_ARB',
+    'GL_TEXTURE_DEPTH_SIZE_ARB',
+    'GL_DEPTH_TEXTURE_MODE_ARB',
+    'GL_SHADER_BINARY_FORMAT_SPIR_V_ARB',
+    'GL_SPIR_V_BINARY_ARB',
+    'GL_INT64_ARB',
+    'GL_INT64_VEC2_ARB',
+    'GL_INT64_VEC3_ARB',
+    'GL_INT64_VEC4_ARB',
+    'GL_UNSIGNED_INT64_VEC2_ARB',
+    'GL_UNSIGNED_INT64_VEC3_ARB',
+    'GL_UNSIGNED_INT64_VEC4_ARB',
+    'GL_PRIMITIVE_BOUNDING_BOX_ARB',
+    'GL_MULTISAMPLE_LINE_WIDTH_RANGE_ARB',
+    'GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY_ARB',
     'glAccum',
     'glActiveShaderProgram',
     'glActiveTexture',
@@ -5192,6 +5284,7 @@ __all__ = [
     'glGetFramebufferAttachmentParameterivEXT',
     'glGetFramebufferParameteriv',
     'glGetGraphicsResetStatus',
+    'glGetImageHandleARB',
     'glGetInteger64i_v',
     'glGetInteger64v',
     'glGetIntegeri_v',
@@ -5269,6 +5362,7 @@ __all__ = [
     'glGetTexParameterIuiv',
     'glGetTexParameterfv',
     'glGetTexParameteriv',
+    'glGetTextureHandleARB',
     'glGetTextureImage',
     'glGetTextureLevelParameterfv',
     'glGetTextureLevelParameteriv',
@@ -5276,6 +5370,7 @@ __all__ = [
     'glGetTextureParameterIuiv',
     'glGetTextureParameterfv',
     'glGetTextureParameteriv',
+    'glGetTextureSamplerHandleARB',
     'glGetTextureSubImage',
     'glGetTransformFeedbackVarying',
     'glGetTransformFeedbacki64_v',
@@ -5287,7 +5382,9 @@ __all__ = [
     'glGetUniformSubroutineuiv',
     'glGetUniformdv',
     'glGetUniformfv',
+    'glGetUniformi64vARB',
     'glGetUniformiv',
+    'glGetUniformui64vARB',
     'glGetUniformuiv',
     'glGetVertexArrayIndexed64iv',
     'glGetVertexArrayIndexediv',
@@ -5295,6 +5392,7 @@ __all__ = [
     'glGetVertexAttribIiv',
     'glGetVertexAttribIuiv',
     'glGetVertexAttribLdv',
+    'glGetVertexAttribLui64vARB',
     'glGetVertexAttribPointerv',
     'glGetVertexAttribdv',
     'glGetVertexAttribfv',
@@ -5315,7 +5413,9 @@ __all__ = [
     'glGetnTexImage',
     'glGetnUniformdv',
     'glGetnUniformfv',
+    'glGetnUniformi64vARB',
     'glGetnUniformiv',
+    'glGetnUniformui64vARB',
     'glGetnUniformuiv',
     'glHint',
     'glIndexMask',
@@ -5345,6 +5445,7 @@ __all__ = [
     'glIsEnabledi',
     'glIsFramebuffer',
     'glIsFramebufferEXT',
+    'glIsImageHandleResidentARB',
     'glIsList',
     'glIsProgram',
     'glIsProgramPipeline',
@@ -5355,6 +5456,7 @@ __all__ = [
     'glIsShader',
     'glIsSync',
     'glIsTexture',
+    'glIsTextureHandleResidentARB',
     'glIsTransformFeedback',
     'glIsVertexArray',
     'glLightModelf',
@@ -5376,6 +5478,10 @@ __all__ = [
     'glLoadTransposeMatrixd',
     'glLoadTransposeMatrixf',
     'glLogicOp',
+    'glMakeImageHandleNonResidentARB',
+    'glMakeImageHandleResidentARB',
+    'glMakeTextureHandleNonResidentARB',
+    'glMakeTextureHandleResidentARB',
     'glMap1d',
     'glMap1f',
     'glMap2d',
@@ -5502,6 +5608,7 @@ __all__ = [
     'glPopDebugGroup',
     'glPopMatrix',
     'glPopName',
+    'glPrimitiveBoundingBoxARB',
     'glPrimitiveRestartIndex',
     'glPrioritizeTextures',
     'glProgramBinary',
@@ -5511,33 +5618,51 @@ __all__ = [
     'glProgramUniform1f',
     'glProgramUniform1fv',
     'glProgramUniform1i',
+    'glProgramUniform1i64ARB',
+    'glProgramUniform1i64vARB',
     'glProgramUniform1iv',
     'glProgramUniform1ui',
+    'glProgramUniform1ui64ARB',
+    'glProgramUniform1ui64vARB',
     'glProgramUniform1uiv',
     'glProgramUniform2d',
     'glProgramUniform2dv',
     'glProgramUniform2f',
     'glProgramUniform2fv',
     'glProgramUniform2i',
+    'glProgramUniform2i64ARB',
+    'glProgramUniform2i64vARB',
     'glProgramUniform2iv',
     'glProgramUniform2ui',
+    'glProgramUniform2ui64ARB',
+    'glProgramUniform2ui64vARB',
     'glProgramUniform2uiv',
     'glProgramUniform3d',
     'glProgramUniform3dv',
     'glProgramUniform3f',
     'glProgramUniform3fv',
     'glProgramUniform3i',
+    'glProgramUniform3i64ARB',
+    'glProgramUniform3i64vARB',
     'glProgramUniform3iv',
     'glProgramUniform3ui',
+    'glProgramUniform3ui64ARB',
+    'glProgramUniform3ui64vARB',
     'glProgramUniform3uiv',
     'glProgramUniform4d',
     'glProgramUniform4dv',
     'glProgramUniform4f',
     'glProgramUniform4fv',
     'glProgramUniform4i',
+    'glProgramUniform4i64ARB',
+    'glProgramUniform4i64vARB',
     'glProgramUniform4iv',
     'glProgramUniform4ui',
+    'glProgramUniform4ui64ARB',
+    'glProgramUniform4ui64vARB',
     'glProgramUniform4uiv',
+    'glProgramUniformHandleui64ARB',
+    'glProgramUniformHandleui64vARB',
     'glProgramUniformMatrix2dv',
     'glProgramUniformMatrix2fv',
     'glProgramUniformMatrix2x3dv',
@@ -5646,6 +5771,7 @@ __all__ = [
     'glShaderSource',
     'glShaderStorageBlockBinding',
     'glSpecializeShader',
+    'glSpecializeShaderARB',
     'glStencilFunc',
     'glStencilFuncSeparate',
     'glStencilMask',
@@ -5752,34 +5878,52 @@ __all__ = [
     'glUniform1f',
     'glUniform1fv',
     'glUniform1i',
+    'glUniform1i64ARB',
+    'glUniform1i64vARB',
     'glUniform1iv',
     'glUniform1ui',
+    'glUniform1ui64ARB',
+    'glUniform1ui64vARB',
     'glUniform1uiv',
     'glUniform2d',
     'glUniform2dv',
     'glUniform2f',
     'glUniform2fv',
     'glUniform2i',
+    'glUniform2i64ARB',
+    'glUniform2i64vARB',
     'glUniform2iv',
     'glUniform2ui',
+    'glUniform2ui64ARB',
+    'glUniform2ui64vARB',
     'glUniform2uiv',
     'glUniform3d',
     'glUniform3dv',
     'glUniform3f',
     'glUniform3fv',
     'glUniform3i',
+    'glUniform3i64ARB',
+    'glUniform3i64vARB',
     'glUniform3iv',
     'glUniform3ui',
+    'glUniform3ui64ARB',
+    'glUniform3ui64vARB',
     'glUniform3uiv',
     'glUniform4d',
     'glUniform4dv',
     'glUniform4f',
     'glUniform4fv',
     'glUniform4i',
+    'glUniform4i64ARB',
+    'glUniform4i64vARB',
     'glUniform4iv',
     'glUniform4ui',
+    'glUniform4ui64ARB',
+    'glUniform4ui64vARB',
     'glUniform4uiv',
     'glUniformBlockBinding',
+    'glUniformHandleui64ARB',
+    'glUniformHandleui64vARB',
     'glUniformMatrix2dv',
     'glUniformMatrix2fv',
     'glUniformMatrix2x3dv',
@@ -5900,6 +6044,8 @@ __all__ = [
     'glVertexAttribIPointer',
     'glVertexAttribL1d',
     'glVertexAttribL1dv',
+    'glVertexAttribL1ui64ARB',
+    'glVertexAttribL1ui64vARB',
     'glVertexAttribL2d',
     'glVertexAttribL2dv',
     'glVertexAttribL3d',

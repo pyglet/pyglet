@@ -42,6 +42,19 @@ def main():
         "GL_ARB_multisample",
         "EXT_texture_compression_s3tc",  # For pyglet.image.codecs.dds
         "GL_EXT_framebuffer_object",  # Needed for GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
+        "GL_ARB_arrays_of_arrays",
+        "GL_ARB_bindless_texture",
+        "GL_ARB_blend_func_extended",
+        "GL_ARB_compressed_texture_pixel_storage",
+        "GL_ARB_copy_image",
+        "GL_ARB_depth_texture",
+        "GL_ARB_gl_spirv",
+        "GL_ARB_gpu_shader_int64",
+
+        # ES compatibility
+        "GL_ARB_ES3_compatibility",
+        "GL_ARB_ES3_1_compatibility",
+        "GL_ARB_ES3_2_compatibility",
     ]
 
     core_profile = registry.get_profile(
@@ -104,6 +117,7 @@ class PygletGLWriter:
         "GLsizeiptr": "c_ptrdiff_t",
         "GLint64": "c_int64",
         "GLuint64": "c_uint64",
+        "GLuint64EXT": "c_uint64",
         "GLsync": "POINTER(struct___GLsync)",
         "GLDEBUGPROC": "CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))",
     }
