@@ -236,7 +236,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         assert _debug('Remaining events: {}'.format(self._events))
 
         for event in pending_events:
-            event._sync_dispatch_to_player(self.player)
+            event.sync_dispatch_to_player(self.player)
 
     def _cleanup_timestamps(self):
         while self._timestamps and self._timestamps[0][0] < self._play_cursor:

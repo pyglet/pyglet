@@ -220,7 +220,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def _dispatch_events(self):
         while self._events and self._events[0][0] <= self._play_cursor:
             _, event = self._events.pop(0)
-            event._sync_dispatch_to_player(self.player)
+            event.sync_dispatch_to_player(self.player)
 
     def _get_write_size(self):
         self._update_play_cursor()
