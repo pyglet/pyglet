@@ -1908,9 +1908,7 @@ GL_ZERO_TO_ONE = 37727
 GL_CLEAR_TEXTURE = 37733
 GL_NUM_SAMPLE_COUNTS = 37760
 GL_SHADER_BINARY_FORMAT_SPIR_V = 38225
-GL_SHADER_BINARY_FORMAT_SPIR_V_ARB = 38225
 GL_SPIR_V_BINARY = 38226
-GL_SPIR_V_BINARY_ARB = 38226
 GL_SPIR_V_EXTENSIONS = 38227
 GL_NUM_SPIR_V_EXTENSIONS = 38228
 GL_EVAL_BIT = 65536
@@ -2725,7 +2723,6 @@ glShaderBinary = _link_function('glShaderBinary', None, [GLsizei, POINTER(GLuint
 glShaderSource = _link_function('glShaderSource', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLint)], requires='OpenGL 2.0')
 glShaderStorageBlockBinding = _link_function('glShaderStorageBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
 glSpecializeShader = _link_function('glSpecializeShader', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='OpenGL 4.6')
-glSpecializeShaderARB = _link_function('glSpecializeShaderARB', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='None')
 glStencilFunc = _link_function('glStencilFunc', None, [GLenum, GLint, GLuint], requires='OpenGL 1.0')
 glStencilFuncSeparate = _link_function('glStencilFuncSeparate', None, [GLenum, GLenum, GLint, GLuint], requires='OpenGL 2.0')
 glStencilMask = _link_function('glStencilMask', None, [GLuint], requires='OpenGL 1.0')
@@ -4946,8 +4943,6 @@ __all__ = [
     'GL_RENDERBUFFER_DEPTH_SIZE_EXT',
     'GL_RENDERBUFFER_STENCIL_SIZE_EXT',
     'GL_UNSIGNED_INT64_ARB',
-    'GL_SHADER_BINARY_FORMAT_SPIR_V_ARB',
-    'GL_SPIR_V_BINARY_ARB',
     'GL_INT64_ARB',
     'GL_INT64_VEC2_ARB',
     'GL_INT64_VEC3_ARB',
@@ -5753,7 +5748,6 @@ __all__ = [
     'glShaderSource',
     'glShaderStorageBlockBinding',
     'glSpecializeShader',
-    'glSpecializeShaderARB',
     'glStencilFunc',
     'glStencilFuncSeparate',
     'glStencilMask',
