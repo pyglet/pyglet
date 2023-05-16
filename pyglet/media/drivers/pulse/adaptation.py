@@ -237,7 +237,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         while self._events and self._events[0][0] <= read_index:
             _, event = self._events.pop(0)
             assert _debug('PulseAudioPlayer: Dispatch event', event)
-            event._sync_dispatch_to_player(self.player)
+            event.sync_dispatch_to_player(self.player)
 
     def _add_event_at_write_index(self, event_name):
         assert _debug('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
