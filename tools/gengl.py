@@ -44,7 +44,6 @@ def main():
         "GL_EXT_framebuffer_object",  # Needed for GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
         "GL_ARB_arrays_of_arrays",
         "GL_ARB_bindless_texture",
-        "GL_ARB_blend_func_extended",
         "GL_ARB_gpu_shader_int64",
     ]
 
