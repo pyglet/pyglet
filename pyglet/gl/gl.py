@@ -1391,7 +1391,6 @@ GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 37494
 GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 37495
 GL_COMPRESSED_RGBA8_ETC2_EAC = 37496
 GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 37497
-GL_PRIMITIVE_BOUNDING_BOX_ARB = 37566
 GL_ATOMIC_COUNTER_BUFFER = 37568
 GL_ATOMIC_COUNTER_BUFFER_BINDING = 37569
 GL_ATOMIC_COUNTER_BUFFER_START = 37570
@@ -1487,8 +1486,6 @@ GL_NEGATIVE_ONE_TO_ONE = 37726
 GL_ZERO_TO_ONE = 37727
 GL_CLEAR_TEXTURE = 37733
 GL_NUM_SAMPLE_COUNTS = 37760
-GL_MULTISAMPLE_LINE_WIDTH_RANGE_ARB = 37761
-GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY_ARB = 37762
 GL_SHADER_BINARY_FORMAT_SPIR_V = 38225
 GL_SHADER_BINARY_FORMAT_SPIR_V_ARB = 38225
 GL_SPIR_V_BINARY = 38226
@@ -1936,7 +1933,6 @@ glPolygonMode = _link_function('glPolygonMode', None, [GLenum, GLenum], requires
 glPolygonOffset = _link_function('glPolygonOffset', None, [GLfloat, GLfloat], requires='OpenGL 1.1')
 glPolygonOffsetClamp = _link_function('glPolygonOffsetClamp', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 4.6')
 glPopDebugGroup = _link_function('glPopDebugGroup', None, [], requires='OpenGL 4.3')
-glPrimitiveBoundingBoxARB = _link_function('glPrimitiveBoundingBoxARB', None, [GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat, GLfloat], requires='None')
 glPrimitiveRestartIndex = _link_function('glPrimitiveRestartIndex', None, [GLuint], requires='OpenGL 3.1')
 glProgramBinary = _link_function('glProgramBinary', None, [GLuint, GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
 glProgramParameteri = _link_function('glProgramParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 4.1')
@@ -3754,9 +3750,6 @@ __all__ = [
     'GL_UNSIGNED_INT64_VEC2_ARB',
     'GL_UNSIGNED_INT64_VEC3_ARB',
     'GL_UNSIGNED_INT64_VEC4_ARB',
-    'GL_PRIMITIVE_BOUNDING_BOX_ARB',
-    'GL_MULTISAMPLE_LINE_WIDTH_RANGE_ARB',
-    'GL_MULTISAMPLE_LINE_WIDTH_GRANULARITY_ARB',
     'glActiveShaderProgram',
     'glActiveTexture',
     'glAttachShader',
@@ -4191,7 +4184,6 @@ __all__ = [
     'glPolygonOffset',
     'glPolygonOffsetClamp',
     'glPopDebugGroup',
-    'glPrimitiveBoundingBoxARB',
     'glPrimitiveRestartIndex',
     'glProgramBinary',
     'glProgramParameteri',

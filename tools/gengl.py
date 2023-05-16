@@ -49,11 +49,6 @@ def main():
         "GL_ARB_copy_image",
         "GL_ARB_gl_spirv",
         "GL_ARB_gpu_shader_int64",
-
-        # ES compatibility
-        "GL_ARB_ES3_compatibility",
-        "GL_ARB_ES3_1_compatibility",
-        "GL_ARB_ES3_2_compatibility",
     ]
 
     core_profile = registry.get_profile(
