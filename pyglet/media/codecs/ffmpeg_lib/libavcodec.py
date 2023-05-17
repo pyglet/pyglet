@@ -14,8 +14,8 @@ _debug = debug_print('debug_media')
 
 avcodec = pyglet.lib.load_library(
     'avcodec',
-    win32=('avcodec-59', 'avcodec-58'),
-    darwin=('avcodec.59', 'avcodec.58')
+    win32=('avcodec-60', 'avcodec-59', 'avcodec-58'),
+    darwin=('avcodec.60', 'avcodec.59', 'avcodec.58')
 )
 
 avcodec.avcodec_version.restype = c_int
@@ -67,6 +67,8 @@ compat.add_version_changes('avcodec', 58, AVPacket, AVPacket_Fields,
 compat.add_version_changes('avcodec', 59, AVPacket, AVPacket_Fields,
                            removals=('convergence_duration',))
 
+compat.add_version_changes('avcodec', 60, AVPacket, AVPacket_Fields,
+                           removals=('convergence_duration',))
 
 class AVCodecParserContext(Structure):
     pass
@@ -376,6 +378,17 @@ compat.add_version_changes('avcodec', 59, AVCodecContext, AVCodecContext_Fields,
                   'rtp_payload_size', 'mv_bits', 'header_bits', 'i_tex_bits', 'p_tex_bits', 'i_count', 'p_count',
                   'skip_count', 'misc_bits', 'frames_bits', 'coded_frame', 'vbv_delay', 'side_data_only_packets')
 )
+
+compat.add_version_changes('avcodec', 60, AVCodecContext, AVCodecContext_Fields,
+    removals=('b_frame_strategy', 'mpeg_quant', 'prediction_method', 'pre_me', 'scenechange_threshold',
+                  'noise_reduction', 'me_penalty_compensation', 'brd_scale', 'chromaoffset', 'b_sensitivity',
+                  'refcounted_frames', 'coder_type', 'context_model', 'coder_type', 'context_model',
+                  'frame_skip_threshold', 'frame_skip_factor', 'frame_skip_exp', 'frame_skip_cmp',
+                  'min_prediction_order', 'max_prediction_order', 'timecode_frame_start', 'rtp_callback',
+                  'rtp_payload_size', 'mv_bits', 'header_bits', 'i_tex_bits', 'p_tex_bits', 'i_count', 'p_count',
+                  'skip_count', 'misc_bits', 'frames_bits', 'coded_frame', 'vbv_delay', 'side_data_only_packets')
+)
+
 
 AV_CODEC_ID_VP8 = 139
 AV_CODEC_ID_VP9 = 167

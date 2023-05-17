@@ -12,8 +12,8 @@ _debug = debug_print('debug_media')
 
 avutil = pyglet.lib.load_library(
     'avutil',
-    win32=('avutil-57', 'avutil-56'),
-    darwin=('avutil.57', 'avutil.56')
+    win32=('avutil-58', 'avutil-57', 'avutil-56'),
+    darwin=('avutil.58', 'avutil.57', 'avutil.56')
 )
 
 avutil.avutil_version.restype = c_int
@@ -167,6 +167,9 @@ compat.add_version_changes('avutil', 56, AVFrame, AVFrame_Fields,
                            removals=('time_base',))
 
 compat.add_version_changes('avutil', 57, AVFrame, AVFrame_Fields,
+                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf'))
+
+compat.add_version_changes('avutil', 58, AVFrame, AVFrame_Fields,
                            removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf'))
 
 AV_NOPTS_VALUE = -0x8000000000000000
