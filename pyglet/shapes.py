@@ -117,6 +117,21 @@ def _rotate_point(center, point, angle):
     return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
 
 
+def _sat(vertices, point):
+    # Separating Axis Theorem
+    # return True if point is not in the shape
+    for i in range(len(vertices) - 1):
+        a, b = vertices[i], vertices[i + 1]
+        base = Vec2(a[1] - b[1], b[0] - a[0])
+        projections = []
+        for x, y in vertices:
+            vec = Vec2(x, y)
+            projections.append(base.dot(vec) / abs(base))
+        point_proj = base.dot(Vec2(*point)) / abs(base)
+        if point_proj < min(projections) or point_proj > max(projections):
+            return True
+    return False
+
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
 
@@ -1213,7 +1228,7 @@ class Rectangle(ShapeBase):
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
-        return (x < point[0] < x + self._width) and (y < point[1] < y + self._height)
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1353,7 +1368,7 @@ class BorderedRectangle(ShapeBase):
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
-        return (x < point[0] < x + self._width) and (y < point[1] < y + self._height)
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
@@ -1533,6 +1548,11 @@ class Triangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+    
+    def __contains__(self, point):
+        assert len(point) == 2
+        return not _sat([(self._x, self._y), (self._x2, self._y2),
+                         (self._x3, self._y3), (self._x, self._y)], point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1764,6 +1784,10 @@ class Polygon(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+    
+    def __contains__(self, point):
+        assert len(point) == 2
+        return not _sat(self._coordinates, point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
