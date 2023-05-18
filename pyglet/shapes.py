@@ -1542,6 +1542,23 @@ class Triangle(ShapeBase):
     def y3(self, value):
         self._y3 = value
         self._update_vertices()
+    @property
+    def rotation(self):
+        """Clockwise rotation of the triangle, in degrees.
+
+        The Triangle will be rotated about its (anchor_x, anchor_y)
+        position.
+
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = rotation
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
+
+
 
 
 class Star(ShapeBase):
