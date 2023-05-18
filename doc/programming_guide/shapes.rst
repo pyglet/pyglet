@@ -78,5 +78,7 @@ The following shapes have above features:
 - Line
 - Rectangle
 - BoderedRectangle
+- Triangle
+- Polygon
 
 It's also available for anchored and rotated shapes.
