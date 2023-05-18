@@ -26,6 +26,8 @@ class ShapesDemo(pyglet.window.Window):
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
         self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255, 175), batch=self.batch)
+        self.triangle.anchor_position = 55, 80
+        self.triangle.position = 120, 100
 
         septagon_step = math.pi * 2 / 7
         self.fading_septagon = shapes.Polygon(
@@ -57,6 +59,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.line.x = 360 + math.sin(self.time * 0.81) * 360
         self.line.x2 = 360 + math.sin(self.time * 1.34) * 360
+
+        self.triangle.rotation = self.time * 25
 
         self.arc.rotation = self.time * 30
 
