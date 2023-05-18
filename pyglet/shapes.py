@@ -1483,12 +1483,12 @@ class Triangle(ShapeBase):
         if not self._visible:
             self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0)
         else:
-            x1 = -self._anchor_x
-            y1 = -self._anchor_y
-            x2 = self._x2 + x1 - self._x
-            y2 = self._y2 + y1 - self._y
-            x3 = self._x3 + x1 - self._x
-            y3 = self._y3 + y1 - self._y
+            x1 = self._x - self._anchor_x
+            y1 = self._y - self._anchor_y
+            x2 = self._x2 - self._anchor_x
+            y2 = self._y2 - self._anchor_y
+            x3 = self._x3 - self._anchor_x
+            y3 = self._y3 - self._anchor_y
             self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
 
     @property
