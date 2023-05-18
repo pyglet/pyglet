@@ -64,7 +64,7 @@ default anchor points::
 Advanced Operation
 ------------------
 
-You can use the `in` operator to check whether a point is inside a shape::
+You can use the ``in`` operator to check whether a point is inside a shape::
 
     circle = shapes.Circle(x=100, y=100, radius=50)
     if (200, 200) in circle:
@@ -80,5 +80,7 @@ The following shapes have above features:
 - BoderedRectangle
 - Triangle
 - Polygon
+
+Shapes that do not support this feature will always return ``False``.
 
 It's also available for anchored and rotated shapes.

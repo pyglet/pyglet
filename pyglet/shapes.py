@@ -1548,7 +1548,7 @@ class Triangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-    
+
     def __contains__(self, point):
         assert len(point) == 2
         return not _sat([(self._x, self._y), (self._x2, self._y2),
@@ -1784,9 +1784,10 @@ class Polygon(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-    
+
     def __contains__(self, point):
         assert len(point) == 2
+        point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
         return not _sat(self._coordinates, point)
 
     def _create_vertex_list(self):
