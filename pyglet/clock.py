@@ -83,11 +83,13 @@ class _ScheduledItem:
 
 
 class _ScheduledIntervalItem:
-    __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
+    __slots__ = ['func', 'interval', 'duration', 'init_ts', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
         self.func = func
         self.interval = interval
+        self.duration = kwargs.pop('_duration', 0)
+        self.init_ts = last_ts
         self.last_ts = last_ts
         self.next_ts = next_ts
         self.args = args
@@ -225,6 +227,8 @@ class Clock:
             # execute the callback
             try:
                 item.func(now - item.last_ts, *item.args, **item.kwargs)
+                if item.duration > 0 and (now - item.init_ts) >= item.duration:
+                    self.unschedule(item.func)
             except ReferenceError:
                 pass    # weakly-referenced object no longer exists.
 
@@ -444,6 +448,10 @@ class Clock:
         Specifying an interval of 0 prevents the function from being
         called again (see `schedule` to call a function as often as possible).
 
+        The function can be scheduled for a given period of time by adding
+        the keyword argument `_duration=` (in seconds). After this delay,
+        the function is unscheduled automagically.
+
         The callback function prototype is the same as for `schedule`.
 
         :Parameters:
@@ -451,6 +459,8 @@ class Clock:
                 The function to call when the timer lapses.
             `interval` : float
                 The number of seconds to wait between each call.
+            `_duration=` : float
+                The number of seconds for which the function is scheduled.
 
         """
         last_ts = self._get_nearest_ts()
