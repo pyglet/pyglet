@@ -728,12 +728,12 @@ The following example loads a GIF animation and packs the images in that
 animation into a texture bin.  A sprite is used to display the animation in
 the window::
 
+    window = pyglet.window.Window()
+
     animation = pyglet.image.load_animation('animation.gif')
     bin = pyglet.image.atlas.TextureBin()
     animation.add_to_texture_bin(bin)
     sprite = pyglet.sprite.Sprite(img=animation)
-
-    window = pyglet.window.Window()
 
     @window.event
     def on_draw():
