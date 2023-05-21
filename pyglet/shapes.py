@@ -120,11 +120,12 @@ def _rotate_point(center, point, angle):
 def _sat(vertices, point):
     # Separating Axis Theorem
     # return True if point is in the shape
-    for i in range(len(vertices) - 1):
-        a, b = vertices[i], vertices[i + 1]
+    poly = vertices + [vertices[0]]
+    for i in range(len(poly) - 1):
+        a, b = poly[i], poly[i + 1]
         base = Vec2(a[1] - b[1], b[0] - a[0])
         projections = []
-        for x, y in vertices:
+        for x, y in poly:
             vec = Vec2(x, y)
             projections.append(base.dot(vec) / abs(base))
         point_proj = base.dot(Vec2(*point)) / abs(base)
@@ -1551,8 +1552,7 @@ class Triangle(ShapeBase):
 
     def __contains__(self, point):
         assert len(point) == 2
-        return _sat([(self._x, self._y), (self._x2, self._y2),
-                     (self._x3, self._y3), (self._x, self._y)], point)
+        return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1788,7 +1788,7 @@ class Polygon(ShapeBase):
     def __contains__(self, point):
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        return _sat(self._coordinates + [self._coordinates[0]], point)
+        return _sat(self._coordinates, point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
