@@ -119,7 +119,7 @@ def _rotate_point(center, point, angle):
 
 def _sat(vertices, point):
     # Separating Axis Theorem
-    # return True if point is not in the shape
+    # return True if point is in the shape
     for i in range(len(vertices) - 1):
         a, b = vertices[i], vertices[i + 1]
         base = Vec2(a[1] - b[1], b[0] - a[0])
@@ -129,8 +129,8 @@ def _sat(vertices, point):
             projections.append(base.dot(vec) / abs(base))
         point_proj = base.dot(Vec2(*point)) / abs(base)
         if point_proj < min(projections) or point_proj > max(projections):
-            return True
-    return False
+            return False
+    return True
 
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
@@ -1551,8 +1551,8 @@ class Triangle(ShapeBase):
 
     def __contains__(self, point):
         assert len(point) == 2
-        return not _sat([(self._x, self._y), (self._x2, self._y2),
-                         (self._x3, self._y3), (self._x, self._y)], point)
+        return _sat([(self._x, self._y), (self._x2, self._y2),
+                     (self._x3, self._y3), (self._x, self._y)], point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1788,7 +1788,7 @@ class Polygon(ShapeBase):
     def __contains__(self, point):
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        return not _sat(self._coordinates, point)
+        return _sat(self._coordinates + [self._coordinates[0]], point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
