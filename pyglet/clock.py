@@ -358,7 +358,7 @@ class Clock:
             for item in self._schedule_interval_items:
                 if abs(item.next_ts - ts) <= e:
                     return True
-                elif item.next_ts > ts + e:
+                if item.next_ts > ts + e:
                     return False
 
             return False
@@ -393,7 +393,7 @@ class Clock:
         divs = 1
         while True:
             next_ts = last_ts
-            for i in range(divs - 1):
+            for _ in range(divs - 1):
                 next_ts += dt
                 if not taken(next_ts, dt / 4):
                     return next_ts
