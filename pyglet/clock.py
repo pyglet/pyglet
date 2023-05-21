@@ -83,13 +83,11 @@ class _ScheduledItem:
 
 
 class _ScheduledIntervalItem:
-    __slots__ = ['func', 'interval', 'duration', 'init_ts', 'last_ts', 'next_ts', 'args', 'kwargs']
+    __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
         self.func = func
         self.interval = interval
-        self.duration = kwargs.pop('_duration', 0)
-        self.init_ts = last_ts
         self.last_ts = last_ts
         self.next_ts = next_ts
         self.args = args
@@ -227,8 +225,6 @@ class Clock:
             # execute the callback
             try:
                 item.func(now - item.last_ts, *item.args, **item.kwargs)
-                if item.duration > 0 and (now - item.init_ts) >= item.duration:
-                    self.unschedule(item.func)
             except ReferenceError:
                 pass    # weakly-referenced object no longer exists.
 
@@ -468,6 +464,9 @@ class Clock:
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
+        if duration := kwargs.pop('_duration', 0):
+            self.schedule_once(self._unschedule_proxy, duration, func)
+
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every ``interval`` seconds.
 
@@ -527,6 +526,10 @@ class Clock:
             item.func = lambda x, *args, **kwargs: x
 
         self._schedule_items = [i for i in self._schedule_items if i.func != func]
+
+    # NOTE: allow to schedule the unschedule function by taking the dt argument
+    def _unschedule_proxy(self, dt: float, func: Callable) -> None:
+        self.unschedule(func)
 
 
 # Default clock.
