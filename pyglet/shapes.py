@@ -8,6 +8,8 @@ Convenience methods are provided for positioning, changing color
 and opacity, and rotation (where applicable). To create more
 complex shapes than what is provided here, the lower level
 graphics API is more appropriate.
+You can also use the ``in`` operator to check whether a point is
+inside a shape.
 See the :ref:`guide_graphics` for more details.
 
 A simple example of drawing shapes::
@@ -132,6 +134,7 @@ def _sat(vertices, point):
         if point_proj < min(projections) or point_proj > max(projections):
             return False
     return True
+
 
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
