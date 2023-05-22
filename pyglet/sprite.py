@@ -400,7 +400,8 @@ class Sprite(event.EventDispatcher):
                                        self._group.blend_dest,
                                        self._group.program,
                                        group)
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
