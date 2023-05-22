@@ -1677,6 +1677,13 @@ class Star(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        center = (self._x - self._anchor_x, self._y - self._anchor_y)
+        radius = (self._outer_radius + self._inner_radius) / 2
+        return math.dist(center, point) < radius
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
