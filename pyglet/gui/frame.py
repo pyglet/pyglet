@@ -1,5 +1,3 @@
-import random
-
 from typing import Callable, Union, Tuple, Dict, TYPE_CHECKING, TypeVar, Optional
 
 if TYPE_CHECKING:
@@ -45,11 +43,10 @@ class RePositionFrame:
     
     """
     
-    def __init__(self, window, random_range: Optional[Tuple[int, int]] = (-1_0000_0000, 1_0000_0000)):
+    def __init__(self, window):
         window.push_handlers(self)
         self.callback_dict: Dict[IndexType, Tuple[Repositionable, CaculateFunc]] = {}
         self.calculate_dict: Dict[IndexType, Tuple[Repositionable, CalculateFunc]] = {}
-        self.random_range = random_range
     
     def add_callback_func(self, obj: Repositionable, func: CallBackFunc, index: Optional[IndexType] = None) -> IndexType:
         """ Add A callback function to the frame
@@ -59,9 +56,7 @@ class RePositionFrame:
         :param index: The index of the object
         """
         if index is None:
-            index = random.randint(*self.random_range)
-        while self.callback_dict.get(index) is not None:
-            index = random.randint(*self.random_range)
+            index = hash(obj)
         self.callback_dict[index] = (obj, func)
         return index
     
@@ -73,9 +68,7 @@ class RePositionFrame:
         :param index: The index of the object
         """
         if index is None:
-            index = random.randint(*self.random_range)
-        while self.calculate_dict.get(index) is not None:
-            index = random.randint(*self.random_range)
+            index = hash(obj)
         self.calculate_dict[index] = (obj, func)
         return index
     
