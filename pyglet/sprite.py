@@ -299,7 +299,7 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
-        self._batch = batch or graphics.get_default_batch()
+        self._batch = batch
         self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
         self._subpixel = subpixel
         self._create_vertex_list()
