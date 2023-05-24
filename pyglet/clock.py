@@ -444,9 +444,23 @@ class Clock:
         Specifying an interval of 0 prevents the function from being
         called again (see `schedule` to call a function as often as possible).
 
-        The function can be scheduled for a given period of time by adding
-        the keyword argument `_duration=` (in seconds). After this delay,
-        the function is unscheduled automagically.
+        The callback function prototype is the same as for `schedule`.
+
+        :Parameters:
+            `func` : callable
+                The function to call when the timer lapses.
+            `interval` : float
+                The number of seconds to wait between each call.
+
+        """
+        last_ts = self._get_nearest_ts()
+        next_ts = last_ts + interval
+        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
+        _heappush(self._schedule_interval_items, item)
+
+    def schedule_interval_for_duration(self, func, interval, duration, *args, **kwargs):
+        """Schedule a function to be called every `interval` seconds
+        (see `schedule_interval`) and unschedule it after `duration` seconds.
 
         The callback function prototype is the same as for `schedule`.
 
@@ -455,17 +469,16 @@ class Clock:
                 The function to call when the timer lapses.
             `interval` : float
                 The number of seconds to wait between each call.
-            `_duration=` : float
+            `duration=` : float
                 The number of seconds for which the function is scheduled.
 
         """
-        last_ts = self._get_nearest_ts()
-        next_ts = last_ts + interval
-        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
-        _heappush(self._schedule_interval_items, item)
+        # NOTE: allow to schedule the unschedule function by taking the dt argument
+        def unschedule(dt: float, func: Callable) -> None:
+            self.unschedule(func)
 
-        if duration := kwargs.pop('_duration', 0):
-            self.schedule_once(self._unschedule_proxy, duration, func)
+        self.schedule_interval(func, interval, *args, **kwargs)
+        self.schedule_once(unschedule, duration, func)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every ``interval`` seconds.
@@ -526,10 +539,6 @@ class Clock:
             item.func = lambda x, *args, **kwargs: x
 
         self._schedule_items = [i for i in self._schedule_items if i.func != func]
-
-    # NOTE: allow to schedule the unschedule function by taking the dt argument
-    def _unschedule_proxy(self, dt: float, func: Callable) -> None:
-        self.unschedule(func)
 
 
 # Default clock.
