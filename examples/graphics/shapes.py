@@ -25,9 +25,11 @@ class ShapesDemo(pyglet.window.Window):
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
-        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255, 175), batch=self.batch)
-        self.triangle.anchor_position = 55, 80
-        self.triangle.position = 120, 100
+        size = 200
+        self.triangle = shapes.Triangle(-size/2, 0, size/2, 0, 0, math.sqrt(3)/2*size, color=(55, 255, 255, 175), batch=self.batch)
+        self.triangle.anchor_position = 0, math.sqrt(3)/6*size
+        self.triangle.position = 100, 100
+        self.triangle_center = shapes.Circle(self.triangle.x, self.triangle.y, 5, color=(255, 0, 0, 255), batch=self.batch)
 
         septagon_step = math.pi * 2 / 7
         self.fading_septagon = shapes.Polygon(
