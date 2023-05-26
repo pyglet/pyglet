@@ -220,8 +220,7 @@ def get_max_array_texture_layers() -> int:
 
 
 def _color_as_bytes(color: Tuple[int, int, int, int]) -> bytes:
-    """
-    Return the color as a bytes object
+    """Return the color as a bytes object
 
     :Parameter:
         `color`: Tuple[int, int, int, int]
@@ -272,16 +271,13 @@ class SolidColorImagePattern(ImagePattern):
 
 
 class CheckerImagePattern(ImagePattern):
-    """
-    Create an image with a tileable checker image.
-    """
+    """Create an image with a tileable checker image."""
 
     def __init__(self, 
                  color1: Tuple[int, int, int, int]=(150, 150, 150, 255), 
                  color2: Tuple[int, int, int, int]=(200, 200, 200, 255)
                  ) -> None:
-        """
-        Initialise with the given colors.
+        """Initialise with the given colors.
 
         :Parameters:
             `color1` : (int, int, int, int)
@@ -1248,15 +1244,15 @@ class Texture(AbstractImage):
 
     """
 
-    region_class: Optional[TextureRegion] = None  # Set to TextureRegion after it's defined
-    tex_coords: Tuple = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
-    tex_coords_order: Tuple = (0, 1, 2, 3)
-    colors: Tuple = (0, 0, 0, 0) * 4
-    level: int = 0
-    images: int = 1
-    x: int = 0
-    y: int = 0
-    z: int = 0
+    region_class = None  # Set to TextureRegion after it's defined
+    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
+    tex_coords_order = (0, 1, 2, 3)
+    colors = (0, 0, 0, 0) * 4
+    level = 0
+    images = 1
+    x = 0
+    y = 0
+    z = 0
     default_min_filter = GL_LINEAR
     default_mag_filter = GL_LINEAR
 
@@ -1412,26 +1408,15 @@ class Texture(AbstractImage):
         glBindTexture(self.target, 0)
 
     def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
-        """
-        Draw `source` on this image.
+        """Draw `source` on this image.
 
-        `source` will be copied into this image such that its anchor point
-        is aligned with the `x` and `y` parameters.  If this image is a 3D
-        texture, the `z` coordinate gives the image slice to copy into.
+        `source` will be copied into this image such that its destination
+        is the `x` and `y` parameters(and `z` if this image is a 3D).
 
         Note that if `source` is larger than this image (or the positioning
         would cause the copy to go out of bounds) then you must pass a
         region of `source` to this method, typically using get_region().
 
-        :Parameters:
-            `source` : ImageData
-                Source to blit onto image
-            `x` : int
-                X-Anchor Point
-            `y` : int
-                Y-Anchor Point
-            `z` : int
-                Z-Anchor Point
         """
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.target, self.level, x, y, z)
@@ -1490,8 +1475,7 @@ class Texture(AbstractImage):
         return transform
 
     def _set_tex_coords_order(self, bl: int, br: int, tr: int, tl: int) -> None:
-        """
-        Set/Change the order of the Texture's Cords
+        """Set/Change the order of the Texture's Cords
         
         :Parameters:
             `bl` : int
@@ -2224,9 +2208,7 @@ class ColorBufferImage(BufferImage):
 
 
 class DepthBufferImage(BufferImage):
-    """
-    The depth buffer.
-    """
+    """The depth buffer."""
     gl_format = GL_DEPTH_COMPONENT
     format = 'L'
 
@@ -2253,9 +2235,7 @@ class DepthBufferImage(BufferImage):
 
 
 class BufferImageMask(BufferImage):
-    """
-    A single bit of the stencil buffer.
-    """
+    """A single bit of the stencil buffer."""
     gl_format = GL_STENCIL_INDEX
     format = 'L'
 
