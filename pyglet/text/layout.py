@@ -1399,6 +1399,21 @@ class TextLayout:
             _vertex_list.colors = colors[start:start + len(_vertex_list.colors)]
             start += len(_vertex_list.colors)
 
+    def _get_right(self):
+        if self._multiline:
+            width = self._width if self._wrap_lines else self.content_width
+        else:
+            width = self.content_width
+
+        if self._anchor_x == 'left':
+            return self._x + width
+        elif self._anchor_x == 'center':
+            return self._x + width // 2
+        elif self._anchor_x == 'right':
+            return self._x
+        else:
+            assert False, '`anchor_x` must be either "left", "center", or "right".'
+
     def _get_left(self):
         if self._multiline:
             width = self._width if self._wrap_lines else self.content_width
