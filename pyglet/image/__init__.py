@@ -386,10 +386,10 @@ class AbstractImage:
         """
         raise ImageException('Cannot get region for %r' % self)
 
-    def save(self, filename: Optional[str]=None, 
+    def save(self, filename: str= "", 
              file: Optional[IO]=None, 
              encoder: Optional[str]=None
-             ) -> Optional[bytes]:
+             ) -> None:
         """Save this image to a file.
 
         :Parameters:
@@ -403,8 +403,6 @@ class AbstractImage:
                 are tried.  If all fail, the exception from the first one
                 attempted is raised.
 
-        :rtype: None or bytes
-        :return: image encoded as bytes if possible
         """
         if not file:
             file = open(filename, 'wb')
@@ -435,23 +433,14 @@ class AbstractImage:
     def blit_into(self, source: ImageData, x: int, y: int, z: int) -> None:
         """Draw `source` on this image.
 
-        `source` will be copied into this image such that its anchor point
-        is aligned with the `x` and `y` parameters.  If this image is a 3D
+        `source` will be copied into this image such that its destination
+        is the `x` and `y` parameters.  If this image is a 3D
         texture, the `z` coordinate gives the image slice to copy into.
 
         Note that if `source` is larger than this image (or the positioning
         would cause the copy to go out of bounds) then you must pass a
         region of `source` to this method, typically using get_region().
 
-        :Parameters:
-            `source` : ImageData
-                Source to blit onto image
-            `x` : int
-                X-Anchor Point
-            `y` : int
-                Y-Anchor Point
-            `z` : int
-                Z-Anchor Point 
         """
         raise ImageException('Cannot blit images onto %r.' % self)
 
@@ -1053,7 +1042,7 @@ class ImageDataRegion(ImageData):
         pitch = pitch or self._current_pitch
         return super().get_data(fmt, pitch)
 
-    def set_data(self, fmt: str, pitch: int, data: Sequence[Union[bytes, str]]):
+    def set_data(self, fmt: str, pitch: int, data: bytes) -> None:
         self.x = 0
         self.y = 0
         super().set_data(fmt, pitch, data)
@@ -1112,7 +1101,7 @@ class CompressedImageData(AbstractImage):
         self.decoder = decoder
         self.mipmap_data = []
 
-    def set_mipmap_data(self, level: int, data: bytes):
+    def set_mipmap_data(self, level: int, data: bytes) -> None:
         """Set data for a mipmap level.
 
         Supplied data gives a compressed image for the given mipmap level.
@@ -1277,18 +1266,20 @@ class Texture(AbstractImage):
         self.id = tex_id
         self._context = pyglet.gl.current_context
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self._context.delete_texture(self.id)
         except Exception:
             pass
 
-    def bind(self, texture_unit: int = 0):
+    def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         glActiveTexture(GL_TEXTURE0 + texture_unit)
         glBindTexture(self.target, self.id)
 
-    def bind_image_texture(self, unit, level=0, layered=False, layer=0, access=GL_READ_WRITE, fmt=GL_RGBA32F):
+    def bind_image_texture(self, unit: int, level: int=0, layered: bool=False, 
+                            layer: int=0, access: int=GL_READ_WRITE, fmt: int=GL_RGBA32F
+                            ) -> None:
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
         ..note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
@@ -1296,7 +1287,10 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls: Texture, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
+    def create(cls: Texture, width: int, height: int, 
+                target: int=GL_TEXTURE_2D, internalformat: int=GL_RGBA8,
+                min_filter: Optional[int]=None, mag_filter: Optional[int]=None, 
+                fmt: int=GL_RGBA, blank_data: bool=True) -> Texture:
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1354,7 +1348,7 @@ class Texture(AbstractImage):
 
         return texture
 
-    def get_image_data(self, z: int=0):
+    def get_image_data(self, z: int=0) -> ImageData:
         """Get the image data of this texture.
 
         Changes to the returned instance will not be reflected in this
@@ -1400,7 +1394,7 @@ class Texture(AbstractImage):
 
     # no implementation of blit_to_texture yet
 
-    def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None):
+    def blit(self, x: int, y: int, z: int=0, width: Optional[int]=None, height: Optional[int]=None) -> None:
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
@@ -1745,7 +1739,7 @@ class TextureArray(Texture, UniformTextureSequence):
         return self.items[start_length:]
 
     @classmethod
-    def create_for_image_grid(cls: Texture, grid, internalformat=GL_RGBA):
+    def create_for_image_grid(cls: Texture, grid: TextureGrid, internalformat: int=GL_RGBA) -> "TextureArray":
         texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
         texture_array.allocate(*grid[:])
         return texture_array
@@ -1817,7 +1811,7 @@ class TileableTexture(Texture):
         glBindTexture(self.target, 0)
 
     @classmethod
-    def create_for_image(cls: Texture, image):
+    def create_for_image(cls: Texture, image: ImageData) -> Texture:
         image = image.get_image_data()
         return image.create_texture(cls)
 
