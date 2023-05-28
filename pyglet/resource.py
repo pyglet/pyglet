@@ -59,7 +59,14 @@ from io import BytesIO
 from typing import Union, Optional
 
 import pyglet
-
+from pyglet.image import (
+    Texture,
+    TextureRegion,
+    Animation,
+    load,
+    get_max_texture_size
+)
+from pyglet.image.altas import TextureBin
 
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
@@ -80,7 +87,7 @@ class UndetectableShaderType(Exception):
         Exception.__init__(self, message)
 
 
-def get_script_home() -> None:
+def get_script_home() -> str:
     """Get the directory containing the program entry module.
 
     For ordinary Python scripts, this is the directory containing the
@@ -164,7 +171,7 @@ def get_settings_path(name: str) -> str:
         return os.path.expanduser(f'~/.{name}')
 
 
-def get_data_path(name: str) -> None:
+def get_data_path(name: str) -> str:
     """Get a directory to save user data.
 
     For a Posix or Linux based system many distributions have a separate
@@ -214,7 +221,7 @@ class Location:
     from, and not necessarily have that path reside on the filesystem.
     """
 
-    def open(self, filename: str, mode: str='rb'):
+    def open(self, filename: str, mode: str='rb') -> IO:
         """Open a file at this location.
 
         :Parameters:
@@ -244,7 +251,7 @@ class FileLocation(Location):
         """
         self.path = filepath
 
-    def open(self, filename: str, mode: str='rb'):
+    def open(self, filename: str, mode: str='rb') -> IO:
         """Opens the file
         
         :Parameters:
@@ -317,7 +324,7 @@ class URLLocation(Location):
         """
         self.base = base_url
 
-    def open(self, filename: str, mode: str='rb') -> None:
+    def open(self, filename: str, mode: str='rb') -> IO:
         """Opens the url using urllib.request.urlopen()"""
         import urllib.parse
         import urllib.request
@@ -493,7 +500,7 @@ class Loader:
         if name not in self._index:
             self._index[name] = location
 
-    def file(self, name: str, mode: str='rb') -> None:
+    def file(self, name: str, mode: str='rb') -> IO:
         """Load a resource.
 
         :Parameters:
@@ -552,10 +559,10 @@ class Loader:
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name: str, atlas: bool, border: int) -> None:
+    def _alloc_image(self, name: str, atlas: bool, border: int) -> Union[Texture, TextureRegion]:
         file = self.file(name)
         try:
-            img = pyglet.image.load(name, file=file)
+            img = load(name, file=file)
         finally:
             file.close()
 
@@ -569,13 +576,13 @@ class Loader:
 
         return bin.add(img, border)
 
-    def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> pyglet.image.atlas.TextureBin:
+    def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> TextureBin:
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        max_texture_size = pyglet.image.get_max_texture_size()
+        max_texture_size = get_max_texture_size()
         max_size = min(2048, max_texture_size) - border
         if width > max_size or height > max_size:
             return None
@@ -589,13 +596,13 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin()
+            texture_bin = TextureBin()
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
 
     def image(self, name: str, flip_x: bool=False, flip_y: bool=False, 
-                rotate: int=0, atlas: bool=True, border: int=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+                rotate: int=0, atlas: bool=True, border: int=1) -> Union[Texture, TextureRegion]:
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -621,7 +628,7 @@ class Loader:
                 Leaves specified pixels of blank space around each image in
                 an atlas, which may help reduce texture bleeding.
 
-        :rtype: `Texture`
+        :rtype: `Texture` or `TextureRegion`
         :return: A complete texture if the image is large or not in an atlas,
             otherwise a :py:class:`~pyglet.image.TextureRegion` of a texture atlas.
         """
@@ -636,7 +643,8 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0, border=1) -> pyglet.image.Animation:
+    def animation(self, name: str, flip_x: bool=False, flip_y: bool=False, 
+                    rotate: int=0, borde: int=1) -> Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -676,7 +684,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def get_cached_image_names(self) -> [str]:
+    def get_cached_image_names(self) -> List[str]:
         """Get a list of image filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -687,7 +695,7 @@ class Loader:
         self._require_index()
         return list(self._cached_images.keys())
 
-    def get_cached_animation_names(self) -> [str]:
+    def get_cached_animation_names(self) -> List[str]:
         """Get a list of animation filenames that have been cached.
 
         This is useful for debugging and profiling only.
@@ -698,7 +706,7 @@ class Loader:
         self._require_index()
         return list(self._cached_animations.keys())
 
-    def get_texture_bins(self) -> [pyglet.image.atlas.TextureBin]:
+    def get_texture_bins(self) -> List[TextureBin]:
         """Get a list of texture bins in use.
 
         This is useful for debugging and profiling only.
@@ -709,7 +717,7 @@ class Loader:
         self._require_index()
         return list(self._texture_atlas_bins.values())
 
-    def media(self, name: name, streaming: bool=True) -> media.Source:
+    def media(self, name: str, streaming: bool=True) -> media.Source:
         """Load a sound or video resource.
 
         The meaning of `streaming` is as for `media.load`.  Compressed
@@ -740,7 +748,7 @@ class Loader:
         except KeyError:
             raise ResourceNotFoundException(name)
 
-    def texture(self, name: str) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+    def texture(self, name: str) -> Union[Texture, TextureRegion]:
         """Load a texture.
 
         The named image will be loaded as a single OpenGL texture.  If the
@@ -852,7 +860,7 @@ class Loader:
 
         return pyglet.graphics.shader.Shader(source_string, shader_type)
 
-    def get_cached_texture_names(self) -> [str]:
+    def get_cached_texture_names(self) -> List[str]:
         """Get the names of textures currently cached.
 
         :rtype: list of str
@@ -875,11 +883,11 @@ path = []
 class _DefaultLoader(Loader):
 
     @property
-    def path(self):
+    def path(self) -> List[str]:
         return path
 
     @path.setter
-    def path(self, value) -> None:
+    def path(self, value: List[str]) -> None:
         global path
         path = value
 
