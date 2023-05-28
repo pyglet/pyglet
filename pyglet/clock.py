@@ -568,7 +568,7 @@ def set_default(default: Clock) -> None:
     By default, an instance of :py:class:`~pyglet.clock.Clock` is used.
     """
     global _default
-    _default: Clock = default
+    _default = default
 
 
 def get_default() -> Clock:
