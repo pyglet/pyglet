@@ -58,17 +58,19 @@ import zipfile
 import weakref
 
 from io import BytesIO
-from typing import Union, Optional, List, IO
+from typing import Union, Optional, List, IO, TYPE_CHECKING
 
 import pyglet
-from pyglet.image import (
-    Texture,
-    TextureRegion,
-    Animation,
-    load,
-    get_max_texture_size
-)
-from pyglet.image.altas import TextureBin
+
+if TYPE_CHECKING:
+    from pyglet.image import (
+        Texture,
+        TextureRegion,
+        Animation,
+        load,
+        get_max_texture_size
+    )
+    from pyglet.image.altas import TextureBin
 
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
