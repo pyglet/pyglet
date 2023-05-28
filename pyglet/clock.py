@@ -63,6 +63,8 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 of the system clock.
 """
 
+from __future__ import annotations
+
 import time as _time
 
 from typing import Callable
@@ -71,7 +73,6 @@ from heapq import heappush as _heappush
 from heapq import heappushpop as _heappushpop
 from operator import attrgetter as _attrgetter
 from collections import deque as _deque
-from __future__ import annotations
 
 class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
@@ -260,7 +261,7 @@ class Clock:
 
         return True
 
-    def tick(self, poll=False) -> None:
+    def tick(self, poll: bool=False) -> None:
         """Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.

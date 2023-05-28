@@ -117,11 +117,12 @@ the particular class documentation.
 
 """
 
+from __future__ import annotations
+
 import inspect
 
 from functools import partial
 from weakref import WeakMethod
-from __future__ import annotations
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
