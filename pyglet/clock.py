@@ -90,9 +90,9 @@ class _ScheduledItem:
 
 
 class _ScheduledIntervalItem:
-    __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
+    __slots__ = ('func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs')
 
-    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args:Tuple, kwargs:Dict) -> None:
+    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args: Tuple, kwargs: Dict) -> None:
         self.func = func
         self.interval = interval
         self.last_ts = last_ts
@@ -100,7 +100,7 @@ class _ScheduledIntervalItem:
         self.args = args
         self.kwargs = kwargs
 
-    def __lt__(self, other: Self) -> None:
+    def __lt__(self, other: Self) -> bool:
         try:
             return self.next_ts < other.next_ts
         except AttributeError:
@@ -146,7 +146,7 @@ class Clock:
     def sleep(microseconds: float) -> None:
         _time.sleep(microseconds * 1e-6)
 
-    def update_time(self) -> None:
+    def update_time(self) -> float:
         """Get the elapsed time since the last call to `update_time`.
 
         This updates the clock's internal measure of time and returns
@@ -171,7 +171,7 @@ class Clock:
 
         return delta_t
 
-    def call_scheduled_functions(self, dt: float) -> None:
+    def call_scheduled_functions(self, dt: float) -> bool:
         """Call scheduled functions that elapsed on the last `update_time`.
 
         .. versionadded:: 1.2
@@ -267,7 +267,7 @@ class Clock:
 
         return True
 
-    def tick(self, poll: bool=False) -> None:
+    def tick(self, poll: bool=False) -> float:
         """Signify that one frame has passed.
 
         This will call any scheduled functions that have elapsed.
@@ -292,7 +292,7 @@ class Clock:
         self.call_scheduled_functions(delta_t)
         return delta_t
 
-    def get_sleep_time(self, sleep_idle: bool) -> None:
+    def get_sleep_time(self, sleep_idle: bool) -> float:
         """Get the time until the next item is scheduled.
 
         Applications can choose to continue receiving updates at the
@@ -326,7 +326,7 @@ class Clock:
 
         return None
 
-    def get_frequency(self) -> None:
+    def get_frequency(self) -> float:
         """Get the average clock update frequency of recent history.
 
         The result is the average of a sliding window of the last "n" updates,
@@ -340,7 +340,7 @@ class Clock:
             return 0
         return len(self.times) / self.cumulative_time
 
-    def _get_nearest_ts(self) -> None:
+    def _get_nearest_ts(self) -> float:
         """Get the nearest timestamp.
 
         Schedule from now, unless now is sufficiently close to last_ts, in
@@ -359,7 +359,7 @@ class Clock:
             return ts
         return last_ts
 
-    def _get_soft_next_ts(self, last_ts: float, interval: float) -> None:
+    def _get_soft_next_ts(self, last_ts: float, interval: float) -> float:
         """Attempts to return evenly scheduled functions
 
         :Parameters:
@@ -428,7 +428,7 @@ class Clock:
         divs = 1
         while True:
             next_ts = last_ts
-            for i in range(divs - 1):
+            for _ in range(divs - 1):
                 next_ts += dt
                 if not taken(next_ts, dt / 4):
                     return next_ts
