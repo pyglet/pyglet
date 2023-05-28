@@ -56,7 +56,7 @@ import zipfile
 import weakref
 
 from io import BytesIO
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 import pyglet
 from pyglet.image import (
