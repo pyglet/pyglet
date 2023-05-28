@@ -65,9 +65,15 @@ of the system clock.
 
 from __future__ import annotations
 
-import time as _time
+from typing import (
+    Callable,
+    Tuple,
+    List,
+    Dict
+)
+from typing_extensions import Self
 
-from typing import Callable
+import time as _time
 from heapq import heappop as _heappop
 from heapq import heappush as _heappush
 from heapq import heappushpop as _heappushpop
@@ -77,7 +83,7 @@ from collections import deque as _deque
 class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
-    def __init__(self, func: Callable, args: tuple, kwargs: dict) -> None:
+    def __init__(self, func: Callable, args: Tuple, kwargs: Dict) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -86,7 +92,7 @@ class _ScheduledItem:
 class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
-    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args:tuple, kwargs:dict) -> None:
+    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args:Tuple, kwargs:Dict) -> None:
         self.func = func
         self.interval = interval
         self.last_ts = last_ts
@@ -94,7 +100,7 @@ class _ScheduledIntervalItem:
         self.args = args
         self.kwargs = kwargs
 
-    def __lt__(self, other: object) -> None:
+    def __lt__(self, other: Self) -> None:
         try:
             return self.next_ts < other.next_ts
         except AttributeError:
@@ -124,13 +130,13 @@ class Clock:
         pausing.
         """
         self.time = time_function
-        self.next_ts: float = self.time()
-        self.last_ts: float = None
+        self.next_ts = self.time()
+        self.last_ts = None
 
         # Used by self.get_frequency to show update frequency
         self.times: _deque() = _deque()
-        self.cumulative_time: float = 0
-        self.window_size: int = 60
+        self.cumulative_time = 0
+        self.window_size = 60
 
         self._schedule_items = []
         self._schedule_interval_items = []
@@ -433,7 +439,7 @@ class Clock:
             if divs > 16:
                 return next_ts
 
-    def schedule(self, func: Callable, *args: tuple, **kwargs: dict) -> None:
+    def schedule(self, func: Callable, *args: Tuple, **kwargs: Dict) -> None:
         """Schedule a function to be called every frame.
 
         The function should have a prototype that includes ``dt`` as the
@@ -447,15 +453,15 @@ class Clock:
         :Parameters:
             `func` : Callable
                 The function to call each frame.
-            `args` : tuple
+            `args` : Tuple
                 Passed into function as *args when func is called
-            `kwargs` : dict
+            `kwargs` : Dict
                 Passed into function as **kwargs when func is called
         """
         item = _ScheduledItem(func, args, kwargs)
         self._schedule_items.append(item)
 
-    def schedule_once(self, func: Callable, delay: float, *args: tuple, **kwargs: dict) -> None:
+    def schedule_once(self, func: Callable, delay: float, *args: Tuple, **kwargs: Dict) -> None:
         """Schedule a function to be called once after `delay` seconds.
 
         The callback function prototype is the same as for `schedule`.
@@ -471,7 +477,7 @@ class Clock:
         item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
-    def schedule_interval(self, func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
+    def schedule_interval(self, func: Callable, interval: float, *args: Tuple, **kwargs: Dict) -> None:
         """Schedule a function to be called every `interval` seconds.
 
         Specifying an interval of 0 prevents the function from being
@@ -491,7 +497,7 @@ class Clock:
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
 
-    def schedule_interval_soft(self, func: Callable, interval: float, *args: tuple, **kwargs: list) -> None:
+    def schedule_interval_soft(self, func: Callable, interval: float, *args: Tuple, **kwargs: List) -> None:
         """Schedule a function to be called every ``interval`` seconds.
 
         This method is similar to `schedule_interval`, except that the
@@ -565,7 +571,7 @@ def set_default(default: Clock) -> None:
     _default: Clock = default
 
 
-def get_default():
+def get_default() -> Clock:
     """Get the pyglet default Clock.
 
     Return the :py:class:`~pyglet.clock.Clock` instance that is used by all
@@ -622,7 +628,7 @@ def get_frequency() -> float:
     return _default.get_frequency()
 
 
-def schedule(func: Callable, *args: tuple, **kwargs: dict) -> None:
+def schedule(func: Callable, *args: Tuple, **kwargs: Dict) -> None:
     """Schedule 'func' to be called every frame on the default clock.
 
     The arguments passed to func are ``dt``, followed by any ``*args`` and
@@ -631,7 +637,7 @@ def schedule(func: Callable, *args: tuple, **kwargs: dict) -> None:
     _default.schedule(func, *args, **kwargs)
 
 
-def schedule_interval(func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
+def schedule_interval(func: Callable, interval: float, *args: Tuple, **kwargs: Dict) -> None:
     """Schedule ``func`` on the default clock every ``interval`` seconds.
 
     The arguments passed to ``func`` are ``dt`` (time since last function
@@ -640,7 +646,7 @@ def schedule_interval(func: Callable, interval: float, *args: tuple, **kwargs: d
     _default.schedule_interval(func, interval, *args, **kwargs)
 
 
-def schedule_interval_soft(func: Callable, interval: float, *args: tuple, **kwargs: dict) -> None:
+def schedule_interval_soft(func: Callable, interval: float, *args: Tuple, **kwargs: Dict) -> None:
     """Schedule ``func`` on the default clock every interval seconds.
 
     The clock will move the interval out of phase with other scheduled
@@ -654,7 +660,7 @@ def schedule_interval_soft(func: Callable, interval: float, *args: tuple, **kwar
     _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 
-def schedule_once(func: Callable, delay: float, *args: tuple, **kwargs: dict) -> None:
+def schedule_once(func: Callable, delay: float, *args: Tuple, **kwargs: Dict) -> None:
     """Schedule ``func`` to be called once after ``delay`` seconds.
 
     This function uses the default clock. ``delay`` can be a float. The
