@@ -353,8 +353,7 @@ class Clock:
         return last_ts
 
     def _get_soft_next_ts(self, last_ts: float, interval: float) -> None:
-        """
-        Attempts to return evenly scheduled functions
+        """Attempts to return evenly scheduled functions
 
         :Parameters:
             `last_ts` : float
@@ -367,8 +366,7 @@ class Clock:
         """
 
         def taken(ts: float, e: float) -> bool:
-            """
-            Check if `ts` has already got an item scheduled nearby.
+            """Check if `ts` has already got an item scheduled nearby.
             
             :Parameters:
             `ts` : float

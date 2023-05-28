@@ -128,15 +128,12 @@ EVENT_UNHANDLED = None
 
 
 class EventException(Exception):
-    """
-    An exception raised when an event handler could not be attached.
-    """
+    """An exception raised when an event handler could not be attached."""
     pass
 
 
 class EventDispatcher:
-    """
-    Generic event dispatcher interface.
+    """Generic event dispatcher interface.
 
     See the module docstring for usage.
     """
@@ -145,8 +142,7 @@ class EventDispatcher:
 
     @classmethod
     def register_event_type(cls: object, name: str):
-        """
-        Register an event type with the dispatcher.
+        """Register an event type with the dispatcher.
 
         Registering event types allows the dispatcher to validate event
         handler names as they are attached, and to search attached objects for
@@ -181,8 +177,7 @@ class EventDispatcher:
         self.set_handlers(*args, **kwargs)
 
     def _get_handlers(self, args: tuple, kwargs: Optional[object, func]):
-        """
-        Implement handler matching on arguments for set_handlers and
+        """Implement handler matching on arguments for set_handlers and
         remove_handlers.
         """
         for obj in args:
@@ -212,8 +207,7 @@ class EventDispatcher:
                 yield name, handler
 
     def set_handlers(self, *args: tuple, **kwargs: Optional[object, func]):
-        """
-        Attach one or more event handlers to the top level of the handler
+        """Attach one or more event handlers to the top level of the handler
         stack.
 
         See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the accepted argument types.
@@ -225,9 +219,8 @@ class EventDispatcher:
         for name, handler in self._get_handlers(args, kwargs):
             self.set_handler(name, handler)
 
-    def set_handler(self, name: str, handler: Callable):
-        """
-        Attach a single event handler.
+    def set_handler(self, name: str, handler: Callable) -> None:
+        """Attach a single event handler.
 
         :Parameters:
             `name` : str
@@ -242,9 +235,8 @@ class EventDispatcher:
 
         self._event_stack[0][name] = handler
 
-    def pop_handlers(self):
-        """
-        Pop the top level of event handlers off the stack.
+    def pop_handlers(self) -> NOne:
+        """Pop the top level of event handlers off the stack.
         """
         assert self._event_stack and 'No handlers pushed'
 
@@ -295,8 +287,7 @@ class EventDispatcher:
             self._event_stack.remove(frame)
 
     def remove_handler(self, name: str, handler: Callable):
-        """
-        Remove a single event handler.
+        """Remove a single event handler.
 
         The given event handler is removed from the first handler stack frame
         it appears in.  The handler must be the exact same Callable as passed
@@ -321,8 +312,7 @@ class EventDispatcher:
                 pass
 
     def _remove_handler(self, name: str, handler: Callable):
-        """
-        Used internally to remove all handler instances for the given event name.
+        """Used internally to remove all handler instances for the given event name.
 
         This is normally called from a dead ``WeakMethod`` to remove itself from the
         event stack.
@@ -342,8 +332,7 @@ class EventDispatcher:
                     pass
 
     def dispatch_event(self, event_type: str, *args: tuple):
-        """
-        Dispatch a single event to the attached handlers.
+        """Dispatch a single event to the attached handlers.
 
         The event is propagated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
@@ -414,8 +403,7 @@ class EventDispatcher:
 
     @staticmethod
     def _raise_dispatch_exception(event_type: str, args: tuple, handler: Callable, exception: Optional[Error]):
-        """
-        A common problem in applications is having the wrong number of
+        """A common problem in applications is having the wrong number of
         arguments in an event handler.  This is caught as a TypeError in
         dispatch_event but the error message is obfuscated.
 
@@ -472,7 +460,7 @@ class EventDispatcher:
         else:
             raise exception
 
-    def event(self, *args: list):
+    def event(self, *args: tuple):
         """Function decorator for an event handler.
 
         Usage::
