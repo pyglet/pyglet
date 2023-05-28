@@ -338,7 +338,7 @@ class EventDispatcher:
                     # weakref is already dead
                     pass
 
-    def dispatch_event(self, event_type: str, *args: Tuple) -> bool:
+    def dispatch_event(self, event_type: str, *args: Tuple) -> Optional[bool]:
         """Dispatch a single event to the attached handlers.
 
         The event is propagated to all handlers from from the top of the stack
@@ -467,7 +467,7 @@ class EventDispatcher:
         else:
             raise exception
 
-    def event(self, *args: Tuple) -> Callable:
+    def event(self, *args: Tuple) -> Optional[Callable]:
         """Function decorator for an event handler.
 
         Usage::
