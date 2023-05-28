@@ -287,9 +287,9 @@ class ShapeBase(ABC):
         """The (x, y) coordinates of the shape, as a tuple.
 
         :Parameters:
-            `x` : int or float
+            `x` : number
                 X coordinate of the sprite.
-            `y` : int or float
+            `y` : number
                 Y coordinate of the sprite.
         """
         return self._x, self._y
@@ -335,9 +335,9 @@ class ShapeBase(ABC):
         The (x, y) coordinates of the anchor point, as a tuple.
 
         :Parameters:
-            `x` : int or float
+            `x` : number
                 X coordinate of the anchor point.
-            `y` : int or float
+            `y` : number
                 Y coordinate of the anchor point.
         """
         return self._anchor_x, self._anchor_y
@@ -456,9 +456,9 @@ class Arc(ShapeBase):
         The Arc's anchor point (x, y) defaults to its center.
 
         :Parameters:
-            `x` : float
+            `x` : number
                 X coordinate of the circle.
-            `y` : float
+            `y` : number
                 Y coordinate of the circle.
             `radius` : float
                 The desired radius.
@@ -705,9 +705,9 @@ class Circle(ShapeBase):
         The circle's anchor point (x, y) defaults to the center of the circle.
 
         :Parameters:
-            `x` : float
+            `x` : number
                 X coordinate of the circle.
-            `y` : float
+            `y` : number
                 Y coordinate of the circle.
             `radius` : float
                 The desired radius.
@@ -909,9 +909,9 @@ class Sector(ShapeBase):
                 The sector's anchor point (x, y) defaults to the center of the circle.
 
                 :Parameters:
-                    `x` : float
+                    `x` : number
                         X coordinate of the sector.
-                    `y` : float
+                    `y` : number
                         Y coordinate of the sector.
                     `radius` : float
                         The desired radius.
@@ -1460,17 +1460,17 @@ class Triangle(ShapeBase):
         The triangle's anchor point defaults to the first vertex point.
 
         :Parameters:
-            `x` : float
+            `x` : number
                 The first X coordinate of the triangle.
-            `y` : float
+            `y` : number
                 The first Y coordinate of the triangle.
-            `x2` : float
+            `x2` : number
                 The second X coordinate of the triangle.
-            `y2` : float
+            `y2` : number
                 The second Y coordinate of the triangle.
-            `x3` : float
+            `x3` : number
                 The third X coordinate of the triangle.
-            `y3` : float
+            `y3` : number
                 The third Y coordinate of the triangle.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the triangle, specified as a
@@ -1579,9 +1579,9 @@ class Star(ShapeBase):
         The star's anchor point (x, y) defaults to the center of the star.
 
         :Parameters:
-            `x` : float
+            `x` : number
                 The X coordinate of the star.
-            `y` : float
+            `y` : number
                 The Y coordinate of the star.
             `outer_radius` : float
                 The desired outer radius of the star.
