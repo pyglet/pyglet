@@ -351,7 +351,7 @@ class Loader:
             application script.
 
     """
-    def __init__(self, path: [str]=None, script_home: str=None) -> None:
+    def __init__(self, path: Optional[List[str]]=None, script_home: Optional[str]=None) -> None:
         """Create a loader for the given path.
 
         If no path is specified it defaults to ``['.']``; that is, just the
