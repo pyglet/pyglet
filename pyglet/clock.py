@@ -223,10 +223,7 @@ class Clock:
                 break
 
             # execute the callback
-            try:
-                item.func(now - item.last_ts, *item.args, **item.kwargs)
-            except ReferenceError:
-                pass    # weakly-referenced object no longer exists.
+            item.func(now - item.last_ts, *item.args, **item.kwargs)
 
             if item.interval:
 
