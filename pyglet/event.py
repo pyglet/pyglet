@@ -505,3 +505,4 @@ class EventDispatcher:
                 return func
 
             return decorator
+        return None
