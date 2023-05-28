@@ -81,8 +81,7 @@ class UndetectableShaderType(Exception):
 
 
 def get_script_home() -> None:
-    """
-    Get the directory containing the program entry module.
+    """Get the directory containing the program entry module.
 
     For ordinary Python scripts, this is the directory containing the
     ``__main__`` module.  For executables created with py2exe the result is
@@ -124,9 +123,8 @@ def get_script_home() -> None:
                 return os.path.dirname(sys.executable)
 
 
-def get_settings_path(name: str):
-    """
-    Get a directory to save user preferences.
+def get_settings_path(name: str) -> str:
+    """Get a directory to save user preferences.
 
     Different platforms have different conventions for where to save user
     preferences, saved games, and settings.  This function implements those
@@ -167,8 +165,7 @@ def get_settings_path(name: str):
 
 
 def get_data_path(name: str) -> None:
-    """
-    Get a directory to save user data.
+    """Get a directory to save user data.
 
     For a Posix or Linux based system many distributions have a separate
     directory to store user data for a specific application and this 
@@ -210,8 +207,7 @@ def get_data_path(name: str) -> None:
 
 
 class Location:
-    """
-    Abstract resource location.
+    """Abstract resource location.
 
     Given a location, a file can be loaded from that location with the `open`
     method.  This provides a convenient way to specify a path to load files
@@ -219,8 +215,7 @@ class Location:
     """
 
     def open(self, filename: str, mode: str='rb'):
-        """
-        Open a file at this location.
+        """Open a file at this location.
 
         :Parameters:
             `filename` : str
@@ -237,13 +232,11 @@ class Location:
 
 
 class FileLocation(Location):
-    """
-    Location on the filesystem.
+    """Location on the filesystem.
     """
 
     def __init__(self, filepath: str) -> None:
-        """
-        Create a location given a relative or absolute path.
+        """Create a location given a relative or absolute path.
 
         :Parameters:
             `filepath` : str
@@ -252,8 +245,7 @@ class FileLocation(Location):
         self.path = filepath
 
     def open(self, filename: str, mode: str='rb'):
-        """
-        Opens the file
+        """Opens the file
         
         :Parameters:
             `filepath` : str
@@ -268,13 +260,11 @@ class FileLocation(Location):
 
 
 class ZIPLocation(Location):
-    """
-    Location within a ZIP file.
+    """Location within a ZIP file.
     """
 
     def __init__(self, zip: zipfile.ZipFile, dir: str) -> None:
-        """
-        Create a location given an open ZIP file and a path within that
+        """Create a location given an open ZIP file and a path within that
         file.
 
         :Parameters:
@@ -288,9 +278,8 @@ class ZIPLocation(Location):
         self.zip = zip
         self.dir = dir
 
-    def open(self, filename: str, mode: str='rb') -> BytesIO():
-        """
-        Opens the file
+    def open(self, filename: str, mode: str='rb') -> BytesIO:
+        """Opens the file
         
         :Parameters:
             `filepath` : str
@@ -312,16 +301,14 @@ class ZIPLocation(Location):
 
 
 class URLLocation(Location):
-    """
-    Location on the network.
+    """Location on the network.
 
     This class uses the ``urlparse`` and ``urllib2`` modules to open files on
     the network given a URL.
     """
 
     def __init__(self, base_url: str) -> None:
-        """
-        Create a location given a base URL.
+        """Create a location given a base URL.
 
         :Parameters:
             `base_url` : str
@@ -339,8 +326,7 @@ class URLLocation(Location):
 
 
 class Loader:
-    """
-    Load program resource files from disk.
+    """Load program resource files from disk.
 
     The loader contains a search path which can include filesystem
     directories, ZIP archives and Python packages.
@@ -355,8 +341,7 @@ class Loader:
 
     """
     def __init__(self, path: [str]=None, script_home: str=None) -> None:
-        """
-        Create a loader for the given path.
+        """Create a loader for the given path.
 
         If no path is specified it defaults to ``['.']``; that is, just the
         program directory.
@@ -392,8 +377,7 @@ class Loader:
             self.reindex()
 
     def reindex(self) -> None:
-        """
-        Refresh the file index.
+        """Refresh the file index.
 
         You must call this method if `path` is changed or the filesystem
         layout changes.
@@ -472,8 +456,7 @@ class Loader:
                             self._index_file(zip_name, location)
 
     def _get_stream(self, path: str) -> Union[str, BytesIO, None]:
-        """
-        Attempts to return the path if zipfile.is_zipfile is true
+        """Attempts to return the path if zipfile.is_zipfile is true
 
         Used to in reindex to verify that the zip exists and use it if it does.
 
@@ -511,8 +494,7 @@ class Loader:
             self._index[name] = location
 
     def file(self, name: str, mode: str='rb') -> None:
-        """
-        Load a resource.
+        """Load a resource.
 
         :Parameters:
             `name` : str
@@ -531,8 +513,7 @@ class Loader:
             raise ResourceNotFoundException(name)
 
     def location(self, name: str) -> Location:
-        """
-        Get the location of a resource.
+        """Get the location of a resource.
 
         This method is useful for opening files referenced from a resource.
         For example, an HTML file loaded as a resource might reference some
@@ -613,9 +594,9 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name: str, flip_x=False, flip_y=False, rotate=0, atlas=True, border=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
-        """
-        Load an image with optional transformation.
+    def image(self, name: str, flip_x: bool=False, flip_y: bool=False, 
+                rotate: int=0, atlas: bool=True, border: int=1) -> Union[pyglet.image.Texture, pyglet.image.TextureRegion]:
+        """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
         packed into a :py:class:`~pyglet.image.atlas.TextureBin` if it is an appropriate size for packing.
