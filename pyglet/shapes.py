@@ -262,7 +262,7 @@ class ShapeBase(ABC):
     def x(self) -> number:
         """X coordinate of the shape.
 
-        :type: int or float
+        :type: number
         """
         return self._x
 
@@ -275,7 +275,7 @@ class ShapeBase(ABC):
     def y(self) -> number:
         """Y coordinate of the shape.
 
-        :type: int or float
+        :type: number
         """
         return self._y
 
@@ -306,7 +306,7 @@ class ShapeBase(ABC):
         """
         The X coordinate of the anchor point
 
-        :rtype: int or float
+        :rtype: float
         """
         return self._anchor_x
 
@@ -321,12 +321,12 @@ class ShapeBase(ABC):
         """
         The Y coordinate of the anchor point
 
-        :rtype: int or float
+        :rtype: float
         """
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value: Number) -> None:
+    def anchor_y(self, value: number) -> None:
         """Set the Y coordinate of the anchor point"""
         self._anchor_y = value
         self._update_vertices()
@@ -508,13 +508,13 @@ class Arc(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         if not self._visible:
             vertices = (0,) * (self._segments + 1) * 4
         else:
