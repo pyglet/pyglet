@@ -58,6 +58,8 @@ from pyglet.graphics.shader import ShaderProgram, ComputeShaderProgram
 from typing import (
     Union,
     Optional,
+    Tuple,
+    List
 )
 
 number = Union[int, float]
