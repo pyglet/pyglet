@@ -275,7 +275,7 @@ class Win32Font(base.Font):
         return logfont
 
     @classmethod
-    def have_font(cls, name):
+    def have_font(cls, name) -> bool:
         # [ ] add support for loading raster fonts
         return win32query.have_font(name)
 
