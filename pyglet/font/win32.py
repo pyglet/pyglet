@@ -236,8 +236,7 @@ class Win32Font(base.Font):
 
     @staticmethod
     def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: Optional[float] = None) -> LOGFONTW:
-        """
-        Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
+        """Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
 
         Args:
             name: The name of the font
