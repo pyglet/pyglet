@@ -211,7 +211,12 @@ class Win32Font(base.Font):
 
     glyph_renderer_class = GDIGlyphRenderer
 
-    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
+    def __init__(
+            self,
+            name: str, size: int,
+            bold: bool = False, italic: bool = False, stretch: bool = False,
+            dpi: Optional[float] = None
+    ):
         super(Win32Font, self).__init__()
 
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
