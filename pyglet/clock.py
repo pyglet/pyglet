@@ -469,7 +469,7 @@ class Clock:
                 The function to call when the timer lapses.
             `interval` : float
                 The number of seconds to wait between each call.
-            `duration=` : float
+            `duration` : float
                 The number of seconds for which the function is scheduled.
 
         """
