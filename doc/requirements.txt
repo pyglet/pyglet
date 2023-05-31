@@ -1,3 +1,4 @@
 sphinx>2
 sphinx-rtd-theme
 pytest
+jinja2>2
