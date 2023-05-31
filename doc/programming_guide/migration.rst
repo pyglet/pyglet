@@ -122,15 +122,15 @@ Here are some very simplistic examples on the new usages.
      -  .. code-block::
           
            vertex_list = batch.add(4, GL_QUADS, group, vertex_format,
-				('c4B', (255,255,255,255) * 4),
-				('t3f', texture.tex_coords))
+                ('c4B', (255,255,255,255) * 4),
+                ('t3f', texture.tex_coords))
                 
      -  .. code-block::
           
                vertex_list = program.vertex_list_indexed(
                 4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], batch, group,
                 colors=('Bn', (255, 255, 255, 255) * 4),
-    			tex_coords=('f', texture.tex_coords))
+                tex_coords=('f', texture.tex_coords))
 
 
 Application Event Loop
