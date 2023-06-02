@@ -122,6 +122,12 @@ class Player(pyglet.event.EventDispatcher):
         #: .. versionadded:: 1.4
         self.loop = False
 
+        #: Pause the current source on the last frame.
+        #: Defaults to ``False`` (ie. rewind to the first frame)
+        #:
+        #: :type: bool
+        self.pause_at_end = False
+
     def __del__(self):
         """Release the Player resources."""
         self.delete()
@@ -587,6 +593,8 @@ class Player(pyglet.event.EventDispatcher):
                 self._audio_player.clear()
             self._set_playing(was_playing)
 
+        elif self.pause_at_end:
+            self.pause()
         else:
             self.next_source()
 
