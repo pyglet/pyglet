@@ -2,6 +2,7 @@
 
 import time
 from collections import deque
+from contextlib import contextmanager
 
 import pyglet
 from pyglet.gl import GL_TEXTURE_2D
@@ -105,6 +106,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def __init__(self):
         """Initialize the Player with a MasterClock."""
+        self._context = pyglet.gl.current_context
         self._source = None
         self._playlists = deque()
         self._audio_player = None
@@ -125,6 +127,16 @@ class Player(pyglet.event.EventDispatcher):
     def __del__(self):
         """Release the Player resources."""
         self.delete()
+
+    @contextmanager
+    def context(self):
+        """ This context manager preserves the creator's context."""
+        previous_context = pyglet.gl.current_context
+        self._context.set_current()
+        try:
+            yield
+        finally:
+            previous_context.set_current()
 
     def queue(self, source):
         """
@@ -359,8 +371,9 @@ class Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self):
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_2D)
-        self._texture = self._texture.get_transform(flip_y=True)
+        with self.context():
+            self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_2D)
+            self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
         self._texture.anchor_y = 0
@@ -457,7 +470,8 @@ class Player(pyglet.event.EventDispatcher):
         if image is not None:
             if self._texture is None:
                 self._create_texture()
-            self._texture.blit_into(image, 0, 0, 0)
+            with self.context():
+                self._texture.blit_into(image, 0, 0, 0)
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
 
