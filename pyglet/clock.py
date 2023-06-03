@@ -67,11 +67,9 @@ from __future__ import annotations
 
 from typing import (
     Callable,
+    Optional,
     Union,
     Any,
-    Tuple,
-    List,
-    Dict,
     Deque
 )
 
