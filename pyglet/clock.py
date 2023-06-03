@@ -440,7 +440,7 @@ class Clock:
             if divs > 16:
                 return next_ts
 
-    def schedule(self, func: Callable, *args: Tuple, **kwargs: Dict) -> None:
+    def schedule(self, func: Callable, *args: Any, **kwargs: Any) -> None:
         """Schedule a function to be called every frame.
 
         The function should have a prototype that includes ``dt`` as the
