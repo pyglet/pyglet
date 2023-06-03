@@ -127,8 +127,7 @@ from typing import (
     Callable,
     Tuple,
     Any,
-    Optional,
-    BaseException
+    Optional
 )
 
 EVENT_HANDLED = True
