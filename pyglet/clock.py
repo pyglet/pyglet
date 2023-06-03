@@ -100,7 +100,7 @@ class _ScheduledIntervalItem:
         self.args = args
         self.kwargs = kwargs
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, other: Union[_ScheduledIntervalItem, float]) -> bool:
         try:
             return self.next_ts < other.next_ts
         except AttributeError:
