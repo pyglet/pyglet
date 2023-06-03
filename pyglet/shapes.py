@@ -280,7 +280,7 @@ class ShapeBase(ABC):
         return self._y
 
     @y.setter
-    def y(self, value: number) -> NOne:
+    def y(self, value: number) -> None:
         self._y = value
         self._update_translation()
 
