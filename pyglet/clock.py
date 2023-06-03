@@ -135,7 +135,7 @@ class Clock:
         self.last_ts = None
 
         # Used by self.get_frequency to show update frequency
-        self.times: _deque() = _deque()
+        self.times: Deque = _deque()
         self.cumulative_time = 0
         self.window_size = 60
 
