@@ -69,7 +69,8 @@ from typing import (
     Callable,
     Tuple,
     List,
-    Dict
+    Dict,
+    Deque
 )
 from typing_extensions import Self
 
