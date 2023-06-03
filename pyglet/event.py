@@ -467,7 +467,7 @@ class EventDispatcher:
         else:
             raise exception
 
-    def event(self, *args: Tuple) -> Optional[Callable]:
+    def event(self, *args) -> Optional[Callable]:
         """Function decorator for an event handler.
 
         Usage::
