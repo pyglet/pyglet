@@ -454,9 +454,9 @@ class Clock:
         :Parameters:
             `func` : Callable
                 The function to call each frame.
-            `args` : Tuple
+            `args` : Any
                 Passed into function as *args when func is called
-            `kwargs` : Dict
+            `kwargs` : Any
                 Passed into function as **kwargs when func is called
         """
         item = _ScheduledItem(func, args, kwargs)
