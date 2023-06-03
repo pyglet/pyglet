@@ -361,7 +361,7 @@ class Clock:
         return last_ts
 
     def _get_soft_next_ts(self, last_ts: float, interval: float) -> float:
-        """Attempts to return evenly scheduled functions
+        """Attempt to predict the delay needed to evenly schedule function calls
 
         :Parameters:
             `last_ts` : float
