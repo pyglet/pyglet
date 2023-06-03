@@ -40,13 +40,13 @@ class AllocatorException(Exception):
 class _Strip:
     __slots__ = 'x', 'y', 'max_height', 'y2'
 
-    def __init__(self, y: int, max_height: int):
+    def __init__(self, y: int, max_height: int) -> None:
         self.x = 0
         self.y = y
         self.max_height = max_height
         self.y2 = y
 
-    def add(self, width: int, height: int):
+    def add(self, width: int, height: int) -> Tuple[float, float]:
         assert width > 0 and height > 0
         assert height <= self.max_height
 
@@ -55,7 +55,7 @@ class _Strip:
         self.y2 = max(self.y + height, self.y2)
         return x, y
 
-    def compact(self):
+    def compact(self) -> None:
         self.max_height = self.y2 - self.y
 
 
@@ -71,7 +71,7 @@ class Allocator:
     """
     __slots__ = 'width', 'height', 'strips', 'used_area'
 
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int) -> None:
         """Create an `Allocator` of the given size.
 
         :Parameters:
@@ -145,7 +145,7 @@ class Allocator:
 class TextureAtlas:
     """Collection of images within a texture."""
 
-    def __init__(self, width: int = 2048, height: int = 2048):
+    def __init__(self, width: int = 2048, height: int = 2048) -> None:
         """Create a texture atlas of the given size.
 
         :Parameters:
@@ -162,7 +162,7 @@ class TextureAtlas:
         self.texture = pyglet.image.Texture.create(width, height)
         self.allocator = Allocator(width, height)
 
-    def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
+    def add(self, img: AbstractImage, border: int = 0) -> TextureRegion:
         """Add an image to the atlas.
 
         This method will fail if the given image cannot be transferred
@@ -194,7 +194,7 @@ class TextureBin:
     ones as necessary to accommodate images added to the bin.
     """
 
-    def __init__(self, texture_width: int = 2048, texture_height: int = 2048):
+    def __init__(self, texture_width: int = 2048, texture_height: int = 2048) -> None:
         """Create a texture bin for holding atlases of the given size.
 
         :Parameters:
@@ -212,7 +212,7 @@ class TextureBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
+    def add(self, img: AbstractImage, border: int = 0) -> TextureRegion:
         """Add an image into this texture bin.
 
         This method calls `TextureAtlas.add` for the first atlas that has room
@@ -252,14 +252,14 @@ class TextureArrayBin:
     ones as necessary as the depth is exceeded.
     """
 
-    def __init__(self, texture_width=2048, texture_height=2048, max_depth=None):
+    def __init__(self, texture_width: int=2048, texture_height: int=2048, max_depth: Optional[int]=None):
         max_texture_size = pyglet.image.get_max_texture_size()
         self.max_depth = max_depth or pyglet.image.get_max_array_texture_layers()
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.arrays = []
 
-    def add(self, img: 'AbstractImage') -> 'TextureArrayRegion':
+    def add(self, img: AbstractImage) -> TextureArrayRegion:
         """Add an image into this texture array bin.
 
         This method calls `TextureArray.add` for the first array that has room
