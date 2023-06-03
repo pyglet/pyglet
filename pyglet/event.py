@@ -127,7 +127,8 @@ from typing import (
     Callable,
     Tuple,
     Any,
-    Optional
+    Optional,
+    Generator
 )
 
 EVENT_HANDLED = True
@@ -182,7 +183,7 @@ class EventDispatcher:
         self._event_stack.insert(0, {})
         self.set_handlers(*args, **kwargs)
 
-    def _get_handlers(self, args: Any, kwargs: Any) -> Tuple[str, Callable]:
+    def _get_handlers(self, args: Any, kwargs: Any) -> Generator[Tuple, None, Tuple[str, Callable]]:
         """Implement handler matching on arguments for set_handlers and
         remove_handlers.
         """
