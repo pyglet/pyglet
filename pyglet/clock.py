@@ -178,7 +178,7 @@ class Clock:
         .. versionadded:: 1.2
 
         :Parameters:
-            dt : float
+            `dt` : float
                 The elapsed time since the last update to pass to each
                 scheduled function.  This is *not* used to calculate which
                 functions have elapsed.
@@ -377,10 +377,10 @@ class Clock:
             """Check if `ts` has already got an item scheduled nearby.
             
             :Parameters:
-            `ts` : float
-                The time stamp
-            `e` : float
-                How far it can be from other scheduled function calls
+                `ts` : float
+                    The time stamp
+                `e` : float
+                    How far it can be from other scheduled function calls
 
             :rtype: bool
             :return: Whether or not it is too close to other scheduled function calls
