@@ -573,6 +573,9 @@ class Player(pyglet.event.EventDispatcher):
         will start to play again until :meth:`next_source` is called or
         :attr:`.loop` is set to ``False``.
 
+        If the :attr:`.pause_at_end` attribute is set to ``True``,
+        the player pauses the source at the last frame.
+
         :event:
         """
         if _debug:
