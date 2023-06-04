@@ -6,16 +6,16 @@ human interface devices (HID). High-level classes are provided for working with
 game controllers, joysticks, and the Apple Remote, with named and normalized inputs.
 Basic support is also provided for Drawing Tablets, such as those made by Wacom.
 
-The game controller abstraction is suited for modern dual-analog stick controllers,
-such as are found on video game consoles. The joystick abstraction is more generalized,
-and suits devices with an arbitrary number of buttons, axis, and hats. This includes
-flight sticks, steering wheels, and just about anything else with buttons and axis
-inputs. For most types of games, the game controller abstraction is usually the easier
-choice.
+The game controller abstraction is most suitable for modern dual-analog stick controllers,
+such as those from video game consoles. The joystick abstraction is more generalized,
+and suits devices with an arbitrary number of buttons, absolute or relative axis, and hats.
+This includes devices like flight sticks, steering wheels, and just about anything else with
+digital and/or analog inputs. For most types of games, the game controller abstraction is
+recommended.
 
-For advanced use cases, it is also possible to access input devices directly. This
-can be useful if need direct accesss to the raw input values, without normalization.
-For most application and games, this is not required.
+For advanced use cases, it is also possible to access the low-level input devices directly.
+This can be useful if you need direct accesss to the raw inputs, without normalization.
+For most application and games this is not required.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
 devices, and a ControllerManager class to support hot-plugging of Controllers::

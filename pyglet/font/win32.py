@@ -236,7 +236,12 @@ class Win32Font(base.Font):
     @classmethod
     def add_font_data(cls, data):
         numfonts = c_uint32()
-        gdi32.AddFontMemResourceEx(data, len(data), 0, byref(numfonts))
+        _handle = gdi32.AddFontMemResourceEx(data, len(data), 0, byref(numfonts))
+
+        # None means a null handle was returned, ie something went wrong
+        if _handle is None:
+            raise ctypes.WinError()
+
 
 # --- GDI+ font rendering ---
 
