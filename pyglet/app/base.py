@@ -127,7 +127,10 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
-        if not interval:
+        if interval is None:
+            # User application will manage a custom _redraw_windows() method
+            pass
+        elif interval == 0:
             self.clock.schedule(self._redraw_windows)
         else:
             self.clock.schedule_interval(self._redraw_windows, interval)
