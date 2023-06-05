@@ -488,7 +488,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, position):
         self._position = position
-        self._position_setter(position)
+        self._vertex_list.position[:] = position
 
     @property
     def x(self):
@@ -503,7 +503,7 @@ class Sprite(event.EventDispatcher):
         _, y, z = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        self._vertex_list.position[:] = position
 
     @property
     def y(self):
@@ -518,7 +518,7 @@ class Sprite(event.EventDispatcher):
         x, _, z = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        self._vertex_list.position[:] = position
 
     @property
     def z(self):
@@ -533,7 +533,7 @@ class Sprite(event.EventDispatcher):
         x, y, _ = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        self._vertex_list.position[:] = position
 
     @property
     def rotation(self):
