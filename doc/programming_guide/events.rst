@@ -1,3 +1,5 @@
+.. _guide_events:
+
 Dispatching Events
 ==================
 
