@@ -537,7 +537,7 @@ attribute has been set to ``True``), or move to the next queued source immediate
 When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
 event is dispached, and playback stops until another source is queued.
 
-For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop`attribute
+For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
 at any time, but be aware that unless sufficient time is given for the future
 data to be decoded and buffered there may be a stutter or gap in playback.
 If set well in advance of the end of the source (say, several seconds), there
