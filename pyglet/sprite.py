@@ -546,6 +546,14 @@ class Sprite(event.EventDispatcher):
         self._vertex_list.rotation[:] = (self._rotation,) * 4
 
     @property
+    def aspect_ratio(self) -> float:
+        """The aspect ratio of the sprite (width/height). Read-Only.
+
+        :type: float
+        """
+        return self.width / self.height
+
+    @property
     def scale(self):
         """Base Scaling factor.
 
@@ -667,6 +675,15 @@ class Sprite(event.EventDispatcher):
     def width(self, width):
         self.scale_x = width / (self._texture.width * abs(self._scale))
 
+    def fit_width(self, width: float) -> None:
+        """Scales the image according to its width, preserving its ratio.
+
+        :type: float
+        """
+        ratio = self.aspect_ratio
+        self.width = width
+        self.height = width / ratio
+
     @property
     def height(self):
         """Scaled height of the sprite.
@@ -681,6 +698,15 @@ class Sprite(event.EventDispatcher):
     @height.setter
     def height(self, height):
         self.scale_y = height / (self._texture.height * abs(self._scale))
+
+    def fit_height(self, height: float) -> None:
+        """Scales the image according to its height, preserving its ratio.
+
+        :type: float
+        """
+        ratio = self.aspect_ratio
+        self.height = height
+        self.width = height * ratio
 
     @property
     def opacity(self):
