@@ -85,6 +85,4 @@ The following shapes have above features:
 .. note:: pyglet now treats Star as a circle with a radius of
           ``(outer_radius + inner_radius) / 2``.
 
-Shapes that do not support this feature will always return ``False``.
-
 It's also available for anchored and rotated shapes.

@@ -216,7 +216,7 @@ class ShapeBase(ABC):
 
     def __contains__(self, point):
         """Test whether a point is inside a shape."""
-        return False
+        raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
     def _update_color(self):
         """Send the new colors for each vertex to the GPU.
