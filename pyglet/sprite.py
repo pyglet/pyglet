@@ -708,6 +708,16 @@ class Sprite(event.EventDispatcher):
         self.height = height
         self.width = height * ratio
 
+    def fit(self, width, height):
+        """Scales the image to the target dimensions, preserving its ratio.
+
+        :type: float
+        """
+        if width / height < self.aspect_ratio:
+            self.fit_width(width)
+        else:
+            self.fit_height(height)
+
     @property
     def opacity(self):
         """Blend opacity.
