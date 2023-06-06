@@ -72,7 +72,9 @@ dispatcher and adding the event handler as a method::
 
     class MyWindow(pyglet.window.Window):
         def on_resize(self, width, height):
-            pass
+            super().on_resize(width, height)    # updates the GL viewport
+                                                # to cover the entire window
+            ...
 
 Stacking event handlers
 -----------------------
