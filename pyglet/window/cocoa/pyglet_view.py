@@ -140,10 +140,6 @@ class PygletView_Implementation:
         self.addTrackingArea_(self._tracking_area)
 
     @PygletView.method('B')
-    def acceptsFirstResponder (self):
-        return True
-
-    @PygletView.method('B')
     def canBecomeKeyView(self):
         return True
 
