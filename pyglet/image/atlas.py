@@ -46,7 +46,7 @@ class _Strip:
         self.max_height = max_height
         self.y2 = y
 
-    def add(self, width: int, height: int) -> Tuple[float, float]:
+    def add(self, width: int, height: int) -> Tuple[int, int]:
         assert width > 0 and height > 0
         assert height <= self.max_height
 
