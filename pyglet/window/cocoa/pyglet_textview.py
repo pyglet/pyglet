@@ -40,8 +40,9 @@ class PygletTextView_Implementation:
         text = cfstring_to_string(text)
         self.setString_(self.empty_string)
         # Don't send control characters (tab, newline) as on_text events.
-        if unicodedata.category(text[0]) != 'Cc':
-            self._window.dispatch_event("on_text", text)
+        if text:
+            if unicodedata.category(text[0]) != 'Cc':
+                self._window.dispatch_event("on_text", text)
 
     @PygletTextView.method('v@')
     def insertNewline_(self, sender):
