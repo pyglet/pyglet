@@ -59,6 +59,7 @@ class MediaThread:
         try:
             self._thread.join()
         except RuntimeError:
+            # Ignore on unclean shutdown
             pass
 
     def sleep(self, timeout):
