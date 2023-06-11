@@ -5,7 +5,7 @@ from math import cos, sin, radians
 import pyglet
 
 from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
-from pyglet.math import Mat4, Vec3, clamp
+from pyglet.math import Vec2, Vec3, Mat4, clamp
 
 
 window = pyglet.window.Window(width=720, height=480, resizable=True)
@@ -23,24 +23,26 @@ class FPSCamera:
 
         # TODO: calculate these values from the passed Vectors
         self.pitch = 0
-        self.yaw = 2705
+        self.yaw = 270
         self.roll = 0
 
-        self.input_map = {
-            pyglet.window.key.W: "forward",
-            pyglet.window.key.S: "backward",
-            pyglet.window.key.A: "left",
-            pyglet.window.key.D: "right",
-        }
+        self.input_map = {pyglet.window.key.W: "forward",
+                          pyglet.window.key.S: "backward",
+                          pyglet.window.key.A: "left",
+                          pyglet.window.key.D: "right"}
 
-        self.forward = False
-        self.backward = False
-        self.left = False
-        self.right = False
+        self.forward = 0
+        self.backward = 0
+        self.left = 0
+        self.right = 0
+
+        self.mouse_look = Vec2()
+        self.controller_look = Vec2()
 
         self._window = weakref.proxy(window)
         self._window.view = Mat4.look_at(position, target, up)
         self._window.push_handlers(self)
+        self._window.set_exclusive_mouse(True)
 
     def on_resize(self, width, height):
         self._window.viewport = (0, 0, *window.get_framebuffer_size())
@@ -48,7 +50,20 @@ class FPSCamera:
         return pyglet.event.EVENT_HANDLED
 
     def on_refresh(self, dt):
+        # Look
+
+        if abs(self.controller_look) > 0.1:
+            self.yaw = self.yaw + self.controller_look.x
+            self.pitch = clamp(self.pitch + self.controller_look.y, -89.0, 89.0)
+
+
+        self.target = Vec3(cos(radians(self.yaw)) * cos(radians(self.pitch)),
+                           sin(radians(self.pitch)),
+                           sin(radians(self.yaw)) * cos(radians(self.pitch))).normalize()
+
+
         # Movement
+
         speed = self.speed * dt
         if self.forward:
             self.position += (self.target * speed)
@@ -59,58 +74,41 @@ class FPSCamera:
         if self.right:
             self.position += (self.target.cross(self.up).normalize() * speed)
 
-        # Look
-
-        yaw = self.yaw * 0.1
-        pitch = self.pitch
-        self.target = Vec3(cos(radians(yaw)) * cos(radians(pitch)),
-                           sin(radians(pitch)),
-                           sin(radians(yaw)) * cos(radians(pitch))).normalize()
 
         self._window.view = Mat4.look_at(self.position, self.position + self.target, self.up)
 
     # Mouse input
 
     def on_mouse_motion(self, x, y, dx, dy):
-        pass
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, mod):
-        self.yaw += dx
-        self.pitch = clamp(self.pitch + dy, -89.0, 89.0)
-        # self.pitch += dy
+        self.yaw += dx * 0.1
+        self.pitch = clamp(self.pitch + dy * 0.1, -89.0, 89.0)
 
     # Keyboard input
 
     def on_key_press(self, symbol, mod):
         if symbol in self.input_map:
-            setattr(self, self.input_map[symbol], True)
+            setattr(self, self.input_map[symbol], 1.0)
 
     def on_key_release(self, symbol, mod):
         if symbol in self.input_map:
-            setattr(self, self.input_map[symbol], False)
+            setattr(self, self.input_map[symbol], 0.0)
+
+    # Controller input
+
+    def on_stick_motion(self, _controller, stick, xvalue, yvalue):
+        if stick == "leftstick":
+            # TODO: movement
+            pass
+
+        elif stick == "rightstick":
+            self.controller_look[:] = xvalue, yvalue
+
 
 
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
-
-
-def animate(dt):
-    global time
-    time += dt
-
-    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
-    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
-    rot_z = Mat4.from_rotation(time/3, Vec3(0, 0, 1))
-    trans = Mat4.from_translation(Vec3(1.25, 0, 2))
-    model_logo.matrix = rot_x @ rot_y @ rot_z @ trans
-
-    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
-    rot_y = Mat4.from_rotation(time/3, Vec3(0, 1, 0))
-    rot_z = Mat4.from_rotation(time/2, Vec3(0, 0, 1))
-    trans = Mat4.from_translation(Vec3(-1.75, 0, 0))
-    model_box.matrix = rot_x @ rot_y @ rot_z @ trans
 
 
 if __name__ == "__main__":
@@ -124,5 +122,12 @@ if __name__ == "__main__":
     # window.view = Mat4.look_at(position=Vec3(0, 0, 5), target=Vec3(0, 0, 0), up=Vec3(0, 1, 0))
     camera = FPSCamera(window, position=Vec3(0, 0, 5))
 
-    pyglet.clock.schedule_interval(animate, 1 / 60)
+    if controllers := pyglet.input.get_controllers():
+        controller = controllers[0]
+        controller.open()
+        controller.push_handlers(camera)
+
+    model_logo.matrix = Mat4.from_translation(Vec3(1.75, 0, 0))
+    model_box.matrix = Mat4.from_translation(Vec3(-1.75, 0, 0))
+
     pyglet.app.run()
