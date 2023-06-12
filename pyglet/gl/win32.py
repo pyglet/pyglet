@@ -1,5 +1,5 @@
-from pyglet.canvas.win32 import Win32Canvas
-from .base import Config, CanvasConfig, Context
+from pyglet.display.win32 import Win32Canvas
+from .base import Config, DisplayConfig, Context
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -66,7 +66,7 @@ class Win32Config(Config):
 
         pf = _gdi32.ChoosePixelFormat(canvas.hdc, byref(pfd))
         if pf:
-            return [Win32CanvasConfig(canvas, pf, self)]
+            return [Win32DisplayConfig(canvas, pf, self)]
         else:
             return []                    
 
@@ -82,7 +82,7 @@ class Win32Config(Config):
         # Construct array of attributes
         attrs = []
         for name, value in self.get_gl_attributes():
-            attr = Win32CanvasConfigARB.attribute_ids.get(name, None)
+            attr = Win32DisplayConfigARB.attribute_ids.get(name, None)
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
         attrs.append(0)        
@@ -92,13 +92,13 @@ class Win32Config(Config):
         nformats = c_uint(16)
         wglext_arb.wglChoosePixelFormatARB(canvas.hdc, attrs, None, nformats, pformats, nformats)
 
-        formats = [Win32CanvasConfigARB(canvas, pf, self) for pf in pformats[:nformats.value]]
+        formats = [Win32DisplayConfigARB(canvas, pf, self) for pf in pformats[:nformats.value]]
         return formats
 
 
-class Win32CanvasConfig(CanvasConfig):
+class Win32DisplayConfig(DisplayConfig):
     def __init__(self, canvas, pf, config):
-        super(Win32CanvasConfig, self).__init__(canvas, config)
+        super(Win32DisplayConfig, self).__init__(canvas, config)
         self._pf = pf
         self._pfd = PIXELFORMATDESCRIPTOR()
 
@@ -132,7 +132,7 @@ class Win32CanvasConfig(CanvasConfig):
         _gdi32.SetPixelFormat(canvas.hdc, self._pf, byref(self._pfd))
 
 
-class Win32CanvasConfigARB(CanvasConfig):
+class Win32DisplayConfigARB(DisplayConfig):
     attribute_ids = {
         'double_buffer': wglext_arb.WGL_DOUBLE_BUFFER_ARB,
         'stereo': wglext_arb.WGL_STEREO_ARB,
@@ -153,7 +153,7 @@ class Win32CanvasConfigARB(CanvasConfig):
     }
 
     def __init__(self, canvas, pf, config):
-        super(Win32CanvasConfigARB, self).__init__(canvas, config)
+        super(Win32DisplayConfigARB, self).__init__(canvas, config)
         self._pf = pf
         
         names = list(self.attribute_ids.keys())

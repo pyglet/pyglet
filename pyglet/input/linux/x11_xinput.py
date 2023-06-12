@@ -307,7 +307,7 @@ def _check_extension(display):
 
 def get_devices(display=None):
     if display is None:
-        display = pyglet.canvas.get_display()
+        display = pyglet.display.get_display()
 
     if not _have_xinput or not _check_extension(display):
         return []

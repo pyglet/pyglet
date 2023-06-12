@@ -64,7 +64,7 @@ def dump_window():
         print(f"Insufficient OpenGL version: {gl_info.get_version_string()}")
         return
     import pyglet.window
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):

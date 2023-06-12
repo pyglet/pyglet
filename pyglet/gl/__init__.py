@@ -50,7 +50,7 @@ from pyglet.gl import gl_info
 from pyglet.gl.gl_compat import GL_LUMINANCE, GL_INTENSITY
 
 from pyglet import compat_platform
-from .base import ObjectSpace, CanvasConfig, Context
+from .base import ObjectSpace, DisplayConfig, Context
 
 import sys as _sys
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run

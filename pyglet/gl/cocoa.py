@@ -1,11 +1,11 @@
 import platform
 from ctypes import c_uint32, c_int, byref
 
-from pyglet.gl.base import Config, CanvasConfig, Context
+from pyglet.gl.base import Config, DisplayConfig, Context
 
 from pyglet.gl import ContextException
 
-from pyglet.canvas.cocoa import CocoaCanvas
+from pyglet.display.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin import cocoapy, quartz
 
@@ -187,13 +187,13 @@ class CocoaConfig(Config):
         if pixel_format is None:
             return []
         else:
-            return [CocoaCanvasConfig(canvas, self, pixel_format)]
+            return [CocoaDisplayConfig(canvas, self, pixel_format)]
 
 
-class CocoaCanvasConfig(CanvasConfig):
+class CocoaDisplayConfig(DisplayConfig):
 
     def __init__(self, canvas, config, pixel_format):
-        super(CocoaCanvasConfig, self).__init__(canvas, config)
+        super(CocoaDisplayConfig, self).__init__(canvas, config)
         self._pixel_format = pixel_format
 
         # Query values for the attributes of the pixel format, and then set the

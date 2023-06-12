@@ -6,7 +6,7 @@ from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 from pyglet.libs.egl import egl
 
 
-from pyglet.canvas.headless import HeadlessCanvas
+from pyglet.display.headless import HeadlessCanvas
 
 # from pyglet.window import key
 # from pyglet.window import mouse

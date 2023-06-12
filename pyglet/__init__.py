@@ -334,8 +334,8 @@ class _ModuleProxy:
 # type checking or code inspection.
 if TYPE_CHECKING:
     from . import app
-    from . import canvas
     from . import clock
+    from . import display
     from . import event
     from . import font
     from . import gl
@@ -354,8 +354,8 @@ if TYPE_CHECKING:
     from . import window
 else:
     app = _ModuleProxy('app')
-    canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
+    display = _ModuleProxy('display')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')

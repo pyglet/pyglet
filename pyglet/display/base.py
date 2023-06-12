@@ -1,28 +1,19 @@
 from pyglet import gl
 from pyglet import app
 from pyglet import window
-from pyglet import canvas
+from pyglet import display
 
 
 class Display:
-    """A display device supporting one or more screens.
-    
-    .. versionadded:: 1.2
-    """
+    """A display device supporting one or more screens."""
 
-    name = None
-    """Name of this display, if applicable.
+    name: str = ""
+    """Name of this display, if applicable."""
 
-    :type: str
-    """
+    x_screen: int = None
+    """The X11 screen number of this display, if applicable."""
 
-    x_screen = None
-    """The X11 screen number of this display, if applicable.
-
-    :type: int
-    """
-
-    def __init__(self, name=None, x_screen=None):
+    def __init__(self, name: str = "", x_screen: int = None):
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the
@@ -34,19 +25,13 @@ class Display:
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
-        screen to be accessed through a single pyglet`~pyglet.canvas.Display`
+        screen to be accessed through a single pyglet`~pyglet.display.Display`
 
         On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
 
-        :Parameters:
-            name : str
-                The name of the display to connect to.
-            x_screen : int
-                The X11 screen number to use.
-
         """
-        canvas._displays.add(self)
+        display._displays.add(self)
 
     def get_screens(self):
         """Get the available screens.
@@ -81,7 +66,7 @@ class Display:
 
         :rtype: sequence of :class:`~pyglet.window.Window`
         """
-        return [window for window in app.windows if window.display is self]
+        return [win for win in app.windows if window.display is self]
 
 
 class Screen:
@@ -106,7 +91,7 @@ class Screen:
         """
         
         :parameters:
-            `display` : `~pyglet.canvas.Display`
+            `display` : `~pyglet.display.Display`
                 :attr:`display`
             `x` : int
                 Left edge :attr:`x`

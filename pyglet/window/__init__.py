@@ -54,7 +54,7 @@ set by the user in their operating system settings).  You can retrieve a list
 of attached screens and select one manually if you prefer.  This is useful for
 opening a fullscreen window on each screen::
 
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     screens = display.get_screens()
     windows = []
     for screen in screens:
@@ -510,7 +510,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self._event_queue = []
 
         if not display:
-            display = pyglet.canvas.get_display()
+            display = pyglet.display.get_display()
 
         if not screen:
             screen = display.get_default_screen()
@@ -537,7 +537,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if not context:
             context = config.create_context(gl.current_context)
 
-        # Set these in reverse order to above, to ensure we get user preference
+        # Set these in reverse order as above, to ensure we get user preference
         self._context = context
         self._config = self._context.config
 

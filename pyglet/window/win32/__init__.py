@@ -13,7 +13,7 @@ from pyglet.window import DefaultMouseCursor, _PlatformEventHandler, _ViewEventH
 from pyglet.event import EventDispatcher
 from pyglet.window import key, mouse
 
-from pyglet.canvas.win32 import Win32Canvas
+from pyglet.display.win32 import Win32Canvas
 
 from pyglet.libs.win32 import _user32, _kernel32, _gdi32, _dwmapi, _shell32
 from pyglet.libs.win32.constants import *
