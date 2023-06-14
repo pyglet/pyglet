@@ -23,7 +23,7 @@ the application's responsibility to keep track of the regions returned by the
 
 .. versionadded:: 1.1
 """
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, Optional
 
 import pyglet
 
@@ -162,7 +162,7 @@ class TextureAtlas:
         self.texture = pyglet.image.Texture.create(width, height)
         self.allocator = Allocator(width, height)
 
-    def add(self, img: AbstractImage, border: int = 0) -> TextureRegion:
+    def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
         """Add an image to the atlas.
 
         This method will fail if the given image cannot be transferred
@@ -212,7 +212,7 @@ class TextureBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img: AbstractImage, border: int = 0) -> TextureRegion:
+    def add(self, img: 'AbstractImage', border: int = 0) -> 'TextureRegion':
         """Add an image into this texture bin.
 
         This method calls `TextureAtlas.add` for the first atlas that has room
@@ -259,7 +259,7 @@ class TextureArrayBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.arrays = []
 
-    def add(self, img: AbstractImage) -> TextureArrayRegion:
+    def add(self, img: 'AbstractImage') -> 'TextureArrayRegion':
         """Add an image into this texture array bin.
 
         This method calls `TextureArray.add` for the first array that has room
