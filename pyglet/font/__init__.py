@@ -100,7 +100,8 @@ def create_font(name: str, mappings: Dict[str, pyglet.image.ImageData], default_
     font.stretch = stretch
     font.dpi = dpi
 
-    _user_fonts.append(name)
+    if name not in _user_fonts:
+        _user_fonts.append(name)
 
     # Cache font in weak-ref dictionary to avoid reloading while still in use
     font_cache[descriptor] = font
