@@ -8,6 +8,8 @@ Convenience methods are provided for positioning, changing color
 and opacity, and rotation (where applicable). To create more
 complex shapes than what is provided here, the lower level
 graphics API is more appropriate.
+You can also use the ``in`` operator to check whether a point is
+inside a shape.
 See the :ref:`guide_graphics` for more details.
 
 A simple example of drawing shapes::
@@ -53,6 +55,7 @@ from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
+from pyglet.math import Vec2
 
 
 vertex_source = """#version 150 core
@@ -107,6 +110,30 @@ def get_default_shader():
         default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
         return default_shader_program
+
+
+def _rotate_point(center, point, angle):
+    prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
+    now_angle = prev_angle + angle
+    r = math.dist(point, center)
+    return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
+
+
+def _sat(vertices, point):
+    # Separating Axis Theorem
+    # return True if point is in the shape
+    poly = vertices + [vertices[0]]
+    for i in range(len(poly) - 1):
+        a, b = poly[i], poly[i + 1]
+        base = Vec2(a[1] - b[1], b[0] - a[0])
+        projections = []
+        for x, y in poly:
+            vec = Vec2(x, y)
+            projections.append(base.dot(vec) / abs(base))
+        point_proj = base.dot(Vec2(*point)) / abs(base)
+        if point_proj < min(projections) or point_proj > max(projections):
+            return False
+    return True
 
 
 class _ShapeGroup(Group):
@@ -186,6 +213,10 @@ class ShapeBase(ABC):
     def __del__(self):
         if self._vertex_list is not None:
             self._vertex_list.delete()
+
+    def __contains__(self, point):
+        """Test whether a point is inside a shape."""
+        raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
     def _update_color(self):
         """Send the new colors for each vertex to the GPU.
@@ -719,6 +750,10 @@ class Circle(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._segments*3, self._draw_mode, self._batch, self._group,
@@ -761,9 +796,7 @@ class Circle(ShapeBase):
 
 
 class Ellipse(ShapeBase):
-    _draw_mode = GL_LINES
-
-    def __init__(self, x, y, a, b, color=(255, 255, 255, 255),
+    def __init__(self, x, y, a, b, segments=None, color=(255, 255, 255, 255),
                  batch=None, group=None):
         """Create an ellipse.
 
@@ -798,8 +831,8 @@ class Ellipse(ShapeBase):
         self._rgba = color_r, color_g, color_b, color_a[0] if color_a else 255
 
         self._rotation = 0
-        self._segments = int(max(a, b) / 1.25)
-        self._num_verts = self._segments * 2
+        self._segments = segments or int(max(a, b) / 1.25)
+        self._num_verts = self._segments * 3
 
         program = get_default_shader()
         self._batch = batch or Batch()
@@ -808,15 +841,24 @@ class Ellipse(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        # Since directly testing whether a point is inside an ellipse is more
+        # complicated, it is more convenient to transform it into a circle.
+        point = (self._b / self._a * point[0], point[1])
+        shape_center = (self._b / self._a * (self._x - self._anchor_x), self._y - self._anchor_y)
+        return math.dist(shape_center, point) < self._b
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
-            self._num_verts, self._draw_mode, self._batch, self._group,
+            self._segments*3, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._num_verts * 4
+            vertices = (0,) * self._num_verts * 6
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -824,13 +866,13 @@ class Ellipse(ShapeBase):
 
             # Calculate the points of the ellipse by formula:
             points = [(x + self._a * math.cos(i * tau_segs),
-                       y + self._b * math.sin(i * tau_segs)) for i in range(self._segments + 1)]
+                       y + self._b * math.sin(i * tau_segs)) for i in range(self._segments)]
 
-            # Create a list of lines from the points:
+            # Create a list of triangles from the points:
             vertices = []
-            for i in range(len(points) - 1):
-                line_points = *points[i], *points[i + 1]
-                vertices.extend(line_points)
+            for i, point in enumerate(points):
+                triangle = x, y, *points[i - 1], *point
+                vertices.extend(triangle)
 
         self._vertex_list.position[:] = vertices
 
@@ -929,6 +971,15 @@ class Sector(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        angle = math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x)
+        if angle < 0: angle += 2 * math.pi
+        if self._start_angle < angle < self._start_angle + self._angle:
+            return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
+        return False
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1061,6 +1112,23 @@ class Line(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        vec_AB = Vec2(self._x2 - self._x, self._y2 - self._y)
+        vec_BA = Vec2(self._x - self._x2, self._y - self._y2)
+        vec_AP = Vec2(point[0] - self._x - self._anchor_x, point[1] - self._y + self._anchor_y)
+        vec_BP = Vec2(point[0] - self._x2 - self._anchor_x, point[1] - self._y2 + self._anchor_y)
+        if vec_AB.dot(vec_AP) * vec_BA.dot(vec_BP) < 0:
+            return False
+
+        a, b = point[0] + self._anchor_x, point[1] - self._anchor_y
+        x1, y1, x2, y2 = self._x, self._y, self._x2, self._y2
+        # The following is the expansion of the determinant of a 3x3 matrix
+        # used to calculate the area of a triangle.
+        double_area = abs(a*y1+b*x2+x1*y2-x2*y1-a*y2-b*x1)
+        h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
+        return h < self._width / 2
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
@@ -1159,6 +1227,12 @@ class Rectangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        x, y = self._x - self._anchor_x, self._y - self._anchor_y
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1293,6 +1367,12 @@ class BorderedRectangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        x, y = self._x - self._anchor_x, self._y - self._anchor_y
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
@@ -1473,6 +1553,10 @@ class Triangle(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
@@ -1593,6 +1677,13 @@ class Star(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        center = (self._x - self._anchor_x, self._y - self._anchor_y)
+        radius = (self._outer_radius + self._inner_radius) / 2
+        return math.dist(center, point) < radius
+
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
@@ -1703,6 +1794,11 @@ class Polygon(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
+
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
+        return _sat(self._coordinates, point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
