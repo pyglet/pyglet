@@ -1,37 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
 import weakref
 from collections import namedtuple, defaultdict
 
@@ -76,6 +42,8 @@ class XAudio2Driver:
 
         self._players = []  # Only used for resetting/restoring xaudio2. Store players to callback.
 
+        self._create_xa2()
+
         if self.restart_on_error:
             audio_devices = get_audio_device_manager()
             if audio_devices:
@@ -86,8 +54,6 @@ class XAudio2Driver:
                     raise ImportError("No default audio device found, can not create driver.")
 
                 pyglet.clock.schedule_interval_soft(self._check_state, 0.5)
-
-        self._create_xa2()
 
     def _check_state(self, dt):
         """Hack/workaround, you cannot shutdown/create XA2 within a COM callback, set a schedule to check state."""
@@ -115,7 +81,11 @@ class XAudio2Driver:
 
     def _create_xa2(self, device_id=None):
         self._xaudio2 = lib.IXAudio2()
-        lib.XAudio2Create(ctypes.byref(self._xaudio2), 0, self.processor)
+
+        try:
+            lib.XAudio2Create(ctypes.byref(self._xaudio2), 0, self.processor)
+        except OSError:
+            raise ImportError("XAudio2 driver could not be initialized.")
 
         if _debug:
             # Debug messages are found in Windows Event Viewer, you must enable event logging:
@@ -283,7 +253,7 @@ class XAudio2Driver:
         """ Get a source voice from the pool. Source voice creation can be slow to create/destroy. So pooling is
             recommended. We pool based on audio channels as channels must be the same as well as frequency.
             Source voice handles all of the audio playing and state for a single source."""
-        voice_key = (source.audio_format.channels, source.audio_format.sample_size)
+        voice_key = (source.audio_format.channels, source.audio_format.sample_size, source.audio_format.sample_rate)
         if len(self._voice_pool[voice_key]) > 0:
             source_voice = self._voice_pool[voice_key].pop(0)
             source_voice.acquired(player)
@@ -319,7 +289,7 @@ class XAudio2Driver:
     def return_voice(self, voice):
         """Reset a voice and return it to the pool."""
         voice.reset()
-        voice_key = (voice.audio_format.channels, voice.audio_format.sample_size)
+        voice_key = (voice.audio_format.channels, voice.audio_format.sample_size, voice.audio_format.sample_rate)
         self._voice_pool[voice_key].append(voice)
 
         if voice.is_emitter:

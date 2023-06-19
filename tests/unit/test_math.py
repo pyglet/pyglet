@@ -1,6 +1,11 @@
 import pytest
 
-from pyglet.math import Mat4
+from pyglet.math import Mat3, Mat4, Vec3
+
+
+@pytest.fixture()
+def mat3():
+    return Mat3()
 
 
 @pytest.fixture()
@@ -14,6 +19,7 @@ def mat4():
 
 def inverse(matrix):
     """The inverse of a Matrix.
+
     Using Gauss-Jordan elimination, the matrix supplied is transformed into
     the identity matrix using a sequence of elementary row operations (below).
     The same sequence of operations is applied to the identity matrix,
@@ -34,8 +40,8 @@ def inverse(matrix):
         if matrix[4*c + c] == 0:
             for r in range(c + 1, 4):
                 if matrix[4*r + c] != 0:
-                    matrix = row_swap(matrix, c, r)
-                    i = row_swap(i, c, r)
+                    matrix = _row_swap(matrix, c, r)
+                    i = _row_swap(i, c, r)
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
@@ -44,19 +50,19 @@ def inverse(matrix):
                 if r_piv != 0:
                     piv = matrix[4*c + c]
                     scalar = r_piv / piv
-                    matrix = row_mul(matrix, c, scalar)
+                    matrix = _row_mul(matrix, c, scalar)
                     matrix = row_sub(matrix, c, r)
-                    i = row_mul(i, c, scalar)
+                    i = _row_mul(i, c, scalar)
                     i = row_sub(i, c, r)
 
         # Put matrix in reduced row-echelon form.
         piv = matrix[4*c + c]
-        matrix = row_mul(matrix, c, 1/piv)
-        i = row_mul(i, c, 1/piv)
+        matrix = _row_mul(matrix, c, 1 / piv)
+        i = _row_mul(i, c, 1 / piv)
     return i
 
 
-def row_swap(matrix, r1, r2):
+def _row_swap(matrix, r1, r2):
     lo = min(r1, r2)
     hi = max(r1, r2)
     values = (matrix[:lo*4]
@@ -67,7 +73,7 @@ def row_swap(matrix, r1, r2):
     return Mat4(values)
 
 
-def row_mul(matrix, r, x):
+def _row_mul(matrix, r, x):
     values = (matrix[:r*4]
               + tuple(v * x for v in matrix[r*4:r*4 + 4])
               + matrix[r*4 + 4:])
@@ -84,11 +90,24 @@ def row_sub(matrix, r1, r2):
     return matrix.Mat4(values)
 
 
-################
-# test functions
-################
+############
+# test cases
+############
+def test_mat3_creation(mat3):
+    assert len(mat3) == 9
+    assert mat3 == (1, 0, 0,
+                    0, 1, 0,
+                    0, 0, 1)
 
-def test_creation(mat4):
+
+def test_mat3_creation_from_list(mat3):
+    mat3_from_list = Mat3([1, 0, 0,
+                           0, 1, 0,
+                           0, 0, 1])
+    assert mat3_from_list == mat3
+
+
+def test_mat4_creation(mat4):
     assert len(mat4) == 16
     assert mat4 == (1, 0, 0, 0,
                     0, 1, 0, 0,
@@ -96,7 +115,7 @@ def test_creation(mat4):
                     0, 0, 0, 1)
 
 
-def test_creation_from_list(mat4):
+def test_mat4_creation_from_list(mat4):
     mat4_from_list = Mat4([1, 0, 0, 0,
                            0, 1, 0, 0,
                            0, 0, 1, 0,
@@ -104,12 +123,19 @@ def test_creation_from_list(mat4):
     assert mat4_from_list == mat4
 
 
-def test_matrix_inversion(mat4):
+def test_mat4_inversion(mat4):
     # Confirm `__invert__` method matches long hand utility method:
     inverse_1 = inverse(mat4)
     inverse_2 = ~mat4
     assert round(inverse_1, 9) == round(inverse_2, 9)
-    # Confirm that Matrix @ it's inverse == identity Matrix:
+    # Confirm that Matrix @ its inverse == identity Matrix:
     assert round(mat4 @ inverse_1, 9) == Mat4()
     assert round(mat4 @ inverse_2, 9) == Mat4()
 
+
+def test_mat3_associative_mul():
+    swap_xy = Mat3((0,1,0, 1,0,0, 0,0,1))
+    scale_x = Mat3((2,0,0, 0,1,0, 0,0,1))
+    v1 = (swap_xy @ scale_x) @ Vec3(0,1,0)
+    v2 = swap_xy @ (scale_x @ Vec3(0,1,0))
+    assert v1 == v2 and abs(v1) != 0

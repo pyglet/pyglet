@@ -1,37 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
 import sys
 
 # Most of this file is win32con.py from Python for Windows Extensions:
@@ -1468,6 +1434,9 @@ WM_RBUTTONDBLCLK = 518
 WM_MBUTTONDOWN = 519
 WM_MBUTTONUP = 520
 WM_MBUTTONDBLCLK = 521
+WM_XBUTTONDOWN = 523
+WM_XBUTTONUP = 524
+WM_XBUTTONBDLCLK = 525
 WM_MOUSEWHEEL = 522
 WM_MOUSELAST = 522
 WHEEL_DELTA = 120     # Value for rolling one detent
@@ -1626,6 +1595,8 @@ MK_RBUTTON = 2
 MK_SHIFT = 4
 MK_CONTROL = 8
 MK_MBUTTON = 16
+MK_XBUTTON1 = 32
+MK_XBUTTON2 = 64
 TME_HOVER = 1
 TME_LEAVE = 2
 TME_QUERY = 1073741824
@@ -5074,6 +5045,7 @@ COINIT_APARTMENTTHREADED = 0x2
 COINIT_MULTITHREADED = 0x0
 COINIT_DISABLE_OLE1DDE = 0x4
 COINIT_SPEED_OVER_MEMORY = 0x8
+RPC_E_CHANGED_MODE = -2147417850
 
 MF_ACCESSMODE_READ = 1
 MF_ACCESSMODE_WRITE = 2
@@ -5089,5 +5061,24 @@ MF_FILEFLAGS_NONE = 0
 MF_FILEFLAGS_NOBUFFERING = 1
 
 CLSCTX_INPROC_SERVER = 0x1
+
+# From Dwmapi.h
+DWM_BB_ENABLE = 0x00000001
+DWM_BB_BLURREGION = 0x00000002
+DWM_BB_TRANSITIONONMAXIMIZED = 0x00000004
+
+STREAM_SEEK_SET = 0
+STREAM_SEEK_CUR = 1
+STREAM_SEEK_END = 2
+
+LOCALE_NAME_MAX_LENGTH = 85
+
+DBT_DEVICEARRIVAL = 0x8000
+DBT_DEVICEREMOVECOMPLETE = 0x8004
+
+DBT_DEVTYP_DEVICEINTERFACE = 5
+
+DEVICE_NOTIFY_WINDOW_HANDLE = 0
+DEVICE_NOTIFY_SERVICE_HANDLE = 1
 
 USER_DEFAULT_SCREEN_DPI = 96

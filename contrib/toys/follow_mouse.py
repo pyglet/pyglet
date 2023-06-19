@@ -1,5 +1,4 @@
-'''
-Code by Richard Jones, released into the public domain.
+"""Code by Richard Jones, released into the public domain.
 
 Inspired by http://screamyguy.net/lines/index.htm
 
@@ -10,7 +9,7 @@ the next line segment.
 
 Note: when working with a single buffer it is always a good idea to
 glFlush() when you've finished your rendering.
-'''
+"""
 
 
 import sys
@@ -23,11 +22,16 @@ from pyglet.gl import *
 config = Config(double_buffer=False)
 window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 
+
 class Line:
     batch = pyglet.graphics.Batch()
-    lines = batch.add(100, GL_LINES, None, ('v2f', (0.0,)  * 200), ('c4B', (255, ) * 400))
+    lines = batch.add(100, GL_LINES, None, ('position3f', (0.0,) * 300), ('colors4Bn', (255, ) * 400))
+    black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0), batch=batch)
+    black.opacity = 32
     unallocated = list(range(100))
     active = []
+
+    mouse_x = mouse_y = 0
 
     def __init__(self):
         self.n = self.unallocated.pop()
@@ -59,16 +63,9 @@ class Line:
 
     @classmethod
     def on_draw(cls):
-        # darken the existing display a little
-        glColor4f(0, 0, 0, .05)
-        glRectf(0, 0, window.width, window.height)
-
-        # render the new lines
         cls.batch.draw()
-
         glFlush()
 
-    mouse_x = mouse_y = 0
     @classmethod
     def on_mouse_motion(cls, x, y, dx, dy):
         cls.mouse_x, cls.mouse_y = x, y
@@ -83,19 +80,17 @@ class Line:
             cls.unallocated.append(line.n)
 
         # update line positions
-        n = len(cls.active)
         for n, line in enumerate(cls.active):
             line.update(dt)
-            cls.lines.vertices[n*4:n*4+4] = [line.lx, line.ly, line.x, line.y]
+            cls.lines.position[n*6:n*6+6] = [line.lx, line.ly, 0, line.x, line.y, 0]
+
 
 glEnable(GL_BLEND)
 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 glEnable(GL_LINE_SMOOTH)
 
-# need to set a FPS limit since we're not going to be limited by VSYNC in single-buffer mode
-pyglet.clock.set_fps_limit(30)
 
-pyglet.clock.schedule(Line.tick)
+pyglet.clock.schedule_interval(Line.tick, 1/30)
 window.push_handlers(Line)
-pyglet.app.run()
 
+pyglet.app.run()

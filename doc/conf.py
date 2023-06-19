@@ -12,14 +12,11 @@ import datetime
 
 # Prevents instance attributes from having a default value of None
 # See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
-from sphinx.ext.autodoc import (ClassLevelDocumenter, InstanceAttributeDocumenter)
+from sphinx.ext.autodoc import ClassLevelDocumenter
 
 
 def iad_add_directive_header(self, sig):
     ClassLevelDocumenter.add_directive_header(self, sig)
-
-
-InstanceAttributeDocumenter.add_directive_header = iad_add_directive_header
 
 
 def write_build(data, filename):
@@ -44,7 +41,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 try:
     import pyglet
-    print("Generating pyglet %s Documentation" % pyglet.version)
+    print(f"Generating pyglet {pyglet.version} Documentation")
 except ImportError:
     print("ERROR: pyglet not found")
     sys.exit(1)
@@ -52,6 +49,22 @@ except ImportError:
 
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
 
+# Set up substitutions that can be referenced later.
+# IMPORTANT:
+# Substitutions are moody and NEED control-like characters to be escaped
+# after them. For example, in |min_python_version|\+ , escaping the plus
+# sign is crucial to avoiding incomprehensible errors.
+# For convenience, |min_python_version_fancy_str| is defined below to
+# avoid having to deal with syntax errors.
+# Also, please note that there does not appear to be a good way to use
+# substitutions within link text by default.
+rst_prolog = """
+.. |min_python_version| replace:: {min_python_version}
+.. |min_python_version_package_name| replace:: ``python{min_python_version}``
+.. |min_python_version_fancy_str| replace:: Python {min_python_version}+
+""".format(
+    min_python_version=pyglet.MIN_PYTHON_VERSION_STR
+)
 
 implementations = ["cocoa", "win32", "xlib"]
 
@@ -69,7 +82,7 @@ skip_modules = {"pyglet": {
                                      "win32",
                                      "freetype", "freetype_lib",
                                      "fontconfig",
-                                     "win32query",],
+                                     "win32query"],
                      "pyglet.input": ["darwin_hid",
                                       "directinput",
                                       "evdev",
@@ -115,8 +128,7 @@ inheritance_graph_attrs = dict(rankdir="LR", size='""')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
-              'ext.docstrings',
-              'sphinx.ext.inheritance_diagram', 
+              'sphinx.ext.inheritance_diagram',
               'sphinx.ext.todo',
               'sphinx.ext.napoleon']
 
@@ -133,14 +145,14 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyglet'
-copyright = u'2006-2008, Alex Holkner. 2008-2020 pyglet contributors'
+copyright = u'2006-2008, Alex Holkner. 2008-2023 pyglet contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '1.5'
+version = '2.0'
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 
@@ -195,10 +207,10 @@ html_theme = 'sphinx_rtd_theme'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "pyglet v%s" % pyglet.version
+html_title = f"pyglet v{pyglet.version}"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "pyglet v%s documentation " % pyglet.version
+html_short_title = f"pyglet v{pyglet.version} documentation "
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.

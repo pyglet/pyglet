@@ -1,7 +1,7 @@
-.. _guide_working-with-the-keyboard:
+.. _guide_keyboard-input:
 
-Working with the keyboard
-=========================
+Keyboard input
+==============
 
 pyglet has support for low-level keyboard input suitable for games as well as
 locale- and device-independent Unicode text entry.
@@ -9,7 +9,7 @@ locale- and device-independent Unicode text entry.
 Keyboard input requires a window which has focus.  The operating system
 usually decides which application window has keyboard focus.  Typically this
 window appears above all others and may be decorated differently, though this
-is platform-specific (for example, Unix window managers sometimes couple
+is platform-specific (for example, some Linux window managers couple
 keyboard focus with the mouse pointer).
 
 You can request keyboard focus for a window with the
@@ -103,8 +103,7 @@ Keys on the number pad have separate symbols::
     key.NUM_ENTER
 
 Some modifier keys have separate symbols for their left and right sides
-(however they cannot all be distinguished on all platforms, including Mac OS
-X)::
+(however they cannot all be distinguished on all platforms, including Mac OSX)::
 
     key.LCTRL
     key.RCTRL
@@ -112,14 +111,14 @@ X)::
     key.RSHIFT
     ...
 
-Key symbols are independent of any modifiers being held down.  For example,
+Key symbols are independent of any modifiers being active.  For example,
 lower-case and upper-case letters both generate the `A` symbol.  This is also
 true of the number keypad.
 
 Modifiers
 ^^^^^^^^^
 
-The modifiers that are held down when the event is generated are combined in a
+The modifiers that are active when the event is generated are combined in a
 bitwise fashion and provided in the ``modifiers`` parameter.  The modifier
 constants defined in :py:mod:`pyglet.window.key` are::
 

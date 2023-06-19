@@ -8,6 +8,18 @@ pyglet.input
 Classes
 -------
 
+.. autoclass:: ControllerManager
+
+  .. rubric:: Methods
+
+  .. automethod:: get_controllers
+
+  .. rubric:: Events
+
+  .. automethod:: on_connect
+  .. automethod:: on_disconnect
+
+
 .. autoclass:: Device
   :members:
   :undoc-members:
@@ -46,6 +58,24 @@ Classes
 
   .. autoattribute:: value
 
+
+.. autoclass:: Controller
+  :show-inheritance:
+
+  .. rubric:: Methods
+
+  .. automethod:: open
+  .. automethod:: close
+
+  .. rubric:: Events
+
+  .. automethod:: on_stick_motion
+  .. automethod:: on_dpad_motion
+  .. automethod:: on_trigger_motion
+  .. automethod:: on_button_press
+  .. automethod:: on_button_release
+
+
 .. autoclass:: Joystick
   :show-inheritance:
 
@@ -60,6 +90,7 @@ Classes
   .. automethod:: on_joyhat_motion
   .. automethod:: on_joybutton_press
   .. automethod:: on_joybutton_release
+
 
 .. autoclass:: AppleRemote
   :show-inheritance:
@@ -77,6 +108,7 @@ Classes
 .. autoclass:: Tablet
   :undoc-members:
 
+
 Functions
 ---------
 
@@ -84,6 +116,7 @@ Functions
 
 .. autofunction:: get_apple_remote
 .. autofunction:: get_devices
+.. autofunction:: get_controllers
 .. autofunction:: get_joysticks
 .. autofunction:: get_tablets
 

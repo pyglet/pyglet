@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 from pyglet import gl
 from pyglet import app
 from pyglet import window
@@ -98,7 +63,7 @@ class Display:
         raise NotImplementedError('abstract')
 
     def get_default_screen(self):
-        """Get the default screen as specified by the user's operating system
+        """Get the default (primary) screen as specified by the user's operating system
         preferences.
 
         :rtype: :class:`Screen`
@@ -164,8 +129,7 @@ class Screen:
         """Height of the screen, in pixels."""
 
     def __repr__(self):
-        return '%s(x=%d, y=%d, width=%d, height=%d)' % \
-               (self.__class__.__name__, self.x, self.y, self.width, self.height)
+        return '{}(x={}, y={}, width={}, height={})'.format(self.__class__.__name__, self.x, self.y, self.width, self.height)
 
     def get_best_config(self, template=None):
         """Get the best available GL config.
@@ -186,8 +150,8 @@ class Screen:
         """
         configs = None
         if template is None:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24),
-                                    gl.Config(double_buffer=True, depth_size=16),
+            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
                                     None]:
                 try:
                     configs = self.get_matching_configs(template_config)
@@ -361,9 +325,7 @@ class ScreenMode:
         self.screen = screen
 
     def __repr__(self):
-        return '%s(width=%r, height=%r, depth=%r, rate=%r)' % (
-            self.__class__.__name__,
-            self.width, self.height, self.depth, self.rate)
+        return f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
 
 
 class Canvas:

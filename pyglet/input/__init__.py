@@ -1,39 +1,4 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
-"""Joystick, tablet and USB HID device support.
+"""Joystick, Game Controller, Tablet and USB HID device support.
 
 This module provides a unified interface to almost any input device, besides
 the regular mouse and keyboard support provided by
@@ -52,20 +17,21 @@ not.  In these cases the device API may still be useful -- the user will have
 to be asked to press each button in turn or move each axis separately to
 identify them.
 
-Higher-level interfaces are provided for joysticks, tablets and the Apple
-remote control.  These devices can usually be identified by pyglet positively,
-and a base level of functionality for each one provided through a common
-interface.
+Higher-level interfaces are provided for joysticks, game controllers, tablets
+and the Apple remote control. These devices can usually be identified by pyglet
+positively, and a base level of functionality for each one provided through a
+common interface.
 
 To use an input device:
 
-1. Call :py:func:`get_devices`, :py:func:`get_apple_remote` or
-   :py:func:`get_joysticks`
-   to retrieve and identify the device.
+1. Call :py:func:`get_devices`, :py:func:`get_apple_remote`,
+   :py:func:`get_controllers` or :py:func:`get_joysticks` to retrieve and
+   identify the device.
 2. For low-level devices (retrieved by :py:func:`get_devices`), query the
    devices list of controls and determine which ones you are interested in. For
    high-level interfaces the set of controls is provided by the interface.
-3. Optionally attach event handlers to controls on the device.
+3. Optionally attach event handlers to controls on the device. For high-level
+   interfaces, additional events are available.
 4. Call :py:meth:`Device.open` to begin receiving events on the device.  You can
    begin querying the control values after this time; they will be updated
    asynchronously.
@@ -77,14 +43,18 @@ note that no control list is available; instead, calling :py:meth:`Tablet.open`
 returns a :py:class:`TabletCanvas` onto which you should set your event
 handlers.
 
+For game controllers, the :py:class:`ControllerManager` is available. This
+provides a convenient way to handle hot-plugging of controllers.
+
 .. versionadded:: 1.2
 
 """
 
 import sys
 
-from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button
-from .base import Joystick, AppleRemote, Tablet
+import pyglet
+from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
+from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -92,7 +62,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 def get_apple_remote(display=None):
     """Get the Apple remote control device.
-    
+
     The Apple remote is the small white 6-button remote control that
     accompanies most recent Apple desktops and laptops.  The remote can only
     be used with Mac OS X.
@@ -105,6 +75,7 @@ def get_apple_remote(display=None):
     :return: The remote device, or `None` if the computer does not support it.
     """
     return None
+
 
 if _is_pyglet_doc_run:
     def get_devices(display=None):
@@ -119,6 +90,7 @@ if _is_pyglet_doc_run:
         :rtype: list of :py:class:`Device`
         """
 
+
     def get_joysticks(display=None):
         """Get a list of attached joysticks.
 
@@ -130,6 +102,20 @@ if _is_pyglet_doc_run:
 
         :rtype: list of :py:class:`Joystick`
         """
+
+
+    def get_controllers(display=None):
+        """Get a list of attached controllers.
+
+        :Parameters:
+            display : `~pyglet.canvas.Display`
+                The display device to query for input devices.  Ignored on Mac
+                OS X and Windows.  On Linux, defaults to the default display
+                device.
+
+        :rtype: list of :py:class:`Controller`
+        """
+
 
     def get_tablets(display=None):
         """Get a list of tablets.
@@ -150,24 +136,27 @@ if _is_pyglet_doc_run:
         """
 
 else:
-    def get_tablets(display=None):
-        return []
 
     from pyglet import compat_platform
 
     if compat_platform.startswith('linux'):
-        from .x11_xinput import get_devices as xinput_get_devices
-        from .x11_xinput_tablet import get_tablets
-        from .evdev import get_devices as evdev_get_devices
-        from .evdev import get_joysticks
-        def get_devices(display=None):
-            return (evdev_get_devices(display) +
-                    xinput_get_devices(display))
+        from .linux import get_devices
+        from .linux import get_joysticks
+        from .linux import get_controllers
+        from .linux import get_tablets
+        from .linux import ControllerManager
+
     elif compat_platform in ('cygwin', 'win32'):
-        from .directinput import get_devices, get_joysticks
-        try:
-            from .wintab import get_tablets
-        except:
-            pass
+        from .win32 import get_devices
+        from .win32 import get_joysticks
+        from .win32 import get_controllers
+        from .win32 import get_tablets
+        from .win32 import Win32ControllerManager as ControllerManager
+
     elif compat_platform == 'darwin':
-        from .darwin_hid import get_devices, get_joysticks, get_apple_remote
+        from .macos import get_devices
+        from .macos import get_joysticks
+        from .macos import get_apple_remote
+        from .macos import get_controllers
+        from .macos import get_tablets
+        from .macos import ControllerManager

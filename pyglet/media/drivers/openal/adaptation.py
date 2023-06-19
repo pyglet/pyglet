@@ -1,45 +1,9 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import weakref
 
-import pyglet
 from . import interface
 from pyglet.util import debug_print
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
-from pyglet.media.events import MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -47,15 +11,16 @@ _debug = debug_print('debug_media')
 
 class OpenALDriver(AbstractAudioDriver):
     def __init__(self, device_name=None):
-        super(OpenALDriver, self).__init__()
-
-        # TODO devices must be enumerated on Windows, otherwise 1.0 context is returned.
+        super().__init__()
 
         self.device = interface.OpenALDevice(device_name)
         self.context = self.device.create_context()
         self.context.make_current()
 
         self._listener = OpenALListener(self)
+
+        self.worker = PlayerWorkerThread()
+        self.worker.start()
 
     def __del__(self):
         assert _debug("Delete OpenALDriver")
@@ -66,7 +31,7 @@ class OpenALDriver(AbstractAudioDriver):
         return OpenALAudioPlayer(self, source, player)
 
     def delete(self):
-        # Delete the context first
+        self.worker.stop()
         self.context = None
 
     def have_version(self, major, minor):
@@ -157,16 +122,16 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         # Up to one audio data may be buffered if too much data was received
         # from the source that could not be written immediately into the
-        # buffer.  See refill().
+        # buffer.  See _refill().
         self._audiodata_buffer = None
 
-        self.refill(self.ideal_buffer_size)
+        self._refill(self.ideal_buffer_size)
 
     def __del__(self):
         self.delete()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
         self.alsource = None
 
     @property
@@ -184,11 +149,11 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._playing = True
         self._clearing = False
 
-        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        self.driver.worker.add(self)
 
     def stop(self):
+        self.driver.worker.remove(self)
         assert _debug('OpenALAudioPlayer.stop()')
-        pyglet.clock.unschedule(self._check_refill)
         assert self.driver is not None
         assert self.alsource is not None
         self.alsource.pause()
@@ -200,7 +165,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         assert self.driver is not None
         assert self.alsource is not None
 
-        super(OpenALAudioPlayer, self).clear()
+        super().clear()
         self.alsource.stop()
         self._handle_processed_buffers()
         self.alsource.clear()
@@ -216,19 +181,13 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         del self._buffer_sizes[:]
         del self._buffer_timestamps[:]
 
-    def _check_refill(self, dt=0):
-        write_size = self.get_write_size()
-        if write_size > self.min_buffer_size:
-            self.refill(write_size)
-
     def _update_play_cursor(self):
         assert self.driver is not None
         assert self.alsource is not None
 
         self._handle_processed_buffers()
 
-        # Update play cursor using buffer cursor + estimate into current
-        # buffer
+        # Update play cursor using buffer cursor + estimate into current buffer
         if self._clearing:
             self._play_cursor = self._buffer_cursor
         else:
@@ -261,9 +220,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def _dispatch_events(self):
         while self._events and self._events[0][0] <= self._play_cursor:
             _, event = self._events.pop(0)
-            event._sync_dispatch_to_player(self.player)
+            event.sync_dispatch_to_player(self.player)
 
-    def get_write_size(self):
+    def _get_write_size(self):
         self._update_play_cursor()
         buffer_size = int(self._write_cursor - self._play_cursor)
 
@@ -273,8 +232,15 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         assert _debug("Write size {} bytes".format(write_size))
         return write_size
 
-    def refill(self, write_size):
-        assert _debug('refill', write_size)
+    def refill_buffer(self):
+        write_size = self._get_write_size()
+        if write_size > self.min_buffer_size:
+            self._refill(write_size)
+            return True
+        return False
+
+    def _refill(self, write_size):
+        assert _debug('_refill', write_size)
 
         while write_size > self.min_buffer_size:
             audio_data = self._get_audiodata()
@@ -314,7 +280,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             assert _debug('No audio data left')
             if self._has_underrun():
                 assert _debug('Underrun')
-                MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
+                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
 
     def _queue_audio_data(self, audio_data, length):
         buf = self.alsource.get_buffer()
@@ -396,5 +362,5 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.alsource.cone_outer_gain = cone_outer_gain
 
     def prefill_audio(self):
-        write_size = self.get_write_size()
-        self.refill(write_size)
+        write_size = self._get_write_size()
+        self._refill(write_size)

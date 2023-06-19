@@ -1,39 +1,4 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
-from pyglet.com import pIUnknown
+from pyglet.libs.win32.com import pIUnknown
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *
@@ -190,15 +155,14 @@ gdiplus.GdiplusStartup.argtypes = [c_void_p, c_void_p, c_void_p]
 
 class GDIPlusDecoder(ImageDecoder):
     def get_file_extensions(self):
-        return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', 
-                '.tiff']
+        return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', '.tiff']
 
     def get_animation_file_extensions(self):
         # TIFF also supported as a multi-page image; but that's not really an
         # animation, is it?
         return ['.gif']
 
-    def _load_bitmap(self, file, filename):
+    def _load_bitmap(self, filename, file):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -272,14 +236,18 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         self.stream.Release()
 
-    def decode(self, file, filename):
-        bitmap = self._load_bitmap(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap = self._load_bitmap(filename, file)
         image = self._get_image(bitmap)
         self._delete_bitmap(bitmap)
         return image
 
-    def decode_animation(self, file, filename):
-        bitmap = self._load_bitmap(file, filename)
+    def decode_animation(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap = self._load_bitmap(filename, file)
         
         dimension_count = c_uint()
         gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))

@@ -1,44 +1,8 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import math
 
 import pyglet
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
-from pyglet.media.events import MediaEvent
 from pyglet.util import debug_print
 from . import interface
 
@@ -69,7 +33,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._xa2_driver = xa2_driver
 
         # If cleared, we need to check when it's done clearing.
-        self._clearing = False
+        self._flushing = False
 
         # If deleted, we need to make sure it's done deleting.
         self._deleted = False
@@ -94,7 +58,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         # This will be True if the last buffer has already been submitted.
         self.buffer_end_submitted = False
 
-        self._buffers = []
+        self._buffers = []  # Current buffers in queue waiting to be played.
 
         self._xa2_source_voice = self._xa2_driver.get_source_voice(source, self)
 
@@ -122,12 +86,16 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self._xa2_source_voice:
             self._deleted = True
 
+            if not self._buffers:
+                self._xa2_driver.return_voice(self._xa2_source_voice)
+
+
     def play(self):
         assert _debug('XAudio2 play')
 
         if not self._playing:
-            if not self._clearing:
-                self._playing = True
+            self._playing = True
+            if not self._flushing:
                 self._xa2_source_voice.play()
 
         assert _debug('return XAudio2 play')
@@ -148,8 +116,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._play_cursor = 0
         self._write_cursor = 0
         self.buffer_end_submitted = False
-        self._clearing = True
         self._deleted = False
+
+        if self._buffers:
+            self._flushing = True
+
         self._xa2_source_voice.flush()
         self._buffers.clear()
         del self._events[:]
@@ -157,15 +128,16 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     def _restart(self, dt):
         """Prefill audio and attempt to replay audio."""
-        if self._xa2_source_voice:
-            self.prefill_audio()
-            self.play()
+        if self._playing and self._xa2_source_voice:
+            self.refill_source_player()
+            self._xa2_source_voice.play()
 
     def refill_source_player(self):
         """Obtains audio data from the source, puts it into a buffer to submit to the voice.
         Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
         consume it. This submits the buffer retrieved from the decoder in it's entirety.
         """
+
         buffers_queued = self._xa2_source_voice.buffers_queued
 
         # Free any buffers that have ended.
@@ -175,11 +147,14 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._play_cursor += buffer.AudioBytes
             del buffer  # Does this remove AudioData within the buffer? Let GC remove or explicit remove?
 
-        # We have to wait for all of the buffers we are clearing to end before we restart next source.
-        # When we reach 0, schedule restart.
-        if self._clearing:
+        # We have to wait for all of the buffers we are flushing to end before we restart next buffer.
+        # When voice reaches 0 buffers, it is available for re-use.
+        if self._flushing:
             if buffers_queued == 0:
-                self._clearing = False
+                self._flushing = False
+
+                # This is required because the next call to play will come before all flushes are done.
+                # Restart at next available opportunity.
                 pyglet.clock.schedule_once(self._restart, 0)
             return
 
@@ -193,7 +168,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self.buffer_end_submitted:
             if buffers_queued == 0:
                 self._xa2_source_voice.stop()
-                MediaEvent(0, "on_eos")._sync_dispatch_to_player(self.player)
+                MediaEvent("on_eos").sync_dispatch_to_player(self.player)
         else:
             current_buffers = []
             while buffers_queued < self.max_buffer_count:
@@ -232,12 +207,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._dispatch_pending_events()
 
     def _dispatch_new_event(self, event_name):
-        MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
+        MediaEvent(event_name).sync_dispatch_to_player(self.player)
 
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
-            event_cursor = self._write_cursor + event.timestamp * \
-                           self.source.audio_format.bytes_per_second
+            event_cursor = self._write_cursor + event.timestamp * self.source.audio_format.bytes_per_second
             assert _debug('Adding event', event, 'at', event_cursor)
             self._events.append((event_cursor, event))
 
@@ -256,7 +230,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         assert _debug('Remaining events: {}'.format(self._events))
 
         for event in pending_events:
-            event._sync_dispatch_to_player(self.player)
+            event.sync_dispatch_to_player(self.player)
 
     def _cleanup_timestamps(self):
         while self._timestamps and self._timestamps[0][0] < self._play_cursor:
@@ -315,7 +289,9 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_voice.cone_outside_volume = cone_outer_gain
 
     def prefill_audio(self):
-        self.refill_source_player()
+        # Cannot refill during a flush. Schedule will handle it.
+        if not self._flushing:
+            self.refill_source_player()
 
 
 class XAudio2Driver(AbstractAudioDriver):

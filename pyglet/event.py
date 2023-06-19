@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Event dispatch framework.
 
 All objects that produce events in pyglet implement :py:class:`~pyglet.event.EventDispatcher`,
@@ -157,7 +122,6 @@ import inspect
 from functools import partial
 from weakref import WeakMethod
 
-
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
@@ -220,7 +184,7 @@ class EventDispatcher:
                 # Single magically named function
                 name = obj.__name__
                 if name not in self.event_types:
-                    raise EventException('Unknown event "%s"' % name)
+                    raise EventException(f'Unknown event "{name}"')
                 if inspect.ismethod(obj):
                     yield name, WeakMethod(obj, partial(self._remove_handler, name))
                 else:
@@ -235,7 +199,7 @@ class EventDispatcher:
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
-                raise EventException('Unknown event "%s"' % name)
+                raise EventException(f'Unknown event "{name}"')
             if inspect.ismethod(handler):
                 yield name, WeakMethod(handler, partial(self._remove_handler, name))
             else:
@@ -302,6 +266,7 @@ class EventDispatcher:
                             return frame
                     except KeyError:
                         pass
+
         frame = find_frame()
 
         # No frame matched; no error.
@@ -351,12 +316,19 @@ class EventDispatcher:
         This is normally called from a dead ``WeakMethod`` to remove itself from the
         event stack.
         """
+
         # Iterate over a copy as we might mutate the list
         for frame in list(self._event_stack):
-            if name in frame and frame[name] == handler:
-                del frame[name]
-                if not frame:
-                    self._event_stack.remove(frame)
+
+            if name in frame:
+                try:
+                    if frame[name] == handler:
+                        del frame[name]
+                        if not frame:
+                            self._event_stack.remove(frame)
+                except TypeError:
+                    # weakref is already dead
+                    pass
 
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
@@ -390,8 +362,8 @@ class EventDispatcher:
             "You need to register events with the class method "
             "EventDispatcher.register_event_type('event_name')."
         )
-        assert event_type in self.event_types,\
-            "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
+        assert event_type in self.event_types, \
+            f"{event_type} not found in {self}.event_types == {self.event_types}"
 
         invoked = False
 
@@ -428,7 +400,8 @@ class EventDispatcher:
 
         return False
 
-    def _raise_dispatch_exception(self, event_type, args, handler, exception):
+    @staticmethod
+    def _raise_dispatch_exception(event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
         # arguments in an event handler.  This is caught as a TypeError in
         # dispatch_event but the error message is obfuscated.
@@ -457,21 +430,18 @@ class EventDispatcher:
             n_handler_args = max(n_handler_args, n_args)
 
         # Allow default values to overspecify arguments
-        if (n_handler_args > n_args and handler_defaults and
-            n_handler_args - len(handler_defaults) <= n_args):
+        if n_handler_args > n_args >= n_handler_args - len(handler_defaults) and handler_defaults:
             n_handler_args = n_args
 
         if n_handler_args != n_args:
             if inspect.isfunction(handler) or inspect.ismethod(handler):
-                descr = "'%s' at %s:%d" % (handler.__name__,
-                                           handler.__code__.co_filename,
-                                           handler.__code__.co_firstlineno)
+                descr = f"'{handler.__name__}' at {handler.__code__.co_filename}:{handler.__code__.co_firstlineno}"
             else:
                 descr = repr(handler)
 
-            raise TypeError("The '{0}' event was dispatched with {1} arguments, "
-                            "but your handler {2} accepts only {3} arguments.".format(
-                             event_type, len(args), descr, len(handler_args)))
+            raise TypeError(f"The '{event_type}' event was dispatched with {len(args)} arguments,\n"
+                            f"but your handler {descr} accepts only {n_handler_args} arguments.")
+
         else:
             raise exception
 
@@ -493,20 +463,23 @@ class EventDispatcher:
                 # ...
 
         """
-        if len(args) == 0:                      # @window.event()
+        if len(args) == 0:  # @window.event()
             def decorator(func):
-                name = func.__name__
-                self.set_handler(name, func)
+                func_name = func.__name__
+                self.set_handler(func_name, func)
                 return func
+
             return decorator
-        elif inspect.isroutine(args[0]):        # @window.event
+        elif inspect.isroutine(args[0]):  # @window.event
             func = args[0]
             name = func.__name__
             self.set_handler(name, func)
             return args[0]
-        elif isinstance(args[0], str):          # @window.event('on_resize')
+        elif isinstance(args[0], str):  # @window.event('on_resize')
             name = args[0]
+
             def decorator(func):
                 self.set_handler(name, func)
                 return func
+
             return decorator

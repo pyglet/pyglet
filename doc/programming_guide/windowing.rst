@@ -2,8 +2,8 @@ Windowing
 =========
 
 A :py:class:`~pyglet.window.Window` in pyglet corresponds to a top-level
-window provided by the operating system.  Windows can be floating
-(overlapped with other application windows) or fullscreen.
+window as provided by the operating system. Windows can be floating (with or
+without a border), or fullscreen.
 
 .. _guide_creating-a-window:
 
@@ -17,7 +17,7 @@ arguments, defaults will be assumed for all parameters::
 
 The default parameters used are:
 
-* The window will have a size of 640x480, and not be resizable.
+* The window will have a size of 960x540, and not be resizable.
 * A default context will be created using template config described in
   :ref:`guide_glconfig`.
 * The window caption will be the name of the executing Python script
@@ -31,8 +31,8 @@ example shows how to create and display a window in two steps::
     # ... perform some additional initialisation
     window.set_visible()
 
-Context configuration
-^^^^^^^^^^^^^^^^^^^^^
+OpenGL Context configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The context of a window cannot be changed once created.  There are several
 ways to control the context that is created:
@@ -108,7 +108,7 @@ however the operating system does not always permit this, and the window may
 have relocated.
 
 Size and position
------------------
+^^^^^^^^^^^^^^^^^
 
 This section applies only to windows that are not fullscreen.  Fullscreen
 windows always have the width and height of the screen they fill.
@@ -130,7 +130,7 @@ in the constructor.  If you do this, you may also want to handle the
 
     @window.event
     def on_resize(width, height):
-        print('The window was resized to %dx%d' % (width, height))
+        print(f'The window was resized to {width},{height}')
 
 You can specify a minimum and maximum size that the window can be resized to
 by the user with the :py:meth:`~pyglet.window.Window.set_minimum_size` and
@@ -168,9 +168,10 @@ Appearance
 Window style
 ^^^^^^^^^^^^
 
-Non-fullscreen windows can be created in one of four styles: default, dialog,
-tool or borderless.  Examples of the appearances of each of these styles under
-Windows and Mac OS X 10.4 are shown below.
+Non-fullscreen windows can be created in one of six styles: default, dialog,
+tool, borderless, transparent, or overlay. Transparent and overlay windows are
+only implemented for Windows, not Mac OS X. Examples of the appearances of each 
+of these styles under Windows and Mac OS X 13.2 are shown below.
 
     .. list-table::
         :header-rows: 1
@@ -187,13 +188,23 @@ Windows and Mac OS X 10.4 are shown below.
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
           - .. image:: img/window_xp_tool.png
           - .. image:: img/window_osx_tool.png
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`
+          - <Image Not Available>
+          - .. image:: img/window_osx_borderless.png
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TRANSPARENT`
+          - .. image:: img/window_xp_transparent.png
+          - <Not Implemented>
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_OVERLAY`
+          - .. image:: img/window_xp_overlay.png
+          - <Not Implemented>
 
 Non-resizable variants of these window styles may appear slightly different
 (for example, the maximize button will either be disabled or absent).
 
 Besides the change in appearance, the window styles affect how the window
 behaves.  For example, tool windows do not usually appear in the task bar and
-cannot receive keyboard focus.  Dialog windows cannot be minimized.  Selecting
+cannot receive keyboard focus.  Dialog windows cannot be minimized. Overlay's
+require custom sizing and moving of the respective window.
 the appropriate window style for your windows means your application will
 behave correctly for the platform on which it is running, however that
 behaviour may not be consistent across Windows, Linux and Mac OS X.
@@ -210,7 +221,7 @@ You can specify the style of the window in the
 :py:class:`~pyglet.window.Window` constructor.
 Once created, the window style cannot be altered::
 
-    window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
+    window = pyglet.window.Window(style=pyglet.window.Window.WINDOW_STYLE_DIALOG)
 
 Caption
 ^^^^^^^
@@ -314,7 +325,7 @@ in :ref:`quickstart`, using a subclass of :py:class:`~pyglet.window.Window`::
 
     class HelloWorldWindow(pyglet.window.Window):
         def __init__(self):
-            super(HelloWorldWindow, self).__init__()
+            super().__init__()
 
             self.label = pyglet.text.Label('Hello, world!')
 
@@ -388,7 +399,3 @@ example:
 * If you cannot afford for your application to block.  If your application run
   loop needs to quickly poll a hardware device, for example, you may want to
   avoid blocking with vsync.
-
-Note that some older video cards do not support the required extensions to
-implement vsync; this will appear as a warning on the console but is otherwise
-ignored.

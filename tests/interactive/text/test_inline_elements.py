@@ -2,7 +2,9 @@ import pytest
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
-from pyglet.text import caret, document, layout
+from pyglet.text import caret, document
+from pyglet.text.layout import TextDecorationGroup, IncrementalTextLayout
+
 
 doctext = """ELEMENT.py test document.
 
@@ -69,15 +71,16 @@ class TestElement(document.InlineElement):
     vertex_list = None
 
     def place(self, layout, x, y):
-        self.vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, 
-            layout.top_group, 
-            'v2i', 
-            ('c4B', [200, 200, 200, 255] * 4))
+        group = TextDecorationGroup(1, layout.top_group)
+        self.vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES,
+                                                    group,
+                                                    [0, 1, 2, 0, 2, 3],
+                                                    'v2i', ('c4B', (200, 200, 200, 255) * 4))
 
         y += self.descent
         w = self.advance
         h = self.ascent - self.descent
-        self.vertex_list.vertices[:] = (x, y, 
+        self.vertex_list.position[:] = (x, y,
                                         x + w, y,
                                         x + w, y + h,
                                         x, y + h)
@@ -95,8 +98,8 @@ class TestWindow(pyglet.window.Window):
         for i in range(0, len(doctext), 300):
             self.document.insert_element(i, TestElement(60, -10, 70))
         self.margin = 2
-        self.layout = layout.IncrementalTextLayout(self.document,
-            self.width - self.margin * 2, self.height - self.margin * 2,
+        self.layout = IncrementalTextLayout(
+            self.document, self.width - self.margin * 2, self.height - self.margin * 2,
             multiline=True,
             batch=self.batch)
         self.caret = caret.Caret(self.layout)
@@ -118,7 +121,7 @@ class TestWindow(pyglet.window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
+        pyglet.gl.glClearColor(0, 0, 0, 1)
         self.clear()
         self.batch.draw()
 

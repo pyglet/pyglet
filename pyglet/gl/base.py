@@ -1,48 +1,19 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
+from enum import Enum
 
-from pyglet import gl, compat_platform
+from pyglet import gl
 from pyglet.gl import gl_info
-from pyglet.gl import glu_info
+
+
+class OpenGLAPI(Enum):
+    OPENGL = 1
+    OPENGL_ES = 2
 
 
 class Config:
     """Graphics configuration.
 
     A Config stores the preferences for OpenGL attributes such as the
-    number of auxilliary buffers, size of the colour and depth buffers,
+    number of auxiliary buffers, size of the colour and depth buffers,
     double buffering, stencilling, multi- and super-sampling, and so on.
 
     Different platforms support a different set of attributes, so these
@@ -56,7 +27,7 @@ class Config:
         `buffer_size` : int
             Total bits per sample per color buffer.
         `aux_buffers` : int
-            The number of auxilliary color buffers.
+            The number of auxiliary color buffers.
         `sample_buffers` : int
             The number of multisample buffers.
         `samples` : int
@@ -108,12 +79,14 @@ class Config:
         'major_version',
         'minor_version',
         'forward_compatible',
+        'opengl_api',
         'debug'
     ]
 
     major_version = None
     minor_version = None
     forward_compatible = None
+    opengl_api = None
     debug = None
 
     def __init__(self, **kwargs):
@@ -130,17 +103,12 @@ class Config:
             else:
                 setattr(self, name, None)
 
-    def requires_gl_3(self):
-        if self.major_version is not None and self.major_version >= 3:
-            return True
-        if self.forward_compatible or self.debug:
-            return True
-        return False
+        self.opengl_api = self.opengl_api or "gl"
 
     def get_gl_attributes(self):
         """Return a list of attributes set on this config.
 
-        :rtype: list of tuple ``(name, value)``
+        :rtype: list of tuple (name, value)
         :return: All attributes, with unset attributes having a value of
             ``None``.
         """
@@ -190,8 +158,7 @@ class Config:
         return isinstance(self, CanvasConfig)
 
     def __repr__(self):
-        import pprint
-        return '%s(%s)' % (self.__class__.__name__, pprint.pformat(self.get_gl_attributes()))
+        return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
 class CanvasConfig(Config):
@@ -213,6 +180,7 @@ class CanvasConfig(Config):
         self.major_version = base_config.major_version
         self.minor_version = base_config.minor_version
         self.forward_compatible = base_config.forward_compatible
+        self.opengl_api = base_config.opengl_api or self.opengl_api
         self.debug = base_config.debug
 
     def compatible(self, canvas):
@@ -238,8 +206,10 @@ class ObjectSpace:
     def __init__(self):
         # Textures and buffers scheduled for deletion
         # the next time this object space is active.
-        self._doomed_textures = []
-        self._doomed_buffers = []
+        self.doomed_textures = []
+        self.doomed_buffers = []
+        self.doomed_vaos = []
+        self.doomed_shader_programs = []
 
 
 class Context:
@@ -253,52 +223,8 @@ class Context:
             GL objects.
 
     """
-
-    #: Context share behaviour indicating that objects should not be
-    #: shared with existing contexts.
-    CONTEXT_SHARE_NONE = None
-
-    #: Context share behaviour indicating that objects are shared with
-    #: the most recently created context (the default).
-    CONTEXT_SHARE_EXISTING = 1
-
-    # Used for error checking, True if currently within a glBegin/End block.
-    # Ignored if error checking is disabled.
-    _gl_begin = False
-
     # gl_info.GLInfo instance, filled in on first set_current
     _info = None
-
-    # List of (attr, check) for each driver/device-specific workaround that is
-    # implemented.  The `attr` attribute on this context is set to the result
-    # of evaluating `check(gl_info)` the first time this context is used.
-    _workaround_checks = [
-        # GDI Generic renderer on Windows does not implement
-        # GL_UNPACK_ROW_LENGTH correctly.
-        ('_workaround_unpack_row_length',
-         lambda info: info.get_renderer() == 'GDI Generic'),
-
-        # Reportedly segfaults in text_input.py example with
-        #   "ATI Radeon X1600 OpenGL Engine"
-        # glGenBuffers not exported by
-        #   "ATI Radeon X1270 x86/MMX/3DNow!/SSE2"
-        #   "RADEON XPRESS 200M Series x86/MMX/3DNow!/SSE2"
-        # glGenBuffers not exported by
-        #   "Intel 965/963 Graphics Media Accelerator"
-        ('_workaround_vbo',
-         lambda info: (info.get_renderer().startswith('ATI Radeon X')
-                       or info.get_renderer().startswith('RADEON XPRESS 200M')
-                       or info.get_renderer() ==
-                       'Intel 965/963 Graphics Media Accelerator')),
-
-        # Some ATI cards on OS X start drawing from a VBO before it's written
-        # to.  In these cases pyglet needs to call glFinish() to flush the
-        # pipeline after updating a buffer but before rendering.
-        ('_workaround_vbo_finish',
-         lambda info: ('ATI' in info.get_renderer() and
-                       info.have_version(1, 5) and
-                       compat_platform == 'darwin')),
-    ]
 
     def __init__(self, config, context_share=None):
         self.config = config
@@ -311,13 +237,13 @@ class Context:
             self.object_space = ObjectSpace()
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
 
     def attach(self, canvas):
         if self.canvas is not None:
             self.detach()
         if not self.config.compatible(canvas):
-            raise RuntimeError('Cannot attach %r to %r' % (canvas, self))
+            raise RuntimeError(f'Cannot attach {canvas} to {self}')
         self.canvas = canvas
 
     def detach(self):
@@ -332,29 +258,33 @@ class Context:
 
         # XXX
         gl_info.set_active_context()
-        glu_info.set_active_context()
 
-        # Implement workarounds
         if not self._info:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
-            for attr, check in self._workaround_checks:
-                setattr(self, attr, check(self._info))
 
-        # Release textures and buffers on this context scheduled for deletion.
-        # Note that the garbage collector may introduce a race condition,
-        # so operate on a copy of the textures/buffers and remove the deleted
-        # items using list slicing (which is an atomic operation)
-        if self.object_space._doomed_textures:
-            textures = self.object_space._doomed_textures[:]
+        # Release Textures, Buffers, and VAOs on this context scheduled for
+        # deletion. Note that the garbage collector may introduce a race
+        # condition, so operate on a copy, and clear the list afterwards.
+        if self.object_space.doomed_textures:
+            textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
             gl.glDeleteTextures(len(textures), textures)
-            self.object_space._doomed_textures[0:len(textures)] = []
-        if self.object_space._doomed_buffers:
-            buffers = self.object_space._doomed_buffers[:]
+            self.object_space.doomed_textures.clear()
+        if self.object_space.doomed_buffers:
+            buffers = self.object_space.doomed_buffers[:]
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space._doomed_buffers[0:len(buffers)] = []
+            self.object_space.doomed_buffers.clear()
+        if self.object_space.doomed_vaos:
+            vaos = self.object_space.doomed_vaos[:]
+            vaos = (gl.GLuint * len(vaos))(*vaos)
+            gl.glDeleteVertexArrays(len(vaos), vaos)
+            self.object_space.doomed_vaos.clear()
+        if self.object_space.doomed_shader_programs:
+            for program_id in self.object_space.doomed_shader_programs:
+                gl.glDeleteProgram(program_id)
+            self.object_space.doomed_shader_programs.clear()
 
     def destroy(self):
         """Release the context.
@@ -375,28 +305,27 @@ class Context:
                 gl._shadow_window.switch_to()
 
     def delete_texture(self, texture_id):
-        """Safely delete a texture belonging to this context.
+        """Safely delete a Texture belonging to this context.
 
-        Usually, the texture is released immediately using
+        Usually, the Texture is released immediately using
         ``glDeleteTextures``, however if another context that does not share
         this context's object space is currently active, the deletion will
         be deferred until an appropriate context is activated.
 
         :Parameters:
             `texture_id` : int
-                The OpenGL name of the texture to delete.
+                The OpenGL name of the Texture to delete.
 
         """
         if self.object_space is gl.current_context.object_space:
-            id = gl.GLuint(texture_id)
-            gl.glDeleteTextures(1, id)
+            gl.glDeleteTextures(1, gl.GLuint(texture_id))
         else:
-            self.object_space._doomed_textures.append(texture_id)
+            self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
-        """Safely delete a buffer object belonging to this context.
+        """Safely delete a Buffer object belonging to this context.
 
-        This method behaves similarly to :py:func:`~pyglet.text.document.AbstractDocument.delete_texture`, though for
+        This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
 
         :Parameters:
@@ -406,10 +335,43 @@ class Context:
         .. versionadded:: 1.1
         """
         if self.object_space is gl.current_context.object_space and False:
-            id = gl.GLuint(buffer_id)
-            gl.glDeleteBuffers(1, id)
+            gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
         else:
-            self.object_space._doomed_buffers.append(buffer_id)
+            self.object_space.doomed_buffers.append(buffer_id)
+
+    def delete_vao(self, vao_id):
+        """Safely delete a Vertex Array Object belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `vao_id` : int
+                The OpenGL name of the Vertex Array to delete.
+
+        .. versionadded:: 2.0
+        """
+        if gl.current_context and self.object_space is gl.current_context.object_space and False:
+            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
+        else:
+            self.object_space.doomed_vaos.append(vao_id)
+
+    def delete_shader_program(self, program_id):
+        """Safely delete a Shader Program belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteProgram`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `program_id` : int
+                The OpenGL name of the Shader Program to delete.
+
+        .. versionadded:: 2.0
+        """
+        if gl.current_context is self:
+            gl.glDeleteProgram(program_id)
+        else:
+            self.object_space.doomed_shader_programs.append(program_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.

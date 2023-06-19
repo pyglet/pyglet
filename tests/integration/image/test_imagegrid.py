@@ -28,7 +28,7 @@ class ImageGridTestCase(unittest.TestCase):
             if row < rows - 1:
                 data += (width * b'\0') * rowpad
         assert len(data) == width * height
-        self.image = ImageData(width, height, 'L', data)
+        self.image = ImageData(width, height, 'R', data)
         self.grid = ImageGrid(self.image, rows, cols,
                               itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
 
@@ -38,7 +38,7 @@ class ImageGridTestCase(unittest.TestCase):
 
         color = colorbyte(cellindex + 1)
         cellimage = cellimage.get_image_data()
-        data = cellimage.get_data('L', cellimage.width)
+        data = cellimage.get_data('R', cellimage.width)
         self.assertTrue(data == color * len(data))
 
     def setUp(self):

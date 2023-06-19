@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-
 """Print all Apple Remote events to stdout.
 """
-
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import pyglet
 import sys

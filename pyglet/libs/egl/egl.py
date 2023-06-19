@@ -1,37 +1,15 @@
-'''Wrapper for /usr/include/EGL/egl
+"""Wrapper for /usr/include/EGL/egl
 
 Generated with:
 wrap.py -o lib_egl.py /usr/include/EGL/egl.h
 
 Do not modify this file.
-'''
-
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
-
-import ctypes
+"""
 from ctypes import *
 
 import pyglet.lib
 
 _lib = pyglet.lib.load_library('EGL')
-
-_int_types = (c_int16, c_int32)
-if hasattr(ctypes, 'c_int64'):
-    # Some builds of ctypes apparently do not have c_int64
-    # defined; it's a pretty good bet that these builds do not
-    # have 64-bit pointers.
-    _int_types += (ctypes.c_int64,)
-for t in _int_types:
-    if sizeof(t) == sizeof(c_size_t):
-        c_ptrdiff_t = t
-
-class c_void(Structure):
-    # c_void_p is a buggy return type, converting to int, so
-    # POINTER(None) == c_void_p is actually written as
-    # POINTER(c_void), so it can be treated as a real pointer.
-    _fields_ = [('dummy', c_int)]
-
 
 
 __egl_h_ = 1 	# /usr/include/EGL/egl.h:2
@@ -117,12 +95,6 @@ PFNEGLGETCONFIGATTRIBPROC = CFUNCTYPE(EGLBoolean, EGLDisplay, EGLConfig, EGLint,
 PFNEGLGETCONFIGSPROC = CFUNCTYPE(EGLBoolean, EGLDisplay, POINTER(EGLConfig), EGLint, POINTER(EGLint)) 	# /usr/include/EGL/egl.h:134
 PFNEGLGETCURRENTDISPLAYPROC = CFUNCTYPE(EGLDisplay) 	# /usr/include/EGL/egl.h:135
 PFNEGLGETCURRENTSURFACEPROC = CFUNCTYPE(EGLSurface, EGLint) 	# /usr/include/EGL/egl.h:136
-class struct__XDisplay(Structure):
-    __slots__ = [
-    ]
-struct__XDisplay._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 class struct__XDisplay(Structure):
     __slots__ = [
@@ -502,7 +474,7 @@ eglWaitSync.restype = EGLBoolean
 eglWaitSync.argtypes = [EGLDisplay, EGLSync, EGLint]
 
 
-__all__ = ['__egl_h_', 'EGL_EGL_PROTOTYPES', 'EGL_VERSION_1_0', 'EGLBoolean',
+__all__ = ['__egl_h_', 'EGL_EGL_PROTOTYPES', 'EGL_VERSION_1_0', 'EGLBoolean', 'EGLint',
 'EGLDisplay', 'EGLConfig', 'EGLSurface', 'EGLContext',
 '__eglMustCastToProperFunctionPointerType', 'EGL_ALPHA_SIZE',
 'EGL_BAD_ACCESS', 'EGL_BAD_ALLOC', 'EGL_BAD_ATTRIBUTE', 'EGL_BAD_CONFIG',

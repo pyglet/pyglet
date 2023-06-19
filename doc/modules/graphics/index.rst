@@ -7,7 +7,7 @@ pyglet.graphics
    :maxdepth: 1
 
    allocation
-   vertexattribute
+   shader
    vertexbuffer
    vertexdomain
 

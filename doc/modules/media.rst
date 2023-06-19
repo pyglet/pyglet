@@ -89,7 +89,7 @@ Classes
   :members:
   :undoc-members:
 
-.. autoclass:: pyglet.media.events.MediaEvent
+.. autoclass:: pyglet.media.drivers.base.MediaEvent
     :members:
 
 Functions

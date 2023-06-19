@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Get environment information useful for debugging.
 
 Intended usage is to create a file for bug reports, e.g.::
@@ -79,7 +44,7 @@ def dump_python():
     print('os.getcwd():', os.getcwd())
     for key, value in os.environ.items():
         if key.startswith('PYGLET_'):
-            print("os.environ['%s']: %s" % (key, value))
+            print(f"os.environ['{key}']: {value}")
 
 
 def dump_pyglet():
@@ -89,20 +54,24 @@ def dump_pyglet():
     print('pyglet.compat_platform:', pyglet.compat_platform)
     print('pyglet.__file__:', pyglet.__file__)
     for key, value in pyglet.options.items():
-        print("pyglet.options['%s'] = %r" % (key, value))
+        print(f"pyglet.options['{key}'] = {value!r}")
 
 
 def dump_window():
     """Dump display, window, screen and default config info."""
+    from pyglet.gl import gl_info
+    if not gl_info.have_version(3):
+        print(f"Insufficient OpenGL version: {gl_info.get_version_string()}")
+        return
     import pyglet.window
     display = pyglet.canvas.get_display()
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):
-        print('screens[%d]: %r' % (i, screen))
+        print(f'screens[{i}]: {screen!r}')
     window = pyglet.window.Window(visible=False)
     for key, value in window.config.get_gl_attributes():
-        print("config['%s'] = %r" % (key, value))
+        print(f"config['{key}'] = {value!r}")
     print('context:', repr(window.context))
 
     _heading('window.context._info')
@@ -119,22 +88,6 @@ def dump_gl(context=None):
     print('gl_info.get_version():', info.get_version())
     print('gl_info.get_vendor():', info.get_vendor())
     print('gl_info.get_renderer():', info.get_renderer())
-    print('gl_info.get_extensions():')
-    extensions = list(info.get_extensions())
-    extensions.sort()
-    for name in extensions:
-        print('  ', name)
-
-
-def dump_glu():
-    """Dump GLU info."""
-    from pyglet.gl import glu_info
-    print('glu_info.get_version():', glu_info.get_version())
-    print('glu_info.get_extensions():')
-    extensions = list(glu_info.get_extensions())
-    extensions.sort()
-    for name in extensions:
-        print('  ', name)
 
 
 def dump_glx():
@@ -205,7 +158,7 @@ def dump_al():
 def dump_wintab():
     """Dump WinTab info."""
     try:
-        from pyglet.input import wintab
+        from pyglet.input.win32 import wintab
     except:
         print('WinTab not available.')
         return
@@ -214,9 +167,9 @@ def dump_wintab():
     impl_version = wintab.get_implementation_version()
     spec_version = wintab.get_spec_version()
 
-    print('WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
-                                             impl_version >> 8, impl_version & 0xff,
-                                             spec_version >> 8, spec_version & 0xff))
+    print('WinTab: {0} {1}.{2} (Spec {3}.{4})'.format(interface_name,
+                                                      impl_version >> 8, impl_version & 0xff,
+                                                      spec_version >> 8, spec_version & 0xff))
 
 
 def _try_dump(heading, func):
@@ -234,7 +187,6 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.gl.glu_info', dump_glu)
     _try_dump('pyglet.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)

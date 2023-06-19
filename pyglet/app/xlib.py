@@ -1,45 +1,9 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import os
 import select
 import threading
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop
-from pyglet.util import asbytes
 
 
 class XlibSelectDevice:
@@ -77,7 +41,7 @@ class NotificationDevice(XlibSelectDevice):
 
     def set(self):
         self._event.set()
-        os.write(self._sync_file_write, asbytes('1'))
+        os.write(self._sync_file_write, b'1')
 
     def select(self):
         self._event.clear()
@@ -85,15 +49,15 @@ class NotificationDevice(XlibSelectDevice):
         app.platform_event_loop.dispatch_posted_events()
 
     def poll(self):
-        return self._event.isSet()
+        return self._event.is_set()
 
 
 class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
         super(XlibEventLoop, self).__init__()
         self._notification_device = NotificationDevice()
-        self._select_devices = set()
-        self._select_devices.add(self._notification_device)
+        self.select_devices = set()
+        self.select_devices.add(self._notification_device)
 
     def notify(self):
         self._notification_device.set()
@@ -104,13 +68,13 @@ class XlibEventLoop(PlatformEventLoop):
 
         # Poll devices to check for already pending events (select.select is not enough)
         pending_devices = []
-        for device in self._select_devices:
+        for device in self.select_devices:
             if device.poll():
                 pending_devices.append(device)
 
         # If no devices were ready, wait until one gets ready
         if not pending_devices:
-            pending_devices, _, _ = select.select(self._select_devices, (), (), timeout)
+            pending_devices, _, _ = select.select(self.select_devices, (), (), timeout)
 
         if not pending_devices:
             # Notify caller that timeout expired without incoming events

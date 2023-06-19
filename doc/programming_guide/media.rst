@@ -1,29 +1,30 @@
-Sound and video
-===============
+Playing Sound and Video
+=======================
 
 pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated
+either OpenAL, XAudio2, DirectSound, or Pulseaudio, permitting hardware-accelerated
 mixing and surround-sound 3D positioning. Video is played into OpenGL
 textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_ v4.X, an
+Decoding of compressed audio and video is provided by `FFmpeg`_ v4 or v5, an
 optional component available for Linux, Windows and Mac OS X. FFmpeg needs
 to be installed separately.
 
-If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
-files only. This may be sufficient for many applications that require only a
-small number of short sounds, in which case those applications need not
-distribute FFmpeg.
+If FFmpeg is not present, pyglet will at a minimum be able to play WAV files
+only. Depending on the OS, an additional limited amount of compressed formats
+may also be supported, but only WAV is guaranteed (see "Supported media types
+" below). the This may be sufficient for many applications that require only a
+small number of short sounds, in which case those applications need not distribute FFmpeg.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
 
-.. _openal.org: http://www.openal.org/downloads.html
+.. _openal.org: https://www.openal.org/downloads
 
 Audio drivers
 -------------
 
-pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio. Only one
+pyglet can use OpenAL, XAudio2, DirectSound, or Pulseaudio to play back audio. Only one
 of these drivers can be used in an application. In most cases you won't need
 to concern yourself with choosing a driver, but you can manually select one if
 desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
@@ -41,18 +42,18 @@ The available drivers depend on your operating system:
         * - DirectSound
           -
           -
-        * -
+        * - XAudio2
           -
           - Pulseaudio
 
 The audio driver can be set through the ``audio`` key of the
 :py:data:`pyglet.options` dictionary. For example::
 
-    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
+    pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
 This tells pyglet to try using the OpenAL driver first, and if not available
-to try Pulseaudio and DirectSound in that order. If all else fails, no driver
-will be instantiated. The ``audio`` option can be a list of any of these
+to try Pulseaudio, XAudio2 and DirectSound in that order. If all else fails,
+no driver will be instantiated. The ``audio`` option can be a list of any of these
 strings, giving the preference order for each driver:
 
     .. list-table::
@@ -64,6 +65,8 @@ strings, giving the preference order for each driver:
           - OpenAL
         * - ``directsound``
           - DirectSound
+        * - ``xaudio2``
+          - XAudio2
         * - ``pulse``
           - Pulseaudio
         * - ``silent``
@@ -75,6 +78,15 @@ see :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
 driver.
+
+XAudio2
+^^^^^^^^^^^
+XAudio2 is only available on Windows Vista and above and is the replacement of
+DirectSound. This provides hardware accelerated audio support for newer operating
+systems.
+
+Note that in some stripped down versions of Windows 10, XAudio2 may not be available
+until the required DLL's are installed.
 
 DirectSound
 ^^^^^^^^^^^
@@ -89,25 +101,102 @@ OpenAL
 OpenAL is included with Mac OS X. Windows users can download a generic driver
 from `openal.org`_, or from their sound device's manufacturer. Most Linux
 distributions will have OpenAL available in the repositories for download.
-For example, Ubuntu users can ``apt install libopenal1``.
+For example, Arch users can ``pacman -S openal`` and Ubuntu users can ``apt install libopenal1``.
 
 Pulse
 ^^^^^
 
-Pulseaudio has become the standard Linux audio implementation over the past
-few years, and is installed by default with most modern Linux distributions.
-Pulseaudio does not support positional audio, and is limited to stereo. It
-is recommended to use OpenAL if positional audio is required.
+Pulseaudio can also be used directly on Linux, and is installed by default
+with most modern Linux distributions. Pulseaudio does not support positional
+audio, and is limited to stereo. It is recommended to use OpenAL if positional
+audio is required.
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
     distributions. It can be downloaded separately from your audio device
-    manufacturer or `openal.org <http://www.openal.org/downloads.html>`_
+    manufacturer or `openal.org <https://www.openal.org/downloads>`_
 
 Supported media types
 ---------------------
 
-If FFmpeg is not installed, only uncompressed RIFF/WAV files encoded with
-linear PCM can be read.
+pyglet has included support for loading Wave (.wav) files, which are therefore
+guaranteed to work on all platforms. pyglet will also use various platform libraries
+and frameworks to support a limited amount of compressed audio types, without the need
+for FFmpeg. While FFmpeg supports a large array of formats and codecs, it may be an
+unnecessarily large dependency when only simple audio playback is needed.
+
+These formats are supported natively under the following systems and codecs:
+
+Windows Media Foundation
+^^^^^^^^^^^^^^^^^^^^^^^^
+Supported on Windows operating systems.
+
+The following are supported on **Windows Vista and above**:
+
+* MP3
+* WMA
+* ASF
+* SAMI/SMI
+
+The following are also supported on **Windows 7 and above**:
+
+* AAC/ADTS
+
+The following is undocumented but known to work on **Windows 10**:
+
+* FLAC
+
+
+GStreamer
+^^^^^^^^^
+Supported on Linux operating systems that have the GStreamer installed. Please note that the
+associated Python packages for gobject & gst are also required. This varies by distribution,
+but will often already be installed along with GStreamer.
+
+* MP3
+* FLAC
+* OGG
+* M4A
+
+
+CoreAudio
+^^^^^^^^^
+Supported on Mac operating systems.
+
+* AAC
+* AC3
+* AIF
+* AU
+* CAF
+* MP3
+* M4A
+* SND
+* SD2
+
+
+PyOgg
+^^^^^
+Supported on Windows, Linux, and Mac operating systems.
+
+PyOgg is a lightweight Python library that provides Python bindings for Opus, Vorbis,
+and FLAC codecs.
+
+If the PyOgg module is installed in your site packages, pyglet will optionally detect
+and use it. Since not all operating systems can decode the same audio formats natively,
+it can often be a hassle to choose an audio format that is truely cross platform with
+a small footprint. This wrapper was created to help with that issue.
+
+Supports the following formats:
+
+* OGG
+* FLAC
+* OPUS
+
+Refer to their installation guide found here: https://pyogg.readthedocs.io/en/latest/installation.html
+
+FFmpeg
+^^^^^^
+FFmpeg requires an external dependency, please see installation instructions
+in the next section below.
 
 With FFmpeg, many common and less-common formats are supported. Due to the
 large number of combinations of audio and video codecs, options, and container
@@ -138,9 +227,7 @@ For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
 to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
-fix errors in the current implementation. Currently a C bindings was written
-with ctypes using FFmpeg v4.X. This means that this version of pyglet will
-support all FFmpeg binaries with the major version set to 4.
+fix errors in the current implementation.
 
 FFmpeg installation
 -------------------
@@ -150,8 +237,9 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-This means that the major version must be 4.X. All minor versions are
-supported. Choose the correct architecture depending on the targeted
+Currently Pyglet supports versions 4.x and 5.x of FFmpeg.
+
+Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
 interpreter, you must download the 32 bits shared binaries.
 
@@ -164,6 +252,8 @@ Finally make sure you download the **shared** builds, not the static or the
 dev builds.
 
 For Mac OS and Linux, the library is usually already installed system-wide.
+It may be easiest to list FFmpeg as a requirement for your project,
+and leave it up to the user to ensure that it is installed.
 For Windows users, it's not recommended to install the library in one of the
 windows sub-folders.
 
@@ -184,6 +274,13 @@ add the dll location to the PATH::
 For Linux and Mac OS::
 
     os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
+
+..note:: If your project is going to reply on FFmpeg, it's a good idea to
+         check at runtime that FFmpeg is being properly detected. This can be
+         done with a call to :py:func:`pyglet.media.have_ffmpeg`. If not `True`
+         you can show a message and exit gracefully, rather than crashing later
+         when failing to load media files.
+
 
 Loading media
 -------------
@@ -272,20 +369,19 @@ Audio Synthesis
 
 In addition to loading audio files, the :py:mod:`pyglet.media.synthesis`
 module is available for simple audio synthesis. There are several basic
-waveforms available:
+waveforms available, including:
 
 * :py:class:`~pyglet.media.synthesis.Sine`
-* :py:class:`~pyglet.media.synthesis.Sawtooth`
 * :py:class:`~pyglet.media.synthesis.Square`
-* :py:class:`~pyglet.media.synthesis.FM`
-* :py:class:`~pyglet.media.synthesis.Silence`
+* :py:class:`~pyglet.media.synthesis.Sawtooth`
+* :py:class:`~pyglet.media.synthesis.Triangle`
 * :py:class:`~pyglet.media.synthesis.WhiteNoise`
-* :py:class:`~pyglet.media.synthesis.Digitar`
+* :py:class:`~pyglet.media.synthesis.Silence`
 
-The module documentation for each will provide more information on
-constructing them, but at a minimum you will need to specify the duration.
-You will also want to set the audio frequency (most waveforms will default
-to 440Hz). Some waveforms, such as the FM, have additional parameters.
+These waveforms can be constructed by specifying a duration, frequency,
+and sample rate. At a minimum, a duration is required. For example::
+
+    sine = pyglet.media.synthesis.Sine(3.0, frequency=440, sample_rate=44800)
 
 For shaping the waveforms, several simple envelopes are available.
 These envelopes affect the amplitude (volume), and can make for more
@@ -294,7 +390,7 @@ and then pass it into the constructor of any of the above waveforms.
 The same envelope instance can be passed to any number of waveforms,
 reducing duplicate code when creating multiple sounds.
 If no envelope is used, all waveforms will default to the FlatEnvelope
-of maximum volume, which esentially has no effect on the sound.
+of maximum amplitude, which esentially has no effect on the sound.
 Check the module documentation of each Envelope to see which parameters
 are available.
 
@@ -305,10 +401,8 @@ are available.
 
 An example of creating an envelope and waveforms::
 
-    adsr = pyglet.media.synthesis.ADSREnvelope(0.05, 0.2, 0.1)
-
+    adsr = pyglet.media.synthesis.ADSREnvelope(attack=0.05, decay=0.2, release=0.1)
     saw = pyglet.media.synthesis.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
-    fm = pyglet.media.synthesis.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
 
 The waveforms you create with the synthesis module can be played like any
 other loaded sound. See the next sections for more detail on playback.
@@ -435,22 +529,26 @@ There are several properties that describe the player's current state:
             the end. If set to ``False``, playback will continue to the next
             queued source.
 
-When a player reaches the end of the current source, by default it will move
-immediately to the next queued source. If there are no more sources, playback
-stops until another source is queued. The :class:`~pyglet.media.player.Player`
-has a :py:attr:`~pyglet.media.player.Player.loop` attribute which determines
-the player behaviour when the current source reaches the end. If
-:py:attr:`~pyglet.media.player.Player.loop` is ``False`` (default) the
-:class:`~pyglet.media.player.Player` starts to play the next queued source.
-Otherwise the :class:`~pyglet.media.player.Player` re-plays the current source
-until either :py:attr:`~pyglet.media.player.Player.loop` is set to ``False``
-or :py:meth:`~pyglet.media.Player.next_source` is called.
 
-You can change the :py:attr:`~pyglet.media.player.Player.loop` attribute at
-any time,  but be aware that unless sufficient time is given for the future
-data to be  decoded and buffered there may be a stutter or gap in playback.
-If set well  in advance of the end of the source (say, several seconds), there
-will be no  disruption.
+When a player reaches the end of the current source, an :py:meth:`~pyglet.media.Player.on_eos`
+(on end-of-source) event is dispatched. Players have a default handler for this event,
+which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
+attribute has been set to ``True``), or move to the next queued source immediately.
+When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
+event is dispached, and playback stops until another source is queued.
+
+For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
+at any time, but be aware that unless sufficient time is given for the future
+data to be decoded and buffered there may be a stutter or gap in playback.
+If set well in advance of the end of the source (say, several seconds), there
+will be no disruption.
+
+The end-of-source behavior can be further customized by setting your own event handlers;
+see :ref:`guide_events`. You can either replace the default event handlers directly,
+or add an additional event as described in the reference. For example::
+
+    my_player.on_eos = my_player.pause
+
 
 Gapless playback
 ----------------
@@ -514,12 +612,12 @@ Ticking the clock
 
 If you are using pyglet's media libraries outside of a pyglet app, you will need 
 to use some kind of loop to tick the pyglet clock periodically (perhaps every 
-200ms or so), otherwise only the first small sample of media will be played:
+200ms or so), otherwise only the first small sample of media will be played::
 
     pyglet.clock.tick()
 
 If you wish to have a media source loop continuously (`player.loop = True`) you will
-also need to ensure Pyglet's events are dispatched inside your loop:
+also need to ensure Pyglet's events are dispatched inside your loop::
 
     pyglet.app.platform_event_loop.dispatch_posted_events()
 

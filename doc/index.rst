@@ -1,6 +1,13 @@
 pyglet Documentation
 ====================
 
+.. ATTENTION::
+   This documentation is for the pyglet 2.x series, which has incompatible
+   changes from the 1.5 and older releases. If you are looking for documentation
+   for the previous stable release, please see
+   `1.5 maintenance <https://pyglet.readthedocs.io/en/pyglet-1.5-maintenance/>`_.
+
+
 **pyglet** is a cross-platform windowing and multimedia library for Python,
 intended for developing games and other visually rich applications. It supports
 windowing, user interface event handling, game controllers and joysticks,
@@ -22,13 +29,15 @@ Some of the features of pyglet are:
   use it for both commercial and other open-source projects with very little
   restriction.
 
-Please join our `Discord` server, or join us on the `mailing list`_!
+Please join our `Discord`_ server, or join us on the `mailing list`_!
 
 .. _Discord: https://discord.gg/QXyegWe
 .. _mailing list: http://groups.google.com/group/pyglet-users
 
 If this is your first time reading about pyglet, we suggest you start at
 :doc:`programming_guide/quickstart`.
+If you are migrating from an older version of pyglet, please read through
+:doc:`programming_guide/migration`.
 
 .. toctree::
    :maxdepth: 3
@@ -40,21 +49,23 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
-   programming_guide/graphics
    programming_guide/shapes
-   programming_guide/text
    programming_guide/image
    programming_guide/media
+   programming_guide/text
    programming_guide/resources
+   programming_guide/graphics
    programming_guide/events
    programming_guide/time
    programming_guide/context
    programming_guide/gl
+   programming_guide/math
    programming_guide/eventloop
+   programming_guide/examplegame
+
    programming_guide/options
    programming_guide/debug
-   programming_guide/advanced
-   programming_guide/examplegame
+   programming_guide/migration
 
 .. toctree::
    :maxdepth: 3
@@ -68,9 +79,11 @@ If this is your first time reading about pyglet, we suggest you start at
    modules/font
    modules/gl
    modules/graphics/index
+   modules/gui
    modules/image/index
    modules/info
    modules/input
+   modules/math
    modules/media
    modules/resource
    modules/sprite

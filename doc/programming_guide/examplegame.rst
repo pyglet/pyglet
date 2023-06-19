@@ -211,13 +211,14 @@ To check new asteroids against the player’s position, we need to pass the
 player’s position into the `asteroids()` function and keep regenerating
 new coordinates until the asteroid is far enough away.  pyglet sprites
 keep track of their position both as a tuple (Sprite.position) and as
-x and y attributes (Sprite.x and Sprite.y).  To keep our code short,
-we’ll just pass the position tuple into the function::
+x, y, and z attributes (Sprite.x, Sprite.y, Sprite.z).  To keep our code
+short, we’ll just pass the position tuple into the function. We're not using
+the z value, so we just use a throwaway variable for that::
 
     def asteroids(num_asteroids, player_position):
         asteroids = []
         for i in range(num_asteroids):
-            asteroid_x, asteroid_y = player_position
+            asteroid_x, asteroid_y, _ = player_position
             while distance((asteroid_x, asteroid_y), player_position) < 100:
                 asteroid_x = random.randint(0, 800)
                 asteroid_y = random.randint(0, 600)
@@ -642,7 +643,7 @@ First, load the image in resources.py::
 
 To get the flame to draw behind the player, we need to move the flame image’s
 center of rotation to the right, past the end of the image.
-To do that, we just set its `anchor_x` and `anchor_y` attributes:
+To do that, we just set its `anchor_x` and `anchor_y` attributes::
 
     engine_image.anchor_x = engine_image.width * 1.5
     engine_image.anchor_y = engine_image.height / 2
@@ -838,7 +839,7 @@ bad idea to modify a list while iterating over it.  The fix is to simply
 add new objects to a separate list, then add the objects in the separate
 list to game_objects after we have finished iterating over it.
 
-Declare a to_add list just below the loop and add new objects to it instead.
+Declare a to_add list just above the loop and add new objects to it instead.
 At the very bottom of `update()`, after the object removal code,
 add the objects in to_add to game_objects::
 
@@ -1039,7 +1040,7 @@ bullets under the right circumstances::
             return False
         ...
 
-Finally, set self.reacts_to_bullets = False in Player.__init__().  `TheBullet`
+Finally, set self.reacts_to_bullets = False in Player.__init__().  The `Bullet`
 class is completely finished!  Now let’s make something happen when a bullet
 hits an asteroid.
 

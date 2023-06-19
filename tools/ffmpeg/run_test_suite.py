@@ -51,7 +51,7 @@ def main(samples_dir):
             print("*** Error, failed to create output dir in the form %s , for any n<100." % s)
             sys.exit(1)
 
-    print("Results will be write to directory: % s" % pathserv.session_dir)
+    print(f"Results will be write to directory: {pathserv.session_dir}")
 
     playmany.play_many(pathserv)
 

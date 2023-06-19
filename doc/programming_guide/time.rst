@@ -2,9 +2,7 @@ Keeping track of time
 =====================
 
 pyglet's :py:mod:`~pyglet.clock` module allows you to schedule functions
-to run periodically, or for one-shot future execution.  There are also some
-helpful utilities provided for calculating and displaying the application
-frame rate.
+to run periodically, or for one-shot future execution.
 
 .. _guide_calling-functions-periodically:
 
@@ -35,12 +33,13 @@ To have a function called periodically, for example, once every 0.1 seconds::
 
     def update(dt):
         # ...
+
     pyglet.clock.schedule_interval(update, 0.1)
 
 The `dt`, or `delta time` parameter gives the number of "wall clock" seconds
 elapsed since the last call of this function, (or the time the function was
 scheduled, if it's the first period). Due to latency, load and timer
-inprecision, this might be slightly more or less than the requested interval.
+imprecision, this might be slightly more or less than the requested interval.
 Please note that the `dt` parameter is always passed to scheduled functions,
 so be sure to expect it when writing functions even if you don't need to
 use it.
@@ -63,10 +62,11 @@ as frequently as possible (and will likely cause heavy CPU usage)::
 
     def benchmark(dt):
         # ...
+
     pyglet.clock.schedule(benchmark)
 
-By default pyglet window buffer swaps are synchronised to the display refresh
-rate, so you may also want to disable vsync if you are running a benchmark.
+.. note:: By default pyglet window buffer swaps are synchronised to the display refresh
+          rate, so you may also want to disable vsync if you are running a benchmark.
 
 For one-shot events, use :py:func:`~pyglet.clock.schedule_once`::
 
@@ -80,6 +80,7 @@ To stop a scheduled function from being called, including cancelling a
 periodic function, use :py:func:`pyglet.clock.unschedule`. This could be
 useful if you want to start running a function on schedule when a user provides
 a certain input, and then unschedule it when another input is received.
+
 
 Sprite movement techniques
 --------------------------
@@ -99,9 +100,10 @@ screen at exactly 10 pixels per second::
     sprite = pyglet.sprite.Sprite(image)
     sprite.dx = 10.0
 
-    def update(dt):
+    def move_sprite(dt):
         sprite.x += sprite.dx * dt
-    pyglet.clock.schedule_interval(update, 1/60.0) # update at 60Hz
+
+    pyglet.clock.schedule_interval(move_sprite, 1/60.0)  # update at 60Hz
 
 This is a robust technique for simple sprite movement, as the velocity will
 remain constant regardless of the speed or load of the computer.
@@ -125,21 +127,9 @@ below.
           - Frame number
           - Frames per second
 
-The frame rate
---------------
-
-Game performance is often measured in terms of the number of times the display
-is updated every second; that is, the frames-per-second or FPS.  You can
-determine your application's FPS with a single function call::
-
-    pyglet.clock.get_fps()
-
-The value returned is more useful than simply taking the reciprocal of `dt`
-from a period function, as it is averaged over a sliding window of several
-frames.
 
 Displaying the frame rate
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 A simple way to profile your application performance is to display the frame
 rate while it is running.  Printing it to the console is not ideal as this
@@ -159,6 +149,7 @@ window in a semi-translucent large font.
 See the :py:class:`~pyglet.window.FPSDisplay` documentation for details
 on how to customise this, or even display another clock value (such as
 the current time) altogether.
+
 
 User-defined clocks
 -------------------

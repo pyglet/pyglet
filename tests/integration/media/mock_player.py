@@ -9,10 +9,10 @@ class MockPlayer:
         self.event_loop = event_loop
         self.events = []
         self.pyclock = pyglet.clock.get_default()
-        super(MockPlayer, self).__init__()
+        super().__init__()
 
     def dispatch_event(self, event_type, *args):
-        super(MockPlayer, self).dispatch_event(event_type, *args)
+        super().dispatch_event(event_type, *args)
         if _debug:
             print('{}: event {} received @ {}'.format(
                 self.__class__.__name__,

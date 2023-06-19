@@ -234,7 +234,7 @@ created based on the values of these properties:
 If you wish to work with OpenGL directly, you can request a higher level
 context. This is required if you wish to work with the modern OpenGL
 programmable pipeline. Please note, however, that pyglet currently uses
-legacy OpenGL functionality for many of it's internal modules (such as
+legacy OpenGL functionality for many of its internal modules (such as
 the text, graphics, and sprite modules). Requesting a higher version
 context will currently prevent usage of these modules.
 

@@ -1,45 +1,10 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import unicodedata
 import urllib.parse
 from ctypes import *
 from functools import lru_cache
 
 import pyglet
-from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
+from pyglet.window import WindowException, MouseCursorException
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
 
@@ -101,6 +66,8 @@ _motion_map = {
     (key.END, True):        key.MOTION_END_OF_FILE,
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
     (key.DELETE, False):    key.MOTION_DELETE,
+    (key.C, True):          key.MOTION_COPY,
+    (key.V, True):          key.MOTION_PASTE
 }
 
 
@@ -123,24 +90,17 @@ XlibEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
-
-
 class XlibWindow(BaseWindow):
     _x_display = None               # X display connection
     _x_screen_id = None             # X screen index
     _x_ic = None                    # X input context
     _window = None                  # Xlib window handle
-    _minimum_size = None
-    _maximum_size = None
     _override_redirect = False
 
     _x = 0
     _y = 0                          # Last known window position
-    _width = 0
-    _height = 0                     # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6    # State of each xlib button
-    _keyboard_exclusive = False
     _active = True
     _applied_mouse_exclusive = False
     _applied_keyboard_exclusive = False
@@ -232,6 +192,8 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
+            if self.style in ('transparent', 'overlay'):
+                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -251,6 +213,11 @@ class XlibWindow(BaseWindow):
             #            no effect on other systems, so it's set
             #            unconditionally.
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
+
+            if self.style in ('transparent', 'overlay'):
+                mask |= xlib.CWBorderPixel
+                window_attributes.border_pixel = 0
+                window_attributes.background_pixel = 0
 
             if self._fullscreen:
                 width, height = self.screen.width, self.screen.height
@@ -370,7 +337,7 @@ class XlibWindow(BaseWindow):
         }
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', (styles[self._style],))
-        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+        elif self._style in (self.WINDOW_STYLE_BORDERLESS, self.WINDOW_STYLE_OVERLAY):
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
@@ -413,7 +380,7 @@ class XlibWindow(BaseWindow):
 
             xlib.XFlush(self._x_display)
 
-            # Need to set argtypes on this function because it's vararg,
+            # Need to set argtypes on this function because its vararg,
             # and ctypes guesses wrong.
             xlib.XCreateIC.argtypes = [xlib.XIM,
                                        c_char_p, c_int,
@@ -535,10 +502,11 @@ class XlibWindow(BaseWindow):
 
         self._sync_resize()
 
-    def set_vsync(self, vsync):
+    def set_vsync(self, vsync: bool) -> None:
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-        self._vsync = vsync
+
+        super().set_vsync(vsync)
         self.context.set_vsync(vsync)
 
     def set_caption(self, caption):
@@ -566,11 +534,8 @@ class XlibWindow(BaseWindow):
     def get_caption(self):
         return self._caption
 
-    def set_size(self, width, height):
-        if self._fullscreen:
-            raise WindowException('Cannot set size of fullscreen window.')
-        self._width = width
-        self._height = height
+    def set_size(self, width: int, height: int) -> None:
+        super().set_size(width, height)
         if not self._resizable:
             self.set_minimum_size(width, height)
             self.set_maximum_size(width, height)
@@ -580,13 +545,6 @@ class XlibWindow(BaseWindow):
 
     def _update_view_size(self):
         xlib.XResizeWindow(self._x_display, self._view, self._width, self._height)
-
-    def get_size(self):
-        # XGetGeometry and XWindowAttributes seem to always return the
-        # original size of the window, which is wrong after the user
-        # has resized it.
-        # XXX this is probably fixed now, with fix of resize.
-        return self._width, self._height
 
     def set_location(self, x, y):
         if self._is_reparented():
@@ -619,19 +577,20 @@ class XlibWindow(BaseWindow):
         if self._x_display and self._window:
             xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
-    def set_visible(self, visible=True):
+    def set_visible(self, visible: bool = True) -> None:
+        super().set_visible(visible)
+
         if visible:
             self._map()
         else:
             self._unmap()
-        self._visible = visible
 
-    def set_minimum_size(self, width, height):
-        self._minimum_size = width, height
+    def set_minimum_size(self, width: int, height: int) -> None:
+        super().set_minimum_size(width, height)
         self._set_wm_normal_hints()
 
-    def set_maximum_size(self, width, height):
-        self._maximum_size = width, height
+    def set_maximum_size(self, width: int, height: int) -> None:
+        super().set_maximum_size(width, height)
         self._set_wm_normal_hints()
 
     def minimize(self):
@@ -659,11 +618,11 @@ class XlibWindow(BaseWindow):
     @lru_cache()
     def _create_cursor_from_image(self, cursor):
         """Creates platform cursor from an ImageCursor instance."""
-        image = cursor.texture
-        width = image.width
-        height = image.height
+        texture = cursor.texture
+        width = texture.width
+        height = texture.height
 
-        alpha_luma_bytes = image.get_image_data().get_data('AL', -width * 2)
+        alpha_luma_bytes = texture.get_image_data().get_data('AL', -width * 2)
         mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
         bmp_data = self._downsample_1bit(alpha_luma_bytes[1::2])
 
@@ -775,14 +734,14 @@ class XlibWindow(BaseWindow):
         if exclusive == self._mouse_exclusive:
             return
 
-        self._mouse_exclusive = exclusive
+        super().set_exclusive_mouse(exclusive)
         self._update_exclusivity()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive == self._keyboard_exclusive:
             return
 
-        self._keyboard_exclusive = exclusive
+        super().set_exclusive_keyboard(exclusive)
         self._update_exclusivity()
 
     def get_system_mouse_cursor(self, name):
@@ -1117,8 +1076,7 @@ class XlibWindow(BaseWindow):
                     motion = self._event_text_motion(symbol, modifiers)
                     if motion:
                         if modifiers & key.MOD_SHIFT:
-                            self.dispatch_event(
-                                'on_text_motion_select', motion)
+                            self.dispatch_event('on_text_motion_select', motion)
                         else:
                             self.dispatch_event('on_text_motion', motion)
                     elif text and not modifiers_ctrl:
@@ -1168,7 +1126,7 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev):
         x = ev.xmotion.x
-        y = self.height - ev.xmotion.y
+        y = self.height - ev.xmotion.y - 1
 
         if self._mouse_in_window:
             dx = x - self._mouse_x
@@ -1176,8 +1134,7 @@ class XlibWindow(BaseWindow):
         else:
             dx = dy = 0
 
-        if self._applied_mouse_exclusive \
-                and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
+        if self._applied_mouse_exclusive and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
             # Ignore events caused by XWarpPointer
             self._mouse_x = x
             self._mouse_y = y
@@ -1204,6 +1161,7 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
+        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
@@ -1224,11 +1182,12 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
+        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
             x = ev.xmotion.x - self._view_x
-            y = self._height - (ev.xmotion.y - self._view_y)
+            y = self._height - (ev.xmotion.y - self._view_y - 1)
 
             if self._mouse_in_window:
                 dx = x - self._mouse_x
@@ -1455,7 +1414,11 @@ class XlibWindow(BaseWindow):
     def _event_button(self, ev):
         x = ev.xbutton.x
         y = self.height - ev.xbutton.y
-        button = 1 << (ev.xbutton.button - 1)  # 1, 2, 3 -> 1, 2, 4
+
+        button = ev.xbutton.button - 1
+        if button == 7 or button == 8:
+            button -= 4
+
         modifiers = self._translate_modifiers(ev.xbutton.state)
         if ev.type == xlib.ButtonPress:
             # override_redirect issue: manually activate this window if
@@ -1467,13 +1430,14 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, -1)
-            elif ev.xbutton.button < len(self._mouse_buttons):
-                self._mouse_buttons[ev.xbutton.button] = True
-                self.dispatch_event('on_mouse_press', x, y, button, modifiers)
-        else:
-            if ev.xbutton.button < 4:
-                self._mouse_buttons[ev.xbutton.button] = False
-                self.dispatch_event('on_mouse_release', x, y, button, modifiers)
+            elif ev.xbutton.button == 6:
+                self.dispatch_event('on_mouse_scroll', x, y, -1, 0)
+            elif ev.xbutton.button == 7:
+                self.dispatch_event('on_mouse_scroll', x, y, 1, 0)
+            elif button < 5:
+                self.dispatch_event('on_mouse_press', x, y, 1 << button, modifiers)
+        elif button < 5:
+            self.dispatch_event('on_mouse_release', x, y, 1 << button, modifiers)
 
     @ViewEventHandler
     @XlibEventHandler(xlib.Expose)
@@ -1488,15 +1452,6 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.EnterNotify)
     def _event_enternotify(self, ev):
-        # figure active mouse buttons
-        # XXX ignore modifier state?
-        state = ev.xcrossing.state
-        self._mouse_buttons[1] = state & xlib.Button1Mask
-        self._mouse_buttons[2] = state & xlib.Button2Mask
-        self._mouse_buttons[3] = state & xlib.Button3Mask
-        self._mouse_buttons[4] = state & xlib.Button4Mask
-        self._mouse_buttons[5] = state & xlib.Button5Mask
-
         # mouse position
         x = self._mouse_x = ev.xcrossing.x
         y = self._mouse_y = self.height - ev.xcrossing.y
@@ -1559,3 +1514,6 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, ev):
         self._mapped = False
         self.dispatch_event('on_hide')
+
+
+__all__ = ["XlibEventHandler", "XlibWindow"]

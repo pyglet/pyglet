@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Text formatting, layout and display.
 
 This module provides classes for loading styled documents from text files,
@@ -73,9 +38,11 @@ creating scrollable layouts.
 .. versionadded:: 1.1
 """
 
-import os.path
+from os.path import dirname as _dirname
+from os.path import splitext as _splitext
 
 import pyglet
+
 from pyglet.text import layout, document, caret
 
 
@@ -130,7 +97,7 @@ def get_decoder(filename, mimetype=None):
     :rtype: `DocumentDecoder`
     """
     if mimetype is None:
-        _, ext = os.path.splitext(filename)
+        _, ext = _splitext(filename)
         if ext.lower() in ('.htm', '.html', '.xhtml'):
             mimetype = 'text/html'
         else:
@@ -146,7 +113,7 @@ def get_decoder(filename, mimetype=None):
         from pyglet.text.formats import attributed
         return attributed.AttributedTextDecoder()
     else:
-        raise DocumentDecodeException('Unknown format "%s"' % mimetype)
+        raise DocumentDecodeException(f'Unknown format "{mimetype}"')
 
 
 def load(filename, file=None, mimetype=None):
@@ -176,7 +143,7 @@ def load(filename, file=None, mimetype=None):
     if hasattr(file_contents, "decode"):
         file_contents = file_contents.decode()
 
-    location = pyglet.resource.FileLocation(os.path.dirname(filename))
+    location = pyglet.resource.FileLocation(_dirname(filename))
     return decoder.decode(file_contents, location)
 
 
@@ -232,9 +199,9 @@ class DocumentLabel(layout.TextLayout):
     """
 
     def __init__(self, document=None,
-                 x=0, y=0, width=None, height=None,
+                 x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a label for a given document.
 
         :Parameters:
@@ -244,6 +211,8 @@ class DocumentLabel(layout.TextLayout):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the label in pixels, or None
             `height` : int
@@ -263,15 +232,17 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
-        super(DocumentLabel, self).__init__(document,
-                                            width=width, height=height,
-                                            multiline=multiline,
-                                            dpi=dpi, batch=batch, group=group)
-
+        super().__init__(document, width, height, multiline, dpi, batch, group)
         self._x = x
         self._y = y
+        self._z = z
+        self._rotation = rotation
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._update()
@@ -300,8 +271,27 @@ class DocumentLabel(layout.TextLayout):
 
     @color.setter
     def color(self, color):
-        self.document.set_style(0, len(self.document.text),
-                                {'color': color})
+        self.document.set_style(0, len(self.document.text), {'color': color})
+
+    @property
+    def opacity(self):
+        """Blend opacity.
+
+        This property sets the alpha component of the colour of the label's
+        vertices.  With the default blend mode, this allows the layout to be
+        drawn with fractional opacity, blending with the background.
+
+        An opacity of 255 (the default) has no effect.  An opacity of 128 will
+        make the label appear semi-translucent.
+
+        :type: int
+        """
+        return self.color[3]
+
+    @opacity.setter
+    def opacity(self, alpha):
+        if alpha != self.color[3]:
+            self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
     def font_name(self):
@@ -316,8 +306,7 @@ class DocumentLabel(layout.TextLayout):
 
     @font_name.setter
     def font_name(self, font_name):
-        self.document.set_style(0, len(self.document.text),
-                                {'font_name': font_name})
+        self.document.set_style(0, len(self.document.text), {'font_name': font_name})
 
     @property
     def font_size(self):
@@ -329,8 +318,7 @@ class DocumentLabel(layout.TextLayout):
 
     @font_size.setter
     def font_size(self, font_size):
-        self.document.set_style(0, len(self.document.text),
-                                {'font_size': font_size})
+        self.document.set_style(0, len(self.document.text), {'font_size': font_size})
 
     @property
     def bold(self):
@@ -342,8 +330,7 @@ class DocumentLabel(layout.TextLayout):
 
     @bold.setter
     def bold(self, bold):
-        self.document.set_style(0, len(self.document.text),
-                                {'bold': bold})
+        self.document.set_style(0, len(self.document.text), {'bold': bold})
 
     @property
     def italic(self):
@@ -355,8 +342,7 @@ class DocumentLabel(layout.TextLayout):
 
     @italic.setter
     def italic(self, italic):
-        self.document.set_style(0, len(self.document.text),
-                                {'italic': italic})
+        self.document.set_style(0, len(self.document.text), {'italic': italic})
 
     def get_style(self, name):
         """Get a document style value by name.
@@ -386,18 +372,21 @@ class DocumentLabel(layout.TextLayout):
         """
         self.document.set_style(0, len(self.document.text), {name: value})
 
+    def __del__(self):
+        self.delete()
+
 
 class Label(DocumentLabel):
     """Plain text label.
     """
 
     def __init__(self, text='',
-                 font_name=None, font_size=None, bold=False, italic=False,
+                 font_name=None, font_size=None, bold=False, italic=False, stretch=False,
                  color=(255, 255, 255, 255),
-                 x=0, y=0, width=None, height=None,
+                 x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
                  align='left',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a plain text label.
 
         :Parameters:
@@ -408,16 +397,20 @@ class Label(DocumentLabel):
                 first matching name is used.
             `font_size` : float
                 Font size, in points.
-            `bold` : bool
+            `bold` : bool/str
                 Bold font style.
-            `italic` : bool
+            `italic` : bool/str
                 Italic font style.
+            `stretch` : bool/str
+                 Stretch font style.
             `color` : (int, int, int, int)
                 Font colour, as RGBA components in range [0, 255].
             `x` : int
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the label in pixels, or None
             `height` : int
@@ -441,18 +434,21 @@ class Label(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
-        document = decode_text(text)
-        super(Label, self).__init__(document, x, y, width, height,
-                                    anchor_x, anchor_y,
-                                    multiline, dpi, batch, group)
+        doc = decode_text(text)
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
             'font_size': font_size,
             'bold': bold,
             'italic': italic,
+            'stretch': stretch,
             'color': color,
             'align': align,
         })
@@ -466,9 +462,9 @@ class HTMLLabel(DocumentLabel):
     """
 
     def __init__(self, text='', location=None,
-                 x=0, y=0, width=None, height=None,
+                 x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
         """Create a label with an HTML string.
 
         :Parameters:
@@ -481,6 +477,8 @@ class HTMLLabel(DocumentLabel):
                 X coordinate of the label.
             `y` : int
                 Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the label in pixels, or None
             `height` : int
@@ -500,14 +498,16 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
 
         """
         self._text = text
         self._location = location
-        document = decode_html(text, location)
-        super(HTMLLabel, self).__init__(document, x, y, width, height,
-                                        anchor_x, anchor_y,
-                                        multiline, dpi, batch, group)
+        doc = decode_html(text, location)
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
 
     @property
     def text(self):

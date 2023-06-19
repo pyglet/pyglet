@@ -1,58 +1,17 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
-from pyglet.app.base import PlatformEventLoop
-from pyglet.libs.darwin import cocoapy
+import signal
+from pyglet import app
+from pyglet.app.base import PlatformEventLoop, EventLoop
+from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
+    ObjCClass, get_selector
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSMenu = cocoapy.ObjCClass('NSMenu')
 NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
-NSAutoreleasePool = cocoapy.ObjCClass('NSAutoreleasePool')
 NSDate = cocoapy.ObjCClass('NSDate')
 NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
+NSTimer = cocoapy.ObjCClass('NSTimer')
 
-
-class AutoReleasePool:
-    def __enter__(self):
-        self.pool = NSAutoreleasePool.alloc().init()
-        return self.pool
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.pool.drain()
-        del self.pool
 
 
 def add_menu_item(menu, title, action, key):
@@ -65,8 +24,6 @@ def add_menu_item(menu, title, action, key):
         menu.addItem_(menuItem)
 
         # cleanup
-        title.release()
-        key.release()
         menuItem.release()
 
 
@@ -92,10 +49,77 @@ def create_menu():
         appMenuItem.release()
 
 
-class CocoaEventLoop(PlatformEventLoop):
+class _AppDelegate_Implementation:
+    _AppDelegate = ObjCSubclass('NSObject', '_AppDelegate')
+
+    @_AppDelegate.method(b'@' + PyObjectEncoding)
+    def init(self, pyglet_loop):
+        objc = ObjCInstance(send_super(self, 'init'))
+        self._pyglet_loop = pyglet_loop
+        return objc  # objc is self
+
+    @_AppDelegate.method('v')
+    def updatePyglet_(self):
+        self._pyglet_loop.nsapp_step()
+
+    @_AppDelegate.method('v@')
+    def applicationWillTerminate_(self, notification):
+        self._pyglet_loop.is_running = False
+        self._pyglet_loop.has_exit = True
+
+    @_AppDelegate.method('v@')
+    def applicationDidFinishLaunching_(self, notification):
+        self._pyglet_loop._finished_launching = True
+
+_AppDelegate = ObjCClass('_AppDelegate')  # the actual class
+
+class CocoaAlternateEventLoop(EventLoop):
+    """This is an alternate loop developed mainly for ARM64 variants of macOS.
+    nextEventMatchingMask_untilDate_inMode_dequeue_ is very broken with ctypes calls. Events eventually stop
+    working properly after X returns. This event loop differs in that it uses the built-in NSApplication event
+    loop. We tie our schedule into it via timer.
+    """
+    def run(self, interval=1/60):
+        if not interval:
+            self.clock.schedule(self._redraw_windows)
+        else:
+            self.clock.schedule_interval(self._redraw_windows, interval)
+
+        self.has_exit = False
+
+        from pyglet.window import Window
+        Window._enable_event_queue = False
+
+        # Dispatch pending events
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_pending_events()
+
+        self.platform_event_loop = app.platform_event_loop
+
+        self.dispatch_event('on_enter')
+        self.is_running = True
+        self.platform_event_loop.nsapp_start(interval)
+
+    def exit(self):
+        """Safely exit the event loop at the end of the current iteration.
+
+        This method is a thread-safe equivalent for setting
+        :py:attr:`has_exit` to ``True``.  All waiting threads will be
+        interrupted (see :py:meth:`sleep`).
+        """
+        self.has_exit = True
+        self.platform_event_loop.notify()
+
+        self.is_running = False
+        self.dispatch_event('on_exit')
+
+        self.platform_event_loop.nsapp_stop()
+
+class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def __init__(self):
-        super(CocoaEventLoop, self).__init__()
+        super(CocoaPlatformEventLoop, self).__init__()
         with AutoReleasePool():
             # Prepare the default application.
             self.NSApp = NSApplication.sharedApplication()
@@ -112,6 +136,11 @@ class CocoaEventLoop(PlatformEventLoop):
             ignoreState = cocoapy.CFSTR("ApplePersistenceIgnoreState")
             if not defaults.objectForKey_(ignoreState):
                 defaults.setBool_forKey_(True, ignoreState)
+
+            holdEnabled = cocoapy.CFSTR("ApplePressAndHoldEnabled")
+            if not defaults.objectForKey_(holdEnabled):
+                defaults.setBool_forKey_(False, holdEnabled)
+
             self._finished_launching = False
 
     def start(self):
@@ -123,6 +152,44 @@ class CocoaEventLoop(PlatformEventLoop):
                 self.NSApp.activateIgnoringOtherApps_(True)
                 self._finished_launching = True
 
+    def nsapp_start(self, interval):
+        """Used only for CocoaAlternateEventLoop"""
+        from pyglet.app import event_loop
+        self._event_loop = event_loop
+
+        def term_received(*args):
+            if self.timer:
+                self.timer.invalidate()
+                self.timer = None
+
+            self.nsapp_stop()
+
+        # Force NSApp to close if Python receives sig events.
+        signal.signal(signal.SIGINT, term_received)
+        signal.signal(signal.SIGTERM, term_received)
+
+        self.appdelegate = _AppDelegate.alloc().init(self)
+        self.NSApp.setDelegate_(self.appdelegate)
+
+        self.timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+             interval,  # Clamped internally to 0.0001 (including 0)
+             self.appdelegate,
+             get_selector('updatePyglet:'),
+             False,
+             True
+         )
+
+        self.NSApp.run()
+
+    def nsapp_step(self):
+        """Used only for CocoaAlternateEventLoop"""
+        self._event_loop.idle()
+        self.dispatch_posted_events()
+
+    def nsapp_stop(self):
+        """Used only for CocoaAlternateEventLoop"""
+        self.NSApp.terminate_(None)
+
     def step(self, timeout=None):
         with AutoReleasePool():
             self.dispatch_posted_events()
@@ -132,6 +199,8 @@ class CocoaEventLoop(PlatformEventLoop):
                 # Using distantFuture as untilDate means that nextEventMatchingMask
                 # will wait until the next event comes along.
                 timeout_date = NSDate.distantFuture()
+            elif timeout == 0.0:
+                timeout_date = NSDate.distantPast()
             else:
                 timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 
@@ -146,24 +215,7 @@ class CocoaEventLoop(PlatformEventLoop):
             if event is not None:
                 event_type = event.type()
                 if event_type != cocoapy.NSApplicationDefined:
-                    # Send out event as normal.  Responders will still receive
-                    # keyUp:, keyDown:, and flagsChanged: events.
                     self.NSApp.sendEvent_(event)
-
-                    # Resend key events as special pyglet-specific messages
-                    # which supplant the keyDown:, keyUp:, and flagsChanged: messages
-                    # because NSApplication translates multiple key presses into key
-                    # equivalents before sending them on, which means that some keyUp:
-                    # messages are never sent for individual keys.   Our pyglet-specific
-                    # replacements ensure that we see all the raw key presses & releases.
-                    # We also filter out key-down repeats since pyglet only sends one
-                    # on_key_press event per key press.
-                    if event_type == cocoapy.NSKeyDown and not event.isARepeat():
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyDown:"), None, event)
-                    elif event_type == cocoapy.NSKeyUp:
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyUp:"), None, event)
-                    elif event_type == cocoapy.NSFlagsChanged:
-                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletFlagsChanged:"), None, event)
 
                 self.NSApp.updateWindows()
                 did_time_out = False

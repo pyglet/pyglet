@@ -36,7 +36,7 @@ There are currently 3 types of interactive test cases:
   These tests are decorated with
   :func:`~tests.interactive.interactive_test_base.requires_user_action`.
 - Tests that can run without user interaction, but that cannot validate
-  whether they should pass or fail. These tests are docorated with
+  whether they should pass or fail. These tests are decorated with
   :func:`~tests.interactive.interactive_test_base.requires_user_validation`.
 - Tests that can run without user interaction and that can compare results
   to screenshots from a previous run to determine whether they pass or
@@ -47,11 +47,18 @@ Running tests
 
 The pyglet test suite is based on the `pytest framework <http://pytest.org>`_.
 
-It is preferred to use a virtual environment to run the tests.
+It is strongly preferred to use a virtual environment to run the tests.
 For instructions to set up virtual environments see :doc:`virtualenv`.
-Make sure the virtual environment for the Python version you want to
-test is active. It is preferred to run the tests on 2.7 and 3.5+
-to make sure changes are compatible with all supported Python versions.
+
+Make sure of the following when running tests:
+
+1. The virtual environment for the Python version you want to
+test is active.
+2. You are running tests against currently supported Python versions.
+
+Ideally, you should also test against the minimum supported Python
+version (currently |min_python_version|) to make sure your changes
+are compatible with all supported Python versions.
 
 To run all tests, execute pytest in the root of the pyglet repository::
 

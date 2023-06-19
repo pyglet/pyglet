@@ -1,6 +1,6 @@
-[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io)
+[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
 
-![logo_large.png](https://bitbucket.org/repo/aejyXX/images/3385888514-logo_large.png)
+![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png)
 
 # pyglet
 
@@ -8,20 +8,28 @@
 and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
+> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
+> new exciting features, but also some necessary breaking changes. If your game/application has suddenly 
+> stopped working, please read the [migration section in the documentation](https://pyglet.readthedocs.io/en/latest/programming_guide/migration.html)
+> The previous version of pyglet is tracked in the `pyglet-1.5-maintenance` branch.
+> **If you want to do a pull request for the previous release, please target the appropriate branch**. 
+
+> :exclamation: `pyglet.graphics.draw` and `pyglet.graphics.draw_indexed` will be removed
+> in pyglet v2.1. The `shapes` module is an alternative for drawing simple shapes. 
+
 * pyglet [documentation]
-* pyglet [wiki]
 * pyglet on [PyPI]
 * pyglet [discord] server
 * pyglet [mailing list]
 * pyglet [issue tracker]
 * pyglet [website]
 
-Pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
+pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
 please [open an issue](https://github.com/pyglet/pyglet/issues).
 Anyone is welcome to join our [discord] server where a lot of the development discussion is going on.
 It's also a great place to ask for help.
 
-Some of the features of pyglet are:
+Some features of pyglet are:
 
 * **No external dependencies or installation requirements.** For most application and game requirements, *pyglet*
   needs nothing else besides Python, simplifying distribution and installation. It's easy to package your project
@@ -40,8 +48,7 @@ Some of the features of pyglet are:
 
 ## Requirements
 
-Pyglet runs under Python 3.5+. Being written in pure Python, it also works on other Python
-interpreters such as PyPy. Supported platforms are:
+pyglet runs under Python 3.8+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
 
 * Windows 7 or later
 * Mac OS X 10.3 or later
@@ -51,12 +58,10 @@ interpreters such as PyPy. Supported platforms are:
   * GDK 2.0+ or Pillow (required for loading images other than PNG and BMP)
   * OpenAL or Pulseaudio (required for playing audio)
 
-**Please note that pyglet v1.5 will likely be the last version to support
-legacy OpenGL**. Future releases of pyglet will be targeting OpenGL 3.3+.
-Previous releases will remain available for download.
+**As of pyglet 2.0, OpenGL 3.3+ is required**. 
 
-Starting with version 1.4, to play compressed audio and video files,
-you will also need [FFmpeg](https://ffmpeg.org/).
+To play a large variety of compressed audio and video files,
+pyglet can optionally take advantage of [FFmpeg](https://ffmpeg.org/).
 
 ## Installation
 
@@ -96,6 +101,7 @@ it is a sign that the docs should be improved.
 If you want to contribute to pyglet, we suggest the following:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
+* Checkout the branch you wish to contribute to (such as *pyglet-1.5-maintenance*).
 * Apply your changes to your fork.
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.

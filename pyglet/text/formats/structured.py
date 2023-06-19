@@ -1,44 +1,43 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Base class for structured (hierarchical) document formats.
 """
 
 import re
 
 import pyglet
+
+from pyglet.gl import *
+
+
+class _InlineElementGroup(pyglet.graphics.Group):
+    def __init__(self, texture, program, order=0, parent=None):
+        super().__init__(order, parent)
+        self.texture = texture
+        self.program = program
+
+    def set_state(self):
+        self.program.use()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        self.program.stop()
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.program == other.program and
+                self.parent == other.parent and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id)
+
+    def __hash__(self):
+        return hash((self._order, self.program, self.parent,
+                     self.texture.target, self.texture.id))
 
 
 class ImageElement(pyglet.text.document.InlineElement):
@@ -51,18 +50,19 @@ class ImageElement(pyglet.text.document.InlineElement):
         anchor_y = self.height // image.height * image.anchor_y
         ascent = max(0, self.height - anchor_y)
         descent = min(0, -anchor_y)
-        super(ImageElement, self).__init__(ascent, descent, self.width)
+        super().__init__(ascent, descent, self.width)
 
-    def place(self, layout, x, y):
-        group = pyglet.graphics.TextureGroup(self.image.get_texture(), layout.top_group)
+    def place(self, layout, x, y, z):
+        program = pyglet.text.layout.get_default_image_layout_shader()
+        group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
         x1 = x
         y1 = y + self.descent
         x2 = x + self.width
         y2 = y + self.height + self.descent
-        vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, group,
-            ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
-            ('c3B', (255, 255, 255) * 4),
-            ('t3f', self.image.tex_coords))
+        vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                                  layout.batch, group,
+                                                  position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
+                                                  tex_coords=('f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
     def remove(self, layout):
@@ -70,21 +70,22 @@ class ImageElement(pyglet.text.document.InlineElement):
         del self.vertex_lists[layout]
 
 
-def _int_to_roman(input):
+def _int_to_roman(number):
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
-    if not 0 < input < 4000:
-        raise ValueError("Argument must be between 1 and 3999")    
-    ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
-    nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    if not 0 < number < 4000:
+        raise ValueError("Argument must be between 1 and 3999")
+    integers = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
+    numerals = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
     result = ""
-    for i in range(len(ints)):
-        count = int(input // ints[i])
-        result += nums[i] * count
-        input -= ints[i] * count
+    for i in range(len(integers)):
+        count = int(number // integers[i])
+        result += numerals[i] * count
+        number -= integers[i] * count
     return result
 
 
 class ListBuilder:
+
     def begin(self, decoder, style):
         """Begin a list.
 
@@ -118,7 +119,7 @@ class ListBuilder:
                 Optional value of the list item.  The meaning is list-type
                 dependent.
 
-        """            
+        """
         mark = self.get_mark(value)
         if mark:
             decoder.add_text(mark)
@@ -138,6 +139,7 @@ class ListBuilder:
 
 
 class UnorderedListBuilder(ListBuilder):
+
     def __init__(self, mark):
         """Create an unordered list with constant mark text.
 
@@ -155,7 +157,7 @@ class UnorderedListBuilder(ListBuilder):
 class OrderedListBuilder(ListBuilder):
     format_re = re.compile('(.*?)([1aAiI])(.*)')
 
-    def __init__(self, start, format):
+    def __init__(self, start, fmt):
         """Create an ordered list with sequentially numbered mark text.
 
         The format is composed of an optional prefix text, a numbering
@@ -179,13 +181,13 @@ class OrderedListBuilder(ListBuilder):
         :Parameters:
             `start` : int
                 First list item number.
-            `format` : str
+            `fmt` : str
                 Format style, for example ``"1."``.
 
         """
         self.next_value = start
 
-        self.prefix, self.numbering, self.suffix = self.format_re.match(format).groups()
+        self.prefix, self.numbering, self.suffix = self.format_re.match(fmt).groups()
         assert self.numbering in '1aAiI'
 
     def get_mark(self, value):
@@ -199,7 +201,7 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'A':
                 mark = mark.upper()
-            return '%s%s%s' % (self.prefix, mark, self.suffix)
+            return f'{self.prefix}{mark}{self.suffix}'
         elif self.numbering in 'iI':
             try:
                 mark = _int_to_roman(value)
@@ -207,9 +209,9 @@ class OrderedListBuilder(ListBuilder):
                 mark = '?'
             if self.numbering == 'i':
                 mark = mark.lower()
-            return '%s%s%s' % (self.prefix, mark, self.suffix)
+            return f'{self.prefix}{mark}{self.suffix}'
         else:
-            return '%s%d%s' % (self.prefix, value, self.suffix)
+            return f'{self.prefix}{value}{self.suffix}'
 
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
@@ -226,7 +228,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         return self.document
 
     def decode_structured(self, text, location):
-        raise NotImplementedError('abstract') 
+        raise NotImplementedError('abstract')
 
     def push_style(self, key, styles):
         old_styles = {}

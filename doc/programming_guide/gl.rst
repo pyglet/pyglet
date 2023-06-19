@@ -3,10 +3,10 @@
 The OpenGL interface
 ====================
 
-pyglet provides an interface to OpenGL and GLU.  The interface is used by all
+pyglet provides a direct interface to OpenGL. The interface is used by all
 of pyglet's higher-level API's, so that all rendering is done efficiently by
-the graphics card, rather than the operating system.  You can access this
-interface directly; using it is much like using OpenGL from C.
+the graphics card, rather than the CPU. You can access this interface directly;
+using it is much like using OpenGL from C.
 
 The interface is a "thin-wrapper" around ``libGL.so`` on Linux,
 ``opengl32.dll`` on Windows and ``OpenGL.framework`` on OS X.  The pyglet
@@ -24,82 +24,64 @@ and will work with pyglet without any modification.
 Using OpenGL
 ------------
 
-Documentation of OpenGL and GLU are provided at the `OpenGL website`_ and
+Documentation for OpenGL is provided at the `OpenGL website`_ and
 (more comprehensively) in the `OpenGL Programming SDK`_.
 
-Importing the package gives access to OpenGL, GLU, and all OpenGL registered
-extensions.   This is sufficient for all but the most advanced uses of
+Importing the package gives access to OpenGL and all OpenGL registered
+extensions. This is sufficient for all but the most advanced uses of
 OpenGL::
 
     from pyglet.gl import *
 
-All function names and constants are identical to the C counterparts.  For
-example, the following program draws a triangle on the screen::
+All function names and constants are identical to the C counterparts. For
+example, the following code sets the GL clear color and enables depth
+testing and face culling::
 
     from pyglet.gl import *
 
     # Direct OpenGL commands to this window.
     window = pyglet.window.Window()
 
-    @window.event
-    def on_draw():
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-        glBegin(GL_TRIANGLES)
-        glVertex2f(0, 0)
-        glVertex2f(window.width, 0)
-        glVertex2f(window.width, window.height)
-        glEnd()
-
-    pyglet.app.run()
+    glClearColor(1, 1, 1, 1)
+    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_CULL_FACE)
 
 Some OpenGL functions require an array of data.  These arrays must be
 constructed as ``ctypes`` arrays of the correct type.  The following example
-draw the same triangle as above, but uses a vertex array instead of the
-immediate-mode functions.  Note the construction of the vertex array using a
-one-dimensional ``ctypes`` array of ``GLfloat``::
+shows how to construct arrays using OpenGL types::
 
     from pyglet.gl import *
 
-    window = pyglet.window.Window()
+    # Create a new array type of length 32:
+    array32f = GLfloat * 32
 
-    vertices = [0, 0,
-                window.width, 0,
-                window.width, window.height]
-    vertices_gl_array = (GLfloat * len(vertices))(*vertices)
+    # Create an instance of this array with initial data:
+    array_instance = array32f(*data)
 
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glVertexPointer(2, GL_FLOAT, 0, vertices_gl_array)
+    # More commonly, combine these steps:
+    array_instance = (GLfloat * 32)(*data)
 
-    @window.event
-    def on_draw():
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-        glDrawArrays(GL_TRIANGLES, 0, len(vertices) // 2)
 
-    pyglet.app.run()
-
-Similar array constructions can be used to create data for vertex buffer
-objects, texture data, polygon stipple data and the map functions.
+Similar array constructions can be used to create data for other OpenGL objects.
 
 .. _OpenGL Website: http://www.opengl.org
 .. _OpenGL Programming SDK: http://www.opengl.org/sdk
+
 
 Resizing the window
 -------------------
 
 pyglet sets up the viewport and an orthographic projection on each window
-automatically.  It does this in a default
-:py:meth:`~pyglet.window.Window.on_resize` handler defined on
-:py:class:`~pyglet.window.Window`::
+automatically. It does this in a default :py:meth:`~pyglet.window.Window.on_resize`
+handler defined on :py:class:`~pyglet.window.Window`. pyglet Windows have a
+`projection` property that can be set with a 4x4 projection matrix.
+See :ref:`guide_math` for more information on creating matrixes. The default
+`on_resize` handler is defined as::
 
     @window.event
     def on_resize(width, height):
-        glViewport(0, 0, width, height)
-        glMatrixMode(gl.GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, width, 0, height, -1, 1)
-        glMatrixMode(gl.GL_MODELVIEW)
+        glViewport(0, 0, *window.get_framebuffer_size())
+        window.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
 If you need to define your own projection (for example, to use
 a 3-dimensional perspective projection), you should override this
@@ -107,12 +89,10 @@ event with your own; for example::
 
     @window.event
     def on_resize(width, height):
-        glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(65, width / float(height), .1, 1000)
-        glMatrixMode(GL_MODELVIEW)
+        glViewport(0, 0, *window.get_framebuffer_size())
+        window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255)
         return pyglet.event.EVENT_HANDLED
+
 
 Note that the :py:meth:`~pyglet.window.Window.on_resize` handler is called for
 a window the first time it is displayed, as well as any time it is later
@@ -155,20 +135,11 @@ implemented by the current driver.  Typically this is done using
 
 You can also easily check the version of OpenGL::
 
-    if pyglet.gl.gl_info.have_version(1,5):
-        # We can assume all OpenGL 1.5 functions are implemented.
+    if pyglet.gl.gl_info.have_version(4, 6):
+        # We can assume all OpenGL 4.6 functions are implemented.
 
 Remember to only call the ``gl_info`` functions after creating a window.
 
-There is a corresponding ``glu_info`` module for checking the version and
-extensions of GLU.
-
-nVidia often release hardware with extensions before having them registered
-officially.  When you ``import * from pyglet.gl`` you import only the
-registered extensions.  You can import the latest nVidia extensions
-with::
-
-    from pyglet.gl.glext_nv import *
 
 Using multiple windows
 ----------------------

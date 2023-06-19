@@ -205,30 +205,37 @@ command line::
 This is the only way that absolute directories and resources not bundled with
 an application should be used with :py:mod:`pyglet.resource`.
 
-Saving user preferences
------------------------
+Saving user preferences and data
+--------------------------------
 
 Because Python applications can be distributed in several ways, including
 within ZIP files, it is usually not feasible to save user preferences, high
 score lists, and so on within the application directory (or worse, the working
-directory).
+directory). The resource module provides functions for assisting with this.
 
 The :py:func:`pyglet.resource.get_settings_path` function returns a directory
-suitable for writing arbitrary user-centric data. The directory used follows
+suitable for writing configuration related data. The directory used follows
 the operating system's convention:
 
-* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_CONFIG_HOME`
-  environment variable).
+* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_CONFIG_HOME` environment variable).
 * ``$HOME\Application Settings\ApplicationName`` on Windows
 * ``~/Library/Application Support/ApplicationName`` on Mac OS X
 
-The returned directory name is not guaranteed to exist -- it is the
-application's responsibility to create it.  The following example opens a high
-score list file for a game called "SuperGame" into the settings directory::
+The :py:func:`pyglet.resource.get_data_path` function returns a directory
+suitable for writing arbitray data, such as save files. The directory used follows
+the operating system's convention:
+
+* ``~/.local/share/ApplicationName/`` on Linux (depends on `XDG_DATA_HOME` environment variable).
+* ``$HOME\Application Settings\ApplicationName`` on Windows
+* ``~/Library/Application Support/ApplicationName`` on Mac OS X
+
+The returned directory names are not guaranteed to exist -- it is the
+application's responsibility to create them.  The following example opens a high
+score list file for a game called "SuperGame" into the data directory::
 
     import os
 
-    dir = pyglet.resource.get_settings_path('SuperGame')
+    dir = pyglet.resource.get_data_path('SuperGame')
     if not os.path.exists(dir):
         os.makedirs(dir)
     filename = os.path.join(dir, 'highscores.txt')

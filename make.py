@@ -14,12 +14,14 @@ GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
 
 
 def clean():
-    """Clean up all build artifacts, including generated documentation."""
+    """Clean up all build & test artifacts, and generated documentation."""
     dirs = [op.join(DOC_DIR, '_build'),
             op.join(DOC_DIR, 'api'),
             DIST_DIR,
             op.join(THIS_DIR, '_build'),
-            op.join(THIS_DIR, 'pyglet.egg-info')]
+            op.join(THIS_DIR, 'pyglet.egg-info'),
+            op.join(THIS_DIR, '.pytest_cache'),
+            op.join(THIS_DIR, '.mypy_cache')]
     files = [op.join(DOC_DIR, 'internal', 'build.rst')]
     for d in dirs:
         print('   Removing:', d)
@@ -28,7 +30,7 @@ def clean():
         print('   Removing:', f)
         try:
             os.remove(f)
-        except:
+        except OSError:
             pass
 
 
@@ -52,8 +54,7 @@ def dist():
 
 def _print_usage():
     print('Usage:', op.basename(sys.argv[0]), '<command>')
-    print('  where commands are:', ', '.join(avail_cmds))
-    print()
+    print('  where commands are:', ', '.join(avail_cmds), "\n")
     for name, cmd in avail_cmds.items():
         print(name, '\t', cmd.__doc__)
 
@@ -66,8 +67,7 @@ if __name__ == '__main__':
         # Invalid number of arguments, just print help
         _print_usage()
     except KeyError:
-        print('Unknown command:', sys.argv[1])
-        print()
+        print(f"Unknown command: {sys.argv[1]}\n")
         _print_usage()
     else:
         command()

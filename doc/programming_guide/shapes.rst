@@ -1,11 +1,11 @@
-Shapes
-======
+Drawing Shapes
+==============
 
 .. _guide_shapes:
 
 
-The :py:mod:`~pyglet.shapes` module is a simplified option for creating
-and manipulating colored shapes. This includes rectangles, circles, and
+The :py:mod:`~pyglet.shapes` module is an easy to use option for creating
+and manipulating colored shapes, such as rectangles, circles, and
 lines. Shapes can be resized, positioned, and rotated where applicable,
 and their color and opacity can be changed. All shapes are implemented
 using OpenGL primitives, so they can be drawn efficiently with :ref:`guide_batched-rendering`.
@@ -24,7 +24,7 @@ Various shapes can be constructed with a specific position, size, and color::
     square = shapes.Rectangle(x=200, y=200, width=200, height=200, color=(55, 55, 255))
 
 You can also change the color, or set the opacity after creation. The opacity
-can can be set on a scale of 0-255, for various levels of transparency::
+can be set on a scale of 0-255, for various levels of transparency::
 
     circle.opacity = 120
 
@@ -52,7 +52,7 @@ the center::
     # or, set at the same time:
     rectangle.anchor_position = 50, 25
 
-    # The rectangle is then rotated around it's anchor point:
+    # The rectangle is then rotated around its anchor point:
     rectangle.rotation = 45
 
 If you plan to create a large number of shapes, you can optionally set the
@@ -60,3 +60,29 @@ default anchor points::
 
     shapes.Rectangle._anchor_x = 100
     shapes.Rectangle._anchor_y = 50
+
+Advanced Operation
+------------------
+
+You can use the ``in`` operator to check whether a point is inside a shape::
+
+    circle = shapes.Circle(x=100, y=100, radius=50)
+    if (200, 200) in circle:
+        circle.color = (255, 0, 0)
+
+The following shapes have above features:
+
+- Circle
+- Ellipse
+- Sector
+- Line
+- Rectangle
+- BoderedRectangle
+- Triangle
+- Polygon
+- Star
+
+.. note:: pyglet now treats Star as a circle with a radius of
+          ``(outer_radius + inner_radius) / 2``.
+
+It's also available for anchored and rotated shapes.

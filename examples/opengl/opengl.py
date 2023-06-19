@@ -1,38 +1,4 @@
 #!/usr/bin/env python
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Displays a rotating torus using the pyglet.graphics API.
 
 This example uses the pyglet.graphics API to render an indexed vertex
@@ -47,64 +13,53 @@ This example demonstrates:
  * Drawing simple 3D primitives using the pyglet.graphics API
  * Fixed-pipeline lighting
 """
-
 from math import pi, sin, cos
 
 import pyglet
 from pyglet.gl import *
+from pyglet.math import Mat4, Vec3
 
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
-    window = pyglet.window.Window(resizable=True, config=config)
+    window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
-    # Fall back to no multisampling for old hardware
+    # Fall back to no multisampling if not supported
     window = pyglet.window.Window(resizable=True)
-
-# Change the window projection to 3D:
-window.projection = pyglet.window.Projection3D()
-
 
 @window.event
 def on_draw():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    glTranslatef(0, 0, -4)
-    glRotatef(rz, 0, 0, 1)
-    glRotatef(ry, 0, 1, 0)
-    glRotatef(rx, 1, 0, 0)
+    window.clear()
     batch.draw()
 
 
-def update(dt):
-    global rx, ry, rz
-    rx += dt * 1
-    ry += dt * 80
-    rz += dt * 30
-    rx %= 360
-    ry %= 360
-    rz %= 360
+@window.event
+def on_resize(width, height):
+    window.viewport = (0, 0, *window.get_framebuffer_size())
+    window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=255, fov=60)
+    return pyglet.event.EVENT_HANDLED
 
+
+def update(dt):
+    global time
+    time += dt
+    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
+    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
+    rot_z = Mat4.from_rotation(time/4, Vec3(0, 0, 1))
+    trans = Mat4.from_translation((0, 0, -3.0))
+    torus_model.matrix = trans @ rot_x @ rot_y @ rot_z
 
 def setup():
     # One-time GL setup
     glClearColor(1, 1, 1, 1)
-    glColor3f(1, 0, 0)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
+    on_resize(*window.size)
 
-    # Uncomment this line for a wireframe view
-    #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    # Uncomment this line for a wireframe view:
+    # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
-    # Simple light setup.  On Windows GL_LIGHT0 is enabled by default,
-    # but this is not the case on Linux or Mac, so remember to always 
-    # include it.
-    glEnable(GL_LIGHTING)
-    glEnable(GL_LIGHT0)
-    glEnable(GL_LIGHT1)
-
-
-def create_torus(radius, inner_radius, slices, inner_slices, batch):
+def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
 
     # Create the vertex and normal arrays.
     vertices = []
@@ -149,24 +104,23 @@ def create_torus(radius, inner_radius, slices, inner_slices, batch):
     specular = [1.0, 1.0, 1.0, 1.0]
     emission = [0.0, 0.0, 0.0, 1.0]
     shininess = 50
-    material = pyglet.model.Material("", diffuse, ambient, specular, emission, shininess)
-    group = pyglet.model.MaterialGroup(material=material)
 
-    vertex_list = batch.add_indexed(len(vertices)//3,
-                                    GL_TRIANGLES,
-                                    group,
-                                    indices,
-                                    ('v3f/static', vertices),
-                                    ('n3f/static', normals))
+    material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
+    group = pyglet.model.MaterialGroup(material=material, program=shader)
+
+    vertex_list = shader.vertex_list_indexed(len(vertices)//3, GL_TRIANGLES, indices, batch, group,
+                                             vertices=('f', vertices),
+                                             normals=('f', normals),
+                                             colors=('f', material.diffuse * (len(vertices) // 3)))
 
     return pyglet.model.Model([vertex_list], [group], batch)
 
 
 setup()
+time = 0.0
 batch = pyglet.graphics.Batch()
-torus_model = create_torus(1, 0.3, 50, 30, batch=batch)
-rx = ry = rz = 0
+shader = pyglet.model.get_default_shader()
+torus_model = create_torus(1.0, 0.3, 50, 30, shader, batch)
 
 pyglet.clock.schedule(update)
-
 pyglet.app.run()

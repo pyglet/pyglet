@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 from ctypes import *
 
 from pyglet.gl import *
@@ -92,9 +57,9 @@ class GdkPixBufLoader:
     """
     Wrapper around GdkPixBufLoader object.
     """
-    def __init__(self, file_, filename):
+    def __init__(self, filename, file):
         self.closed = False
-        self._file = file_
+        self._file = file
         self._filename = filename
         self._loader = gdkpixbuf.gdk_pixbuf_loader_new()
         if self._loader is None:
@@ -108,7 +73,6 @@ class GdkPixBufLoader:
             gdk.g_object_unref(self._loader)
 
     def _load_file(self):
-        assert self._file is not None
         self._file.seek(0)
         data = self._file.read()
         self.write(data)
@@ -305,12 +269,16 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
     def get_animation_file_extensions(self):
         return ['.gif', '.ani']
 
-    def decode(self, file, filename):
-        loader = GdkPixBufLoader(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        loader = GdkPixBufLoader(filename, file)
         return loader.get_pixbuf().to_image()
 
-    def decode_animation(self, file, filename):
-        loader = GdkPixBufLoader(file, filename)
+    def decode_animation(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        loader = GdkPixBufLoader(filename, file)
         return loader.get_animation().to_animation()
 
 
@@ -325,5 +293,5 @@ def get_encoders():
 def init():
     gdk.g_type_init()
 
-init()
 
+init()

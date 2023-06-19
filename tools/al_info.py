@@ -15,7 +15,6 @@ import sys
 
 from pyglet.util import asbytes
 from pyglet.media.drivers import openal
-from pyglet.media.drivers.openal.interface import al
 from pyglet.media.drivers.openal.interface import alc
 
 

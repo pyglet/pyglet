@@ -1,39 +1,5 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import ctypes
+import warnings
 from collections import namedtuple
 
 from pyglet.util import asbytes, asstr
@@ -45,7 +11,7 @@ from pyglet.font.freetype_lib import *
 
 class FreeTypeGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
-        super(FreeTypeGlyphRenderer, self).__init__(font)
+        super().__init__(font)
         self.font = font
 
         self._glyph_slot = None
@@ -119,7 +85,18 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
                               'A',
                               self._data,
                               abs(self._pitch))
-        glyph = self.font.create_glyph(img)
+
+        # HACK: Get text working in GLES until image data can be converted properly
+        #       GLES don't support coversion during pixel transfer so we have to
+        #       force specify the glyph format to be GL_ALPHA. This format is not
+        #       supported in 3.3+ core, but are present in ES because of pixel transfer
+        #       limitations.
+        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
+            GL_ALPHA = 0x1906
+            glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
+        else:
+            glyph = self.font.create_glyph(img)
+
         glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
         if self._pitch > 0:
             t = list(glyph.tex_coords)
@@ -134,8 +111,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         return self._create_glyph()
 
 
-FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics',
-                                 ['ascent', 'descent'])
+FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics', ['ascent', 'descent'])
 
 
 class MemoryFaceStore:
@@ -160,17 +136,26 @@ class FreeTypeFont(base.Font):
     # Map font (name, bold, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
-        super(FreeTypeFont, self).__init__()
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
+        # assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        # assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
 
-        self.name = name
+        if stretch:
+            warnings.warn("The current font render does not support stretching.")
+
+        super().__init__()
+        self._name = name
         self.size = size
         self.bold = bold
         self.italic = italic
-        self.dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
+        self.dpi = dpi or 96
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
+
+    @property
+    def name(self):
+        return self.face.family_name
 
     @property
     def ascent(self):
@@ -186,14 +171,15 @@ class FreeTypeFont(base.Font):
         return self.face.get_glyph_slot(glyph_index)
 
     def _load_font_face(self):
-        self.face = self._memory_faces.get(self.name, self.bold, self.italic)
+        self.face = self._memory_faces.get(self._name, self.bold, self.italic)
         if self.face is None:
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self):
-        match = get_fontconfig().find_font(self.name, self.size, self.bold, self.italic)
+        match = get_fontconfig().find_font(self._name, self.size, self.bold, self.italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % self.name)
+            raise base.FontException(f"Could not match font '{self._name}'")
+        self.filename = match.file
         self.face = FreeTypeFace.from_fontconfig(match)
 
     @classmethod
@@ -238,8 +224,12 @@ class FreeTypeFace:
             return cls(match.face)
         else:
             if not match.file:
-                raise base.FontException('No filename for "%s"' % match.name)
+                raise base.FontException(f'No filename for "{match.name}"')
             return cls.from_file(match.file)
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def family_name(self):
@@ -315,7 +305,7 @@ class FreeTypeFace:
                                    descent=-ascent // 4)  # arbitrary.
 
     def _get_best_name(self):
-        self.name = self.family_name
+        self._name = asstr(self.ft_face.contents.family_name)
         self._get_font_family_from_ttf
 
     def _get_font_family_from_ttf(self):
@@ -334,7 +324,7 @@ class FreeTypeFace:
                             name.encoding_id == TT_MS_ID_UNICODE_CS):
                         continue
                     # name.string is not 0 terminated! use name.string_len
-                    self.name = name.string.decode('utf-16be', 'ignore')
+                    self._name = name.string.decode('utf-16be', 'ignore')
                 except:
                     continue
 
@@ -342,7 +332,7 @@ class FreeTypeFace:
 class FreeTypeMemoryFace(FreeTypeFace):
     def __init__(self, data):
         self._copy_font_data(data)
-        super(FreeTypeMemoryFace, self).__init__(self._create_font_face())
+        super().__init__(self._create_font_face())
 
     def _copy_font_data(self, data):
         self.font_data = (FT_Byte * len(data))()

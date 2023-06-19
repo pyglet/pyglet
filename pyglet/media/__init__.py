@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Audio and video playback.
 
 pyglet can play WAV files, and if FFmpeg is installed, many other audio and
@@ -75,28 +40,16 @@ the application performance can be delayed.
 The player provides a :py:meth:`Player.delete` method that can be used to
 release resources immediately.
 """
-
 from .drivers import get_audio_driver
-from .exceptions import MediaDecodeException
 from .player import Player, PlayerGroup
-from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
-from .codecs import add_default_media_codecs, have_ffmpeg
-from .codecs import Source, StaticSource, StreamingSource, SourceGroup
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
+from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffmpeg
 
 from . import synthesis
 
 
-__all__ = (
-    'load',
-    'get_audio_driver',
-    'Player',
-    'PlayerGroup',
-    'SourceGroup',
-    'get_encoders',
-    'get_decoders',
-    'add_encoders',
-    'add_decoders',
-)
+__all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
 def load(filename, file=None, streaming=True, decoder=None):
@@ -122,22 +75,9 @@ def load(filename, file=None, streaming=True, decoder=None):
     :rtype: StreamingSource or Source
     """
     if decoder:
-        return decoder.decode(file, filename, streaming)
+        return decoder.decode(filename, file, streaming=streaming)
     else:
-        first_exception = None
-        for decoder in get_decoders(filename):
-            try:
-                loaded_source = decoder.decode(file, filename, streaming)
-                return loaded_source
-            except MediaDecodeException as e:
-                if not first_exception or first_exception.exception_priority < e.exception_priority:
-                    first_exception = e
-
-        # TODO: Review this:
-        # The FFmpeg codec attempts to decode anything, so this codepath won't be reached.
-        if not first_exception:
-            raise MediaDecodeException('No decoders are available for this media format.')
-        raise first_exception
+        return _codec_registry.decode(filename, file, streaming=streaming)
 
 
-add_default_media_codecs()
+_add_default_codecs()

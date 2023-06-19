@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Decode HTML into attributed text.
 
 A subset of HTML 4.01 Transitional is implemented.  The following elements are
@@ -63,22 +28,22 @@ def _hex_color(val):
 
 
 _color_names = {
-    'black': _hex_color(0x000000),
-    'silver': _hex_color(0xc0c0c0),
-    'gray': _hex_color(0x808080),
-    'white': _hex_color(0xffffff),
-    'maroon': _hex_color(0x800000),
-    'red': _hex_color(0xff0000),
-    'purple': _hex_color(0x800080),
-    'fucsia': _hex_color(0x008000),
-    'green': _hex_color(0x00ff00),
-    'lime': _hex_color(0xffff00),
-    'olive': _hex_color(0x808000),
-    'yellow': _hex_color(0xff0000),
-    'navy': _hex_color(0x000080),
-    'blue': _hex_color(0x0000ff),
-    'teal': _hex_color(0x008080),
-    'aqua': _hex_color(0x00ffff),
+    'black':    _hex_color(0x000000),
+    'silver':   _hex_color(0xc0c0c0),
+    'gray':     _hex_color(0x808080),
+    'white':    _hex_color(0xffffff),
+    'maroon':   _hex_color(0x800000),
+    'red':      _hex_color(0xff0000),
+    'purple':   _hex_color(0x800080),
+    'fucsia':   _hex_color(0x008000),
+    'green':    _hex_color(0x00ff00),
+    'lime':     _hex_color(0xffff00),
+    'olive':    _hex_color(0x808000),
+    'yellow':   _hex_color(0xff0000),
+    'navy':     _hex_color(0x000080),
+    'blue':     _hex_color(0x0000ff),
+    'teal':     _hex_color(0x008080),
+    'aqua':     _hex_color(0x00ffff),
 }
 
 
@@ -123,6 +88,8 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         'font_name': 'Times New Roman',
         'font_size': 12,
         'margin_bottom': '12pt',
+        'bold': False,
+        'italic': False,
     }
 
     #: Map HTML font sizes to actual font sizes, in points.
@@ -229,6 +196,10 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self._font_size_stack.append(size)
                 if size in self.font_sizes:
                     style['font_size'] = self.font_sizes.get(size, 3)
+            elif 'real_size' in attrs:
+                size = int(attrs['real_size'])
+                self._font_size_stack.append(size)
+                style['font_size'] = size
             else:
                 self._font_size_stack.append(self._font_size_stack[-1])
             if 'color' in attrs:

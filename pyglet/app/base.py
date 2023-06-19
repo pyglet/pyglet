@@ -1,61 +1,22 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 import sys
 import queue
-import platform
 import threading
 
 from pyglet import app
 from pyglet import clock
 from pyglet import event
-from pyglet import compat_platform
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class PlatformEventLoop:
     """ Abstract class, implementation depends on platform.
-    
+
     .. versionadded:: 1.2
     """
-
     def __init__(self):
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
-        self._is_running.clear()
 
     def is_running(self):
         """Return True if the event loop is currently processing, or False
@@ -72,8 +33,8 @@ class PlatformEventLoop:
         is able to dispatch the event.  This method can be safely called
         from any thread.
 
-        If the method is called from the :py:meth:`run` method's thread (for 
-        example, from within an event handler), the event may be dispatched 
+        If the method is called from the :py:meth:`run` method's thread (for
+        example, from within an event handler), the event may be dispatched
         within the same runloop iteration or the next one; the choice is
         nondeterministic.
 
@@ -96,11 +57,13 @@ class PlatformEventLoop:
         """
         while True:
             try:
-                dispatcher, event, args = self._event_queue.get(False)
+                dispatcher, evnt, args = self._event_queue.get(False)
+                dispatcher.dispatch_event(evnt, *args)
             except queue.Empty:
                 break
-
-            dispatcher.dispatch_event(event, *args)
+            except ReferenceError:
+                # weakly-referenced object no longer exists
+                pass
 
     def notify(self):
         """Notify the event loop that something needs processing.
@@ -118,7 +81,7 @@ class PlatformEventLoop:
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
-        raise NotImplementedError('abstract')
+        pass
 
     def stop(self):
         pass
@@ -128,7 +91,7 @@ class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
 
     Calling `run` begins the application event loop, which processes
-    operating system events, calls :py:func:`pyglet.clock.tick` to call 
+    operating system events, calls :py:func:`pyglet.clock.tick` to call
     scheduled functions and calls :py:meth:`pyglet.window.Window.on_draw` and
     :py:meth:`pyglet.window.Window.flip` to update window contents.
 
@@ -147,7 +110,16 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
-    def run(self):
+    @staticmethod
+    def _redraw_windows(dt):
+        # Redraw all windows
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_event('on_draw')
+            window.dispatch_event('on_refresh', dt)
+            window.flip()
+
+    def run(self, interval=1/60):
         """Begin processing events, scheduled functions and window updates.
 
         This method returns when :py:attr:`has_exit` is set to True.
@@ -155,8 +127,20 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
+        if not interval:
+            self.clock.schedule(self._redraw_windows)
+        else:
+            self.clock.schedule_interval(self._redraw_windows, interval)
+
         self.has_exit = False
-        self._legacy_setup()
+
+        from pyglet.window import Window
+        Window._enable_event_queue = False
+
+        # Dispatch pending events
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_pending_events()
 
         platform_event_loop = app.platform_event_loop
         platform_event_loop.start()
@@ -170,16 +154,6 @@ class EventLoop(event.EventDispatcher):
         self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
-
-    def _legacy_setup(self):
-        # Disable event queuing for dispatch_events
-        from pyglet.window import Window
-        Window._enable_event_queue = False
-
-        # Dispatch pending events
-        for window in app.windows:
-            window.switch_to()
-            window.dispatch_pending_events()
 
     def enter_blocking(self):
         """Called by pyglet internal processes when the operating system
@@ -198,7 +172,8 @@ class EventLoop(event.EventDispatcher):
         timeout = self.idle()
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
-    def exit_blocking(self):
+    @staticmethod
+    def exit_blocking():
         """Called by pyglet internal processes when the blocking operation
         completes.  See :py:meth:`enter_blocking`.
         """
@@ -234,15 +209,7 @@ class EventLoop(event.EventDispatcher):
             be called again, or `None` to block for user input.
         """
         dt = self.clock.update_time()
-        redraw_all = self.clock.call_scheduled_functions(dt)
-
-        # Redraw all windows
-        for window in app.windows:
-            if redraw_all or (window._legacy_invalid and window.invalid):
-                window.switch_to()
-                window.dispatch_event('on_draw')
-                window.flip()
-                window._legacy_invalid = False
+        self.clock.call_scheduled_functions(dt)
 
         # Update timout
         return self.clock.get_sleep_time(True)
@@ -273,7 +240,7 @@ class EventLoop(event.EventDispatcher):
     def exit(self):
         """Safely exit the event loop at the end of the current iteration.
 
-        This method is a thread-safe equivalent for for setting 
+        This method is a thread-safe equivalent for setting
         :py:attr:`has_exit` to ``True``.  All waiting threads will be
         interrupted (see :py:meth:`sleep`).
         """

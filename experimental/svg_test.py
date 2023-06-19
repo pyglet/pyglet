@@ -7,8 +7,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import math
-import random
 import re
 import os.path
 import pyglet
@@ -318,7 +316,7 @@ class SVG:
         dom = xml.dom.minidom.parse(filename)
         tag = dom.documentElement
         if tag.tagName != 'svg':
-            raise ValueError('document is <%s> instead of <svg>' % tag.tagName)
+            raise ValueError(f'document is <{tag.tagName}> instead of <svg>')
 
         # generate all the drawing elements
         self.batch = pyglet.graphics.Batch()

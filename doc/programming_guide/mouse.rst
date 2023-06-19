@@ -1,7 +1,7 @@
-Working with the mouse
-======================
+Mouse input
+===========
 
-All pyglet windows can recieve input from a 3 button mouse with a
+All pyglet windows can receive input from a 3 button mouse with a
 2 dimensional scroll wheel.  The mouse pointer is typically drawn by the
 operating system, but you can override this and request either a different
 cursor shape or provide your own image or animation.
@@ -54,8 +54,8 @@ mouse event, but besides being tiresome to code, it does not take into account
 the effects of other obscuring windows.  It is best to use the `dx` and `dy`
 parameters instead.
 
-The following events are dispatched when a mouse button is pressed or
-released, or the mouse is moved while any button is held down::
+The following events are dispatched by the Window when a mouse button is
+pressed or released, or the mouse is moved while any button is held down::
 
     def on_mouse_press(x, y, button, modifiers):
         pass
@@ -70,7 +70,7 @@ The `x`, `y`, `dx` and `dy` parameters are as for the
 :py:meth:`~pyglet.window.Window.on_mouse_motion` event.
 The press and release events do not require `dx` and `dy` parameters as they
 would be zero in this case.  The `modifiers` parameter is as for the keyboard
-events, see :ref:`guide_working-with-the-keyboard`.
+events, see :ref:`guide_keyboard-input`.
 
 The `button` parameter signifies which mouse button was pressed, and is one of
 the following constants::

@@ -1,38 +1,3 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
 """Formatted and unformatted document interfaces used by text layout.
 
 Abstract representation
@@ -40,7 +5,7 @@ Abstract representation
 
 Styled text in pyglet is represented by one of the :py:class:`~pyglet.text.document.AbstractDocument` classes,
 which manage the state representation of text and style independently of how
-it is loaded or rendered.  
+it is loaded or rendered.
 
 A document consists of the document text (a Unicode string) and a set of
 named style ranges.  For example, consider the following (artificial)
@@ -67,8 +32,8 @@ This can be useful to tag areas of interest in a document, or maintain
 references back to the source material.
 
 As well as text, the document can contain arbitrary elements represented by
-:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves like a single character in the
-documented, but can be rendered by the application.
+:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves
+like a single character in the document, but can be rendered by the application.
 
 Paragraph breaks
 ================
@@ -131,7 +96,7 @@ entire paragraph, otherwise results are undefined.
 ``align``
     ``left`` (default), ``center`` or ``right``.
 ``indent``
-    Additional horizontal space to insert before the first 
+    Additional horizontal space to insert before the first
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     in points.  Defaults to 0.
@@ -159,7 +124,7 @@ document; it will be ignored by the built-in text classes.
 
 All style attributes (including those not present in a document) default to
 ``None`` (including the so-called "boolean" styles listed above).  The meaning
-of a ``None`` style is style- and application-dependent. 
+of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
@@ -181,8 +146,8 @@ class InlineElement:
 
     Elements behave like a single glyph in the document.  They are
     measured by their horizontal advance, ascent above the baseline, and
-    descent below the baseline.  
-    
+    descent below the baseline.
+
     The pyglet layout classes reserve space in the layout for elements and
     call the element's methods to ensure they are rendered at the
     appropriate position.
@@ -209,14 +174,15 @@ class InlineElement:
         self.advance = advance
         self._position = None
 
-    position = property(lambda self: self._position,
-                        doc="""Position of the element within the
-        document.  Read-only.
+    @property
+    def position(self):
+        """Position of the element within the document.  Read-only.
 
         :type: int
-        """)
+        """
+        return self._position
 
-    def place(self, layout, x, y):
+    def place(self, layout, x, y, z):
         """Construct an instance of the element at the given coordinates.
 
         Called when the element's position within a layout changes, either
@@ -225,8 +191,8 @@ class InlineElement:
 
         It is the responsibility of the element to clip itself against
         the layout boundaries, and position itself appropriately with respect
-        to the layout's position and viewport offset.  
-        
+        to the layout's position and viewport offset.
+
         The `TextLayout.top_state` graphics state implements this transform
         and clipping into window space.
 
@@ -263,13 +229,13 @@ class AbstractDocument(event.EventDispatcher):
     This class can be overridden to interface pyglet with a third-party
     document format.  It may be easier to implement the document format in
     terms of one of the supplied concrete classes :py:class:`~pyglet.text.document.FormattedDocument` or
-    :py:class:`~pyglet.text.document.UnformattedDocument`. 
+    :py:class:`~pyglet.text.document.UnformattedDocument`.
     """
     _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
     _next_paragraph_re = re.compile(u'[\n\u2029]')
 
     def __init__(self, text=''):
-        super(AbstractDocument, self).__init__()
+        super().__init__()
         self._text = u''
         self._elements = []
         if text:
@@ -302,10 +268,9 @@ class AbstractDocument(event.EventDispatcher):
 
         :rtype: int
         """
-        # Tricky special case where the $ in pattern matches before the \n at
-        # the end of the string instead of the end of the string.
-        if (self._text[:pos + 1].endswith('\n') or
-                self._text[:pos + 1].endswith(u'\u2029')):
+        # Tricky special case where the $ in pattern matches before the
+        # \n at the end of the string instead of the end of the string.
+        if self._text[:pos + 1].endswith('\n') or self._text[:pos + 1].endswith(u'\u2029'):
             return pos
 
         m = self._previous_paragraph_re.search(self._text, 0, pos + 1)
@@ -456,8 +421,8 @@ class AbstractDocument(event.EventDispatcher):
     def insert_element(self, position, element, attributes=None):
         """Insert a element into the document.
 
-        See the :py:class:`~pyglet.text.document.InlineElement` class documentation for details of
-        usage.
+        See the :py:class:`~pyglet.text.document.InlineElement` class
+        documentation for details of usage.
 
         :Parameters:
             `position` : int
@@ -469,8 +434,7 @@ class AbstractDocument(event.EventDispatcher):
                 inserted text.
 
         """
-        assert element._position is None, \
-            'Element is already in a document.'
+        assert element._position is None, 'Element is already in a document.'
         self.insert_text(position, '\0', attributes)
         element._position = position
         self._elements.append(element)
@@ -488,7 +452,7 @@ class AbstractDocument(event.EventDispatcher):
         for element in self._elements:
             if element._position == position:
                 return element
-        raise RuntimeError('No element at position %d' % position)
+        raise RuntimeError(f'No element at position {position}')
 
     def set_style(self, start, end, attributes):
         """Set text style of some or all of the document.
@@ -583,7 +547,7 @@ class UnformattedDocument(AbstractDocument):
     """
 
     def __init__(self, text=''):
-        super(UnformattedDocument, self).__init__(text)
+        super().__init__(text)
         self.styles = {}
 
     def get_style_runs(self, attribute):
@@ -594,15 +558,13 @@ class UnformattedDocument(AbstractDocument):
         return self.styles.get(attribute)
 
     def set_style(self, start, end, attributes):
-        return super(UnformattedDocument, self).set_style(
-            0, len(self.text), attributes)
+        return super().set_style(0, len(self.text), attributes)
 
     def _set_style(self, start, end, attributes):
         self.styles.update(attributes)
 
     def set_paragraph_style(self, start, end, attributes):
-        return super(UnformattedDocument, self).set_paragraph_style(
-            0, len(self.text), attributes)
+        return super().set_paragraph_style(0, len(self.text), attributes)
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
@@ -614,8 +576,8 @@ class UnformattedDocument(AbstractDocument):
         font_size = self.styles.get('font_size')
         bold = self.styles.get('bold', False)
         italic = self.styles.get('italic', False)
-        return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic), dpi=dpi)
+        stretch = self.styles.get('stretch', False)
+        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self):
         return runlist.ConstRunIterator(len(self._text), None)
@@ -630,7 +592,7 @@ class FormattedDocument(AbstractDocument):
 
     def __init__(self, text=''):
         self._style_runs = {}
-        super(FormattedDocument, self).__init__(text)
+        super().__init__(text)
 
     def get_style_runs(self, attribute):
         try:
@@ -659,17 +621,18 @@ class FormattedDocument(AbstractDocument):
             self.get_style_runs('font_size'),
             self.get_style_runs('bold'),
             self.get_style_runs('italic'),
+            self.get_style_runs('stretch'),
             dpi)
 
     def get_font(self, position, dpi=None):
-        iter = self.get_font_runs(dpi)
-        return iter[position]
+        runs_iter = self.get_font_runs(dpi)
+        return runs_iter[position]
 
     def get_element_runs(self):
         return _ElementIterator(self._elements, len(self._text))
 
     def _insert_text(self, start, text, attributes):
-        super(FormattedDocument, self)._insert_text(start, text, attributes)
+        super()._insert_text(start, text, attributes)
 
         len_text = len(text)
         for runs in self._style_runs.values():
@@ -680,13 +643,12 @@ class FormattedDocument(AbstractDocument):
                 try:
                     runs = self._style_runs[attribute]
                 except KeyError:
-                    runs = self._style_runs[attribute] = \
-                        runlist.RunList(0, None)
+                    runs = self._style_runs[attribute] = runlist.RunList(0, None)
                     runs.insert(0, len(self.text))
                 runs.set_run(start, start + len_text, value)
 
     def _delete_text(self, start, end):
-        super(FormattedDocument, self)._delete_text(start, end)
+        super()._delete_text(start, end)
         for runs in self._style_runs.values():
             runs.delete(start, end)
 
@@ -709,31 +671,27 @@ class _ElementIterator(runlist.RunIterator):
 
 class _FontStyleRunsRangeIterator:
     # XXX subclass runlist
-    def __init__(self, font_names, font_sizes, bolds, italics, dpi):
-        self.zip_iter = runlist.ZipRunIterator(
-            (font_names, font_sizes, bolds, italics))
+    def __init__(self, font_names, font_sizes, bolds, italics, stretch, dpi):
+        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 
     def ranges(self, start, end):
         from pyglet import font
         for start, end, styles in self.zip_iter.ranges(start, end):
-            font_name, font_size, bold, italic = styles
-            ft = font.load(font_name, font_size,
-                           bold=bool(bold), italic=bool(italic),
-                           dpi=self.dpi)
+            font_name, font_size, bold, italic, stretch = styles
+            ft = font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
-        font_name, font_size, bold, italic = self.zip_iter[index]
-        return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic),
-                         dpi=self.dpi)
+        font_name, font_size, bold, italic, stretch = self.zip_iter[index]
+        return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator:
     # XXX subclass runlist
-    def ranges(self, start, end):
+    @staticmethod
+    def ranges(start, end):
         yield start, end, None
 
     def __getitem__(self, index):

@@ -1,49 +1,16 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
 import os
 import platform
 import warnings
 
-from pyglet import com, image
-from pyglet.util import debug_print
+from pyglet import image
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
+from pyglet.libs.win32 import com
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from pyglet.media import Source, MediaDecodeException
+from pyglet.media import Source
 from pyglet.media.codecs import AudioFormat, AudioData, VideoFormat, MediaDecoder, StaticSource
+from pyglet.util import debug_print, DecodeException
 
 _debug = debug_print('debug_media')
 
@@ -484,18 +451,18 @@ class WMFSource(Source):
                 self._imf_bytestream.SetCurrentPosition(0)
 
                 if wrote_length.value != data_len:
-                    raise MediaDecodeException("Could not write all of the data to the bytestream file.")
+                    raise DecodeException("Could not write all of the data to the bytestream file.")
 
             try:
                 MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
-                raise MediaDecodeException(err) from None
+                raise DecodeException(err) from None
         else:
             # We can just load from filename if no file object specified..
             try:
                 MFCreateSourceReaderFromURL(filename, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
-                raise MediaDecodeException(err) from None
+                raise DecodeException(err) from None
 
         if self.decode_audio:
             self._load_audio()
@@ -568,7 +535,7 @@ class WMFSource(Source):
                 try:
                     self._source_reader.SetCurrentMediaType(self._audio_stream_index, None, mf_mediatype)
                 except OSError as err:  # Can't decode codec.
-                    raise MediaDecodeException(err) from None
+                    raise DecodeException(err) from None
 
             # Current media type should now be properly decoded at this point.
             decoded_media_type = IMFMediaType()  # Maybe reusing older IMFMediaType will work?
@@ -616,14 +583,14 @@ class WMFSource(Source):
 
         imfmedia.Release()
 
-        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
+        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32)
         uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
         uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
 
         try:
             self._source_reader.SetCurrentMediaType(self._video_stream_index, None, uncompressed_mt)
         except OSError as err:  # Can't decode codec.
-            raise MediaDecodeException(err) from None
+            raise DecodeException(err) from None
 
         height, width = self._get_attribute_size(uncompressed_mt, MF_MT_FRAME_SIZE)
 
@@ -827,15 +794,7 @@ class WMFSource(Source):
 
 class WMFDecoder(MediaDecoder):
     def __init__(self):
-
-        self.ole32 = None
         self.MFShutdown = None
-
-        try:
-            # Coinitialize supposed to be called for COMs?
-            ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
-        except OSError as err:
-            warnings.warn(str(err))
 
         try:
             MFStartup(MF_VERSION, 0)
@@ -844,7 +803,6 @@ class WMFDecoder(MediaDecoder):
 
         self.extensions = self._build_decoder_extensions()
 
-        self.ole32 = ole32
         self.MFShutdown = MFShutdown
 
         assert _debug('Windows Media Foundation: Initialized.')
@@ -863,19 +821,19 @@ class WMFDecoder(MediaDecoder):
             extensions.extend(['.3g2', '.3gp', '.3gp2', '.3gp',
                                '.aac', '.adts',
                                '.avi',
-                               '.m4a', '.m4v', '.mov', '.mp4',
+                               '.m4a', '.m4v',
                                # '.wav'  # Can do wav, but we have a WAVE decoder.
                                ])
 
         if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
-            extensions.extend(['.mkv', '.flac', '.ogg'])
+            extensions.extend(['.flac'])
 
         return extensions
 
     def get_file_extensions(self):
         return self.extensions
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WMFSource(filename, file)
         else:
@@ -884,8 +842,6 @@ class WMFDecoder(MediaDecoder):
     def __del__(self):
         if self.MFShutdown is not None:
             self.MFShutdown()
-        if self.ole32 is not None:
-            self.ole32.CoUninitialize()
 
 
 def get_decoders():

@@ -1,10 +1,8 @@
 """
 Test internals of the DirectSound media driver.
 """
-
 import ctypes
 import math
-import pytest
 import random
 import time
 
