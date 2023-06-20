@@ -162,6 +162,10 @@ def _create_shadow_window():
             """Shadow window does not need a projection."""
             pass
 
+        def on_resize(self, width, height):
+            """No projection and not required."""
+            pass
+
     _shadow_window = ShadowWindow()
     _shadow_window.switch_to()
 

@@ -31,7 +31,7 @@ def on_mouse_press(x, y, button, modifier):
 @window.event
 def on_resize(width, height):
     window.on_resize(width, height)
-    print("WHAT?")
+    print("RESIZED", width, height)
 
 @window.event
 def on_scale(scale, dpi):
