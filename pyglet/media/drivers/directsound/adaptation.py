@@ -1,10 +1,11 @@
 import math
 import ctypes
 
+import pyglet.app
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.mediathreads import PlayerWorkerThread
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -75,7 +76,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._play_cursor_ring = 0
         self._write_cursor_ring = 0
 
-        # List of (play_cursor, MediaEvent), in sort order
+        # List of play_cursor, in sort order
         self._events = []
 
         # List of (cursor, timestamp), in sort order (cursor gives expiry
@@ -156,9 +157,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def _has_underrun(self):
         return (self._eos_cursor is not None
                 and self._play_cursor > self._eos_cursor)
-
-    def _dispatch_new_event(self, event_name):
-        MediaEvent(event_name).sync_dispatch_to_player(self.player)
 
     def _get_audiodata(self):
         if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:
@@ -246,7 +244,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         if self._playing and self._has_underrun():
             assert _debug('underrun, stopping')
             self.stop()
-            self._dispatch_new_event('on_eos')
+            pyglet.app.platform_event_loop.post_event(self.player, 'on_eos')
 
     def _get_write_size(self):
         self.update_play_cursor()
