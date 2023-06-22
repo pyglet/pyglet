@@ -1,3 +1,21 @@
+pyglet 2.0.8
+
+Changes and Improvements
+------------------------
+- Add missing OpenGL extensions
+- Add support for FFmpeg 6.0
+- Sprite width & height properties are now settable, allowing scaling by pixels
+- documentation: updates to migration guide, media, and events
+- shapes: Allow checking if a point is in a shape, using the `in` operator
+
+Bugfixes
+--------
+- clock: Fix clock swallowing ReferenceErrors
+- documentation: fix some sphinx build issues on ReadTheDocs
+- font: multiple macOS fixes, including issues with double-byte fonts
+- input: ensure Xinput controllers dispatch events on the main thread
+
+
 pyglet 2.0.7
 
 Changes and Improvements

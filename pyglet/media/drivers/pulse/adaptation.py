@@ -1,7 +1,6 @@
 import weakref
 
-import pyglet.app
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.util import debug_print
 
@@ -218,7 +217,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         if self._has_audio_data():
             self._write_to_stream()
         else:
-            self._events.append('on_eos')
+            self._add_event_at_write_index('on_eos')
 
     def _process_events(self):
         assert _debug('PulseAudioPlayer: Process events')
@@ -256,7 +255,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         if driver.mainloop is None:
             assert _debug('PulseAudioDriver already deleted. '
-                          'PulseAudioPlayer could not clean up properly.')
+                      'PulseAudioPlayer could not clean up properly.')
             return
 
         if self._time_sync_operation is not None:

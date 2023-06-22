@@ -135,6 +135,17 @@ class AudioData:
         self.duration -= num_bytes / audio_format.bytes_per_second
         self.timestamp += num_bytes / audio_format.bytes_per_second
 
+    def get_string_data(self):
+        """Return data as a bytestring.
+
+        Returns:
+            bytes: Data as a (byte)string.
+        """
+        if self.data is None:
+            return b''
+
+        return memoryview(self.data).tobytes()[:self.length]
+
 
 class SourceInfo:
     """Source metadata information.
@@ -398,7 +409,7 @@ class StaticSource(Source):
             audio_data = source.get_audio_data(buffer_size)
             if not audio_data:
                 break
-            data.write(audio_data.data)
+            data.write(audio_data.get_string_data())
         self._data = data.getvalue()
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
