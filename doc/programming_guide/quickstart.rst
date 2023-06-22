@@ -210,9 +210,11 @@ You can find an example of a 2D game in the :ref:`programming-guide-game`
 section.
 
 To write advanced 3D applications or achieve optimal performance in your 2D
-applications, you can also work with OpenGL directly.  If you only want to
-work with OpenGL primitives, but want something slightly higher-level, have a
-look at the :ref:`guide_graphics` module.
+applications, you can also work with OpenGL directly. pyglet provides raw
+OpenGL bindings which give you direct access to the OpenGL libraries, which
+does require knowledge of `ctypes` to use effectively. To simplify things a
+bit, the `graphics` module provides higher level objects for the most common
+OpenGL constructs. The :ref:`guide_graphics` section goes into more detail.
 
 There are numerous examples of pyglet applications in the ``examples/``
 directory of the documentation and source distributions.  If you get

@@ -223,10 +223,7 @@ class Clock:
                 break
 
             # execute the callback
-            try:
-                item.func(now - item.last_ts, *item.args, **item.kwargs)
-            except ReferenceError:
-                pass    # weakly-referenced object no longer exists.
+            item.func(now - item.last_ts, *item.args, **item.kwargs)
 
             if item.interval:
 
@@ -457,6 +454,28 @@ class Clock:
         next_ts = last_ts + interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         _heappush(self._schedule_interval_items, item)
+
+    def schedule_interval_for_duration(self, func, interval, duration, *args, **kwargs):
+        """Schedule a function to be called every `interval` seconds
+        (see `schedule_interval`) and unschedule it after `duration` seconds.
+
+        The callback function prototype is the same as for `schedule`.
+
+        :Parameters:
+            `func` : callable
+                The function to call when the timer lapses.
+            `interval` : float
+                The number of seconds to wait between each call.
+            `duration` : float
+                The number of seconds for which the function is scheduled.
+
+        """
+        # NOTE: allow to schedule the unschedule function by taking the dt argument
+        def unschedule(dt: float, func: Callable) -> None:
+            self.unschedule(func)
+
+        self.schedule_interval(func, interval, *args, **kwargs)
+        self.schedule_once(unschedule, duration, func)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every ``interval`` seconds.

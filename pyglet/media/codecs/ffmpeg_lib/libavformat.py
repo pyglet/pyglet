@@ -14,8 +14,8 @@ _debug = debug_print('debug_media')
 
 avformat = pyglet.lib.load_library(
     'avformat',
-    win32=('avformat-59', 'avformat-58'),
-    darwin=('avformat.59', 'avformat.58')
+    win32=('avformat-60', 'avformat-59', 'avformat-58'),
+    darwin=('avformat.60', 'avformat.59', 'avformat.58')
 )
 
 avformat.avformat_version.restype = c_int
@@ -115,6 +115,7 @@ class AVStream(Structure):
     pass
 
 AVStream_Fields = [
+        ('av_class', POINTER(AVClass)),
         ('index', c_int),
         ('id', c_int),
         ('codec', POINTER(AVCodecContext)),  # Deprecated. Removed in 59.
@@ -139,11 +140,14 @@ AVStream_Fields = [
         ('pts_wrap_bits', c_int),
     ]
 
-compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=None)
+compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=('av_class',))
 
 compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
-                           removals=('codec', 'recommended_encoder_configuration', 'info'))
+                           removals=('av_class', 'codec', 'recommended_encoder_configuration', 'info'))
 
+compat.add_version_changes('avformat', 60, AVStream, AVStream_Fields,
+                           removals=('codec', 'recommended_encoder_configuration', 'info'),
+                           repositions=(compat.Reposition("codecpar", "id"),))
 
 class AVProgram(Structure):
     pass
@@ -259,6 +263,8 @@ compat.add_version_changes('avformat', 58, AVFormatContext, AVFormatContext_Fiel
 compat.add_version_changes('avformat', 59, AVFormatContext, AVFormatContext_Fields,
                            removals=('filename', 'internal'))
 
+compat.add_version_changes('avformat', 60, AVFormatContext, AVFormatContext_Fields,
+                           removals=('filename', 'internal'))
 
 avformat.av_find_input_format.restype = c_int
 avformat.av_find_input_format.argtypes = [c_int]

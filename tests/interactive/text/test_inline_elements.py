@@ -80,7 +80,7 @@ class TestElement(document.InlineElement):
         y += self.descent
         w = self.advance
         h = self.ascent - self.descent
-        self.vertex_list.vertices[:] = (x, y, 
+        self.vertex_list.position[:] = (x, y,
                                         x + w, y,
                                         x + w, y + h,
                                         x, y + h)

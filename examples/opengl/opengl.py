@@ -25,7 +25,7 @@ try:
     window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling if not supported
-    window = pyglet.window.Window(resizable=True)
+    window = pyglet.window.Window(width=960, height=540, resizable=True)
 
 @window.event
 def on_draw():
@@ -46,7 +46,7 @@ def update(dt):
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
     rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/4, Vec3(0, 0, 1))
-    trans = Mat4.from_translation((0, 0, -3.0))
+    trans = Mat4.from_translation(Vec3(0, 0, -3.0))
     torus_model.matrix = trans @ rot_x @ rot_y @ rot_z
 
 def setup():
@@ -109,7 +109,7 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     group = pyglet.model.MaterialGroup(material=material, program=shader)
 
     vertex_list = shader.vertex_list_indexed(len(vertices)//3, GL_TRIANGLES, indices, batch, group,
-                                             vertices=('f', vertices),
+                                             position=('f', vertices),
                                              normals=('f', normals),
                                              colors=('f', material.diffuse * (len(vertices) // 3)))
 

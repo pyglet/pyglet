@@ -3,6 +3,7 @@ from .base import Display, Screen, ScreenMode, Canvas
 from pyglet.libs.win32 import _user32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
+from pyglet.libs.win32.context_managers import device_context
 
 
 class Win32Display(Display):
@@ -30,13 +31,13 @@ class Win32Screen(Screen):
         self._handle = handle
 
     def get_matching_configs(self, template):
-        hdc = _user32.GetDC(0)
-        canvas = Win32Canvas(self.display, 0, hdc)
-        configs = template.match(canvas)
-        # XXX deprecate config's being screen-specific
-        for config in configs:
-            config.screen = self
-        _user32.ReleaseDC(0, hdc)
+        with device_context(None) as hdc:
+            canvas = Win32Canvas(self.display, 0, hdc)
+            configs = template.match(canvas)
+            # XXX deprecate config's being screen-specific
+            for config in configs:
+                config.screen = self
+
         return configs
 
     def get_device_name(self):

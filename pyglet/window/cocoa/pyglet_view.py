@@ -1,11 +1,31 @@
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, NSPasteboardURLReadingFileURLsOnlyKey, NSLeftShiftKeyMask, NSRightShiftKeyMask, \
+    NSLeftControlKeyMask, NSRightControlKeyMask, NSLeftAlternateKeyMask, NSRightAlternateKeyMask, NSLeftCommandKeyMask, \
+    NSRightCommandKeyMask, NSFunctionKeyMask, NSAlphaShiftKeyMask
 from .pyglet_textview import PygletTextView
 
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
+NSURL = cocoapy.ObjCClass('NSURL')
+NSArray = cocoapy.ObjCClass('NSArray')
+NSDictionary = cocoapy.ObjCClass('NSDictionary')
+NSNumber = cocoapy.ObjCClass('NSNumber')
+
+# Key to mask mapping.
+maskForKey = {
+    key.LSHIFT: NSLeftShiftKeyMask,
+    key.RSHIFT: NSRightShiftKeyMask,
+    key.LCTRL: NSLeftControlKeyMask,
+    key.RCTRL: NSRightControlKeyMask,
+    key.LOPTION: NSLeftAlternateKeyMask,
+    key.ROPTION: NSRightAlternateKeyMask,
+    key.LCOMMAND: NSLeftCommandKeyMask,
+    key.RCOMMAND: NSRightCommandKeyMask,
+    key.CAPSLOCK: NSAlphaShiftKeyMask,
+    key.FUNCTION: NSFunctionKeyMask
+}
 
 # Event data helper functions.
 
@@ -160,45 +180,23 @@ class PygletView_Implementation:
                 app.event_loop.idle()
 
     @PygletView.method('v@')
-    def pygletKeyDown_(self, nsevent):
-        symbol = getSymbol(nsevent)
-        modifiers = getModifiers(nsevent)
-        self._window.dispatch_event('on_key_press', symbol, modifiers)
+    def keyDown_(self, nsevent):
+        if not nsevent.isARepeat():
+            symbol = getSymbol(nsevent)
+            modifiers = getModifiers(nsevent)
+            self._window.dispatch_event('on_key_press', symbol, modifiers)
 
     @PygletView.method('v@')
-    def pygletKeyUp_(self, nsevent):
+    def keyUp_(self, nsevent):
         symbol = getSymbol(nsevent)
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_key_release', symbol, modifiers)
 
     @PygletView.method('v@')
-    def pygletFlagsChanged_(self, nsevent):
+    def flagsChanged_(self, nsevent):
         # Handles on_key_press and on_key_release events for modifier keys.
         # Note that capslock is handled differently than other keys; it acts
         # as a toggle, so on_key_release is only sent when it's turned off.
-
-        # TODO: Move these constants somewhere else.
-        # Undocumented left/right modifier masks found by experimentation:
-        NSLeftShiftKeyMask      = 1 << 1
-        NSRightShiftKeyMask     = 1 << 2
-        NSLeftControlKeyMask    = 1 << 0
-        NSRightControlKeyMask   = 1 << 13
-        NSLeftAlternateKeyMask  = 1 << 5
-        NSRightAlternateKeyMask = 1 << 6
-        NSLeftCommandKeyMask    = 1 << 3
-        NSRightCommandKeyMask   = 1 << 4
-
-        maskForKey = {key.LSHIFT: NSLeftShiftKeyMask,
-                      key.RSHIFT: NSRightShiftKeyMask,
-                      key.LCTRL: NSLeftControlKeyMask,
-                      key.RCTRL: NSRightControlKeyMask,
-                      key.LOPTION: NSLeftAlternateKeyMask,
-                      key.ROPTION: NSRightAlternateKeyMask,
-                      key.LCOMMAND: NSLeftCommandKeyMask,
-                      key.RCOMMAND: NSRightCommandKeyMask,
-                      key.CAPSLOCK: cocoapy.NSAlphaShiftKeyMask,
-                      key.FUNCTION: cocoapy.NSFunctionKeyMask}
-
         symbol = keymap.get(nsevent.keyCode(), None)
 
         # Ignore this event if symbol is not a modifier key.  We must check this
@@ -346,6 +344,32 @@ class PygletView_Implementation:
         self._window._mouse_in_window = True
         if not self._window._mouse_exclusive:
             self._window.set_mouse_platform_visible()
+
+    @PygletView.method('Q@')
+    def draggingEntered_(self, draginfo):
+        return cocoapy.NSDragOperationGeneric
+
+    @PygletView.method('B@')
+    def performDragOperation_(self, sender):
+        pos = sender.draggingLocation()
+
+        pasteboard = sender.draggingPasteboard()
+
+        classes = NSArray.arrayWithObject_(NSURL)
+
+        options = NSDictionary.dictionaryWithObject_forKey_(
+            NSNumber.numberWithBool_(True), NSPasteboardURLReadingFileURLsOnlyKey
+        )
+
+        urls = pasteboard.readObjectsForClasses_options_(classes, options)
+
+        url_count = urls.count()
+        paths = []
+        for i in range(url_count):
+            fpath = urls.objectAtIndex_(i).fileSystemRepresentation()
+            paths.append(fpath.decode())
+
+        self._window.dispatch_event('on_file_drop', pos.x, pos.y, paths)
 
 
 PygletView = cocoapy.ObjCClass('PygletView')

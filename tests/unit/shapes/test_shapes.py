@@ -28,14 +28,9 @@ def shape_keywords_only(request):
     return partial(class_, *positional_args)
 
 
-@pytest.fixture(params=[(0, 0, 0), (0, 255, 0, 37)])
-def original_color(request):
-    return request.param
-
-
 @pytest.fixture()
-def rgb_or_rgba_shape(shape_keywords_only, original_color):
-    return shape_keywords_only(color=original_color)
+def rgb_or_rgba_shape(shape_keywords_only, original_rgb_or_rgba_color):
+    return shape_keywords_only(color=original_rgb_or_rgba_color)
 
 
 @pytest.fixture

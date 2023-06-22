@@ -67,7 +67,7 @@ class Caret:
 
     _mark = None
 
-    def __init__(self, layout, batch=None, color=(0, 0, 0)):
+    def __init__(self, layout, batch=None, color=(0, 0, 0, 255)):
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
@@ -78,17 +78,27 @@ class Caret:
                 Layout to control.
             `batch` : `~pyglet.graphics.Batch`
                 Graphics batch to add vertices to.
-            `color` : (int, int, int)
-                RGB tuple with components in range [0, 255].
+            `color` : (int, int, int, int)
+                An RGBA or RGB tuple with components in the range [0, 255].
+                RGB colors will be treated as having an opacity of 255.
 
         """
         from pyglet import gl
         self._layout = layout
-        batch = batch or layout.batch
-        group = layout.foreground_decoration_group
-        colors = (*color, 255, *color, 255)
 
-        self._list = group.program.vertex_list(2, gl.GL_LINES, batch, group, colors=('Bn', colors))
+        self._custom_batch = True if batch else False
+        self._batch = batch or layout.batch
+        self._group = layout.foreground_decoration_group
+
+        # Handle both 3 and 4 byte colors
+        r, g, b, *a = color
+
+        # The alpha value when not in a hidden blink state
+        self._visible_alpha = a[0] if a else 255
+
+        colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
+
+        self._list = self._group.program.vertex_list(2, gl.GL_LINES, batch, self._group, colors=('Bn', colors))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -96,6 +106,21 @@ class Caret:
         self.visible = True
 
         layout.push_handlers(self)
+
+    @property
+    def layout(self):
+        return self._layout
+
+    @layout.setter
+    def layout(self, layout):
+        if self._layout == layout and self._group == layout.group:
+            return
+
+        from pyglet import gl
+        self._layout = layout
+        batch = self._batch if self._custom_batch else layout.batch
+        self._group = layout.foreground_decoration_group
+        self._batch.migrate(self._list, gl.GL_LINES, self._group, batch)
 
     def delete(self):
         """Remove the caret from its batch.
@@ -108,10 +133,13 @@ class Caret:
     def _blink(self, dt):
         if self.PERIOD:
             self._blink_visible = not self._blink_visible
+
         if self._visible and self._active and self._blink_visible:
-            alpha = 255
+            alpha = self._visible_alpha
         else:
             alpha = 0
+
+        # Only set the alpha rather than entire colors
         self._list.colors[3] = alpha
         self._list.colors[7] = alpha
 
@@ -140,19 +168,33 @@ class Caret:
 
     @property
     def color(self):
-        """Caret color.
+        """An RGBA tuple of the current caret color
 
-        The default caret color is ``[0, 0, 0]`` (black).  Each RGB color
-        component is in the range 0 to 255.
+        When blinking off, the alpha channel will be set to ``0``.  The
+        default caret color when visible is ``(0, 0, 0, 255)`` (opaque black).
 
-        :type: (int, int, int)
+        You may set the color to an RGBA or RGB color tuple.
+
+        .. warning:: This setter can fail for a short time after layout / window init!
+
+                     Use ``__init__``'s ``color`` keyword argument instead if you
+                     run into this problem.
+
+        Each color channel must be between 0 and 255, inclusive. If the color
+        set to an RGB color, the previous alpha channel value will be used.
+
+        :type: (int, int, int, int)
         """
-        return self._list.colors[:3]
+        return self._list.colors[:4]
 
     @color.setter
     def color(self, color):
-        self._list.colors[:3] = color
-        self._list.colors[4:7] = color
+        r, g, b, *_a = color
+
+        # Preserve alpha when setting an RGB color
+        a = _a[0] if _a else self._list.colors[3]
+
+        self._list.colors[:] = r, g, b, a, r, g, b, a
 
     @property
     def position(self):
@@ -357,14 +399,17 @@ class Caret:
         x += self._layout.x
         y += self._layout.y + self._layout.height
 
-        font = self._layout.document.get_font(max(0, self._position - 1))
-        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
-
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))
 
         self._layout.ensure_line_visible(line)
         self._layout.ensure_x_visible(x)
+
+        font = self._layout.document.get_font(max(0, self._position - 1))
+        self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
+
+    def on_translation_update(self):
+        self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
 
     def on_layout_update(self):
         """Handler for the `IncrementalTextLayout.on_layout_update` event.

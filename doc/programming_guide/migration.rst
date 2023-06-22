@@ -76,6 +76,62 @@ The new :py:mod:`~pyglet.math` module is available to assist in creating
 and manipulating matrixes, so basic operations can be performed without
 deep mathematical knowledge.
 
+Here are some very simplistic examples on the new usages.
+
+.. list-table:: Pyglet 1.5 -> 2.0 Chart
+   :header-rows: 1
+
+   * - 
+     - 1.5 Code
+     - 2.0 Code
+   * - Translation
+     -  .. code-block::
+     
+           glTranslatef(x, y, z)
+
+     -  .. code-block::
+     
+           window.view = window.view.translate((x, y, z))
+           
+   * - Scaling
+     -  .. code-block::
+     
+           glScalef(zoom, zoom, 1)
+           
+     -  .. code-block::
+     
+           window.view = window.view.scale((zoom, zoom, 1))
+           
+        
+   * - Orthogonal Projection
+     -  .. code-block::
+          
+           gl.glMatrixMode(gl.GL_PROJECTION)
+           gl.glLoadIdentity()
+           gl.glOrtho(0, width, 0, height, -255, 255)
+           gl.glMatrixMode(gl.GL_MODELVIEW)
+
+     -  .. code-block::
+           
+           from pyglet.math import Mat4
+           window.projection = Mat4.orthogonal_projection(
+               0, width, 0, height, -255, 255
+           )
+           
+   * - GL_QUADS
+     -  .. code-block::
+          
+           vertex_list = batch.add(4, GL_QUADS, group, vertex_format,
+                ('c4B', (255,255,255,255) * 4),
+                ('t3f', texture.tex_coords))
+                
+     -  .. code-block::
+          
+               vertex_list = program.vertex_list_indexed(
+                4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], batch, group,
+                colors=('Bn', (255, 255, 255, 255) * 4),
+                tex_coords=('f', texture.tex_coords))
+
 
 Application Event Loop
 ^^^^^^^^^^^^^^^^^^^^^^

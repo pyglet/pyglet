@@ -29,18 +29,20 @@ class PygletTextView_Implementation:
     def dealloc(self):
         self.empty_string.release()
 
-    @PygletTextView.method('v@')
-    def keyDown_(self, nsevent):
-        array = NSArray.arrayWithObject_(nsevent)
-        self.interpretKeyEvents_(array)
+    # Other functions still seem to work?
+    # @PygletTextView.method('v@')
+    # def keyDown_(self, nsevent):
+    #     array = NSArray.arrayWithObject_(nsevent)
+    #     self.interpretKeyEvents_(array)
 
     @PygletTextView.method('v@')
     def insertText_(self, text):
         text = cfstring_to_string(text)
         self.setString_(self.empty_string)
         # Don't send control characters (tab, newline) as on_text events.
-        if unicodedata.category(text[0]) != 'Cc':
-            self._window.dispatch_event("on_text", text)
+        if text:
+            if unicodedata.category(text[0]) != 'Cc':
+                self._window.dispatch_event("on_text", text)
 
     @PygletTextView.method('v@')
     def insertNewline_(self, sender):

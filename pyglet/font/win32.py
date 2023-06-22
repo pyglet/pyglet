@@ -9,6 +9,7 @@ from pyglet.font import base
 from pyglet.font import win32query
 import pyglet.image
 from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.context_managers import device_context
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
 from pyglet.libs.win32 import _kernel32 as kernel32
@@ -195,14 +196,13 @@ class Win32Font(base.Font):
         self.hfont = gdi32.CreateFontIndirectW(byref(self.logfont))
 
         # Create a dummy DC for coordinate mapping
-        dc = user32.GetDC(0)
-        metrics = TEXTMETRIC()
-        gdi32.SelectObject(dc, self.hfont)
-        gdi32.GetTextMetricsA(dc, byref(metrics))
-        self.ascent = metrics.tmAscent
-        self.descent = -metrics.tmDescent
-        self.max_glyph_width = metrics.tmMaxCharWidth
-        user32.ReleaseDC(0, dc)
+        with device_context(None) as dc:
+            metrics = TEXTMETRIC()
+            gdi32.SelectObject(dc, self.hfont)
+            gdi32.GetTextMetricsA(dc, byref(metrics))
+            self.ascent = metrics.tmAscent
+            self.descent = -metrics.tmDescent
+            self.max_glyph_width = metrics.tmMaxCharWidth
 
     def __del__(self):
         gdi32.DeleteObject(self.hfont)
@@ -210,22 +210,22 @@ class Win32Font(base.Font):
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
         # Create a dummy DC for coordinate mapping
-        dc = user32.GetDC(0)
-        if dpi is None:
-            dpi = 96
-        logpixelsy = dpi
+        with device_context(None) as dc:
+            if dpi is None:
+                dpi = 96
+            logpixelsy = dpi
 
-        logfont = LOGFONTW()
-        # Conversion of point size to device pixels
-        logfont.lfHeight = int(-size * logpixelsy // 72)
-        if bold:
-            logfont.lfWeight = FW_BOLD
-        else:
-            logfont.lfWeight = FW_NORMAL
-        logfont.lfItalic = italic
-        logfont.lfFaceName = name
-        logfont.lfQuality = ANTIALIASED_QUALITY
-        user32.ReleaseDC(0, dc)
+            logfont = LOGFONTW()
+            # Conversion of point size to device pixels
+            logfont.lfHeight = int(-size * logpixelsy // 72)
+            if bold:
+                logfont.lfWeight = FW_BOLD
+            else:
+                logfont.lfWeight = FW_NORMAL
+            logfont.lfItalic = italic
+            logfont.lfFaceName = name
+            logfont.lfQuality = ANTIALIASED_QUALITY
+
         return logfont
 
     @classmethod
@@ -236,7 +236,12 @@ class Win32Font(base.Font):
     @classmethod
     def add_font_data(cls, data):
         numfonts = c_uint32()
-        gdi32.AddFontMemResourceEx(data, len(data), 0, byref(numfonts))
+        _handle = gdi32.AddFontMemResourceEx(data, len(data), 0, byref(numfonts))
+
+        # None means a null handle was returned, ie something went wrong
+        if _handle is None:
+            raise ctypes.WinError()
+
 
 # --- GDI+ font rendering ---
 

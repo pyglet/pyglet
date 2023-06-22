@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.4'
+version = '2.0.8'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -130,6 +130,8 @@ options = {
     'win32_disable_shaping': False,
     'dw_legacy_naming': False,
     'win32_disable_xinput': False,
+    'com_mta': False,
+    'osx_alt_loop': False
 }
 
 _option_types = {
@@ -160,7 +162,9 @@ _option_types = {
     'headless_device': int,
     'win32_disable_shaping': bool,
     'dw_legacy_naming': bool,
-    'win32_disable_xinput': bool
+    'win32_disable_xinput': bool,
+    'com_mta': bool,
+    'osx_alt_loop': bool,
 }
 
 

@@ -63,7 +63,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """A sprite group that uses multiple active textures.
     """
 
-    def __init__(self, textures, blend_src, blend_dest, program=None, order=0, parent=None):
+    def __init__(self, textures, blend_src, blend_dest, program=None, parent=None):
         """Create a sprite group for multiple textures and samplers.
            All textures must share the same target type.
 
@@ -82,7 +82,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         self.textures = textures
         texture = list(self.textures.values())[0]
         self.target = texture.target
-        super().__init__(texture, blend_src, blend_dest, program, order, parent)
+        super().__init__(texture, blend_src, blend_dest, program, parent)
 
     def set_state(self):
         self.program.use()
@@ -145,7 +145,7 @@ class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
         self._texture = list(textures.values())[0]
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = self.group_class(textures, blend_src, blend_dest, self._program, 0, group)
+        self._group = self.group_class(textures, blend_src, blend_dest, self._program, group)
         self._subpixel = subpixel
         self._create_vertex_list()
 

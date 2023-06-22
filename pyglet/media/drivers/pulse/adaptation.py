@@ -236,9 +236,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert _debug('PulseAudioPlayer: Dispatch events at index {}'.format(read_index))
 
         while self._events and self._events[0][0] <= read_index:
-            event_name = self._events.pop(0)
-            assert _debug('PulseAudioPlayer: Dispatch event', event_name)
-            pyglet.app.platform_event_loop.post_event(self.player, event_name)
+            _, event = self._events.pop(0)
+            assert _debug('PulseAudioPlayer: Dispatch event', event)
+            event.sync_dispatch_to_player(self.player)
+
+    def _add_event_at_write_index(self, event_name):
+        assert _debug('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
+        self._events.append((self._write_index, MediaEvent(event_name)))
 
     def delete(self):
         assert _debug('Delete PulseAudioPlayer')

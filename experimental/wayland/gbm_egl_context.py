@@ -17,8 +17,7 @@
 
 import os
 
-from ctypes import *
-from gbm import *
+from pyglet.libs.wayland.gbm import *
 from pyglet.libs.egl.egl import *
 from pyglet.libs.egl.eglext import *
 

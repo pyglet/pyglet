@@ -1,19 +1,21 @@
-Controllers & Joysticks
-=======================
+Controller & Joystick input
+===========================
 
-pyglet's :py:mod:`~pyglet.input` module allows you to accept input
-from any USB or Bluetooth human interface device (HID). High-level
-abstractions are provided for working with game controllers, joysticks,
-and the Apple Remote, with named and normalized inputs. The game controller
-abstraction is suited for modern gamepads, such as are found on home video game
-consoles. The joystick abstraction is more generalized, and suits devices with
-an arbitrary number of buttons, axis, and hats. This includes flight sticks,
-steering wheels, and just about anything else with buttons and axis inputs. For
-most types of games, the Controller abstraction is usually the easier choice.
+The :py:mod:`~pyglet.input` module allows you to accept input from USB or Bluetooth
+human interface devices (HID). High-level classes are provided for working with
+game controllers, joysticks, and the Apple Remote, with named and normalized inputs.
+Basic support is also provided for Drawing Tablets, such as those made by Wacom.
 
-For advanced use cases, it's also possible to access the low-level input
-devices directly. The only read advantage to doing things is way, is that you
-access the raw input values without normalization.
+The game controller abstraction is most suitable for modern dual-analog stick controllers,
+such as those from video game consoles. The joystick abstraction is more generalized,
+and suits devices with an arbitrary number of buttons, absolute or relative axis, and hats.
+This includes devices like flight sticks, steering wheels, and just about anything else with
+digital and/or analog inputs. For most types of games, the game controller abstraction is
+recommended.
+
+For advanced use cases, it is also possible to access the low-level input devices directly.
+This can be useful if you need direct accesss to the raw inputs, without normalization.
+For most application and games this is not required.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
 devices, and a ControllerManager class to support hot-plugging of Controllers::
@@ -25,7 +27,7 @@ devices, and a ControllerManager class to support hot-plugging of Controllers::
     controllers = pyglet.input.get_controllers()
 
     # get a list of all joysticks:
-    joysticks = pyglet.input.get_controllers()
+    joysticks = pyglet.input.get_joysticks()
 
     # get a list of tablets:
     tablets = pyglet.input.get_tablets()
@@ -41,11 +43,11 @@ Using Controllers
 -----------------
 
 Controllers have a strictly defined set of inputs that mimic the layout of
-popular video game console Controllers. This includes two analog sticks, analog
-triggers, a directional pad (dpad), face and shoulder buttons, and
-start/back/guide and stick press buttons. Many controllers also include the
-ability to play rumble effects (vibration). The following platform interfaces
-are used for Controller support:
+modern dual-analog stick video game console Controllers. This includes two
+analog sticks, analog triggers, a directional pad (dpad), face and shoulder
+buttons, and start/back/guide and stick press buttons. Many controllers also
+include the ability to play rumble effects (vibration). The following platform
+interfaces are used for Controller support:
 
     .. list-table::
         :header-rows: 1
@@ -96,27 +98,27 @@ following analog controls are available:
 
         * - leftx
           - float
-          - -1,1
+          - -1~1
 
         * - lefty
           - float
-          - -1,1
+          - -1~1
 
         * - rightx
           - float
-          - -1,1
+          - -1~1
 
         * - righty
           - float
-          - -1,1
+          - -1~1
 
         * - lefttrigger
           - float
-          - 0,1
+          - 0~1
 
         * - righttrigger
           - float
-          - 0,1
+          - 0~1
 
 The following digital controls are available:
 

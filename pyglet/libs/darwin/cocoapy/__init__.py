@@ -28,10 +28,12 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+from contextlib import contextmanager
 
-from .runtime import objc, send_message, send_super
+from .runtime import objc, send_message, send_super, AutoReleasePool
 from .runtime import get_selector
 from .runtime import ObjCClass, ObjCInstance, ObjCSubclass
 
 from .cocoatypes import *
 from .cocoalibs import *
+

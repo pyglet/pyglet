@@ -7,7 +7,7 @@ from ctypes import c_void_p, c_int32, byref, c_byte
 from pyglet.font import base
 import pyglet.image
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, kCTFontURLAttribute, CGFloat
 
 cf = cocoapy.cf
 ct = cocoapy.ct
@@ -38,26 +38,39 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         cf.CFRelease(string)
         cf.CFRelease(attributes)
 
-        # Get a bounding rectangle for glyphs in string.
+        # Determine the glyphs involved for the text (if any)
         count = len(text)
         chars = (cocoapy.UniChar * count)(*list(map(ord,str(text))))
         glyphs = (cocoapy.CGGlyph * count)()
         ct.CTFontGetGlyphsForCharacters(ctFont, chars, glyphs, count)
-        rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
 
-        # Get advance for all glyphs in string.
-        advance = ct.CTFontGetAdvancesForGlyphs(ctFont, 0, glyphs, None, count)
+        # If a glyph is returned as 0, it does not exist in the current font.
+        if glyphs[0] == 0:
+            # Use the typographic bounds instead for the placements.
+            # This seems to have some sort of fallback information in the bounds.
+            ascent, descent = CGFloat(), CGFloat()
+            advance = width = int(ct.CTLineGetTypographicBounds(line, byref(ascent), byref(descent), None))
+            height = int(ascent.value + descent.value)
+            lsb = 0
+            baseline = descent.value
+        else:
+            # Get a bounding rectangle for glyphs in string.
+            rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
 
-        # Set image parameters:
-        # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
-        # around the glyph image when it is placed in the texture atlas.  This prevents
-        # weird artifacts from showing up around the edges of the rendered glyph textures.
-        # We adjust the baseline and lsb of the glyph by 1 pixel accordingly.
-        width = max(int(math.ceil(rect.size.width) + 2), 1)
-        height = max(int(math.ceil(rect.size.height) + 2), 1)
-        baseline = -int(math.floor(rect.origin.y)) + 1
-        lsb = int(math.floor(rect.origin.x)) - 1
-        advance = int(round(advance))
+            # Get advance for all glyphs in string.
+            advance = ct.CTFontGetAdvancesForGlyphs(ctFont, 0, glyphs, None, count)
+
+            # Set image parameters:
+            # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
+            # around the glyph image when it is placed in the texture atlas.  This prevents
+            # weird artifacts from showing up around the edges of the rendered glyph textures.
+            # We adjust the baseline and lsb of the glyph by 1 pixel accordingly.
+
+            width = max(int(math.ceil(rect.size.width) + 2), 1)
+            height = max(int(math.ceil(rect.size.height) + 2), 1)
+            baseline = -int(math.floor(rect.origin.y)) + 1
+            lsb = int(math.ceil(rect.origin.x)) - 1
+            advance = int(round(advance))
 
         # Create bitmap context.
         bitsPerComponent = 8
@@ -183,6 +196,7 @@ class QuartzFont(base.Font):
             traits |= cocoapy.kCTFontItalicTrait
 
         name = str(name)
+        self.traits = traits
         # First see if we can find an appropriate font from our table of loaded fonts.
         cgFont = self._lookup_font_with_family_and_traits(name, traits)
         if cgFont:
@@ -192,7 +206,6 @@ class QuartzFont(base.Font):
             # Create a font descriptor for given name and traits and use it to create font.
             descriptor = self._create_font_descriptor(name, traits)
             self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, size, None))
-
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
 
@@ -202,6 +215,19 @@ class QuartzFont(base.Font):
 
         self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
         self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
+
+    @property
+    def filename(self):
+        descriptor = self._create_font_descriptor(self.name, self.traits)
+        ref = c_void_p(ct.CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute))
+        if ref:
+            url = cocoapy.ObjCInstance(ref, cache=False)  # NSURL
+            filepath = url.fileSystemRepresentation().decode()
+            cf.CFRelease(ref)
+            return filepath
+
+        cf.CFRelease(descriptor)
+        return 'Unknown'
 
     @property
     def name(self):

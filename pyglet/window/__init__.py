@@ -1410,7 +1410,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_draw(self, dt):
+        def on_draw(self):
             """The window contents must be redrawn.
 
             The `EventLoop` will dispatch this event when the window
@@ -1799,7 +1799,9 @@ class FPSDisplay:
     usage is to create an `FPSDisplay` for each window, and draw the display
     at the end of the windows' :py:meth:`~pyglet.window.Window.on_draw` event handler::
 
-        window = pyglet.window.Window()
+        from pyglet.window import Window, FPSDisplay
+
+        window = Window()
         fps_display = FPSDisplay(window)
 
         @window.event

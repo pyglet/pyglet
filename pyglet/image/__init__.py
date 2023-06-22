@@ -118,6 +118,16 @@ class ImageException(Exception):
     pass
 
 
+class TextureArraySizeExceeded(Exception):
+    """Exception occurs ImageData dimensions are larger than the array supports."""
+    pass
+
+
+class TextureArrayDepthExceeded(Exception):
+    """Exception occurs when depth has hit the maximum supported of the array."""
+    pass
+
+
 def load(filename, file=None, decoder=None):
     """Load an image from a file.
 
@@ -678,7 +688,7 @@ class ImageData(AbstractImage):
         :rtype: cls or cls.region_class
         """
         internalformat = self._get_internalformat(self._desired_format)
-        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat)
+        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, False, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -706,7 +716,7 @@ class ImageData(AbstractImage):
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -818,10 +828,15 @@ class ImageData(AbstractImage):
 
         # Unset GL_UNPACK_ROW_LENGTH:
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+        self._default_region_unpack()
+
         # Flush image upload before data get GC'd:
         glFlush()
 
     def _apply_region_unpack(self):
+        pass
+
+    def _default_region_unpack(self):
         pass
 
     def _convert(self, fmt, pitch):
@@ -996,6 +1011,10 @@ class ImageDataRegion(ImageData):
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
         glPixelStorei(GL_UNPACK_SKIP_ROWS, self.y)
+
+    def _default_region_unpack(self):
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
 
     def get_region(self, x, y, width, height):
         x += self.x
@@ -1219,7 +1238,7 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA):
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None, fmt=GL_RGBA, blank_data=True):
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
@@ -1244,6 +1263,9 @@ class Texture(AbstractImage):
                 GL constant giving format of texture; for example, ``GL_RGBA``.
                 The format specifies what format the pixel data we're expecting to write
                 to the texture and should ideally be the same as for internal format.
+            `blank_data` : bool
+                Setting to True will initialize the texture data with all zeros. Setting False, will initialize Texture
+                with no data.
 
         :rtype: :py:class:`~pyglet.image.Texture`
         """
@@ -1257,13 +1279,14 @@ class Texture(AbstractImage):
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         if internalformat is not None:
+            blank = (GLubyte * (width * height * 4))() if blank_data else None
             glTexImage2D(target, 0,
                          internalformat,
                          width, height,
                          0,
                          fmt,
                          GL_UNSIGNED_BYTE,
-                         None)
+                         blank)
             glFlush()
 
         texture = cls(width, height, target, tex_id.value)
@@ -1302,7 +1325,7 @@ class Texture(AbstractImage):
             glPixelStorei(GL_PACK_ALIGNMENT, 1)
             glCheckFramebufferStatus(GL_FRAMEBUFFER)
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
-            glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
+            glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glDeleteFramebuffers(1, fbo)
         else:
@@ -1468,7 +1491,7 @@ class Texture3D(Texture, UniformTextureSequence):
     items = ()
 
     @classmethod
-    def create_for_images(cls, images, internalformat=GL_RGBA):
+    def create_for_images(cls, images, internalformat=GL_RGBA, blank_data=True):
         item_width = images[0].width
         item_height = images[0].height
         for image in images:
@@ -1484,12 +1507,13 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.images = depth
 
+        blank = (GLubyte * (texture.width * texture.height * texture.images))() if blank_data else None
         glBindTexture(texture.target, texture.id)
         glTexImage3D(texture.target, texture.level,
                      internalformat,
                      texture.width, texture.height, texture.images, 0,
                      GL_ALPHA, GL_UNSIGNED_BYTE,
-                     None)
+                     blank)
 
         items = []
         for i, image in enumerate(images):
@@ -1528,32 +1552,17 @@ class Texture3D(Texture, UniformTextureSequence):
 class TextureArrayRegion(TextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture.
     """
-    def __init__(self, x, y, z, width, height, owner):
-        super().__init__(width, height, owner.target, owner.id)
-
-        self.x = x
-        self.y = y
-        self.z = z
-        self.owner = owner
-        owner_u1 = owner.tex_coords[0]
-        owner_v1 = owner.tex_coords[1]
-        owner_u2 = owner.tex_coords[3]
-        owner_v2 = owner.tex_coords[7]
-        scale_u = owner_u2 - owner_u1
-        scale_v = owner_v2 - owner_v1
-        u1 = x / owner.width * scale_u + owner_u1
-        v1 = y / owner.height * scale_v + owner_v1
-        u2 = (x + width) / owner.width * scale_u + owner_u1
-        v2 = (y + height) / owner.height * scale_v + owner_v1
-        z = float(z)
-        self.tex_coords = (u1, v1, z, u2, v1, z, u2, v2, z, u1, v2, z)
 
     def __repr__(self):
-        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height, self.z)
+        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height,
+                                                        self.z)
 
 
 class TextureArray(Texture, UniformTextureSequence):
-    allow_smaller_pack = True
+    def __init__(self, width, height, target, tex_id, max_depth):
+        super().__init__(width, height, target, tex_id)
+        self.max_depth = max_depth
+        self.items = []
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
@@ -1600,9 +1609,7 @@ class TextureArray(Texture, UniformTextureSequence):
                      0)
         glFlush()
 
-        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value)
-        texture.items = []  # No items on creation
-        texture.max_depth = max_depth
+        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value, max_depth)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
 
@@ -1610,22 +1617,30 @@ class TextureArray(Texture, UniformTextureSequence):
 
     def _verify_size(self, image):
         if image.width > self.width or image.height > self.height:
-            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(
-                image.width, image.height, self.width, self.height))
+            raise TextureArraySizeExceeded(f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x{self.height})')
+
+    def add(self, image: pyglet.image.ImageData):
+        if len(self.items) >= self.max_depth:
+            raise TextureArrayDepthExceeded(f"TextureArray is full.")
+
+        self._verify_size(image)
+        start_length = len(self.items)
+        item = self.region_class(0, 0, start_length, image.width, image.height, self)
+        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length)
+        self.items.append(item)
+        return item
 
     def allocate(self, *images):
+        """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
-            raise Exception("The amount of images being added exceeds the depth of this TextureArray.")
+            raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
 
-        textures = []
         start_length = len(self.items)
         for i, image in enumerate(images):
             self._verify_size(image)
             item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
             self.items.append(item)
             image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
-
-        glFlush()
 
         return self.items[start_length:]
 
@@ -2094,7 +2109,7 @@ class ColorBufferImage(BufferImage):
     format = 'RGBA'
 
     def get_texture(self, rectangle=False):
-        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA, blank_data=False)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 

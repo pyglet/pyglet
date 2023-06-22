@@ -56,7 +56,11 @@ class MediaThread:
         with self._condition:
             self._stopped = True
             self._condition.notify()
-        self._thread.join()
+        try:
+            self._thread.join()
+        except RuntimeError:
+            # Ignore on unclean shutdown
+            pass
 
     def sleep(self, timeout):
         """Wait for some amount of time, or until notified.

@@ -214,7 +214,7 @@ class OBJModelDecoder(ModelDecoder):
                 texture = pyglet.resource.texture(material.texture_name)
                 matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        vertices=('f', mesh.vertices),
+                                                        position=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
                                                         tex_coords=('f', mesh.tex_coords),
                                                         colors=('f', material.diffuse * count)))
@@ -222,7 +222,7 @@ class OBJModelDecoder(ModelDecoder):
                 program = pyglet.model.get_default_shader()
                 matgroup = MaterialGroup(material, program, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        vertices=('f', mesh.vertices),
+                                                        position=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
                                                         colors=('f', material.diffuse * count)))
             groups.append(matgroup)

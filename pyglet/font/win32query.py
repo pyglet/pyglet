@@ -71,6 +71,7 @@ appropriate typeface name and create the font using CreateFont or
 CreateFontIndirect.
 
 """
+from pyglet.libs.win32.context_managers import device_context
 
 DEBUG = False
 
@@ -385,36 +386,33 @@ def query(charset=DEFAULT_CHARSET):
     global FONTDB
 
     # 1. Get device context of the entire screen
-    hdc = user32.GetDC(None)
+    with device_context(None) as hdc:
 
-    # 2. Call EnumFontFamiliesExA (ANSI version)
+        # 2. Call EnumFontFamiliesExA (ANSI version)
 
-    # 2a. Call with empty font name to query all available fonts
-    #     (or fonts for the specified charset)
-    #
-    # NOTES:
-    #
-    #  * there are fonts that don't support ANSI charset
-    #  * for DEFAULT_CHARSET font is passed to callback function as
-    #    many times as charsets it supports
+        # 2a. Call with empty font name to query all available fonts
+        #     (or fonts for the specified charset)
+        #
+        # NOTES:
+        #
+        #  * there are fonts that don't support ANSI charset
+        #  * for DEFAULT_CHARSET font is passed to callback function as
+        #    many times as charsets it supports
 
-    # [ ] font name should be less than 32 symbols with terminating \0
-    # [ ] check double purpose - enumerate all available font names
-    #      - enumerate all available charsets for a single font
-    #      - other params?
+        # [ ] font name should be less than 32 symbols with terminating \0
+        # [ ] check double purpose - enumerate all available font names
+        #      - enumerate all available charsets for a single font
+        #      - other params?
 
-    logfont = LOGFONTW(0, 0, 0, 0, 0, 0, 0, 0, charset, 0, 0, 0, 0, '')
-    FONTDB = []  # clear cached FONTDB for enum_font_names callback
-    res = gdi32.EnumFontFamiliesExW(
-        hdc,  # handle to device context
-        ctypes.byref(logfont),
-        enum_font_names,  # pointer to callback function
-        0,  # lParam  - application-supplied data
-        0)  # dwFlags - reserved = 0
-    # res here is the last value returned by callback function
-
-    # 3. Release DC
-    user32.ReleaseDC(None, hdc)
+        logfont = LOGFONTW(0, 0, 0, 0, 0, 0, 0, 0, charset, 0, 0, 0, 0, '')
+        FONTDB = []  # clear cached FONTDB for enum_font_names callback
+        res = gdi32.EnumFontFamiliesExW(
+            hdc,  # handle to device context
+            ctypes.byref(logfont),
+            enum_font_names,  # pointer to callback function
+            0,  # lParam  - application-supplied data
+            0)  # dwFlags - reserved = 0
+        # res here is the last value returned by callback function
 
     return FONTDB
 

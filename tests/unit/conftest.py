@@ -1,9 +1,10 @@
+from typing import Tuple
 from unittest import mock
 
-import pytest
+from pytest import fixture
 
 
-@pytest.fixture
+@fixture
 def get_dummy_shader_program():
     """
     Provide a dummy getter to monkeypatch getters for default shaders.
@@ -32,3 +33,69 @@ def get_dummy_shader_program():
         return mock.MagicMock()
 
     return _get_dummy_shader_program
+
+
+# Color constants & fixtures for use with Shapes, UI elements, etc.
+ORIGINAL_RGB_COLOR = 253, 254, 255
+ORIGINAL_RGBA_COLOR = ORIGINAL_RGB_COLOR + (37,)
+NEW_RGB_COLOR = 1, 2, 3
+NEW_RGBA_COLOR = 5, 6, 7, 59
+
+
+@fixture(scope="session")
+def original_rgb_color():
+    return ORIGINAL_RGB_COLOR
+
+
+@fixture(scope="session")
+def original_rgba_color():
+    return ORIGINAL_RGBA_COLOR
+
+
+@fixture(params=[ORIGINAL_RGB_COLOR, ORIGINAL_RGBA_COLOR])
+def original_rgb_or_rgba_color(request):
+    return request.param
+
+
+def expected_alpha_for_color(color: Tuple[int, ...]):
+    """
+    Slow but readable color helper with validation.
+
+    This uses more readable logic than the main library and will raise
+    clear ValueErrors as part of validation.
+
+    Args:
+        color: An RGB or RGBA color
+
+    Returns:
+
+    """
+    num_channels = len(color)
+
+    if num_channels == 4:
+        return color[3]
+    elif num_channels == 3:
+        return 255
+
+    raise ValueError(
+        f"Expected color tuple with 3 or 4 elements, but got {color!r}.")
+
+
+@fixture
+def original_rgb_or_rgba_expected_alpha(original_rgb_or_rgba_color):
+    return expected_alpha_for_color(original_rgb_or_rgba_color)
+
+
+@fixture(scope="session")
+def new_rgb_color():
+    return NEW_RGB_COLOR
+
+
+@fixture(scope="session")
+def new_rgba_color():
+    return NEW_RGBA_COLOR
+
+
+@fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
+def new_rgb_or_rgba_color(request):
+    return request.param

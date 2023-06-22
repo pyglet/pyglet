@@ -370,7 +370,7 @@ class TextEntry(WidgetBase):
     """
 
     def __init__(self, text, x, y, width,
-                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0),
+                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0, 255),
                  batch=None, group=None):
         """Create a text entry widget.
 
@@ -387,8 +387,9 @@ class TextEntry(WidgetBase):
                 The color of the outline box in RGBA format.
             `text_color` : (int, int, int, int)
                 The color of the text in RGBA format.
-            `caret_color` : (int, int, int)
-                The color of the caret in RGB format.
+            `caret_color` : (int, int, int, int)
+                The color of the caret when it is visible in RGBA or RGB
+                format.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the text entry widget to.
             `group` : `~pyglet.graphics.Group`
@@ -438,6 +439,7 @@ class TextEntry(WidgetBase):
     def _set_focus(self, value):
         self._focus = value
         self._caret.visible = value
+        self._caret.layout = self._layout
 
     def update_groups(self, order):
         self._outline.group = Group(order=order + 1, parent=self._user_group)

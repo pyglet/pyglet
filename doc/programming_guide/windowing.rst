@@ -2,8 +2,8 @@ Windowing
 =========
 
 A :py:class:`~pyglet.window.Window` in pyglet corresponds to a top-level
-window provided by the operating system.  Windows can be floating
-(overlapped with other application windows) or fullscreen.
+window as provided by the operating system. Windows can be floating (with or
+without a border), or fullscreen.
 
 .. _guide_creating-a-window:
 
@@ -108,7 +108,7 @@ however the operating system does not always permit this, and the window may
 have relocated.
 
 Size and position
------------------
+^^^^^^^^^^^^^^^^^
 
 This section applies only to windows that are not fullscreen.  Fullscreen
 windows always have the width and height of the screen they fill.
@@ -168,9 +168,10 @@ Appearance
 Window style
 ^^^^^^^^^^^^
 
-Non-fullscreen windows can be created in one of four styles: default, dialog,
-tool or borderless.  Examples of the appearances of each of these styles under
-Windows and Mac OS X 10.4 are shown below.
+Non-fullscreen windows can be created in one of six styles: default, dialog,
+tool, borderless, transparent, or overlay. Transparent and overlay windows are
+only implemented for Windows, not Mac OS X. Examples of the appearances of each 
+of these styles under Windows and Mac OS X 13.2 are shown below.
 
     .. list-table::
         :header-rows: 1
@@ -187,6 +188,9 @@ Windows and Mac OS X 10.4 are shown below.
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
           - .. image:: img/window_xp_tool.png
           - .. image:: img/window_osx_tool.png
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`
+          - <Image Not Available>
+          - .. image:: img/window_osx_borderless.png
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TRANSPARENT`
           - .. image:: img/window_xp_transparent.png
           - <Not Implemented>

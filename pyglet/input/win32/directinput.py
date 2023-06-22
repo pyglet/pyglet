@@ -15,7 +15,6 @@ from pyglet.libs.win32 import dinput, _user32, DEV_BROADCAST_DEVICEINTERFACE, co
 from pyglet.libs.win32 import _kernel32
 from pyglet.input.controller import get_mapping
 from pyglet.input.base import ControllerManager
-from pyglet.libs.win32.dinput import DIPROPHEADER
 
 # These instance names are not defined anywhere, obtained by experiment.  The
 # GUID names (which seem to be ideally what are needed) are wrong/missing for
@@ -210,31 +209,78 @@ GUID_DEVINTERFACE_HID = com.GUID(0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00, 0
 
 class DIDeviceManager(EventDispatcher):
     def __init__(self):
-        # Pick any open window, or the shadow window if no windows have been created yet.
-        window = pyglet.gl._shadow_window
-        for window in pyglet.app.windows:
-            break
-
-        self.window = window
-
-        dbi = DEV_BROADCAST_DEVICEINTERFACE()
-        dbi.dbcc_size = ctypes.sizeof(dbi)
-        dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE
-        dbi.dbcc_classguid = GUID_DEVINTERFACE_HID
-
-        # Register we look for HID device unplug/plug.
-        _user32.RegisterDeviceNotificationW(window._hwnd, ctypes.byref(dbi), DEVICE_NOTIFY_WINDOW_HANDLE)
-
-        window._event_handlers[WM_DEVICECHANGE] = self._event_devicechange
-
-        # All devices.
+        self.registered = False
+        self.window = None
+        self._devnotify = None
         self.devices: List[DirectInputDevice] = []
 
+        if self.register_device_events(skip_warning=True):
+            self.set_current_devices()
+
+    def set_current_devices(self):
+        """Sets all currently discovered devices in the devices list.
+        Be careful when using this, as this creates new device objects. Should only be called on initialization of
+        the manager and if for some reason the window connection event isn't registered.
+        """
         new_devices, _ = self._get_devices()
-        self.devices.extend(new_devices)
+        self.devices = new_devices
+
+    def register_device_events(self, skip_warning=False, window=None):
+        """Register the first OS Window to receive events of disconnect and connection of devices.
+        Returns True if events were successfully registered.
+        """
+        if not self.registered:
+            # If a specific window is not specified, find one.
+            if not window:
+                # Pick any open window, or the shadow window if no windows have been created yet.
+                window = pyglet.gl._shadow_window
+                if not window:
+                    for window in pyglet.app.windows:
+                        break
+
+            self.window = window
+            if self.window is not None:
+                dbi = DEV_BROADCAST_DEVICEINTERFACE()
+                dbi.dbcc_size = ctypes.sizeof(dbi)
+                dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE
+                dbi.dbcc_classguid = GUID_DEVINTERFACE_HID
+
+                # Register we look for HID device unplug/plug.
+                self._devnotify = _user32.RegisterDeviceNotificationW(self.window._hwnd, ctypes.byref(dbi), DEVICE_NOTIFY_WINDOW_HANDLE)
+
+                self.window._event_handlers[WM_DEVICECHANGE] = self._event_devicechange
+                self.registered = True
+                self.window.push_handlers(self)
+                return True
+            else:
+                if not skip_warning:
+                    warnings.warn("DirectInput Device Manager requires a window to receive device connection events.")
+
+        return False
+
+    def _unregister_device_events(self):
+        del self.window._event_handlers[WM_DEVICECHANGE]
+        _user32.UnregisterDeviceNotification(self._devnotify)
+        self.registered = False
+        self._devnotify = None
+
+    def on_close(self):
+        if self.registered:
+            self._unregister_device_events()
+
+        import pyglet.app
+        if len(pyglet.app.windows) != 0:
+            # At this point the closed windows aren't removed from the app.windows list. Check for non-current window.
+            for existing_window in pyglet.app.windows:
+                if existing_window != self.window:
+                    self.register_device_events(skip_warning=True, window=existing_window)
+                    return
+
+        self.window = None
 
     def __del__(self):
-        del self.window._event_handlers[WM_DEVICECHANGE]  # Remove handler.
+        if self.registered:
+            self._unregister_device_events()
 
     def _get_devices(self, display=None):
         """Enumerate all the devices on the system.
@@ -294,11 +340,13 @@ class DIDeviceManager(EventDispatcher):
         if wParam == DBT_DEVICEARRIVAL or wParam == DBT_DEVICEREMOVECOMPLETE:
             hdr_ptr = ctypes.cast(lParam, ctypes.POINTER(DEV_BROADCAST_HDR))
             if hdr_ptr.contents.dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE:
-                self._recheck_devices()
+                # Need to call this outside the generate OS event to prevent COM deadlock.
+                pyglet.app.platform_event_loop.post_event(self, '_recheck_devices')
 
 
 DIDeviceManager.register_event_type('on_connect')
 DIDeviceManager.register_event_type('on_disconnect')
+DIDeviceManager.register_event_type('_recheck_devices')  # Not to be used by subclasses!
 
 _di_manager = DIDeviceManager()
 
@@ -334,6 +382,10 @@ class DIControllerManager(ControllerManager):
         return None
 
     def get_controllers(self):
+        if not _di_manager.registered:
+            _di_manager.register_device_events()
+            _di_manager.set_current_devices()
+
         return list(self._controllers.values())
 
 
@@ -387,12 +439,20 @@ def _create_joystick(device):
 
 
 def get_joysticks(display=None):
+    if not _di_manager.registered:
+        _di_manager.register_device_events()
+        _di_manager.set_current_devices()
+
     return [joystick for joystick in
             [_create_joystick(device) for device in _di_manager.devices]
             if joystick is not None]
 
 
 def get_controllers(display=None):
+    if not _di_manager.registered:
+        _di_manager.register_device_events()
+        _di_manager.set_current_devices()
+
     return [controller for controller in
             [_create_controller(device) for device in _di_manager.devices]
             if controller is not None]

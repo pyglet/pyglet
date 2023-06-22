@@ -207,8 +207,11 @@ _user32.GetRawInputData.restype = UINT
 _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
 _user32.ChangeWindowMessageFilterEx.restype = BOOL
 _user32.ChangeWindowMessageFilterEx.argtypes = [HWND, UINT, DWORD, c_void_p]
-_user32.RegisterDeviceNotificationW.restype = LPVOID
+_user32.RegisterDeviceNotificationW.restype = HANDLE
 _user32.RegisterDeviceNotificationW.argtypes = [HANDLE, LPVOID, DWORD]
+_user32.UnregisterDeviceNotification.restype = BOOL
+_user32.UnregisterDeviceNotification.argtypes = [HANDLE]
+
 
 # dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
@@ -278,11 +281,17 @@ if _debug_win32:
     set_errchecks(_ole32)
     set_errchecks(_oleaut32)
 
-# Initialize COM in MTA mode. Required for: WIC (DirectWrite), WMF, and XInput
+# Initialize COM. Required for: WIC (DirectWrite), WMF, and XInput
 try:
-    _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
+    if pyglet.options["com_mta"] is True:
+        _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
+    else:
+        _ole32.CoInitializeEx(None, constants.COINIT_APARTMENTTHREADED)
 except OSError as err:
-    warnings.warn("Could not set COM MTA mode. Unexpected behavior may occur.")
+    if err.winerror == constants.RPC_E_CHANGED_MODE:
+        warnings.warn("COM mode set by another library in a different mode. Unexpected behavior may occur.")
+    else:
+        warnings.warn("COM was already initialized by another library.")
 
 
 def _uninitialize():

@@ -52,6 +52,11 @@ class ClockTestCase(unittest.TestCase):
         self.advance_clock(2)
         self.assertEqual(self.callback_a.call_count, 2)
 
+    def test_schedule_interval_for_duration(self):
+        self.clock.schedule_interval_for_duration(self.callback_a, 1, 5)
+        self.advance_clock(10)
+        self.assertEqual(self.callback_a.call_count, 4)
+
     def test_schedule_interval_multiple(self):
         self.clock.schedule_interval(self.callback_a, 1)
         self.clock.schedule_interval(self.callback_b, 1)

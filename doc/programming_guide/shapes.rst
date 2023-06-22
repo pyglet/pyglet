@@ -60,3 +60,29 @@ default anchor points::
 
     shapes.Rectangle._anchor_x = 100
     shapes.Rectangle._anchor_y = 50
+
+Advanced Operation
+------------------
+
+You can use the ``in`` operator to check whether a point is inside a shape::
+
+    circle = shapes.Circle(x=100, y=100, radius=50)
+    if (200, 200) in circle:
+        circle.color = (255, 0, 0)
+
+The following shapes have above features:
+
+- Circle
+- Ellipse
+- Sector
+- Line
+- Rectangle
+- BoderedRectangle
+- Triangle
+- Polygon
+- Star
+
+.. note:: pyglet now treats Star as a circle with a radius of
+          ``(outer_radius + inner_radius) / 2``.
+
+It's also available for anchored and rotated shapes.

@@ -57,11 +57,38 @@ _uniform_setters = {
     GL_FLOAT_VEC3: (GLfloat, glUniform3fv, glProgramUniform3fv, 3, 1),
     GL_FLOAT_VEC4: (GLfloat, glUniform4fv, glProgramUniform4fv, 4, 1),
 
-    GL_SAMPLER_1D:       (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    # 1D Samplers
+    GL_SAMPLER_1D:              (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_SAMPLER_1D_ARRAY:        (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_1D:          (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_1D_ARRAY:    (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_1D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+
+    # 2D Samplers
     GL_SAMPLER_2D:       (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
     GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
-        
+    GL_INT_SAMPLER_2D:   (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_2D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    # Multisample
+    GL_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+
+    # Cube Samplers
+    GL_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+
+    # 3D Samplers
     GL_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_UNSIGNED_INT_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
 
     GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, glProgramUniformMatrix2fv, 4, 1),
     GL_FLOAT_MAT3: (GLfloat, glUniformMatrix3fv, glProgramUniformMatrix3fv, 6, 1),

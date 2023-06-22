@@ -29,20 +29,24 @@ default policy is to wait until all windows are closed)::
 .. versionadded:: 1.1
 """
 
+import platform
 import sys
 import weakref
 
-from pyglet.app.base import EventLoop
+import pyglet
 from pyglet import compat_platform
+from pyglet.app.base import EventLoop
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
 
 if _is_pyglet_doc_run:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':
-        from pyglet.app.cocoa import CocoaEventLoop as PlatformEventLoop
+        from pyglet.app.cocoa import CocoaPlatformEventLoop as PlatformEventLoop
+
+        if platform.machine() == 'arm64' or pyglet.options["osx_alt_loop"]:
+            from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:
@@ -61,7 +65,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval=1/60):
+def run(interval=1 / 60):
     """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::

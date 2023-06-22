@@ -13,8 +13,8 @@ _debug = debug_print('debug_media')
 
 swscale = pyglet.lib.load_library(
     'swscale',
-    win32=('swscale-6', 'swscale-5'),
-    darwin=('swscale.6', 'swscale.5')
+    win32=('swscale-7', 'swscale-6', 'swscale-5'),
+    darwin=('swscale.7', 'swscale.6', 'swscale.5')
 )
 
 swscale.swscale_version.restype = c_int

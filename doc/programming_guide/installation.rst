@@ -3,16 +3,13 @@ Installation
 
 .. note:: These instructions apply to pyglet |version|.
 
-pyglet is a pure python library, so no special steps or complitation are
-required for installation. You can install it in a variety of ways, or simply
-copy the `pyglet` folder directly into your project. If you're unsure what to do,
-the recommended method is to install it into your local ``site-packages``
-directory. pyglet is available `on PyPI <https://pypi.python.org/pypi/pyglet>`_.
-for easy installation via **pip**:
+pyglet is a pure Python library, with no hard dependencies on other modules.
+No special steps or complitation are required for installation. You can install
+from `on PyPI <https://pypi.python.org/pypi/pyglet>`_ via **pip**. For example:
 
 .. code-block:: sh
 
-    pip install pyglet --user
+    pip install --upgrade --user pyglet
 
 You can also clone the repository using **git** and install from source:
 
@@ -20,9 +17,12 @@ You can also clone the repository using **git** and install from source:
 
     git clone https://github.com/pyglet/pyglet.git
     cd pyglet
-    git checkout pyglet-1.5-maintenance
     python setup.py install --user
 
+
+In addition, since pyglet is pure Python, you can also just copy the `pyglet`
+subfolder directly into the root of your project without installation into your
+local `site-packages`.
 
 To play video, or a wide selection of compressed audio, pyglet can optionally
 use `FFmpeg <https://www.ffmpeg.org/download.html>`_.
@@ -31,7 +31,7 @@ use `FFmpeg <https://www.ffmpeg.org/download.html>`_.
 Running the examples
 --------------------
 
-The source code archives include examples. Archives are
+The source code archives include examples. Archive zip files are
 `available on Github <https://github.com/pyglet/pyglet/releases/>`_:
 
 .. code-block:: sh
