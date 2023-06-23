@@ -218,7 +218,10 @@ NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUn
 NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
 NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
 NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
+NSDeviceSize = c_void_p.in_dll(appkit, 'NSDeviceSize')
+NSDeviceResolution = c_void_p.in_dll(appkit, 'NSDeviceResolution')
 NSDragOperationGeneric = 4
+
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
 NSAnyEventMask = 0xFFFFFFFF     # NSUIntegerMax
@@ -411,6 +414,9 @@ quartz.CGDisplayCopyDisplayMode.argtypes = [CGDirectDisplayID]
 
 quartz.CGDisplayModeGetRefreshRate.restype = c_double
 quartz.CGDisplayModeGetRefreshRate.argtypes = [c_void_p]
+
+quartz.CGDisplayScreenSize.restype = CGSize
+quartz.CGDisplayScreenSize.argtypes = [CGDirectDisplayID]
 
 quartz.CGDisplayModeRetain.restype = c_void_p
 quartz.CGDisplayModeRetain.argtypes = [c_void_p]

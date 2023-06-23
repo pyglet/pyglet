@@ -368,7 +368,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _width = None
     _height = None
     _dpi = 96
-    _scale = 1.0
     _caption = None
     _resizable = False
     _style = WINDOW_STYLE_DEFAULT
@@ -1275,9 +1274,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def scale(self):
         """The scale of the window factoring in DPI.  Read only.
 
-        :type: dpi
+        :type: float
         """
-        return self._scale
+        return self._dpi / 96
 
     @property
     def dpi(self):

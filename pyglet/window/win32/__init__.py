@@ -135,16 +135,15 @@ class Win32Window(BaseWindow):
             self._ws_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX)
 
         self._dpi = self._screen.get_dpi()
-        self._scale = self._dpi / USER_DEFAULT_SCREEN_DPI
 
         if self._fullscreen:
             width = self.screen.width
             height = self.screen.height
         else:
             if pyglet.options["scale_with_dpi"]:
-                if self._scale > 1.0:
-                    self._width = int(self._width * self._scale)
-                    self._height = int(self._height * self._scale)
+                if self.scale != 1.0:
+                    self._width = int(self._width * self.scale)
+                    self._height = int(self._height * self.scale)
 
             width, height = \
                 self._client_to_window_size(self._width, self._height, self._dpi)
@@ -1313,7 +1312,6 @@ class Win32Window(BaseWindow):
             _user32.SetWindowPos(self._hwnd, 0,
                                  x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE)
 
-        self._scale = scale
         self._dpi = x_dpi
 
         self.switch_to()

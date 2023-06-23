@@ -263,7 +263,6 @@ class CocoaContext(Context):
         # setView, otherwise you get an "invalid drawable" message.
         self._nscontext.setView_(canvas.nsview)
 
-        self._nscontext.view().setWantsBestResolutionOpenGLSurface_(1 if pyglet.options["scale_with_dpi"] else 0)
         self.set_current()
 
     def detach(self):

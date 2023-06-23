@@ -2616,7 +2616,7 @@ struct_anon_94._fields_ = [
 class XrmValue(Structure):
     _fields_ = (
         ('size', c_uint),
-        ('addr', c_void_p)
+        ('addr', c_char_p)
     )
 
 
@@ -2690,10 +2690,13 @@ XrmGetStringDatabase = _lib.XrmGetStringDatabase
 XrmGetStringDatabase.restype = c_void_p
 XrmGetStringDatabase.argtypes = [c_char_p]
 
+XrmDestroyDatabase = _lib.XrmDestroyDatabase
+XrmDestroyDatabase.restype = None
+XrmDestroyDatabase.argtypes = [c_void_p]
+
 XrmGetResource = _lib.XrmGetResource
 XrmGetResource.restype = c_bool
-XrmGetResource.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p, c_void_p]
-
+XrmGetResource.argtypes = [c_void_p, c_char_p, c_char_p, POINTER(c_char_p), POINTER(XrmValue)]
 # /usr/include/X11/Xlib.h:1502
 XFetchBytes = _lib.XFetchBytes
 XFetchBytes.restype = c_char_p

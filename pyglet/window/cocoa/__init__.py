@@ -8,7 +8,7 @@ from pyglet.event import EventDispatcher
 
 from pyglet.canvas.cocoa import CocoaCanvas
 
-from pyglet.libs.darwin import cocoapy, CGPoint, AutoReleasePool
+from pyglet.libs.darwin import cocoapy, CGPoint, AutoReleasePool, NSDeviceResolution
 
 from .systemcursor import SystemCursor
 from .pyglet_delegate import PygletDelegate
@@ -152,6 +152,7 @@ class CocoaWindow(BaseWindow):
 
             # Then create a view and set it as our NSWindow's content view.
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
+            self._nsview.setWantsBestResolutionOpenGLSurface_(1 if pyglet.options["scale_with_dpi"] else 0)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 
@@ -175,8 +176,7 @@ class CocoaWindow(BaseWindow):
             if self._maximum_size is not None:
                 self.set_maximum_size(*self._maximum_size)
 
-            self._dpi  # TODO
-            self._scale  # TODO
+            self._dpi = self._get_dpi_desc()
 
             if self._file_drops:
                 array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeURL)
@@ -186,6 +186,26 @@ class CocoaWindow(BaseWindow):
             self.switch_to()
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
+
+    def _get_dpi_desc(self):
+        if pyglet.options["scale_with_dpi"] and self._nswindow:
+            desc = self._nswindow.deviceDescription()
+            rsize = desc.objectForKey_(NSDeviceResolution).sizeValue()
+            dpi = int(rsize.width)
+            return dpi
+
+        return 72
+
+    @property
+    def scale(self):
+        """The scale of the window factoring in DPI.  Read only.
+
+        :type: float
+        """
+        if pyglet.options["scale_with_dpi"] and self._nswindow:
+            return self._nswindow.backingScaleFactor()
+
+        return 1.0
 
     def _set_nice_window_location(self):
         # Construct a list of all visible windows that aren't us.
@@ -362,8 +382,11 @@ class CocoaWindow(BaseWindow):
 
     def get_framebuffer_size(self):
         view = self.context._nscontext.view()
-        bounds = view.convertRectToBacking_(view.bounds()).size
-        return int(bounds.width), int(bounds.height)
+        bounds = view.bounds()
+        if pyglet.options["scale_with_dpi"]:
+            bounds = view.convertRectToBacking_(bounds)
+        return int(bounds.size.width), int(bounds.size.height)
+
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)

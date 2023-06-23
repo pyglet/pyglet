@@ -4,9 +4,11 @@ from ctypes import *
 
 from .base import Display, Screen, ScreenMode, Canvas
 
-from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf
+from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf, ObjCClass, get_NSString
 from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
+from pyglet.libs.darwin import NSDeviceResolution
 
+NSScreen = ObjCClass('NSScreen')
 
 class CocoaDisplay(Display):
 
@@ -31,35 +33,38 @@ class CocoaScreen(Screen):
         self._cg_display_id = displayID
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
+        self._ns_screen = self.get_nsscreen()
 
-    # FIX ME:
-    # This method is needed to get multi-monitor support working properly.
-    # However the NSScreens.screens() message currently sends out a warning:
-    # "*** -[NSLock unlock]: lock (<NSLock: 0x...> '(null)') unlocked when not locked"
-    # on Snow Leopard and apparently causes python to crash on Lion.
-    #
-    # def get_nsscreen(self):
-    #     """Returns the NSScreen instance that matches our CGDirectDisplayID."""
-    #     NSScreen = ObjCClass('NSScreen')
-    #     # Get a list of all currently active NSScreens and then search through
-    #     # them until we find one that matches our CGDisplayID.
-    #     screen_array = NSScreen.screens()
-    #     count = screen_array.count()
-    #     for i in range(count):
-    #         nsscreen = screen_array.objectAtIndex_(i)
-    #         screenInfo = nsscreen.deviceDescription()
-    #         displayID = screenInfo.objectForKey_(get_NSString('NSScreenNumber'))
-    #         displayID = displayID.intValue()
-    #         if displayID == self._cg_display_id:
-    #             return nsscreen
-    #     return None
+    def get_nsscreen(self):
+        """Returns the NSScreen instance that matches our CGDirectDisplayID."""
+        # Get a list of all currently active NSScreens and then search through
+        # them until we find one that matches our CGDisplayID.
+        screen_array = NSScreen.screens()
+        count = screen_array.count()
+        for i in range(count):
+            nsscreen = screen_array.objectAtIndex_(i)
+            screenInfo = nsscreen.deviceDescription()
+            displayID = screenInfo.objectForKey_(get_NSString('NSScreenNumber'))
+            displayID = displayID.intValue()
+            if displayID == self._cg_display_id:
+                return nsscreen
+        return None
+
     def get_dpi(self):
-        # TODO
-        pass
+        desc = self._ns_screen.deviceDescription()
+        rsize = desc.objectForKey_(NSDeviceResolution).sizeValue()
+        return int(rsize.width)
 
     def get_scale(self):
-        # TODO
-        pass
+        ratio = 1.0
+        if self._ns_screen:
+            pts = self._ns_screen.frame()
+            pixels = self._ns_screen.convertRectToBacking_(pts)
+            ratio = pixels.size.width / pts.size.width
+        else:
+            print("Could not initialize NSScreen to retrieve DPI. Using default.")
+
+        return ratio
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self, None)
