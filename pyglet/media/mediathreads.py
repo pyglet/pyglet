@@ -53,7 +53,6 @@ class PlayerWorkerThread(threading.Thread):
                 if self.players:
                     sleep_time = self._nap_time
                     for player in self.players:
-                        pass
                         player.refill_buffer()
                 else:
                     # sleep until a player is added
