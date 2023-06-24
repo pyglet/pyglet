@@ -136,6 +136,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
         consume it. This submits the buffer retrieved from the decoder in it's entirety.
         """
+        if not self._xa2_source_voice:
+            return
 
         buffers_queued = self._xa2_source_voice.buffers_queued
 
