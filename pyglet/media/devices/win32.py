@@ -7,7 +7,7 @@ from pyglet.libs.win32.types import *
 from pyglet.media.devices import base
 from pyglet.util import debug_print
 
-_debug = debug_print('debug_media')
+_debug = debug_print('debug_input')
 
 EDataFlow = UINT
 # Audio rendering stream. Audio data flows from the application to the audio endpoint device, which renders the stream.
