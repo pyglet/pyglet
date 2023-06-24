@@ -122,6 +122,15 @@ class EventLoop(event.EventDispatcher):
     def run(self, interval=1/60):
         """Begin processing events, scheduled functions and window updates.
 
+        :Parameters:
+            `interval` : float or None [default: 1/60]
+                Windows redraw interval, in seconds (framerate).
+                If `interval == 0`, windows will redraw at maximum rate.
+                If `interval is None`, Pyglet will not call its redraw function.
+                The user must schedule (or call on demand) a custom redraw
+                function for each window, allowing a custom framerate per window.
+                (see example in documentation)
+
         This method returns when :py:attr:`has_exit` is set to True.
 
         Developers are discouraged from overriding this method, as the
