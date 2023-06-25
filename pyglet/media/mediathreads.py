@@ -89,6 +89,12 @@ class PlayerWorkerThread(threading.Thread):
         self._rest_event.set()
 
     def add(self, player):
+        """
+        Add a player to the PlayerWorkerThread; which will call
+        `refill_buffer` on it regularly. Notify the thread as well.
+
+        Do not call this method from within the thread, as it will deadlock.
+        """
         assert player is not None
         assert _debug('PlayerWorkerThread: player added')
 
@@ -98,6 +104,12 @@ class PlayerWorkerThread(threading.Thread):
         self.notify()
 
     def remove(self, player):
+        """
+        Remove a player from the PlayerWorkerThread, or ignore if it does
+        not exist.
+
+        Do not call this method from within the thread, as it may deadlock.
+        """
         assert _debug('PlayerWorkerThread: player removed')
 
         if player in self.players:
