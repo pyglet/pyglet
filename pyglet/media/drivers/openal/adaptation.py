@@ -101,7 +101,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         # Cursor position of end of queued AL buffer.
         self._write_cursor = 0
 
-        # Whether the source hit its end; protect against duplicate dispatch of on_eos events.
+        # Whether the source hit its end; protect against duplicate dispatch
+        # of on_eos events.
         self._has_underrun = False
 
         # List of currently queued buffer sizes (in bytes)
