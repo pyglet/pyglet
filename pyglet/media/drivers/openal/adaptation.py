@@ -101,6 +101,10 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         # Cursor position of end of queued AL buffer.
         self._write_cursor = 0
 
+        # Whether the source hit its end; protect against duplicate dispatch
+        # of on_eos events.
+        self._has_underrun = False
+
         # List of currently queued buffer sizes (in bytes)
         self._buffer_sizes = []
 
@@ -177,6 +181,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._buffer_cursor = 0
         self._play_cursor = 0
         self._write_cursor = 0
+        self._has_underrun = False
         del self._events[:]
         del self._buffer_sizes[:]
         del self._buffer_timestamps[:]
@@ -271,15 +276,15 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def _get_new_audiodata(self):
         assert _debug('Getting new audio data buffer.')
         compensation_time = self.get_audio_time_diff()
-        self._audiodata_buffer= self.source.get_audio_data(self.ideal_buffer_size, compensation_time)
+        self._audiodata_buffer = self.source.get_audio_data(self.ideal_buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
             assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
             self._queue_events(self._audiodata_buffer)
         else:
             assert _debug('No audio data left')
-            if self._has_underrun():
-                assert _debug('Underrun')
+            if self._has_just_underrun():
+                assert _debug('Freshly underrun')
                 MediaEvent('on_eos').sync_dispatch_to_player(self.player)
 
     def _queue_audio_data(self, audio_data, length):
@@ -297,12 +302,17 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
     def _queue_events(self, audio_data):
         for event in audio_data.events:
-            cursor = self._write_cursor + event.timestamp * \
-                self.source.audio_format.bytes_per_second
+            cursor = self._write_cursor + event.timestamp * self.source.audio_format.bytes_per_second
             self._events.append((cursor, event))
 
-    def _has_underrun(self):
-        return self.alsource.buffers_queued == 0
+    def _has_just_underrun(self):
+        if self._has_underrun:
+            return False
+
+        if self.alsource.buffers_queued == 0:
+            self._has_underrun = True
+
+        return self._has_underrun
 
     def get_time(self):
         # Update first, might remove buffers
