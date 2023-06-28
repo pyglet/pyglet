@@ -410,7 +410,8 @@ class EventDispatcher:
 
     @staticmethod
     def _raise_dispatch_exception(event_type: str, args: Any, handler: Callable, exception: Optional[BaseException]) -> None:
-        """ A common problem in applications is having the wrong number of
+        """
+        A common problem in applications is having the wrong number of
         arguments in an event handler.  This is caught as a TypeError in
         dispatch_event but the error message is obfuscated.
 
@@ -430,7 +431,8 @@ class EventDispatcher:
                 Error to use if all the other errors are not true.
 
         :rtype: NoneType
-        :return: None """
+        :return: None
+        """
 
         n_args = len(args)
 

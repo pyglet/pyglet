@@ -399,7 +399,8 @@ class Clock:
 
         self._schedule_interval_items.sort(key=_attrgetter('next_ts'))
 
-        """ Binary division over interval:
+        """
+        Binary division over interval:
         
         0                          interval
         |--------------------------|
@@ -412,7 +413,8 @@ class Clock:
               then at            ...
         
         Schedule is hopefully then evenly distributed for any interval,
-        and any number of scheduled functions. """
+        and any number of scheduled functions.
+        """
 
         next_ts = last_ts + interval
         if not taken(next_ts, interval / 4):
