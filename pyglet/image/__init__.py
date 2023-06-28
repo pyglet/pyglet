@@ -385,7 +385,7 @@ class AbstractImage:
     def save(self, filename: str= "", 
              file: Optional[IO]=None, 
              encoder: Optional[str]=None
-             ) -> None:
+             ) -> Optional[ImageEncodeException]:
         """Save this image to a file.
 
         :Parameters:
@@ -1262,7 +1262,7 @@ class Texture(AbstractImage):
         self.id = tex_id
         self._context = pyglet.gl.current_context
 
-    def __del__(self) -> None:
+    def __del__(self):
         try:
             self._context.delete_texture(self.id)
         except Exception:
