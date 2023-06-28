@@ -410,27 +410,27 @@ class EventDispatcher:
 
     @staticmethod
     def _raise_dispatch_exception(event_type: str, args: Any, handler: Callable, exception: Optional[BaseException]) -> None:
-        # A common problem in applications is having the wrong number of
-        # arguments in an event handler.  This is caught as a TypeError in
-        # dispatch_event but the error message is obfuscated.
+        """ A common problem in applications is having the wrong number of
+        arguments in an event handler.  This is caught as a TypeError in
+        dispatch_event but the error message is obfuscated.
 
-        # Here we check if there is indeed a mismatch in argument count,
-        # and construct a more useful exception message if so.  If this method
-        # doesn't find a problem with the number of arguments, the error
-        # is re-raised as if we weren't here.
+        Here we check if there is indeed a mismatch in argument count,
+        and construct a more useful exception message if so.  If this method
+        doesn't find a problem with the number of arguments, the error
+        is re-raised as if we weren't here.
 
-        # :Parameters:
-        #     `event_type` : str
-        #         Name of the event.
-        #     `args` : Any
-        #         Arguments to pass to the event handler.
-        #     `handler` : Callable
-        #         function to check
-        #     `exception` : Error
-        #         Error to use if all the other errors are not true.
+        :Parameters:
+            `event_type` : str
+                Name of the event.
+            `args` : Any
+                Arguments to pass to the event handler.
+            `handler` : Callable
+                function to check
+            `exception` : Error
+                Error to use if all the other errors are not true.
 
-        # :rtype: NoneType
-        # :return: None
+        :rtype: NoneType
+        :return: None """
 
         n_args = len(args)
 
