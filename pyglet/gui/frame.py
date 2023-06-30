@@ -42,6 +42,10 @@ class Frame:
 
     @property
     def enable(self):
+        """Whether to enable frame.
+
+        :type: bool
+        """
         return self._enable
 
     @enable.setter
