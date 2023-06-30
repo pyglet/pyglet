@@ -10,13 +10,15 @@ class Frame:
     of Widgets are in use.
     """
 
-    def __init__(self, window, cell_size=64, order=0):
+    def __init__(self, window, enable=True, cell_size=64, order=0):
         """Create an instance of a Frame.
 
         :Parameters:
             `window` : `~pyglet.window.Window`
                 The SpatialHash will recieve events from this Window.
                 Appropriate events will be passed on to all added Widgets.
+            `enable`: bool
+                Whether to enable frame.
             `cell_size` : int
                 The cell ("bucket") size for each cell in the hash.
                 Widgets may span multiple cells.
@@ -24,16 +26,31 @@ class Frame:
                 Widgets use internal OrderedGroups for draw sorting.
                 This is the base value for these Groups.
         """
-        window.push_handlers(self)
+        self._window = window
+        self._enable = enable
         self._cell_size = cell_size
         self._cells = {}
         self._active_widgets = set()
         self._order = order
         self._mouse_pos = 0, 0
+        if self._enable:
+            self._window.push_handlers(self)
 
     def _hash(self, x, y):
         """Normalize position to cell"""
         return int(x / self._cell_size), int(y / self._cell_size)
+
+    @property
+    def enable(self):
+        return self._enable
+
+    @enable.setter
+    def enable(self, value):
+        self._enable = bool(value)
+        if self._enable:
+            self._window.push_handlers(self)
+        else:
+            self._window.remove_handlers(self)
 
     def add_widget(self, widget):
         """Add a Widget to the spatial hash."""
@@ -42,6 +59,7 @@ class Frame:
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
         widget.update_groups(self._order)
+        widget.parent = self
 
     def remove_widget(self, widget):
         """Remove a Widget from the spatial hash."""
@@ -52,45 +70,62 @@ class Frame:
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
+        if not self._enable:
+            return
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
+        if not self._enable:
+            return
         for widget in self._active_widgets:
             widget.on_mouse_release(x, y, buttons, modifiers)
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
+        if not self._enable:
+            return
         for widget in self._active_widgets:
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
         """Pass the event to any widgets within range of the mouse"""
+        if not self._enable:
+            return
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.on_mouse_scroll(x, y, index, direction)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Pass the event to any widgets within range of the mouse"""
-        for widget in self._cells.get(self._hash(x, y), set()):
-            widget.on_mouse_motion(x, y, dx, dy)
+        if not self._enable:
+            return
+        for cell in self._cells.values():
+            for widget in cell:
+                widget.on_mouse_motion(x, y, dx, dy)
         self._mouse_pos = x, y
 
     def on_text(self, text):
         """Pass the event to any widgets within range of the mouse"""
+        if not self._enable:
+            return
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text(text)
 
     def on_text_motion(self, motion):
         """Pass the event to any widgets within range of the mouse"""
+        if not self._enable:
+            return
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion):
         """Pass the event to any widgets within range of the mouse"""
+        if not self._enable:
+            return
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion_select(motion)
 
@@ -111,8 +146,8 @@ class MovableFrame(Frame):
     API documentation.
     """
 
-    def __init__(self, window, order=0, modifier=0):
-        super().__init__(window, order=order)
+    def __init__(self, window, enable, order=0, modifier=0):
+        super().__init__(window, enable=enable, order=order)
         self._modifier = modifier
         self._moving_widgets = set()
 

@@ -1,6 +1,8 @@
 """Display different types of interactive widgets.
 """
 
+from contextlib import contextmanager
+
 import pyglet
 
 from pyglet.event import EventDispatcher
@@ -16,9 +18,20 @@ class WidgetBase(EventDispatcher):
         self._y = y
         self._width = width
         self._height = height
+        self._parent = None
         self._bg_group = None
         self._fg_group = None
         self.enabled = True
+
+    @contextmanager
+    def _update_parent(self):
+        if self._parent is not None:
+            self._parent.remove_widget(self)
+        try:
+            yield
+        finally:
+            if self._parent is not None:
+                self._parent.add_widget(self)
 
     def update_groups(self, order):
         pass
@@ -33,7 +46,8 @@ class WidgetBase(EventDispatcher):
 
     @x.setter
     def x(self, value):
-        self._x = value
+        with self._update_parent():
+            self._x = value
         self._update_position()
 
     @property
@@ -46,8 +60,21 @@ class WidgetBase(EventDispatcher):
 
     @y.setter
     def y(self, value):
-        self._y = value
+        with self._update_parent():
+            self._y = value
         self._update_position()
+
+    @property
+    def parent(self):
+        """The frame this widget belongs to.
+
+        :type: `~pyglet.gui.frame.Frame`
+        """
+        return self._parent
+
+    @parent.setter
+    def parent(self, value):
+        self._parent = value
 
     @property
     def position(self):
@@ -59,7 +86,8 @@ class WidgetBase(EventDispatcher):
 
     @position.setter
     def position(self, values):
-        self._x, self._y = values
+        with self._update_parent():
+            self._x, self._y = values
         self._update_position()
 
     @property
@@ -91,7 +119,7 @@ class WidgetBase(EventDispatcher):
     @property
     def value(self):
         """Query or set the Widget's value.
-        
+
         This property allows you to set the value of a Widget directly, without any
         user input.  This could be used, for example, to restore Widgets to a
         previous state, or if some event in your program is meant to naturally
@@ -99,7 +127,7 @@ class WidgetBase(EventDispatcher):
         dispatched when changing this property.
         """
         raise NotImplementedError("Value depends on control type!")
-    
+
     @value.setter
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
@@ -179,8 +207,9 @@ class PushButton(WidgetBase):
 
     @property
     def value(self):
+        """Whether the button is pressed or not."""
         return self._pressed
-    
+
     @value.setter
     def value(self, value):
         assert type(value) is bool, "This Widget's value must be True or False."
@@ -298,6 +327,7 @@ class Slider(WidgetBase):
 
     @property
     def value(self):
+        """Value of the slider."""
         return self._value
 
     @value.setter
@@ -426,6 +456,7 @@ class TextEntry(WidgetBase):
 
     @property
     def value(self):
+        """Text displayed in the entry."""
         return self._doc.text
 
     @value.setter
