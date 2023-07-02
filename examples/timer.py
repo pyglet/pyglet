@@ -57,5 +57,6 @@ def on_draw():
 
 timer = Timer()
 pyglet.clock.schedule_interval(timer.update, 1/30.0)
+pyglet.clock.schedule_interval(window.draw, 1/30)
 pyglet.app.run()
 

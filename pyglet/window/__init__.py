@@ -681,6 +681,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
+    def draw(self, dt):
+        # TODO: pass `dt` to the on_draw event
+        self.switch_to()
+        self.dispatch_event('on_draw')
+        self.flip()
+
     def draw_mouse_cursor(self):
         """Draw the custom mouse cursor.
 
@@ -1413,9 +1419,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_draw(self):
             """The window contents must be redrawn.
 
-            The `EventLoop` will dispatch this event when the window
-            should be redrawn.  This will happen during idle time after
-            any window events and after any scheduled functions were called.
+            This event is dispatched by the :py:meth:`~pyglet.window.Window.draw`
+            method, which will generally be scheduled on the clock at a
+            specific interval.
 
             The window will already have the GL context, so there is no
             need to call `switch_to`.  The window's `flip` method will
@@ -1424,8 +1430,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             You should make no assumptions about the window contents when
             this event is triggered; a resize or expose event may have
             invalidated the framebuffer since the last time it was drawn.
-
-            .. versionadded:: 1.1
 
             :event:
             """
@@ -1627,25 +1631,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     Distance from the top edge of the screen to the top edge of
                     the window.  Note that this is one of few methods in pyglet
                     which use a Y-down coordinate system.
-
-            :event:
-            """
-
-        def on_refresh(self, dt):
-            """The window contents must be redrawn.
-
-            The `EventLoop` will dispatch this event when the window
-            should be redrawn.
-
-            The window will already have the GL context, so there is no
-            need to call `switch_to`.  The window's `flip` method will
-            be called after this event, so your event handler should not.
-
-            You should make no assumptions about the window contents when
-            this event is triggered; a resize or expose event may have
-            invalidated the framebuffer since the last time it was drawn.
-
-            .. versionadded:: 2.0
 
             :event:
             """

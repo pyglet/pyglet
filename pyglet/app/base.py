@@ -110,40 +110,14 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
-    @staticmethod
-    def _redraw_windows(dt):
-        # Redraw all windows
-        for window in app.windows:
-            window.switch_to()
-            window.dispatch_event('on_draw')
-            window.dispatch_event('on_refresh', dt)
-            window.flip()
-
-    def run(self, interval=1/60):
-        """Begin processing events, scheduled functions and window updates.
-
-        :Parameters:
-            `interval` : float or None [default: 1/60]
-                Windows redraw interval, in seconds (framerate).
-                If `interval == 0`, windows will redraw at maximum rate.
-                If `interval is None`, Pyglet will not call its redraw function.
-                The user must schedule (or call on demand) a custom redraw
-                function for each window, allowing a custom framerate per window.
-                (see example in documentation)
+    def run(self):
+        """Begin processing events and scheduled functions.
 
         This method returns when :py:attr:`has_exit` is set to True.
 
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
-        if interval is None:
-            # User application will manage a custom _redraw_windows() method
-            pass
-        elif interval == 0:
-            self.clock.schedule(self._redraw_windows)
-        else:
-            self.clock.schedule_interval(self._redraw_windows, interval)
-
         self.has_exit = False
 
         from pyglet.window import Window

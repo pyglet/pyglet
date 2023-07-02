@@ -29,13 +29,15 @@ default policy is to wait until all windows are closed)::
 .. versionadded:: 1.1
 """
 
-import platform
 import sys
 import weakref
+import platform
 
 import pyglet
+
 from pyglet import compat_platform
 from pyglet.app.base import EventLoop
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -65,37 +67,38 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval=1 / 60):
-    """Begin processing events, scheduled functions and window updates.
+def run():
+    """Begin processing events and scheduled functions.
 
     This is a convenience function, equivalent to::
 
         pyglet.app.event_loop.run()
 
     """
-    event_loop.run(interval)
+    event_loop.run()
 
 
 def exit():
     """Exit the application event loop.
 
-    Causes the application event loop to finish, if an event loop is currently
-    running.  The application may not necessarily exit (for example, there may
-    be additional code following the `run` invocation).
+    Causes the application event loop to finish if it's currenting
+    running. This call does not specifically exit the application.
+    For example, there may be additional code following the `run`
+    invocation.
 
     This is a convenience function, equivalent to::
 
-        event_loop.exit()
+        pyglet.app.event_loop.exit()
 
     """
     event_loop.exit()
 
 
-#: The global event loop.  Applications can replace this
+#: The global event loop. Applications can replace this
 #: with their own subclass of :class:`EventLoop` before calling 
 #: :meth:`EventLoop.run`.
 event_loop = EventLoop()
 
-#: The platform-dependent event loop. Applications must not subclass
-# or replace this :class:`PlatformEventLoop` object.
+#: The platform-dependent event loop. Applications are strongly discouraged
+#: from subclassing or replacing this :class:`PlatformEventLoop` object.
 platform_event_loop = PlatformEventLoop()
