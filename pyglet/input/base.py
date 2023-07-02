@@ -27,7 +27,7 @@ class Device:
     """Input device.
 
     :Ivariables:
-        display : `pyglet.canvas.Display`
+        display : `pyglet.display.Display`
             Display this device is connected to.
         name : str
             Name of the device, as described by the device firmware.

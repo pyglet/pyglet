@@ -12,7 +12,7 @@ from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
 
-from pyglet.canvas.xlib import XlibCanvas
+from pyglet.display.xlib import XlibCanvas
 
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont

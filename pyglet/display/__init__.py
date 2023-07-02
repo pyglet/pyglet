@@ -1,11 +1,9 @@
 """Display and screen management.
 
-Rendering is performed on a :class:`Canvas`, which conceptually could be an
-off-screen buffer, the content area of a :class:`pyglet.window.Window`, or an
-entire screen. Currently, canvases can only be created with windows (though
-windows can be set fullscreen).
+Rendering is performed on the content area of a :class:`pyglet.window.Window`,
+or an entire screen.
 
-Windows and canvases must belong to a :class:`Display`. On Windows and Mac OS X
+Windows must belong to a :class:`Display`. On Microsoft Windows and macOS,
 there is only one display, which can be obtained with :func:`get_display`.
 Linux supports multiple displays, corresponding to discrete X11 display
 connections and screens.  :func:`get_display` on Linux returns the default
@@ -60,22 +58,22 @@ def get_display():
 
 
 if _is_pyglet_doc_run:
-    from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
+    from pyglet.display.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform, options
     if options['headless']:
-        from pyglet.canvas.headless import HeadlessDisplay as Display
-        from pyglet.canvas.headless import HeadlessScreen as Screen
-        from pyglet.canvas.headless import HeadlessCanvas as Canvas
+        from pyglet.display.headless import HeadlessDisplay as Display
+        from pyglet.display.headless import HeadlessScreen as Screen
+        from pyglet.display.headless import HeadlessCanvas as Canvas
     elif compat_platform == 'darwin':
-        from pyglet.canvas.cocoa import CocoaDisplay as Display
-        from pyglet.canvas.cocoa import CocoaScreen as Screen
-        from pyglet.canvas.cocoa import CocoaCanvas as Canvas
+        from pyglet.display.cocoa import CocoaDisplay as Display
+        from pyglet.display.cocoa import CocoaScreen as Screen
+        from pyglet.display.cocoa import CocoaCanvas as Canvas
     elif compat_platform in ('win32', 'cygwin'):
-        from pyglet.canvas.win32 import Win32Display as Display
-        from pyglet.canvas.win32 import Win32Screen as Screen
-        from pyglet.canvas.win32 import Win32Canvas as Canvas
+        from pyglet.display.win32 import Win32Display as Display
+        from pyglet.display.win32 import Win32Screen as Screen
+        from pyglet.display.win32 import Win32Canvas as Canvas
     else:
-        from pyglet.canvas.xlib import XlibDisplay as Display
-        from pyglet.canvas.xlib import XlibScreen as Screen
-        from pyglet.canvas.xlib import XlibCanvas as Canvas
+        from pyglet.display.xlib import XlibDisplay as Display
+        from pyglet.display.xlib import XlibScreen as Screen
+        from pyglet.display.xlib import XlibCanvas as Canvas

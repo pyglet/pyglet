@@ -1,11 +1,11 @@
 from ctypes import *
 
 from pyglet import gl
-from pyglet.canvas.headless import HeadlessCanvas
+from pyglet.display.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
 from pyglet.libs.egl.egl import *
 
-from .base import CanvasConfig, Config, Context
+from .base import DisplayConfig, Config, Context
 
 _fake_gl_attributes = {
     'double_buffer': 0,
@@ -30,7 +30,7 @@ class HeadlessConfig(Config):
         for name, value in self.get_gl_attributes():
             if name == 'double_buffer':
                 continue
-            attr = HeadlessCanvasConfig.attribute_ids.get(name, None)
+            attr = HeadlessDisplayConfig.attribute_ids.get(name, None)
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
         attrs.extend([EGL_SURFACE_TYPE, EGL_PBUFFER_BIT])
@@ -49,11 +49,11 @@ class HeadlessConfig(Config):
         egl.eglChooseConfig(display_connection, attrs_list, configs,
                             num_config.value, byref(num_config))
 
-        result = [HeadlessCanvasConfig(canvas, c, self) for c in configs]
+        result = [HeadlessDisplayConfig(canvas, c, self) for c in configs]
         return result
 
 
-class HeadlessCanvasConfig(CanvasConfig):
+class HeadlessDisplayConfig(DisplayConfig):
     attribute_ids = {
         'buffer_size': egl.EGL_BUFFER_SIZE,
         'level': egl.EGL_LEVEL,  # Not supported
@@ -68,7 +68,7 @@ class HeadlessCanvasConfig(CanvasConfig):
     }
 
     def __init__(self, canvas, egl_config, config):
-        super(HeadlessCanvasConfig, self).__init__(canvas, config)
+        super(HeadlessDisplayConfig, self).__init__(canvas, config)
         self._egl_config = egl_config
         context_attribs = (EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
                            EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0,

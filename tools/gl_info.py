@@ -10,7 +10,7 @@ import textwrap
 
 import pyglet
 import pyglet.app
-import pyglet.canvas
+import pyglet.display
 import pyglet.window
 from pyglet.gl import *
 from pyglet.gl import gl_info

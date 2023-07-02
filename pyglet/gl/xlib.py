@@ -1,8 +1,8 @@
 import warnings
 from ctypes import *
 
-from .base import Config, CanvasConfig, Context
-from pyglet.canvas.xlib import XlibCanvas
+from .base import Config, DisplayConfig, Context
+from pyglet.display.xlib import XlibCanvas
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
 from pyglet.gl import glx_info
@@ -25,7 +25,7 @@ class XlibConfig(Config):
         # Construct array of attributes
         attrs = []
         for name, value in self.get_gl_attributes():
-            attr = XlibCanvasConfig.attribute_ids.get(name, None)
+            attr = XlibDisplayConfig.attribute_ids.get(name, None)
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
 
@@ -41,7 +41,7 @@ class XlibConfig(Config):
 
         configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
 
-        result = [XlibCanvasConfig(canvas, info, c, self) for c in configs]
+        result = [XlibDisplayConfig(canvas, info, c, self) for c in configs]
 
         # Can't free array until all XlibGLConfig's are GC'd.  Too much
         # hassle, live with leak. XXX
@@ -50,7 +50,7 @@ class XlibConfig(Config):
         return result
 
 
-class XlibCanvasConfig(CanvasConfig):
+class XlibDisplayConfig(DisplayConfig):
 
     attribute_ids = {
         'buffer_size': glx.GLX_BUFFER_SIZE,

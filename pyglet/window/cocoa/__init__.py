@@ -6,7 +6,7 @@ from pyglet.window import MouseCursor, DefaultMouseCursor
 from pyglet.window import WindowException
 from pyglet.event import EventDispatcher
 
-from pyglet.canvas.cocoa import CocoaCanvas
+from pyglet.display.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin import cocoapy, CGPoint, AutoReleasePool
 

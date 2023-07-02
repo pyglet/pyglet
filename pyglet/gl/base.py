@@ -123,7 +123,7 @@ class Config:
             `canvas` : `Canvas`
                 Display to host contexts created from the config.
 
-        :rtype: list of `CanvasConfig`
+        :rtype: list of `DisplayConfig`
         """
         raise NotImplementedError('abstract')
 
@@ -155,14 +155,14 @@ class Config:
         :rtype: bool
         :return: True if the config is complete and can create a context.
         """
-        return isinstance(self, CanvasConfig)
+        return isinstance(self, DisplayConfig)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
-class CanvasConfig(Config):
-    """OpenGL configuration for a particular canvas.
+class DisplayConfig(Config):
+    """An OpenGL configuration for a particular display.
 
     Use `Config.match` to obtain an instance of this class.
 
