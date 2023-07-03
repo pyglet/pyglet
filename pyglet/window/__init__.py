@@ -682,9 +682,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         raise NotImplementedError('abstract')
 
     def draw(self, dt):
-        # TODO: pass `dt` to the on_draw event
         self.switch_to()
-        self.dispatch_event('on_draw')
+        self.dispatch_event('on_draw', dt)
         self.flip()
 
     def draw_mouse_cursor(self):
