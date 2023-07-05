@@ -683,7 +683,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     def draw(self, dt):
         self.switch_to()
-        self.dispatch_event('on_draw', dt)
+        self.dispatch_event('on_draw')
+        self.dispatch_event('on_refresh', dt)
         self.flip()
 
     def draw_mouse_cursor(self):

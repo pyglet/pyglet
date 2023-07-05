@@ -21,10 +21,11 @@ def on_key_press(keycode, mod):
     if redraw_rate:
         pyglet.clock.unschedule(window.draw)
         pyglet.clock.schedule_interval(window.draw, redraw_rate)
+        fps._delta_times.clear()
 
 
 @window.event
-def on_draw(dt):
+def on_refresh(dt):
     global MOVEMENT_SPEED
 
     window.clear()
