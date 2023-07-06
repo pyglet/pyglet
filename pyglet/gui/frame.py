@@ -40,6 +40,10 @@ class Frame:
         """Normalize position to cell"""
         return int(x / self._cell_size), int(y / self._cell_size)
 
+    def _on_reposition_handler(self, widget):
+        self.remove_widget(widget)
+        self.add_widget(widget)
+
     @property
     def enable(self):
         """Whether to enable frame.
@@ -63,14 +67,13 @@ class Frame:
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
         widget.update_groups(self._order)
-        widget.parent = self
+        widget.set_handler("on_reposition", self._on_reposition_handler)
 
     def remove_widget(self, widget):
-        """Remove a Widget from the spatial hash."""
-        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
-        for i in range(min_vec[0], max_vec[0] + 1):
-            for j in range(min_vec[1], max_vec[1] + 1):
-                self._cells.get((i, j)).remove(widget)
+        """Remove a Widget."""
+        for widgets in self._cells.values():
+            if widget in widgets:
+                widgets.remove(widget)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""

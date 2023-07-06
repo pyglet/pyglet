@@ -1,8 +1,6 @@
 """Display different types of interactive widgets.
 """
 
-from contextlib import contextmanager
-
 import pyglet
 
 from pyglet.event import EventDispatcher
@@ -23,16 +21,6 @@ class WidgetBase(EventDispatcher):
         self._fg_group = None
         self.enabled = True
 
-    @contextmanager
-    def _update_parent(self):
-        if self._parent is not None:
-            self._parent.remove_widget(self)
-        try:
-            yield
-        finally:
-            if self._parent is not None:
-                self._parent.add_widget(self)
-
     def update_groups(self, order):
         pass
 
@@ -46,9 +34,9 @@ class WidgetBase(EventDispatcher):
 
     @x.setter
     def x(self, value):
-        with self._update_parent():
-            self._x = value
+        self._x = value
         self._update_position()
+        self.dispatch_event("on_reposition", self)
 
     @property
     def y(self):
@@ -60,9 +48,9 @@ class WidgetBase(EventDispatcher):
 
     @y.setter
     def y(self, value):
-        with self._update_parent():
-            self._y = value
+        self._y = value
         self._update_position()
+        self.dispatch_event("on_reposition", self)
 
     @property
     def parent(self):
@@ -86,9 +74,9 @@ class WidgetBase(EventDispatcher):
 
     @position.setter
     def position(self, values):
-        with self._update_parent():
-            self._x, self._y = values
+        self._x, self._y = values
         self._update_position()
+        self.dispatch_event("on_reposition", self)
 
     @property
     def width(self):
@@ -161,6 +149,9 @@ class WidgetBase(EventDispatcher):
 
     def on_text_motion_select(self, motion):
         pass
+
+
+WidgetBase.register_event_type("on_reposition")
 
 
 class PushButton(WidgetBase):
