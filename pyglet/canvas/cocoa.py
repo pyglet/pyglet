@@ -78,6 +78,12 @@ class CocoaScreen(Screen):
         self.height = mode.height
 
     def restore_mode(self):
+        match_attrs = ['width', 'height', 'depth', 'rate']
+        current_mode = self.get_mode()
+        if all(getattr(current_mode, attr) == getattr(self._default_mode, attr) for
+               attr in match_attrs):
+            # Already in default mode
+            return
         quartz.CGDisplaySetDisplayMode(self._cg_display_id, self._default_mode.cgmode, None)
         quartz.CGDisplayRelease(self._cg_display_id)
 
