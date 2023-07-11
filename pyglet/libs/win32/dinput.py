@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 import ctypes
 
-from pyglet import com
+from pyglet.libs.win32 import com
 
 lib = ctypes.oledll.dinput8
 
@@ -244,7 +244,7 @@ DISCL_NOWINKEY = 0x00000010
 DIPROP_BUFFERSIZE = 1
 
 GUID_XAxis = \
-    com.GUID(0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00)
+    com.GUID(0xA36D02E0, 0xC9F3, 0x11CF, 0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00)
 
 
 class DIDEVICEINSTANCE(ctypes.Structure):
@@ -402,7 +402,7 @@ class IDirectInputDevice8(com.pIUnknown):
 class IDirectInput8(com.pIUnknown):
     _methods_ = [
         ('CreateDevice',
-         com.STDMETHOD(ctypes.POINTER(com.GUID), 
+         com.STDMETHOD(ctypes.POINTER(com.GUID),
                        ctypes.POINTER(IDirectInputDevice8),
                        ctypes.c_void_p)),
         ('EnumDevices',
@@ -422,7 +422,7 @@ class IDirectInput8(com.pIUnknown):
     ]
 
 IID_IDirectInput8W = \
-    com.GUID(0xBF798031,0x483A,0x4DA2,0xAA,0x99,0x5D,0x64,0xED,0x36,0x97,0x00)
+    com.GUID(0xBF798031, 0x483A, 0x4DA2, 0xAA, 0x99, 0x5D, 0x64, 0xED, 0x36, 0x97, 0x00)
 
 DIRECTINPUT_VERSION = 0x0800
 DirectInput8Create = lib.DirectInput8Create

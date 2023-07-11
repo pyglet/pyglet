@@ -1,10 +1,6 @@
-from pyglet.media.events import MediaEvent
-
-import pyglet
-import ctypes
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from pyglet import com
+from pyglet.libs.win32 import com
 import platform
 import os
 from pyglet.util import debug_print
@@ -646,9 +642,9 @@ class XAUDIO2FX_REVERB_PARAMETERS(Structure):
 class IXAudio2(com.pIUnknown):
     _methods_ = [
         ('RegisterForCallbacks',
-           com.STDMETHOD(POINTER(IXAudio2EngineCallback))),
+         com.STDMETHOD(POINTER(IXAudio2EngineCallback))),
         ('UnregisterForCallbacks',
-           com.METHOD(ctypes.c_void_p, POINTER(IXAudio2EngineCallback))),
+         com.METHOD(ctypes.c_void_p, POINTER(IXAudio2EngineCallback))),
         ('CreateSourceVoice',
          com.STDMETHOD(POINTER(IXAudio2SourceVoice), POINTER(WAVEFORMATEX), UINT32, c_float,
                        POINTER(IXAudio2VoiceCallback), POINTER(XAUDIO2_VOICE_SENDS), POINTER(XAUDIO2_EFFECT_CHAIN))),
