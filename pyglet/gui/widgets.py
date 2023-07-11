@@ -16,6 +16,7 @@ class WidgetBase(EventDispatcher):
         self._y = y
         self._width = width
         self._height = height
+        self._parent = None
         self._bg_group = None
         self._fg_group = None
         self.enabled = True
@@ -35,6 +36,7 @@ class WidgetBase(EventDispatcher):
     def x(self, value):
         self._x = value
         self._update_position()
+        self.dispatch_event("on_reposition", self)
 
     @property
     def y(self):
@@ -48,6 +50,19 @@ class WidgetBase(EventDispatcher):
     def y(self, value):
         self._y = value
         self._update_position()
+        self.dispatch_event("on_reposition", self)
+
+    @property
+    def parent(self):
+        """The frame this widget belongs to.
+
+        :type: `~pyglet.gui.frame.Frame`
+        """
+        return self._parent
+
+    @parent.setter
+    def parent(self, value):
+        self._parent = value
 
     @property
     def position(self):
@@ -61,6 +76,7 @@ class WidgetBase(EventDispatcher):
     def position(self, values):
         self._x, self._y = values
         self._update_position()
+        self.dispatch_event("on_reposition", self)
 
     @property
     def width(self):
@@ -91,7 +107,7 @@ class WidgetBase(EventDispatcher):
     @property
     def value(self):
         """Query or set the Widget's value.
-        
+
         This property allows you to set the value of a Widget directly, without any
         user input.  This could be used, for example, to restore Widgets to a
         previous state, or if some event in your program is meant to naturally
@@ -99,7 +115,7 @@ class WidgetBase(EventDispatcher):
         dispatched when changing this property.
         """
         raise NotImplementedError("Value depends on control type!")
-    
+
     @value.setter
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
@@ -133,6 +149,9 @@ class WidgetBase(EventDispatcher):
 
     def on_text_motion_select(self, motion):
         pass
+
+
+WidgetBase.register_event_type("on_reposition")
 
 
 class PushButton(WidgetBase):
@@ -179,8 +198,9 @@ class PushButton(WidgetBase):
 
     @property
     def value(self):
+        """Whether the button is pressed or not."""
         return self._pressed
-    
+
     @value.setter
     def value(self, value):
         assert type(value) is bool, "This Widget's value must be True or False."
@@ -298,6 +318,7 @@ class Slider(WidgetBase):
 
     @property
     def value(self):
+        """Value of the slider."""
         return self._value
 
     @value.setter
@@ -426,6 +447,7 @@ class TextEntry(WidgetBase):
 
     @property
     def value(self):
+        """Text displayed in the entry."""
         return self._doc.text
 
     @value.setter
