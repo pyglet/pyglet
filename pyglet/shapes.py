@@ -1327,7 +1327,7 @@ class BorderedRectangle(ShapeBase):
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
             `border_color` : (int, int, int, int)
-                The RGB or RGBA fill color of the rectangle, specified
+                The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
 
@@ -1409,6 +1409,19 @@ class BorderedRectangle(ShapeBase):
 
             self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
                                              bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+
+    @property
+    def border(self):
+        """The border width of the rectangle.
+
+        :return: float
+        """
+        return self._border
+
+    @border.setter
+    def border(self, width):
+        self._border = width
+        self._update_vertices()
 
     @property
     def width(self):
