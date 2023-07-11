@@ -80,11 +80,6 @@ class CocoaAlternateEventLoop(EventLoop):
     loop. We tie our schedule into it via timer.
     """
     def run(self, interval=1/60):
-        if not interval:
-            self.clock.schedule(self._redraw_windows)
-        else:
-            self.clock.schedule_interval(self._redraw_windows, interval)
-
         self.has_exit = False
 
         from pyglet.window import Window
