@@ -10,6 +10,9 @@ __pycache__
 /.venv2
 /.venv3
 
+# Pyenv
+.python-version
+
 # Build / Docs
 _build
 pyglet.*.log

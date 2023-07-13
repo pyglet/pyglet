@@ -114,8 +114,9 @@ class CodecRegistry:
         will be return if no encoders for that extension are available.
         """
         if filename:
-            extension = os.path.splitext(filename)[1].lower()
-            return self._encoder_extensions.get(extension, [])
+            root, ext = os.path.splitext(filename)
+            extension = ext if ext else root        # If only ".ext" is provided
+            return self._encoder_extensions.get(extension.lower(), [])
         return self._encoders
 
     def get_decoders(self, filename=None):
@@ -124,8 +125,9 @@ class CodecRegistry:
         will be return if no encoders for that extension are available.
         """
         if filename:
-            extension = os.path.splitext(filename)[1].lower()
-            return self._decoder_extensions.get(extension, [])
+            root, ext = os.path.splitext(filename)
+            extension = ext if ext else root        # If only ".ext" is provided
+            return self._decoder_extensions.get(extension.lower(), [])
         return self._decoders
 
     def add_decoders(self, module):

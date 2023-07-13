@@ -69,6 +69,10 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         # eos for one buffer size.
         self._eos_cursor = None
 
+        # Whether the source has hit its end; protect against duplicate
+        # dispatch of on_eos events.
+        self._has_underrun = False
+
         # Indexes into DSound circular buffer.  Complications ensue wrt each
         # other to avoid writing over the play cursor.  See _get_write_size and
         # write().
@@ -101,13 +105,13 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def play(self):
         assert _debug('DirectSound play')
-        self.driver.worker.add(self)
 
         if not self._playing:
-            self._get_audiodata()  # prebuffer if needed
             self._playing = True
+            self._get_audiodata()  # prebuffer if needed
             self._ds_buffer.play()
 
+        self.driver.worker.add(self)
         assert _debug('return DirectSound play')
 
     def stop(self):
@@ -128,6 +132,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._play_cursor = self._write_cursor
         self._eos_cursor = None
         self._audiodata_buffer = None
+        self._has_underrun = False
         del self._events[:]
         del self._timestamps[:]
 
@@ -152,10 +157,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                 assert _debug('write silence')
                 self.write(None, write_size)
                 write_size = 0
-
-    def _has_underrun(self):
-        return (self._eos_cursor is not None
-                and self._play_cursor > self._eos_cursor)
 
     def _dispatch_new_event(self, event_name):
         MediaEvent(event_name).sync_dispatch_to_player(self.player)
@@ -243,9 +244,13 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             del self._timestamps[0]
 
     def _check_underrun(self):
-        if self._playing and self._has_underrun():
+        if (
+            not self._has_underrun and
+            self._playing and
+            (self._eos_cursor is not None and self._play_cursor > self._eos_cursor)
+        ):
             assert _debug('underrun, stopping')
-            self.stop()
+            self._has_underrun = True
             self._dispatch_new_event('on_eos')
 
     def _get_write_size(self):

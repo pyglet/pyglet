@@ -89,7 +89,6 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             if not self._buffers:
                 self._xa2_driver.return_voice(self._xa2_source_voice)
 
-
     def play(self):
         assert _debug('XAudio2 play')
 
@@ -137,6 +136,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
         consume it. This submits the buffer retrieved from the decoder in it's entirety.
         """
+        if not self._xa2_source_voice:
+            return
 
         buffers_queued = self._xa2_source_voice.buffers_queued
 

@@ -4,31 +4,40 @@ The application event loop
 ==========================
 
 In order to let pyglet process operating system events such as mouse and
-keyboard events, applications need to enter an application event loop.  The
-event loop continuously checks for new events, dispatches those events, and
-updates the contents of all open windows.
+keyboard events, applications need to enter an application event loop. The
+event loop watches for new events, dispatches those events, and sleeps until
+something else needs to be done. It also handles any functions that you
+have scheduled on the clock (see :ref:`guide_calling-functions-periodically`).
+pyglet ensures that the loop iterates only as often as necessary to fulfill all
+scheduled functions and user input. It is well tuned for performance and low
+power usage on Windows, Linux and macOS.
 
-pyglet provides an application event loop that is tuned for performance and
-low power usage on Windows, Linux and Mac OS X.  Most applications need only
-call::
+After creating Windows and attaching event handlers, most applications need
+only call::
 
     pyglet.app.run()
 
-to enter the event loop after creating their initial set of windows and
-attaching event handlers. The :py:func:`~pyglet.app.run` function does not
-return until all open windows have been closed, or until
-:py:func:`pyglet.app.exit()` is called.
+The :py:func:`~pyglet.app.run` function does not return until all open windows
+have been closed, or until :py:func:`pyglet.app.exit()` is called.
 
-The pyglet application event loop dispatches window events (such as for mouse
-and keyboard input) as they occur and dispatches the
-:py:meth:`~pyglet.window.Window.on_draw` event to
-each window after every iteration through the loop.
+Once you have entered the event loop it dispatches window events (such as for
+keyboard input or mouse movement), events from Controllers or Joysticks,
+and any other events as they occur. By default, the application event loop will
+also refresh all Windows and dispatch the :py:meth:`~pyglet.window.Window.on_draw`
+event at a rate of 60Hz (60 times per second). You can customize this by
+passing the desired interval in seconds to :py:func:`~pyglet.app.run`::
 
-To have additional code run periodically or every iteration through the loop,
-schedule functions on the clock (see
-:ref:`guide_calling-functions-periodically`). pyglet ensures that the loop
-iterates only as often as necessary
-to fulfill all scheduled functions and user input.
+    pyglet.app.run(1/30)    # 30Hz
+    # or
+    pyglet.app.run(1/120)   # 120Hz
+    # or for benchmarking, redraw as fast as possible:
+    pyglet.app.run(0)
+
+
+Passing `None` to :py:func:`~pyglet.app.run` is a special case. It will enter
+the event loop as usual, but it will not dispatch the Window events. This can
+be desired if you wish to have different refresh rates for different Windows,
+or even change the refresh rate while the application is running.
 
 Customising the event loop
 --------------------------
@@ -52,7 +61,7 @@ instance. Other pyglet modules such as :py:mod:`pyglet.window` depend on this.
 Event loop events
 ^^^^^^^^^^^^^^^^^
 
-You can listen for several events on the event loop instance.  The most useful
+You can listen for several events on the event loop instance. A useful one
 of these is :py:meth:`~pyglet.app.EventLoop.on_window_close`, which is
 dispatched whenever a window is closed.  The default handler for this event
 exits the event loop if there are no more windows.  The following example
@@ -73,7 +82,7 @@ Overriding the default idle policy
 
 The :py:meth:`pyglet.app.EventLoop.idle` method is called every iteration of
 the event loop.  It is responsible for calling scheduled clock functions,
-redrawing windows, and deciding how idle the application is. You can override
+and deciding how idle the application is. You can override
 this method if you have specific requirements for tuning the performance
 of your application; especially if it uses many windows.
 
@@ -81,18 +90,12 @@ The default implementation has the following algorithm:
 
 1. Call :py:func:`pyglet.clock.tick` with ``poll=True`` to call any scheduled
    functions.
-2. Dispatch the :py:meth:`~pyglet.window.Window.on_draw` event and call
-   :py:meth:`~pyglet.window.Window.flip` on every open window.
-3. Return the value of :py:func:`pyglet.clock.get_sleep_time`.
+2. Return the value of :py:func:`pyglet.clock.get_sleep_time`.
 
 The return value of the :py:meth:`~pyglet.clock.get_sleep_time` method is
 the number of seconds until the event loop needs to iterate again (unless
 there is an earlier user-input event); or ``None`` if the loop can wait
 for input indefinitely.
-
-Note that this default policy causes every window to be redrawn during every
-user event -- if you have more knowledge about which events have an effect on
-which windows you can improve on the performance of this method.
 
 Dispatching events manually
 ---------------------------
@@ -116,7 +119,7 @@ A simple event loop usually has the following form::
 
 The :py:meth:`~pyglet.window.Window.dispatch_events` method checks the window's
 operating system event queue for user input and dispatches any events found.
-The method does not wait for input -- if ther are no events pending, control is
+The method does not wait for input -- if there are no events pending, control is
 returned to the program immediately.
 
 The call to :py:func:`pyglet.clock.tick` is required for ensuring scheduled
@@ -130,10 +133,10 @@ discouraged for the following reasons:
   toolkits to be integrated without needing to resort to a manual event loop.
 * Because :py:class:`~pyglet.app.EventLoop` is tuned for specific operating
   systems, it is more responsive to user events, and continues calling clock
-  functions while windows are being resized, and (on Mac OS X) the menu bar is
+  functions while windows are being resized, and (on macOS) the menu bar is
   being tracked.
-* It is difficult to write a manual event loop that does not consume
-  100% CPU while still remaining responsive to user input.
+* It is difficult to write a manual event loop that does not waste CPU cycles
+  and is still responsive to user input.
 
 The capability for writing manual event loops remains for legacy support and
 extreme cases where the developer knows what they are doing.

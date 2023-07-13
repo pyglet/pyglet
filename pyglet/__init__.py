@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.7'
+version = '2.0.8'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -333,6 +333,7 @@ class _ModuleProxy:
 # Lazily load all modules, except if performing
 # type checking or code inspection.
 if TYPE_CHECKING:
+    from . import types
     from . import app
     from . import canvas
     from . import clock
@@ -353,6 +354,7 @@ if TYPE_CHECKING:
     from . import text
     from . import window
 else:
+    types = _ModuleProxy('types')
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
