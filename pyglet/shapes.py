@@ -920,7 +920,7 @@ class Ellipse(ShapeBase):
 
 
 class Sector(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
+    def __init__(self, x, y, radius, segments=None, angle=360.0, start_angle=0,
                  color=(255, 255, 255, 255), batch=None, group=None):
         """Create a Sector of a circle.
 
@@ -939,10 +939,10 @@ class Sector(ShapeBase):
                         be automatically calculated using the formula:
                         `max(14, int(radius / 1.25))`.
                     `angle` : float
-                        The angle of the sector, in radians. Defaults to tau (pi * 2),
+                        The angle of the sector, in degrees. Defaults to 360.0,
                         which is a full circle.
                     `start_angle` : float
-                        The start angle of the sector, in radians. Defaults to 0.
+                        The start angle of the sector, in degrees. Defaults to 0.
                     `color` : (int, int, int, int)
                         The RGB or RGBA color of the circle, specified as a
                         tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -994,12 +994,12 @@ class Sector(ShapeBase):
             x = -self._anchor_x
             y = -self._anchor_y
             r = self._radius
-            tau_segs = self._angle / self._segments
-            start_angle = self._start_angle - math.radians(self._rotation)
+            segment_radians = math.radians(self._angle) / self._segments
+            start_radians = math.radians(self._start_angle - self._rotation)
 
             # Calculate the outer points of the sector.
-            points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
-                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
+            points = [(x + (r * math.cos((i * segment_radians) + start_radians)),
+                       y + (r * math.sin((i * segment_radians) + start_radians))) for i in range(self._segments + 1)]
 
             # Create a list of triangles from the points
             vertices = []
