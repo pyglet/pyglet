@@ -569,7 +569,7 @@ class Arc(ShapeBase):
 
     @property
     def angle(self):
-        """The angle of the arc.
+        """The angle of the arc, in degrees.
 
         :type: float
         """
@@ -582,7 +582,7 @@ class Arc(ShapeBase):
 
     @property
     def start_angle(self):
-        """The start angle of the arc.
+        """The start angle of the arc, in degrees.
 
         :type: float
         """
