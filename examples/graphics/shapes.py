@@ -33,7 +33,7 @@ class ShapesDemo(pyglet.window.Window):
             batch=self.batch
         )
 
-        self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=4, color=(255, 255, 255), batch=self.batch)
+        self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=270.0, color=(255, 255, 255), batch=self.batch)
 
         self.star = shapes.Star(600, 375, 50, 30, 5, color=(255, 255, 0), batch=self.batch)
 
