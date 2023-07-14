@@ -1011,7 +1011,7 @@ class Sector(ShapeBase):
 
     @property
     def angle(self):
-        """The angle of the sector.
+        """The angle of the sector, in degrees.
 
         :type: float
         """
@@ -1024,7 +1024,7 @@ class Sector(ShapeBase):
 
     @property
     def start_angle(self):
-        """The start angle of the sector.
+        """The start angle of the sector, in degrees.
 
         :type: float
         """
