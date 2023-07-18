@@ -131,10 +131,6 @@ class TextureArrayDepthExceeded(Exception):
 def load(filename, file=None, decoder=None):
     """Load an image from a file.
 
-    :note: You can make no assumptions about the return type; usually it will
-        be ImageData or CompressedImageData, but decoders are free to return
-        any subclass of AbstractImage.
-
     :Parameters:
         `filename` : str
             Used to guess the image format, and to load the file if `file` is
@@ -147,6 +143,11 @@ def load(filename, file=None, decoder=None):
             first decoder is raised.
 
     :rtype: AbstractImage
+
+    .. note:: You can make no assumptions about the return type; usually it will
+        be ImageData or CompressedImageData, but decoders are free to return
+        any subclass of AbstractImage.
+
     """
     if decoder:
         return decoder.decode(filename, file)
@@ -181,10 +182,6 @@ def load_animation(filename, file=None, decoder=None):
 def create(width, height, pattern=None):
     """Create an image optionally filled with the given pattern.
 
-    :note: You can make no assumptions about the return type; usually it will
-        be ImageData or CompressedImageData, but patterns are free to return
-        any subclass of AbstractImage.
-
     :Parameters:
         `width` : int
             Width of image to create
@@ -195,6 +192,10 @@ def create(width, height, pattern=None):
             initially be transparent.
 
     :rtype: AbstractImage
+
+    .. note:: You can make no assumptions about the return type; usually it will
+              be ImageData or CompressedImageData, but patterns are free to return
+              any subclass of AbstractImage.
     """
     if not pattern:
         pattern = SolidColorImagePattern()
@@ -1233,7 +1234,7 @@ class Texture(AbstractImage):
     def bind_image_texture(self, unit, level=0, layered=False, layer=0, access=GL_READ_WRITE, fmt=GL_RGBA32F):
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
-        ..note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
+        .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
         """
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
