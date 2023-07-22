@@ -145,7 +145,7 @@ class Allocator:
 class TextureAtlas:
     """Collection of images within a texture."""
 
-    def __init__(self, width: int=2048, height: int=2048) -> None:
+    def __init__(self, width: int = 2048, height: int = 2048) -> None:
         """Create a texture atlas of the given size.
 
         :Parameters:
@@ -252,7 +252,7 @@ class TextureArrayBin:
     ones as necessary as the depth is exceeded.
     """
 
-    def __init__(self, texture_width: int=2048, texture_height: int=2048, max_depth: Optional[int]=None) -> None:
+    def __init__(self, texture_width: int = 2048, texture_height: int = 2048, max_depth: Optional[int] = None) -> None:
         max_texture_size = pyglet.image.get_max_texture_size()
         self.max_depth = max_depth or pyglet.image.get_max_array_texture_layers()
         self.texture_width = min(texture_width, max_texture_size)
