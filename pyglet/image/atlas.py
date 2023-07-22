@@ -139,7 +139,7 @@ class Allocator:
         if not self.strips:
             return 0.0
         possible_area = self.strips[-1].y2 * self.width
-        return 1.0 - self.used_area / float(possible_area)
+        return 1.0 - self.used_area / possible_area
 
 
 class TextureAtlas:
