@@ -7,10 +7,9 @@ when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
 and opacity, and rotation (where applicable). To create more
 complex shapes than what is provided here, the lower level
-graphics API is more appropriate.
-You can also use the ``in`` operator to check whether a point is
-inside a shape.
-See the :ref:`guide_graphics` for more details.
+graphics API is more appropriate. See the :ref:`guide_graphics`
+for more details. You can also use the ``in`` operator to check
+whether a point is inside a shape.
 
 A simple example of drawing shapes::
 
