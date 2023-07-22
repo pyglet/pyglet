@@ -821,7 +821,7 @@ class Circle(ShapeBase):
 class Ellipse(ShapeBase):
     _draw_mode = GL_LINES
 
-    def __init__(self, x: number, y: number, a: float, b: float, segments: Optional[int]=None
+    def __init__(self, x: number, y: number, a: float, b: float, segments: Optional[int]=None,
                  color: Tuple[int, int, int, int]=(255, 255, 255, 255),
                  batch: Optional[Batch]=None, group: Optional[Group]=None) -> None:
         """Create an ellipse.
