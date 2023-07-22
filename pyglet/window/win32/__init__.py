@@ -76,7 +76,7 @@ class Win32Window(BaseWindow):
     _mouse_platform_visible = True
     _pending_click = False
     _in_title_bar = False
-    
+
     _keyboard_state = {0x02A: False, 0x036: False}  # For shift keys.
 
     _ws_style = 0
@@ -134,12 +134,19 @@ class Win32Window(BaseWindow):
         else:
             self._ws_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX)
 
+        self._dpi = self._screen.get_dpi()
+
         if self._fullscreen:
             width = self.screen.width
             height = self.screen.height
         else:
+            if pyglet.options["scale_with_dpi"]:
+                if self.scale != 1.0:
+                    self._width = int(self._width * self.scale)
+                    self._height = int(self._height * self.scale)
+
             width, height = \
-                self._client_to_window_size(self._width, self._height)
+                self._client_to_window_size(self._width, self._height, self._dpi)
 
         if not self._window_class:
             module = _kernel32.GetModuleHandleW(None)
@@ -368,7 +375,7 @@ class Win32Window(BaseWindow):
 
     def set_size(self, width, height):
         super().set_size(width, height)
-        width, height = self._client_to_window_size(width, height)
+        width, height = self._client_to_window_size_dpi(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
                              (SWP_NOZORDER | SWP_NOMOVE | SWP_NOOWNERZORDER))
         self.dispatch_event('on_resize', self._width, self._height)
@@ -407,6 +414,13 @@ class Win32Window(BaseWindow):
 
     def maximize(self):
         _user32.ShowWindow(self._hwnd, SW_MAXIMIZE)
+
+    def get_window_screen(self):
+        """ Gets the current screen the window is on.
+            If between monitors will retrieve the screen with the most screen space.
+        """
+        handle = _user32.MonitorFromWindow(self._hwnd, MONITOR_DEFAULTTONEAREST)
+        return [screen for screen in self.display.get_screens() if screen._handle == handle][0]
 
     def set_caption(self, caption):
         self._caption = caption
@@ -654,15 +668,41 @@ class Win32Window(BaseWindow):
         return icon
 
     # Private util
-
-    def _client_to_window_size(self, width, height):
+    def _client_to_window_size(self, width, height, dpi):
+        """This returns the true window size factoring in styles, borders, title bars"""
         rect = RECT()
         rect.left = 0
         rect.top = 0
         rect.right = width
         rect.bottom = height
-        _user32.AdjustWindowRectEx(byref(rect),
-                                   self._ws_style, False, self._ex_ws_style)
+
+        if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
+            _user32.AdjustWindowRectExForDpi(byref(rect),
+                self._ws_style, False, self._ex_ws_style, dpi)
+        else:
+            _user32.AdjustWindowRectEx(byref(rect),
+                self._ws_style, False, self._ex_ws_style)
+
+        return rect.right - rect.left, rect.bottom - rect.top
+
+
+    def _client_to_window_size_dpi(self, width, height):
+        """ This returns the true window size factoring in styles, borders, title bars.
+            Retrieves DPI directly from the Window hwnd, used after window creation.
+        """
+        rect = RECT()
+        rect.left = 0
+        rect.top = 0
+        rect.right = width
+        rect.bottom = height
+
+        if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
+            _user32.AdjustWindowRectExForDpi(byref(rect),
+                self._ws_style, False, self._ex_ws_style, _user32.GetDpiForWindow(self._hwnd))
+        else:
+            _user32.AdjustWindowRectEx(byref(rect),
+                self._ws_style, False, self._ex_ws_style)
+
         return rect.right - rect.left, rect.bottom - rect.top
 
     def _client_to_window_pos(self, x, y):
@@ -670,7 +710,14 @@ class Win32Window(BaseWindow):
         rect.left = x
         rect.top = y
         _user32.AdjustWindowRectEx(byref(rect),
-                                   self._ws_style, False, self._ex_ws_style)
+            self._ws_style, False, self._ex_ws_style)
+
+        if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
+            _user32.AdjustWindowRectExForDpi(byref(rect),
+                self._ws_style, False, self._ex_ws_style, _user32.GetDpiForWindow(self._hwnd))
+        else:
+            _user32.AdjustWindowRectEx(byref(rect),
+                self._ws_style, False, self._ex_ws_style)
         return rect.left, rect.top
 
     # Event dispatching
@@ -1176,11 +1223,10 @@ class Win32Window(BaseWindow):
 
         if self._minimum_size:
             info.ptMinTrackSize.x, info.ptMinTrackSize.y = \
-                self._client_to_window_size(*self._minimum_size)
+                self._client_to_window_size_dpi(*self._minimum_size)
         if self._maximum_size:
             info.ptMaxTrackSize.x, info.ptMaxTrackSize.y = \
-                self._client_to_window_size(*self._maximum_size)
-
+                self._client_to_window_size_dpi(*self._maximum_size)
         return 0
 
     @Win32EventHandler(WM_ERASEBKGND)
@@ -1223,6 +1269,55 @@ class Win32Window(BaseWindow):
         # Reverse Y and call event.
         self.dispatch_event('on_file_drop', point.x, self._height - point.y, paths)
         return 0
+
+    @Win32EventHandler(WM_GETDPISCALEDSIZE)
+    def _event_dpi_scaled_size(self, msg, wParam, lParam):
+        if pyglet.options["scale_with_dpi"]:
+            return None
+
+        size = cast(lParam, POINTER(SIZE)).contents
+
+        dpi = wParam
+
+        if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
+            current = RECT()
+            result = RECT()
+
+            # Size between current size and future.
+            _user32.AdjustWindowRectExForDpi(byref(current),
+                                             self._ws_style, False, self._ex_ws_style,
+                                             _user32.GetDpiForWindow(self._hwnd))
+
+            _user32.AdjustWindowRectExForDpi(byref(result),
+                                             self._ws_style, False, self._ex_ws_style, dpi)
+
+            size.cx += (result.right - result.left) - (current.right - current.left)
+            size.cy += (result.bottom - result.top) - (current.bottom - current.top)
+            return 1
+
+    @Win32EventHandler(WM_DPICHANGED)
+    def _event_dpi_change(self, msg, wParam, lParam):
+        y_dpi, x_dpi = self._get_location(wParam)
+
+        scale = x_dpi / USER_DEFAULT_SCREEN_DPI
+        if not self._fullscreen and\
+                (pyglet.options["scale_with_dpi"] or WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+            suggested_rect = cast(lParam, POINTER(RECT)).contents
+
+            x = suggested_rect.left
+            y = suggested_rect.top
+            width = suggested_rect.right - suggested_rect.left
+            height = suggested_rect.bottom - suggested_rect.top
+
+            _user32.SetWindowPos(self._hwnd, 0,
+                                 x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE)
+
+        self._dpi = x_dpi
+
+        self.switch_to()
+        self.dispatch_event('on_scale', scale, x_dpi)
+        return 1
+
 
 
 __all__ = ["Win32EventHandler", "Win32Window"]

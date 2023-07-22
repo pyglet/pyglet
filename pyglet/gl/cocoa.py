@@ -193,7 +193,7 @@ class CocoaConfig(Config):
 class CocoaDisplayConfig(DisplayConfig):
 
     def __init__(self, canvas, config, pixel_format):
-        super(CocoaDisplayConfig, self).__init__(canvas, config)
+        super().__init__(canvas, config)
         self._pixel_format = pixel_format
 
         # Query values for the attributes of the pixel format, and then set the
@@ -260,7 +260,7 @@ class CocoaContext(Context):
         # The NSView instance should be attached to a nondeferred window before calling
         # setView, otherwise you get an "invalid drawable" message.
         self._nscontext.setView_(canvas.nsview)
-        self._nscontext.view().setWantsBestResolutionOpenGLSurface_(1)
+
         self.set_current()
 
     def detach(self):

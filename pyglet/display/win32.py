@@ -1,9 +1,25 @@
 from .base import Display, Screen, ScreenMode, Canvas
 
-from pyglet.libs.win32 import _user32
+from pyglet.libs.win32 import _user32, _shcore, _gdi32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32.context_managers import device_context
+
+
+def set_dpi_awareness():
+    """
+       Setting DPI varies per Windows version.
+       Note: DPI awareness needs to be set before Window, Display, or Screens are initialized.
+    """
+    if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
+        _user32.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+    elif WINDOWS_8_1_OR_GREATER:  # 8.1 and above allows per monitor DPI.
+        _shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
+    elif WINDOWS_VISTA_OR_GREATER:  # Only System wide DPI
+        _user32.SetProcessDPIAware()
+
+
+set_dpi_awareness()
 
 
 class Win32Display(Display):
@@ -45,6 +61,24 @@ class Win32Screen(Screen):
         info.cbSize = sizeof(MONITORINFOEX)
         _user32.GetMonitorInfoW(self._handle, byref(info))
         return info.szDevice
+
+    def get_dpi(self):
+        if WINDOWS_8_1_OR_GREATER:
+            xdpi = UINT()
+            ydpi = UINT()
+            _shcore.GetDpiForMonitor(self._handle, 0, byref(xdpi), byref(ydpi))
+            xdpi, ydpi = xdpi.value, ydpi.value
+        else:
+            dc = _user32.GetDC(None)
+            xdpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSX)
+            ydpi = _gdi32.GetDeviceCaps(dc, LOGPIXELSY)
+            _user32.ReleaseDC(0, dc)
+
+        return xdpi
+
+    def get_scale(self):
+        xdpi = self.get_dpi()
+        return xdpi / USER_DEFAULT_SCREEN_DPI
 
     def get_modes(self):
         device_name = self.get_device_name()

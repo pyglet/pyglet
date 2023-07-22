@@ -367,6 +367,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     # Instance variables accessible only via properties
     _width = None
     _height = None
+    _dpi = 96
     _caption = None
     _resizable = False
     _style = WINDOW_STYLE_DEFAULT
@@ -384,6 +385,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     # Used to restore window size and position after fullscreen
     _windowed_size = None
     _windowed_location = None
+
+    # Used to tell if window is currently being resized.
+    _window_resizing = False
 
     _minimum_size = None
     _maximum_size = None
@@ -822,6 +826,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         gl.glViewport(0, 0, *self.get_framebuffer_size())
         self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+
+    def on_scale(self, scale, dpi):
+        """A default scale event handler.
+
+        This default handler is called if the screen or system's DPI changes
+        during runtime.
+        """
 
     def set_caption(self, caption):
         """Set the window's caption.
@@ -1266,6 +1277,22 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self.set_size(self.width, new_height)
 
     @property
+    def scale(self):
+        """The scale of the window factoring in DPI.  Read only.
+
+        :type: float
+        """
+        return self._dpi / 96
+
+    @property
+    def dpi(self):
+        """DPI values of the Window.  Read only.
+
+        :type: int
+        """
+        return self._dpi
+
+    @property
     def size(self):
         """The size of the window. Read-Write.
 
@@ -1650,6 +1677,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
+        def on_scale(self, scale, dpi):
+            """A default scale event handler.
+
+            This default handler is called if the screen or system's DPI changes
+            during runtime.
+            """
+
         def on_show(self):
             """The window was shown.
 
@@ -1765,6 +1799,7 @@ BaseWindow.register_event_type('on_mouse_leave')
 BaseWindow.register_event_type('on_close')
 BaseWindow.register_event_type('on_expose')
 BaseWindow.register_event_type('on_resize')
+BaseWindow.register_event_type('on_scale')
 BaseWindow.register_event_type('on_move')
 BaseWindow.register_event_type('on_activate')
 BaseWindow.register_event_type('on_deactivate')

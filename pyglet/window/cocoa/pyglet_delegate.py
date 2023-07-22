@@ -1,19 +1,23 @@
-from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
+from ctypes import c_void_p
+
 from pyglet.libs.darwin.cocoapy import NSApplicationDidHideNotification
 from pyglet.libs.darwin.cocoapy import NSApplicationDidUnhideNotification
-from pyglet.libs.darwin.cocoapy import send_super, get_selector
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
 from pyglet.libs.darwin.cocoapy import PyObjectEncoding
-from pyglet.libs.darwin.cocoapy import quartz
+from pyglet.libs.darwin.cocoapy import quartz, appkit
+from pyglet.libs.darwin.cocoapy import send_super, get_selector
 from .systemcursor import SystemCursor
 
 NSNotificationCenter = ObjCClass('NSNotificationCenter')
 NSApplication = ObjCClass('NSApplication')
 
+NSBackingPropertyOldScaleFactorKey = c_void_p.in_dll(appkit, 'NSBackingPropertyOldScaleFactorKey')
+
 
 class PygletDelegate_Implementation:
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
 
-    @PygletDelegate.method(b'@'+PyObjectEncoding)
+    @PygletDelegate.method(b'@' + PyObjectEncoding)
     def initWithWindow_(self, window):
         self = ObjCInstance(send_super(self, 'init'))
 
@@ -75,14 +79,14 @@ class PygletDelegate_Implementation:
 
     @PygletDelegate.method('v@')
     def windowDidBecomeKey_(self, notification):
-         # Restore exclusive mouse mode if it was active before we lost key status.
-         if self.did_pause_exclusive_mouse:
-             self._window.set_exclusive_mouse(True)
-             self.did_pause_exclusive_mouse = False
-             self._window._nswindow.setMovable_(True)  # Mac OS 10.6
-         # Restore previous mouse visibility settings.
-         self._window.set_mouse_platform_visible()
-         self._window.dispatch_event("on_activate")
+        # Restore exclusive mouse mode if it was active before we lost key status.
+        if self.did_pause_exclusive_mouse:
+            self._window.set_exclusive_mouse(True)
+            self.did_pause_exclusive_mouse = False
+            self._window._nswindow.setMovable_(True)  # Mac OS 10.6
+        # Restore previous mouse visibility settings.
+        self._window.set_mouse_platform_visible()
+        self._window.dispatch_event("on_activate")
 
     @PygletDelegate.method('v@')
     def windowDidResignKey_(self, notification):
@@ -113,7 +117,7 @@ class PygletDelegate_Implementation:
         self._window.dispatch_event("on_show")
 
     @PygletDelegate.method('v@')
-    def windowDidExpose_(self,  notification):
+    def windowDidExpose_(self, notification):
         self._window.dispatch_event("on_expose")
 
     @PygletDelegate.method('v@')
@@ -127,6 +131,15 @@ class PygletDelegate_Implementation:
         if menuitem.action() == get_selector('terminate:'):
             return not self._window._keyboard_exclusive
         return True
+
+    @PygletDelegate.method('v@')
+    def windowDidChangeBackingProperties_(self, notification):
+        user_info = notification.userInfo()
+        old_scale = user_info.objectForKey_(NSBackingPropertyOldScaleFactorKey)
+
+        new_scale = self._window._nswindow.backingScaleFactor()
+        if old_scale.doubleValue() != new_scale:
+            self._window.dispatch_event("on_scale", new_scale, self._window._get_dpi_desc())
 
 
 PygletDelegate = ObjCClass('PygletDelegate')

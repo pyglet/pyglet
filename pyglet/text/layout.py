@@ -930,14 +930,14 @@ class TextLayout:
 
         self._width = width
         self._height = height
-        self._multiline = multiline       
+        self._multiline = multiline
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
         self._dpi = dpi or 96
         self.document = document
-        
+
     @property
     def _flow_glyphs(self):
         if self._multiline:
@@ -1095,7 +1095,7 @@ class TextLayout:
     @property
     def rotation(self):
         """Rotation of the layout.
-        
+
         :type: float
         """
         return self._rotation
@@ -1324,6 +1324,21 @@ class TextLayout:
         See `begin_update`.
         """
         self._update_enabled = True
+        self._update()
+
+    @property
+    def dpi(self):
+        """Get DPI used by this layout.
+
+            Read-only.
+
+            :type: float
+        """
+        return self._dpi
+
+    @dpi.setter
+    def dpi(self, value):
+        self._dpi = value
         self._update()
 
     def delete(self):

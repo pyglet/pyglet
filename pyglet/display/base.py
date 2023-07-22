@@ -252,6 +252,20 @@ class Screen:
         """
         raise NotImplementedError('abstract')
 
+    def get_dpi(self):
+        """Get the DPI of the screen.
+
+        :rtype: int
+        """
+        raise NotImplementedError('abstract')
+
+    def get_scale(self):
+        """Get the pixel scale ratio of the screen.
+
+        :rtype: float
+        """
+        raise NotImplementedError('abstract')
+
 
 class ScreenMode:
     """Screen resolution and display settings.

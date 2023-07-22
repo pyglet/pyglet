@@ -1,6 +1,8 @@
 import ctypes
 from ctypes import *
 
+from pyglet.util import asbytes
+
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
 from .base import Display, Screen, ScreenMode, Canvas
@@ -176,6 +178,28 @@ class XlibScreen(Screen):
     def __init__(self, display, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(display, x, y, width, height)
         self._xinerama = xinerama
+
+    def get_dpi(self):
+        resource = xlib.XResourceManagerString(self.display._display)
+        dpi = 96
+        if resource:
+            xlib.XrmInitialize()
+
+            db = xlib.XrmGetStringDatabase(resource)
+            if db:
+                rs_type = c_char_p()
+                value = xlib.XrmValue()
+                if xlib.XrmGetResource(db, asbytes("Xft.dpi"), asbytes("Xft.dpi"),
+                                            byref(rs_type), byref(value)):
+                    if value.addr and rs_type.value == b'String':
+                        dpi = int(value.addr)
+
+                xlib.XrmDestroyDatabase(db)
+
+        return dpi
+
+    def get_scale(self):
+        return self.get_dpi() / 96
 
     def get_matching_configs(self, template):
         canvas = XlibCanvas(self.display, None)

@@ -214,6 +214,8 @@ class XlibWindow(BaseWindow):
             #            unconditionally.
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
+            self._dpi = self._screen.get_dpi()
+
             if self.style in ('transparent', 'overlay'):
                 mask |= xlib.CWBorderPixel
                 window_attributes.border_pixel = 0
@@ -226,6 +228,10 @@ class XlibWindow(BaseWindow):
             else:
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
+                if pyglet.options["scale_with_dpi"]:
+                    if self.scale != 1.0:
+                        self._width = width = int(self._width * self.scale)
+                        self._height = height = int(self._height * self.scale)
 
             self._window = xlib.XCreateWindow(self._x_display, root,
                                               0, 0, width, height, 0, visual_info.depth,
