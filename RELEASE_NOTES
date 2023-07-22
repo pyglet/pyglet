@@ -1,3 +1,21 @@
+pyglet 2.0.9
+
+Changes and Improvements
+------------------------
+- app: Passing `None` to pyglet.app.run will disable automatic Window redraws.
+- window: Add a Window.draw method to help when manually scheduling Window redraws.
+- shapes: Add a `border` thickness setter to BorderedRectangle.
+- docs: Various docstring improvements and cleanups.
+- examples: Add minimal ComputeShader example.
+
+Bugfixes
+--------
+- media: Fix multiple on_eos events from OpenAL players, and major MediaThreads overhaul.
+- macos: Fix on_key events (#898)
+- macos: Workaround for CGDisplaySetDisplayMode bug
+- Xaudio2: Fix packet refill crash when removing a player that was deleted mid callback.
+
+
 pyglet 2.0.8
 
 Changes and Improvements
