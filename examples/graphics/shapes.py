@@ -33,13 +33,13 @@ class ShapesDemo(pyglet.window.Window):
             batch=self.batch
         )
 
-        self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=4, color=(255, 255, 255), batch=self.batch)
+        self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=270.0, color=(255, 255, 255), batch=self.batch)
 
         self.star = shapes.Star(600, 375, 50, 30, 5, color=(255, 255, 0), batch=self.batch)
 
         self.ellipse = shapes.Ellipse(650, 150, a=50, b=30, color=(55, 255, 55), batch=self.batch)
 
-        self.sector = shapes.Sector(125, 400, 60, angle=0.9, color=(55, 255, 55), batch=self.batch)
+        self.sector = shapes.Sector(125, 400, 60, angle=0.45 * 360, color=(55, 255, 55), batch=self.batch)
 
         self.polygon = shapes.Polygon([400, 100], [500, 10], [600, 100], [550, 175], [450, 150], batch=self.batch)
 
@@ -66,7 +66,7 @@ class ShapesDemo(pyglet.window.Window):
         self.polygon.rotation = self.time * 45
 
         self.ellipse.b = abs(math.sin(self.time) * 100)
-        self.sector.angle = self.time % math.tau
+        self.sector.angle = (self.time * 30) % 360.0
 
 
 if __name__ == "__main__":
