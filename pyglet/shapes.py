@@ -1792,7 +1792,7 @@ class Polygon(ShapeBase):
         :Parameters:
             `coordinates` : List[[int, int]]
                 The coordinates for each point in the polygon.
-            `color` : (int, int, int)
+            `color` : (int, int, int, int)
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
