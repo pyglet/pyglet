@@ -137,6 +137,9 @@ class EventDispatcher:
 
     See the module docstring for usage.
     """
+
+    __slots__ = []
+
     # Placeholder empty stack; real stack is created only if needed
     _event_stack = ()
 
