@@ -228,7 +228,7 @@ class VertexList:
         self.start = start
         self.count = count
         self._caches = {}
-        self._cache_versions = {}
+        self._cache_version = None
 
     def draw(self, mode):
         """Draw this vertex list in the given OpenGL mode.
@@ -261,8 +261,7 @@ class VertexList:
         self.start = new_start
         self.count = count
 
-        for version in self._cache_versions:
-            self._cache_versions[version] = None
+        self._cache_version = None
 
     def delete(self):
         """Delete this group."""
@@ -292,6 +291,7 @@ class VertexList:
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
         self.start = new_start
+        self._cache_version = None
 
         for version in self._cache_versions:
             self._cache_versions[version] = None
@@ -304,12 +304,15 @@ class VertexList:
         """dynamic access to vertex attributes, for backwards compatibility.
         """
         domain = self.domain
-        if self._cache_versions.get(name, None) != domain.version:
+        version = domain.version
+        _caches = self._caches
+        if self._cache_version != version:
+            _caches.clear()
+            self._cache_version = version
+        region = _caches.get(name, None)
+        if region is None:
             attribute = domain.attribute_names[name]
-            self._caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
-            self._cache_versions[name] = domain.version
-
-        region = self._caches[name]
+            region = _caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
         region.invalidate()
         return region.array
 
