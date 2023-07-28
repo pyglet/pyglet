@@ -122,7 +122,7 @@ class WidgetBase(EventDispatcher):
     def on_mouse_motion(self, x, y, dx, dy):
         pass
 
-    def on_mouse_scroll(self, x, y, mouse, direction):
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         pass
 
     def on_text(self, text):
@@ -348,11 +348,11 @@ class Slider(WidgetBase):
         if self._in_update:
             self._update_knob(x)
 
-    def on_mouse_scroll(self, x, y, mouse, direction):
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if not self.enabled:
             return
         if self._check_hit(x, y):
-            self._update_knob(self._knob_spr.x + self._half_knob_width + direction)
+            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled:
