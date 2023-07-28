@@ -1427,6 +1427,12 @@ class Texture(AbstractImage):
         order = self.tex_coords_order
         self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
+    @property
+    def uv(self):
+        """Tuple containing the left, bottom, right, top 2D texture coordinates."""
+        tex_coords = self.tex_coords
+        return tex_coords[0], tex_coords[1], tex_coords[3], tex_coords[7]
+
     def __repr__(self):
         return "{}(id={}, size={}x{})".format(self.__class__.__name__, self.id, self.width, self.height)
 
