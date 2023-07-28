@@ -333,10 +333,10 @@ class _ModuleProxy:
 # Lazily load all modules, except if performing
 # type checking or code inspection.
 if TYPE_CHECKING:
-    from . import types
     from . import app
     from . import canvas
     from . import clock
+    from . import customtypes
     from . import event
     from . import font
     from . import gl
@@ -354,10 +354,10 @@ if TYPE_CHECKING:
     from . import text
     from . import window
 else:
-    types = _ModuleProxy('types')
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
+    customtypes = _ModuleProxy('customtypes')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')

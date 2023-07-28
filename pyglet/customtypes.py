@@ -1,6 +1,8 @@
 """Holds type aliases used throughout the codebase."""
 import ctypes
+
 from typing import Union
+
 
 __all__ = [
     "Buffer"
