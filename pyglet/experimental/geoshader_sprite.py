@@ -235,19 +235,12 @@ class SpriteGroup(graphics.Group):
 
 
 class Sprite(event.EventDispatcher):
+    __slots__ = ['_batch', '_animation', '_frame_index', '_paused', '_rotation',
+                 '_rgba', '_scale', '_scale_x', '_scale_y', '_visible',
+                 '_vertex_list', 'group_class', '_x', '_y', '_z', '_img', '_texture',
+                 '_program', '_user_group', '_group', '_subpixel',
+                 '_position_setter']
 
-    _batch = None
-    _animation = None
-    _frame_index = 0
-    _paused = False
-    _rotation = 0
-    _rgba = [255, 255, 255, 255]
-    _scale = 1.0
-    _scale_x = 1.0
-    _scale_y = 1.0
-    _visible = True
-    _vertex_list = None
-    group_class = SpriteGroup
 
     def __init__(self,
                  img, x=0, y=0, z=0,
@@ -283,6 +276,19 @@ class Sprite(event.EventDispatcher):
                 The class methods and properties depend on this, and will
                 crash otherwise.
         """
+        self._batch = None
+        self._animation = None
+        self._frame_index = 0
+        self._paused = False
+        self._rotation = 0
+        self._rgba = [255, 255, 255, 255]
+        self._scale = 1.0
+        self._scale_x = 1.0
+        self._scale_y = 1.0
+        self._visible = True
+        self._vertex_list = None
+        self.group_class = SpriteGroup
+
         self._x = x
         self._y = y
         self._z = z
