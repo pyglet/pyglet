@@ -22,6 +22,7 @@ primitives of the same OpenGL primitive mode.
 """
 
 import ctypes
+import functools
 
 import pyglet
 
@@ -103,6 +104,18 @@ class VertexDomain:
         self.attribute_names = {}
         for attribute in self.attributes:
             self.attribute_names[attribute.name] = attribute
+        
+        self._create_attribute_buffer_arrays()
+
+    def _create_attribute_buffer_arrays(self):
+        """
+        For each attribute, create a ctypes array pointing to the entire buffer
+        which can be used to write values into the buffer using slice assignment
+        """
+        for attribute in self.attributes:
+            region = attribute.get_region(attribute.buffer, 0, self.allocator.capacity)
+            attribute.buffer_array = region.array
+
 
     def __del__(self):
         # Break circular refs that Python GC seems to miss even when forced
@@ -123,6 +136,7 @@ class VertexDomain:
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
+            self._create_attribute_buffer_arrays()
             return self.allocator.alloc(count)
 
     def safe_realloc(self, start, count, new_count):
@@ -135,6 +149,7 @@ class VertexDomain:
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
+            self._create_attribute_buffer_arrays()
             return self.allocator.realloc(start, count, new_count)
 
     def create(self, count, index_count=None):
@@ -293,8 +308,27 @@ class VertexList:
         self.start = new_start
         self._cache_version = None
 
-        for version in self._cache_versions:
-            self._cache_versions[version] = None
+    def get_setter(self, name):
+        """
+        Returns a function that, when called, sets the values for a given attribute.
+
+        The setter becomes invalid when the VertexList migrates to a different
+        domain, and it's the caller's responsibility to stop using the old setter
+        and create a new one.
+        """
+
+        attribute = self.domain.attribute_names[name]
+        buffer = attribute.buffer
+        value_size = attribute.align
+        attribute_count = attribute.count
+        # These change when VertexList migrates between domains, so docstring
+        # warns callers and makes it their responsibility.
+        # Why? Speed
+        start = self.start * attribute_count
+        count = self.count * attribute_count
+        mem_start = start * value_size
+        mem_end = mem_start + (count * value_size)
+        return functools.partial(set_attribute_values, attribute, buffer, start, count, mem_start, mem_end)
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
@@ -322,6 +356,15 @@ class VertexList:
             getattr(self, name)[:] = value
             return
         super().__setattr__(name, value)
+
+def set_attribute_values(attribute, buffer, start, count, byte_start, byte_end, data):
+    # Cannot cache attribute.buffer_array!  It is re-created when
+    # buffer resizes
+    attribute.buffer_array[start:start + count] = data
+    if byte_start < buffer._dirty_min:
+        buffer._dirty_min = byte_start
+    if byte_end > buffer._dirty_max:
+        buffer._dirty_max = byte_end
 
 
 class IndexedVertexDomain(VertexDomain):

@@ -315,6 +315,10 @@ class Sprite(event.EventDispatcher):
         self._subpixel = subpixel
 
         self._create_vertex_list()
+        self._create_vertex_setters()
+    
+    def _create_vertex_setters(self):
+        self._position_setter = self._vertex_list.get_setter('position')
 
     def _create_vertex_list(self):
         texture = self._texture
@@ -341,6 +345,7 @@ class Sprite(event.EventDispatcher):
                                        self._user_group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
         self._program = program
+        self._create_vertex_setters()
 
     def delete(self):
         """Force immediate removal of the sprite from video memory.
@@ -400,6 +405,8 @@ class Sprite(event.EventDispatcher):
             self._batch = batch
             self._create_vertex_list()
 
+        self._create_vertex_setters()
+
     @property
     def group(self):
         """Parent graphics group.
@@ -421,6 +428,7 @@ class Sprite(event.EventDispatcher):
                                        self._group.program,
                                        group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
+        self._create_vertex_setters()
 
     @property
     def image(self):
@@ -480,7 +488,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, position):
         self._position = position
-        self._vertex_list.position[:] = position
+        self._position_setter(position)
 
     @property
     def x(self):
@@ -495,7 +503,7 @@ class Sprite(event.EventDispatcher):
         _, y, z = self._position
         position = x, y, z
         self._position = position
-        self._vertex_list.position[:] = position
+        self._position_setter(position)
 
     @property
     def y(self):
@@ -510,7 +518,7 @@ class Sprite(event.EventDispatcher):
         x, _, z = self._position
         position = x, y, z
         self._position = position
-        self._vertex_list.position[:] = position
+        self._position_setter(position)
 
     @property
     def z(self):
@@ -525,7 +533,7 @@ class Sprite(event.EventDispatcher):
         x, y, _ = self._position
         position = x, y, z
         self._position = position
-        self._vertex_list.position[:] = position
+        self._position_setter(position)
 
     @property
     def rotation(self):
