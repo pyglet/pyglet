@@ -235,19 +235,12 @@ class SpriteGroup(graphics.Group):
 
 
 class Sprite(event.EventDispatcher):
+    __slots__ = ['_batch', '_animation', '_frame_index', '_paused', '_rotation',
+                 '_rgba', '_scale', '_scale_x', '_scale_y', '_visible',
+                 '_vertex_list', 'group_class', '_position', '_img', '_texture',
+                 '_program', '_user_group', '_group', '_subpixel',
+                 '_position_setter']
 
-    _batch = None
-    _animation = None
-    _frame_index = 0
-    _paused = False
-    _rotation = 0
-    _rgba = [255, 255, 255, 255]
-    _scale = 1.0
-    _scale_x = 1.0
-    _scale_y = 1.0
-    _visible = True
-    _vertex_list = None
-    group_class = SpriteGroup
 
     def __init__(self,
                  img, x=0, y=0, z=0,
@@ -283,9 +276,20 @@ class Sprite(event.EventDispatcher):
                 The class methods and properties depend on this, and will
                 crash otherwise.
         """
-        self._x = x
-        self._y = y
-        self._z = z
+        self._batch = None
+        self._animation = None
+        self._frame_index = 0
+        self._paused = False
+        self._rotation = 0
+        self._rgba = [255, 255, 255, 255]
+        self._scale = 1.0
+        self._scale_x = 1.0
+        self._scale_y = 1.0
+        self._visible = True
+        self._vertex_list = None
+        self.group_class = SpriteGroup
+
+        self._position = (x, y, z)
         self._img = img
 
         if isinstance(img, image.Animation):
@@ -311,12 +315,16 @@ class Sprite(event.EventDispatcher):
         self._subpixel = subpixel
 
         self._create_vertex_list()
+        self._create_vertex_setters()
+    
+    def _create_vertex_setters(self):
+        self._position_setter = self._vertex_list.get_setter('position')
 
     def _create_vertex_list(self):
         texture = self._texture
         self._vertex_list = self.program.vertex_list(
             1, GL_POINTS, self._batch, self._group,
-            position=('f', (self._x, self._y, self._z)),
+            position=('f', self._position),
             size=('f', (texture.width, texture.height, 1, 1)),
             color=('Bn', self._rgba),
             texture_uv=('f', texture.uv),
@@ -337,6 +345,7 @@ class Sprite(event.EventDispatcher):
                                        self._user_group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
         self._program = program
+        self._create_vertex_setters()
 
     def delete(self):
         """Force immediate removal of the sprite from video memory.
@@ -396,6 +405,8 @@ class Sprite(event.EventDispatcher):
             self._batch = batch
             self._create_vertex_list()
 
+        self._create_vertex_setters()
+
     @property
     def group(self):
         """Parent graphics group.
@@ -417,6 +428,7 @@ class Sprite(event.EventDispatcher):
                                        self._group.program,
                                        group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
+        self._create_vertex_setters()
 
     @property
     def image(self):
@@ -471,12 +483,12 @@ class Sprite(event.EventDispatcher):
             `z` : int
                 Z coordinate of the sprite.
         """
-        return self._x, self._y, self._z
+        return self._position
 
     @position.setter
     def position(self, position):
-        self._x, self._y, self._z = position
-        self._vertex_list.position[:] = position
+        self._position = position
+        self._position_setter(position)
 
     @property
     def x(self):
@@ -484,12 +496,14 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        return self._x
+        return self._position[0]
 
     @x.setter
     def x(self, x):
-        self._x = x
-        self._vertex_list.position[:] = x, self._y, self._z
+        _, y, z = self._position
+        position = x, y, z
+        self._position = position
+        self._position_setter(position)
 
     @property
     def y(self):
@@ -497,12 +511,14 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        return self._y
+        return self._position[1]
 
     @y.setter
     def y(self, y):
-        self._y = y
-        self._vertex_list.position[:] = self._x, y, self._z
+        x, _, z = self._position
+        position = x, y, z
+        self._position = position
+        self._position_setter(position)
 
     @property
     def z(self):
@@ -510,12 +526,14 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        return self._z
+        return self._position[2]
 
     @z.setter
     def z(self, z):
-        self._z = z
-        self._vertex_list.position[:] = self._x, self._y, z
+        x, y, _ = self._position
+        position = x, y, z
+        self._position = position
+        self._position_setter(position)
 
     @property
     def rotation(self):

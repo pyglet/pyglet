@@ -309,5 +309,7 @@ class BufferObjectRegion:
         until the next time the buffer is used, for efficiency).
         """
         buffer = self.buffer
-        buffer._dirty_min = min(buffer._dirty_min, self.start)
-        buffer._dirty_max = max(buffer._dirty_max, self.end)
+        if self.start < buffer._dirty_min:
+            buffer._dirty_min = self.start
+        if self.end > buffer._dirty_max:
+            buffer._dirty_max = self.end
