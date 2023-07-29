@@ -328,7 +328,7 @@ class VertexList:
         count = self.count * attribute_count
         mem_start = start * value_size
         mem_end = mem_start + (count * value_size)
-        return functools.partial(set_attribute_values, attribute, buffer, start, count, mem_start, mem_end)
+        return set_attribute_values(attribute, buffer, start, count, mem_start, mem_end)
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
@@ -357,14 +357,16 @@ class VertexList:
             return
         super().__setattr__(name, value)
 
-def set_attribute_values(attribute, buffer, start, count, byte_start, byte_end, data):
-    # Cannot cache attribute.buffer_array!  It is re-created when
-    # buffer resizes
-    attribute.buffer_array[start:start + count] = data
-    if byte_start < buffer._dirty_min:
-        buffer._dirty_min = byte_start
-    if byte_end > buffer._dirty_max:
-        buffer._dirty_max = byte_end
+def set_attribute_values(attribute, buffer, start, count, byte_start, byte_end):
+    def do_it(data):
+        # Cannot cache attribute.buffer_array!  It is re-created when
+        # buffer resizes
+        attribute.buffer_array[start:start + count] = data
+        if byte_start < buffer._dirty_min:
+            buffer._dirty_min = byte_start
+        if byte_end > buffer._dirty_max:
+            buffer._dirty_max = byte_end
+    return do_it
 
 
 class IndexedVertexDomain(VertexDomain):
