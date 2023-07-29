@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.8'
+version = '2.0.9'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -337,6 +337,7 @@ class _ModuleProxy:
 if TYPE_CHECKING:
     from . import app
     from . import clock
+    from . import customtypes
     from . import display
     from . import event
     from . import font
@@ -357,6 +358,7 @@ if TYPE_CHECKING:
 else:
     app = _ModuleProxy('app')
     clock = _ModuleProxy('clock')
+    customtypes = _ModuleProxy('customtypes')
     display = _ModuleProxy('display')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')

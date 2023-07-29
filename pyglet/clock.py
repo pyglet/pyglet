@@ -5,8 +5,8 @@ to run periodically, or for one-shot future execution. pyglet's default
 event loop (:py:func:`~pyglet.app.run`) keeps an internal instance of
 a :py:class:`~pyglet.clock.Clock`, which is ticked automatically.
 
-..note:: Some internal modules will schedule items on the clock. If you
-         are using a custom event loop, always remember to `tick` the clock!
+.. note:: Some internal modules will schedule items on the clock. If you
+          are using a custom event loop, always remember to `tick` the clock!
 
 Scheduling
 ==========
@@ -101,10 +101,7 @@ class _ScheduledIntervalItem:
 
 
 class Clock:
-    """Class for calculating and limiting framerate.
 
-    It is also used for calling scheduled functions.
-    """
     # List of functions to call every tick.
     _schedule_items = None
 
@@ -136,24 +133,19 @@ class Clock:
         self._current_interval_item = None
 
     @staticmethod
-    def sleep(microseconds):
+    def sleep(microseconds: float):
         _time.sleep(microseconds * 1e-6)
 
-    def update_time(self):
+    def update_time(self) -> float:
         """Get the elapsed time since the last call to `update_time`.
 
         This updates the clock's internal measure of time and returns
-        the difference since the last update (or since the clock was created).
-
-        .. versionadded:: 1.2
-
-        :rtype: float
-        :return: The number of seconds since the last `update_time`, or 0
-                 if this was the first time it was called.
+        the difference (in seconds) since the last time it was called.
+        The first call of this method always returns 0.
         """
         ts = self.time()
         if self.last_ts is None:
-            delta_t = 0
+            delta_t = 0.0
         else:
             delta_t = ts - self.last_ts
             self.times.appendleft(delta_t)
@@ -164,8 +156,10 @@ class Clock:
 
         return delta_t
 
-    def call_scheduled_functions(self, dt):
+    def call_scheduled_functions(self, dt: float) -> bool:
         """Call scheduled functions that elapsed on the last `update_time`.
+
+        Returns True if any functions were called, otherwise False.
 
         .. versionadded:: 1.2
 
@@ -174,9 +168,6 @@ class Clock:
                 The elapsed time since the last update to pass to each
                 scheduled function.  This is *not* used to calculate which
                 functions have elapsed.
-
-        :rtype: bool
-        :return: True if any functions were called, otherwise False.
         """
         now = self.last_ts
         result = False  # flag indicates if any function was called
@@ -257,10 +248,13 @@ class Clock:
 
         return True
 
-    def tick(self, poll=False):
+    def tick(self, poll=False) -> float:
         """Signify that one frame has passed.
 
-        This will call any scheduled functions that have elapsed.
+        This will call any scheduled functions that have elapsed,
+        and returns the number of seconds since the last time this
+        method has been called. The first time this method is called,
+        0 is returned.
 
         :Parameters:
             `poll` : bool
@@ -268,12 +262,6 @@ class Clock:
                 but will not sleep or busy-wait for any reason.  Recommended
                 for advanced applications managing their own sleep timers
                 only.
-
-                Since pyglet 1.1.
-
-        :rtype: float
-        :return: The number of seconds since the last "tick", or 0 if this was
-            the first frame.
         """
         if not poll and self._force_sleep:
             self.sleep(0)
@@ -282,7 +270,7 @@ class Clock:
         self.call_scheduled_functions(delta_t)
         return delta_t
 
-    def get_sleep_time(self, sleep_idle):
+    def get_sleep_time(self, sleep_idle: bool):
         """Get the time until the next item is scheduled.
 
         Applications can choose to continue receiving updates at the
@@ -316,29 +304,23 @@ class Clock:
 
         return None
 
-    def get_frequency(self):
+    def get_frequency(self) -> float:
         """Get the average clock update frequency of recent history.
 
         The result is the average of a sliding window of the last "n" updates,
         where "n" is some number designed to cover approximately 1 second.
         This is **not** the Window redraw rate.
-
-        :rtype: float
-        :return: The measured updates per second.
         """
         if not self.cumulative_time:
             return 0
         return len(self.times) / self.cumulative_time
 
-    def _get_nearest_ts(self):
+    def _get_nearest_ts(self) -> float:
         """Get the nearest timestamp.
 
         Schedule from now, unless now is sufficiently close to last_ts, in
         which case use last_ts.  This clusters together scheduled items that
-        probably want to be scheduled together.  The old (pre 1.1.1)
-        behaviour was to always use self.last_ts, and not look at ts.  The
-        new behaviour is needed because clock ticks can now be quite
-        irregular, and span several seconds.
+        probably want to be scheduled together.
         """
         last_ts = self.last_ts or self.next_ts
         ts = self.time()
@@ -402,19 +384,25 @@ class Clock:
                 return next_ts
 
     def schedule(self, func, *args, **kwargs):
-        """Schedule a function to be called every frame.
+        """Schedule a function to be called every tick.
 
-        The function should have a prototype that includes ``dt`` as the
-        first argument, which gives the elapsed time, in seconds, since the
-        last clock tick.  Any additional arguments given to this function
-        are passed on to the callback::
+        The scheduled function should have a prototype that includes ``dt``
+        as the first argument, which gives the elapsed time in seconds since
+        the last clock tick. Any additional args or kwargs given to this
+        method are passed on to the callback::
 
             def callback(dt, *args, **kwargs):
                 pass
 
         :Parameters:
             `func` : callable
-                The function to call each frame.
+                The function to call each tick.
+
+        .. note:: Functions scheduled using this method will be called
+                  every tick by the default pyglet event loop, which can
+                  lead to high CPU usage. It is usually better to use
+                  :py:meth:`~pyglet.clock.schedule_interval` unless
+                  this is desired.
         """
         item = _ScheduledItem(func, args, kwargs)
         self._schedule_items.append(item)
@@ -470,12 +458,12 @@ class Clock:
                 The number of seconds for which the function is scheduled.
 
         """
-        # NOTE: allow to schedule the unschedule function by taking the dt argument
-        def unschedule(dt: float, func: Callable) -> None:
-            self.unschedule(func)
+        # NOTE: unschedule wrapper that takes `dt` argument
+        def _unschedule(dt: float, _func: Callable) -> None:
+            self.unschedule(_func)
 
         self.schedule_interval(func, interval, *args, **kwargs)
-        self.schedule_once(unschedule, duration, func)
+        self.schedule_once(_unschedule, duration, func)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every ``interval`` seconds.
@@ -561,101 +549,44 @@ def get_default():
 
 
 def tick(poll: bool = False) -> float:
-    """Signify that one frame has passed on the default clock.
-
-    This will call any scheduled functions that have elapsed,
-    and return the elapsed seconds since the last tick. The
-    return value will be 0.0 if this is the first tick.
-
-    :Parameters:
-        `poll` : bool
-            If True, the function will call any scheduled functions
-            but will not sleep or busy-wait for any reason.  Recommended
-            for advanced applications managing their own sleep timers
-            only.
-
-            Since pyglet 1.1.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.tick`"""
     return _default.tick(poll)
 
 
 def get_sleep_time(sleep_idle: bool) -> float:
-    """Get the time until the next item is scheduled on the default clock.
-
-    Returns the time until the next scheduled event in seconds, or
-    ``None`` if there is no event scheduled.
-
-    See `Clock.get_sleep_time` for details.
-
-    :Parameters:
-        `sleep_idle` : bool
-            If True, the application intends to sleep through its idle
-            time; otherwise it will continue ticking at the maximum
-            frame rate allowed.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.get_sleep_time`"""
     return _default.get_sleep_time(sleep_idle)
 
 
 def get_frequency() -> float:
-    """Get the average clock update frequency.
-
-    The result is the sliding average of the last "n" updates,
-    where "n" is some number designed to cover approximately 1
-    second. This is the internal clock update rate, **not** the
-    Window redraw rate. Platform events, such as moving the
-    mouse rapidly, will cause the clock to refresh more often.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.get_frequency`"""
     return _default.get_frequency()
 
 
 def schedule(func: Callable, *args, **kwargs) -> None:
-    """Schedule 'func' to be called every frame on the default clock.
-
-    The arguments passed to func are ``dt``, followed by any ``*args`` and
-    ``**kwargs`` given here.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule`"""
     _default.schedule(func, *args, **kwargs)
 
 
 def schedule_interval(func: Callable, interval: float, *args, **kwargs) -> None:
-    """Schedule ``func`` on the default clock every ``interval`` seconds.
-
-    The arguments passed to ``func`` are ``dt`` (time since last function
-    call), followed by any ``*args`` and ``**kwargs`` given here.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval`"""
     _default.schedule_interval(func, interval, *args, **kwargs)
+
+def schedule_interval_for_duration(func: Callable, interval: float, duration: float, *args, **kwargs) -> None:
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_for_duration`"""
+    _default.schedule_interval_for_duration(func, interval, duration, *args, **kwargs)
 
 
 def schedule_interval_soft(func: Callable, interval: float, *args, **kwargs) -> None:
-    """Schedule ``func`` on the default clock every interval seconds.
-
-    The clock will move the interval out of phase with other scheduled
-    functions in order to distribute CPU load more evenly.
-
-    The arguments passed to ``func`` are ``dt`` (time since last function
-    call), followed by any ``*args`` and ``**kwargs`` given here.
-
-    :see: `Clock.schedule_interval_soft`
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_soft`"""
     _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 
 def schedule_once(func: Callable, delay: float, *args, **kwargs) -> None:
-    """Schedule ``func`` to be called once after ``delay`` seconds.
-
-    This function uses the default clock. ``delay`` can be a float. The
-    arguments passed to ``func`` are ``dt`` (time since last function call),
-    followed by any ``*args`` and ``**kwargs`` given here.
-
-    If no default clock is set, the func is queued and will be scheduled
-    on the default clock as soon as it is created.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_once`"""
     _default.schedule_once(func, delay, *args, **kwargs)
 
 
 def unschedule(func: Callable) -> None:
-    """Remove ``func`` from the default clock's schedule.
-
-    No error is raised if the ``func`` was never scheduled.
-    """
+    """:see: :py:meth:`~pyglet.clock.Clock.unschedule`"""
     _default.unschedule(func)

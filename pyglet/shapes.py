@@ -526,7 +526,7 @@ class Arc(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * (self._segments + 1) * 4
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -658,7 +658,7 @@ class BezierCurve(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._segments * 4
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -761,7 +761,7 @@ class Circle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._segments * 6
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -857,7 +857,7 @@ class Ellipse(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._num_verts * 6
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -988,7 +988,7 @@ class Sector(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0,) * self._segments * 6
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -1113,11 +1113,11 @@ class Line(ShapeBase):
 
     def __contains__(self, point):
         assert len(point) == 2
-        vec_AB = Vec2(self._x2 - self._x, self._y2 - self._y)
-        vec_BA = Vec2(self._x - self._x2, self._y - self._y2)
-        vec_AP = Vec2(point[0] - self._x - self._anchor_x, point[1] - self._y + self._anchor_y)
-        vec_BP = Vec2(point[0] - self._x2 - self._anchor_x, point[1] - self._y2 + self._anchor_y)
-        if vec_AB.dot(vec_AP) * vec_BA.dot(vec_BP) < 0:
+        vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
+        vec_ba = Vec2(self._x - self._x2, self._y - self._y2)
+        vec_ap = Vec2(point[0] - self._x - self._anchor_x, point[1] - self._y + self._anchor_y)
+        vec_bp = Vec2(point[0] - self._x2 - self._anchor_x, point[1] - self._y2 + self._anchor_y)
+        if vec_ab.dot(vec_ap) * vec_ba.dot(vec_bp) < 0:
             return False
 
         a, b = point[0] + self._anchor_x, point[1] - self._anchor_y
@@ -1136,7 +1136,7 @@ class Line(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = self._anchor_y - self._width / 2
@@ -1156,6 +1156,15 @@ class Line(ShapeBase):
             dy = x1 * sr + y2 * cr
 
             self._vertex_list.position[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, width):
+        self._width = width
+        self._update_vertices()
 
     @property
     def x2(self):
@@ -1241,7 +1250,7 @@ class Rectangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1317,7 +1326,7 @@ class BorderedRectangle(ShapeBase):
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
             `border_color` : (int, int, int, int)
-                The RGB or RGBA fill color of the rectangle, specified
+                The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
 
@@ -1385,7 +1394,7 @@ class BorderedRectangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
         else:
             bx1 = -self._anchor_x
             by1 = -self._anchor_y
@@ -1399,6 +1408,19 @@ class BorderedRectangle(ShapeBase):
 
             self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
                                              bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+
+    @property
+    def border(self):
+        """The border width of the rectangle.
+
+        :return: float
+        """
+        return self._border
+
+    @border.setter
+    def border(self, width):
+        self._border = width
+        self._update_vertices()
 
     @property
     def width(self):
@@ -1564,7 +1586,7 @@ class Triangle(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1692,7 +1714,7 @@ class Star(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_spikes * 6
+            vertices = (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -1769,7 +1791,7 @@ class Polygon(ShapeBase):
         :Parameters:
             `coordinates` : List[[int, int]]
                 The coordinates for each point in the polygon.
-            `color` : (int, int, int)
+            `color` : (int, int, int, int)
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
@@ -1807,7 +1829,7 @@ class Polygon(ShapeBase):
 
     def _update_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = tuple([0] * ((len(self._coordinates) - 2) * 6))
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
         else:
             # Adjust all coordinates by the anchor.
             trans_x, trans_y = self._coordinates[0]

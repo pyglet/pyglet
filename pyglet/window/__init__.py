@@ -685,7 +685,16 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def draw(self, dt):
+    def draw(self, dt: float):
+        """Redraw the Window contents.
+
+        This method will first call the :py:meth:`~pyglet.window.Window.`switch_to`
+        method to make the GL context current. It then dispatches the
+        :py:meth:`~pyglet.window.Window.on_draw` and
+        :py:meth:`~pyglet.window.Window.on_refresh`
+        events. Finally, it calls the :py:meth:`~pyglet.window.Window.flip`
+        method to swap the front and back OpenGL buffers.
+        """
         self.switch_to()
         self.dispatch_event('on_draw')
         self.dispatch_event('on_refresh', dt)
@@ -1444,15 +1453,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """
 
         def on_draw(self):
-            """The window contents must be redrawn.
+            """The window contents should be redrawn.
 
-            This event is dispatched by the :py:meth:`~pyglet.window.Window.draw`
-            method, which will generally be scheduled on the clock at a
-            specific interval.
-
-            The window will already have the GL context, so there is no
-            need to call `switch_to`.  The window's `flip` method will
-            be called after this event, so your event handler should not.
+            The `EventLoop` will dispatch this event when the `draw`
+            method has been called. The window will already have the
+            GL context, so there is no need to call `switch_to`. The window's
+            `flip` method will be called immediately after this event,
+            so your event handler should not.
 
             You should make no assumptions about the window contents when
             this event is triggered; a resize or expose event may have
@@ -1632,11 +1639,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """
 
         def on_mouse_leave(self, x, y):
-            """The mouse was moved outside of the window.
+            """The mouse was moved outside the window.
 
             This event will not be triggered if the mouse is currently being
             dragged.  Note that the coordinates of the mouse pointer will be
-            outside of the window rectangle.
+            outside the window rectangle.
 
             :Parameters:
                 `x` : int
@@ -1658,6 +1665,24 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     Distance from the top edge of the screen to the top edge of
                     the window.  Note that this is one of few methods in pyglet
                     which use a Y-down coordinate system.
+
+            :event:
+            """
+
+        def on_refresh(self, dt):
+            """The window contents should be redrawn.
+
+            The `EventLoop` will dispatch this event when the `draw`
+            method has been called. The window will already have the
+            GL context, so there is no need to call `switch_to`. The window's
+            `flip` method will be called immediately after this event, so your
+            event handler should not.
+
+            You should make no assumptions about the window contents when
+            this event is triggered; a resize or expose event may have
+            invalidated the framebuffer since the last time it was drawn.
+
+            .. versionadded:: 2.0
 
             :event:
             """
