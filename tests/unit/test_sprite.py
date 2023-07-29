@@ -62,6 +62,33 @@ def scale_y(request):
     return request.param
 
 
+def test_color_initially_rgba_white(sprite):
+    assert sprite.color == (255, 255, 255, 255)
+
+
+def test_opacity_initially_255(sprite):
+    assert sprite.opacity == 255
+
+def test_color_changes_opacity_if_set_to_rgba(sprite, new_rgba_color):
+    sprite.color = new_rgba_color
+    assert sprite.opacity == new_rgba_color[3]
+
+
+def test_color_leaves_opacity_unchanged_if_set_to_rgb(sprite, new_rgb_color):
+    sprite.color = new_rgb_color
+    assert sprite.opacity == 255
+
+
+def test_color_changes_rgb_channels(sprite, new_rgb_or_rgba_color):
+    sprite.color = new_rgb_or_rgba_color
+    assert sprite.color[:3] == new_rgb_or_rgba_color[:3]
+
+
+def test_opacity_setter_changes_opacity_channel_in_color(sprite, new_opacity_set_opacity_alone):
+    sprite.opacity = new_opacity_set_opacity_alone
+    assert sprite.color[3] == new_opacity_set_opacity_alone
+
+
 def test_update_sets_passed_positions(sprite, x, y, z):
 
     sprite.update(x=x, y=y, z=z)
