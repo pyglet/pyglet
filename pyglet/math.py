@@ -9,9 +9,9 @@ for creating orthographic and perspective projection matrixes.
 Matrices behave just like they do in GLSL: they are specified in column-major
 order and multiply on the left of vectors, which are treated as columns.
 
-:note: For performance, Matrixes subclass the `tuple` type. They
-    are therefore immutable - all operations return a new object;
-    the object is not updated in-place.
+.. note:: For performance reasons, Matrix types subclass `tuple`. They are
+          therefore immutable. All operations return a new object; the object
+          is not updated in-place.
 """
 
 from __future__ import annotations
@@ -719,29 +719,23 @@ class Mat3(tuple):
 
 
 class Mat4(tuple):
-    """A 4x4 Matrix class
-
-    `Mat4` is an immutable 4x4 Matrix, including most common
-    operators. Matrix multiplication must be performed using
-    the "@" operator.
-    Class methods are available for creating orthogonal
-    and perspective projections matrixes.
-    """
 
     def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
                                                  0.0, 1.0, 0.0, 0.0,
                                                  0.0, 0.0, 1.0, 0.0,
                                                  0.0, 0.0, 0.0, 1.0,)) -> Mat4:
-        """Create a 4x4 Matrix
+        """Create a 4x4 Matrix.
+
+        `Mat4` is an immutable 4x4 Matrix, which includs most common
+        operators. This includes class methods for creating orthogonal
+        and perspective projection matrixes, to be used by OpenGL.
 
         A Matrix can be created with a list or tuple of 16 values.
         If no values are provided, an "identity matrix" will be created
         (1.0 on the main diagonal). Matrix objects are immutable, so
         all operations return a new Mat4 object.
 
-        :Parameters:
-            `values` : tuple of float or int
-                A tuple or list containing 16 floats or ints.
+        .. note:: Matrix multiplication is performed using the "@" operator.
         """
 
         new = super().__new__(Mat4, values)
@@ -749,19 +743,12 @@ class Mat4(tuple):
         return new
 
     @classmethod
-    def orthogonal_projection(
-        cls: type[Mat4T],
-        left: float,
-        right: float,
-        bottom: float,
-        top: float,
-        z_near: float,
-        z_far: float
-    ) -> Mat4T:
+    def orthogonal_projection(cls: type[Mat4T], left: float, right: float, bottom: float, top: float, z_near: float, z_far: float) -> Mat4T:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
 
-        This matrix doesn't actually perform the projection; it transforms the
-        space so that OpenGL's vertex processing performs it.
+        Given left, right, bottom, top values, and near/far z planes,
+        create a 4x4 Projection Matrix. This is useful for setting
+        :py:attr:`~pyglet.window.Window.projection`.
         """
         width = right - left
         height = top - bottom
@@ -781,24 +768,12 @@ class Mat4(tuple):
                     tx, ty, tz, 1.0))
 
     @classmethod
-    def perspective_projection(
-        cls: type[Mat4T],
-        aspect: float,
-        z_near: float,
-        z_far: float,
-        fov: float = 60
-    ) -> Mat4T:
-        """
-        Create a Mat4 perspective projection matrix for use with OpenGL.
+    def perspective_projection(cls: type[Mat4T], aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4T:
+        """Create a Mat4 perspective projection matrix for use with OpenGL.
 
-        This matrix doesn't actually perform the projection; it transforms the
-        space so that OpenGL's vertex processing performs it.
-
-        :Parameters:
-            `aspect` : The aspect ratio as a `float`
-            `z_near` : The near plane as a `float`
-            `z_far` : The far plane as a `float`
-            `fov` : Field of view in degrees as a `float`
+        Given a desired aspect ratio, near/far planes, and fov (field of view),
+        create a 4x4 Projection Matrix. This is useful for setting
+        :py:attr:`~pyglet.window.Window.projection`.
         """
         xy_max = z_near * _math.tan(fov * _math.pi / 360)
         y_min = -xy_max

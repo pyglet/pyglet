@@ -101,7 +101,7 @@ OpenAL
 OpenAL is included with Mac OS X. Windows users can download a generic driver
 from `openal.org`_, or from their sound device's manufacturer. Most Linux
 distributions will have OpenAL available in the repositories for download.
-For example, Ubuntu users can ``apt install libopenal1``.
+For example, Arch users can ``pacman -S openal`` and Ubuntu users can ``apt install libopenal1``.
 
 Pulse
 ^^^^^
@@ -118,10 +118,11 @@ audio is required.
 Supported media types
 ---------------------
 
-Windows and Linux both support a limited amount of compressed audio types, without
-the need for FFmpeg. While FFmpeg supports a large array of formats and codecs, it
-may be an unnecessarily large dependency when simple audio playback is needed on
-these operating systems.
+pyglet has included support for loading Wave (.wav) files, which are therefore
+guaranteed to work on all platforms. pyglet will also use various platform libraries
+and frameworks to support a limited amount of compressed audio types, without the need
+for FFmpeg. While FFmpeg supports a large array of formats and codecs, it may be an
+unnecessarily large dependency when only simple audio playback is needed.
 
 These formats are supported natively under the following systems and codecs:
 
@@ -136,20 +137,14 @@ The following are supported on **Windows Vista and above**:
 * ASF
 * SAMI/SMI
 
-The following are supported on **Windows 7 and above**:
+The following are also supported on **Windows 7 and above**:
 
-* 3G2/3GP/3GP2/3GP
 * AAC/ADTS
-* AVI
-* M4A/M4V/MOV/MP4
 
 The following is undocumented but known to work on **Windows 10**:
 
 * FLAC
 
-Please note that any video playback done through WMF is limited in codec
-support and is **not** hardware accelerated. It should only be used for simple
-or small videos. FFmpeg is recommended for all other purposes.
 
 GStreamer
 ^^^^^^^^^
@@ -162,6 +157,22 @@ but will often already be installed along with GStreamer.
 * OGG
 * M4A
 
+
+CoreAudio
+^^^^^^^^^
+Supported on Mac operating systems.
+
+* AAC
+* AC3
+* AIF
+* AU
+* CAF
+* MP3
+* M4A
+* SND
+* SD2
+
+
 PyOgg
 ^^^^^
 Supported on Windows, Linux, and Mac operating systems.
@@ -169,10 +180,10 @@ Supported on Windows, Linux, and Mac operating systems.
 PyOgg is a lightweight Python library that provides Python bindings for Opus, Vorbis,
 and FLAC codecs.
 
-Pyglet now provides a wrapper to support PyOgg. Since not all operating systems
-can decode the same audio formats natively, it can often be a hassle to choose
-an audio format that is truely cross platform with a small footprint. This wrapper
-was created to help with that issue.
+If the PyOgg module is installed in your site packages, pyglet will optionally detect
+and use it. Since not all operating systems can decode the same audio formats natively,
+it can often be a hassle to choose an audio format that is truely cross platform with
+a small footprint. This wrapper was created to help with that issue.
 
 Supports the following formats:
 
@@ -518,22 +529,26 @@ There are several properties that describe the player's current state:
             the end. If set to ``False``, playback will continue to the next
             queued source.
 
-When a player reaches the end of the current source, by default it will move
-immediately to the next queued source. If there are no more sources, playback
-stops until another source is queued. The :class:`~pyglet.media.player.Player`
-has a :py:attr:`~pyglet.media.player.Player.loop` attribute which determines
-the player behaviour when the current source reaches the end. If
-:py:attr:`~pyglet.media.player.Player.loop` is ``False`` (default) the
-:class:`~pyglet.media.player.Player` starts to play the next queued source.
-Otherwise the :class:`~pyglet.media.player.Player` re-plays the current source
-until either :py:attr:`~pyglet.media.player.Player.loop` is set to ``False``
-or :py:meth:`~pyglet.media.Player.next_source` is called.
 
-You can change the :py:attr:`~pyglet.media.player.Player.loop` attribute at
-any time,  but be aware that unless sufficient time is given for the future
-data to be  decoded and buffered there may be a stutter or gap in playback.
-If set well  in advance of the end of the source (say, several seconds), there
-will be no  disruption.
+When a player reaches the end of the current source, an :py:meth:`~pyglet.media.Player.on_eos`
+(on end-of-source) event is dispatched. Players have a default handler for this event,
+which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
+attribute has been set to ``True``), or move to the next queued source immediately.
+When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
+event is dispached, and playback stops until another source is queued.
+
+For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
+at any time, but be aware that unless sufficient time is given for the future
+data to be decoded and buffered there may be a stutter or gap in playback.
+If set well in advance of the end of the source (say, several seconds), there
+will be no disruption.
+
+The end-of-source behavior can be further customized by setting your own event handlers;
+see :ref:`guide_events`. You can either replace the default event handlers directly,
+or add an additional event as described in the reference. For example::
+
+    my_player.on_eos = my_player.pause
+
 
 Gapless playback
 ----------------

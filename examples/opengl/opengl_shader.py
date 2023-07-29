@@ -11,6 +11,9 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()
 
+label = pyglet.text.Label("A minimal shader to display a textured quad.", x=5, y=5, batch=batch)
+
+
 
 @window.event
 def on_draw():

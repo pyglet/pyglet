@@ -232,6 +232,7 @@ class LOGFONT(Structure):
 
 
 class LOGFONTW(Structure):
+    # https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logfontw
     _fields_ = [
         ('lfHeight', LONG),
         ('lfWidth', LONG),

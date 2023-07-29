@@ -165,7 +165,10 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta)):
 
     @property
     def source(self):
-        """Source to play from."""
+        """Source to play from.
+        May be swapped out for one of an equal audio format, but ensure that
+        the player has been paused and cleared beforehand.
+        """
         return self._source
 
     @source.setter

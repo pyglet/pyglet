@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.7'
+version = '2.0.9'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -336,6 +336,7 @@ if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
+    from . import customtypes
     from . import event
     from . import font
     from . import gl
@@ -356,6 +357,7 @@ else:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
+    customtypes = _ModuleProxy('customtypes')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')

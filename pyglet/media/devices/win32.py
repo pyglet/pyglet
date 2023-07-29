@@ -1,3 +1,5 @@
+from typing import List, Optional, Tuple
+
 from pyglet.libs.win32 import com
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
@@ -5,7 +7,7 @@ from pyglet.libs.win32.types import *
 from pyglet.media.devices import base
 from pyglet.util import debug_print
 
-_debug = debug_print('debug_media')
+_debug = debug_print('debug_input')
 
 EDataFlow = UINT
 # Audio rendering stream. Audio data flows from the application to the audio endpoint device, which renders the stream.
@@ -49,7 +51,7 @@ class PROPERTYKEY(ctypes.Structure):
         return "PROPERTYKEY({}, pid={})".format(self.fmtid, self.pid)
 
 
-REFPROPERTYKEY = PROPERTYKEY
+REFPROPERTYKEY = POINTER(PROPERTYKEY)
 
 PKEY_Device_FriendlyName = PROPERTYKEY(
     com.GUID(0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0), 14)
@@ -93,10 +95,20 @@ class IMMNotificationClient(com.IUnknown):
     ]
 
 
+IID_IMMEndpoint = com.GUID(0x1BE09788, 0x6894, 0x4089, 0x85, 0x86, 0x9A, 0x2A, 0x6C, 0x26, 0x5A, 0xC5)
+
+
+class IMMEndpoint(com.pIUnknown):
+    _methods_ = [
+        ('GetDataFlow',
+         com.STDMETHOD(POINTER(EDataFlow))),
+    ]
+
+
 class AudioNotificationCB(com.COMObject):
     _interfaces_ = [IMMNotificationClient]
 
-    def __init__(self, audio_devices):
+    def __init__(self, audio_devices: 'Win32AudioDeviceManager'):
         super().__init__()
         self.audio_devices = audio_devices
         self._lost = False
@@ -105,19 +117,24 @@ class AudioNotificationCB(com.COMObject):
         device = self.audio_devices.get_cached_device(pwstrDeviceId)
 
         old_state = device.state
+
+        pyglet_old_state = Win32AudioDevice.platform_state[old_state]
+        pyglet_new_state = Win32AudioDevice.platform_state[dwNewState]
         assert _debug(
-            "Audio device {} changed state. From state: {} to state: {}".format(device.name, old_state, dwNewState))
+            f"Audio device '{device.name}' changed state. From: {pyglet_old_state} to: {pyglet_new_state}")
 
         device.state = dwNewState
-        self.audio_devices.dispatch_event('on_device_state_changed', device, old_state, dwNewState)
+        self.audio_devices.dispatch_event('on_device_state_changed', device, pyglet_old_state, pyglet_new_state)
 
     def OnDeviceAdded(self, this, pwstrDeviceId):
-        assert _debug("Audio device was added {}".format(pwstrDeviceId))
-        self.audio_devices.dispatch_event('on_device_added', pwstrDeviceId)
+        dev = self.audio_devices.add_device(pwstrDeviceId)
+        assert _debug(f"Audio device was added {pwstrDeviceId}: {dev}")
+        self.audio_devices.dispatch_event('on_device_added', dev)
 
     def OnDeviceRemoved(self, this, pwstrDeviceId):
-        assert _debug("Audio device was removed {}".format(pwstrDeviceId))
-        self.audio_devices.dispatch_event('on_device_removed', pwstrDeviceId)
+        dev = self.audio_devices.remove_device(pwstrDeviceId)
+        assert _debug(f"Audio device was removed {pwstrDeviceId} : {dev}")
+        self.audio_devices.dispatch_event('on_device_removed', dev)
 
     def OnDefaultDeviceChanged(self, this, flow, role, pwstrDeviceId):
         # Only support eConsole role right now
@@ -127,7 +144,10 @@ class AudioNotificationCB(com.COMObject):
             else:
                 device = self.audio_devices.get_cached_device(pwstrDeviceId)
 
-            self.audio_devices.dispatch_event('on_default_changed', device)
+            pyglet_flow = Win32AudioDevice.platform_flow[flow]
+            assert _debug(f"Default device was changed to: {device} ({pyglet_flow})")
+
+            self.audio_devices.dispatch_event('on_default_changed', device, pyglet_flow)
 
     def OnPropertyValueChanged(self, this, pwstrDeviceId, key):
         pass
@@ -171,14 +191,14 @@ class IMMDeviceEnumerator(com.pIUnknown):
 
 
 class Win32AudioDevice(base.AudioDevice):
-    _platform_state = {
+    platform_state = {
         DEVICE_STATE_ACTIVE: base.DeviceState.ACTIVE,
         DEVICE_STATE_DISABLED: base.DeviceState.DISABLED,
         DEVICE_STATE_NOTPRESENT: base.DeviceState.MISSING,
         DEVICE_STATE_UNPLUGGED: base.DeviceState.UNPLUGGED
     }
 
-    _platform_flow = {
+    platform_flow = {
         eRender: base.DeviceFlow.OUTPUT,
         eCapture: base.DeviceFlow.INPUT,
         eAll: base.DeviceFlow.INPUT_OUTPUT
@@ -192,14 +212,42 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
                                byref(self._device_enum))
 
         # Keep all devices cached, and the callback can keep them updated.
-        self.devices = self._query_all_devices()
+        self.devices: List[Win32AudioDevice] = self._query_all_devices()
 
         super().__init__()
 
         self._callback = AudioNotificationCB(self)
         self._device_enum.RegisterEndpointNotificationCallback(self._callback)
 
-    def get_default_output(self):
+    def add_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
+        dev = self.get_device(pwstrDeviceId)
+        self.devices.append(dev)
+        return dev
+
+    def remove_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
+        dev = self.audio_devices.get_cached_device(pwstrDeviceId)
+        self.audio_devices.devices.remove(dev)
+        return dev
+
+    def get_device(self, pwstrDeviceId: str) -> Win32AudioDevice:
+        device = IMMDevice()
+
+        self._device_enum.GetDevice(pwstrDeviceId, byref(device))
+        dev_id, name, desc, dev_state = self.get_device_info(device)
+
+        ep = IMMEndpoint()
+        device.QueryInterface(IID_IMMEndpoint, byref(ep))
+
+        dataflow = EDataFlow()
+        ep.GetDataFlow(byref(dataflow))
+        flow = dataflow.value
+
+        windevice = Win32AudioDevice(dev_id, name, desc, flow, dev_state)
+        ep.Release()
+        device.Release()
+        return windevice
+
+    def get_default_output(self) -> Optional[Win32AudioDevice]:
         """Attempts to retrieve a default audio output for the system. Returns None if no available devices found."""
         try:
             device = IMMDevice()
@@ -207,14 +255,14 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             dev_id, name, desc, dev_state = self.get_device_info(device)
             device.Release()
 
-            pid = self.get_cached_device(dev_id)
-            pid.state = dev_state
-            return pid
-        except OSError:
-            assert _debug("No default audio output was found.")
+            cached_dev = self.get_cached_device(dev_id)
+            cached_dev.state = dev_state
+            return cached_dev
+        except OSError as err:
+            assert _debug("No default audio output was found.", err)
             return None
 
-    def get_default_input(self):
+    def get_default_input(self) -> Optional[Win32AudioDevice]:
         """Attempts to retrieve a default audio input for the system. Returns None if no available devices found."""
         try:
             device = IMMDevice()
@@ -222,37 +270,35 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             dev_id, name, desc, dev_state = self.get_device_info(device)
             device.Release()
 
-            pid = self.get_cached_device(dev_id)
-            pid.state = dev_state
-            return pid
-        except OSError:
-            assert _debug("No default input output was found.")
+            cached_dev = self.get_cached_device(dev_id)
+            cached_dev.state = dev_state
+            return cached_dev
+        except OSError as err:
+            assert _debug("No default input output was found.", err)
             return None
 
-    def get_cached_device(self, dev_id):
+    def get_cached_device(self, dev_id) -> Win32AudioDevice:
         """Gets the cached devices, so we can reduce calls to COM and tell current state vs new states."""
         for device in self.devices:
             if device.id == dev_id:
                 return device
 
-        raise Exception("Attempted to get a device that does not exist.")
+        raise Exception("Attempted to get a device that does not exist.", dev_id)
 
-        # return None
-
-    def get_output_devices(self, state=DEVICE_STATE_ACTIVE):
+    def get_output_devices(self, state=DEVICE_STATE_ACTIVE) -> List[Win32AudioDevice]:
         return [device for device in self.devices if device.state == state and device.flow == eRender]
 
-    def get_input_devices(self, state=DEVICE_STATE_ACTIVE):
+    def get_input_devices(self, state=DEVICE_STATE_ACTIVE) -> List[Win32AudioDevice]:
         return [device for device in self.devices if device.state == state and device.flow == eCapture]
 
-    def get_all_devices(self):
+    def get_all_devices(self) -> List[Win32AudioDevice]:
         return self.devices
 
-    def _query_all_devices(self):
+    def _query_all_devices(self) -> List[Win32AudioDevice]:
         return self.get_devices(flow=eRender, state=DEVICE_STATEMASK_ALL) + self.get_devices(flow=eCapture,
                                                                                              state=DEVICE_STATEMASK_ALL)
 
-    def get_device_info(self, device):
+    def get_device_info(self, device: IMMDevice) -> Tuple[str, str, str, int]:
         """Return the ID, Name, and Description of the Audio Device."""
         store = IPropertyStore()
         device.OpenPropertyStore(STGM_READ, byref(store))
@@ -293,13 +339,13 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
         return devices
 
     @staticmethod
-    def get_pkey_value(store, pkey):
+    def get_pkey_value(store: IPropertyStore, pkey: PROPERTYKEY):
         try:
             propvar = PROPVARIANT()
             store.GetValue(pkey, byref(propvar))
             value = propvar.pwszVal
-            ole32.PropVariantClear(propvar)
-        except Exception as err:
+            ole32.PropVariantClear(byref(propvar))
+        except Exception:
             value = "Unknown"
 
         return value

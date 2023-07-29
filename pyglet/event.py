@@ -341,28 +341,28 @@ class EventDispatcher:
     def dispatch_event(self, event_type: str, *args: Any) -> Optional[bool]:
         """Dispatch a single event to the attached handlers.
 
-        The event is propagated to all handlers from from the top of the stack
-        until one returns `EVENT_HANDLED`.  This method should be used only by
-        :py:class:`~pyglet.event.EventDispatcher` implementors; applications should call
-        the ``dispatch_events`` method.
+        The event is propagated to all registered event handlers
+        in the stack, starting and the top and going down. If any
+        registered event handler returns `EVENT_HANDLED`, no further
+        handlers down the stack will receive this event.
 
-        Since pyglet 1.2, the method returns `EVENT_HANDLED` if an event
-        handler returned `EVENT_HANDLED` or `EVENT_UNHANDLED` if all events
-        returned `EVENT_UNHANDLED`.  If no matching event handlers are in the
-        stack, ``False`` is returned.
+        This method has several possible return values.
+        If any event hander has returned `EVENT_HANDLED`, then this
+        method will also return `EVENT_HANDLED`. If not, this method
+        will return `EVENT_UNHANDLED`. If there were no events
+        registered to receive this event, ``False`` is returned.
 
         :Parameters:
             `event_type` : str
-                Name of the event.
-            `args` : Any
-                Arguments to pass to the event handler.
+                The name of the event to dispatch.
+            `args` : sequence
+                Optional arguments to pass to the event handlers.
 
         :rtype: bool or None
-        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler
-            returned `EVENT_HANDLED`; `EVENT_UNHANDLED` if one or more event
-            handlers were invoked but returned only `EVENT_UNHANDLED`;
-            otherwise ``False``.  In pyglet 1.1 and earlier, the return value
-            is always ``None``.
+        :return: `EVENT_HANDLED` if any event handler returned `EVENT_HANDLED`;
+                 `EVENT_UNHANDLED` if one or more event handlers were invoked
+                 without any of them returning `EVENT_HANDLED`;
+                 ``False`` if no event handlers were registered.
 
         """
         assert hasattr(self, 'event_types'), (

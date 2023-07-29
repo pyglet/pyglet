@@ -139,6 +139,7 @@ def parse_obj_file(filename, file=None):
 
         elif values[0] == 'o':
             mesh = Mesh(name=values[1])
+            mesh.material = default_material
             mesh_list.append(mesh)
 
         elif values[0] == 'f':
