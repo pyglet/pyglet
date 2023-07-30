@@ -35,4 +35,5 @@ def on_draw():
     window.clear()
 
 
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()

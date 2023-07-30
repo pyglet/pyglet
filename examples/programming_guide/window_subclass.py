@@ -19,4 +19,5 @@ class HelloWorldWindow(pyglet.window.Window):
 
 if __name__ == '__main__':
     window = HelloWorldWindow()
+    pyglet.clock.schedule(window.draw)
     pyglet.app.run()

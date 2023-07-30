@@ -17,4 +17,5 @@ def on_draw():
     image.blit(0, 0)
 
 
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()

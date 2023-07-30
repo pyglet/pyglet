@@ -21,4 +21,5 @@ def on_draw():
     label.draw()
 
 
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()

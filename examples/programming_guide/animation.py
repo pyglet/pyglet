@@ -41,4 +41,9 @@ def on_draw():
     sprite.draw()
 
 
+# Schedule redraw at the default frame rate
+pyglet.clock.schedule(window.draw)
+
+
+# Start the application
 pyglet.app.run()
