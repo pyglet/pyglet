@@ -43,5 +43,7 @@ for i in range(1000):
 def on_draw():
     window.clear()
     batch.draw()
-    
+
+
+pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()
