@@ -59,4 +59,5 @@ def on_draw():
     d_pad_rect.position = d_pad_x, d_pad_y
 
 
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()

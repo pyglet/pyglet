@@ -108,4 +108,7 @@ controller_manager.on_disconnect = on_disconnect
 if controllers := controller_manager.get_controllers():
     on_connect(controllers[0])
 
+
+# Set redraw to occur at the default frame rate & run the application
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()
