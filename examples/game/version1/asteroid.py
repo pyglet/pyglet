@@ -29,5 +29,8 @@ def on_draw():
 
 
 if __name__ == "__main__":
+    # Schedule redraw at the default frame rate
+    pyglet.clock.schedule(game_window.draw)
+
     # Tell pyglet to do its thing
     pyglet.app.run()
