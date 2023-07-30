@@ -126,4 +126,5 @@ if __name__ == '__main__':
     font_names.sort()
     window = Window(1024, 600)
     window.on_text_motion(None)
+    pyglet.clock.schedule_interval(window.draw, 1 / 60)
     pyglet.app.run()
