@@ -20,4 +20,5 @@ def on_draw():
     batch.draw()
 
 
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()

@@ -95,7 +95,12 @@ def on_draw():
 rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
 rectangle.anchor_position = 50, 50
 
-# Schedule the update function at 60fps
+
+# Schedule the update & redraw functions at 60fps
 pyglet.clock.schedule_interval(update, 1/60)
+pyglet.clock.schedule_interval(window.draw, 1/60)
+
+
+# Start the example
 pyglet.app.run()
 
