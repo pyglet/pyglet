@@ -50,4 +50,5 @@ class MyWindow(pyglet.window.Window):
 
 if __name__ == '__main__':
     window = MyWindow()
+    pyglet.clock.schedule(window.draw)
     pyglet.app.run()

@@ -16,4 +16,6 @@ def on_draw():
 win_event_logger = pyglet.window.event.WindowEventLogger()
 window.push_handlers(win_event_logger)
 
+
+pyglet.clock.schedule(window.draw)
 pyglet.app.run()
