@@ -51,6 +51,8 @@ class Keyboard:
             self.instructions.draw()
             self.current_note.draw()
 
+        pyglet.clock.schedule(self.window.draw)
+
     def play_note(self, frequency, length=0.6):
         if frequency in self.note_cache:
             note_wave = self.note_cache[frequency]

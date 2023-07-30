@@ -370,6 +370,7 @@ def main(target, dbg_file, debug):
     window.gui_update_source()
     window.set_visible(True)
     window.set_default_video_size()
+    pyglet.clock.schedule(window.draw)
 
     # this is an async call
     player.play()
