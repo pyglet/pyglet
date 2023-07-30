@@ -1,49 +1,65 @@
-from typing import Dict, Optional
+from typing import Callable, Optional
 
 import pyglet
 from pyglet.font import base
 
 
+class UserDefinedFontException(Exception):
+    pass
+
+
 class UserGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font: 'UserDefinedFont'):
         self._font = font
-        self._font.glyphs[self._font.default_char] = self.render(self._font.default_char)
+        self._font.glyphs[self._font._default_char] = self.render(
+            self._font._default_char)
         super().__init__(font)
 
     def render(self, text: str):
-        image_data = self._font.mappings[text]
+        image_data = self._font.search_texture(text, size=self._font.size, bold=self._font.bold,
+                                               italic=self._font.italic, stretch=self._font.stretch)
         glyph = self._font.create_glyph(image_data)
         glyph.set_bearings(-self._font.descent, 0, image_data.width)
         return glyph
 
 
 class UserDefinedFont(base.Font):
-    """A basic UserDefinedFont, it takes a mappings of ImageData """
+    """A basic UserDefinedFont, it takes a function search_texture to
+    get ImageData of a character.
+    """
     glyph_renderer_class = UserGlyphRenderer
 
-    def __init__(self, mappings: Dict[str, pyglet.image.ImageData], default_char: str, name: str, ascent: float,
-                 descent: float, size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
-                 dpi: int = None,
-                 locale: Optional[str] = None):
+    def __init__(self, default_char: str, name: str, ascent: float, descent: float,
+                 size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
+                 dpi: int = None, locale: Optional[str] = None,
+                 search_texture: Callable[..., Optional[pyglet.image.ImageData]] = None):
+        """Create a custom font.
+
+        The search_texture function should be defined as::
+
+            def search_texture(char, size, bold, italic, stretch, dpi):
+                ...
+        """
         super().__init__()
         self._name = name
-        self.mappings: Dict[str, pyglet.image.ImageData] = mappings
+        self.search_texture = search_texture
+        if self.search_texture is None:
+            raise UserDefinedFontException(
+                "A search_texture function must be provided.")
 
-        if default_char not in self.mappings:
-            raise Exception(f"Default character: '{default_char}' must exist within your mappings.")
+        self._default_char = default_char
+        if self.search_texture(default_char, size=size, bold=bold, italic=italic, stretch=stretch, dpi=dpi) is None:
+            raise UserDefinedFontException(
+                f"The search_texture function must return an ImageData for default character '{default_char}'.")
 
         if ascent is None or descent is None:
-            image = list(mappings.values())[0]
-
+            image = self.search_texture(default_char)
             if ascent is None:
                 ascent = image.height
-
             if descent is None:
                 descent = 0
-
         self.ascent = ascent
         self.descent = descent
-        self.default_char = default_char
 
         self.bold = bold
         self.italic = italic
@@ -78,8 +94,8 @@ class UserDefinedFont(base.Font):
             if c not in self.glyphs:
                 if not glyph_renderer:
                     glyph_renderer = self.glyph_renderer_class(self)
-                if c not in self.mappings:
-                    c = self.default_char
+                if self.search_texture(c) is None:
+                    c = self._default_char
                 else:
                     self.glyphs[c] = glyph_renderer.render(c)
             glyphs.append(self.glyphs[c])
