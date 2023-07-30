@@ -46,4 +46,5 @@ if __name__ == '__main__':
     window.height = img.height
     window.set_visible()
 
+    pyglet.clock.schedule(window.draw)
     pyglet.app.run()
