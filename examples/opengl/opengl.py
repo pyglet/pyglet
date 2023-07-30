@@ -123,4 +123,5 @@ shader = pyglet.model.get_default_shader()
 torus_model = create_torus(1.0, 0.3, 50, 30, shader, batch)
 
 pyglet.clock.schedule(update)
+pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()

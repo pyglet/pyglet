@@ -132,4 +132,5 @@ vertex_list = shader_program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch
 #####################
 # Enter the main loop
 #####################
+pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()
