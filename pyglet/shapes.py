@@ -366,14 +366,22 @@ class ShapeBase(ABC):
 
     @property
     def color(self):
-        """The shape color.
+        """The shape's color as an RGBA tuple.
 
-        This property sets the color of the shape.
+        The color is stored as an RGBA tuple of integers in the
+        following order: '(red, green, blue, alpha)'. Each channel
+        is between 0 (unsaturated) and 255 (saturated).
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        You can set the color with either of the following:
 
-        :type: (int, int, int)
+        1. An RGBA tuple of integers '(red, green, blue, alpha)'
+        2. An RGB tuple of integers '(red, green, blue)'
+
+        In the latter case, the shape's current alpha value will be
+        preserved. Each color component must be in the range 0 (dark)
+        to 255 (saturated).
+
+        :type: (int, int, int, int)
         """
         return self._rgba
 
