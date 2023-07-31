@@ -7,6 +7,7 @@ from PIL.Image import Resampling
 import pyglet
 from pyglet import image, resource
 from pyglet.font import create_font
+from pyglet.font.user.search_texture import UserDefinedSearchTextureFont
 from pyglet.text import Label
 from pyglet.window import Window
 
@@ -60,21 +61,20 @@ def get_texture_ascii(char, size=8, **kwargs):
     return font_image.get_region(x, y, int(w), size).get_image_data()
 
 
-def get_texture_sga(char, size=8, **kwargs):
-    if char not in " " + string.ascii_letters:
-        return None
-    if ("sga", size) not in image_cache:
-        cache = BytesIO()
-        font_sga.save("cache.png", file=cache)
-        image_original = Image.open(cache)
-        image_resized = image_original.resize((16 * size,) * 2, Resampling.NEAREST)
-        cache = BytesIO()
-        image_resized.save(cache, format="png")
-        cache.seek(0)
-        image_cache.setdefault(("sga", size), image.load("cache.png", file=cache))
-    font_image = image_cache[("sga", size)]
-    x, y = ord(char) % 16 * size, size * 16 - (ord(char) // 16 + 1) * size
-    return font_image.get_region(x, y, int(0.75 * size), size).get_image_data()
+def create_font_sga():
+    cache = BytesIO()
+    font_sga.save("cache.png", file=cache)
+    image_original = Image.open(cache)
+    image_resized = image_original.resize((16 * 24,) * 2, Resampling.NEAREST)
+    cache = BytesIO()
+    image_resized.save(cache, format="png")
+    cache.seek(0)
+    font_image = image.load("cache.png", file=cache)
+    mappings = {}
+    for char in " " + string.ascii_letters:
+        x, y = ord(char) % 16 * 24, 24 * 16 - (ord(char) // 16 + 1) * 24
+        mappings[char] = font_image.get_region(x, y, 18, 24).get_image_data()
+    return create_font("sga", default_char=" ", ascent=24, size=24, mappings=mappings)
 
 
 class CreateFontWindow(Window):
@@ -132,17 +132,10 @@ if __name__ == "__main__":
                 default_char=" ",
                 ascent=size,
                 size=size,
-                search_texture=get_texture_ascii,
+                font_class=UserDefinedSearchTextureFont,
+                search_texture=get_texture_ascii
             )
         )
-    fonts.append(
-        create_font(
-            "sga",
-            default_char=" ",
-            ascent=24,
-            size=24,
-            search_texture=get_texture_sga,
-        )
-    )
+    fonts.append(create_font_sga())
     w = CreateFontWindow()
     pyglet.app.run()

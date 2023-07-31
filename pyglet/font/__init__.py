@@ -22,7 +22,7 @@ import weakref
 from typing import Union, BinaryIO, Optional, Iterable
 
 import pyglet
-from pyglet.font.user import UserDefinedFont, UserDefinedFontException
+from pyglet.font.user.mapping import UserDefinedMappingFont
 from pyglet import gl
 
 
@@ -59,7 +59,7 @@ def create_font(name: str, default_char: str, ascent: Optional[float] = None,
                 descent: Optional[float] = None, size: Optional[float] = 12,
                 bold: Optional[bool] = False, italic: Optional[bool] = False,
                 stretch: Optional[bool] = False, dpi: Optional[float] = 96,
-                font_class=UserDefinedFont, **kwargs):
+                font_class=UserDefinedMappingFont, **kwargs):
     """Create a custom font using font_class.
 
     A strong reference needs to be applied to the returned font object,
@@ -81,7 +81,7 @@ def create_font(name: str, default_char: str, ascent: Optional[float] = None,
             A font class defined by user.
         `kwargs` : dict
             Other parameters. For example, the default font_class need a
-            function named search_texture.
+            dict named `mappings`.
 
     The rest of the font parameters are used for font lookups.
 
@@ -101,10 +101,10 @@ def create_font(name: str, default_char: str, ascent: Optional[float] = None,
     # Look for font name in font cache
     descriptor = (name, size, bold, italic, stretch, dpi)
     if descriptor in font_cache:
-        raise UserDefinedFontException(f"A font with parameters {descriptor} has already been created.")
+        raise Exception(f"A font with parameters {descriptor} has already been created.")
 
     if _system_font_class.have_font(name):
-        raise UserDefinedFontException(f"Font name '{name}' already exists within the system fonts.")
+        raise Exception(f"Font name '{name}' already exists within the system fonts.")
 
     # Not in cache, create from scratch
     font = font_class(default_char, name, ascent, descent,
