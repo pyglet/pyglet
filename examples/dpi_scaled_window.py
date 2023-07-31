@@ -41,5 +41,8 @@ def on_scale(scale, dpi):
     print("Window Frame Buffer Size:", window.get_framebuffer_size())
 
 
-pyglet.clock.schedule_interval(window.draw, 1/60)
+# Schedule redraw with the default FPS
+pyglet.clock.schedule(window.draw)
+
+# Run the application
 pyglet.app.run()
