@@ -34,6 +34,8 @@ def on_mouse_press(x, y, button, modifiers):
 def on_draw():
     window.clear()
 
+# Redraw at 60 FPS
+pyglet.clock.schedule_interval(window.draw, 1 / 60)
 
-pyglet.clock.schedule(window.draw)
+# Run the application
 pyglet.app.run()

@@ -51,7 +51,8 @@ class Keyboard:
             self.instructions.draw()
             self.current_note.draw()
 
-        pyglet.clock.schedule(self.window.draw)
+        # Redraw at 60 FPS
+        pyglet.clock.schedule_interval(self.window.draw, 1 / 60)
 
     def play_note(self, frequency, length=0.6):
         if frequency in self.note_cache:

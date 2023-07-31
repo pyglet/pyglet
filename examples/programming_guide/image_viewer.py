@@ -17,5 +17,8 @@ def on_draw():
     image.blit(0, 0)
 
 
-pyglet.clock.schedule(window.draw)
+# Redraw at 60 FPS
+pyglet.clock.schedule_interval(window.draw, 1 / 60)
+
+# Run the application
 pyglet.app.run()

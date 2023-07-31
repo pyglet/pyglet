@@ -16,8 +16,8 @@ def on_draw():
     s1.rotation -= 0.5
     s1.draw()
 
-# Schedule redraw for Window 1 at the default frame rate
-pyglet.clock.schedule(w1.draw)
+# Redraw Window 1 at 60 FPS
+pyglet.clock.schedule_interval(w1.draw, 1 / 60)
 
 
 w2 = pyglet.window.Window(300, 300, caption='Second window', resizable=True)
@@ -32,9 +32,9 @@ def on_draw():
     s2.rotation += 0.5
     s2.draw()
 
-# Schedule redraw for Window 2 at the default frame rate
-pyglet.clock.schedule(w2.draw)
 
+# Redraw Window 2 at 60 FPS
+pyglet.clock.schedule_interval(w2.draw, 1 / 60)
 
 # Run the demo
 pyglet.app.run()
