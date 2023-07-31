@@ -647,7 +647,7 @@ class Sprite(event.EventDispatcher):
     def width(self):
         """Scaled width of the sprite.
 
-        Read-only.  Invariant under rotation.
+        Invariant under rotation.
 
         :type: int
         """
@@ -663,7 +663,7 @@ class Sprite(event.EventDispatcher):
     def height(self):
         """Scaled height of the sprite.
 
-        Read-only.  Invariant under rotation.
+        Invariant under rotation.
 
         :type: int
         """
