@@ -75,7 +75,7 @@ class CreateFontWindow(Window):
     def __init__(self):
         super().__init__(640, 480, "create_font")
         self.label_ascii = Label(
-            "pyglet", font_name="ascii", font_size=24, x=320, y=256, anchor_x="center"
+            "pyglet", font_name="ascii", font_size=16, x=320, y=256, anchor_x="center"
         )
         self.label_sga = Label(
             "A python library for game developing",
@@ -92,7 +92,8 @@ class CreateFontWindow(Window):
 
 
 if __name__ == "__main__":
-    create_font("ascii", default_char=" ", size=24, search_texture=get_texture_ascii)
-    create_font("sga", default_char=" ", size=16, search_texture=get_texture_sga)
+    for size in [16, 24, 32]:
+        create_font("ascii", default_char=" ", size=size, search_texture=get_texture_ascii)
+        create_font("sga", default_char=" ", size=size, search_texture=get_texture_sga)
     w = CreateFontWindow()
     pyglet.app.run()
