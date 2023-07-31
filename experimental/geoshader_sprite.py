@@ -33,7 +33,7 @@ vertex_source = """#version 150
 """
 
 geometry_source = """#version 150
-    // We are taking single points form the vertex shader
+    // We are taking single points from the vertex shader
     // and emitting 4 new vertices creating a quad/sprites
     layout (points) in;
     layout (triangle_strip, max_vertices = 4) out;
@@ -64,6 +64,9 @@ geometry_source = """#version 150
         // Calculate the half size of the sprites for easier calculations
         vec2 hsize = geo_size[0].xy / 2.0;
 
+        // Alias the Z value to save space
+        float z = gl_in[0].gl_Position.z;
+
         // Convert the rotation to radians
         float angle = radians(-geo_rotation[0]);
 
@@ -88,25 +91,25 @@ geometry_source = """#version 150
         // run of a vertex shader, but in geomtry shaders we can do it multiple times!
 
         // Upper left
-        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, hsize.y) * scale + center, 0.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, hsize.y) * scale + center, z, 1.0);
         uv = vec2(tl, tt);
         frag_color = geo_color[0];
         EmitVertex();
 
         // lower left
-        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, -hsize.y) * scale + center, 0.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, -hsize.y) * scale + center, z, 1.0);
         uv = vec2(tl, tb);
         frag_color = geo_color[0];
         EmitVertex();
 
         // upper right
-        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, hsize.y) * scale + center, 0.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, hsize.y) * scale + center, z, 1.0);
         uv = vec2(tr, tt);
         frag_color = geo_color[0];
         EmitVertex();
 
         // lower right
-        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, -hsize.y) * scale + center, 0.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, -hsize.y) * scale + center, z, 1.0);
         uv = vec2(tr, tb);
         frag_color = geo_color[0];
         EmitVertex();
@@ -648,10 +651,13 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        if self._subpixel:
-            return self._texture.width * abs(self._scale_x) * abs(self._scale)
-        else:
-            return int(self._texture.width * abs(self._scale_x) * abs(self._scale))
+        w = self._texture.width * abs(self._scale_x) * abs(self._scale)
+        return w if self._subpixel else int(w)
+
+    @width.setter
+    def width(self, width):
+        self.scale_x = width / (self._texture.width * abs(self._scale))
+
 
     @property
     def height(self):
@@ -661,10 +667,12 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        if self._subpixel:
-            return self._texture.height * abs(self._scale_y) * abs(self._scale)
-        else:
-            return int(self._texture.height * abs(self._scale_y) * abs(self._scale))
+        h = self._texture.height * abs(self._scale_y) * abs(self._scale)
+        return h if self._subpixel else int(h)
+
+    @height.setter
+    def height(self, height):
+        self.scale_y = height / (self._texture.height * abs(self._scale))
 
     @property
     def opacity(self):
