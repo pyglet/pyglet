@@ -72,11 +72,6 @@ window = pyglet.window.Window(960, 540, resizable=True)
 fixed_res = FixedResolution(window, width=320, height=180)
 
 
-def update(dt):
-    global rectangle
-    rectangle.rotation += dt * 10
-
-
 @window.event
 def on_draw():
     window.clear()
@@ -91,14 +86,23 @@ def on_draw():
     # fixed_res.end()
 
 
+# Combine update & drawing to avoid stutter from mismatched update rates
+def update(dt):
+    global rectangle
+    rectangle.rotation += dt * 10
+
+    # This method automatically calls any on_draw method registered
+    # using @window.event, as we did above.
+    window.draw(dt)
+
+
 # Create a simple Rectangle to show the effect
 rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
 rectangle.anchor_position = 50, 50
 
 
-# Schedule the update & redraw functions at 60fps
+# Call the combined update & redraw function at 60 FPS
 pyglet.clock.schedule_interval(update, 1/60)
-pyglet.clock.schedule_interval(window.draw, 1/60)
 
 
 # Start the example
