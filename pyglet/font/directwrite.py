@@ -2072,7 +2072,7 @@ class Win32DirectWriteFont(base.Font):
             if self._font_index is None and self._collection is None:
                 write_font, self._collection = self.find_font_face(name, self._weight, self._style, self._stretch)
 
-        assert self._collection is not None, f"Font: '{name}' not found in loaded or system font collection."
+        assert self._collection is not None, f"Font '{name}' not found in loaded or system font collection."
 
         if self._font_index is not None:
             font_family = IDWriteFontFamily1()

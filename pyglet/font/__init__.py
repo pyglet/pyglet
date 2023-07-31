@@ -19,7 +19,7 @@ by this package.
 import os
 import sys
 import weakref
-from typing import Dict, Union, BinaryIO, Optional, Iterable
+from typing import Union, BinaryIO, Optional, Iterable
 
 import pyglet
 from pyglet.font.user import UserDefinedFont, UserDefinedFontException
@@ -50,12 +50,20 @@ def _get_system_font_class():
     return _font_class
 
 
+if not getattr(sys, 'is_pyglet_doc_run', False):
+    _system_font_class = _get_system_font_class()
+    _user_fonts = []
+
+
 def create_font(name: str, default_char: str, ascent: Optional[float] = None,
                 descent: Optional[float] = None, size: Optional[float] = 12,
                 bold: Optional[bool] = False, italic: Optional[bool] = False,
                 stretch: Optional[bool] = False, dpi: Optional[float] = 96,
                 font_class=UserDefinedFont, **kwargs):
     """Create a custom font using font_class.
+
+    A strong reference needs to be applied to the returned font object,
+    otherwise pyglet may not find the font.
 
     :Parameters:
         `name` : str
@@ -134,6 +142,9 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
          stretch: bool = False, dpi: Optional[float] = None):
     """Load a font for rendering.
 
+    A strong reference needs to be applied to the returned font object,
+    otherwise pyglet may not find the font.
+
     :Parameters:
         `name` : str, or list of str
             Font family, for example, "Times New Roman".  If a list of names
@@ -167,7 +178,8 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
-        shared_object_space.pyglet_font_font_name_match = {}  # Match a tuple to specific name to reduce lookups.
+        # Match a tuple to specific name to reduce lookups.
+        shared_object_space.pyglet_font_font_name_match = {}
 
     font_cache = shared_object_space.pyglet_font_font_cache
     font_hold = shared_object_space.pyglet_font_font_hold
@@ -216,11 +228,6 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
     font_hold.insert(0, font)
 
     return font
-
-
-if not getattr(sys, 'is_pyglet_doc_run', False):
-    _system_font_class = _get_system_font_class()
-    _user_fonts = []
 
 
 def add_file(font: Union[str, BinaryIO]):
