@@ -106,3 +106,8 @@ def new_rgba_color():
 @fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
+
+
+@fixture
+def new_rgb_or_rgba_expected_alpha(new_rgb_or_rgba_color) -> int:
+    return expected_alpha_for_color(new_rgb_or_rgba_color)
