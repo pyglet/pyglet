@@ -40,7 +40,7 @@ def get_dummy_shader_program():
 
 # Unusual, non-default colors test init's color keyword argument
 ORIGINAL_RGB_COLOR = 252, 253, 254
-ORIGINAL_RGBA_COLOR = ORIGINAL_RGB_COLOR + (37,)
+ORIGINAL_RGBA_COLOR = 34, 35 ,36, 37
 
 # Non-default, non-original colors test setters
 NEW_RGB_COLOR = 1, 2, 3
