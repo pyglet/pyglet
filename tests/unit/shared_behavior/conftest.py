@@ -2,21 +2,19 @@ import importlib
 import inspect
 import re
 from dataclasses import dataclass, field
-from functools import lru_cache, partial
+from functools import lru_cache
 from types import ModuleType as Module
-from typing import Callable, Optional, Iterable, Union, Tuple, List, Any
+from typing import Callable, Optional, Iterable, Union, Tuple, List, Any, Mapping, Dict
 
 import pytest
 
 
-# IMPORTANT: You must define an instance_factory_template fixture!
+# IMPORTANT: Fixtures in this file assume a working instance_factory
+# fixture!
 #
-#
-# This fixture needs to return a Tuple[Callable, Tuple[Any, ...]].
-# You can use the helpers in this file to do so.
-#
-# The second value in it needs to contain the positional arguments
-# for the callable.
+# To acheive this, you can do one of two things:
+# 1. Implement a instance_factory_template which returns Tuple[Callable, Dict[str, Any]]
+# 2. Define a local override for the instance_factory fixture
 
 
 # Identify module elements which are likely to return shaders.
@@ -143,7 +141,6 @@ def _get_targets_for_callable(c: Callable) -> List[str]:
     return targets
 
 
-
 @pytest.fixture(autouse=True)
 def monkeypatch_shaders(instance_factory_template, monkeypatch, get_dummy_shader_program):
     """Automatically monkeypatch based on the factory method in the template.
@@ -159,10 +156,48 @@ def monkeypatch_shaders(instance_factory_template, monkeypatch, get_dummy_shader
         monkeypatch.setattr(target, get_dummy_shader_program)
 
 
+def _arg_list_and_dict_from(
+        source: Mapping[str, Any],
+        arg_list: Optional[List] = None,
+        arg_mapping: Mapping[str, Any] = None) -> Tuple[List, Dict]:
+    """Build pure positional and keyword-compatible args from a template
+
+    This is a more flexible yet brittle alternative to functool.partial.
+    It does not performed detailed checking or signature inspection.
+
+    Args:
+         source: Where to pull values from
+         arg_list: a base arg list to build from
+         arg_mapping: a base arg dict to build from
+    Returns:
+        A tuple of new arg_list, arg_dict pairs
+    """
+    arg_list = [] if arg_list is None else [e for e in arg_list]
+    arg_mapping = {} if arg_mapping is None else dict(arg_mapping)
+
+    # Brittle, does not account for out of order specification, unusual
+    # argument requirements, or signature checking.
+    for k, v in source.items():
+        if k.startswith('**'):
+            arg_mapping.update(v)
+        elif k.startswith('*'):
+            arg_list.extend(v)
+        else:
+            arg_mapping[k] = v
+
+    return arg_list, arg_mapping
+
+
 @pytest.fixture
 def instance_factory(instance_factory_template):
-    factory, positional_args = instance_factory_template
-    return partial(factory, *positional_args)
+    factory, default_source = instance_factory_template
+    default_list, default_dict = _arg_list_and_dict_from(default_source)
+
+    def wrapper(**kwargs):
+        arg_list, arg_dict = _arg_list_and_dict_from(kwargs, default_list, default_dict)
+        return factory(*arg_list, **arg_dict)
+
+    return wrapper
 
 
 @pytest.fixture

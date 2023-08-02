@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Any
+from typing import Callable, Tuple, Any, Dict
 
 import pytest
 
@@ -6,25 +6,32 @@ from pyglet.graphics import Batch
 from pyglet.shapes import *
 
 
+# todo: expand this to a general defaults fixture + a filtration tool?
 # The shapes are tested individually since their RGBA handling is
 # inlined for maximum speed instead of encapsulated in their baseclass.
 # A typo might break color functionality in one but not the others.
 @pytest.fixture(scope="module", params=[
-    (Arc, (0, 0, 5)),
-    (Circle, (0, 0, 5)),
+    (Arc, dict(x=0, y=0, radius=5)),
+    (Circle, dict(x=0, y=0, radius=5)),
     # Ellipse's a value below is nonsensical in normal use, but here it
     # makes sure the value is not confused with the RGBA alpha channel
     # internally.
-    (Ellipse, (0, 0, 0, 5)),
-    (Sector, (0, 0, 3)),
-    (Line, (0, 0, 7, 7)),
-    (Rectangle, (0, 0, 20, 20)),
-    (BorderedRectangle, (0, 0, 30, 10)),
-    (Triangle, (0, 0, 2, 2, 5, 5)),
-    (Star, (1, 1, 20, 11, 5)),
-    (Polygon, ((0, 0), (1, 1), (2, 2)))
+    (Ellipse, dict(x=0, y=0, a=0, b=5)),
+    (Sector, dict(x=0, y=0, radius=3)),
+    (Line, dict(x=0, y=0, x2=7, y2=7)),
+    (Rectangle, dict(x=0, y=0, width=20, height=20)),
+    (BorderedRectangle, dict(x=0, y=0, width=30, height=10)),
+    (Triangle, dict(x=0, y=0, x2=2, y2=2, x3=5, y3=5)),
+    (Star, dict(x=0, y=0, inner_radius=20, outer_radius=11, num_spikes=5)),
+    (Polygon, {
+        "*coordinates": (
+                (0, 0),
+                (1, 1),
+                (2, 2)
+        )
+    })
 ])
-def instance_factory_template(request) -> Tuple[Callable, Tuple[Any, ...]]:
+def instance_factory_template(request) -> Tuple[Callable, Dict[str, Any]]:
     return request.param
 
 
