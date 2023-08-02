@@ -1,4 +1,5 @@
-from typing import Tuple
+from functools import lru_cache
+from typing import Tuple, Union
 from unittest import mock
 
 from pytest import fixture
@@ -61,18 +62,20 @@ def original_rgb_or_rgba_color(request):
     return request.param
 
 
-def expected_alpha_for_color(color: Tuple[int, ...]):
-    """
-    Slow but readable color helper with validation.
+@lru_cache
+def expected_alpha_for_color(color: Union[Tuple[int, int, int, int], Tuple[int, int, int]]):
+    """Get the expected alpha for a color.
 
-    This uses more readable logic than the main library and will raise
-    clear ValueErrors as part of validation.
+    This function offers the following benefits during tests:
+
+    1. More readable logic than the streamlined library code
+    2. Raises a clear ValueError when color's length is not 3 or 4
 
     Args:
         color: An RGB or RGBA color
 
     Returns:
-
+        A 0-255 value for the color's expected alpha
     """
     num_channels = len(color)
 
@@ -82,7 +85,7 @@ def expected_alpha_for_color(color: Tuple[int, ...]):
         return 255
 
     raise ValueError(
-        f"Expected color tuple with 3 or 4 elements, but got {color!r}.")
+        f"Expected color tuple with 3 or 4 values, but got {color!r}.")
 
 
 @fixture
