@@ -36,8 +36,12 @@ def get_dummy_shader_program():
 
 
 # Color constants & fixtures for use with Shapes, UI elements, etc.
-ORIGINAL_RGB_COLOR = 253, 254, 255
+
+# Unusual, non-default colors test init's color keyword argument
+ORIGINAL_RGB_COLOR = 252, 253, 254
 ORIGINAL_RGBA_COLOR = ORIGINAL_RGB_COLOR + (37,)
+
+# Non-default, non-original colors test setters
 NEW_RGB_COLOR = 1, 2, 3
 NEW_RGBA_COLOR = 5, 6, 7, 59
 
