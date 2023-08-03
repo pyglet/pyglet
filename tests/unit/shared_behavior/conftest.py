@@ -45,14 +45,14 @@ class PatchTarget:
     """Specify targets for monkeypatching shader getters.
 
     When only the module prefix is defined, anything object located in a
-    module starting with `module_prefix` will have members matching the
+    module starting with `trigger_prefix` will have members matching the
     regex above monkeypatched with the get_dummy_shader_program top-level
     fixture.
 
     If module_targets is defined, the target modules will have members
     matching the regex patched instead.
     """
-    module_prefix: str = field()
+    trigger_prefix: str = field()
     module_targets: Optional[Iterable[str]] = field(default=None)
 
 
@@ -133,7 +133,7 @@ def _get_targets_for_callable(c: Callable) -> List[str]:
     targets = []
 
     for entry in SHADER_PATCH_TARGETS:
-        prefix = entry.module_prefix
+        prefix = entry.trigger_prefix
 
         if parent_module_name.startswith(prefix):
             # Use the prefix module if no module targets were defined
