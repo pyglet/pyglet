@@ -24,7 +24,10 @@ SHADER_GETTER_PATTERN = re.compile(r"^get(_[a-zA-Z0-9]+)*_shader$")
 def is_shader_getter(c: Callable) -> bool:
     """Returns true if an item appears to be a shader getter.
 
-
+    Args:
+       c: A callable to evaluate
+    Returns:
+       Whether an item appears to be a shader getter.
     """
     if not (hasattr(c, "__name__") and SHADER_GETTER_PATTERN.fullmatch(c.__name__)):
         return False
