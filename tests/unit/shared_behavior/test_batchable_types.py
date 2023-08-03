@@ -6,11 +6,11 @@ from pyglet.graphics import Batch
 from pyglet.shapes import *
 
 
-# todo: expand this to a general defaults fixture + a filtration tool?
 # The shapes are tested individually since their RGBA handling is
 # inlined for maximum speed instead of encapsulated in their baseclass.
 # A typo might break color functionality in one but not the others.
-@pytest.fixture(scope="module", params=[
+SHAPES_TEMPLATES = [
+    # Shapes
     (Arc, dict(x=0, y=0, radius=5)),
     (Circle, dict(x=0, y=0, radius=5)),
     # Ellipse's a value below is nonsensical in normal use, but here it
@@ -29,8 +29,11 @@ from pyglet.shapes import *
                 (1, 1),
                 (2, 2)
         )
-    })
-])
+    }),
+]
+
+
+@pytest.fixture(scope="module", params=SHAPES_TEMPLATES)
 def instance_factory_template(request) -> Tuple[Callable, Dict[str, Any]]:
     return request.param
 
