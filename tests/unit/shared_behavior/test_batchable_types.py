@@ -3,39 +3,11 @@ from typing import Callable, Tuple, Any, Dict
 import pytest
 
 from pyglet.graphics import Batch
-from pyglet.shapes import *
 
 
-# The shapes are tested individually since their RGBA handling is
-# inlined for maximum speed instead of encapsulated in their baseclass.
-# A typo might break color functionality in one but not the others.
-SHAPES_TEMPLATES = [
-    # Shapes
-    (Arc, dict(x=0, y=0, radius=5)),
-    (Circle, dict(x=0, y=0, radius=5)),
-    # Ellipse's a value below is nonsensical in normal use, but here it
-    # makes sure the value is not confused with the RGBA alpha channel
-    # internally.
-    (Ellipse, dict(x=0, y=0, a=0, b=5)),
-    (Sector, dict(x=0, y=0, radius=3)),
-    (Line, dict(x=0, y=0, x2=7, y2=7)),
-    (Rectangle, dict(x=0, y=0, width=20, height=20)),
-    (BorderedRectangle, dict(x=0, y=0, width=30, height=10)),
-    (Triangle, dict(x=0, y=0, x2=2, y2=2, x3=5, y3=5)),
-    (Star, dict(x=0, y=0, inner_radius=20, outer_radius=11, num_spikes=5)),
-    (Polygon, {
-        "*coordinates": (
-                (0, 0),
-                (1, 1),
-                (2, 2)
-        )
-    }),
-]
-
-
-@pytest.fixture(scope="module", params=SHAPES_TEMPLATES)
-def instance_factory_template(request) -> Tuple[Callable, Dict[str, Any]]:
-    return request.param
+@pytest.fixture(scope="module")
+def instance_factory_template(shape_templates) -> Tuple[Callable, Dict[str, Any]]:
+    return shape_templates
 
 
 def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_instance, original_rgba_color):

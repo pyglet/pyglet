@@ -8,6 +8,8 @@ from typing import Callable, Optional, Iterable, Union, Tuple, List, Any, Mappin
 
 import pytest
 
+from pyglet.shapes import *
+
 
 # IMPORTANT: Fixtures in this file assume a working instance_factory
 # fixture!
@@ -189,6 +191,38 @@ def _arg_list_and_dict_from(
             arg_mapping[k] = v
 
     return arg_list, arg_mapping
+
+
+# The shapes are tested individually since their RGBA handling is
+# inlined for maximum speed instead of encapsulated in their baseclass.
+# A typo might break color functionality in one but not the others.
+SHAPE_TEMPLATES = [
+    # Shapes
+    (Arc, dict(x=0, y=0, radius=5)),
+    (Circle, dict(x=0, y=0, radius=5)),
+    # Ellipse's a value below is nonsensical in normal use, but here it
+    # makes sure the value is not confused with the RGBA alpha channel
+    # internally.
+    (Ellipse, dict(x=0, y=0, a=0, b=5)),
+    (Sector, dict(x=0, y=0, radius=3)),
+    (Line, dict(x=0, y=0, x2=7, y2=7)),
+    (Rectangle, dict(x=0, y=0, width=20, height=20)),
+    (BorderedRectangle, dict(x=0, y=0, width=30, height=10)),
+    (Triangle, dict(x=0, y=0, x2=2, y2=2, x3=5, y3=5)),
+    (Star, dict(x=0, y=0, inner_radius=20, outer_radius=11, num_spikes=5)),
+    (Polygon, {
+        "*coordinates": (
+                (0, 0),
+                (1, 1),
+                (2, 2)
+        )
+    }),
+]
+
+
+@pytest.fixture(scope="module", params=SHAPE_TEMPLATES)
+def shape_templates(request):
+    return request.param
 
 
 @pytest.fixture
