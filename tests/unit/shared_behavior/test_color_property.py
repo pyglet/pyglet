@@ -8,7 +8,7 @@ def instance_factory_template(shape_templates) -> Tuple[Callable, Dict[str, Any]
     return shape_templates
 
 
-def test_setting_opacity_does_not_change_rgb_channels(rgb_or_rgba_instance, original_rgb_or_rgba_color):
+def test_setting_opacity_preserves_rgb_channels(rgb_or_rgba_instance, original_rgb_or_rgba_color):
     rgb_or_rgba_instance.opacity = 255
     assert rgb_or_rgba_instance.color[:3] == original_rgb_or_rgba_color[:3]
 
@@ -21,7 +21,7 @@ def test_setting_color_sets_rgb_channels(
     assert rgb_or_rgba_instance.color[:3] == new_rgb_or_rgba_color[:3]
 
 
-def test_setting_color_to_rgb_value_does_not_change_opacity(
+def test_setting_color_to_rgb_value_preserves_opacity(
         rgb_or_rgba_instance,
         new_rgb_color,
         original_rgb_or_rgba_expected_alpha
