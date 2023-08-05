@@ -39,5 +39,8 @@ def on_refresh(dt):
     fps.draw()
 
 
+# Set the initial frame rate to 60 FPS
 pyglet.clock.schedule_interval(window.draw, 1/60)
+
+# Start the application
 pyglet.app.run()

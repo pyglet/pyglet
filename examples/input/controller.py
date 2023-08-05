@@ -108,4 +108,9 @@ controller_manager.on_disconnect = on_disconnect
 if controllers := controller_manager.get_controllers():
     on_connect(controllers[0])
 
+
+# Redraw at 60 FPS
+pyglet.clock.schedule_interval(window.draw, 1 / 60)
+
+# Run the application
 pyglet.app.run()

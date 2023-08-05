@@ -156,6 +156,9 @@ if __name__ == "__main__":
         # Update position text label
         position_text.text = repr(round(camera.position))
 
+    # Schedule game state updates & redraw at 60 FPS
+    pyglet.clock.schedule_interval(on_update, 1 / 60)
+    pyglet.clock.schedule_interval(window.draw, 1 / 60)
+
     # Start the demo
-    pyglet.clock.schedule(on_update)
     pyglet.app.run()

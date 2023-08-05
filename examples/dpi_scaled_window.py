@@ -40,4 +40,9 @@ def on_scale(scale, dpi):
     print("Window Pixel Ratio:", window.get_pixel_ratio())
     print("Window Frame Buffer Size:", window.get_framebuffer_size())
 
+
+# Redraw at 60 FPS
+pyglet.clock.schedule_interval(window.draw, 1 / 60)
+
+# Run the application
 pyglet.app.run()
