@@ -107,7 +107,7 @@ def test_update_sets_passed_scales(sprite, scale, scale_x, scale_y):
 def test_update_leaves_none_scales_alone(sprite, scale, scale_x, scale_y):
     o_scale, o_scale_x, o_scale_y = sprite.scale, sprite.scale_x, sprite.scale_y
 
-    sprite.update(x=x, y=y, z=z)
+    sprite.update(scale=scale, scale_x=scale_x, scale_y=scale_y)
 
     if scale is None:
         assert sprite.scale == o_scale
