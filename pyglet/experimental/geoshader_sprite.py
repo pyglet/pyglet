@@ -7,6 +7,7 @@ from pyglet import clock
 from pyglet import event
 from pyglet import graphics
 from pyglet import image
+from pyglet.graphics.vertexdomain import vertex_list_set_attribute_values
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -239,7 +240,7 @@ class Sprite(event.EventDispatcher):
                  '_rgba', '_scale', '_scale_x', '_scale_y', '_visible',
                  '_vertex_list', 'group_class', '_position', '_img', '_texture',
                  '_program', '_user_group', '_group', '_subpixel',
-                 '_position_setter']
+                 '_position_setter_params']
 
 
     def __init__(self,
@@ -318,7 +319,7 @@ class Sprite(event.EventDispatcher):
         self._create_vertex_setters()
     
     def _create_vertex_setters(self):
-        self._position_setter = self._vertex_list.get_setter('position')
+        self._position_setter_params = self._vertex_list.get_setter_params('position')
 
     def _create_vertex_list(self):
         texture = self._texture
@@ -488,7 +489,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, position):
         self._position = position
-        self._position_setter(position)
+        vertex_list_set_attribute_values(self._position_setter_params, position)
 
     @property
     def x(self):
@@ -503,7 +504,7 @@ class Sprite(event.EventDispatcher):
         _, y, z = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        vertex_list_set_attribute_values(self._position_setter_params, position)
 
     @property
     def y(self):
@@ -518,7 +519,7 @@ class Sprite(event.EventDispatcher):
         x, _, z = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        vertex_list_set_attribute_values(self._position_setter_params, position)
 
     @property
     def z(self):
@@ -533,7 +534,7 @@ class Sprite(event.EventDispatcher):
         x, y, _ = self._position
         position = x, y, z
         self._position = position
-        self._position_setter(position)
+        vertex_list_set_attribute_values(self._position_setter_params, position)
 
     @property
     def rotation(self):

@@ -338,13 +338,30 @@ class VertexList:
         self.start = new_start
         self._cache_version = None
 
-    def get_setter(self, name):
+    def get_setter_params(self, name):
         """
-        Returns a function that, when called, sets the values for a given attribute.
+        Returns a tuple of params which can be passed to
+        `vertex_list_set_attribute_values` along with a data tuple to set values
+        for the attribute.
 
-        The setter becomes invalid when the VertexList migrates to a different
+        These params become invalid when the VertexList migrates to a different
         domain, and it's the caller's responsibility to stop using the old setter
         and create a new one.
+
+        This style is un-pythonic and chosen deliberately to optimize performance
+        and memory usage.  Sprites write updated values into their VertexList often,
+        so every ounce of speed helps.
+
+        This style avoids:
+            attribute access on slotted class (slower than tuple unpack even w/python 3.11's new optimizations)
+            extra function calls (python fn calls are slow)
+            method lookup on a class (extra function call & lookup is slower)
+            memory overhead of functools.partial (partials are relatively heavy objects)
+            memory overhead of closures (closures create Cell objects)
+            performance hit for fn calls that mix unpacking with positions, (`foo(*params, value)` is surprisingly slow)
+        
+        Before changing this style, consider if your changes will introduce any of the performance penalties
+        listed above.
         """
 
         attribute = self.domain.attribute_names[name]
@@ -358,22 +375,21 @@ class VertexList:
         count = self.count * attribute_count
         mem_start = start * value_size
         mem_end = mem_start + (count * value_size)
-        return set_attribute_values(attribute, buffer, start, count, mem_start, mem_end)
+        return (attribute, buffer, start, count, mem_start, mem_end)
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
         attribute.set_region(attribute.buffer, self.start, self.count, data)
 
-def set_attribute_values(attribute, buffer, start, count, byte_start, byte_end):
-    def do_it(data):
-        # Cannot cache attribute.buffer_array!  It is re-created when
-        # buffer resizes
-        attribute.buffer_array[start:start + count] = data
-        if byte_start < buffer._dirty_min:
-            buffer._dirty_min = byte_start
-        if byte_end > buffer._dirty_max:
-            buffer._dirty_max = byte_end
-    return do_it
+def vertex_list_set_attribute_values(params, data):
+    attribute, buffer, start, count, byte_start, byte_end = params
+    # Cannot cache attribute.buffer_array!  It is re-created when
+    # buffer resizes
+    attribute.buffer_array[start:start + count] = data
+    if byte_start < buffer._dirty_min:
+        buffer._dirty_min = byte_start
+    if byte_end > buffer._dirty_max:
+        buffer._dirty_max = byte_end
 
 
 class IndexedVertexDomain(VertexDomain):
