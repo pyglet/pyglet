@@ -122,5 +122,9 @@ batch = pyglet.graphics.Batch()
 shader = pyglet.model.get_default_shader()
 torus_model = create_torus(1.0, 0.3, 50, 30, shader, batch)
 
-pyglet.clock.schedule(update)
+# Update & redraw at 60 FPS
+pyglet.clock.schedule_interval(update, 1 / 60)
+pyglet.clock.schedule_interval(window.draw, 1 / 60)
+
+# Run the application
 pyglet.app.run()

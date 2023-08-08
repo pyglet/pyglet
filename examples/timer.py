@@ -56,7 +56,11 @@ def on_draw():
 
 
 timer = Timer()
+
+# Set timer and redraw update rate to 30 FPS
 pyglet.clock.schedule_interval(timer.update, 1/30.0)
 pyglet.clock.schedule_interval(window.draw, 1/30)
+
+# Launch the application
 pyglet.app.run()
 
