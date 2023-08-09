@@ -1,4 +1,5 @@
-from typing import Tuple
+from functools import lru_cache
+from typing import Tuple, Union
 from unittest import mock
 
 from pytest import fixture
@@ -36,8 +37,12 @@ def get_dummy_shader_program():
 
 
 # Color constants & fixtures for use with Shapes, UI elements, etc.
-ORIGINAL_RGB_COLOR = 253, 254, 255
-ORIGINAL_RGBA_COLOR = ORIGINAL_RGB_COLOR + (37,)
+
+# Unusual, non-default colors test init's color keyword argument
+ORIGINAL_RGB_COLOR = 252, 253, 254
+ORIGINAL_RGBA_COLOR = 34, 35 ,36, 37
+
+# Non-default, non-original colors test setters
 NEW_RGB_COLOR = 1, 2, 3
 NEW_RGBA_COLOR = 5, 6, 7, 59
 
@@ -57,18 +62,20 @@ def original_rgb_or_rgba_color(request):
     return request.param
 
 
-def expected_alpha_for_color(color: Tuple[int, ...]):
-    """
-    Slow but readable color helper with validation.
+@lru_cache
+def expected_alpha_for_color(color: Union[Tuple[int, int, int, int], Tuple[int, int, int]]):
+    """Get the expected alpha for a color.
 
-    This uses more readable logic than the main library and will raise
-    clear ValueErrors as part of validation.
+    This function offers the following benefits during tests:
+
+    1. More readable logic than the streamlined library code
+    2. Raises a clear ValueError when color's length is not 3 or 4
 
     Args:
         color: An RGB or RGBA color
 
     Returns:
-
+        A 0-255 value for the color's expected alpha
     """
     num_channels = len(color)
 
@@ -78,7 +85,7 @@ def expected_alpha_for_color(color: Tuple[int, ...]):
         return 255
 
     raise ValueError(
-        f"Expected color tuple with 3 or 4 elements, but got {color!r}.")
+        f"Expected color tuple with 3 or 4 values, but got {color!r}.")
 
 
 @fixture
@@ -99,3 +106,8 @@ def new_rgba_color():
 @fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
+
+
+@fixture
+def new_rgb_or_rgba_expected_alpha(new_rgb_or_rgba_color) -> int:
+    return expected_alpha_for_color(new_rgb_or_rgba_color)

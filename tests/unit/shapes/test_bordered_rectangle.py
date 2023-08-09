@@ -9,6 +9,12 @@ import pytest
 from pyglet.shapes import BorderedRectangle
 
 
+@pytest.fixture(autouse=True)
+def monkeypatch_default_shape_shader(monkeypatch, get_dummy_shader_program):
+    """Use a dummy shader when testing non-drawing functionality"""
+    monkeypatch.setattr('pyglet.shapes.get_default_shader', get_dummy_shader_program)
+
+
 @pytest.fixture
 def bordered_rectangle():
     return BorderedRectangle(0, 0, 10, 50, color=(0, 0, 0, 31), border_color=(1, 1, 1))
