@@ -99,3 +99,13 @@ def new_rgba_color():
 @fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
+
+
+def new_color_expected_alpha(new_rgb_or_rgba_color):
+    return expected_alpha_for_color(new_rgb_or_rgba_color)
+
+
+@fixture(params=[0, 128, 254])
+def new_opacity_set_opacity_alone(request):
+    return request.param
+
