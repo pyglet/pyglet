@@ -19,6 +19,9 @@ kCFStringEncodingUTF8 = 0x08000100
 
 CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
+CFURLRef = c_void_p
+CFStringRef = c_void_p
+CFURLPathStyle = c_int
 
 cf.CFStringCreateWithCString.restype = c_void_p
 cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
@@ -44,8 +47,7 @@ cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 # Core Foundation type to Python type conversion functions
 
 def CFSTR(string):
-    return ObjCInstance(c_void_p(cf.CFStringCreateWithCString(
-            None, string.encode('utf8'), kCFStringEncodingUTF8)))
+    return cf.CFStringCreateWithCString(None, string.encode('utf8'), kCFStringEncodingUTF8)
 
 # Other possible names for this method:
 # at, ampersat, arobe, apenstaartje (little monkey tail), strudel,
@@ -54,7 +56,7 @@ def CFSTR(string):
 # kukac (caterpillar).
 def get_NSString(string):
     """Autoreleased version of CFSTR"""
-    return CFSTR(string).autorelease()
+    return ObjCInstance(c_void_p(CFSTR(string))).autorelease()
 
 def cfstring_to_string(cfstring):
     length = cf.CFStringGetLength(cfstring)
@@ -96,6 +98,10 @@ cf.CFNumberGetTypeID.argtypes = []
 
 cf.CFGetTypeID.restype = CFTypeID
 cf.CFGetTypeID.argtypes = [c_void_p]
+
+cf.CFURLCreateWithFileSystemPath.restype = CFURLRef
+cf.CFURLCreateWithFileSystemPath.argtypes = [CFAllocatorRef, CFStringRef, CFURLPathStyle, c_bool]
+
 
 # CFNumber.h
 kCFNumberSInt8Type     = 1
@@ -209,6 +215,10 @@ NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, 'NSEventTrackingRunLoopMode')
 NSApplicationDidHideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidHideNotification')
 NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUnhideNotification')
+NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
+NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
+NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
+NSDragOperationGeneric = 4
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
 NSAnyEventMask = 0xFFFFFFFF     # NSUIntegerMax
@@ -217,6 +227,17 @@ NSKeyDown            = 10
 NSKeyUp              = 11
 NSFlagsChanged       = 12
 NSApplicationDefined = 15
+
+# Undocumented left/right modifier masks found by experimentation:
+NSLeftShiftKeyMask = 1 << 1
+NSRightShiftKeyMask = 1 << 2
+NSLeftControlKeyMask = 1 << 0
+NSRightControlKeyMask = 1 << 13
+NSLeftAlternateKeyMask = 1 << 5
+NSRightAlternateKeyMask = 1 << 6
+NSLeftCommandKeyMask = 1 << 3
+NSRightCommandKeyMask = 1 << 4
+
 
 NSAlphaShiftKeyMask         = 1 << 16
 NSShiftKeyMask              = 1 << 17
@@ -236,25 +257,25 @@ NSPageUpFunctionKey   = 0xF72C
 NSPageDownFunctionKey = 0xF72D
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSWindow.h
-NSBorderlessWindowMask		= 0
-NSTitledWindowMask		= 1 << 0
-NSClosableWindowMask		= 1 << 1
-NSMiniaturizableWindowMask	= 1 << 2
-NSResizableWindowMask		= 1 << 3
+NSBorderlessWindowMask      = 0
+NSTitledWindowMask      = 1 << 0
+NSClosableWindowMask        = 1 << 1
+NSMiniaturizableWindowMask  = 1 << 2
+NSResizableWindowMask       = 1 << 3
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSPanel.h
-NSUtilityWindowMask		= 1 << 4
+NSUtilityWindowMask     = 1 << 4
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSGraphics.h
-NSBackingStoreRetained	        = 0
-NSBackingStoreNonretained	= 1
-NSBackingStoreBuffered	        = 2
+NSBackingStoreRetained          = 0
+NSBackingStoreNonretained   = 1
+NSBackingStoreBuffered          = 2
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSTrackingArea.h
 NSTrackingMouseEnteredAndExited  = 0x01
 NSTrackingMouseMoved             = 0x02
-NSTrackingCursorUpdate 		 = 0x04
-NSTrackingActiveInActiveApp 	 = 0x40
+NSTrackingCursorUpdate       = 0x04
+NSTrackingActiveInActiveApp      = 0x40
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSOpenGL.h
 NSOpenGLPFAAllRenderers       =   1   # choose from all available renderers
@@ -557,6 +578,11 @@ ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
 
 ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
 ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
+
+ct.CTFontDescriptorCopyAttribute.restype = c_void_p
+ct.CTFontDescriptorCopyAttribute.argtypes = [c_void_p, CFStringRef]
+
+kCTFontURLAttribute = c_void_p.in_dll(ct, 'kCTFontURLAttribute')
 
 ######################################################################
 

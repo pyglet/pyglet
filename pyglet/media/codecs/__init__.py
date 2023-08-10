@@ -53,7 +53,7 @@ class MediaDecoder(Decoder):
 
     def decode(self, file, filename, streaming):
         """Read the given file object and return an instance of `Source`
-        or `StreamingSource`. 
+        or `StreamingSource`.
         Throws MediaDecodeException if there is an error.  `filename`
         can be a file type hint.
         """
@@ -110,6 +110,14 @@ def add_default_media_codecs():
         add_decoders(pyogg)
     except ImportError:
         pass
+
+
+    if pyglet.compat_platform.startswith("darwin"):
+        try:
+            from . import coreaudio
+            registry.add_decoders(coreaudio)
+        except ImportError:
+            pass
 
 
 def have_ffmpeg():

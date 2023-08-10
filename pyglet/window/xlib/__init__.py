@@ -137,6 +137,7 @@ class XlibWindow(BaseWindow):
     _width = 0
     _height = 0                     # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
+    _mouse_buttons = [False] * 6    # State of each xlib button
     _keyboard_exclusive = False
     _active = True
     _applied_mouse_exclusive = False
@@ -1203,7 +1204,6 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
-        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
@@ -1224,7 +1224,6 @@ class XlibWindow(BaseWindow):
             buttons |= mouse.MIDDLE
         if ev.xmotion.state & xlib.Button3MotionMask:
             buttons |= mouse.RIGHT
-        # TODO: Determine how to implement drag support for mouse 4 and 5
 
         if buttons:
             # Drag event
@@ -1456,11 +1455,7 @@ class XlibWindow(BaseWindow):
     def _event_button(self, ev):
         x = ev.xbutton.x
         y = self.height - ev.xbutton.y
-
-        button = ev.xbutton.button - 1
-        if button == 7 or button == 8:
-            button -= 4
-
+        button = 1 << (ev.xbutton.button - 1)  # 1, 2, 3 -> 1, 2, 4
         modifiers = self._translate_modifiers(ev.xbutton.state)
         if ev.type == xlib.ButtonPress:
             # override_redirect issue: manually activate this window if
@@ -1476,10 +1471,13 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_scroll', x, y, -1, 0)
             elif ev.xbutton.button == 7:
                 self.dispatch_event('on_mouse_scroll', x, y, 1, 0)
-            elif button < 5:
-                self.dispatch_event('on_mouse_press', x, y, 1 << button, modifiers)
-        elif button < 5:
-            self.dispatch_event('on_mouse_release', x, y, 1 << button, modifiers)
+            elif ev.xbutton.button < len(self._mouse_buttons):
+                self._mouse_buttons[ev.xbutton.button] = True
+                self.dispatch_event('on_mouse_press', x, y, button, modifiers)
+        else:
+            if ev.xbutton.button < 4:
+                self._mouse_buttons[ev.xbutton.button] = False
+                self.dispatch_event('on_mouse_release', x, y, button, modifiers)
 
     @ViewEventHandler
     @XlibEventHandler(xlib.Expose)
@@ -1494,6 +1492,15 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.EnterNotify)
     def _event_enternotify(self, ev):
+        # figure active mouse buttons
+        # XXX ignore modifier state?
+        state = ev.xcrossing.state
+        self._mouse_buttons[1] = state & xlib.Button1Mask
+        self._mouse_buttons[2] = state & xlib.Button2Mask
+        self._mouse_buttons[3] = state & xlib.Button3Mask
+        self._mouse_buttons[4] = state & xlib.Button4Mask
+        self._mouse_buttons[5] = state & xlib.Button5Mask
+
         # mouse position
         x = self._mouse_x = ev.xcrossing.x
         y = self._mouse_y = self.height - ev.xcrossing.y

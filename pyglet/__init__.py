@@ -166,6 +166,7 @@ options = {
     'headless': False,
     'headless_device': 0,
     'win32_disable_shaping': False,
+    'osx_alt_loop': False
 }
 
 _option_types = {
@@ -193,6 +194,7 @@ _option_types = {
     'headless': bool,
     'headless_device': int,
     'win32_disable_shaping': bool
+    'osx_alt_loop': bool,
 }
 
 

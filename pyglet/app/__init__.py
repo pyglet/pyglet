@@ -38,8 +38,8 @@
 Applications
 ------------
 
-Most applications need only call :func:`run` after creating one or more 
-windows to begin processing events.  For example, a simple application 
+Most applications need only call :func:`run` after creating one or more
+windows to begin processing events.  For example, a simple application
 consisting of one window is::
 
     import pyglet
@@ -64,11 +64,13 @@ default policy is to wait until all windows are closed)::
 .. versionadded:: 1.1
 """
 
+import platform
 import sys
 import weakref
 
-from pyglet.app.base import EventLoop
+import pyglet
 from pyglet import compat_platform
+from pyglet.app.base import EventLoop
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -77,7 +79,10 @@ if _is_pyglet_doc_run:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':
-        from pyglet.app.cocoa import CocoaEventLoop as PlatformEventLoop
+        from pyglet.app.cocoa import CocoaPlatformEventLoop as PlatformEventLoop
+
+        if platform.machine() == 'arm64' or pyglet.options["osx_alt_loop"]:
+            from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:
@@ -90,8 +95,8 @@ class AppException(Exception):
 
 windows = weakref.WeakSet()
 """Set of all open windows (including invisible windows).  Instances of
-:class:`pyglet.window.Window` are automatically added to this set upon 
-construction. The set uses weak references, so windows are removed from 
+:class:`pyglet.window.Window` are automatically added to this set upon
+construction. The set uses weak references, so windows are removed from
 the set when they are no longer referenced or are closed explicitly.
 """
 
@@ -123,7 +128,7 @@ def exit():
 
 
 #: The global event loop.  Applications can replace this
-#: with their own subclass of :class:`EventLoop` before calling 
+#: with their own subclass of :class:`EventLoop` before calling
 #: :meth:`EventLoop.run`.
 event_loop = EventLoop()
 

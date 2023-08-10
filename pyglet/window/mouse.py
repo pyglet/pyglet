@@ -87,21 +87,15 @@ def buttons_string(buttons):
     """
     button_names = []
     if buttons & LEFT:
-        button_names.append("LEFT")
+        button_names.append('LEFT')
     if buttons & MIDDLE:
-        button_names.append("MIDDLE")
+        button_names.append('MIDDLE')
     if buttons & RIGHT:
-        button_names.append("RIGHT")
-    if buttons & MOUSE4:
-        button_names.append("MOUSE4")
-    if buttons & MOUSE5:
-        button_names.append("MOUSE5")
-    return "|".join(button_names)
+        button_names.append('RIGHT')
+    return '|'.join(button_names)
 
 
 # Symbolic names for the mouse buttons
 LEFT = 1 << 0
 MIDDLE = 1 << 1
 RIGHT = 1 << 2
-MOUSE4 = 1 << 3
-MOUSE5 = 1 << 4
