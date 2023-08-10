@@ -543,6 +543,9 @@ kCTFontBoldTrait   = (1 << 1)
 ct.CTLineCreateWithAttributedString.restype = c_void_p
 ct.CTLineCreateWithAttributedString.argtypes = [c_void_p]
 
+ct.CTLineGetTypographicBounds.restype = c_double
+ct.CTLineGetTypographicBounds.argtypes = [c_void_p, POINTER(CGFloat), POINTER(CGFloat), POINTER(CGFloat)]
+
 ct.CTLineDraw.restype = None
 ct.CTLineDraw.argtypes = [c_void_p, c_void_p]
 
