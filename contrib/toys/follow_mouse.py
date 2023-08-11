@@ -25,9 +25,9 @@ window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 
 class Line:
     batch = pyglet.graphics.Batch()
-    lines = batch.add(100, GL_LINES, None, ('position3f', (0.0,) * 300), ('colors4Bn', (255, ) * 400))
-    black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0), batch=batch)
-    black.opacity = 32
+    program = pyglet.shapes.get_default_shader()
+    lines = program.vertex_list(100, GL_LINES, batch=batch, colors=('Bn', (255, 255, 255, 255) * 100))
+    black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0, 32), batch=batch)
     unallocated = list(range(100))
     active = []
 
@@ -82,7 +82,7 @@ class Line:
         # update line positions
         for n, line in enumerate(cls.active):
             line.update(dt)
-            cls.lines.position[n*6:n*6+6] = [line.lx, line.ly, 0, line.x, line.y, 0]
+            cls.lines.position[n*4:n*4+4] = [line.lx, line.ly, line.x, line.y]
 
 
 glEnable(GL_BLEND)
