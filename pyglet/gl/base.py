@@ -208,7 +208,6 @@ class ObjectSpace:
         # the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
-        self.doomed_vaos = []
         self.doomed_shader_programs = []
 
 
@@ -230,6 +229,8 @@ class Context:
         self.config = config
         self.context_share = context_share
         self.canvas = None
+
+        self.doomed_vaos = []
 
         if context_share:
             self.object_space = context_share.object_space
@@ -276,15 +277,15 @@ class Context:
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
             self.object_space.doomed_buffers.clear()
-        if self.object_space.doomed_vaos:
-            vaos = self.object_space.doomed_vaos[:]
-            vaos = (gl.GLuint * len(vaos))(*vaos)
-            gl.glDeleteVertexArrays(len(vaos), vaos)
-            self.object_space.doomed_vaos.clear()
         if self.object_space.doomed_shader_programs:
             for program_id in self.object_space.doomed_shader_programs:
                 gl.glDeleteProgram(program_id)
             self.object_space.doomed_shader_programs.clear()
+        if self.doomed_vaos:
+            vaos = self.doomed_vaos[:]
+            vaos = (gl.GLuint * len(vaos))(*vaos)
+            gl.glDeleteVertexArrays(len(vaos), vaos)
+            self.doomed_vaos.clear()
 
     def destroy(self):
         """Release the context.
@@ -351,10 +352,10 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if gl.current_context and self.object_space is gl.current_context.object_space and False:
+        if gl.current_context is self:
             gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
         else:
-            self.object_space.doomed_vaos.append(vao_id)
+            self.doomed_vaos.append(vao_id)
 
     def delete_shader_program(self, program_id):
         """Safely delete a Shader Program belonging to this context.
