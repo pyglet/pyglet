@@ -79,7 +79,7 @@ class CocoaAlternateEventLoop(EventLoop):
     working properly after X returns. This event loop differs in that it uses the built-in NSApplication event
     loop. We tie our schedule into it via timer.
     """
-    def run(self, interval=1/60):
+    def run(self, interval=1.0/60.0):
         self.has_exit = False
 
         from pyglet.window import Window
