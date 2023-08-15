@@ -99,7 +99,6 @@ from pyglet import gl
 from pyglet.math import Mat4
 from pyglet.event import EventDispatcher
 from pyglet.window import key, event
-from pyglet.util import with_metaclass
 from pyglet.graphics import shader
 
 
@@ -256,7 +255,7 @@ class _WindowMetaclass(type):
         super(_WindowMetaclass, cls).__init__(name, bases, dict)
 
 
-class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
+class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     """Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
