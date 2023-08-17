@@ -3,7 +3,6 @@ from enum import Enum, auto
 from typing import Dict, Optional
 
 from pyglet import event
-from pyglet.util import with_metaclass
 
 
 class DeviceState(Enum):
@@ -37,7 +36,7 @@ class AudioDevice:
             self.__class__.__name__, self.name, self.platform_state[self.state].name, self.platform_flow[self.flow].name)
 
 
-class AbstractAudioDeviceManager(with_metaclass(ABCMeta, event.EventDispatcher, object)):
+class AbstractAudioDeviceManager(event.EventDispatcher, metaclass=ABCMeta):
 
     def __del__(self):
         """Required to remove handlers before exit, as it can cause problems with the event system's weakrefs."""

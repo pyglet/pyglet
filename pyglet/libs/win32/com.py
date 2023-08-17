@@ -148,11 +148,8 @@ class InterfacePtrMeta(type(ctypes.POINTER(COMInterface))):
         return super(InterfacePtrMeta, cls).__new__(cls, name, bases, dct)
 
 
-# pyglet.util.with_metaclass does not work here, as the base class is from _ctypes.lib
-# See https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef
-pInterface = InterfacePtrMeta(str('Interface'),
-                              (ctypes.POINTER(COMInterface),),
-                              {'__doc__': 'Base COM interface pointer.'})
+class pInterface(ctypes.POINTER(COMInterface), metaclass=InterfacePtrMeta):
+    """Base COM interface pointer."""
 
 
 class COMInterfaceMeta(type):
