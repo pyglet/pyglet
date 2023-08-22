@@ -154,6 +154,12 @@ class WidgetBase(EventDispatcher):
     def on_text_motion_select(self, motion):
         pass
 
+    def on_key_press(self, symbol, modifiers):
+        pass
+    
+    def on_key_release(self, symbol, modifiers):
+        pass
+
 
 class PushButton(WidgetBase):
     """Instance of a push button.
@@ -507,6 +513,12 @@ class TextEntry(WidgetBase):
         super(TextEntry, self).on_resize(width, height)
         self._layout.width, self._layout.height = width, height
         self._outline.width, self._outline.height = width + self._pad * 2, height + self._pad * 2
+
+    def on_key_press(self, symbol, modifiers):
+        if not self._focus:
+            return
+        if symbol == pyglet.window.key.A and modifiers & pyglet.window.key.MOD_CTRL:
+            self._caret.select_all()
 
     def on_text(self, text):
         if not self.enabled:
