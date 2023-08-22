@@ -884,6 +884,7 @@ class TextLayout:
     _anchor_x = 'left'
     _anchor_y = 'bottom'
     _content_valign = 'top'
+    _content_halign = 'left'
     _multiline = False
     _visible = True
 
@@ -1294,6 +1295,35 @@ class TextLayout:
         self._content_valign = content_valign
         self._update()
 
+    @property
+    def content_halign(self):
+        """Horizontal alignment of content within larger layout box.
+
+        This property determines how content is positioned within the layout
+        box when ``content_width`` is less than ``width``.  It is one
+        of the enumerants:
+
+        ``left`` (default)
+            Content is aligned to the left of the layout box.
+        ``center``
+            Content is centered vertically within the layout box.
+        ``right``
+            Content is aligned to the right of the layout box.
+
+        This property has no effect when ``content_width`` is greater
+        than ``width`` (in which case the content is aligned to the top) or when
+        ``width`` is ``None`` (in which case there is no vertical layout box
+        dimension).
+
+        :type: str
+        """
+        return self._content_halign
+
+    @content_halign.setter
+    def content_halign(self, content_halign):
+        self._content_halign = content_halign
+        self._update()
+
     def _wrap_lines_invariant(self):
         self._wrap_lines = self._multiline and self._wrap_lines_flag
         assert not self._wrap_lines or self._width, \
@@ -1400,17 +1430,26 @@ class TextLayout:
             start += len(_vertex_list.colors)
 
     def _get_left(self):
-        if self._multiline:
-            width = self._width if self._wrap_lines else self.content_width
-        else:
+        if self.width is None or (self._multiline and not self._wrap_lines):
             width = self.content_width
+            offset = 0
+        else:
+            width = self.width
+            if self._content_halign == 'left':
+                offset = 0
+            elif self._content_halign == 'right':
+                offset = max(0, self._width - self.content_width)
+            elif self._content_halign == 'center':
+                offset = max(0, self._width - self.content_width) // 2
+            else:
+                assert False, '`content_halign` must be either "left", "right", or "center".'
 
         if self._anchor_x == 'left':
-            return self._x
+            return self._x + offset
         elif self._anchor_x == 'center':
-            return self._x - width // 2
+            return self._x - width // 2 + offset
         elif self._anchor_x == 'right':
-            return self._x - width
+            return self._x - width + offset
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
@@ -1430,18 +1469,18 @@ class TextLayout:
                 assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
         if self._anchor_y == 'top':
-            return self._y - offset
+            return self._y + offset
         elif self._anchor_y == 'baseline':
-            return self._y + lines[0].ascent - offset
+            return self._y + lines[0].ascent + offset
         elif self._anchor_y == 'bottom':
-            return self._y + height - offset
+            return self._y + height + offset
         elif self._anchor_y == 'center':
             if len(lines) == 1 and self._height is None:
                 # This "looks" more centered than considering all of the descent.
                 line = lines[0]
                 return self._y + line.ascent // 2 - line.descent // 4
             else:
-                return self._y + height // 2 - offset
+                return self._y + height // 2 + offset
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
