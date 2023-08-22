@@ -73,7 +73,6 @@ If you are migrating from an older version of pyglet, please read through
 
    modules/pyglet
    modules/app
-   modules/canvas
    modules/clock
    modules/event
    modules/font
@@ -87,7 +86,7 @@ If you are migrating from an older version of pyglet, please read through
    modules/media
    modules/resource
    modules/sprite
-   modules/shapes
+   modules/shapes2d
    modules/text/index
    modules/window
 

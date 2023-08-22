@@ -1,17 +1,17 @@
-pyglet.shapes
-=============
+pyglet.shapes2d
+===============
 
-.. automodule:: pyglet.shapes
+.. automodule:: pyglet.shapes2d
 
 .. autoclass:: ShapeBase
-   
+
   .. rubric:: Methods
-   
+
   .. automethod:: draw
   .. automethod:: delete
-    
+
   .. rubric:: Attributes
-  
+
   .. autoattribute:: x
   .. autoattribute:: y
   .. autoattribute:: position
