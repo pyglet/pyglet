@@ -36,6 +36,7 @@ an interface.
 
 import sys
 import ctypes
+from typing import Any
 
 from pyglet.util import debug_print
 
@@ -50,7 +51,7 @@ class GUID(ctypes.Structure):
         ('Data1', ctypes.c_ulong),
         ('Data2', ctypes.c_ushort),
         ('Data3', ctypes.c_ushort),
-        ('Data4', ctypes.c_ubyte * 8)
+        ('Data4', ctypes.c_ubyte * 8),
     ]
 
     def __init__(self, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8):
@@ -83,9 +84,11 @@ class METHOD:
         self.restype = restype
         self.argtypes = args
 
-    def get_field(self):
-        # ctypes caches WINFUNCTYPE's so this should be ok.
-        return ctypes.WINFUNCTYPE(self.restype, *self.argtypes)
+        self.prototype = ctypes.WINFUNCTYPE(self.restype, *self.argtypes)
+        self.direct_prototype = ctypes.WINFUNCTYPE(self.restype, ctypes.c_void_p, *self.argtypes)
+
+    def get_com_proxy(self, i, name):
+        return self.prototype(i, name)
 
 
 class STDMETHOD(METHOD):
@@ -95,79 +98,136 @@ class STDMETHOD(METHOD):
         super().__init__(ctypes.HRESULT, *args)
 
 
-class COMMethodInstance:
-    """Binds a COM interface method."""
+class VOIDMETHOD(METHOD):
+    """COM method with no return value."""
 
-    def __init__(self, name, i, method):
-        self.name = name
-        self.i = i
-        self.method = method
-
-    # x->F(a, b, c)
-    # x->lpVtbl->F(x, a, b, c)
-    # ((FunctionPointerTrustMeBro *)x->lpVtbl)[i](a, b, c)
-
-    def __get__(self, obj, tp):
-        if obj is not None:
-            def _call(*args):
-                # assert _debug_com(f'COM: IN  {obj.__class__.__name__}.{self.name}[{self.i}]: (~, {", ".join(map(repr, args))})')
-                ret = self.method.get_field()(self.i, self.name)(obj, *args)
-                # assert _debug_com(f'COM: OUT {obj.__class__.__name__}.{self.name}[{self.i}]: (~, {", ".join(map(repr, args))})')
-                # assert _debug_com(f'COM: RETURN {ret}')
-                return ret
-
-            return _call
-
-        raise AttributeError()
+    def __init__(self, *args):
+        super().__init__(None, *args)
 
 
-class _COMInterface(ctypes.Structure):
+class _COMInterfaceDummy(ctypes.Structure):
     """Dummy struct to serve as the type of all COM pointers."""
-    _fields_ = [('lpVtbl', ctypes.c_void_p)]
+    _fields_ = [('vtbl_ptr', ctypes.c_void_p)]
 
 
-COMInterfacePointer = ctypes.POINTER(_COMInterface)
-_PointerType = type(COMInterfacePointer)
+_COMInterfaceDummyPointer = ctypes.POINTER(_COMInterfaceDummy)
+_PointerType = type(_COMInterfaceDummyPointer)
+_StructType = type(ctypes.Structure)
+
+
+def _accumulate_inherited_methods(from_, barrier):
+    methods = []
+    for base in reversed(from_.__mro__[:from_.__mro__.index(barrier)]):
+        methods.extend(base.__dict__.get('_methods_', ()))
+    return methods
+
+
+class _InterfaceMeta(_StructType):
+    def __new__(cls, name, bases, dct, /, pointer_type_dict=None):
+        if len(bases) > 1:
+            assert _debug_com(f"Ignoring {len(bases) - 1} bases on {name}")
+            bases = (bases[0],)
+
+        inh_methods = _accumulate_inherited_methods(bases[0], ctypes.Structure)
+        new_methods = tuple(dct.get('_methods_', ()))
+
+        for i, (meth_name, meth_type) in enumerate(new_methods, start=len(inh_methods)):
+            dct[meth_name] = meth_type.get_com_proxy(i, meth_name)
+
+        all_methods = tuple(inh_methods) + new_methods
+        for i, (method_name, _) in enumerate(all_methods):
+            assert _debug_com(f"{name}[{i}]: {method_name}")
+
+        vtbl_struct_type = _StructType(f"Vtable_{name}",
+                                       (ctypes.Structure,),
+                                       {'_fields_': [(n, x.direct_prototype) for n, x in all_methods]})
+        dct['_vtbl_struct_type'] = vtbl_struct_type
+        dct['vtbl_own_offset'] = len(inh_methods)
+
+        dct['_fields_'] = (('vtbl_ptr', ctypes.POINTER(vtbl_struct_type)),)
+
+        res_interface_struct = super().__new__(cls, name, bases, dct)
+
+        # Create special pInterface pointer subclass
+        b = _COMInterfaceDummyPointer if bases[0] is _COMInterfaceDummy else ctypes.POINTER(bases[0])
+        if pointer_type_dict is None:
+            pointer_type_dict = {}
+        pointer_type_dict['_type_'] = res_interface_struct
+        own_pointer_type = _pInterfaceMeta(f"p{name}", (b,), pointer_type_dict)
+
+        # Hack it into the ctypes pointer cache so all uses of `ctypes.POINTER` on this interface
+        # type will yield it instead of the extremely inflexible standard
+        from ctypes import _pointer_type_cache
+        _pointer_type_cache[res_interface_struct] = own_pointer_type
+
+        return res_interface_struct
 
 
 # Unfortunately, ctypes' pointer factory only checks the immediate typedict for `_type_`,
-# making meaningful propagation of the _type_ attribute impossible via simple subclassing:
-# Every pointer type beneath COMInterfacePointer has no type as far as ctypes is concerned,
-# resulting in the error "Cannot create instance: has no _type_" upon pointer creation.
-# Use a metaclass to force _type_ in as early as possible just like the POINTER factory does.
+# making meaningful propagation of the _type_ attribute impossible via simple subclassing
 class _pInterfaceMeta(_PointerType):
     def __new__(cls, name, bases, dct):
-        dct['_type_'] = _COMInterface
+        # Interfaces can also be declared by inheritance of pInterface subclasses
+        # If this happens, create the interface and then become pointer to its struct.
+
+        target = dct.get('_type_', None)
+
+        # If we weren't created due to an Interface subclass definition (don't have a _type_),
+        # just define that Interface subclass, which will then actually create the type properly.
+        if target is None:
+            interface_base = bases[0]._type_
+
+            # Create corresponding interface type and then retrieve own new type through cache
+            it = _InterfaceMeta(f"_{name}_FoundationInterface",
+                                (interface_base,),
+                                {'_methods_': dct.get('_methods_', ())},
+                                pointer_type_dict=dct)
+            return ctypes.POINTER(it)
+
+        # Create method proxies that will forward ourselves into the 
+        vtbl_struct_type = target._vtbl_struct_type
+        for i in range(target.vtbl_own_offset, len(vtbl_struct_type._fields_)):
+            method_name = vtbl_struct_type._fields_[i][0]
+            m = getattr(target, method_name)
+            def pinterface_method_forward(self, *args, _m=m):
+                _m(self, *args)
+            dct[method_name] = pinterface_method_forward
+
         return super().__new__(cls, name, bases, dct)
 
 
-class pInterface(COMInterfacePointer, metaclass=_pInterfaceMeta):
-    """Base COM interface pointer."""
-
-    def __init_subclass__(cls, /, **kwargs):
-        methods = []
-        relevant_bases = cls.__mro__[:cls.__mro__.index(pInterface)]
-        for base in reversed(relevant_bases):
-            methods.extend(base.__dict__.get('_methods_', ()))
-
-        for i, (method_name, method_type) in enumerate(methods):
-            assert _debug_com(f'{cls.__name__}[{i}]: {method_name}')
-            setattr(cls, method_name, COMMethodInstance(method_name, i, method_type))
-
-        super().__init_subclass__(**kwargs)
+class Interface(_COMInterfaceDummy, metaclass=_InterfaceMeta):
+    pass
+    # def __init__(self):
+    #     raise RuntimeError("Cannot instantiate interfaces")
 
 
-<<<<<<< HEAD
-class pInterface(ctypes.POINTER(COMInterface), metaclass=InterfacePtrMeta):
-    """Base COM interface pointer."""
-=======
+class pInterface(_COMInterfaceDummyPointer, metaclass=_pInterfaceMeta):
+    @classmethod
+    def from_param(cls, obj):
+        """When dealing with a COMObject, pry a fitting interface out of it
+        via a GUID-less version of the QueryInterface mechanism
+        """
+
+        raise RuntimeError("todo")
+        # if isinstance(obj, )
+        return obj
+
+
+class IUnknown(Interface):
+    _methods_ = [
+        ('QueryInterface', STDMETHOD(REFIID, ctypes.c_void_p)),
+        ('AddRef', METHOD(ctypes.c_int)),
+        ('Release', METHOD(ctypes.c_int)),
+    ]
+
+
 class pIUnknown(pInterface):
     _methods_ = [
         ('QueryInterface', STDMETHOD(REFIID, ctypes.c_void_p)),
         ('AddRef', METHOD(ctypes.c_int)),
         ('Release', METHOD(ctypes.c_int))
     ]
->>>>>>> b7e8f8ff (COM module rewrite step 0)
 
 
 class COMInterfaceMeta(type):
@@ -266,14 +326,13 @@ def _missing_impl(interface_name, method_name):
     return missing_cb_func
 
 
-def _found_impl(interface_name, method_name, method_func):
+def _found_impl(interface_name, method_name, method_func, self_distance):
     """If a method was found in class, we can set it as a callback."""
 
-    def cb_func(*args, **kw):
-        try:
-            result = method_func(*args, **kw)
-        except Exception as err:
-            raise err
+    def self_extracting_cb_func(p, *args):
+        offset = ctypes.sizeof(ctypes.c_void_p) * self_distance
+        self = ctypes.cast(p.value + offset, ctypes.py_object).value
+        result = method_func(self, *args)
 
         if not result:  # QOL so callbacks don't need to specify a return for assumed OK's.
             return 0
@@ -283,65 +342,74 @@ def _found_impl(interface_name, method_name, method_func):
     return cb_func
 
 
-# Store structures with same fields to prevent duplicate table creations.
-_cached_structures = {}
+class _COMObjectMeta(_StructType):
+    def __new__(cls, name, bases, dct):
+        is_user_subclass = bases[0] is not ctypes.Structure
+        if len(bases) != 1 and is_user_subclass:
+            raise TypeError("Must directly inherit from COMObject only")
 
+        implemented_interfaces = dct.pop('_interfaces_', ())
+        if not implemented_interfaces and is_user_subclass:
+            # could also just create an empty struct, but there's no point
+            raise TypeError("Must implement at least one COM Interface in '_interfaces_'")
 
-def create_vtbl_structure(fields, interface):
-    """Create virtual table structure with fields for use in COM's."""
-    try:
-        return _cached_structures[fields]
-    except KeyError:
-        Vtbl = type("Vtbl_{}".format(interface.__name__), (ctypes.Structure,), {"_fields_": fields})
-        _cached_structures[fields] = Vtbl
-        _debug_com(f"vtbl len {len(fields)} created for {interface}")
-        return Vtbl
+        for interface_type in implemented_interfaces:
+            for other in implemented_interfaces:
+                if interface_type is other:
+                    continue
+                if issubclass(interface_type, other):
+                    raise TypeError("Only specify the leaf interfaces")
 
+        # Done with sanity checks
 
-class COMObject:
-    """A base class for defining a COM object for use with callbacks and custom implementations."""
-    _interfaces_ = []
+        _vtbl_pointers = []
+        implemented_methods = {}
+        # NOTE: If two interfaces were to have name collisions, the last one will
+        # overwrite previous ones.
 
-    def __new__(cls, *args, **kw):
-        new_cls = super().__new__(cls)
-        assert len(cls._interfaces_) > 0, "Atleast one interface must be defined to use a COMObject."
-        new_cls._pointers = {}
-        new_cls.__create_interface_pointers()
-        return new_cls
+        for i, interface_type in enumerate(implemented_interfaces):
+            vtbl = interface_type._vtbl_struct_type()
 
-    def __create_interface_pointers(cls):
-        """Create a custom ctypes structure to handle COM functions in a COM Object."""
-        interfaces = tuple(cls._interfaces_)
-        for itf in interfaces[::-1]:
-            methods = []
-            fields = []
-            print(itf.__mro__)
-            for interface in itf.__mro__[-2::-1]:
-                for method in interface._methods_:
-                    name, com_method = method
-
+            for method_name, method_type in interface_type._vtbl_struct_type._fields_:
+                if method_name in implemented_methods:
+                    # Method is already implemented on a previous interface; redirect to it
+                    # See https://devblogs.microsoft.com/oldnewthing/20040206-00/?p=40723
+                    method_obj, interface_idx = implemented_methods[method_name]
+                    def adjustor(p, *args, _m=method_obj):
+                        # Modification of p may be a bad idea
+                        p.value += (interface_idx - i) * ctypes.sizeof(ctypes.c_void_p)
+                        _m(p, *args)
+                    setattr(vtbl, method_name, method_type(adjustor))
+                else:
                     if (found_method := getattr(cls, name, None)) is None:
-                        mth = _missing_impl(itf.__name__, name)
+                        mth = _missing_impl(interface_type.__name__, name)
                     else:
-                        mth = _found_impl(itf.__name__, name, found_method)
+                        mth = _found_impl(interface_type.__name__, name, found_method)
 
-                    proto = ctypes.WINFUNCTYPE(com_method.restype, *com_method.argtypes)
+                    wrapped = method_type(mth)
+                    setattr(vtbl, method_name, wrapped)
+                    implemented_methods[method_name] = (wrapped, i)
 
-                    fields.append((name, proto))
-                    methods.append(proto(mth))
+            _vtbl_pointers.append(ctypes.cast(ctypes.pointer(vtbl), ctypes.c_void_p))
 
-            # Make a structure dynamically with the fields given.
-            itf_structure = create_vtbl_structure(tuple(fields), interface)
+        dct['_vtbl_pointers'] = _vtbl_pointers
+        # Discard all other _fields_, struct part is business of the metaclass
+        # vtbl pointers to all distinct interfaces and then a reference to self
+        dct['_fields_'] = [
+            *((f'vtbl_ptr_{i}', ctypes.c_void_p) for i in range(len(implemented_interfaces))),
+            ('self', ctypes.py_object),
+        ]
+        com_object_struct = super().__new__(cls, name, bases, dct)
 
-            # Assign the methods to the fields
-            vtbl = itf_structure(*methods)
+        return com_object_struct
 
-            cls._pointers[itf] = ctypes.pointer(ctypes.pointer(vtbl))
 
-    @property
-    def pointers(self):
-        """Returns pointers to the implemented interfaces in this COMObject.  Read-only.
-
-        :type: dict
-        """
-        return self._pointers
+class COMObject(ctypes.Structure, metaclass=_COMObjectMeta):
+    def __init__(self):
+        # For some reason, complains about receiving a c_void_p instead of a py_object instance
+        # Set them over multiple lines then
+        # super().__init__(*self._vtbl_pointers, ctypes.py_object(self))
+        super().__init__()
+        for i, p in enumerate(self._vtbl_pointers):
+            setattr(self, f"vtbl_ptr_{i}", p)
+        self.self = ctypes.py_object(self)
