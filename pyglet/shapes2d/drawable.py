@@ -8,6 +8,7 @@ from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
+from pyglet.shapes2d.collidable import *
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -63,31 +64,6 @@ def get_default_shader():
         return default_shader_program
 
 
-def rotate_point(center, point, angle):
-    prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
-    now_angle = prev_angle + angle
-    r = math.dist(point, center)
-    return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
-
-
-def point_in_polygon(polygon, point) -> bool:
-    """Raycasting Algorithm to find out whether a point is in a given polygon.
-
-    Copy from https://www.algorithms-and-technologies.com/point_in_polygon/python
-    """
-    odd = False
-    i = 0
-    j = len(polygon) - 1
-    while i < len(polygon) - 1:
-        i = i + 1
-        if (((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (point[0] < (
-        (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1]) / (polygon[j][1] - polygon[i][1])) +
-        polygon[i][0])):
-            odd = not odd
-        j = i
-    return odd
-
-
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
 
@@ -139,7 +115,7 @@ class _ShapeGroup(Group):
 
 
 class ShapeBase(ABC):
-    """Base class for all shape objects.
+    """Base class for all drawable shape objects.
 
     A number of default shapes are provided in this module. Curves are
     approximated using multiple vertices.
@@ -722,7 +698,8 @@ class Catenary(ShapeBase):
         if math.sqrt(s**2 - v**2) / h < 1:
             raise ValueError("The equation has no solution.")
         # Newton's method was used here to solve sinh(x) / x = sqrt(s**2 - v**2) / h
-        f = lambda x: (math.sinh(x)/x - math.sqrt(s**2-v**2)/h) * (x**2 / (x*math.cosh(x)-math.sinh(x)))
+        f = lambda x: (math.sinh(x)/x - math.sqrt(s**2-v**2)/h) * \
+            (x**2 / (x*math.cosh(x)-math.sinh(x)))
         x_now = 1
         while True:
             x_prev = x_now
@@ -755,6 +732,21 @@ class Catenary(ShapeBase):
             a, b, c = self._get_curve_parameters()
             curve = lambda x: a * math.cosh((x + b) / a) + c
             dist = abs(self._x1 - self._x)
+
+            points = [(x + i * dist / self._segments,
+                       y + curve(self._x + i * dist / self._segments)) for i in range(self._segments + 1)]
+            trans_x, trans_y = points[0]
+            trans_x += self._anchor_x
+            trans_y += self._anchor_y
+            coords = [[x - trans_x, y - trans_y] for x, y in points]
+
+            # Create a list of doubled-up points from the points:
+            vertices = []
+            for i in range(len(coords) - 1):
+                line_points = *coords[i], *coords[i + 1]
+                vertices.extend(line_points)
+
+        self._vertex_list.position[:] = vertices
 
     @property
     def x2(self):
@@ -1910,10 +1902,10 @@ class Polygon(ShapeBase):
         self._update_vertices()
 
     def __contains__(self, point):
-        assert len(point) == 2
-        point = rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        coords = self._coordinates + [self._coordinates[0]]
-        return point_in_polygon(coords, point)
+        return point in CollisonPolygon(*self._coordinates,
+                                        anchor_position=(self._anchor_x, self._anchor_y),
+                                        rotation=self._rotation)
+        
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
