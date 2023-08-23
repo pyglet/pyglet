@@ -43,4 +43,5 @@ A simple example of drawing shapes::
 .. versionadded:: 1.5.4
 """
 
+from pyglet.shapes2d.collidable import *
 from pyglet.shapes2d.drawable import *

@@ -39,6 +39,12 @@ pyglet.shapes2d
   .. autoattribute:: points
   .. autoattribute:: t
 
+.. autoclass:: Catenary
+  :show-inheritance:
+
+  .. autoattribute:: x1
+  .. autoattribute:: y1
+  .. autoattribute:: length
 
 .. autoclass:: Circle
   :show-inheritance:
