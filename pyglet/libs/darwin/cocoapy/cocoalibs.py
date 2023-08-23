@@ -218,6 +218,7 @@ NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUn
 NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
 NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
 NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
+NSPasteboardTypeString = c_void_p.in_dll(appkit, 'NSPasteboardTypeString')
 NSDragOperationGeneric = 4
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
