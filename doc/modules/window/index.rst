@@ -6,8 +6,8 @@ pyglet.window
 .. toctree::
    :maxdepth: 1
 
-   window_key
-   window_mouse
+   key
+   mouse
 
 .. rubric:: Details
 

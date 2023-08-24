@@ -86,9 +86,9 @@ If you are migrating from an older version of pyglet, please read through
    modules/media
    modules/resource
    modules/sprite
-   modules/shapes2d
+   modules/shapes2d/index
    modules/text/index
-   modules/window
+   modules/window/index
 
 .. toctree::
    :maxdepth: 3

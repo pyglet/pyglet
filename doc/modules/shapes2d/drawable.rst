@@ -1,7 +1,7 @@
-pyglet.shapes2d
-===============
+pyglet.shapes2d.drawable
+========================
 
-.. automodule:: pyglet.shapes2d
+.. automodule:: pyglet.shapes2d.drawable
 
 .. autoclass:: ShapeBase
 
@@ -36,8 +36,8 @@ pyglet.shapes2d
 .. autoclass:: BezierCurve
   :show-inheritance:
 
-  .. autoattribute:: points
   .. autoattribute:: t
+
 
 .. autoclass:: Catenary
   :show-inheritance:
@@ -72,6 +72,7 @@ pyglet.shapes2d
 .. autoclass:: Line
   :show-inheritance:
 
+  .. autoattribute:: width
   .. autoattribute:: x2
   .. autoattribute:: y2
 
@@ -87,9 +88,11 @@ pyglet.shapes2d
 .. autoclass:: BorderedRectangle
   :show-inheritance:
 
+  .. autoattribute:: border
   .. autoattribute:: width
   .. autoattribute:: height
   .. autoattribute:: border_color
+  .. autoattribute:: color
   .. autoattribute:: rotation
 
 

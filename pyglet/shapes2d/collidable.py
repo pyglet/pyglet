@@ -1,3 +1,8 @@
+"""2D collison detection.
+
+The module provides classes for 2D collision dection.
+"""
+
 import math
 from abc import ABC, abstractmethod
 from typing import List
@@ -36,7 +41,7 @@ def point_in_polygon(polygon: List[Point2D], point: Point2D) -> bool:
     return odd
 
 
-class CollisonShapeBase(ABC):
+class CollisionShapeBase(ABC):
     """Base class for all collidable shape objects."""
 
     _x: number = 0
@@ -79,11 +84,10 @@ class CollisonShapeBase(ABC):
     def position(self) -> Point2D:
         """The (x, y) coordinates of the shape, as a tuple.
 
-        :Parameters:
-            `x` : number
-                X coordinate of the sprite.
-            `y` : number
-                Y coordinate of the sprite.
+        :param number x:
+            X coordinate of the sprite.
+        :param number y:
+            Y coordinate of the sprite.
         """
         return self._x, self._y
 
@@ -119,11 +123,10 @@ class CollisonShapeBase(ABC):
     def anchor_position(self) -> Point2D:
         """The (x, y) coordinates of the anchor point, as a tuple.
 
-        :Parameters:
-            `x` : number
-                X coordinate of the anchor point.
-            `y` : number
-                Y coordinate of the anchor point.
+        :param number x:
+            X coordinate of the anchor point.
+        :param number y:
+            Y coordinate of the anchor point.
         """
         return self._anchor_x, self._anchor_y
 
@@ -147,13 +150,14 @@ class CollisonShapeBase(ABC):
         self._rotation = rotation
 
 
-class CollisonCircle(CollisonShapeBase):
+class CollisionCircle(CollisionShapeBase):
     def __init__(self, x: number, y: number, radius: number) -> None:
         self._x = x
         self._y = y
         self._radius = radius
 
     def __contains__(self, point: Point2D) -> bool:
+        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
         center = (self._x - self._anchor_x, self._y - self._anchor_y)
         return math.dist(center, point) < self._radius
 
@@ -170,7 +174,7 @@ class CollisonCircle(CollisonShapeBase):
         self._radius = value
 
 
-class CollisonEllipse(CollisonShapeBase):
+class CollisionEllipse(CollisionShapeBase):
     def __init__(self, x: number, y: number, a: number, b: number) -> None:
         self._x = x
         self._y = y
@@ -213,7 +217,44 @@ class CollisonEllipse(CollisonShapeBase):
         self._b = value
 
 
-class CollisonPolygon(CollisonShapeBase):
+class CollisionRectangle(CollisionShapeBase):
+    def __init__(self, x: number, y: number, width: number, height: number):
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+
+    def __contains__(self, point: Point2D) -> bool:
+        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        x, y = self._x - self._anchor_x, self._y - self._anchor_y
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
+
+    @property
+    def width(self) -> number:
+        """The width of the rectangle.
+
+        :type: number
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value: number) -> None:
+        self._width = value
+
+    @property
+    def height(self) -> number:
+        """The height of the rectangle.
+
+        :type: number
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value: number) -> None:
+        self._height = value
+
+
+class CollisionPolygon(CollisionShapeBase):
     def __init__(self, *coordinates: Point2D) -> None:
         self._coordinates: List[Point2D] = list(coordinates)
 
@@ -229,8 +270,9 @@ class CollisonPolygon(CollisonShapeBase):
 __all__ = (
     "rotate_point",
     "point_in_polygon",
-    "CollisonShapeBase",
-    "CollisonCircle",
-    "CollisonEllipse",
-    "CollisonPolygon",
+    "CollisionShapeBase",
+    "CollisionCircle",
+    "CollisionEllipse",
+    "CollisionRectangle",
+    "CollisionPolygon",
 )
