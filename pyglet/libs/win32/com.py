@@ -18,7 +18,7 @@ Interfaces can define methods::
             ...
         ]
 
-Only use STDMETHOD or METHOD for the method types (not ordinary ctypes
+Only use METHOD, STDMETHOD or VOIDMETHOD for the method types (not ordinary ctypes
 function types).  The 'this' pointer is bound automatically... e.g., call::
 
     device = IDirectSound8()
@@ -76,6 +76,10 @@ LPGUID = ctypes.POINTER(GUID)
 IID = GUID
 REFIID = ctypes.POINTER(IID)
 
+S_OK = 0x00000000
+E_NOTIMPL = 0x80004001
+E_NOINTERFACE = 0x80004002
+
 
 class METHOD:
     """COM method."""
@@ -120,7 +124,7 @@ _StructType = type(ctypes.Structure)
 
 
 class _InterfaceMeta(_StructType):
-    def __new__(cls, name, bases, dct, /, pointer_type_dict=None):
+    def __new__(cls, name, bases, dct, /, from_pointer=False):
         if len(bases) > 1:
             assert _debug_com(f"Ignoring {len(bases) - 1} bases on {name}")
             bases = (bases[0],)
@@ -141,7 +145,7 @@ class _InterfaceMeta(_StructType):
         for i, (method_name, mt) in enumerate(all_methods):
             assert _debug_com(f"{name}[{i}]: {method_name}: "
                               f"{(', '.join(t.__name__ for t in mt.argtypes) or '()')} -> "
-                              f"{mt.restype.__name__}")
+                              f"{'void' if mt.restype is None else mt.restype.__name__}")
 
         vtbl_struct_type = _StructType(f"Vtable_{name}",
                                        (ctypes.Structure,),
@@ -151,40 +155,16 @@ class _InterfaceMeta(_StructType):
 
         dct['_fields_'] = (('vtbl_ptr', ctypes.POINTER(vtbl_struct_type)),)
 
-        res_interface_struct = super().__new__(cls, name, bases, dct)
+        res_type = super().__new__(cls, name, bases, dct)
+        if not from_pointer:
+            # If we're not being created from a pInterface subclass as helper Interface (so likely
+            # being explicitly defined from user code for later use), create the special
+            # pInterface pointer subclass so it registers itself into the pointer cache
+            _pInterfaceMeta(f"p{name}", (ctypes.POINTER(bases[0]),), {'_type_': res_type})
 
-        # Create special pInterface pointer subclass
-        b = _COMInterfaceDummyPointer if bases[0] is _COMInterfaceDummy else ctypes.POINTER(bases[0])
-        if pointer_type_dict is None:
-            pointer_type_dict = {}
-        pointer_type_dict['_type_'] = res_interface_struct
-        own_pointer_type = _pInterfaceMeta(f"p{name}", (b,), pointer_type_dict)
-
-        # Hack it into the ctypes pointer cache so all uses of `ctypes.POINTER` on this interface
-        # type will yield it instead of the extremely inflexible standard pointer
-        from ctypes import _pointer_type_cache
-        _pointer_type_cache[res_interface_struct] = own_pointer_type
-
-        return res_interface_struct
+        return res_type
 
 
-@classmethod
-def _pInterface_from_param(cls, obj):
-    """When dealing with a COMObject, pry a fitting interface out of it
-    via a GUID-less version of the QueryInterface mechanism
-    """
-
-    if not isinstance(obj, COMObject):
-        return obj
-
-    if (i := obj._interface_to_vtbl_idx.get(cls._type_, None)) is None:
-        raise TypeError(f"COMObject {obj} does not implement {cls._type_}")
-
-    return ctypes.byref(obj._struct, i * (ctypes.sizeof(ctypes.c_void_p)))
-
-
-# Unfortunately, ctypes' pointer factory only checks the immediate typedict for `_type_`,
-# making meaningful propagation of the _type_ attribute impossible via simple subclassing
 class _pInterfaceMeta(_PointerType):
     def __new__(cls, name, bases, dct):
         # Interfaces can be declared by inheritance of pInterface subclasses
@@ -192,38 +172,62 @@ class _pInterfaceMeta(_PointerType):
 
         target = dct.get('_type_', None)
         # If we weren't created due to an Interface subclass definition (don't have a _type_),
-        # just define that Interface subclass, which will then actually create the pointer type
+        # just define that Interface subclass from our base's _type_
         if target is None:
             interface_base = bases[0]._type_
 
-            # Create corresponding interface type and then retrieve own new type through cache
-            it = _InterfaceMeta(f"_{name}_HelperInterface",
-                                (interface_base,),
-                                {'_methods_': dct.get('_methods_', ())},
-                                pointer_type_dict=dct)
-            return ctypes.POINTER(it)
+            # Create corresponding interface type and then set it as target
+            target = _InterfaceMeta(f"_{name}_HelperInterface",
+                                    (interface_base,),
+                                    {'_methods_': dct.get('_methods_', ())},
+                                    from_pointer=True)
+            dct['_type_'] = target
 
         # Create method proxies that will forward ourselves into the interface's methods
         for i, (method_name, method) in enumerate(target._methods_):
             m = method.get_com_proxy(i + target.vtbl_own_offset, method_name)
             def pinterface_method_forward(self, *args, _m=m, _i=i):
-                # assert _debug_com(f'Calling COM {_i} of {target.__name__} ({_m}) through pointer: ({", ".join(map(repr, (self, *args)))})')
+                assert _debug_com(f'Calling COM {_i} of {target.__name__} ({_m}) through '
+                                  f'pointer: ({", ".join(map(repr, (self, *args)))})')
                 return _m(self, *args)
             dct[method_name] = pinterface_method_forward
 
-        dct['from_param'] = _pInterface_from_param
+        pointer_type = super().__new__(cls, name, bases, dct)
 
-        return super().__new__(cls, name, bases, dct)
+        # Hack selves into the ctypes pointer cache so all uses of `ctypes.POINTER` on the
+        # interface type will yield it instead of the inflexible standard pointer.
+        # NOTE: This is done pretty much exclusively to help convert COMObjects.
+        # Some additional work from callers like
+        # RegisterCallback(callback_obj.as_interface(ICallbacK))
+        # instead of
+        # RegisterCallback(callback_obj)
+        # could make this obsolete.
+        from ctypes import _pointer_type_cache
+        _pointer_type_cache[target] = pointer_type
+
+        return pointer_type
 
 
 class Interface(_COMInterfaceDummy, metaclass=_InterfaceMeta):
     pass
-    # def __init__(self):
-    #     raise RuntimeError("Cannot instantiate interfaces")
-
 
 class pInterface(_COMInterfaceDummyPointer, metaclass=_pInterfaceMeta):
-    pass
+    _type_ = Interface
+
+    @classmethod
+    def from_param(cls, obj):
+        """When dealing with a COMObject, pry a fitting interface out of it"""
+        # This ignores the QueryInterface mechanism completely.
+        # Works, as so far none of the python-made COMObjects are expected to support
+        # it by any C code
+
+        if not isinstance(obj, COMObject):
+            return obj
+
+        if (offset := obj._interface_to_vtbl_offset.get(cls._type_, None)) is None:
+            raise TypeError(f"COMObject {obj} does not implement {cls._type_}")
+
+        return ctypes.byref(obj._struct, offset)
 
 
 class IUnknown(Interface):
@@ -328,60 +332,92 @@ class IUnknown(Interface):
 
 
 def _missing_impl(interface_name, method_name):
-    """Functions that are not implemented use this to prevent errors when called."""
+    """Create a callback returning E_NOTIMPL for methods not present on a COMObject."""
 
     def missing_cb_func(*_):
-        """Return E_NOTIMPL because the method is not implemented."""
-        assert _debug_com(f"Undefined method {method_name} called in interface {interface_name}")
-        return 0x80004001
+        assert _debug_com(f"Non-implemented method {method_name} called in {interface_name}")
+        return E_NOTIMPL
 
     return missing_cb_func
 
 
 def _found_impl(interface_name, method_name, method_func, self_distance):
-    """If a method was found in class, we can set it as a callback."""
+    """If a method was found in class, create a callback extracting self from the struct
+    pointer.
+    """
 
     def self_extracting_cb_func(p, *args):
-        self = ctypes.cast(
-            p + self_distance * ctypes.sizeof(ctypes.c_void_p),
-            ctypes.POINTER(ctypes.py_object)
-        ).contents.value
+        assert _debug_com(f"COMObject method {method_name} called through interface {interface_name}")
+        self = ctypes.cast(p + self_distance, ctypes.POINTER(ctypes.py_object)).contents.value
         result = method_func(self, *args)
-
-        if not result:  # QOL so callbacks don't need to specify a return for assumed OK's.
-            return 0
-
-        return result
+        # Assume no return statement translates to success
+        return S_OK if result is None else result
 
     return self_extracting_cb_func
 
 
 def _adjust_impl(interface_name, method_name, original_method, offset):
-    def adjustor(p, *args):
-        return original_method(p + offset * ctypes.sizeof(ctypes.c_void_p), *args)
+    """A method implemented in a previous interface modifies the COMOboject pointer so it
+    corresponds to an earlier interface and passes it on to the actual implementation.
+    """
 
-    return adjustor
+    def adjustor_cb_func(p, *args):
+        assert _debug_com(f"COMObject method {method_name} called through interface "
+                          f"{interface_name}, adjusting pointer by {offset}")
+        return original_method(p + offset, *args)
+
+    return adjustor_cb_func
 
 
 class COMObject:
     def __init_subclass__(cls, /, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        implemented_interfaces = cls.__dict__.get('_interfaces_', ())
-        for interface_type in implemented_interfaces:
-            for other in implemented_interfaces:
+        implemented_leaf_interfaces = cls.__dict__.get('_interfaces_', ())
+
+        for interface_type in implemented_leaf_interfaces:
+            for other in implemented_leaf_interfaces:
                 if interface_type is other:
                     continue
                 if issubclass(interface_type, other):
                     raise TypeError("Only specify the leaf interfaces")
 
-        # Done with sanity checks
+        # Sanity check done
+
+        _ptr_size = ctypes.sizeof(ctypes.c_void_p)
 
         _vtbl_pointers = []
-        _interface_to_vtbl_idx = {}
         implemented_methods = {}
 
-        for i, interface_type in enumerate(implemented_interfaces):
+        all_implemented_interfaces = []
+        _interface_to_vtbl_offset = {}
+        for i, interface_type in enumerate(implemented_leaf_interfaces):
+            bases = interface_type.get_interface_inheritance()
+            all_implemented_interfaces.extend(bases)
+            for base in bases:
+                if base not in _interface_to_vtbl_offset:
+                    _interface_to_vtbl_offset[base] = i * _ptr_size
+
+        if IUnknown in all_implemented_interfaces:
+            def QueryInterface(self, refi_id, res_ptr):
+                ctypes.cast(res_ptr, ctypes.POINTER(ctypes.c_void_p))[0] = 0
+                return E_NOINTERFACE
+
+            def AddRef(self):
+                self._vrefcount += 1
+                return self._vrefcount
+
+            def Release(self):
+                if self._vrefcount <= 0:
+                    raise RuntimeError(f"Bad memory management of {self}")
+                self._vrefcount -= 1
+                return self._vrefcount
+
+            cls.QueryInterface = QueryInterface
+            cls.AddRef = AddRef
+            cls.Release = Release
+
+        for i, interface_type in enumerate(implemented_leaf_interfaces):
             wrappers = []
 
             for method_name, method_type in interface_type._vtbl_struct_type._fields_:
@@ -390,10 +426,10 @@ class COMObject:
                     # See https://devblogs.microsoft.com/oldnewthing/20040206-00/?p=40723
                     # NOTE: Never tested, might be totally wrong
                     func, implementing_vtbl_idx = implemented_methods[method_name]
-                    wrapped = method_type(_adjust_impl(interface_type.__name__,
-                                                       method_name,
-                                                       func,
-                                                       implementing_vtbl_idx - i))
+                    mth = _adjust_impl(interface_type.__name__,
+                                           method_name,
+                                           func,
+                                           (implementing_vtbl_idx - i) * _ptr_size)
 
                 else:
                     if (found_method := getattr(cls, method_name, None)) is None:
@@ -402,27 +438,25 @@ class COMObject:
                         mth = _found_impl(interface_type.__name__,
                                           method_name,
                                           found_method,
-                                          len(implemented_interfaces) - i)
+                                          (len(implemented_leaf_interfaces) - i) * _ptr_size)
 
                     implemented_methods[method_name] = (mth, i)
-                    wrapped = method_type(mth)
 
-                wrappers.append(wrapped)
+                wrappers.append(method_type(mth))
 
             vtbl = interface_type._vtbl_struct_type(*wrappers)
             _vtbl_pointers.append(ctypes.pointer(vtbl))
-            for supported_base in interface_type.get_interface_inheritance():
-                if supported_base not in _interface_to_vtbl_idx:
-                    _interface_to_vtbl_idx[supported_base] = i
 
         fields = []
-        for i, itf in enumerate(implemented_interfaces):
+        for i, itf in enumerate(implemented_leaf_interfaces):
             fields.append((f'vtbl_ptr_{i}', ctypes.POINTER(itf._vtbl_struct_type)))
         fields.append(('self_', ctypes.py_object))
 
-        cls._interface_to_vtbl_idx = _interface_to_vtbl_idx
+        cls._interface_to_vtbl_offset = _interface_to_vtbl_offset
         cls._vtbl_pointers = _vtbl_pointers
         cls._struct_type = _StructType(f"{cls.__name__}_Struct", (ctypes.Structure,), {'_fields_': fields})
 
     def __init__(self):
+        self._vrefcount = 1
         self._struct = self._struct_type(*self._vtbl_pointers, ctypes.py_object(self))
+        self._as_param_ = ctypes.pointer(self._struct)
