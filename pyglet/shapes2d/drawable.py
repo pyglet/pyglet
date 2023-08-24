@@ -264,11 +264,8 @@ class ShapeBase(ABC):
     def position(self) -> Point2D:
         """The (x, y) coordinates of the shape, as a tuple.
 
-        :Parameters:
-            `x` : number
-                X coordinate of the sprite.
-            `y` : number
-                Y coordinate of the sprite.
+        :param number x: X coordinate of the shape.
+        :param number y: Y coordinate of the shape.
         """
         return self._x, self._y
 
@@ -307,11 +304,8 @@ class ShapeBase(ABC):
     def anchor_position(self) -> Point2D:
         """The (x, y) coordinates of the anchor point, as a tuple.
 
-        :Parameters:
-            `x` : number
-                X coordinate of the anchor point.
-            `y` : number
-                Y coordinate of the anchor point.
+        :param number x: X coordinate of the anchor point.
+        :param number y: Y coordinate of the anchor point.
         """
         return self._anchor_x, self._anchor_y
 
@@ -337,7 +331,7 @@ class ShapeBase(ABC):
         preserved. Each color component must be in the range 0 (dark)
         to 255 (saturated).
 
-        :type: Color
+        :type: color
         """
         return self._rgba
 
@@ -462,7 +456,7 @@ class Arc(ShapeBase):
             `closed` : bool
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
-            `color` : Color
+            `color` : color
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
@@ -604,7 +598,7 @@ class BezierCurve(ShapeBase):
         The curve's anchor point (x, y) defaults to its first control point.
 
         :Parameters:
-            `points` : Tuple[Point2D]
+            `points` : Point2D
                 Control points of the curve.
             `t` : float
                 Draw `100*t` percent of the curve. 0.5 means the curve
@@ -612,7 +606,7 @@ class BezierCurve(ShapeBase):
             `segments` : int
                 You can optionally specify how many line segments the
                 curve should be made from.
-            `color` : Color
+            `color` : color
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
@@ -688,7 +682,7 @@ class BezierCurve(ShapeBase):
     def points(self) -> List[Point2D]:
         """Control points of the curve.
 
-        :type: List[[Point2D]
+        :type: List[Point2D]
         """
         return self._points
 
@@ -744,7 +738,7 @@ class Catenary(ShapeBase):
             `segments` : int
                 You can optionally specify how many distinct triangles
                 the catenary should be made from.
-            `color` : Color
+            `color` : color
                 The RGB or RGBA color of the catenary, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
@@ -1553,15 +1547,15 @@ class Rectangle(ShapeBase):
 class BorderedRectangle(ShapeBase):
     def __init__(
         self,
-        x,
-        y,
-        width,
-        height,
-        border=1,
-        color=(255, 255, 255),
-        border_color=(100, 100, 100),
-        batch=None,
-        group=None,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        border: number=1,
+        color: Color=(255, 255, 255),
+        border_color: Color=(100, 100, 100),
+        batch: Optional[Batch]=None,
+        group: Optional[Group]=None,
     ):
         """Create a rectangle or square.
 
@@ -1569,21 +1563,21 @@ class BorderedRectangle(ShapeBase):
         which are at the bottom left.
 
         :Parameters:
-            `x` : float
+            `x` : number
                 The X coordinate of the rectangle.
-            `y` : float
+            `y` : number
                 The Y coordinate of the rectangle.
-            `width` : float
+            `width` : number
                 The width of the rectangle.
-            `height` : float
+            `height` : number
                 The height of the rectangle.
-            `border` : float
+            `border` : number
                 The thickness of the border.
-            `color` : (int, int, int, int)
+            `color` : color
                 The RGB or RGBA fill color of the rectangle, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
-            `border_color` : (int, int, int, int)
+            `border_color` : color
                 The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
