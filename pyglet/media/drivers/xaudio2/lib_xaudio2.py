@@ -220,6 +220,7 @@ class XA2SourceCallback(com.COMObject):
     _interfaces_ = [IXAudio2VoiceCallback]
 
     def __init__(self, xa2_player):
+        super().__init__()
         self.xa2_player = xa2_player
 
     def OnVoiceProcessingPassStart(self, bytesRequired):
