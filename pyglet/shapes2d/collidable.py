@@ -72,10 +72,10 @@ class CollisionShapeBase(ABC):
 
         :rtype: bool
         """
-        method = f"collide_with_{self._shape_name}"
+        method = f"collide_with_{other._shape_name}"
         if hasattr(self, method) and callable(getattr(self, method)):
             return getattr(self, method)(other)
-        method = f"collide_with_{other._shape_name}"
+        method = f"collide_with_{self._shape_name}"
         if hasattr(other, method) and callable(getattr(other, method)):
             return getattr(other, method)(self)
         raise TypeError(
