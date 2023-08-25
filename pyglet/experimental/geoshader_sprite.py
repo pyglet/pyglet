@@ -13,12 +13,14 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 vertex_source = """#version 150
     in vec3 position;
-    in vec4 size;
+    in vec2 size;
+    in vec2 scale;
     in vec4 color;
     in vec4 texture_uv;
     in float rotation;
 
-    out vec4 geo_size;
+    out vec2 geo_size;
+    out vec2 geo_scale;
     out vec4 geo_color;
     out vec4 geo_tex_coords;
     out float geo_rotation;
@@ -26,6 +28,7 @@ vertex_source = """#version 150
     void main() {
         gl_Position = vec4(position, 1);
         geo_size = size;
+        geo_scale = scale;
         geo_color = color;
         geo_tex_coords = texture_uv;
         geo_rotation = rotation;
@@ -48,7 +51,8 @@ geometry_source = """#version 150
     // Since geometry shader can take multiple values from a vertex
     // shader we need to define the inputs from it as arrays.
     // In our instance we just take single values (points)
-    in vec4 geo_size[];
+    in vec2 geo_size[];
+    in vec2 geo_scale[];
     in vec4 geo_color[];
     in vec4 geo_tex_coords[];
     in float geo_rotation[];
@@ -62,7 +66,7 @@ geometry_source = """#version 150
         vec2 center = gl_in[0].gl_Position.xy;
 
         // Calculate the half size of the sprites for easier calculations
-        vec2 hsize = geo_size[0].xy / 2.0;
+        vec2 hsize = geo_size[0] / 2.0;
 
         // Alias the Z value to save space
         float z = gl_in[0].gl_Position.z;
@@ -71,7 +75,7 @@ geometry_source = """#version 150
         float angle = radians(-geo_rotation[0]);
 
         // Create a scale vector
-        vec2 scale = vec2(geo_size[0][2], geo_size[0][3]);
+        vec2 scale = geo_scale[0];
 
         // Create a 2d rotation matrix
         mat2 rot = mat2(cos(angle), sin(angle),
@@ -320,9 +324,10 @@ class Sprite(event.EventDispatcher):
         self._vertex_list = self.program.vertex_list(
             1, GL_POINTS, self._batch, self._group,
             position=('f', (self._x, self._y, self._z)),
-            size=('f', (texture.width, texture.height, 1, 1)),
+            size=('f', (texture.width, texture.height)),
             color=('Bn', self._rgba),
             texture_uv=('f', texture.uv),
+            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y)),
             rotation=('f', (self._rotation,)))
 
     @property
