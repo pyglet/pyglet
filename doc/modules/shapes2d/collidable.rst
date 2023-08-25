@@ -5,6 +5,12 @@ pyglet.shapes2d.collidable
 
 .. autoclass:: CollisionShapeBase
 
+  .. rubric:: Methods
+
+  .. automethod:: is_collided
+
+  .. rubric:: Attributes
+
   .. autoattribute:: x
   .. autoattribute:: y
   .. autoattribute:: position
@@ -36,3 +42,5 @@ pyglet.shapes2d.collidable
 
 .. autoclass:: CollisionPolygon
   :show-inheritance:
+
+  .. autoattribute:: coordinates

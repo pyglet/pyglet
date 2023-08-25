@@ -36,6 +36,7 @@ pyglet.shapes2d.drawable
 .. autoclass:: BezierCurve
   :show-inheritance:
 
+  .. autoattribute:: points
   .. autoattribute:: t
 
 
@@ -117,4 +118,5 @@ pyglet.shapes2d.drawable
 .. autoclass:: Polygon
   :show-inheritance:
 
+  .. autoattribute:: coordinates
   .. autoattribute:: rotation

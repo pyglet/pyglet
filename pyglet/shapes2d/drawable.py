@@ -23,17 +23,10 @@ from abc import ABC, abstractmethod
 from typing import List, NoReturn, Optional
 
 import pyglet
-from pyglet.customtypes import Color, number, Point2D
-from pyglet.gl import (
-    GL_BLEND,
-    GL_LINES,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TRIANGLES,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet.customtypes import Color, Point2D, number
+from pyglet.gl import (GL_BLEND, GL_LINES, GL_ONE_MINUS_SRC_ALPHA,
+                       GL_SRC_ALPHA, GL_TRIANGLES, glBlendFunc, glDisable,
+                       glEnable)
 from pyglet.graphics import Batch, Group
 from pyglet.graphics.shader import ShaderProgram
 from pyglet.graphics.vertexdomain import VertexList
@@ -117,17 +110,14 @@ class _ShapeGroup(Group):
         The group is created internally. Usually you do not
         need to explicitly create it.
 
-        :Parameters:
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                The ShaderProgram to use.
-            `parent` : `~pyglet.graphics.Group`
-                Optional parent group.
+        :param int blend_src:
+            OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+        :param int blend_dest:
+            OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+        :param pyglet.graphics.shader.ShaderProgram program:
+            The ShaderProgram to use.
+        :param pyglet.graphics.Group group:
+            Optional parent group.
         """
         super().__init__(parent=parent)
         self.program = program
@@ -704,6 +694,14 @@ class BezierCurve(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
+    def points(self) -> List[Point2D]:
+        """Control points of the curve. Read-only.
+
+        :type: List[Point2d]
+        """
+        return self._points
+
+    @property
     def t(self) -> float:
         """Draw ``100*t`` percent of the curve.
 
@@ -786,19 +784,19 @@ class Catenary(ShapeBase):
         if math.sqrt(s**2 - v**2) / h < 1:
             raise ValueError("length is too shot")
         f = lambda x: math.sinh(x) / x - math.sqrt(s**2 - v**2) / h
-        differ = lambda f, x: (f(x + 10e-5) - f(x - 10e-5)) / (2 * 10e-5)
+        differ = lambda f, x: (f(x + 10e-5) - f(x - 1e-5)) / (2e-5)
         x_now = 1
         while True:
             x_prev = x_now
             x_now = x_prev - f(x_now) / differ(f, x_now)
-            if abs(x_prev - x_now) < 10e-5:
+            if abs(x_prev - x_now) < 1e-3:
                 break
             x_prev = x_now
         a = h / (2 * x_now)
         b = h / a
         c = (self._y - self._y2) / a
         d = c**2 - math.expm1(b) * math.expm1(-b)
-        p1 = -self._x + a * math.log((c - math.sqrt(d)) / -math.expm1(b))
+        p1 = a * math.log((math.sqrt(d) - c) / math.expm1(b)) - self._x
         p2 = self._y - a * math.cosh((self._x + p1) / a)
         return a, p1, p2
 
@@ -2191,6 +2189,14 @@ class Polygon(ShapeBase):
             self._vertex_list.position[:] = tuple(
                 value for coordinate in triangles for value in coordinate
             )
+
+    @property
+    def coordinates(self) -> List[Point2D]:
+        """The coordinates for each point in the polygon. Read-only.
+
+        :type: List[Point2D]
+        """
+        return self._coordinates
 
     @property
     def rotation(self) -> number:

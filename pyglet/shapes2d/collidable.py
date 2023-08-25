@@ -7,7 +7,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import List
 
-from pyglet.customtypes import number, Point2D
+from pyglet.customtypes import Point2D, number
 
 
 def rotate_point(center: Point2D, point: Point2D, angle: number) -> Point2D:
@@ -52,9 +52,26 @@ class CollisionShapeBase(ABC):
 
     @abstractmethod
     def __contains__(self, point: Point2D) -> bool:
+        """Test whether a point is inside a collidable shape.
+
+        :param Point2D point:
+            The point.
+
+        :trype: bool
+        """
         raise NotImplementedError(
             f"The `in` operator is not supported for {self.__class__.__name__}"
         )
+
+    def is_collided(self, other: "CollisionShapeBase") -> bool:
+        """Test whether two shapes are collided.
+
+        :param CollisionShapeBase other:
+            A second shape that needs to be detected with this shape.
+
+        :rtype: bool
+        """
+        return False
 
     @property
     def x(self) -> number:
@@ -265,6 +282,14 @@ class CollisionPolygon(CollisionShapeBase):
             (point[0] - self._anchor_x, point[1] - self._anchor_y) for point in coords
         ]
         return point_in_polygon(coords, point)
+
+    @property
+    def coordinates(self) -> List[Point2D]:
+        """The coordinates for each point in the polygon.
+
+        :type: List[Point2D]
+        """
+        return self._coordinates
 
 
 __all__ = (
