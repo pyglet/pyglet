@@ -49,6 +49,7 @@ class CollisionShapeBase(ABC):
     _anchor_x: number = 0
     _anchor_y: number = 0
     _rotation: number = 0
+    _shape_name: str = "base"
 
     @abstractmethod
     def __contains__(self, point: Point2D) -> bool:
@@ -63,7 +64,7 @@ class CollisionShapeBase(ABC):
             f"The `in` operator is not supported for {self.__class__.__name__}"
         )
 
-    def is_collided(self, other: "CollisionShapeBase") -> bool:
+    def is_collide(self, other: "CollisionShapeBase") -> bool:
         """Test whether two shapes are collided.
 
         :param CollisionShapeBase other:
@@ -71,7 +72,16 @@ class CollisionShapeBase(ABC):
 
         :rtype: bool
         """
-        return False
+        method = f"collide_with_{self._shape_name}"
+        if hasattr(self, method) and callable(getattr(self, method)):
+            return getattr(self, method)(other)
+        method = f"collide_with_{other._shape_name}"
+        if hasattr(other, method) and callable(getattr(other, method)):
+            return getattr(other, method)(self)
+        raise TypeError(
+            "Cannot perform collision detection between "
+            f"{self.__class__.__name} and {other.__class__.__name__}"
+        )
 
     @property
     def x(self) -> number:
@@ -168,6 +178,8 @@ class CollisionShapeBase(ABC):
 
 
 class CollisionCircle(CollisionShapeBase):
+    _shape_name = "circle"
+
     def __init__(self, x: number, y: number, radius: number) -> None:
         self._x = x
         self._y = y
@@ -177,6 +189,12 @@ class CollisionCircle(CollisionShapeBase):
         point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
         center = (self._x - self._anchor_x, self._y - self._anchor_y)
         return math.dist(center, point) < self._radius
+
+    def collide_with_circle(self, other: "CollisionCircle") -> bool:
+        center1 = (self._x - self._anchor_x, self._y - self._anchor_y)
+        center2 = (other.x - other.anchor_x, other.y - other.anchor_y)
+        length = self._radius + other.radius
+        return math.dist(center1, center2) < length
 
     @property
     def radius(self) -> number:
@@ -192,6 +210,8 @@ class CollisionCircle(CollisionShapeBase):
 
 
 class CollisionEllipse(CollisionShapeBase):
+    _shape_name = "ellipse"
+
     def __init__(self, x: number, y: number, a: number, b: number) -> None:
         self._x = x
         self._y = y
@@ -235,6 +255,8 @@ class CollisionEllipse(CollisionShapeBase):
 
 
 class CollisionRectangle(CollisionShapeBase):
+    _shape_name = "rectangle"
+
     def __init__(self, x: number, y: number, width: number, height: number):
         self._x = x
         self._y = y
@@ -272,6 +294,8 @@ class CollisionRectangle(CollisionShapeBase):
 
 
 class CollisionPolygon(CollisionShapeBase):
+    _shape_name = "polygon"
+
     def __init__(self, *coordinates: Point2D) -> None:
         self._coordinates: List[Point2D] = list(coordinates)
 
