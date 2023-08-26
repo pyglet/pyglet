@@ -22,6 +22,7 @@ primitives of the same OpenGL primitive mode.
 """
 
 import ctypes
+from typing import Tuple
 
 import pyglet
 
@@ -104,6 +105,17 @@ class VertexDomain:
         for attribute in self.attributes:
             self.attribute_names[attribute.name] = attribute
 
+        self._create_attribute_arrays()
+
+    def _create_attribute_arrays(self):
+        """
+        For each attribute, create a ctypes array pointing to the entire buffer
+        which can be used to write values into the buffer using slice assignment
+        """
+        for attribute in self.attributes:
+            region = attribute.get_region(attribute.buffer, 0, self.allocator.capacity)
+            attribute.array = region.array
+
     def __del__(self):
         # Break circular refs that Python GC seems to miss even when forced
         # collection.
@@ -123,6 +135,7 @@ class VertexDomain:
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
+            self._create_attribute_arrays()
             return self.allocator.alloc(count)
 
     def safe_realloc(self, start, count, new_count):
@@ -135,6 +148,7 @@ class VertexDomain:
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
+            self._create_attribute_arrays()
             return self.allocator.realloc(start, count, new_count)
 
     def create(self, count, index_count=None):
@@ -319,6 +333,63 @@ class VertexList:
             getattr(self, name)[:] = value
             return
         super().__setattr__(name, value)
+    
+    def _get_setter_params(self, name: str) -> '_VertexListSetParams':
+        """Returns an opaque tuple of params which can be passed to
+        `_vertex_list_set` along with a data tuple to write values
+        for the attribute into the buffer, in performance-critical code.
+
+        These params become invalid when the VertexList migrates to a different
+        domain, and it's the caller's responsibility to stop using the old setter
+        and create a new one.
+
+        This style is un-pythonic and chosen deliberately to optimize performance
+        and memory usage.  Sprites write updated values into their VertexList often,
+        so every ounce of speed helps.
+
+        This style avoids:
+            attribute access on slotted class (slower than tuple unpack even w/python 3.11's new optimizations)
+            extra function calls (python fn calls are slow)
+            method lookup on a class (extra function call & lookup is slower)
+            memory overhead of functools.partial (partials are relatively heavy objects)
+            memory overhead of closures (closures create Cell objects)
+            performance hit for fn calls that mix unpacking with positions, (`foo(*params, value)` is surprisingly slow)
+        
+        Before changing this style, consider if your changes will introduce any of the performance penalties
+        listed above.
+        """
+
+        # These change when VertexList migrates between domains, so docstring
+        # warns callers and makes it their responsibility.
+        # Why? Speed
+
+        attribute = self.domain.attribute_names[name]
+        buffer = attribute.buffer
+        value_size = attribute.align
+        attribute_count = attribute.count
+        start = self.start * attribute_count
+        count = self.count * attribute_count
+        mem_start = start * value_size
+        mem_end = mem_start + (count * value_size)
+        return (attribute, buffer, start, count, mem_start, mem_end)
+
+
+_VertexListSetParams = Tuple[shader.Attribute, MappableBufferObject, int, int, int, int]
+
+
+# Not a static method of `VertexList` to avoid extra dictionary lookup at callsites
+def _vertex_list_set(params: _VertexListSetParams, data):
+    "See `VertexList._get_setter_params`"
+    attribute, buffer, start, count, byte_start, byte_end = params
+    # Cannot cache attribute.buffer_array!  It is re-created when
+    # buffer resizes. VertexList owners control when they migrate the VertexList
+    # between domains, but they cannot be notified when the buffer reallocates.
+    attribute.array[start:start+count] = data
+    # Benchmarks on cpython 3.11 show this style is faster than `a.b = min(a.b, c)`
+    if byte_start < buffer._dirty_min:
+        buffer._dirty_min = byte_start
+    if byte_end > buffer._dirty_max:
+        buffer._dirty_max = byte_end
 
 
 class IndexedVertexDomain(VertexDomain):

@@ -7,6 +7,7 @@ from pyglet import clock
 from pyglet import event
 from pyglet import graphics
 from pyglet import image
+from pyglet.graphics.vertexdomain import _vertex_list_set
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -318,7 +319,8 @@ class Sprite(event.EventDispatcher):
         self._subpixel = subpixel
 
         self._create_vertex_list()
-
+        self._create_vertex_setter_params()
+    
     def _create_vertex_list(self):
         texture = self._texture
         self._vertex_list = self.program.vertex_list(
@@ -329,6 +331,14 @@ class Sprite(event.EventDispatcher):
             texture_uv=('f', texture.uv),
             scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y)),
             rotation=('f', (self._rotation,)))
+
+    def _create_vertex_setter_params(self):
+        "Must be called every time VertexList is created or migrates between VertexDomains"
+        self._setter_params_position = self._vertex_list._get_setter_params('position')
+        self._setter_params_rotation = self._vertex_list._get_setter_params('rotation')
+        self._setter_params_scale = self._vertex_list._get_setter_params('scale')
+        self._setter_params_color = self._vertex_list._get_setter_params('color')
+        self._setter_params_texture_uv = self._vertex_list._get_setter_params('texture_uv')
 
     @property
     def program(self):
@@ -345,6 +355,7 @@ class Sprite(event.EventDispatcher):
                                        self._user_group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
         self._program = program
+        self._create_vertex_setter_params()
 
     def delete(self):
         """Force immediate removal of the sprite from video memory.
@@ -403,6 +414,8 @@ class Sprite(event.EventDispatcher):
             self._vertex_list.delete()
             self._batch = batch
             self._create_vertex_list()
+        
+        self._create_vertex_setter_params()
 
     @property
     def group(self):
@@ -425,6 +438,7 @@ class Sprite(event.EventDispatcher):
                                        self._group.program,
                                        group)
         self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
+        self._create_vertex_setter_params()
 
     @property
     def image(self):
@@ -484,7 +498,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, position):
         self._x, self._y, self._z = position
-        self._vertex_list.position[:] = position
+        _vertex_list_set(self._setter_params_position, position)
 
     @property
     def x(self):
@@ -497,7 +511,7 @@ class Sprite(event.EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self._vertex_list.position[:] = x, self._y, self._z
+        _vertex_list_set(self._setter_params_position, (x, self._y, self._z))
 
     @property
     def y(self):
@@ -510,7 +524,7 @@ class Sprite(event.EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self._vertex_list.position[:] = self._x, y, self._z
+        _vertex_list_set(self._setter_params_position, (self._x, y, self._z))
 
     @property
     def z(self):
@@ -523,7 +537,7 @@ class Sprite(event.EventDispatcher):
     @z.setter
     def z(self, z):
         self._z = z
-        self._vertex_list.position[:] = self._x, self._y, z
+        _vertex_list_set(self._setter_params_position, (self._x, self._y, z))
 
     @property
     def rotation(self):
@@ -539,7 +553,7 @@ class Sprite(event.EventDispatcher):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._vertex_list.rotation[0] = self._rotation
+        _vertex_list_set(self._setter_params_rotation, (rotation,))
 
     @property
     def scale(self):
@@ -555,7 +569,7 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
-        self._vertex_list.scale[:] = scale * self._scale_x, scale * self._scale_y
+        _vertex_list_set(self._setter_params_scale, (scale * self._scale_x, scale * self._scale_y))
 
     @property
     def scale_x(self):
@@ -571,7 +585,8 @@ class Sprite(event.EventDispatcher):
     @scale_x.setter
     def scale_x(self, scale_x):
         self._scale_x = scale_x
-        self._vertex_list.scale[:] = self._scale * scale_x, self._scale * self._scale_y
+        scale = self._scale
+        _vertex_list_set(self._setter_params_scale, (scale * scale_x, scale * self._scale_y))
 
     @property
     def scale_y(self):
@@ -587,7 +602,8 @@ class Sprite(event.EventDispatcher):
     @scale_y.setter
     def scale_y(self, scale_y):
         self._scale_y = scale_y
-        self._vertex_list.scale[:] = self._scale * self._scale_x, self._scale * scale_y
+        scale = self._scale
+        _vertex_list_set(self._setter_params_scale, (scale * self._scale_x, scale * scale_y))
 
     def update(self, x=None, y=None, z=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -626,11 +642,11 @@ class Sprite(event.EventDispatcher):
             translations_outdated = True
 
         if translations_outdated:
-            self._vertex_list.position[:] = (self._x, self._y, self._z)
+            _vertex_list_set(self._setter_params_position, (self._x, self._y, self._z))
 
         if rotation is not None and rotation != self._rotation:
             self._rotation = rotation
-            self._vertex_list.rotation[:] = rotation
+            _vertex_list_set(self._setter_params_rotation, (rotation,))
 
         scales_outdated = False
 
@@ -646,7 +662,8 @@ class Sprite(event.EventDispatcher):
             scales_outdated = True
 
         if scales_outdated:
-            self._vertex_list.scale[:] = self._scale * self._scale_x, self._scale * self._scale_y
+            scale = self._scale
+            _vertex_list_set(self._setter_params_scale, (scale * self._scale_x, scale * self._scale_y))
 
     @property
     def width(self):
@@ -697,8 +714,9 @@ class Sprite(event.EventDispatcher):
 
     @opacity.setter
     def opacity(self, opacity):
-        self._rgba[3] = opacity
-        self._vertex_list.color[:] = self._rgba
+        rgba = self._rgba
+        rgba[3] = opacity
+        _vertex_list_set(self._setter_params_color, rgba)
 
     @property
     def color(self):
@@ -716,8 +734,9 @@ class Sprite(event.EventDispatcher):
 
     @color.setter
     def color(self, rgb):
-        self._rgba[:3] = list(map(int, rgb))
-        self._vertex_list.color[:] = self._rgba
+        rgba = self._rgba
+        rgba[:3] = list(map(int, rgb))
+        _vertex_list_set(self._setter_params_color, rgba)
 
     @property
     def visible(self):
@@ -730,7 +749,7 @@ class Sprite(event.EventDispatcher):
     @visible.setter
     def visible(self, visible):
         self._visible = visible
-        self._vertex_list.texture_uv[:] = (0, 0, 0, 0) if not visible else self._texture.uv
+        _vertex_list_set(self._setter_params_texture_uv, (0, 0, 0, 0) if not visible else self._texture.uv)
 
     @property
     def paused(self):
