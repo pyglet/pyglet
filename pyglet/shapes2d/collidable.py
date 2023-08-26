@@ -49,7 +49,6 @@ class CollisionShapeBase(ABC):
     _anchor_x: number = 0
     _anchor_y: number = 0
     _rotation: number = 0
-    _shape_name: str = "base"
 
     @abstractmethod
     def __contains__(self, point: Point2D) -> bool:
@@ -72,15 +71,15 @@ class CollisionShapeBase(ABC):
 
         :rtype: bool
         """
-        method = f"collide_with_{other._shape_name}"
+        method = f"collide_with_{other.__class__.__name__}"
         if hasattr(self, method) and callable(getattr(self, method)):
             return getattr(self, method)(other)
-        method = f"collide_with_{self._shape_name}"
+        method = f"collide_with_{self.__class__.__name__}"
         if hasattr(other, method) and callable(getattr(other, method)):
             return getattr(other, method)(self)
         raise TypeError(
-            "Cannot perform collision detection between "
-            f"{self.__class__.__name} and {other.__class__.__name__}"
+            "No collision detection method found between "
+            f"{self.__class__.__name__} and {other.__class__.__name__}"
         )
 
     @property
@@ -178,8 +177,6 @@ class CollisionShapeBase(ABC):
 
 
 class CollisionCircle(CollisionShapeBase):
-    _shape_name = "circle"
-
     def __init__(self, x: number, y: number, radius: number) -> None:
         self._x = x
         self._y = y
@@ -190,7 +187,7 @@ class CollisionCircle(CollisionShapeBase):
         center = (self._x - self._anchor_x, self._y - self._anchor_y)
         return math.dist(center, point) < self._radius
 
-    def collide_with_circle(self, other: "CollisionCircle") -> bool:
+    def collide_with_CollisionCircle(self, other: "CollisionCircle") -> bool:
         center1 = (self._x - self._anchor_x, self._y - self._anchor_y)
         center2 = (other.x - other.anchor_x, other.y - other.anchor_y)
         length = self._radius + other.radius
@@ -210,8 +207,6 @@ class CollisionCircle(CollisionShapeBase):
 
 
 class CollisionEllipse(CollisionShapeBase):
-    _shape_name = "ellipse"
-
     def __init__(self, x: number, y: number, a: number, b: number) -> None:
         self._x = x
         self._y = y
@@ -255,8 +250,6 @@ class CollisionEllipse(CollisionShapeBase):
 
 
 class CollisionRectangle(CollisionShapeBase):
-    _shape_name = "rectangle"
-
     def __init__(self, x: number, y: number, width: number, height: number):
         self._x = x
         self._y = y
@@ -294,8 +287,6 @@ class CollisionRectangle(CollisionShapeBase):
 
 
 class CollisionPolygon(CollisionShapeBase):
-    _shape_name = "polygon"
-
     def __init__(self, *coordinates: Point2D) -> None:
         self._coordinates: List[Point2D] = list(coordinates)
 
