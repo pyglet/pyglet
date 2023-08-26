@@ -24,6 +24,7 @@ pressed = pyglet.resource.image('button_down.png')
 hover = pyglet.resource.image('button_hover.png')
 bar = pyglet.resource.image('bar.png')
 knob = pyglet.resource.image('knob.png')
+header = pyglet.resource.image('header.png')
 
 
 ######################################
@@ -77,7 +78,9 @@ layout.set_style('cell-content-alignment', ('center', 'bottom'))
 
 header_label = pyglet.text.Label("Menu", batch=batch, color=(0, 0, 0, 255))
 layout.cell(0, 0).content = header_label
-layout.cell(0, 0).set_style('background', (255,255,255,255))
+header_sprite = pyglet.sprite.Sprite(header, batch=batch, 
+                                    image_mesh_generator=pyglet.sprite.NinePatchImageMeshGenerator(11, 11, 11, 11, 2))
+layout.cell(0, 0).set_style('background', header_sprite)
 
 togglebutton = pyglet.gui.ToggleButton(0,0, pressed=pressed, depressed=depressed, hover=hover, batch=batch)
 togglebutton.set_handler('on_toggle', toggle_button_handler)
@@ -95,6 +98,7 @@ layout.cell(2, 1).content = pushbutton
 frame.add_widget(pushbutton)
 
 slider = pyglet.gui.Slider(0,0, bar, knob, edge=5, batch=batch)
+slider._base_spr.set_image_mesh_generator(pyglet.sprite.NinePatchImageMeshGenerator(0, 20, 0, 20))
 slider.set_handler('on_change', slider_handler)
 
 slider_label = pyglet.text.Label("Slider Value: 0.0", batch=batch, color=(0, 0, 0, 255))
