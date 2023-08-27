@@ -874,7 +874,7 @@ class DefaultImageMeshGenerator(ImageMeshGenerator):
         x1 = -tex.anchor_x * image.scale_x
         y1 = -tex.anchor_y * image.scale_y
         x2 = x1 + image.width
-        y2 = y1 + tex.height
+        y2 = y1 + image.height
         vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
 
         if not image._subpixel:
