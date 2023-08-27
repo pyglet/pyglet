@@ -8,38 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from pyglet.customtypes import Point2D, number
-
-
-def rotate_point(center: Point2D, point: Point2D, angle: number) -> Point2D:
-    prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
-    now_angle = prev_angle + angle
-    r = math.dist(point, center)
-    return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
-
-
-def point_in_polygon(polygon: List[Point2D], point: Point2D) -> bool:
-    """Raycasting Algorithm to find out whether a point is in a given polygon.
-
-    Copy from https://www.algorithms-and-technologies.com/point_in_polygon/python
-    """
-    odd = False
-    i = 0
-    j = len(polygon) - 1
-    while i < len(polygon) - 1:
-        i = i + 1
-        if ((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (
-            point[0]
-            < (
-                (polygon[j][0] - polygon[i][0])
-                * (point[1] - polygon[i][1])
-                / (polygon[j][1] - polygon[i][1])
-            )
-            + polygon[i][0]
-        ):
-            odd = not odd
-        j = i
-    return odd
-
+from pyglet.shapes2d.util import *
 
 class CollisionShapeBase(ABC):
     """Base class for all collidable shape objects."""
@@ -308,11 +277,9 @@ class CollisionPolygon(CollisionShapeBase):
 
 
 __all__ = (
-    "rotate_point",
-    "point_in_polygon",
     "CollisionShapeBase",
     "CollisionCircle",
     "CollisionEllipse",
     "CollisionRectangle",
-    "CollisionPolygon",
+    "CollisionPolygon"
 )

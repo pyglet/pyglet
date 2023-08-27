@@ -1352,7 +1352,6 @@ class Line(ShapeBase):
         self._update_vertices()
 
     def __contains__(self, point: Point2D) -> bool:
-        assert len(point) == 2
         vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
         vec_ba = -vec_ab
         vec_ap = Vec2(
