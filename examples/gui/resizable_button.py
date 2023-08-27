@@ -1,80 +1,63 @@
-"""A button which resizes along with the window it fills.
+"""Use UI element resizing to scale a button with a window.
 
-This example is written in object-oriented style rather than
-functions and decorators because overriding the default
-Window event handler stops automatic gl viewport resizing.
+When overriding the Window.on_resize event handler, it is
+easiest to use either ``@window.event`` decoration or
+inheritance to make sure you update the GL view projection.
+If you do not, the window will cut off drawing at its
+original size unless you manually reset the projection.
 
-See the Setting Event handlers section of the Programming Guide
-for more information:
-https://pyglet.readthedocs.io/en/latest/programming_guide/events.html#setting-event-handlers
+This demo takes the event decorator approach.
 """
 import pyglet
 
-# How much space to leave around the inside of the window
+# Add space around the window to make sure button hovering works
 PADDING_PX = 30
+DOUBLE_PADDING = PADDING_PX * 2
 
 
-class ResizableButtonWindow(pyglet.window.Window):
-
-    def __init__(self, width: int = 500, height: int = 500):
-        super().__init__(
-            width, height,
-            caption="Resizable Button", resizable= True)
-
-        # Load button textures
-        self.depressed=pyglet.resource.image('button_up.png')
-        self.pressed = pyglet.resource.image('button_down.png')
-        self.hover=pyglet.resource.image('button_hover.png')
-
-        self.batch = pyglet.graphics.Batch()
-        self.frame = pyglet.gui.Frame(self, order=4)
-
-        self.push_label = pyglet.text.Label(
-            "Push Button: ", x=0, y=0, batch=self.batch, color=(0, 0, 0, 255))
-        self.pushbutton = pyglet.gui.PushButton(
-            PADDING_PX, PADDING_PX,
-            self.pressed,
-            self.depressed,
-            hover=self.hover,
-            width=self.width - 2 * PADDING_PX,
-            height=self.height - 2 * PADDING_PX,
-            batch=self.batch
-        )
-
-        self.pushbutton.set_handler('on_press', self.push_button_handler)
-        self.pushbutton.set_handler('on_release', self.release_button_handler)
-        self.frame.add_widget(self.pushbutton)
-        self.update_label()
-
-    def on_draw(self):
-        self.clear()
-        self.batch.draw()
-
-    def update_label(self):
-        """Update the label contents with current data"""
-        button = self.pushbutton
-        self.push_label.text =\
-            f"Push Button: pressed={button.value}, "\
-            f"width={button.width}, height={button.height}"
-
-    def push_button_handler(self):
-        self.update_label()
-
-    def release_button_handler(self):
-        self.update_label()
-
-    def on_resize(self, width, height):
-        # Crucial: update the GL viewport so we don't cut things off!
-        super().on_resize(width, height)
-        # Avoid division by zero
-        self.pushbutton.size = (
-            max(1, width - 2 * PADDING_PX),
-            max(1, height - 2 * PADDING_PX)
-        )
-        self.update_label()
+window = pyglet.window.Window(500, 500, caption="Resizable Full-Window Button", resizable=True)
+batch = pyglet.graphics.Batch()
+pyglet.gl.glClearColor(0.8, 0.8, 0.8, 1.0)
+frame = pyglet.gui.Frame(window, order=4)
 
 
-if __name__ == "__main__":
-    _ = ResizableButtonWindow()
-    pyglet.gl.glClearColor(0.8, 0.8, 0.8, 1.0)
-    pyglet.app.run()
+@window.event
+def on_draw():
+    window.clear()
+    batch.draw()
+
+
+depressed = pyglet.resource.image('button_up.png')
+pressed = pyglet.resource.image('button_down.png')
+hover = pyglet.resource.image('button_hover.png')
+
+
+push_label = pyglet.text.Label("Push Button: False", x=0, y=0, batch=batch, color=(0, 0, 0, 255))
+pushbutton = pyglet.gui.PushButton(
+    PADDING_PX, PADDING_PX,
+    pressed, depressed,
+    hover=hover, batch=batch,
+    width=window.width - DOUBLE_PADDING, height=window.height - DOUBLE_PADDING
+)
+
+
+# Update the bottom left display label
+def update_label_text():
+    push_label.text =\
+        f"Push Button: pressed={pushbutton.value}, "\
+        f"width={pushbutton.width}, height={pushbutton.height}"
+
+
+# Use a decorator to register the resize handler
+@window.event
+def on_resize(width, height):
+    pushbutton.size = width - DOUBLE_PADDING, height - DOUBLE_PADDING
+    update_label_text()
+
+
+pushbutton.set_handler('on_press', update_label_text)
+pushbutton.set_handler('on_release', update_label_text)
+frame.add_widget(pushbutton)
+
+
+pyglet.app.run()
