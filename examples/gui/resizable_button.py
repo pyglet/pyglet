@@ -1,12 +1,33 @@
-"""Use UI element resizing to scale a button with a window.
+"""Use UI element resizing to scale a button with a window's size.
 
-When overriding the Window.on_resize event handler, it is
-easiest to use either ``@window.event`` decoration or
-inheritance to make sure you update the GL view projection.
-If you do not, the window will cut off drawing at its
-original size unless you manually reset the projection.
+When overriding the Window.on_resize event handler, it is easiest to do
+one of the following:
 
-This demo takes the event decorator approach.
+1. Use ``@window.event`` to register an event handler
+2. Inherit from the base Window class and call `super().on_resize()`
+   at the top of the overriding on_resize method.
+
+This example takes the first approach.
+
+If you do neither, you must manually update the projection, or else
+drawing will cut off all drawing above and to the right of the window's
+original size:
+
+             +--------------------------+
+             |       Window Title       |
+             +--------------------------+  ^
+             |    + - - - - - - - -+    |  |
+             |    |    Cut off     |    |  |  Window
+             |       button area        |  |  growth
+         --- +----------------+    |    | ---
+          |  |    |  Visible  |         |
+ Original |  |    |   area    |    |    |
+  height  |  |    +-----------| - -+    |
+          |  |                |         |
+         --- +----------------+---------+
+             |----------------|---------->
+                  Original       Window
+                   width         growth
 """
 import pyglet
 
@@ -15,7 +36,11 @@ PADDING_PX = 30
 DOUBLE_PADDING = PADDING_PX * 2
 
 
-window = pyglet.window.Window(500, 500, caption="Resizable Full-Window Button", resizable=True)
+window = pyglet.window.Window(
+    500, 500,
+    caption="Resizable Full-Window Button",
+    resizable=True  # Important: make the window resizable
+)
 batch = pyglet.graphics.Batch()
 pyglet.gl.glClearColor(0.8, 0.8, 0.8, 1.0)
 frame = pyglet.gui.Frame(window, order=4)
@@ -27,12 +52,17 @@ def on_draw():
     batch.draw()
 
 
+# Load textures
 depressed = pyglet.resource.image('button_up.png')
 pressed = pyglet.resource.image('button_down.png')
 hover = pyglet.resource.image('button_hover.png')
 
 
-push_label = pyglet.text.Label("Push Button: False", x=0, y=0, batch=batch, color=(0, 0, 0, 255))
+push_label = pyglet.text.Label(
+    "Push Button: False",
+    x=0, y=0,
+    batch=batch, color=(0, 0, 0, 255)
+)
 pushbutton = pyglet.gui.PushButton(
     PADDING_PX, PADDING_PX,
     pressed, depressed,
@@ -48,7 +78,8 @@ def update_label_text():
         f"width={pushbutton.width}, height={pushbutton.height}"
 
 
-# Use a decorator to register the resize handler
+# Use a decorator to register the resize handler to make sure
+# we scale the drawing area as the window grows and shrinks.
 @window.event
 def on_resize(width, height):
     pushbutton.size = width - DOUBLE_PADDING, height - DOUBLE_PADDING
