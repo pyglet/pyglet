@@ -75,6 +75,10 @@ class WidgetBase(EventDispatcher):
     def width(self, value):
         self.on_resize(value, self._height)
 
+    @width.setter
+    def width(self, value):
+        self.on_resize(value, self._height)
+
     @property
     def height(self):
         """Height of the widget.
@@ -83,6 +87,18 @@ class WidgetBase(EventDispatcher):
         """
         return self._height
     
+    @height.setter
+    def height(self, value):
+        self.on_resize(self._width, value)
+
+    @property
+    def size(self):
+        return (self.width, self.height)
+
+    @size.setter
+    def size(self, size_value):
+        self.on_resize(size_value[0], size_value[1])
+
     @height.setter
     def height(self, value):
         self.on_resize(self._width, value)
@@ -121,6 +137,10 @@ class WidgetBase(EventDispatcher):
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
     
+    def on_resize(self, width, height):
+        self._width = width
+        self._height = height
+
     def on_resize(self, width, height):
         self._width = width
         self._height = height
@@ -365,7 +385,7 @@ class Slider(WidgetBase):
             self._base_spr.height = height
             self._knob_spr.height = height * self._knob_to_base_height_ratio
         self._update_position()
-        
+
     @property
     def value(self):
         return self._value
