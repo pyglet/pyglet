@@ -10,6 +10,7 @@ from typing import List
 from pyglet.customtypes import Point2D, number
 from pyglet.shapes2d.util import *
 
+
 class CollisionShapeBase(ABC):
     """Base class for all collidable shape objects."""
 
@@ -46,6 +47,10 @@ class CollisionShapeBase(ABC):
         method = f"collide_with_{self.__class__.__name__}"
         if hasattr(other, method) and callable(getattr(other, method)):
             return getattr(other, method)(self)
+        if hasattr(self, "get_polygon") and hasattr(other, "get_polygon"):
+            polygon1 = CollisionPolygon(*self.get_polygon())
+            polygon2 = CollisionPolygon(*other.get_polygon())
+            return polygon1.is_collide(polygon2)
         raise TypeError(
             "No collision detection method found between "
             f"{self.__class__.__name__} and {other.__class__.__name__}"
@@ -156,11 +161,18 @@ class CollisionCircle(CollisionShapeBase):
         center = (self._x - self._anchor_x, self._y - self._anchor_y)
         return math.dist(center, point) < self._radius
 
-    def collide_with_CollisionCircle(self, other: "CollisionCircle") -> bool:
-        center1 = (self._x - self._anchor_x, self._y - self._anchor_y)
-        center2 = (other.x - other.anchor_x, other.y - other.anchor_y)
-        length = self._radius + other.radius
-        return math.dist(center1, center2) < length
+    def get_polygon(self) -> List[Point2D]:
+        x0 = self._x
+        y0 = self._y
+        polygon = []
+        for i in range(360, 5):
+            polygon.append(
+                (
+                    x0 + self._radius * math.cos(math.radians(i)),
+                    y0 + self._radius * math.sin(math.radians(i)),
+                )
+            )
+        return polygon
 
     @property
     def radius(self) -> number:
@@ -192,6 +204,19 @@ class CollisionEllipse(CollisionShapeBase):
             self._y - self._anchor_y,
         )
         return math.dist(center, point) < self._b
+
+    def get_polygon(self) -> List[Point2D]:
+        x0 = self._x
+        y0 = self._y
+        polygon = []
+        for i in range(360, 5):
+            polygon.append(
+                (
+                    x0 + self._a * math.cos(math.radians(i)),
+                    y0 + self._b * math.sin(math.radians(i)),
+                )
+            )
+        return polygon
 
     @property
     def a(self) -> number:
@@ -230,6 +255,14 @@ class CollisionRectangle(CollisionShapeBase):
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
+    def get_polygon(self) -> List[Point2D]:
+        return [
+            (self._x, self._y),
+            (self._x + self._width, self._y),
+            (self._x + self._width, self._y + self._height),
+            (self._x, self._y + self._height),
+        ]
+
     @property
     def width(self) -> number:
         """The width of the rectangle.
@@ -267,6 +300,12 @@ class CollisionPolygon(CollisionShapeBase):
         ]
         return point_in_polygon(coords, point)
 
+    def collide_with_CollisionPolygon(self, other: "CollisionPolygon") -> bool:
+        return False
+
+    def get_polygon(self) -> List[Point2D]:
+        return self._coordinates
+
     @property
     def coordinates(self) -> List[Point2D]:
         """The coordinates for each point in the polygon.
@@ -281,5 +320,5 @@ __all__ = (
     "CollisionCircle",
     "CollisionEllipse",
     "CollisionRectangle",
-    "CollisionPolygon"
+    "CollisionPolygon",
 )

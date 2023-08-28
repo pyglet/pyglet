@@ -48,6 +48,10 @@ def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
         polygon2 = polygonQuickDecomp(polygon2)
     else:
         polygon2 = [polygon2]
+
+    def _sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
+        return False
+
     return False
 
 
@@ -60,9 +64,10 @@ def is_convex(polygon: List[Point2D]) -> bool:
     for i in range(len(polygon)):
         u = Vec2(*polygon[i + 1]) - Vec2(*polygon[i])
         v = Vec2(*polygon[i + 2]) - Vec2(*polygon[i])
-        if flag is None:
-            flag = math.copysign(1, u[0] * v[1] - u[1] * v[0])
+        # Cross product between Vec2.
         n = math.copysign(1, u[0] * v[1] - u[1] * v[0])
+        if flag is None:
+            flag = n
         if n != flag:
             return False
     return True
