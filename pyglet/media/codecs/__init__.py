@@ -81,7 +81,7 @@ def add_default_media_codecs():
     if pyglet.compat_platform.startswith("darwin"):
         try:
             from . import coreaudio
-            registry.add_decoders(coreaudio)
+            add_decoders(coreaudio)
         except ImportError:
             pass
 
