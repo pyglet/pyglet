@@ -33,64 +33,28 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import atexit
 import struct
+import warnings
 
 import pyglet
+from . import com
 from . import constants
 from .types import *
-from pyglet import com
 
 IS64 = struct.calcsize("P") == 8
 
 _debug_win32 = pyglet.options['debug_win32']
 
-if _debug_win32:
-    import traceback
-    _GetLastError = windll.kernel32.GetLastError
-    _SetLastError = windll.kernel32.SetLastError
-    _FormatMessageA = windll.kernel32.FormatMessageA
+DebugLibrary = lambda lib: ctypes.WinDLL(lib, use_last_error=True if _debug_win32 else False)
 
-    _log_win32 = open('debug_win32.log', 'w')
-    
-    def format_error(err):
-        msg = create_string_buffer(256)
-        _FormatMessageA(constants.FORMAT_MESSAGE_FROM_SYSTEM,
-                        c_void_p(),
-                        err,
-                        0,
-                        msg,
-                        len(msg),
-                        c_void_p())
-        return msg.value
-    
-    class DebugLibrary:
-        def __init__(self, lib):
-            self.lib = lib
-
-        def __getattr__(self, name):
-            fn = getattr(self.lib, name)
-
-            def f(*args):
-                _SetLastError(0)
-                result = fn(*args)
-                err = _GetLastError()
-                if err != 0:
-                    for entry in traceback.format_list(traceback.extract_stack()[:-1]):
-                        _log_win32.write(entry)
-                    print(format_error(err), file=_log_win32)
-                return result
-
-            return f
-else:
-    DebugLibrary = lambda lib: lib
-
-
-_gdi32 = DebugLibrary(windll.gdi32)
-_kernel32 = DebugLibrary(windll.kernel32)
-_user32 = DebugLibrary(windll.user32)
-_dwmapi = DebugLibrary(windll.dwmapi)
-_shell32 = DebugLibrary(windll.shell32)
-_ole32 = DebugLibrary(windll.ole32)
+_gdi32 = DebugLibrary('gdi32')
+_kernel32 = DebugLibrary('kernel32')
+_user32 = DebugLibrary('user32')
+_dwmapi = DebugLibrary('dwmapi')
+_shell32 = DebugLibrary('shell32')
+_ole32 = DebugLibrary('ole32')
+_oleaut32 = DebugLibrary('oleaut32')
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -123,7 +87,7 @@ _gdi32.GetCharABCWidthsW.restype = BOOL
 _gdi32.GetCharABCWidthsW.argtypes = [HDC, UINT, UINT, POINTER(ABC)]
 _gdi32.GetCharWidth32W.restype = BOOL
 _gdi32.GetCharWidth32W.argtypes = [HDC, UINT, UINT, POINTER(INT)]
-_gdi32.GetStockObject.restype =  HGDIOBJ
+_gdi32.GetStockObject.restype = HGDIOBJ
 _gdi32.GetStockObject.argtypes = [c_int]
 _gdi32.GetTextMetricsA.restype = BOOL
 _gdi32.GetTextMetricsA.argtypes = [HDC, POINTER(TEXTMETRIC)]
@@ -157,7 +121,7 @@ _kernel32.GlobalLock.argtypes = [HGLOBAL]
 _kernel32.GlobalUnlock.restype = BOOL
 _kernel32.GlobalUnlock.argtypes = [HGLOBAL]
 _kernel32.SetLastError.restype = DWORD
-_kernel32.SetLastError.argtypes = []
+_kernel32.SetLastError.argtypes = [DWORD]
 _kernel32.SetWaitableTimer.restype = BOOL
 _kernel32.SetWaitableTimer.argtypes = [HANDLE, POINTER(LARGE_INTEGER), LONG, LPVOID, LPVOID, BOOL]  # TIMERAPCPROC
 _kernel32.WaitForSingleObject.restype = DWORD
@@ -174,7 +138,8 @@ _user32.ClipCursor.argtypes = [LPRECT]
 _user32.CreateIconIndirect.restype = HICON
 _user32.CreateIconIndirect.argtypes = [POINTER(ICONINFO)]
 _user32.CreateWindowExW.restype = HWND
-_user32.CreateWindowExW.argtypes = [DWORD, c_wchar_p, c_wchar_p, DWORD, c_int, c_int, c_int, c_int, HWND, HMENU, HINSTANCE, LPVOID]
+_user32.CreateWindowExW.argtypes = [DWORD, c_wchar_p, c_wchar_p, DWORD, c_int, c_int, c_int, c_int, HWND, HMENU,
+                                    HINSTANCE, LPVOID]
 _user32.DefWindowProcW.restype = LRESULT
 _user32.DefWindowProcW.argtypes = [HWND, UINT, WPARAM, LPARAM]
 _user32.DestroyWindow.restype = BOOL
@@ -192,8 +157,8 @@ _user32.GetClientRect.argtypes = [HWND, LPRECT]
 _user32.GetCursorPos.restype = BOOL
 _user32.GetCursorPos.argtypes = [LPPOINT]
 # workaround for win 64-bit, see issue #664
-_user32.GetDC.restype = c_void_p # HDC
-_user32.GetDC.argtypes = [c_void_p] # [HWND]
+_user32.GetDC.restype = c_void_p  # HDC
+_user32.GetDC.argtypes = [c_void_p]  # [HWND]
 _user32.GetDesktopWindow.restype = HWND
 _user32.GetDesktopWindow.argtypes = []
 _user32.GetKeyState.restype = c_short
@@ -210,6 +175,8 @@ _user32.LoadCursorW.restype = HCURSOR
 _user32.LoadCursorW.argtypes = [HINSTANCE, c_wchar_p]
 _user32.LoadIconW.restype = HICON
 _user32.LoadIconW.argtypes = [HINSTANCE, c_wchar_p]
+_user32.LoadImageW.restype = HICON
+_user32.LoadImageW.argtypes = [HINSTANCE, LPCWSTR, UINT, c_int, c_int, UINT]
 _user32.MapVirtualKeyW.restype = UINT
 _user32.MapVirtualKeyW.argtypes = [UINT, UINT]
 _user32.MapWindowPoints.restype = c_int
@@ -227,8 +194,8 @@ _user32.RegisterHotKey.argtypes = [HWND, c_int, UINT, UINT]
 _user32.ReleaseCapture.restype = BOOL
 _user32.ReleaseCapture.argtypes = []
 # workaround for win 64-bit, see issue #664
-_user32.ReleaseDC.restype = c_int32 # c_int
-_user32.ReleaseDC.argtypes = [c_void_p, c_void_p] # [HWND, HDC]
+_user32.ReleaseDC.restype = c_int32  # c_int
+_user32.ReleaseDC.argtypes = [c_void_p, c_void_p]  # [HWND, HDC]
 _user32.ScreenToClient.restype = BOOL
 _user32.ScreenToClient.argtypes = [HWND, LPPOINT]
 _user32.SetCapture.restype = HWND
@@ -276,13 +243,13 @@ _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
 _user32.ChangeWindowMessageFilterEx.restype = BOOL
 _user32.ChangeWindowMessageFilterEx.argtypes = [HWND, UINT, DWORD, c_void_p]
 
-#dwmapi
+# dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
 _dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]
 _dwmapi.DwmFlush.restype = c_int
 _dwmapi.DwmFlush.argtypes = []
 
-#_shell32
+# _shell32
 _shell32.DragAcceptFiles.restype = c_void
 _shell32.DragAcceptFiles.argtypes = [HWND, BOOL]
 _shell32.DragFinish.restype = c_void
@@ -294,6 +261,8 @@ _shell32.DragQueryPoint.argtypes = [HDROP, LPPOINT]
 
 # ole32
 _ole32.CreateStreamOnHGlobal.argtypes = [HGLOBAL, BOOL, LPSTREAM]
+_ole32.CoInitialize.restype = HRESULT
+_ole32.CoInitialize.argtypes = [LPVOID]
 _ole32.CoInitializeEx.restype = HRESULT
 _ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
 _ole32.CoUninitialize.restype = HRESULT
@@ -302,3 +271,58 @@ _ole32.PropVariantClear.restype = HRESULT
 _ole32.PropVariantClear.argtypes = [c_void_p]
 _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
+_ole32.CoSetProxyBlanket.restype = HRESULT
+_ole32.CoSetProxyBlanket.argtypes = (c_void_p, DWORD, DWORD, c_void_p, DWORD, DWORD, c_void_p, DWORD)
+
+# oleaut32
+_oleaut32.VariantInit.restype = c_void_p
+_oleaut32.VariantInit.argtypes = [c_void_p]
+_oleaut32.VariantClear.restype = HRESULT
+_oleaut32.VariantClear.argtypes = [c_void_p]
+
+if _debug_win32:
+    import traceback
+
+    _log_win32 = open('debug_win32.log', 'w')
+
+
+    def win32_errcheck(result, func, args):
+        last_err = ctypes.get_last_error()
+        if last_err != 0:  # If the result is not success and last error is invalid.
+            for entry in traceback.format_list(traceback.extract_stack()[:-1]):
+                _log_win32.write(entry)
+            print(f"[Result {result}] Error #{last_err} - {ctypes.FormatError(last_err)}", file=_log_win32)
+        return args
+
+
+    def set_errchecks(lib):
+        """Set errcheck hook on all functions we have defined."""
+        for key in lib.__dict__:
+            if key.startswith('_'):  # Ignore builtins.
+                continue
+            lib.__dict__[key].errcheck = win32_errcheck
+
+
+    set_errchecks(_gdi32)
+    set_errchecks(_kernel32)
+    set_errchecks(_user32)
+    set_errchecks(_dwmapi)
+    set_errchecks(_shell32)
+    set_errchecks(_ole32)
+    set_errchecks(_oleaut32)
+
+# Initialize COM in MTA mode. Required for: WIC (DirectWrite), WMF, and XInput
+try:
+    _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
+except OSError as err:
+    warnings.warn("Could not set COM MTA mode. Unexpected behavior may occur.")
+
+
+def _uninitialize():
+    try:
+        _ole32.CoUninitialize()
+    except OSError:
+        pass
+
+
+atexit.register(_uninitialize)

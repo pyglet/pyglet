@@ -36,7 +36,7 @@ import os
 import platform
 import warnings
 
-from pyglet import com, image
+from pyglet import image
 from pyglet.util import debug_print
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
@@ -863,7 +863,7 @@ class WMFDecoder(MediaDecoder):
             extensions.extend(['.3g2', '.3gp', '.3gp2', '.3gp',
                                '.aac', '.adts',
                                '.avi',
-                               '.m4a', '.m4v', '.mov', '.mp4',
+                               '.m4a', '.m4v',
                                # '.wav'  # Can do wav, but we have a WAVE decoder.
                                ])
 

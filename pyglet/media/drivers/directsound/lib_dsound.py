@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
-from pyglet import com
+from pyglet.libs.win32 import com
 
 lib = ctypes.oledll.dsound
 
@@ -178,9 +178,9 @@ class IDirectSoundBuffer(com.pIUnknown):
         ('Initialize',
          com.STDMETHOD(ctypes.c_void_p, LPDSBUFFERDESC)),
         ('Lock',
-         com.STDMETHOD(DWORD, DWORD, 
-                       ctypes.POINTER(ctypes.c_void_p), LPDWORD, 
-                       ctypes.POINTER(ctypes.c_void_p), LPDWORD, 
+         com.STDMETHOD(DWORD, DWORD,
+                       ctypes.POINTER(ctypes.c_void_p), LPDWORD,
+                       ctypes.POINTER(ctypes.c_void_p), LPDWORD,
                        DWORD)),
         ('Play',
          com.STDMETHOD(DWORD, DWORD, DWORD)),
@@ -228,7 +228,7 @@ class IDirectSound3DListener(com.pIUnknown):
         ('SetDopplerFactor',
          com.STDMETHOD(D3DVALUE, DWORD)),
         ('SetOrientation',
-         com.STDMETHOD(D3DVALUE, D3DVALUE, D3DVALUE, 
+         com.STDMETHOD(D3DVALUE, D3DVALUE, D3DVALUE,
                        D3DVALUE, D3DVALUE, D3DVALUE, DWORD)),
         ('SetPosition',
          com.STDMETHOD(D3DVALUE, D3DVALUE, D3DVALUE, DWORD)),
@@ -285,24 +285,24 @@ class IDirectSound3DBuffer(com.pIUnknown):
 
 class IDirectSound(com.pIUnknown):
     _methods_ = [
-        ('CreateSoundBuffer', 
-         com.STDMETHOD(LPDSBUFFERDESC, 
-                       ctypes.POINTER(IDirectSoundBuffer), 
+        ('CreateSoundBuffer',
+         com.STDMETHOD(LPDSBUFFERDESC,
+                       ctypes.POINTER(IDirectSoundBuffer),
                        LPUNKNOWN)),
-        ('GetCaps', 
+        ('GetCaps',
          com.STDMETHOD(LPDSCAPS)),
-        ('DuplicateSoundBuffer', 
-         com.STDMETHOD(IDirectSoundBuffer, 
+        ('DuplicateSoundBuffer',
+         com.STDMETHOD(IDirectSoundBuffer,
                        ctypes.POINTER(IDirectSoundBuffer))),
-        ('SetCooperativeLevel', 
+        ('SetCooperativeLevel',
          com.STDMETHOD(HWND, DWORD)),
-        ('Compact', 
+        ('Compact',
          com.STDMETHOD()),
-        ('GetSpeakerConfig', 
+        ('GetSpeakerConfig',
          com.STDMETHOD(LPDWORD)),
-        ('SetSpeakerConfig', 
+        ('SetSpeakerConfig',
          com.STDMETHOD(DWORD)),
-        ('Initialize', 
+        ('Initialize',
          com.STDMETHOD(com.LPGUID)),
     ]
     _type_ = com.COMInterface

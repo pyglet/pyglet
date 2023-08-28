@@ -1,5 +1,3 @@
-import warnings
-
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32 import _ole32 as ole32
@@ -61,7 +59,7 @@ WICBitmapEncoderNoCache = 0x2
 WICBITMAPENCODERCACHEOPTION_FORCE_DWORD = 0x7fffffff
 
 # Different pixel formats.
-REFWICPixelFormatGUID = com.GUID
+REFWICPixelFormatGUID = POINTER(com.GUID)
 GUID_WICPixelFormatDontCare = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x00)
 GUID_WICPixelFormat1bppIndexed = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x01)
 GUID_WICPixelFormat2bppIndexed = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x02)
@@ -159,7 +157,7 @@ class IWICBitmapFrameEncode(com.pIUnknown):
         ('SetResolution',
          com.STDMETHOD()),
         ('SetPixelFormat',
-         com.STDMETHOD(POINTER(REFWICPixelFormatGUID))),
+         com.STDMETHOD(REFWICPixelFormatGUID)),
         ('SetColorContexts',
          com.STDMETHOD()),
         ('SetPalette',
@@ -243,7 +241,7 @@ class IWICBitmapSource(com.pIUnknown):
         ('GetSize',
          com.STDMETHOD(POINTER(UINT), POINTER(UINT))),
         ('GetPixelFormat',
-         com.STDMETHOD(POINTER(REFWICPixelFormatGUID))),
+         com.STDMETHOD(REFWICPixelFormatGUID)),
         ('GetResolution',
          com.STDMETHOD(POINTER(DOUBLE), POINTER(DOUBLE))),
         ('CopyPalette',
@@ -256,10 +254,10 @@ class IWICBitmapSource(com.pIUnknown):
 class IWICFormatConverter(IWICBitmapSource, com.pIUnknown):
     _methods_ = [
         ('Initialize',
-         com.STDMETHOD(IWICBitmapSource, POINTER(REFWICPixelFormatGUID), WICBitmapDitherType, c_void_p, DOUBLE,
+         com.STDMETHOD(IWICBitmapSource, REFWICPixelFormatGUID, WICBitmapDitherType, c_void_p, DOUBLE,
                        WICBitmapPaletteType)),
         ('CanConvert',
-         com.STDMETHOD(POINTER(REFWICPixelFormatGUID), POINTER(REFWICPixelFormatGUID), POINTER(BOOL))),
+         com.STDMETHOD(REFWICPixelFormatGUID, REFWICPixelFormatGUID, POINTER(BOOL))),
     ]
 
 
@@ -374,7 +372,7 @@ class IWICImagingFactory(com.pIUnknown):
         ('CreateColorTransformer',
          com.STDMETHOD()),
         ('CreateBitmap',
-         com.STDMETHOD(UINT, UINT, POINTER(REFWICPixelFormatGUID), WICBitmapCreateCacheOption, POINTER(IWICBitmap))),
+         com.STDMETHOD(UINT, UINT, REFWICPixelFormatGUID, WICBitmapCreateCacheOption, POINTER(IWICBitmap))),
         ('CreateBitmapFromSource',
          com.STDMETHOD()),
         ('CreateBitmapFromSourceRect',
@@ -611,7 +609,7 @@ class WICEncoder(ImageEncoder):
 
         data = (c_byte * size).from_buffer(bytearray(image_data))
 
-        frame.WritePixels(image.height, abs(image.pitch), size, data)
+        frame.WritePixels(image.height, pitch, size, data)
 
         frame.Commit()
 

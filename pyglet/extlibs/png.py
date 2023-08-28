@@ -997,7 +997,7 @@ def unpack_rows(rows):
     to being a sequence of bytes.
     """
     for row in rows:
-        fmt = '!%dH' % len(row)
+        fmt = f'!{len(row)}H'
         yield bytearray(struct.pack(fmt, *row))
 
 
@@ -1733,7 +1733,7 @@ class Reader:
                         "PLTE chunk is required before bKGD chunk.")
                 self.background = struct.unpack('B', data)
             else:
-                self.background = struct.unpack("!%dH" % self.color_planes,
+                self.background = struct.unpack(f"!{self.color_planes}H",
                                                 data)
         except struct.error:
             raise FormatError("bKGD chunk has incorrect length.")
@@ -1756,7 +1756,7 @@ class Reader:
                     self.color_type)
             try:
                 self.transparent = \
-                    struct.unpack("!%dH" % self.color_planes, data)
+                    struct.unpack(f"!{self.color_planes}H", data)
             except struct.error:
                 raise FormatError("tRNS chunk has incorrect length.")
 
@@ -1989,7 +1989,7 @@ class Reader:
             pixels = itertrns(pixels)
         targetbitdepth = None
         if self.sbit:
-            sbit = struct.unpack('%dB' % len(self.sbit), self.sbit)
+            sbit = struct.unpack(f'{len(self.sbit)}B', self.sbit)
             targetbitdepth = max(sbit)
             if targetbitdepth > info['bitdepth']:
                 raise Error('sBIT chunk %r exceeds bitdepth %d' %

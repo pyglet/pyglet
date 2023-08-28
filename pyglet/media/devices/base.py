@@ -1,38 +1,40 @@
 from abc import ABCMeta, abstractmethod
+from enum import Enum, auto
+from typing import Dict, Optional
 
 from pyglet import event
 from pyglet.util import with_metaclass
 
 
-class DeviceState:
-    ACTIVE = "active"
-    DISABLED = "disabled"
-    MISSING = "missing"
-    UNPLUGGED = "unplugged"
+class DeviceState(Enum):
+    ACTIVE = auto()
+    DISABLED = auto()
+    MISSING = auto()
+    UNPLUGGED = auto()
 
 
-class DeviceFlow:
-    OUTPUT = "output"
-    INPUT = "input"
-    INPUT_OUTPUT = "input/output"
+class DeviceFlow(Enum):
+    OUTPUT = auto()
+    INPUT = auto()
+    INPUT_OUTPUT = auto()
 
 
 class AudioDevice:
     """Base class for a platform independent audio device.
        _platform_state and _platform_flow is used to make device state numbers."""
-    _platform_state = {}  # Must be defined by the parent.
-    _platform_flow = {}  # Must be defined by the parent.
+    platform_state: Dict[int, DeviceState] = {}  # Must be defined by the parent.
+    platform_flow: Dict[int, DeviceFlow] = {}  # Must be defined by the parent.
 
-    def __init__(self, dev_id, name, description, flow, state):
+    def __init__(self, dev_id: str, name: str, description: str, flow: int, state: int):
         self.id = dev_id
-        self.flow = flow
-        self.state = state
+        self.flow = flow  # platform value
+        self.state = state  # platform value
         self.name = name
         self.description = description
 
     def __repr__(self):
-        return "{}(name={}, state={}, flow={})".format(
-            self.__class__.__name__, self.name, self._platform_state[self.state], self._platform_flow[self.flow])
+        return "{}(name='{}', state={}, flow={})".format(
+            self.__class__.__name__, self.name, self.platform_state[self.state].name, self.platform_flow[self.flow].name)
 
 
 class AbstractAudioDeviceManager(with_metaclass(ABCMeta, event.EventDispatcher, object)):
@@ -66,20 +68,23 @@ class AbstractAudioDeviceManager(with_metaclass(ABCMeta, event.EventDispatcher, 
         """Returns a list of all audio devices, no matter what state they are in."""
         pass
 
-    def on_device_state_changed(self, device, old_state, new_state):
-        """Event, occurs when the state of a device changes, provides old state and new state."""
+    def on_device_state_changed(self, device: AudioDevice, old_state: DeviceState, new_state: DeviceState):
+        """Event, occurs when the state of a device changes, provides the old state and new state."""
         pass
 
-    def on_device_added(self, device):
+    def on_device_added(self, device: AudioDevice):
         """Event, occurs when a new device is added to the system."""
         pass
 
-    def on_device_removed(self, device):
+    def on_device_removed(self, device: AudioDevice):
         """Event, occurs when an existing device is removed from the system."""
         pass
 
-    def on_default_changed(self, device):
-        """Event, occurs when the default audio device changes."""
+    def on_default_changed(self, device: Optional[AudioDevice], flow: DeviceFlow):
+        """Event, occurs when the default audio device changes.
+           If there is no device that can be the default on the system, can be None.
+           The flow determines whether an input or output device became it's respective default.
+        """
         pass
 
 

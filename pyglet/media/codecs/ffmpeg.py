@@ -129,8 +129,6 @@ class MemoryFileObject:
         self.fmt_context = None
         self.buffer = None
 
-        print("File object:", file)
-
         if not getattr(self.file, 'seek', None) or not getattr(self.file, 'tell', None):
             raise Exception("File object does not support seeking.")
 
@@ -213,6 +211,7 @@ def ffmpeg_open_memory_file(filename, file_object):
 
     return file, memory_file
 
+
 def ffmpeg_open_filename(filename):
     """Open the media file.
 
@@ -265,8 +264,7 @@ def ffmpeg_file_info(file):
         info.title = asstr(entry.contents.value)
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('artist'), None, 0) \
-            or \
-            avutil.av_dict_get(file.context.contents.metadata, asbytes('album_artist'), None, 0)
+        or avutil.av_dict_get(file.context.contents.metadata, asbytes('album_artist'), None, 0)
     if entry:
         info.author = asstr(entry.contents.value)
 
