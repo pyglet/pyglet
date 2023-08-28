@@ -99,18 +99,6 @@ class WidgetBase(EventDispatcher):
     def size(self, size_value):
         self.on_resize(size_value[0], size_value[1])
 
-    @height.setter
-    def height(self, value):
-        self.on_resize(self._width, value)
-
-    @property
-    def size(self):
-        return (self.width, self.height)
-
-    @size.setter
-    def size(self, size_value):
-        self.on_resize(size_value[0], size_value[1])
-
     @property
     def aabb(self):
         """Bounding box of the widget.
@@ -137,10 +125,6 @@ class WidgetBase(EventDispatcher):
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
     
-    def on_resize(self, width, height):
-        self._width = width
-        self._height = height
-
     def on_resize(self, width, height):
         self._width = width
         self._height = height
