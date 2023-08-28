@@ -85,7 +85,7 @@ class NotificationDevice(XlibSelectDevice):
         app.platform_event_loop.dispatch_posted_events()
 
     def poll(self):
-        return self._event.isSet()
+        return self._event.is_set()
 
 
 class XlibEventLoop(PlatformEventLoop):
