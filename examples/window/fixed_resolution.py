@@ -4,28 +4,32 @@ size, but rendering to the full screen.
 
 The method used in this example is:
 
-1. Create a Framebuffer object, and a Texture of the desired resolution
-2. Attach the Texture to the Framebuffer.
-2. Bind the Framebuffer as the current render target.
-3. Render the scene using any OpenGL functions (here, just a shape).
-4. Unbind the Framebuffer, and blit the Texture scaled to fill the screen.
+1. Create a Framebuffer object, a Texture, and a depth buffer.
+2. Attach the Texture and depth buffer to the Framebuffer.
+3. Bind the Framebuffer as the current render target.
+4. Render the scene using any OpenGL functions (here, just a shape).
+5. Unbind the Framebuffer, and blit the Texture scaled to fill the screen.
 """
 
-from pyglet.gl import *
 import pyglet
+
+from pyglet.gl import *
 
 
 class FixedResolution:
     def __init__(self, window, width, height):
         self.window = window
+        self.window.set_minimum_size(width, height)
         self.width = width
         self.height = height
 
         self._target_area = 0, 0, 0, 0, 0
 
         self.framebuffer = pyglet.image.Framebuffer()
-        self.texture = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
-        self.framebuffer.attach_texture(self.texture)
+        self._color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
+        self._depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
+        self.framebuffer.attach_texture(self._color_buffer)
+        self.framebuffer.attach_renderbuffer(self._depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
 
         self.window.push_handlers(self)
 
@@ -52,7 +56,7 @@ class FixedResolution:
 
     def __exit__(self, *unused):
         self.framebuffer.unbind()
-        self.texture.blit(*self._target_area)
+        self._color_buffer.blit(*self._target_area)
 
     def begin(self):
         self.__enter__()
@@ -65,37 +69,36 @@ class FixedResolution:
 # Simple program using the Viewport:
 ###################################
 
-window = pyglet.window.Window(960, 540, resizable=True)
+if __name__ == '__main__':
+    window = pyglet.window.Window(960, 540, resizable=True)
 
-# Create an instance of the FixedResolution class. Use
-# 320x180 resolution to make the effect completely obvious:
-fixed_res = FixedResolution(window, width=320, height=180)
-
-
-def update(dt):
-    global rectangle
-    rectangle.rotation += dt * 10
+    # Create an instance of the FixedResolution class. Use
+    # 320x180 resolution to make the effect completely obvious:
+    fixed_res = FixedResolution(window, width=320, height=180)
 
 
-@window.event
-def on_draw():
-    window.clear()
+    @window.event
+    def on_draw():
+        window.clear()
 
-    # The FixedResolution instance can be used as a context manager:
-    with fixed_res:
-        rectangle.draw()
+        # The FixedResolution instance can be used as a context manager:
+        with fixed_res:
+            rectangle.draw()
 
-    # # Alternatively, you can do it manually:
-    # fixed_res.begin()
-    # rectangle.draw()
-    # fixed_res.end()
+        # # Alternatively, you can do it manually:
+        # fixed_res.begin()
+        # rectangle.draw()
+        # fixed_res.end()
 
 
-# Create a simple Rectangle to show the effect
-rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
-rectangle.anchor_position = 50, 50
+    # Create a simple Rectangle to show the effect
+    rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
+    rectangle.anchor_position = 50, 50
 
-# Schedule the update function at 60fps
-pyglet.clock.schedule_interval(update, 1/60)
-pyglet.app.run()
+    def update(dt):
+        global rectangle
+        rectangle.rotation += dt * 10
 
+    # Schedule the update function at 60fps
+    pyglet.clock.schedule_interval(update, 1 / 60)
+    pyglet.app.run()
