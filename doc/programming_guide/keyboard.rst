@@ -332,52 +332,47 @@ and their keyboard mapping on each operating system.
 Adding New Motions
 """"""""""""""""""
 
-To add a new motion, do the following:
+Before adding a new motion, please do the following:
 
 #. Consult the previous section to be sure it is:
-   #. A common, cross-platform text operation
-   #. Overlooked by pyglet
 
-#. Discuss the addition with maintainers by doing either of the following:
+   #. A common text operation present on every platform
+   #. Not already implemented by pyglet
+
+#. Attempt to find the corresponding functionality in
+   `Apple's NSTextView documentation
+   <https://developer.apple.com/documentation/appkit/nstextview/>`_
+
+#. Discuss the addition and any remaining questions with maintainers by either:
 
    * `Filing a GitHub Issue <https://github.com/pyglet/pyglet/issues>`_
-   * `Alternative means of contact <https://github.com/pyglet/pyglet#contact>`_
+   * `Discord or the mailing list <https://github.com/pyglet/pyglet#contact>`_
 
-#. Add the motion constant to :py:mod:`pyglet.key`
-#. Add an entry for the motion constant in the previous section's table
-#. Add the platform-specific keyboard shortcut for each motion constant
-   to the ``_motion_map`` dictionary in each of the following modules:
+Then, once you're ready:
 
-   .. list-table::
-      :header-rows: 1
+#. Add the motion constant to :py:mod:`pyglet.window.key`
+#. Add an entry for the constant in the :ref:`keyboard_motion_events`
+   section
 
-      * - Platform
-        - Module
-        - Path in Source
+#. Implement Mac support (the hardest step)
 
-      * - Windows
-        - :py:mod:`pyglet.window.win32`
-        - .. raw:: html
+   #. Open `pyglet/window/cocoa/pyglet_textview.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/pyglet_textview.py>`_
+   #. Implement a corresponding handler method on pyglet's subclass of ``NSTextView``
 
-             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py">
-             <pre>pyglet/window/win32/__init__.py</pre>
-             </a>
+#. Add the Windows keyboard shortcut
 
-      * - Mac
-        - :py:mod:`pyglet.window.cocoa`
-        - .. raw:: html
+   #. Open `pyglet/window/win32/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
 
-             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/__init__.py">
-             <pre>pyglet/window/cocoa/__init__.py</pre>
-             </a>
+#. Add the Linux keyboard shortcut
 
-      * - Linux
-        - :py:mod:`pyglet.window.xlib`
-        - .. raw:: html
+   #. Open `pyglet/window/xlib/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
 
-             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py">
-             <pre>pyglet/window/xlib/__init__.py</pre>
-             </a>
+Be sure to test your changes before making a PR!
 
 Keyboard exclusivity
 --------------------
