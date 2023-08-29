@@ -277,6 +277,14 @@ and their keyboard mapping on each operating system.
           - Move the cursor right
           - Right
           - Right
+        * - ``MOTION_COPY``
+          - Copy the current selection to the clipboard
+          - Ctrl + C
+          - Command + C
+        * - ``MOTION_PASTE``
+          - Paste the clipboard contents into the current document
+          - Ctrl + V
+          - Command + V
         * - ``MOTION_PREVIOUS_WORD``
           - Move the cursor to the previous word
           - Ctrl + Left
