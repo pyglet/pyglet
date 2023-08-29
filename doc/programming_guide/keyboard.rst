@@ -318,6 +318,56 @@ and their keyboard mapping on each operating system.
           - Delete
           - Delete
 
+
+.. _keyboard_motion_events_adding:
+
+Adding New Motions
+""""""""""""""""""
+
+To add a new motion, do the following:
+
+#. Consult the previous section to be sure it is:
+   #. A common, cross-platform text operation
+   #. Overlooked by pyglet
+
+#. Discuss the addition with maintainers by doing either of the following:
+
+   * `Filing a GitHub Issue <https://github.com/pyglet/pyglet/issues>`_
+   * `Alternative means of contact <https://github.com/pyglet/pyglet#contact>`_
+
+#. Add the motion constant to :py:mod:`pyglet.key`
+#. Add an entry for the motion constant in the previous section's table
+#. Add the platform-specific keyboard shortcut for each motion constant
+   to the ``_motion_map`` dictionary in each of the following modules:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Platform
+        - Module
+        - Path in Source
+
+      * - Windows
+        - :py:mod:`pyglet.window.win32`
+        - .. raw:: html
+             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py">
+             <pre>pyglet/window/win32/__init__.py</pre>
+             </a>
+
+      * - Mac
+        - :py:mod:`pyglet.window.cocoa`
+        - .. raw:: html
+             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/__init__.py">
+             <pre>pyglet/window/cocoa/__init__.py</pre>
+             </a>
+
+      * - Linux
+        - :py:mod:`pyglet.window.xlib`
+        - .. raw:: html
+             <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py">
+             <pre>pyglet/window/xlib/__init__.py</pre>
+             </a>
+
 Keyboard exclusivity
 --------------------
 
