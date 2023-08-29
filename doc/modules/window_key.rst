@@ -127,7 +127,10 @@ Misc functions
 Text motion constants
 ^^^^^^^^^^^^^^^^^^^^^
 
-These are allowed to clash with key constants.
+These are allowed to clash with key constants because they abstract
+common text motions from their platform-specific keyboard shortcuts.
+See :ref:`keyboard_motion_events` for more information.
+
 
 .. list-table::
 
@@ -159,6 +162,10 @@ These are allowed to clash with key constants.
     * ``MOTION_BACKSPACE``
   *
     * ``MOTION_DELETE``
+  *
+    * ``MOTION_COPY``
+  *
+    * ``MOTION_PASTE``
 
 Number pad
 ^^^^^^^^^^

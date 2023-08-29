@@ -220,6 +220,9 @@ Conversely, you never use :py:meth:`~pyglet.window.Window.on_text` when you
 require keys to be pressed (for example, to control the movement of the player
 in a game).
 
+
+.. _keyboard_motion_events:
+
 Motion events
 ^^^^^^^^^^^^^
 
