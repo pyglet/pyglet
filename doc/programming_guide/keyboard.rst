@@ -350,6 +350,7 @@ To add a new motion, do the following:
       * - Windows
         - :py:mod:`pyglet.window.win32`
         - .. raw:: html
+
              <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py">
              <pre>pyglet/window/win32/__init__.py</pre>
              </a>
@@ -357,6 +358,7 @@ To add a new motion, do the following:
       * - Mac
         - :py:mod:`pyglet.window.cocoa`
         - .. raw:: html
+
              <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/__init__.py">
              <pre>pyglet/window/cocoa/__init__.py</pre>
              </a>
@@ -364,6 +366,7 @@ To add a new motion, do the following:
       * - Linux
         - :py:mod:`pyglet.window.xlib`
         - .. raw:: html
+
              <a href="https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py">
              <pre>pyglet/window/xlib/__init__.py</pre>
              </a>

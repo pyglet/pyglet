@@ -142,6 +142,10 @@ See :ref:`keyboard_motion_events` for more information.
     * ``MOTION_DOWN``
   *
     * ``MOTION_LEFT``
+
+    * ``MOTION_COPY``
+  *
+    * ``MOTION_PASTE``
   *
     * ``MOTION_NEXT_WORD``
   *
@@ -162,10 +166,7 @@ See :ref:`keyboard_motion_events` for more information.
     * ``MOTION_BACKSPACE``
   *
     * ``MOTION_DELETE``
-  *
-    * ``MOTION_COPY``
-  *
-    * ``MOTION_PASTE``
+
 
 Number pad
 ^^^^^^^^^^
