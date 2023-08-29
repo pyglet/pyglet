@@ -142,7 +142,7 @@ See :ref:`keyboard_motion_events` for more information.
     * ``MOTION_DOWN``
   *
     * ``MOTION_LEFT``
-
+  *
     * ``MOTION_COPY``
   *
     * ``MOTION_PASTE``
