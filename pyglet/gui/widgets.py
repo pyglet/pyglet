@@ -1,5 +1,6 @@
 """Display different types of interactive widgets.
 """
+from typing import Optional
 
 import pyglet
 
@@ -70,6 +71,10 @@ class WidgetBase(EventDispatcher):
         """
         return self._width
     
+    @width.setter
+    def width(self, value):
+        self.on_resize(value, self._height)
+
     @width.setter
     def width(self, value):
         self.on_resize(value, self._height)
@@ -162,7 +167,17 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+    def __init__(
+            self,
+            x, y,
+            pressed,
+            depressed,
+            hover=None,
+            width: Optional[int] = None,
+            height: Optional[int] = None,
+            batch = None,
+            group=None
+    ):
         """Create a push button.
 
         :Parameters:
@@ -176,12 +191,26 @@ class PushButton(WidgetBase):
                 Image to display when the button isn't pressed.
             `hover` : `~pyglet.image.AbstractImage`
                 Image to display when the button is being hovered over.
+            `width`:
+                An optional width in pixels to scale the button's textures
+                to. If left as ``None``, the ``depressed`` texture's default
+                width will be used.
+            `height`
+                An optional height in pixels to scale the button's textures
+                to. If left as ``None``, the ``depressed`` texture's default
+                height will be used.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the push button to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the push button.
         """
-        super().__init__(x, y, depressed.width, depressed.height)
+        # Default to the depressed texture's dimensions if not specified
+        if unscaled_x := (width is None):
+            width = depressed.width
+        if unscaled_y := (height is None):
+            height = depressed.height
+        super().__init__(x, y, width, height)
+
         self._pressed_img = pressed
         self._depressed_img = depressed
         self._hover_img = hover or depressed
@@ -191,6 +220,12 @@ class PushButton(WidgetBase):
         self._user_group = group
         bg_group = Group(order=0, parent=group)
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
+
+        # Apply rescaling if necessary
+        if not unscaled_x:
+            self._sprite.width = width
+        if not unscaled_y:
+            self._sprite.height = height
 
         self._pressed = False
 
@@ -334,7 +369,7 @@ class Slider(WidgetBase):
             self._base_spr.height = height
             self._knob_spr.height = height * self._knob_to_base_height_ratio
         self._update_position()
-        
+
     @property
     def value(self):
         return self._value
