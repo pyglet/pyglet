@@ -215,14 +215,11 @@ class CollisionEllipse(CollisionShapeBase):
         self._b = b
 
     def __contains__(self, point: Point2D) -> bool:
-        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        point = self._inverse(point)
         # Since directly testing whether a point is inside an ellipse is more
         # complicated, it is more convenient to transform it into a circle.
         point = (self._b / self._a * point[0], point[1])
-        center = (
-            self._b / self._a * (self._x - self._anchor_x),
-            self._y - self._anchor_y,
-        )
+        center = (self._b / self._a * self._x, self._y)
         return math.dist(center, point) < self._b
 
     def get_polygon(self) -> List[Point2D]:

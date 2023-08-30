@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copy from https://github.com/wsilva32/poly_decomp.property
 # License under MIT.
 
@@ -131,15 +130,6 @@ def polygonAt(polygon, i):
     s = len(polygon)
     return polygon[i % s]
 
-def polygonClear(polygon):
-    """Clears the polygon data
-
-    Keyword arguments:
-    polygon -- The polygon
-
-    """
-    del polygon[:]
-
 def polygonAppend(polygon, poly, start, end):
     """Grabs points at indicies `start` to `end` from `poly`
     and appends them to `polygon`
@@ -244,7 +234,7 @@ def polygonCopy(polygon, i, j, targetPoly=None):
 
     """
     p = targetPoly or []
-    polygonClear(p)
+    del p[:]
     if i < j:
         # Insert all vertices from i to j
         for k in range(i, j+1):

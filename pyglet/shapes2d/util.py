@@ -6,13 +6,6 @@ from pyglet.extlibs.poly_decomp import polygonQuickDecomp
 from pyglet.math import Vec2
 
 
-def rotate_point(center: Point2D, point: Point2D, angle: number) -> Point2D:
-    prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
-    now_angle = prev_angle + angle
-    r = math.dist(point, center)
-    return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
-
-
 def point_in_polygon(polygon: List[Point2D], point: Point2D) -> bool:
     """Raycasting Algorithm to find out whether a point is in a given polygon.
 
@@ -37,24 +30,6 @@ def point_in_polygon(polygon: List[Point2D], point: Point2D) -> bool:
     return odd
 
 
-def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
-    """An algorithm to detect whether two polygons intersect or not.."""
-    assert len(polygon1) >= 3 and len(polygon2) >= 3
-    if not is_convex(polygon1):
-        polygon1 = polygonQuickDecomp(polygon1)
-    else:
-        polygon1 = [polygon1]
-    if not is_convex(polygon2):
-        polygon2 = polygonQuickDecomp(polygon2)
-    else:
-        polygon2 = [polygon2]
-
-    def _sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
-        return False
-
-    return False
-
-
 def is_convex(polygon: List[Point2D]) -> bool:
     """Return ``True`` if a polygon is convex."""
     if len(polygon) <= 4:
@@ -73,4 +48,49 @@ def is_convex(polygon: List[Point2D]) -> bool:
     return True
 
 
-__all__ = ("rotate_point", "point_in_polygon", "sat", "is_convex")
+def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
+    """An algorithm to detect whether two polygons intersect or not.."""
+
+    def _sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
+        # Calculate normals of all edges
+        polygon1 += [polygon1[0]]
+        polygon2 += [polygon2[0]]
+        normals = [
+            (Vec2(*polygon1[i]) - Vec2(*polygon1[i - 1]))
+            for i in range(1, len(polygon1))
+        ]
+        normals += [
+            (Vec2(*polygon2[i]) - Vec2(*polygon2[i - 1]))
+            for i in range(1, len(polygon2))
+        ]
+        normals = [Vec2(-vec.y, vec.x).normalize() for vec in normals]
+        checklist = []
+        for normal in normals:
+            # Get edge projections of polygon1
+            proj1 = []
+            for point in polygon1:
+                proj1.append(normal.dot(Vec2(*point)))
+            # Get edge projections of polygon2
+            proj2 = []
+            for point in polygon2:
+                proj2.append(normal.dot(Vec2(*point)))
+            checklist.append(max(proj1) > min(proj2) and max(proj2) > min(proj1))
+        return all(checklist)
+
+    assert len(polygon1) >= 3 and len(polygon2) >= 3
+    if not is_convex(polygon1):
+        polygon1 = polygonQuickDecomp(polygon1)
+    else:
+        polygon1 = [polygon1]
+    if not is_convex(polygon2):
+        polygon2 = polygonQuickDecomp(polygon2)
+    else:
+        polygon2 = [polygon2]
+    checklist = []
+    for part1 in polygon1:
+        for part2 in polygon2:
+            checklist.append(_sat(part1, part2))
+    return all(checklist)
+
+
+__all__ = ("point_in_polygon", "is_convex", "sat")
