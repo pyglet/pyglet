@@ -22,19 +22,19 @@ output_dir = os.path.join(script_dir, os.path.pardir, 'pyglet', 'input')
 output_file = os.path.join(output_dir, 'controller_db.py')
 
 # Parse the Windows section:
-win_string = '#if SDL_JOYSTICK_DINPUT'
+win_string = '#ifdef SDL_JOYSTICK_DINPUT'
 win_start = raw.find(win_string) + len(win_string)
 win_end = raw.find('#endif', win_start)
 win_raw = raw[win_start:win_end]
 
 # Parse the Mac OSX section:
-mac_string = '#if defined(__MACOS__)'
+mac_string = '#ifdef __MACOS__'
 mac_start = raw.find(mac_string) + len(mac_string)
 mac_end = raw.find('#endif', mac_start)
 mac_raw = raw[mac_start:mac_end]
 
 # Parse the Linux section:
-lin_string = '#if SDL_JOYSTICK_LINUX'
+lin_string = '#if defined(SDL_JOYSTICK_LINUX) || defined(__OpenBSD__)'
 lin_start = raw.find(lin_string) + len(lin_string)
 lin_end = raw.find('#endif', lin_start)
 lin_raw = raw[lin_start:lin_end]
