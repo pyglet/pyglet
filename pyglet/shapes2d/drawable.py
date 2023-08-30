@@ -1046,7 +1046,7 @@ class Ellipse(ShapeBase):
     def __contains__(self, point: Point2D) -> bool:
         ellipse = CollisionEllipse(self._x, self._y, self._a, self._b)
         ellipse.anchor_position = self._anchor_x, self._anchor_y
-        ellipse.rotation = self.rotation
+        ellipse.rotation = self._rotation
         return point in ellipse
 
     def _create_vertex_list(self) -> None:
@@ -1192,14 +1192,10 @@ class Sector(ShapeBase):
         self._update_vertices()
 
     def __contains__(self, point: Point2D) -> bool:
-        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
-        center = (self._x - self._anchor_x, self._y - self._anchor_y)
-        angle = math.atan2(point[1] - center[1], point[0] - center[0])
-        if angle < 0:
-            angle += 2 * math.pi
-        if self._start_angle < angle < self._start_angle + self._angle:
-            return math.dist(center, point) < self._radius
-        return False
+        sector = CollisionSector(self._x, self._y, self._radius, self._angle, self._start_angle)
+        sector.anchor_position = self._anchor_x, self._anchor_y
+        sector.rotation = self._rotation
+        return point in sector
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(

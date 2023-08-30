@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from pyglet.customtypes import Point2D, number
+from pyglet.math import Vec2
 from pyglet.shapes2d.util import *
 
 
@@ -32,6 +33,23 @@ class CollisionShapeBase(ABC):
         raise NotImplementedError(
             f"The `in` operator is not supported for {self.__class__.__name__}"
         )
+
+    def _transform(self, point: Point2D) -> Point2D:
+        if hasattr(self, "coordinates"):
+            center = Vec2(*self._coordinates[0])
+        else:
+            center = Vec2(self._x, self._y)
+        point = Vec2(*point) - Vec2(self._anchor_x, self._anchor_y)
+        rotated = (point - center).rotate(-math.radians(self._rotation))
+        return tuple(center + rotated)
+
+    def _inverse(self, point: Point2D) -> Point2D:
+        if hasattr(self, "coordinates"):
+            center = Vec2(*self._coordinates[0])
+        else:
+            center = Vec2(self._x, self._y)
+        rotated = (Vec2(*point) - center).rotate(math.radians(self._rotation))
+        return tuple(rotated + center + Vec2(self._anchor_y, self._anchor_y))
 
     def is_collide(self, other: "CollisionShapeBase") -> bool:
         """Test whether two shapes are collided.
@@ -157,19 +175,21 @@ class CollisionCircle(CollisionShapeBase):
         self._radius = radius
 
     def __contains__(self, point: Point2D) -> bool:
-        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
-        center = (self._x - self._anchor_x, self._y - self._anchor_y)
+        point = self._inverse(point)
+        center = (self._x, self._y)
         return math.dist(center, point) < self._radius
 
     def get_polygon(self) -> List[Point2D]:
         x0 = self._x
         y0 = self._y
         polygon = []
-        for i in range(360, 5):
+        for i in range(0, 360, 5):
             polygon.append(
-                (
-                    x0 + self._radius * math.cos(math.radians(i)),
-                    y0 + self._radius * math.sin(math.radians(i)),
+                self._transform(
+                    (
+                        x0 + self._radius * math.cos(math.radians(i)),
+                        y0 + self._radius * math.sin(math.radians(i)),
+                    )
                 )
             )
         return polygon
@@ -209,11 +229,13 @@ class CollisionEllipse(CollisionShapeBase):
         x0 = self._x
         y0 = self._y
         polygon = []
-        for i in range(360, 5):
+        for i in range(0, 360, 5):
             polygon.append(
-                (
-                    x0 + self._a * math.cos(math.radians(i)),
-                    y0 + self._b * math.sin(math.radians(i)),
+                self._transform(
+                    (
+                        x0 + self._a * math.cos(math.radians(i)),
+                        y0 + self._b * math.sin(math.radians(i)),
+                    )
                 )
             )
         return polygon
@@ -251,16 +273,18 @@ class CollisionRectangle(CollisionShapeBase):
         self._height = height
 
     def __contains__(self, point: Point2D) -> bool:
-        point = rotate_point((self._x, self._y), point, math.radians(self._rotation))
-        x, y = self._x - self._anchor_x, self._y - self._anchor_y
-        return x < point[0] < x + self._width and y < point[1] < y + self._height
+        point = self._inverse(point)
+        return self._x < point[0] < self._x + self._width and self._y < point[1] < self._y + self._height
 
     def get_polygon(self) -> List[Point2D]:
         return [
-            (self._x, self._y),
-            (self._x + self._width, self._y),
-            (self._x + self._width, self._y + self._height),
-            (self._x, self._y + self._height),
+            self._transform(point)
+            for point in [
+                (self._x, self._y),
+                (self._x + self._width, self._y),
+                (self._x + self._width, self._y + self._height),
+                (self._x, self._y + self._height),
+            ]
         ]
 
     @property
@@ -288,23 +312,83 @@ class CollisionRectangle(CollisionShapeBase):
         self._height = value
 
 
+class CollisionSector(CollisionShapeBase):
+    def __init__(
+        self,
+        x: Point2D,
+        y: Point2D,
+        radius: number,
+        angle: number,
+        start_angle: number = 0,
+    ) -> None:
+        self._x = x
+        self._y = y
+        self._radius = radius
+        self._angle = angle
+        self._start_angle = start_angle
+
+    def __contains__(self, point: Point2D) -> bool:
+        point = self._inverse(point)
+        center = (self._x, self._y)
+        angle = math.atan2(point[1] - center[1], point[0] - center[0])
+        if angle < 0:
+            angle += 2 * math.pi
+        angle = math.degrees(angle)
+        if self._start_angle < angle < self._start_angle + self._angle:
+            return math.dist(center, point) < self._radius
+        return False
+
+    @property
+    def angle(self) -> number:
+        """The angle of the sector, in degrees.
+
+        :type: number
+        """
+        return self._angle
+
+    @angle.setter
+    def angle(self, value: number) -> None:
+        self._angle = value
+
+    @property
+    def start_angle(self) -> number:
+        """The start angle of the sector, in degrees.
+
+        :type: number
+        """
+        return self._start_angle
+
+    @start_angle.setter
+    def start_angle(self, angle: number) -> None:
+        self._start_angle = angle
+
+    @property
+    def radius(self) -> number:
+        """The radius of the sector.
+
+        :type: number
+        """
+        return self._radius
+
+    @radius.setter
+    def radius(self, value: number) -> None:
+        self._radius = value
+
+
 class CollisionPolygon(CollisionShapeBase):
     def __init__(self, *coordinates: Point2D) -> None:
         self._coordinates: List[Point2D] = list(coordinates)
 
     def __contains__(self, point: Point2D) -> bool:
-        point = rotate_point(self._coordinates[0], point, math.radians(self._rotation))
+        point = self._inverse(point)
         coords = self._coordinates + [self._coordinates[0]]
-        coords = [
-            (point[0] - self._anchor_x, point[1] - self._anchor_y) for point in coords
-        ]
         return point_in_polygon(coords, point)
 
     def collide_with_CollisionPolygon(self, other: "CollisionPolygon") -> bool:
-        return False
+        return sat(self._coordinates, other._coordinates)
 
     def get_polygon(self) -> List[Point2D]:
-        return self._coordinates
+        return [self._transform(point) for point in self._coordinates]
 
     @property
     def coordinates(self) -> List[Point2D]:
@@ -320,5 +404,6 @@ __all__ = (
     "CollisionCircle",
     "CollisionEllipse",
     "CollisionRectangle",
+    "CollisionSector",
     "CollisionPolygon",
 )
