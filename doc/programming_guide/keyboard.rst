@@ -220,6 +220,9 @@ Conversely, you never use :py:meth:`~pyglet.window.Window.on_text` when you
 require keys to be pressed (for example, to control the movement of the player
 in a game).
 
+
+.. _keyboard_motion_events:
+
 Motion events
 ^^^^^^^^^^^^^
 
@@ -274,6 +277,14 @@ and their keyboard mapping on each operating system.
           - Move the cursor right
           - Right
           - Right
+        * - ``MOTION_COPY``
+          - Copy the current selection to the clipboard
+          - Ctrl + C
+          - Command + C
+        * - ``MOTION_PASTE``
+          - Paste the clipboard contents into the current document
+          - Ctrl + V
+          - Command + V
         * - ``MOTION_PREVIOUS_WORD``
           - Move the cursor to the previous word
           - Ctrl + Left
@@ -314,6 +325,54 @@ and their keyboard mapping on each operating system.
           - Delete the next character, or the current character
           - Delete
           - Delete
+
+
+.. _keyboard_motion_events_adding:
+
+Adding New Motions
+""""""""""""""""""
+
+Before adding a new motion, please do the following:
+
+#. Consult the previous section to be sure it is:
+
+   #. A common text operation present on every platform
+   #. Not already implemented by pyglet
+
+#. Attempt to find the corresponding functionality in
+   `Apple's NSTextView documentation
+   <https://developer.apple.com/documentation/appkit/nstextview/>`_
+
+#. Discuss the addition and any remaining questions with maintainers by either:
+
+   * `Filing a GitHub Issue <https://github.com/pyglet/pyglet/issues>`_
+   * `Discord or the mailing list <https://github.com/pyglet/pyglet#contact>`_
+
+Then, once you're ready:
+
+#. Add the motion constant to :py:mod:`pyglet.window.key`
+#. Add an entry for the constant in the :ref:`keyboard_motion_events`
+   section
+
+#. Implement Mac support (the hardest step)
+
+   #. Open `pyglet/window/cocoa/pyglet_textview.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/pyglet_textview.py>`_
+   #. Implement a corresponding handler method on pyglet's subclass of ``NSTextView``
+
+#. Add the Windows keyboard shortcut
+
+   #. Open `pyglet/window/win32/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
+
+#. Add the Linux keyboard shortcut
+
+   #. Open `pyglet/window/xlib/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
+
+Be sure to test your changes before making a PR!
 
 Keyboard exclusivity
 --------------------
