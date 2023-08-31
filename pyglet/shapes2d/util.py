@@ -36,7 +36,7 @@ def is_convex(polygon: List[Point2D]) -> bool:
         return True
     polygon += [polygon[0], polygon[1]]
     flag = None
-    for i in range(len(polygon)):
+    for i in range(len(polygon) - 2):
         u = Vec2(*polygon[i + 1]) - Vec2(*polygon[i])
         v = Vec2(*polygon[i + 2]) - Vec2(*polygon[i])
         # Cross product between Vec2.
