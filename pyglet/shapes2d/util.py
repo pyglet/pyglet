@@ -64,7 +64,6 @@ def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
             for i in range(1, len(polygon2))
         ]
         normals = [Vec2(-vec.y, vec.x).normalize() for vec in normals]
-        checklist = []
         for normal in normals:
             # Get edge projections of polygon1
             proj1 = []
@@ -74,8 +73,9 @@ def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
             proj2 = []
             for point in polygon2:
                 proj2.append(normal.dot(Vec2(*point)))
-            checklist.append(max(proj1) > min(proj2) and max(proj2) > min(proj1))
-        return all(checklist)
+            if not (max(proj1) > min(proj2) and max(proj2) > min(proj1)):
+                return False
+        return True
 
     assert len(polygon1) >= 3 and len(polygon2) >= 3
     if not is_convex(polygon1):
@@ -86,11 +86,11 @@ def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
         polygon2 = polygonQuickDecomp(polygon2)
     else:
         polygon2 = [polygon2]
-    checklist = []
     for part1 in polygon1:
         for part2 in polygon2:
-            checklist.append(_sat(part1, part2))
-    return all(checklist)
+            if _sat(part1, part2):
+                return True
+    return False
 
 
 __all__ = ("point_in_polygon", "is_convex", "sat")

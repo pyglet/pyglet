@@ -1,18 +1,20 @@
 """2D collison detection.
 
-The module provides classes for 2D collision dection.
+The module provides classes for 2D collision dection. You can also connect it to a
+physics engine for better effiency.
 """
 
 import math
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from pyglet.customtypes import Point2D, number
+from pyglet.event import EventDispatcher
 from pyglet.math import Vec2
 from pyglet.shapes2d.util import *
 
 
-class CollisionShapeBase(ABC):
+class CollisionShapeBase(ABC, EventDispatcher):
     """Base class for all collidable shape objects."""
 
     _x: number = 0
@@ -73,6 +75,18 @@ class CollisionShapeBase(ABC):
             "No collision detection method found between "
             f"{self.__class__.__name__} and {other.__class__.__name__}"
         )
+
+    def on_enter(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+        """Another shape was moved into this shape."""
+        pass
+
+    def on_collide(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+        """Another shape was collided with this shape."""
+        pass
+
+    def on_leave(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+        """Another shape was moved outside this shape."""
+        pass
 
     @property
     def x(self) -> number:
@@ -166,6 +180,11 @@ class CollisionShapeBase(ABC):
     @rotation.setter
     def rotation(self, rotation: number) -> None:
         self._rotation = rotation
+
+
+CollisionShapeBase.register_event_type("on_enter")
+CollisionShapeBase.register_event_type("on_collide")
+CollisionShapeBase.register_event_type("on_leave")
 
 
 class CollisionCircle(CollisionShapeBase):
@@ -271,7 +290,10 @@ class CollisionRectangle(CollisionShapeBase):
 
     def __contains__(self, point: Point2D) -> bool:
         point = self._inverse(point)
-        return self._x < point[0] < self._x + self._width and self._y < point[1] < self._y + self._height
+        return (
+            self._x < point[0] < self._x + self._width
+            and self._y < point[1] < self._y + self._height
+        )
 
     def get_polygon(self) -> List[Point2D]:
         return [

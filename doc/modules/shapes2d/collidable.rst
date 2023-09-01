@@ -4,10 +4,11 @@ pyglet.shapes2d.collidable
 .. automodule:: pyglet.shapes2d.collidable
 
 .. autoclass:: CollisionShapeBase
+  :show-inheritance:
 
   .. rubric:: Methods
 
-  .. automethod:: is_collided
+  .. automethod:: is_collide
 
   .. rubric:: Attributes
 
@@ -18,6 +19,12 @@ pyglet.shapes2d.collidable
   .. autoattribute:: anchor_y
   .. autoattribute:: anchor_position
   .. autoattribute:: rotation
+
+  .. rubric:: Events
+
+  .. automethod:: on_enter
+  .. automethod:: on_collide
+  .. automethod:: on_leave
 
 
 .. autoclass:: CollisionCircle
@@ -38,6 +45,14 @@ pyglet.shapes2d.collidable
 
   .. autoattribute:: width
   .. autoattribute:: height
+
+
+.. autoclass:: CollisionSector
+  :show-inheritance:
+
+  .. autoattribute:: radius
+  .. autoattribute:: angle
+  .. autoattribute:: start_angle
 
 
 .. autoclass:: CollisionPolygon

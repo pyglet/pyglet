@@ -44,5 +44,5 @@ def update(dt):
 
 if __name__ == "__main__":
     clock.schedule_interval(win.draw, 1 / 60)
-    clock.schedule_interval(update, 1 / 80)
+    clock.schedule_interval(update, 1 / 60)
     app.run()
