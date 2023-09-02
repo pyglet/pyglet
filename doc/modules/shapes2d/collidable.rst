@@ -8,7 +8,7 @@ pyglet.shapes2d.collidable
 
   .. rubric:: Methods
 
-  .. automethod:: is_collide
+  .. automethod:: collide
 
   .. rubric:: Attributes
 

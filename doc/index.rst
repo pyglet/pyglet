@@ -73,6 +73,7 @@ If you are migrating from an older version of pyglet, please read through
 
    modules/pyglet
    modules/app
+   modules/cancas
    modules/clock
    modules/event
    modules/font

@@ -10,17 +10,18 @@ complex shapes than what is provided here, the lower level
 graphics API is more appropriate. See the :ref:`guide_graphics`
 for more details.
 
-.. note:: Some Shapes, such as Lines and Triangles, have multiple coordinates.
-          If you update the x, y coordinate, this will also affect the secondary
-          coordinates. This allows you to move the shape without affecting it's
-          overall dimensions.
+Note:
+    Some Shapes, such as Lines and Triangles, have multiple coordinates.
+    If you update the x, y coordinate, this will also affect the secondary
+    coordinates. This allows you to move the shape without affecting it's
+    overall dimensions.
 
 .. versionadded:: 1.5.4
 """
 
 import math
 from abc import ABC, abstractmethod
-from typing import List, NoReturn, Optional
+from typing import List, Optional
 
 import pyglet
 from pyglet.customtypes import Color, Point2D, number
@@ -30,8 +31,6 @@ from pyglet.gl import (GL_BLEND, GL_LINES, GL_ONE_MINUS_SRC_ALPHA,
 from pyglet.graphics import Batch, Group
 from pyglet.graphics.shader import ShaderProgram
 from pyglet.graphics.vertexdomain import VertexList
-from pyglet.math import Vec2
-from pyglet.shapes2d.collidable import *
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -110,14 +109,13 @@ class _ShapeGroup(Group):
         The group is created internally. Usually you do not
         need to explicitly create it.
 
-        :param int blend_src:
-            OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
-        :param int blend_dest:
-            OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
-        :param pyglet.graphics.shader.ShaderProgram program:
-            The ShaderProgram to use.
-        :param pyglet.graphics.Group group:
-            Optional parent group.
+        Args:
+            blend_src: OpenGL blend source mode; for example,
+                ``GL_SRC_ALPHA``.
+            blend_dest: OpenGL blend destination mode; for example,
+                ``GL_ONE_MINUS_SRC_ALPHA``.
+            program: The ShaderProgram to use.
+            group: Optional parent group.
         """
         super().__init__(parent=parent)
         self.program = program
@@ -174,12 +172,6 @@ class ShapeBase(ABC):
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
-    def __contains__(self, point: Point2D) -> NoReturn:
-        """Test whether a point is inside a shape."""
-        raise NotImplementedError(
-            f"The `in` operator is not supported for {self.__class__.__name__}"
-        )
-
     def _update_color(self) -> None:
         """Send the new colors for each vertex to the GPU.
 
@@ -212,8 +204,7 @@ class ShapeBase(ABC):
 
     @abstractmethod
     def _update_vertices(self) -> None:
-        """
-        Generate up-to-date vertex positions & send them to the GPU.
+        """Generate up-to-date vertex positions & send them to the GPU.
 
         This method must set the contents of `self._vertex_list.vertices`
         using a list or tuple that contains the new vertex coordinates for
@@ -274,10 +265,9 @@ class ShapeBase(ABC):
     def position(self) -> Point2D:
         """The (x, y) coordinates of the shape, as a tuple.
 
-        :param number x:
-            X coordinate of the shape.
-        :param number y:
-            Y coordinate of the shape.
+        Args:
+            x: X coordinate of the shape.
+            y: Y coordinate of the shape.
         """
         return self._x, self._y
 
@@ -316,10 +306,9 @@ class ShapeBase(ABC):
     def anchor_position(self) -> Point2D:
         """The (x, y) coordinates of the anchor point, as a tuple.
 
-        :param number x:
-            X coordinate of the anchor point.
-        :param number y:
-            Y coordinate of the anchor point.
+        Args:
+            x: X coordinate of the anchor point.
+            y: Y coordinate of the anchor point.
         """
         return self._anchor_x, self._anchor_y
 
@@ -456,30 +445,25 @@ class Arc(ShapeBase):
 
         The Arc's anchor point (x, y) defaults to its center.
 
-        :param number x:
-            X coordinate of the circle.
-        :param number y:
-            Y coordinate of the circle.
-        :param number radius:
-            The desired radius.
-        :param int segments:
-            You can optionally specify how many distinct line segments
-            the arc should be made from. If not specified it will be
-            automatically calculated using the formula: `max(14, int(radius / 1.25))`.
-        :param number angle:
-            The angle of the arc, in degrees. Defaults to 360.0, which is a full circle.
-        :param number start_angle:
-            The start angle of the arc, in degrees. Defaults to 0.
-        :param bool closed:
-            If True, the ends of the arc will be connected with a line. defaults to False.
-        :param Color color:
-            The RGB or RGBA color of the arc, specified as a tuple of
-            3 or 4 ints in the range of 0-255. RGB colors will be treated
-            as having opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the circle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the circle.
+        Args:
+            x: X coordinate of the circle.
+            y: Y coordinate of the circle.
+            radius: The desired radius.
+            segments: You can optionally specify how many distinct line
+                segments the arc should be made from. If not specified
+                it will be automatically calculated using the formula:
+                `max(14, int(radius / 1.25))`.
+            angle: The angle of the arc, in degrees. Defaults to 360.0,
+                which is a full circle.
+            start_angle: The start angle of the arc, in degrees.
+                Defaults to 0.
+            closed: If True, the ends of the arc will be connected with
+                a line. defaults to False.
+            color: The RGB or RGBA color of the arc, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having opacity of 255.
+            batch: Optional batch to add the circle to.
+            group: Optional parent group of the circle.
         """
         self._x = x
         self._y = y
@@ -613,22 +597,17 @@ class BezierCurve(ShapeBase):
 
         The curve's anchor point (x, y) defaults to its first control point.
 
-        :param Point2D points:
-            Control points of the curve.
-        :param float t:
-            Draw ``100*t`` percent of the curve. 0.5 means the curve
-            is half drawn and 1.0 means draw the whole curve.
-        :param int segments:
-            You can optionally specify how many line segments the
-            curve should be made from.
-        :param Color color:
-            The RGB or RGBA color of the curve, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the curve to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the curve.
+        Args:
+            *points: Control points of the curve.
+            t: Draw ``100*t`` percent of the curve. 0.5 means the curve
+                is half drawn and 1.0 means draw the whole curve.
+            segments: You can optionally specify how many line segments
+                the curve should be made from.
+            color: The RGB or RGBA color of the curve, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the curve to.
+            group: Optional parent group of the curve.
         """
         self._points = list(points)
         self._t = t
@@ -734,27 +713,19 @@ class Catenary(ShapeBase):
 
         The catenary's anchor point defaults to the (x, y) coordinates.
 
-        :param number x:
-            The first X coordinate of the catenary.
-        :param number y:
-            The first Y coordinate of the catenary.
-        :param number x2:
-            The second X coordinate of the catenary.
-        :param number y2:
-            The second Y coordinate of the catenary.
-        :param number length:
-            The desired length of the catenary.
-        :param int segments:
-            You can optionally specify how many distinct lines
-            the catenary should be made from.
-        :param Color color:
-            The RGB or RGBA color of the catenary, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the catenary to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the catenary.
+        Args:
+            x: The first X coordinate of the catenary.
+            y: The first Y coordinate of the catenary.
+            x2: The second X coordinate of the catenary.
+            y2: The second Y coordinate of the catenary.
+            length: The desired length of the catenary.
+            segments: You can optionally specify how many distinct lines
+                the catenary should be made from.
+            color: The RGB or RGBA color of the catenary, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the catenary to.
+            group: Optional parent group of the catenary.
         """
         self._x = x
         self._y = y
@@ -898,25 +869,19 @@ class Circle(ShapeBase):
 
         The circle's anchor point (x, y) defaults to the center of the circle.
 
-        :param number x:
-            X coordinate of the circle.
-        :param number y:
-            Y coordinate of the circle.
-        :param number radius:
-            The desired radius.
-        :param int segments:
-            You can optionally specify how many distinct triangles
-            the circle should be made from. If not specified it will
-            be automatically calculated using the formula:
-            `max(14, int(radius / 1.25))`.
-        :param Color color:
-            The RGB or RGBA color of the circle, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the circle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the circle.
+        Args:
+            x: X coordinate of the circle.
+            y: Y coordinate of the circle.
+            radius: The desired radius.
+            segments: You can optionally specify how many distinct
+                triangles the circle should be made from. If not
+                specified it will be automatically calculated using the
+                formula: `max(14, int(radius / 1.25))`.
+            color: The RGB or RGBA color of the circle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the circle to.
+            group: Optional parent group of the circle.
         """
         self._x = x
         self._y = y
@@ -934,11 +899,6 @@ class Circle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        circle = CollisionCircle(self._x, self._y, self._radius)
-        circle.anchor_position = self._anchor_x, self._anchor_y
-        return point in circle
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1003,22 +963,16 @@ class Ellipse(ShapeBase):
 
         The ellipse's anchor point (x, y) defaults to the center of the ellipse.
 
-        :param number x:
-            X coordinate of the ellipse.
-        :param number y:
-            Y coordinate of the ellipse.
-        :param number a:
-            Semi-major axes of the ellipse.
-        :param number b:
-            Semi-minor axes of the ellipse.
-        :param number color:
-            The RGB or RGBA color of the ellipse, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the circle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the ellipse.
+        Args:
+            x: X coordinate of the ellipse.
+            y: Y coordinate of the ellipse.
+            a: Semi-major axes of the ellipse.
+            b: Semi-minor axes of the ellipse.
+            color: The RGB or RGBA color of the ellipse, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the circle to.
+            group: Optional parent group of the ellipse.
         """
         self._x = x
         self._y = y
@@ -1042,12 +996,6 @@ class Ellipse(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        ellipse = CollisionEllipse(self._x, self._y, self._a, self._b)
-        ellipse.anchor_position = self._anchor_x, self._anchor_y
-        ellipse.rotation = self._rotation
-        return point in ellipse
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1144,30 +1092,23 @@ class Sector(ShapeBase):
 
         The sector's anchor point (x, y) defaults to the center of the circle.
 
-        :param number x:
-            X coordinate of the sector.
-        :param number y:
-            Y coordinate of the sector.
-        :param number radius:
-            The desired radius.
-        :param number segments:
-            You can optionally specify how many distinct triangles
-            the sector should be made from. If not specified it will
-            be automatically calculated using the formula:
-            `max(14, int(radius / 1.25))`.
-        :param number angle:
-            The angle of the sector, in degrees. Defaults to 360,
-            which is a full circle.
-        :param number start_angle:
-            The start angle of the sector, in degrees. Defaults to 0.
-        :param Color color:
-            The RGB or RGBA color of the circle, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the sector to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the sector.
+        Args:
+            x: X coordinate of the sector.
+            y: Y coordinate of the sector.
+            radius: The desired radius.
+            segments: You can optionally specify how many distinct
+                triangles the sector should be made from. If not
+                specified it will be automatically calculated using the
+                formula: `max(14, int(radius / 1.25))`.
+            angle: The angle of the sector, in degrees. Defaults to 360,
+                which is a full circle.
+            start_angle: The start angle of the sector, in degrees.
+                Defaults to 0.
+            color: The RGB or RGBA color of the circle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the sector to.
+            group: Optional parent group of the sector.
         """
         self._x = x
         self._y = y
@@ -1190,12 +1131,6 @@ class Sector(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        sector = CollisionSector(self._x, self._y, self._radius, self._angle, self._start_angle)
-        sector.anchor_position = self._anchor_x, self._anchor_y
-        sector.rotation = self._rotation
-        return point in sector
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1307,24 +1242,17 @@ class Line(ShapeBase):
         The line's anchor point defaults to the center of the line's
         width on the X axis, and the Y axis.
 
-        :param number x:
-            The first X coordinate of the line.
-        :param number y:
-            The first Y coordinate of the line.
-        :param number x2:
-            The second X coordinate of the line.
-        :param number y2:
-            The second Y coordinate of the line.
-        :param number width:
-            The desired width of the line.
-        :param Color color:
-            The RGB or RGBA color of the line, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the line to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the line.
+        Args:
+            x: The first X coordinate of the line.
+            y: The first Y coordinate of the line.
+            x2: The second X coordinate of the line.
+            y2: The second Y coordinate of the line.
+            width: The desired width of the line.
+            color: The RGB or RGBA color of the line, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the line to.
+            group: Optional parent group of the line.
         """
         self._x = x
         self._y = y
@@ -1346,26 +1274,6 @@ class Line(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
-        vec_ba = -vec_ab
-        vec_ap = Vec2(
-            point[0] - self._x - self._anchor_x, point[1] - self._y + self._anchor_y
-        )
-        vec_bp = Vec2(
-            point[0] - self._x2 - self._anchor_x, point[1] - self._y2 + self._anchor_y
-        )
-        if vec_ab.dot(vec_ap) * vec_ba.dot(vec_bp) < 0:
-            return False
-
-        a, b = point[0] + self._anchor_x, point[1] - self._anchor_y
-        x1, y1, x2, y2 = self._x, self._y, self._x2, self._y2
-        # The following is the expansion of the determinant of a 3x3 matrix
-        # used to calculate the area of a triangle.
-        double_area = abs(a * y1 + b * x2 + x1 * y2 - x2 * y1 - a * y2 - b * x1)
-        h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
-        return h < self._width / 2
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1456,22 +1364,16 @@ class Rectangle(ShapeBase):
         The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
-        :param number x:
-            The X coordinate of the rectangle.
-        :param number y:
-            The Y coordinate of the rectangle.
-        :param number width:
-            The width of the rectangle.
-        :param number height:
-            The height of the rectangle.
-        :param Color color:
-            The RGB or RGBA color of the circle, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the rectangle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the rectangle.
+        Args:
+            x: The X coordinate of the rectangle.
+            y: The Y coordinate of the rectangle.
+            width: The width of the rectangle.
+            height: The height of the rectangle.
+            color: The RGB or RGBA color of the circle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the rectangle to.
+            group: Optional parent group of the rectangle.
         """
         self._x = x
         self._y = y
@@ -1491,12 +1393,6 @@ class Rectangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        rect = CollisionRectangle(self._x, self._y, self._width, self._height)
-        rect.anchor_position = self._anchor_x, self._anchor_y
-        rect.rotation = self._rotation
-        return point in rect
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1580,33 +1476,27 @@ class BorderedRectangle(ShapeBase):
         The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
-        :param number x:
-            The X coordinate of the rectangle.
-        :param number y:
-            The Y coordinate of the rectangle.
-        :param number width:
-            The width of the rectangle.
-        :param number height:
-            The height of the rectangle.
-        :param number border:
-            The thickness of the border.
-        :param Color color:
-            The RGB or RGBA fill color of the rectangle, specified
-            as a tuple of 3 or 4 ints in the range of 0-255. RGB
-            colors will be treated as having an opacity of 255.
-        :param Color border_color:
-            The RGB or RGBA fill color of the border, specified
-            as a tuple of 3 or 4 ints in the range of 0-255. RGB
-            colors will be treated as having an opacity of 255.
+        Args:
+            x: The X coordinate of the rectangle.
+            y: The Y coordinate of the rectangle.
+            width: The width of the rectangle.
+            height: The height of the rectangle.
+            border: The thickness of the border.
+            color: The RGB or RGBA fill color of the rectangle,
+                specified as a tuple of 3 or 4 ints in the range of
+                0-255. RGB colors will be treated as having an opacity
+                of 255.
+            border_color: The RGB or RGBA fill color of the border,
+                specified as a tuple of 3 or 4 ints in the range of
+                0-255. RGB colors will be treated as having an opacity
+                of 255.
 
-            The alpha values must match if you pass RGBA values to
-            both this argument and `border_color`. If they do not,
-            a `ValueError` will be raised informing you of the
-            ambiguity.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the rectangle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the rectangle.
+                The alpha values must match if you pass RGBA values to
+                both this argument and `border_color`. If they do not,
+                a `ValueError` will be raised informing you of the
+                ambiguity.
+            batch: Optional batch to add the rectangle to.
+            group: Optional parent group of the rectangle.
         """
         self._x = x
         self._y = y
@@ -1649,12 +1539,6 @@ class BorderedRectangle(ShapeBase):
         self._create_vertex_list()
         self._update_vertices()
 
-    def __contains__(self, point: Point2D) -> bool:
-        rect = CollisionRectangle(self._x, self._y, self._width, self._height)
-        rect.anchor_position = self._anchor_x, self._anchor_y
-        rect.rotation = self._rotation
-        return point in rect
-
     def _create_vertex_list(self):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
         self._vertex_list = self._group.program.vertex_list_indexed(
@@ -1691,7 +1575,8 @@ class BorderedRectangle(ShapeBase):
     def border(self) -> number:
         """The border width of the rectangle.
 
-        :return: number
+        Returns:
+            number
         """
         return self._border
 
@@ -1821,26 +1706,18 @@ class Triangle(ShapeBase):
 
         The triangle's anchor point defaults to the first vertex point.
 
-        :param number x:
-            The first X coordinate of the triangle.
-        :param number y:
-            The first Y coordinate of the triangle.
-        :param number x2:
-            The second X coordinate of the triangle.
-        :param number y2:
-            The second Y coordinate of the triangle.
-        :param number x3:
-            The third X coordinate of the triangle.
-        :param number y3:
-            The third Y coordinate of the triangle.
-        :param Color color:
-            The RGB or RGBA color of the triangle, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the triangle to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the triangle.
+        Args:
+            x: The first X coordinate of the triangle.
+            y: The first Y coordinate of the triangle.
+            x2: The second X coordinate of the triangle.
+            y2: The second Y coordinate of the triangle.
+            x3: The third X coordinate of the triangle.
+            y3: The third Y coordinate of the triangle.
+            color: The RGB or RGBA color of the triangle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the triangle to.
+            group: Optional parent group of the triangle.
         """
         self._x = x
         self._y = y
@@ -1862,16 +1739,6 @@ class Triangle(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        polygon = CollisionPolygon(
-            (self._x, self._y),
-            (self._x2, self._y2),
-            (self._x3, self._y3),
-        )
-        polygon.anchor_position = self._anchor_x, self._anchor_y
-        polygon.rotation = self._rotation
-        return point in polygon
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -1964,24 +1831,17 @@ class Star(ShapeBase):
 
         The star's anchor point (x, y) defaults to the center of the star.
 
-        :param number x:
-            The X coordinate of the star.
-        :param number y:
-            The Y coordinate of the star.
-        :param number outer_radius:
-            The desired outer radius of the star.
-        :param number inner_radius:
-            The desired inner radius of the star.
-        :param int num_spikes:
-            The desired number of spikes of the star.
-        :param Color color:
-            The RGB or RGBA color of the star, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the star to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the star.
+        Args:
+            x: The X coordinate of the star.
+            y: The Y coordinate of the star.
+            outer_radius: The desired outer radius of the star.
+            inner_radius: The desired inner radius of the star.
+            num_spikes: The desired number of spikes of the star.
+            color: The RGB or RGBA color of the star, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the star to.
+            group: Optional parent group of the star.
         """
         self._x = x
         self._y = y
@@ -2001,12 +1861,6 @@ class Star(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        circle = CollisionCircle(self._x, self._y, (self._outer_radius + self._inner_radius) / 2)
-        circle.anchor_position = self._anchor_x, self._anchor_y
-        circle.rotation = self._rotation
-        return point in circle
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(
@@ -2120,16 +1974,13 @@ class Polygon(ShapeBase):
 
         The polygon's anchor point defaults to the first vertex point.
 
-        :param Point2D coordinates:
-            The coordinates for each point in the polygon.
-        :param Color color:
-            The RGB or RGBA color of the polygon, specified as a
-            tuple of 3 or 4 ints in the range of 0-255. RGB colors
-            will be treated as having an opacity of 255.
-        :param pyglet.graphics.Batch batch:
-            Optional batch to add the polygon to.
-        :param pyglet.graphics.Group group:
-            Optional parent group of the polygon.
+        Args:
+            *coordinates: The coordinates for each point in the polygon.
+            color: The RGB or RGBA color of the polygon, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch: Optional batch to add the polygon to.
+            group: Optional parent group of the polygon.
         """
 
         # len(self._coordinates) = the number of vertices and sides in the shape.
@@ -2148,12 +1999,6 @@ class Polygon(ShapeBase):
 
         self._create_vertex_list()
         self._update_vertices()
-
-    def __contains__(self, point: Point2D) -> bool:
-        polygon = CollisionPolygon(*self._coordinates)
-        polygon.anchor_position = self._anchor_x, self._anchor_y
-        polygon.rotation = self._rotation
-        return point in polygon
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._group.program.vertex_list(

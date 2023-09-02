@@ -7,9 +7,17 @@ from pyglet.math import Vec2
 
 
 def point_in_polygon(polygon: List[Point2D], point: Point2D) -> bool:
-    """Raycasting Algorithm to find out whether a point is in a given polygon.
+    """Use raycasting to determine if a point is inside a polygon
 
-    Copy from https://www.algorithms-and-technologies.com/point_in_polygon/python
+    This function is an example implementation available under MIT License at:
+    https://www.algorithms-and-technologies.com/point_in_polygon/python
+
+    Args:
+        polygon: The vertices of the polygon
+        point: The point to test
+
+    Returns:
+        Whether the point is inside the polygon.
     """
     odd = False
     i = 0
@@ -49,7 +57,15 @@ def is_convex(polygon: List[Point2D]) -> bool:
 
 
 def sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
-    """An algorithm to detect whether two polygons intersect or not.."""
+    """Return whether two polygons intersect or not.
+
+    Args:
+        polygon1: The first polygon to test
+        polygon2: The second polygon to test
+
+    Returns:
+        Whether the two polygons intersect
+    """
 
     def _sat(polygon1: List[Point2D], polygon2: List[Point2D]) -> bool:
         # Calculate normals of all edges

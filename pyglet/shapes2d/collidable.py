@@ -3,6 +3,7 @@
 The module provides classes for 2D collision dection. You can also connect it to a
 physics engine for better effiency.
 """
+from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
@@ -27,8 +28,8 @@ class CollisionShapeBase(ABC, EventDispatcher):
     def __contains__(self, point: Point2D) -> bool:
         """Test whether a point is inside a collidable shape.
 
-        :param Point2D point:
-            The point.
+        Args:
+            point: The point.
 
         :trype: bool
         """
@@ -53,38 +54,40 @@ class CollisionShapeBase(ABC, EventDispatcher):
         rotated = (Vec2(*point) - center).rotate(math.radians(self._rotation))
         return tuple(rotated + center + Vec2(self._anchor_y, self._anchor_y))
 
-    def is_collide(self, other: "CollisionShapeBase") -> bool:
+    def collide(self, other: CollisionShapeBase) -> bool:
         """Test whether two shapes are collided.
 
-        :param CollisionShapeBase other:
-            A second shape that needs to be detected with this shape.
+        Args:
+            other: A second shape that needs to be detected with this
+                shape.
 
-        :rtype: bool
+        Returns:
+            bool
         """
-        method = f"collide_with_{other.__class__.__name__}"
-        if hasattr(self, method) and callable(getattr(self, method)):
-            return getattr(self, method)(other)
-        method = f"collide_with_{self.__class__.__name__}"
-        if hasattr(other, method) and callable(getattr(other, method)):
-            return getattr(other, method)(self)
+        self_method_name = f"collide_with_{other.__class__.__name__}"
+        if callable(self_method := getattr(self, self_method_name, None)):
+            return self_method(other)
+        other_method_name = f"collide_with_{self.__class__.__name__}"
+        if callable(other_method := getattr(other, other_method_name, None)):
+            return other_method(self)
         if hasattr(self, "get_polygon") and hasattr(other, "get_polygon"):
             polygon1 = CollisionPolygon(*self.get_polygon())
             polygon2 = CollisionPolygon(*other.get_polygon())
-            return polygon1.is_collide(polygon2)
+            return polygon1.collide(polygon2)
         raise TypeError(
             "No collision detection method found between "
             f"{self.__class__.__name__} and {other.__class__.__name__}"
         )
 
-    def on_enter(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+    def on_enter(self, other: CollisionShapeBase, *args) -> Optional[bool]:
         """Another shape was moved into this shape."""
         pass
 
-    def on_collide(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+    def on_collide(self, other: CollisionShapeBase, *args) -> Optional[bool]:
         """Another shape was collided with this shape."""
         pass
 
-    def on_leave(self, other: "CollisionShapeBase", *args) -> Optional[bool]:
+    def on_leave(self, other: CollisionShapeBase, *args) -> Optional[bool]:
         """Another shape was moved outside this shape."""
         pass
 
@@ -116,10 +119,9 @@ class CollisionShapeBase(ABC, EventDispatcher):
     def position(self) -> Point2D:
         """The (x, y) coordinates of the shape, as a tuple.
 
-        :param number x:
-            X coordinate of the sprite.
-        :param number y:
-            Y coordinate of the sprite.
+        Args:
+            x: X coordinate of the sprite.
+            y: Y coordinate of the sprite.
         """
         return self._x, self._y
 
@@ -155,10 +157,9 @@ class CollisionShapeBase(ABC, EventDispatcher):
     def anchor_position(self) -> Point2D:
         """The (x, y) coordinates of the anchor point, as a tuple.
 
-        :param number x:
-            X coordinate of the anchor point.
-        :param number y:
-            Y coordinate of the anchor point.
+        Args:
+            x: X coordinate of the anchor point.
+            y: Y coordinate of the anchor point.
         """
         return self._anchor_x, self._anchor_y
 

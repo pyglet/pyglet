@@ -23,7 +23,7 @@ collision2 = CollisionRectangle(rect2.x, rect2.y, 20, 20)
 
 @win.event
 def on_mouse_motion(x, y, dx, dy):
-    if (x, y) in rect1:
+    if (x, y) in collision1:
         if hint.visible:
             hint.visible = False
         rect1.x = max(0, min(rect1.x + 1.2 * dx, 380))
@@ -38,7 +38,7 @@ def on_draw():
     hint.draw()
 
 def update(dt):
-    if collision1.is_collide(collision2):
+    if collision1.collide(collision2):
         rect2.position = randint(20, 380), randint(20, 280)
         collision2.position = rect2.position
 
