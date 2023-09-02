@@ -1,7 +1,7 @@
 """Holds type aliases used throughout the codebase."""
 import ctypes
 
-from typing import Union, Tuple
+from typing import Union, Tuple, TypeVar
 
 # just Number
 Number = Union[int, float]
