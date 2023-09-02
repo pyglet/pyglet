@@ -14,9 +14,13 @@ Point2D = Tuple[Number, Number]
 Point3D = Tuple[Number, Number, Number]
 
 # Colors
-RGB = Tuple[int, int, int]
-RGBA = Tuple[int, int, int, int]
-Color = Union[RGB, RGBA]
+Channel = TypeVar('Channel')
+
+RGB = Tuple[Channel, Channel, Channel]
+RGBA = Tuple[Channel, Channel, Channel, Channel]
+
+# Can be used as Color[int] or Color[float]
+Color = Union[RGB[Channel], RGBA[Channel]]
 
 __all__ = [
     'Number',
