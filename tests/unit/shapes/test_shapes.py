@@ -59,7 +59,7 @@ def test_init_sets_opacity_to_255_for_rgb_value_as_color_argument(shape_keywords
 
 def test_init_sets_rotation_to_zero(rgb_or_rgba_shape, shape_type):
     if shape_type is Line:
-        pytest.skip(msg="Rotation test not yet valid for line due to design ambiguity")
+        pytest.xfail(msg="Rotation test not yet valid for line due to design ambiguity")
     assert rgb_or_rgba_shape.rotation == 0
 
 
