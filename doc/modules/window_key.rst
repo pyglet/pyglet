@@ -129,7 +129,7 @@ Text motion constants
 
 These are allowed to clash with key constants because they abstract
 common text motions from their platform-specific keyboard shortcuts.
-See :ref:`keyboard_motion_events` for more information.
+See :ref:`guide_keyboard-motion-events` for more information.
 
 
 .. list-table::
