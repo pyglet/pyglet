@@ -70,14 +70,15 @@ class CollisionShapeBase(ABC, EventDispatcher):
         other_method_name = f"collide_with_{self.__class__.__name__}"
         if callable(other_method := getattr(other, other_method_name, None)):
             return other_method(self)
-        if hasattr(self, "get_polygon") and hasattr(other, "get_polygon"):
+        try:
             polygon1 = CollisionPolygon(*self.get_polygon())
             polygon2 = CollisionPolygon(*other.get_polygon())
             return polygon1.collide(polygon2)
-        raise TypeError(
-            "No collision detection method found between "
-            f"{self.__class__.__name__} and {other.__class__.__name__}"
-        )
+        except AttributeError as e:
+            raise AttributeError(
+                "No collision detection method found between "
+                f"{self.__class__.__name__} and {other.__class__.__name__}"
+            ) from e
 
     def on_enter(self, other: CollisionShapeBase, *args) -> Optional[bool]:
         """Another shape was moved into this shape."""
