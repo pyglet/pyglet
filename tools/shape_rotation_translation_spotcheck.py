@@ -24,9 +24,8 @@ from pyglet.shapes import (
 from pyglet.text import Label
 
 
-INSTRUCTIONS = """Movement + rotation test rig:
-1. Use - / = keys to rotate
-2. Left click + drag to adjust positions
+INSTRUCTIONS = """- / = keys to rotate
+Left click + drag to adjust positions
 """
 
 PX_SIZE = 10
@@ -93,7 +92,11 @@ def main():
     padding = 50
     width, height = 600, 600
 
-    window = pyglet.window.Window(width, height, resizable=True)
+    window = pyglet.window.Window(
+        width, height,
+        caption="Shape Translation / Rotation Spotcheck",
+        resizable=True)
+
     shapes: Dict[Type, ShapeBase] = {}
     labels: Dict[Type, Label] = {}
     batch = pyglet.graphics.Batch()
