@@ -1,6 +1,3 @@
-"""
-
-"""
 import itertools
 import inspect
 from typing import Dict, Optional, Generator, Tuple, Type
@@ -140,7 +137,7 @@ def main():
         shapes[shape_type] = shape
         labels[shape_type] = label
 
-    instructions = pyglet.text.Label(
+    _instructions = pyglet.text.Label(
         INSTRUCTIONS,
         x=window.width // 2, y=padding,
         width=window.width,
@@ -178,4 +175,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
