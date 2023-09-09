@@ -263,8 +263,18 @@ class ShapeBase(ABC):
     def rotation(self) -> float:
         """Clockwise rotation of the shape in degrees.
 
-        It will be rotated about its (anchor_x, anchor_y)
-        position.
+        It will be rotated about its (anchor_x, anchor_y) position,
+        which defaults to the first vertex point of the shape.
+
+        For most shapes, this is the lower left corner. The shapes
+        below default to the points their ``radius`` values are
+        measured from:
+
+            * :py:class:`.Circle`
+            * :py:class:`.Ellipse`
+            * :py:class:`.Arc`
+            * :py:class:`.Sector`
+            * :py:class:`.Star`
         """
         return self._rotation
 
