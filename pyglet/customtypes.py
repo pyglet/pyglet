@@ -3,18 +3,15 @@ import ctypes
 
 from typing import Union, Tuple, TypeVar
 
-# just Number
-Number = Union[int, float]
-
-# Colors
+# Channel
 Channel = TypeVar('Channel', int, float)
 
 # Backwards compatible placeholder for `collections.abc.Buffer` from Python 3.12
 Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]
 
 # Points
-Point2D = Tuple[Number, Number]
-Point3D = Tuple[Number, Number, Number]
+Point2D = Tuple[Channel, Channel]
+Point3D = Tuple[Channel, Channel, Channel]
 
 
 RGB = Tuple[Channel, Channel, Channel]
@@ -34,7 +31,6 @@ Color255 = Color[int]
 ColorFloat = Color[float]
 
 __all__ = [
-    'Number',
     'Channel',
     'Buffer',
     
