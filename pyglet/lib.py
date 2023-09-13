@@ -79,8 +79,8 @@ class LibraryLoader:
         platform = 'win32'
 
     def load_library(self, *names, **kwargs):
-        """Find and load a library.  
-        
+        """Find and load a library.
+
         More than one name can be specified, they will be tried in order.
         Platform-specific library names (given as kwargs) are tried first.
 
@@ -164,6 +164,9 @@ class MachOLibraryLoader(LibraryLoader):
         else:
             self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
 
+        # check homebrew for libs too
+        self.brew_library_path = ['/opt/homebrew/lib']
+
     def find_library(self, path):
         """Implements the dylib search as specified in Apple documentation:
 
@@ -205,11 +208,13 @@ class MachOLibraryLoader(LibraryLoader):
             search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
             search_path.append(path)
             search_path.extend([os.path.join(p, libname) for p in self.dyld_fallback_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.brew_library_path])
         else:
             search_path.extend([os.path.join(p, libname) for p in self.ld_library_path])
             search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
             search_path.append(path)
             search_path.extend([os.path.join(p, libname) for p in self.dyld_fallback_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.brew_library_path])
 
         for path in search_path:
             if os.path.exists(path):
