@@ -11,6 +11,7 @@ import ctypes
 import ctypes.util
 
 import pyglet
+import warnings
 
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
@@ -26,6 +27,8 @@ if pyglet.options['search_local_libs']:
 else:
     _local_lib_paths = None
 
+if pyglet.options['brew_library_path'] != pyglet._option_dflts['brew_library_path']:
+    warnings.warn("Changing the default Homebrew library path is not recommended.  Use at your own risk.")
 
 class _TraceFunction:
     def __init__(self, func):
@@ -165,7 +168,7 @@ class MachOLibraryLoader(LibraryLoader):
             self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
 
         # check homebrew for libs too
-        self.brew_library_path = ['/opt/homebrew/lib']
+        self.brew_library_path = [pyglet.options['brew_library_path']]
 
     def find_library(self, path):
         """Implements the dylib search as specified in Apple documentation:

@@ -100,6 +100,9 @@ if getattr(sys, 'frozen', None):
 #:     to True by default.
 #:
 #:     .. versionadded:: 1.2
+#: brew_library_path
+#:     If set, pyglet will check this directory rather than the default for
+#:     Homebrew installed libraries on macOS.  Use at your own risk.
 #:
 options = {
     'audio': ('xaudio2', 'directsound', 'openal', 'pulse', 'silent'),
@@ -124,6 +127,7 @@ options = {
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
     'search_local_libs': True,
+    'brew_library_path': '/opt/homebrew/lib',
     'win32_gdi_font': False,
     'headless': False,
     'headless_device': 0,
@@ -157,6 +161,7 @@ _option_types = {
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'search_local_libs': bool,
+    'brew_library_path': str,
     'win32_gdi_font': bool,
     'headless': bool,
     'headless_device': int,
@@ -166,6 +171,8 @@ _option_types = {
     'com_mta': bool,
     'osx_alt_loop': bool,
 }
+
+_option_dflts = dict(options)
 
 
 for key in options:
@@ -180,6 +187,8 @@ for key in options:
             options[key] = value in ('true', 'TRUE', 'True', '1')
         elif _option_types[key] is int:
             options[key] = int(value)
+        elif _option_types[key] is str:
+            options[key] = str(value)
     except KeyError:
         pass
 
