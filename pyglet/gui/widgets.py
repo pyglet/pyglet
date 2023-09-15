@@ -282,7 +282,15 @@ class Slider(WidgetBase):
     scrolling the mouse wheel.
     """
 
-    def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
+    def __init__(self, 
+                 x, y,
+                 width, height,
+                 base, knob, 
+                 edge=0,
+                 value_range=(0, 1),
+                 integer=False,
+                 orientation='horizontal', 
+                 batch=None, group=None):
         """Create a slider.
 
         :Parameters:
@@ -294,52 +302,100 @@ class Slider(WidgetBase):
                 Image to display as the background to the slider.
             `knob` : `~pyglet.image.AbstractImage`
                 Knob that moves to show the position of the slider.
-            `edge` : int
+            `edge` : int or (int, int)
                 Pixels from the maximum and minimum position of the slider,
                 to the edge of the base image.
+            `value_range` : (float, float)
+                Slider value range.
+            `integer` : bool
+                Is slider counts only in integer numbers.
+            `orientation` : str
+                Optional parent group of the slider.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the slider to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the slider.
+
         """
-        super().__init__(x, y, base.width, max(base.height, knob.height))
+        if width is None:
+            width = max(base.width, knob.width)
+        if height is None:
+            height = max(base.height, knob.height)
+        super().__init__(x, y, width, height)
+
+        self.value_range = value_range
+        self._horizontal = orientation == 'horizontal'
+        self._integer = integer
+        if isinstance(edge, int):
+            edge = (edge, edge)
         self._edge = edge
         self._base_img = base
         self._knob_img = knob
-        self._half_knob_width = knob.width / 2
-        self._half_knob_height = knob.height / 2
-        self._knob_img.anchor_y = knob.height / 2
-        self._knob_to_base_height_ratio = knob.height / base.height
-
-        self._min_knob_x = x + edge
-        self._max_knob_x = x + base.width - knob.width - edge
 
         self._user_group = group
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
-        self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
+        self._base_spr = pyglet.sprite.Sprite(self._base_img, batch=batch, group=bg_group)
+        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, batch=batch, group=fg_group)
+
+        if self._horizontal:
+            self._base_display_style = ('padding', ((self.height - self._base_spr.height) / 2,) * 2)
+            self._knob_display_style = ('padding', ((self.height - self._knob_spr.height) / 2,) * 2)
+            self._min_knob_size = self._knob_img.width
+        else:
+            self._base_display_style = ('padding', ((self.width - self._base_spr.width) / 2,) * 2)
+            self._knob_display_style = ('padding', ((self.width - self._knob_spr.width) / 2,) * 2)
+            self._min_knob_size = self._knob_img.height
+
+        self._knob_size = 0
 
         self._value = 0
         self._in_update = False
 
+        self.on_resize(self.width, self.height)
+
+    
     def _update_position(self):
-        self._min_knob_x = self._x + self._edge
-        self._max_knob_x = self._x + self._base_spr.width - self._knob_spr.width - self._edge
-        self._base_spr.position = self._x, self._y, 0
-        self._knob_spr.position = self._x + self._edge, self._y + self._base_spr.height / 2, 0
+        if self._horizontal:
+            self._base_spr.x = self._x
+            self._base_spr.y = self._y + self._calculate_offset(self._base_display_style, self.height)
+            self._knob_spr.y = self._y + self._calculate_offset(self._knob_display_style, self.height)
+        else:
+            self._base_spr.x = self._x + self._calculate_offset(self._base_display_style, self.width)
+            self._base_spr.y = self._y
+            self._knob_spr.x = self._x + self._calculate_offset(self._knob_display_style, self.width)
         self.value = self._value
 
     def on_resize(self, width, height):
         super(Slider, self).on_resize(width, height)
-        self._base_spr.width = width
-        if self._knob_to_base_height_ratio > 1:
-            self._knob_spr.height = height
-            self._base_spr.height = height / self._knob_to_base_height_ratio
+        if self._horizontal:
+            self._base_spr.width = width
+            self._base_spr.height = self._calculate_size(self._base_display_style, self.height)
+            self._knob_spr.width = max(self.knob_size, self._min_knob_size)
+            self._knob_spr.height = self._calculate_size(self._knob_display_style, self.height)
         else:
             self._base_spr.height = height
-            self._knob_spr.height = height * self._knob_to_base_height_ratio
+            self._base_spr.width = self._calculate_size(self._base_display_style, self.width)
+            self._knob_spr.height = max(self.knob_size, self._min_knob_size)
+            self._knob_spr.width = self._calculate_size(self._knob_display_style, self.width)
+            print(self._knob_spr.height)
         self._update_position()
+
+    def _calculate_offset(self, display_style, max_size):
+        if display_style[0] == 'padding':
+            return display_style[1][0]
+        if display_style[0] == 'percent':
+            return max_size * (1 - display_style[1] / 100) / 2
+        if display_style[0] == 'pixels':
+            return (max_size - display_style[1]) / 2
+        
+    def _calculate_size(self, display_style, max_size):
+        if display_style[0] == 'padding':
+            return max_size - display_style[1][0] - display_style[1][1]
+        if display_style[0] == 'percent':
+            return max_size * display_style[1] / 100
+        if display_style[0] == 'pixels':
+            return display_style[1]
         
     @property
     def value(self):
@@ -348,9 +404,24 @@ class Slider(WidgetBase):
     @value.setter
     def value(self, value):
         assert type(value) in (int, float), "This Widget's value must be an int or float."
+        if self._integer: value = round(value)
+        value = min(max(value, self.value_range[0]), self.value_range[1])
         self._value = value
-        x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
-        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
+
+        if self._horizontal:
+            min_x, max_x = self._min_x, self._max_x
+            self._knob_spr.x = (
+                (value - self._value_range[0]) / 
+                (self._value_range[1] - self._value_range[0]) *
+                (max_x - min_x) + min_x
+            )
+        else:
+            min_y, max_y = self._min_y, self._max_y
+            self._knob_spr.y = (
+                (value - self._value_range[0]) / 
+                (self._value_range[1] - self._value_range[0]) *
+                (max_y - min_y) + min_y
+            )
 
     def update_groups(self, order):
         self._base_spr.group = Group(order=order + 1, parent=self._user_group)
@@ -358,46 +429,86 @@ class Slider(WidgetBase):
 
     @property
     def _min_x(self):
-        return self._x + self._edge
+        return self._x + self._edge[0] - max(self._min_knob_size - self.knob_size, 0) / 2
 
     @property
     def _max_x(self):
-        return self._x + self._width - self._edge
+        return self._x + self._width - self._edge[1] - max(self._min_knob_size / 2, self.knob_size)
 
     @property
     def _min_y(self):
-        return self._y - self._half_knob_height
+        return self._y + self._edge[0] - max(self._min_knob_size - self.knob_size, 0) / 2
 
     @property
     def _max_y(self):
-        return self._y + self._half_knob_height + self._base_img.height / 2
+        return self._y + self._height - self._edge[1] - max(self._min_knob_size / 2, self.knob_size)
+
+    @property
+    def value_range(self):
+        return self._value_range
+    
+    @value_range.setter
+    def value_range(self, value):
+        assert value[0] < value[1], "Range Min must be < Range Max"
+        self._value_range = value
+    
+    @property
+    def knob_size(self):
+        return self._knob_size
+    
+    @knob_size.setter
+    def knob_size(self, value):
+        self._knob_size = value
+        self.on_resize(self.width, self.height)
 
     def _check_hit(self, x, y):
-        return self._min_x < x < self._max_x and self._min_y < y < self._max_y
+        return self.x < x < self.x + self.width and self.y < y < self.y + self.height
 
-    def _update_knob(self, x):
-        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
-        self._value = abs(((self._knob_spr.x - self._min_knob_x) * 100) / (self._min_knob_x - self._max_knob_x))
+    def _update_knob(self, x, y):
+        if self._horizontal:
+            x -= self._min_knob_size / 2
+            min_x, max_x = self._min_x, self._max_x
+            self.value = (
+                (x - min_x) / (max_x - min_x) *
+                (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+            )
+        else:
+            y -= self._min_knob_size / 2
+            min_y, max_y = self._min_y, self._max_y
+            self.value = (
+                (y - min_y) / (max_y - min_y) *
+                (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+            )
         self.dispatch_event('on_change', self._value)
+
+    def set_sprite_style(self, sprite_name, size_type, value):
+        if sprite_name == 'base':
+            self._base_display_style = (size_type, value)
+            self.on_resize(self.width, self.height)
+        elif sprite_name == 'knob':
+            self._knob_display_style = (size_type, value)
+            self.on_resize(self.width, self.height)
+        else:
+            raise Exception('Unknown sprite type:', sprite_name)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled:
             return
         if self._check_hit(x, y):
             self._in_update = True
-            self._update_knob(x)
+            self._update_knob(x, y)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if not self.enabled:
             return
         if self._in_update:
-            self._update_knob(x)
+            self._update_knob(x, y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if not self.enabled:
             return
         if self._check_hit(x, y):
-            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
+            self.value += scroll_y
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled:

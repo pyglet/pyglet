@@ -97,7 +97,7 @@ layout.cell(2, 0).content = push_label
 layout.cell(2, 1).content = pushbutton
 frame.add_widget(pushbutton)
 
-slider = pyglet.gui.Slider(0,0, bar, knob, edge=5, batch=batch)
+slider = pyglet.gui.Slider(0,0,0,16, bar, knob, edge=5, batch=batch, value_range=(0, 10), integer=True)
 slider._base_spr.set_image_mesh_generator(pyglet.sprite.NinePatchImageMeshGenerator(0, 20, 0, 20))
 slider.set_handler('on_change', slider_handler)
 
