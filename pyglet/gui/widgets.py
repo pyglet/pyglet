@@ -120,6 +120,10 @@ class WidgetBase(EventDispatcher):
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
     
+    def draw(self):
+        """Draw widget manually in case batch is not provided"""
+        pass
+    
     def on_resize(self, width, height):
         self._width = width
         self._height = height
@@ -244,6 +248,9 @@ class PushButton(WidgetBase):
         super(PushButton, self).on_resize(width, height)
         self._sprite.width = width
         self._sprite.height = height
+
+    def draw(self):
+        self._sprite.draw()
 
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
@@ -515,6 +522,9 @@ class Slider(WidgetBase):
             return
         self._in_update = False
 
+    def draw(self):
+        self._base_spr.draw()
+        self._knob_spr.draw()
 
 Slider.register_event_type('on_change')
 
@@ -658,6 +668,10 @@ class TextEntry(WidgetBase):
         if not self.enabled:
             return
         """Text has been commited via Enter/Return key."""
+
+    def draw(self):
+        self._outline.draw()
+        self._layout.draw()
 
 
 TextEntry.register_event_type('on_commit')
