@@ -44,7 +44,11 @@ The available drivers depend on your operating system:
           -
         * - XAudio2
           -
-          - Pulseaudio
+          - PulseAudio [#pulseaudiof]_
+
+.. [#pulseaudiof] PulseAudio support is currently buggy. Installing
+     OpenAL is recommended as a workaround. See the
+     :ref:`guide-pulseaudio` section below to learn more.
 
 .. [#openalf] OpenAL does not come preinstalled on Windows and some
      Linux distributions. See the :ref:`guide-openal` section below
@@ -127,14 +131,21 @@ usually be installed through the package manager.
     * - Fedora, Nobara
       - ``dnf install openal-soft``
 
+.. _guide-pulseaudio:
 
 Pulse
 ^^^^^
 
-Pulseaudio can also be used directly on Linux, and is installed by default
-with most modern Linux distributions. Pulseaudio does not support positional
-audio, and is limited to stereo. It is recommended to use OpenAL if positional
-audio is required.
+Although a PulseAudio implementation is usually installed on modern
+Linux systems, the :ref:`guide-openal` driver is recommended instead.
+This is because:
+
+1. The pyglet PulseAudio driver has bugs which can crash games (see this
+   `github issue <https://github.com/pyglet/pyglet/issues/952>`_
+   for more information)
+
+2. PulseAudio is limited to only plain stereo audio and does not support
+   spatial audio and other features
 
 Supported media types
 ---------------------
