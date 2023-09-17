@@ -1,0 +1,2 @@
+class UserDefinedFontException(Exception):
+    pass
