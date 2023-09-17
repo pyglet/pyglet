@@ -71,15 +71,15 @@ strings, giving the preference order for each driver:
 
         * - String
           - Audio driver
-        * - ``openal``
+        * - ``'openal'``
           - OpenAL
-        * - ``directsound``
+        * - ``'directsound'``
           - DirectSound
-        * - ``xaudio2``
+        * - ``'xaudio2'``
           - XAudio2
-        * - ``pulse``
-          - Pulseaudio
-        * - ``silent``
+        * - ``'pulse'``
+          - PulseAudio
+        * - ``'silent'``
           - No audio output
 
 You must set the ``audio`` option before importing :mod:`pyglet.media`.
