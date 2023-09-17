@@ -161,6 +161,16 @@ An example program using keyboard and mouse events is in
 Playing sounds and music
 ------------------------
 
+.. note::
+
+   Linux users should make sure they have OpenAL installed.
+
+   1. It prevents crashes from a PulseAudio-related bug
+   2. It automatically enables 2D and 3D surround sound
+
+   See the :ref:`guide-pulseaudio` and :ref:`guide-openal` sections for
+   more information.
+
 pyglet makes it easy to play and mix multiple sounds together.
 The following example plays an MP3 file [#mp3]_::
 
