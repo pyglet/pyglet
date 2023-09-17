@@ -2,7 +2,7 @@ Playing Sound and Video
 =======================
 
 pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, XAudio2, DirectSound, or Pulseaudio, permitting hardware-accelerated
+either OpenAL, XAudio2, DirectSound, or PulseAudio, permitting hardware-accelerated
 mixing and surround-sound 3D positioning. Video is played into OpenGL
 textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
