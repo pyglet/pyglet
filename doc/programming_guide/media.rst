@@ -132,8 +132,8 @@ usually be installed through the package manager.
 
 .. _guide-pulseaudio:
 
-Pulse
-^^^^^
+PulseAudio
+^^^^^^^^^^
 
 Although a PulseAudio implementation is usually installed on modern
 Linux systems, the :ref:`guide-openal` driver is recommended instead.
