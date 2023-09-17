@@ -46,13 +46,12 @@ The available drivers depend on your operating system:
           -
           - PulseAudio [#pulseaudiof]_
 
-.. [#pulseaudiof] PulseAudio support is currently buggy. Installing
-     OpenAL is recommended as a workaround. See the
-     :ref:`guide-pulseaudio` section below to learn more.
+.. [#pulseaudiof] PulseAudio support is buggy; using OpenAL
+     is recommended as a workaround. See the :ref:`guide-pulseaudio`
+     section below for install instructions.
 
 .. [#openalf] OpenAL does not come preinstalled on Windows and some
-     Linux distributions. See the :ref:`guide-openal` section below
-     for install instructions.
+     Linux distributions.
 
 The :mod:`pyglet.media` module reads the value for the ``'audio'`` key
 in :py:data:`pyglet.options`. It will try each entry until it either
