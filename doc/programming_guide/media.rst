@@ -46,8 +46,14 @@ The available drivers depend on your operating system:
           -
           - Pulseaudio
 
-The audio driver can be set through the ``audio`` key of the
-:py:data:`pyglet.options` dictionary. For example::
+.. [#openalf] OpenAL does not come preinstalled on Windows and some
+     Linux distributions. See the :ref:`guide-openal` section below
+     for install instructions.
+
+The :mod:`pyglet.media` module reads the value for the ``'audio'`` key
+in :py:data:`pyglet.options`. It will try each entry until it either
+finds a working driver or runs out of entries. For example, the default
+is equivalent to setting the following value::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
@@ -95,13 +101,32 @@ DirectSound is available only on Windows, and is installed by default.
 pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not
 support hardware audio mixing or surround sound.
 
+.. _guide-openal:
+
 OpenAL
 ^^^^^^
 
-OpenAL is included with Mac OS X. Windows users can download a generic driver
-from `openal.org`_, or from their sound device's manufacturer. Most Linux
-distributions will have OpenAL available in the repositories for download.
-For example, Arch users can ``pacman -S openal`` and Ubuntu users can ``apt install libopenal1``.
+OpenAL is included with Mac OS X. Windows users can download a generic
+driver from either `openal.org`_ or their sound device's manufacturer.
+
+If a Linux distribution does not come with OpenAL pre-installed, it can
+usually be installed through the package manager.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Common Linux Distros
+      - Install Command
+
+    * - Ubuntu, Pop!_OS, Debian
+      - ``apt install libopenal1``
+
+    * - Arch, Manjaro
+      - ``pacman -S openal``
+
+    * - Fedora, Nobara
+      - ``dnf install openal-soft``
+
 
 Pulse
 ^^^^^
@@ -110,10 +135,6 @@ Pulseaudio can also be used directly on Linux, and is installed by default
 with most modern Linux distributions. Pulseaudio does not support positional
 audio, and is limited to stereo. It is recommended to use OpenAL if positional
 audio is required.
-
-.. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
-    distributions. It can be downloaded separately from your audio device
-    manufacturer or `openal.org <https://www.openal.org/downloads>`_
 
 Supported media types
 ---------------------
