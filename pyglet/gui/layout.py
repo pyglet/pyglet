@@ -156,12 +156,12 @@ class LayoutCell:
             self.get_style('padding-left') or 0
         )
         stretch_content = (
-            self.get_style('stretch-content-x') or 0,
-            self.get_style('stretch-content-y') or 0
+            self.get_style('stretch-content-x') or False,
+            self.get_style('stretch-content-y') or False
         )
         content_alignment = (
-            self.get_style('content-alignment-x') or 0,
-            self.get_style('content-alignment-y') or 0
+            self.get_style('content-alignment-x') or 'center',
+            self.get_style('content-alignment-y') or 'center'
         )
 
         if stretch_content[0]:
@@ -190,9 +190,11 @@ class LayoutCell:
         else:
             raise ValueError('content-alignment-y variable is not set properly: ' + content_alignment[1])
 
+        print(self.content, new_rect, stretch_content, content_alignment, (content_x, content_y))
+        
         try:
             self._content.position = (content_x, content_y)
-        except:
+        except Exception as e:
             self._content.position = (content_x, content_y, 0)
 
 
@@ -231,7 +233,7 @@ class _LayoutCellSequenceData:
         elif isinstance(value, str):
             if value.endswith('%'):
                 self.set_size('percent', float(value[0:-1].strip()))
-            if value.endswith('px'):
+            elif value.endswith('px'):
                 self.set_size('pixels', int(value[0:-2].strip()))
             else:
                 self.set_size('pixels', int(value))
@@ -276,6 +278,7 @@ class _LayoutGridContent:
                 'stretch-content': self._style['cell-stretch-content']
             }, self._batch, self._group)
     
+    @property
     def all_cells(self):
         return [cell for sublist in self._cells for cell in sublist if not isinstance(cell, _LayoutSpanFiller)]
 
@@ -300,13 +303,23 @@ class _LayoutGridContent:
         if old_rows != new_rows:
             new_arr = [None] * new_rows
             for i in range(new_rows):
-                new_arr[i] = self._rows[i] if i < old_rows else _LayoutCellSequenceData(self._style['cell-margin'])
+                if i < old_rows:
+                    new_arr[i] = self._rows[i]
+                else:
+                    new_arr[i] = _LayoutCellSequenceData(self._style['cell-margin'])
+                    if 'row-size' in self._style:
+                        new_arr[i].parse_size(self._style['row-size'])
             self._rows = new_arr
 
         if old_cols != new_cols:
             new_arr = [None] * new_cols
             for i in range(new_cols):
-                new_arr[i] = self._columns[i] if i < old_cols else _LayoutCellSequenceData(self._style['cell-margin'])
+                if i < old_cols:
+                    new_arr[i] = self._columns[i]
+                else:
+                    new_arr[i] = _LayoutCellSequenceData(self._style['cell-margin'])
+                    if 'column-size' in self._style:
+                        new_arr[i].parse_size(self._style['column-size'])
             self._columns = new_arr
 
         self._column_count = new_cols
@@ -363,6 +376,7 @@ class _LayoutGridContent:
             for j in range(self._column_count):
                 cell = self._cells[i][j]
                 if isinstance(cell, LayoutCell):
+                    print(i, j, self._calc_cell_rect(i, j))
                     cell.realign(self._calc_cell_rect(i, j))
 
     def _update_sequence_sizes(self, sequence, area_size):
@@ -394,9 +408,10 @@ class _LayoutGridContent:
             for cell in self.all_cells:
                 cell.set_style('background', value)
 
-        elif key.startswith('cell-padding'): 
+        elif key.startswith('cell-padding') or key.startswith('cell-stretch-content') or key.startswith('cell-content-alignment'): 
             for cell in self.all_cells:
-                cell.set_style(key[6:], value)
+                cell.set_style(key[5:], value)
+            self.realign()
 
         elif key == 'cell-margin':
             if not isinstance(value, tuple) and not isinstance(value, list):
@@ -499,6 +514,7 @@ class Layout(LayoutCell):
         self._set_style_if_none('cell-background', None)
         self._set_style_if_none('cell-stretch-content', False)
         self._set_style_if_none('cell-content-alignment', 'center')
+        self._set_style_if_none('cell-padding', 0)
         self.set_style('stretch-content', True)
 
         self._cell_group = pyglet.graphics.Group(order=1, parent=group)
@@ -558,7 +574,8 @@ class Layout(LayoutCell):
         self.content.set_cell_span(row, col, rowspan, colspan)
     
     def draw(self):
-        self._batch.draw()
+        if self._batch is not None:
+            self._batch.draw()
         
         for row in range(self.rows):
             for col in range(self.columns):
@@ -595,3 +612,31 @@ class Layout(LayoutCell):
         
         if self.content is not None:
             self.content.realign()
+
+
+class HBox(Layout):
+    def __init__(self, x, y, width, height, style={}, batch=None, group=None):
+        super().__init__(x, y, width, height, 1, 1, style, batch, group)
+
+    def add(self, widget):
+        if self.cell(0).content is not None:
+            self.columns = self.columns + 1
+        self.cell(self.columns - 1).content = widget
+        self.realign()
+    
+    def cell(self, index, cl=0):
+        return super().cell(0, index)
+
+
+class VBox(Layout):
+    def __init__(self, x, y, width, height, style={}, batch=None, group=None):
+        super().__init__(x, y, width, height, 1, 1, style, batch, group)
+
+    def add(self, widget):
+        if self.cell(0).content is not None:
+            self.rows = self.rows + 1
+        self.cell(self.rows - 1).content = widget
+        self.realign()
+    
+    def cell(self, index, rw=0):
+        return super().cell(index, 0)
