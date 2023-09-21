@@ -63,8 +63,8 @@ The available drivers depend on your operating system:
 Choosing the audio driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``'audio'`` key of :py:data:`pyglet.options` specifies the preference
-order for audio drivers.
+The ``'audio'`` key of the :py:data:`pyglet.options` dictionary
+specifies the audio driver preference order.
 
 On import, the :mod:`pyglet.media` will try each entry from first to
 last until it either finds a working driver or runs out of entries. For
@@ -72,10 +72,13 @@ example, the default is equivalent to setting the following value::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
-This tells pyglet to try using the OpenAL driver first, and if not available
-to try Pulseaudio, XAudio2 and DirectSound in that order. If all else fails,
-no driver will be instantiated. The ``audio`` option can be a list of any of these
-strings, giving the preference order for each driver:
+This tells pyglet to try using the OpenAL driver first. If is not
+available,  try Pulseaudio, XAudio2, and DirectSound in that order.
+If all else fails, no driver will be instantiated and the game will
+run silently.
+
+You can override the default order of the ``'audio'`` key with your own
+list or tuple which contains one or more of the following values:
 
     .. list-table::
         :header-rows: 1
@@ -93,8 +96,8 @@ strings, giving the preference order for each driver:
         * - ``'silent'``
           - No audio output
 
-You must set the ``audio`` option before importing :mod:`pyglet.media`.
-You  can alternatively set it through an environment variable;
+You must set any custom ``'audio'`` preference order before importing
+:mod:`pyglet.media`. This can also be set through an environment variable;
 see :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
