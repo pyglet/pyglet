@@ -135,16 +135,49 @@ usually be installed through the package manager.
 PulseAudio
 ^^^^^^^^^^
 
-Although a PulseAudio implementation is usually installed on modern
-Linux systems, the :ref:`guide-openal` driver is recommended instead.
-This is because:
+.. warning:: Install and use :ref:`guide-openal` instead of this driver
+             whenever possible!
 
-1. The pyglet PulseAudio driver has bugs which can crash games (see this
-   `github issue <https://github.com/pyglet/pyglet/issues/952>`_
-   for more information)
+Although most modern Linux distributions support PulseAudio, this pyglet
+driver has serious downsides:
 
-2. PulseAudio is limited to only plain stereo audio and does not support
-   spatial audio and other features
+#. It contains a bug which can crash your program
+#. PulseAudio lacks built-in support for standard game audio features
+
+The bug
+"""""""
+
+The bug is known to crash programs when one or more of the following
+occurs:
+
+#. A debugger pauses or resumes the program
+#. Unpredictably when 2 or more sounds are playing
+
+It is not known to be affected by whether the PulseAudio implementation
+is the stand-alone or PipeWire compatibility layer.
+
+Do not expect the bug to be fixed quickly for multiple reasons:
+
+#. :ref:`guide-openal` is better in almost every way
+#. It unpleasant to fix because it appears to be a concurrency problem.
+   See the `original github issue <https://github.com/pyglet/pyglet/issues/952>`_
+   and discussion below it for more information.
+#. PulseAudio is on its way to being replaced by PipeWire, so replacing
+   this driver may be a better use of developer time than fixing it.
+
+Missing features
+""""""""""""""""
+
+PulseAudio was designed with only desktop computer workloads in mind.
+This means it lacks built-in support for common features such as spatial
+audio mixing. The following features will not work properly with this
+driver:
+
+#. Changing the volume between individual speakers or earbuds based on
+   the position of the sound source relative to the listener
+#. Integration with surround sound
+
+Switching to :ref:`guide-openal` should automatically enable them.
 
 Supported media types
 ---------------------
