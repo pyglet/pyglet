@@ -142,6 +142,8 @@ usually be installed through the package manager.
     * - Fedora, Nobara
       - ``dnf install openal-soft``
 
+OpenAL does not appear to have a package on recent versions of RHEL.
+
 .. _guide-pulseaudio:
 
 PulseAudio
