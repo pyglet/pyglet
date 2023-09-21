@@ -63,12 +63,12 @@ The available drivers depend on your operating system:
 Choosing the audio driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`pyglet.media` module reads the order of audio drivers to try
-from the value for the ``'audio'`` key in :py:data:`pyglet.options`. It
-will try each entry from first to last until it either finds a working
-driver or runs out of entries.
+The ``'audio'`` key of :py:data:`pyglet.options` specifies the preference
+order for audio drivers.
 
-For example, the default is equivalent to setting the following value::
+On import, the :mod:`pyglet.media` will try each entry from first to
+last until it either finds a working driver or runs out of entries. For
+example, the default is equivalent to setting the following value::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
