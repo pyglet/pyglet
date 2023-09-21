@@ -24,10 +24,15 @@ small number of short sounds, in which case those applications need not distribu
 Audio drivers
 -------------
 
-pyglet can use OpenAL, XAudio2, DirectSound, or Pulseaudio to play back audio. Only one
-of these drivers can be used in an application. In most cases you won't need
-to concern yourself with choosing a driver, but you can manually select one if
-desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
+pyglet can use OpenAL, XAudio2, DirectSound, or PulseAudio to play
+sound. Only one driver can be used at a time, but the selection can
+be changed by altering the configuration and restarting the program.
+
+The default driver preference order works well for most users. However,
+you may override it by setting a different preference sequence before
+the :py:mod:`pyglet.media` module is loaded. See
+:ref:`guide-audio-driver-order` to learn more.
+
 The available drivers depend on your operating system:
 
     .. list-table::
@@ -53,10 +58,17 @@ The available drivers depend on your operating system:
 .. [#openalf] OpenAL does not come preinstalled on Windows and some
      Linux distributions.
 
-The :mod:`pyglet.media` module reads the value for the ``'audio'`` key
-in :py:data:`pyglet.options`. It will try each entry until it either
-finds a working driver or runs out of entries. For example, the default
-is equivalent to setting the following value::
+.. _guide-audio-driver-order:
+
+Choosing the audio driver
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :mod:`pyglet.media` module reads the order of audio drivers to try
+from the value for the ``'audio'`` key in :py:data:`pyglet.options`. It
+will try each entry from first to last until it either finds a working
+driver or runs out of entries.
+
+For example, the default is equivalent to setting the following value::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
