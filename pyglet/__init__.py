@@ -31,8 +31,10 @@ _enable_optimisations = not __debug__
 if getattr(sys, 'frozen', None):
     _enable_optimisations = True
 
-#: Global dict of pyglet options.  To change an option from its default, you
-#: must import ``pyglet`` before any sub-packages.  For example::
+#: Global dict of pyglet options.
+#:
+#: To change an option from its default, you must import
+#: ``pyglet`` before any sub-packages.  For example::
 #:
 #:      import pyglet
 #:      pyglet.options['debug_gl'] = False
