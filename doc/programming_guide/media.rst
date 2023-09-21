@@ -124,11 +124,26 @@ support hardware audio mixing or surround sound.
 OpenAL
 ^^^^^^
 
-OpenAL is included with Mac OS X. Windows users can download a generic
-driver from either `openal.org`_ or their sound device's manufacturer.
+By default, this is the most preferred driver. It will be used first
+if it is installed unless overridden. See :ref:`guide-audio-driver-order`
+to learn more.
 
-If a Linux distribution does not come with OpenAL pre-installed, it can
-usually be installed through the package manager.
+It is the best target for cross-platform consistency due to being either
+preinstalled or easy to install on all supported platforms. It implements
+software versions of common game audio features such as positional mixing
+on platforms which may not support them by default.
+
+OpenAL's main downside is that platforms other than Mac OS X are not
+guaranteed to have it preinstalled.
+
+Windows users can download a generic driver from either `openal.org`_
+or their sound device's manufacturer.
+
+On Linux, it may already be installed. It is strongly recommended to
+install it since the :ref:`guide-pulseaudio` backend has serious bugs
+and limitations. The commands to install OpenAL on the most common
+Linux distros are listed below. You may need to use ``sudo`` to run
+them.
 
 .. list-table::
     :header-rows: 1
@@ -145,7 +160,12 @@ usually be installed through the package manager.
     * - Fedora, Nobara
       - ``dnf install openal-soft``
 
-OpenAL does not appear to have a package on recent versions of RHEL.
+These commands should be safe to run when OpenAL is already
+installed. You will be informed the package is already installed
+if this is the case, and no action will take place.
+
+Note that OpenAL does not appear to have a package on recent versions of
+RHEL.
 
 .. _guide-pulseaudio:
 
