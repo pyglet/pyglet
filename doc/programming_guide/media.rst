@@ -206,10 +206,9 @@ Consider the following when deciding whether to use this back-end:
 Missing features
 """"""""""""""""
 
-PulseAudio was designed with only desktop computer workloads in mind.
-This means it lacks built-in support for common features such as spatial
-audio mixing. The following features will not work properly with this
-driver:
+Although PulseAudio can theoretically support advanced multi-channel
+audio, the pyglet back-end does not. The following features will not
+work properly with this driver:
 
 #. Changing the volume between individual speakers or earbuds based on
    the position of the sound source relative to the listener
