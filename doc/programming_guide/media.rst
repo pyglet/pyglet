@@ -128,10 +128,11 @@ By default, this is the most preferred driver. It will be used first
 if it is installed unless overridden. See :ref:`guide-audio-driver-order`
 to learn more.
 
-It is the best target for cross-platform consistency due to being either
-preinstalled or easy to install on all supported platforms. It implements
-software versions of common game audio features such as positional mixing
-on platforms which may not support them by default.
+This driver is currently the best choice for POSIX systems because:
+
+* It's either preinstalled or easy to install.
+* It implements features which may be absent from OS-specific APIs,
+  such as positional audio
 
 OpenAL's main downside is that platforms other than Mac OS X are not
 guaranteed to have it preinstalled.
