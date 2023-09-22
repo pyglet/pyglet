@@ -753,7 +753,7 @@ class Catenary(ShapeBase):
         h = 1 if h == 0 else h
         v = 1 if v == 0 else v
         if math.sqrt(s**2 - v**2) / h < 1:
-            raise ValueError("length is too shot")
+            raise ValueError("length should be great than the distance between the two endpoints")
         f = lambda x: math.sinh(x) / x - math.sqrt(s**2 - v**2) / h
         differ = lambda f, x: (f(x + 10e-5) - f(x - 1e-5)) / (2e-5)
         x_now = 1
