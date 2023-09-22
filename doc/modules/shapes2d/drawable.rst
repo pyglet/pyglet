@@ -1,17 +1,17 @@
-pyglet.shapes
-=============
+pyglet.shapes2d.drawable
+========================
 
-.. automodule:: pyglet.shapes
+.. automodule:: pyglet.shapes2d.drawable
 
 .. autoclass:: ShapeBase
-   
+
   .. rubric:: Methods
-   
+
   .. automethod:: draw
   .. automethod:: delete
-    
+
   .. rubric:: Attributes
-  
+
   .. autoattribute:: x
   .. autoattribute:: y
   .. autoattribute:: position
@@ -40,6 +40,13 @@ pyglet.shapes
   .. autoattribute:: t
 
 
+.. autoclass:: Catenary
+  :show-inheritance:
+
+  .. autoattribute:: x2
+  .. autoattribute:: y2
+  .. autoattribute:: length
+
 .. autoclass:: Circle
   :show-inheritance:
 
@@ -66,6 +73,7 @@ pyglet.shapes
 .. autoclass:: Line
   :show-inheritance:
 
+  .. autoattribute:: width
   .. autoattribute:: x2
   .. autoattribute:: y2
 
@@ -81,9 +89,11 @@ pyglet.shapes
 .. autoclass:: BorderedRectangle
   :show-inheritance:
 
+  .. autoattribute:: border
   .. autoattribute:: width
   .. autoattribute:: height
   .. autoattribute:: border_color
+  .. autoattribute:: color
   .. autoattribute:: rotation
 
 
@@ -108,4 +118,5 @@ pyglet.shapes
 .. autoclass:: Polygon
   :show-inheritance:
 
+  .. autoattribute:: coordinates
   .. autoattribute:: rotation

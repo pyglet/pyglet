@@ -73,7 +73,7 @@ If you are migrating from an older version of pyglet, please read through
 
    modules/pyglet
    modules/app
-   modules/canvas
+   modules/cancas
    modules/clock
    modules/event
    modules/font
@@ -87,9 +87,9 @@ If you are migrating from an older version of pyglet, please read through
    modules/media
    modules/resource
    modules/sprite
-   modules/shapes
+   modules/shapes2d/index
    modules/text/index
-   modules/window
+   modules/window/index
 
 .. toctree::
    :maxdepth: 3
