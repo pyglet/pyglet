@@ -59,7 +59,7 @@ class WidgetBase(EventDispatcher):
 
     @position.setter
     def position(self, values):
-        self._x, self._y = values
+        self._x, self._y = values[0], values[1]
         self._update_position()
 
     @property
@@ -289,6 +289,47 @@ class PushButton(WidgetBase):
 
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
+
+class TextPushButton(PushButton):
+    """Instance of a button with a label inside."""
+
+    def __init__(self, x, y, 
+                 text,
+                 pressed=(150, 150, 150, 255), 
+                 depressed=(230, 230, 230, 255),
+                 hover=(255, 255, 255, 255),
+                 text_color=(0, 0, 0, 255),
+                 width=None, height=None,
+                 batch=None, group=None):
+        
+        super().__init__(x, y, pressed=pressed, depressed=depressed, hover=hover, width=width, height=height, batch=batch, group=group)
+        self._label = pyglet.text.Label(text, 
+                                        x=x, y=y, width=self.width, height=self.height,
+                                        anchor_y='bottom',
+                                        batch=self._batch, color=text_color)
+        self._label.content_halign = 'center'
+        self._label.content_valign = 'center'
+
+    def _update_position(self):
+        super()._update_position()
+        self._label.position = (self.x, self.y, 0)
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self._label.width = width
+        self._label.height = height
+
+    def draw(self):
+        super().draw()
+        self._label.draw()
+
+    @property
+    def text(self):
+        return self._label.text
+    
+    @text.setter
+    def text(self, value):
+        self._label.text = value
 
 
 class ToggleButton(PushButton):
