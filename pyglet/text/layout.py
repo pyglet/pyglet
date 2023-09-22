@@ -1459,28 +1459,28 @@ class TextLayout:
             offset = 0
         else:
             height = self._height
-            if self._content_valign == 'top':
-                offset = 0
-            elif self._content_valign == 'bottom':
-                offset = max(0, self._height - self.content_height)
+            if self._content_valign == 'bottom':
+                offset = self.content_height
+            elif self._content_valign == 'top':
+                offset = self._height
             elif self._content_valign == 'center':
-                offset = max(0, self._height - self.content_height) // 2
+                offset = (self._height + self.content_height) // 2
             else:
                 assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
-        if self._anchor_y == 'top':
+        if self._anchor_y == 'bottom':
             return self._y + offset
         elif self._anchor_y == 'baseline':
             return self._y + lines[0].ascent + offset
-        elif self._anchor_y == 'bottom':
-            return self._y + height + offset
+        elif self._anchor_y == 'top':
+            return self._y - height + offset
         elif self._anchor_y == 'center':
             if len(lines) == 1 and self._height is None:
                 # This "looks" more centered than considering all of the descent.
                 line = lines[0]
                 return self._y + line.ascent // 2 - line.descent // 4
             else:
-                return self._y + height // 2 + offset
+                return self._y - height // 2 + offset
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 

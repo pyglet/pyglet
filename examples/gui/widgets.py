@@ -76,7 +76,7 @@ layout.set_column_size(0, "200px")
 layout.set_cell_span(0, 0, colspan=2)
 layout.set_style('cell-content-alignment', ('center', 'bottom'))
 
-header_label = pyglet.text.Label("Menu", batch=batch, color=(0, 0, 0, 255))
+header_label = pyglet.text.Label("Menu", batch=batch, color=(0, 0, 0, 255), anchor_y='center')
 layout.cell(0, 0).content = header_label
 header_sprite = pyglet.sprite.Sprite(header, batch=batch, 
                                     image_mesh_generator=pyglet.sprite.NinePatchImageMeshGenerator(11, 11, 11, 11, 2))
