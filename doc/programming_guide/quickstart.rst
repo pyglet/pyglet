@@ -161,16 +161,6 @@ An example program using keyboard and mouse events is in
 Playing sounds and music
 ------------------------
 
-.. note::
-
-   Linux users should make sure they have OpenAL installed.
-
-   1. It prevents crashes from a PulseAudio-related bug
-   2. It automatically enables 2D and 3D surround sound
-
-   See the :ref:`guide-pulseaudio` and :ref:`guide-openal` sections for
-   more information.
-
 pyglet makes it easy to play and mix multiple sounds together.
 The following example plays an MP3 file [#mp3]_::
 
@@ -200,8 +190,14 @@ The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
+.. note:: Linux users may want to install OpenAL.
+
+   See the :ref:`guide-pulseaudio` and :ref:`guide-openal` sections for
+   more information.
+
 .. [#mp3] MP3 and other compressed audio formats require FFmpeg to be installed.
           Uncompressed WAV files can be played without FFmpeg.
+
 
 Where to next?
 --------------
