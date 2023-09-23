@@ -1,4 +1,8 @@
 from enum import Enum
+from typing import Tuple
+from functools import cache
+
+import pyglet
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -162,7 +166,7 @@ class Config:
 
 
 class CanvasConfig(Config):
-    """OpenGL configuration for a particular canvas.
+    """An OpenGL configuration for a particular canvas.
 
     Use `Config.match` to obtain an instance of this class.
 
@@ -212,7 +216,7 @@ class ObjectSpace:
 
 
 class Context:
-    """OpenGL context for drawing.
+    """An OpenGL context for drawing.
 
     Use `CanvasConfig.create_context` to create a context.
 
@@ -266,7 +270,7 @@ class Context:
 
         # Release Textures, Buffers, and VAOs on this context scheduled for
         # deletion. Note that the garbage collector may introduce a race
-        # condition, so operate on a copy, and clear the list afterwards.
+        # condition, so operate on a copy, and clear the list afterward.
         if self.object_space.doomed_textures:
             textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
@@ -304,6 +308,29 @@ class Context:
             # Switch back to shadow context.
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
+
+    @cache
+    def create_program(self, *sources: Tuple[str, str], program_class=None):
+        """Create a ShaderProgram from OpenGL GLSL source.
+
+        This is a convenience method that takes one or more tuples of
+        (source_string, shader_type), and returns a
+        :py:class:`~pyglet.graphics.shader.ShaderProgram` instance.
+
+        `source_string` is OpenGL GLSL source code as a str, and `shader_type`
+        is the OpenGL shader type, such as "vertex" or "fragment". See
+        :py:class:`~pyglet.graphics.shader.Shader` for more information.
+
+        .. note:: This method is cached. Given the same shader sources, the
+                  same ShaderProgram instance will be returned. For more
+                  control over the ShaderProgram lifecycle, it is recommended
+                  to manually create Shaders and link ShaderPrograms.
+
+        .. versionadded:: 2.0.10
+        """
+        program_class = program_class or pyglet.graphics.shader.ShaderProgram
+        shaders = (pyglet.graphics.shader.Shader(src, srctype) for (src, srctype) in sources)
+        return program_class(*shaders)
 
     def delete_texture(self, texture_id):
         """Safely delete a Texture belonging to this context.

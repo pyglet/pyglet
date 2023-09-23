@@ -146,25 +146,12 @@ fragment_array_source = """#version 150 core
 
 
 def get_default_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_sprite_default_shader
-    except AttributeError:
-        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-        _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
-        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
-        pyglet.gl.current_context.pyglet_sprite_default_shader = default_shader_program
-        return pyglet.gl.current_context.pyglet_sprite_default_shader
-
+    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+                                                    (fragment_source, 'fragment'))
 
 def get_default_array_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
-    except AttributeError:
-        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-        _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
-        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
-        pyglet.gl.current_context.pyglet_sprite_default_array_shader = default_shader_program
-        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
+   return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+                                                   (fragment_array_source, 'fragment'))
 
 
 class SpriteGroup(graphics.Group):
