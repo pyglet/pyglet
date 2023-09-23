@@ -176,48 +176,62 @@ command. Consult your distro's documentation for more information.
 PulseAudio
 ^^^^^^^^^^
 
-.. warning:: Install and use :ref:`guide-openal` instead of this driver
-             whenever possible!
+The backend for this driver is nearly universally supported.
 
-Although most modern Linux distributions support PulseAudio, this pyglet
-driver has serious downsides:
+Even distros using PipeWire often come with a PulseAudio compatibility
+layer preinstalled. If this driver fails to initialize, consult your
+distro's documentation to learn which audio back-ends you can install.
 
-#. It contains a bug which can crash your program
-#. PulseAudio lacks built-in support for standard game audio features
+This driver has the following downsides:
 
-The bug
-"""""""
-
-The bug is known to crash programs when one or more of the following
-occurs:
-
-#. A debugger pauses or resumes the program
-#. Unpredictably when 2 or more sounds are playing
-
-It is not known to be affected by whether the PulseAudio implementation
-is the stand-alone or PipeWire compatibility layer.
-
-Consider the following when deciding whether to use this back-end:
-
-#. :ref:`guide-openal` is better in almost every way
-#. The `current understanding <https://github.com/pyglet/pyglet/issues/952>`_
-   of the bug is that is may be a concurrency issue, and therefore
-   inherently unpredictable
-#. PulseAudio is on its way to being replaced by PipeWire, so replacing
-   this driver may be a better use of developer time than fixing it
+#. Limited features compared to other drivers
+#. A bug which can crash your program under certain conditions.
 
 Missing features
 """"""""""""""""
 
 Although PulseAudio can theoretically support advanced multi-channel
-audio, the pyglet back-end does not. The following features will not
-work properly with this driver:
+audio, the pyglet driver does not. The following features will not
+work properly:
 
-#. Changing the volume between individual speakers or earbuds based on
-   the position of the sound source relative to the listener
+#. Positional audio: automatically changing the volume for individual
+   audio channels based on the position of the sound source
 #. Integration with surround sound
 
 Switching to :ref:`guide-openal` should automatically enable them.
+
+The bug
+"""""""
+
+.. _pulse-bug: https://github.com/pyglet/pyglet/issues/952
+
+The driver will initialize correctly, but pyglet will crash
+during execution.
+
+The traceback will contain a message like the one below:
+
+.. code-block:: console
+
+   Assertion 'q->front' failed at pulsecore/queue.c:81, function pa_queue_push(). Aborting.
+
+The following conditions can trigger the crash:
+
+#. A debugger paused or resumed the program while audio is playing
+#. Unpredictably when 2 or more sounds are playing
+
+The easiest fix is installing :ref:`installing OpenAL <guide-openal>`
+and restarting the program.
+
+See `the GitHub issue <pulse-bug_>`_ for more information. The following
+are currently unclear:
+
+#. How different PulseAudio implementations affect the bug (PipeWire vs original)
+#. How often the bug occurs for users on less common distros
+#. Its full details; it is believed to be an unpredictable
+   `concurrency issue involving locks <https://github.com/pyglet/pyglet/issues/952#issuecomment-1716821550>`_.
+#. Whether it is worth fixing; the workarounds are easy and PulseAudio
+   is being replaced by PipeWire.
+
 
 Supported media types
 ---------------------
