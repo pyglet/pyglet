@@ -161,12 +161,6 @@ them.
     * - Fedora, Nobara
       - ``dnf install openal-soft``
 
-These commands should be safe to run when OpenAL is already
-installed. You will be informed the package is already installed
-if this is the case, and no action will take place.
-
-Note that OpenAL does not appear to have a package on recent versions of
-RHEL.
 
 .. _guide-pulseaudio:
 
