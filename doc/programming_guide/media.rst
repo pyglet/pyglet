@@ -124,27 +124,29 @@ support hardware audio mixing or surround sound.
 OpenAL
 ^^^^^^
 
-By default, this is the most preferred driver. It will be used first
-if it is installed unless overridden. See :ref:`guide-audio-driver-order`
-to learn more.
+By default, this is the first driver expected to load on POSIX systems.
+See :ref:`guide-audio-driver-order` to learn about overriding the driver
+preference order.
 
-This driver is currently the best choice for POSIX systems because:
+This driver has the following advantages:
 
-* It's either preinstalled or easy to install.
-* It implements features which may be absent from OS-specific APIs,
-  such as positional audio
+* It's either preinstalled or easy to install on supported platforms.
+* It implements features which may be absent from other drivers or
+  OS-specific versions of their backing APIs.
 
-OpenAL's main downside is that platforms other than Mac OS X are not
+Its main downside is that platforms other than Mac OS X are not
 guaranteed to have it preinstalled.
 
-Windows users can download a generic driver from either `openal.org`_
+Windows users can download an OpenAL implementation from `openal.org`_
 or their sound device's manufacturer.
 
-On Linux, it may already be installed. It is strongly recommended to
-install it since the :ref:`guide-pulseaudio` backend has serious bugs
-and limitations. The commands to install OpenAL on the most common
-Linux distros are listed below. You may need to use ``sudo`` to run
-them.
+On Linux, the following apply:
+
+* It may already be installed as a dependency of other packages.
+* It lacks the limitations of the :ref:`guide-pulseaudio` driver.
+
+The commands to install OpenAL on the most common Linux distros are
+listed below.
 
 .. list-table::
     :header-rows: 1
@@ -161,6 +163,8 @@ them.
     * - Fedora, Nobara
       - ``dnf install openal-soft``
 
+You may need to prefix these commands with either ``sudo`` or another
+command. Consult your distro's documentation for more information.
 
 .. _guide-pulseaudio:
 
