@@ -108,14 +108,18 @@ see :ref:`guide_environment-settings`.
 The following sections describe the requirements and limitations of each audio
 driver.
 
+.. _guide-xaudio2:
+
 XAudio2
-^^^^^^^^^^^
+^^^^^^^
 XAudio2 is only available on Windows Vista and above and is the replacement of
 DirectSound. This provides hardware accelerated audio support for newer operating
 systems.
 
 Note that in some stripped down versions of Windows 10, XAudio2 may not be available
 until the required DLL's are installed.
+
+.. _guide-directsound:
 
 DirectSound
 ^^^^^^^^^^^
@@ -129,29 +133,31 @@ support hardware audio mixing or surround sound.
 OpenAL
 ^^^^^^
 
-By default, this is the first driver expected to load on POSIX systems.
-See :ref:`guide-audio-driver-order` to learn about overriding the driver
-preference order.
+The favored driver for Mac OS X, but also available on other systems.
 
 This driver has the following advantages:
 
-* It's either preinstalled or easy to install on supported platforms.
-* It implements features which may be absent from other drivers or
+* Either preinstalled or easy to install on supported platforms.
+* Implements features which may be absent from other drivers or
   OS-specific versions of their backing APIs.
 
-Its main downside is that platforms other than Mac OS X are not
-guaranteed to have it preinstalled.
+Its main downsides are:
+
+* Not guaranteed to be installed on platforms other than Mac OS X
+* On recent Windows versions, the :ref:`guide-xaudio2` and
+  :ref:`guide-directsound` backends may support more features.
 
 Windows users can download an OpenAL implementation from `openal.org`_
 or their sound device's manufacturer.
 
 On Linux, the following apply:
 
+* It can usually be installed through your distro's package manager.
 * It may already be installed as a dependency of other packages.
 * It lacks the limitations of the :ref:`guide-pulseaudio` driver.
 
-The commands to install OpenAL on the most common Linux distros are
-listed below.
+The commands below should install OpenAL on the most common Linux
+distros:
 
 .. list-table::
     :header-rows: 1
