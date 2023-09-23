@@ -70,15 +70,20 @@ On import, the :mod:`pyglet.media` will try each entry from first to
 last until it either finds a working driver or runs out of entries. For
 example, the default is equivalent to setting the following value::
 
+   pyglet.options['audio'] = ('xaudio2', 'directsound', 'openal', 'pulse', 'silent')
+
+You can also set a custom preference order. For example, we could add
+this line before importing the media module::
+
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
-This tells pyglet to try using the OpenAL driver first. If is not
+It tells pyglet to try using the OpenAL driver first. If is not
 available,  try Pulseaudio, XAudio2, and DirectSound in that order.
 If all else fails, no driver will be instantiated and the game will
 run silently.
 
-You can override the default order of the ``'audio'`` key with your own
-list or tuple which contains one or more of the following values:
+The value for the ``'audio'`` key can be a list or tuple which contains
+one or more of the following strings:
 
     .. list-table::
         :header-rows: 1
