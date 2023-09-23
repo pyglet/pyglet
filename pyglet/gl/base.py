@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Tuple
-from functools import cache
+from functools import lru_cache
 
 import pyglet
 
@@ -309,7 +309,7 @@ class Context:
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
 
-    @cache
+    @lru_cache()
     def create_program(self, *sources: Tuple[str, str], program_class=None):
         """Create a ShaderProgram from OpenGL GLSL source.
 
