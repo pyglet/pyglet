@@ -58,9 +58,9 @@ if getattr(sys, 'frozen', None):
 #:
 #:     * ``'xaudio2'``, the Windows Xaudio2 audio module (Windows only)
 #:     * ``'directsound'``, the Windows DirectSound audio module (Windows only)
-#:     * ``'pulse'``, the PulseAudio module (Linux only, buggy, use
-#:       :ref:`guide-openal` if possible)
-#:     * ``'openal'``, the OpenAL audio module (A library may need to be
+#:     * ``'pulse'``, the :ref:`guide-pulseaudio` module (Linux only, otherwise
+#:       nearly ubiquitous. Limited features; use ``'openal'`` for more.)
+#:     * ``'openal'``, the :ref:`guide-openal` audio module (A library may need to be
 #:       installed on Windows and Linux)
 #:     * ``'silent'``, no audio
 #:
