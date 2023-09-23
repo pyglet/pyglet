@@ -51,9 +51,8 @@ The available drivers depend on your operating system:
           -
           - PulseAudio [#pulseaudiof]_
 
-.. [#pulseaudiof] PulseAudio support is buggy; using OpenAL
-     is recommended as a workaround. See the :ref:`guide-pulseaudio`
-     section below for install instructions.
+.. [#pulseaudiof] The :ref:`guide-pulseaudio` driver has limitations.
+     For audio-intensive programs, consider using :ref:`guide-openal`.
 
 .. [#openalf] OpenAL does not come preinstalled on Windows and some
      Linux distributions.
