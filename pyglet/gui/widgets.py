@@ -564,19 +564,25 @@ class Slider(WidgetBase):
 
     def _update_knob(self, x, y):
         if self._horizontal:
-            x -= self._min_knob_size / 2
+            x -= self.knob_size / 2
             min_x, max_x = self._min_x, self._max_x
-            self.value = (
-                (x - min_x) / (max_x - min_x) *
-                (self.value_range[1] - self.value_range[0]) + self.value_range[0]
-            )
+            if min_x < max_x:
+                self.value = (
+                    (x - min_x) / (max_x - min_x) *
+                    (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+                )
+            else:
+                self.value = 0
         else:
-            y -= self._min_knob_size / 2
+            y -= self.knob_size / 2
             min_y, max_y = self._min_y, self._max_y
-            self.value = (
-                (y - min_y) / (max_y - min_y) *
-                (self.value_range[1] - self.value_range[0]) + self.value_range[0]
-            )
+            if min_y < max_y:
+                self.value = (
+                    (y - min_y) / (max_y - min_y) *
+                    (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+                )
+            else:
+                self.value = 0
         self.dispatch_event('on_change', self._value)
 
     def set_sprite_style(self, sprite_name, size_type, value):

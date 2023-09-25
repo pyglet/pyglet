@@ -165,12 +165,17 @@ class LayoutCell:
         )
 
         if stretch_content[0]:
-            self._content.width = self.width - padding[1] - padding[3]
+            content_width = self.width - padding[1] - padding[3]
+            if abs(content_width - self._content.width) >= 1:
+                self._content.width = content_width
+        else:
+            content_width = self._content.width or 0
         if stretch_content[1]:
-            self._content.height = self.height - padding[0] - padding[2]
-        
-        content_width = self._content.width or 0
-        content_height = self._content.height or 0
+            content_height = self.height - padding[0] - padding[2]
+            if abs(content_height - self._content.width) >= 1:
+                self._content.height = content_height
+        else:
+            content_height = self._content.height or 0
 
         if content_alignment[0] == 'left':
             content_x = self.x
@@ -189,13 +194,12 @@ class LayoutCell:
             content_y = self.y + self.height - content_height
         else:
             raise ValueError('content-alignment-y variable is not set properly: ' + content_alignment[1])
-
-        print(self.content, new_rect, stretch_content, content_alignment, (content_x, content_y))
         
-        try:
-            self._content.position = (content_x, content_y)
-        except Exception as e:
-            self._content.position = (content_x, content_y, 0)
+        if abs(self.content.position[0] - content_x) >= 1 or abs(self.content.position[1] - content_y) >= 1:
+            try:
+                self._content.position = (content_x, content_y)
+            except Exception as e:
+                self._content.position = (content_x, content_y, 0)
 
 
 class _LayoutSpanFiller:
@@ -376,7 +380,6 @@ class _LayoutGridContent:
             for j in range(self._column_count):
                 cell = self._cells[i][j]
                 if isinstance(cell, LayoutCell):
-                    print(i, j, self._calc_cell_rect(i, j))
                     cell.realign(self._calc_cell_rect(i, j))
 
     def _update_sequence_sizes(self, sequence, area_size):
@@ -444,13 +447,29 @@ class _LayoutGridContent:
         self._update_position()
 
     @property
-    def position(self, value):
+    def position(self):
         return (self.x, self.y)
 
     @position.setter
     def position(self, value):
         self.x, self.y = value[0], value[1]
         self.realign()
+
+    def _calculate_size(self, sequence):
+        return (
+            sum([ el.calculated_size for el in sequence]) +
+            sum([ el.margin_after for el in sequence[0:-1]])
+        )
+    
+    @property
+    def calculated_height(self):
+        "If height is not specified by user, returns height calculated from rows sizes"
+        return self._calculate_size(self._rows)
+    
+    @property
+    def calculated_width(self):
+        "If width is not specified by user, returns width calculated from columns sizes"
+        return self._calculate_size(self._columns)
         
 
 class Layout(LayoutCell):
@@ -612,6 +631,9 @@ class Layout(LayoutCell):
         
         if self.content is not None:
             self.content.realign()
+        
+    def fit_to_content(self):
+        self.size = (self.content.calculated_width, self.content.calculated_height)
 
 
 class HBox(Layout):
