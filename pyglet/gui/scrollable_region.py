@@ -100,7 +100,6 @@ class ScrollableRegion(LayoutCell):
 
     def on_content_bounds_updated(self):
         if self.content is None: return
-
         self.frame.on_widgets_realign()
         if self.horizontal and self.content.width > 0:
             self._horizontal_slider.knob_size = min(
@@ -155,10 +154,12 @@ class ScrollableRegion(LayoutCell):
         
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if not self._check_hit(x, y): return
-        if self.horizontal and self._horizontal_slider._check_hit(x, y):
-            self._vertical_slider.value += 50.0 / self.content.height
-        elif self.vertical and self._vertical_slider._check_hit(x, y):
-            self._horizontal_slider.value += 50.0 / self.content.width
+        if self.vertical and self._vertical_slider._check_hit(x, y):
+            self._vertical_slider.value += 50.0 / self.content.height * scroll_y
+            self._on_vertical_change(self._vertical_slider.value)
+        elif self.horizontal and self._horizontal_slider._check_hit(x, y):
+            self._horizontal_slider.value -= 50.0 / self.content.width * scroll_y
+            self._on_horizontal_change(self._horizontal_slider.value)
         else:
             self.frame.on_mouse_scroll(x - self._hoffset, y - self._voffset, scroll_x, scroll_y)
 
