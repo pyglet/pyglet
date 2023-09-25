@@ -190,11 +190,6 @@ The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
-.. note:: Linux users may want to install OpenAL.
-
-   See the :ref:`guide-pulseaudio` and :ref:`guide-openal` sections for
-   more information.
-
 .. [#mp3] MP3 and other compressed audio formats require FFmpeg to be installed.
           Uncompressed WAV files can be played without FFmpeg.
 
