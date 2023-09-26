@@ -31,8 +31,10 @@ _enable_optimisations = not __debug__
 if getattr(sys, 'frozen', None):
     _enable_optimisations = True
 
-#: Global dict of pyglet options.  To change an option from its default, you
-#: must import ``pyglet`` before any sub-packages.  For example::
+#: Global dict of pyglet options.
+#:
+#: To change an option from its default, you must import
+#: ``pyglet`` before any sub-packages.  For example::
 #:
 #:      import pyglet
 #:      pyglet.options['debug_gl'] = False
@@ -48,14 +50,20 @@ if getattr(sys, 'frozen', None):
 #: The non-development options are:
 #:
 #: audio
-#:     A sequence of the names of audio modules to attempt to load, in
-#:     order of preference.  Valid driver names are:
+#:     A :py:class:`~typing.Sequence` of valid audio modules names. They will
+#:     be tried from first to last until either a driver loads or no entries
+#:     remain. See :ref:`guide-audio-driver-order` for more information.
 #:
-#:     * xaudio2, the Windows Xaudio2 audio module (Windows only)
-#:     * directsound, the Windows DirectSound audio module (Windows only)
-#:     * pulse, the PulseAudio module (Linux only)
-#:     * openal, the OpenAL audio module
-#:     * silent, no audio
+#:     Valid driver names are:
+#:
+#:     * ``'xaudio2'``, the Windows Xaudio2 audio module (Windows only)
+#:     * ``'directsound'``, the Windows DirectSound audio module (Windows only)
+#:     * ``'pulse'``, the :ref:`guide-pulseaudio` module (Linux only, otherwise
+#:       nearly ubiquitous. Limited features; use ``'openal'`` for more.)
+#:     * ``'openal'``, the :ref:`guide-openal` audio module (A library may need to be
+#:       installed on Windows and Linux)
+#:     * ``'silent'``, no audio
+#:
 #: debug_lib
 #:     If True, prints the path of each dynamic library loaded.
 #: debug_gl
