@@ -1,28 +1,31 @@
 """An example sprite previewer using PyQT5 and Pyglet together.
 
-   Important:
+Important:
 
-   1. This example uses PyQT5
-   2. PyQT5 uses a different licensing approach than pyglet's BSD-style
-      license: dual GPL / commercial licensing.
+1. This example uses PyQT5 and requires it to run.
+2. PyQT5 uses a different licensing approach than pyglet's BSD-style
+   license: dual GPL / commercial licensing.
+3. This may impose additional requirements on derivatives of this
+   example, depending on which license you use.
 
-   This may impose additional requirements on derivatives of this example.
-   Please consult the PyQT5 documentation for further information.
+Please consult the PyQT5 documentation and that of the relevant
+software licenses for further information.
 
-   This sprite previewer example allows you to edit the fragment and vertex
-   shaders and compile it to get a live view. Errors and success will be
-   printed to the console.
+This sprite previewer example allows you to edit the fragment and vertex
+shaders and compile them to get a live view. Errors and success will be
+printed to the console.
 
-   To load images, choose File -> Open Image.
-   Images loaded will be listed in the Images menu.
-   By selecting an image in the menu list, it will be unloaded.
+To load images, choose File -> Open Image.
+Images loaded will be listed in the Images menu.
+By selecting an image in the menu list, it will be unloaded.
 
-   Names in parentheses will be used for the sampler2D name.
+Names in parentheses will be used for the sampler2D name.
 
-   You can open a shader (both vert and frag) at the same time. Text is allowed, but will load into the fragment shader.
-   Saving a shader saves both frag and vertex (IE: test becomes test.vert and test.frag)
+You can open a shader (both vert and frag) at the same time. Text is
+allowed, but will load into the fragment shader. Saving a shader saves
+both frag and vertex (IE: test becomes test.vert and test.frag)
 
-   Scrolling the mousewheel also zooms in
+Scrolling the mousewheel also zooms in.
 """
 
 import os
