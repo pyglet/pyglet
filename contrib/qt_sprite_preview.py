@@ -9,8 +9,9 @@
    This may impose additional requirements on derivatives of this example.
    Please consult the PyQT5 documentation for further information.
 
-   This is a sprite previewer, you can edit the fragment and vertex shaders and compile it to get a live view.
-   Errors and success will be printed in console.
+   This sprite previewer example allows you to edit the fragment and vertex
+   shaders and compile it to get a live view. Errors and success will be
+   printed to the console.
 
    To load images, choose File -> Open Image.
    Images loaded will be listed in the Images menu.
@@ -21,7 +22,7 @@
    You can open a shader (both vert and frag) at the same time. Text is allowed, but will load into the fragment shader.
    Saving a shader saves both frag and vertex (IE: test becomes test.vert and test.frag)
 
-   Scrolling mouswheel also zooms in
+   Scrolling the mousewheel also zooms in
 """
 
 import os
