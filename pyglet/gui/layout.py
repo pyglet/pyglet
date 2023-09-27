@@ -232,7 +232,7 @@ class _LayoutCellSequenceData:
         self.calculated_size = 0
 
     def parse_size(self, value):
-        if value is None or len(value) == 0:
+        if value is None or len(str(value)) == 0:
             self.set_size(None)
         elif isinstance(value, str):
             if value.endswith('%'):
@@ -282,6 +282,18 @@ class _LayoutGridContent:
                 'stretch-content': self._style['cell-stretch-content']
             }, self._batch, self._group)
     
+    def _new_row(self):
+        row = _LayoutCellSequenceData(self._style['cell-margin'])
+        if 'row-size' in self._style:
+            row.parse_size(self._style['row-size'])
+        return row
+    
+    def _new_column(self):
+        column = _LayoutCellSequenceData(self._style['cell-margin'])
+        if 'column-size' in self._style:
+            column.parse_size(self._style['column-size'])
+        return column
+    
     @property
     def all_cells(self):
         return [cell for sublist in self._cells for cell in sublist if not isinstance(cell, _LayoutSpanFiller)]
@@ -305,26 +317,10 @@ class _LayoutGridContent:
         self._cells = new_arr
 
         if old_rows != new_rows:
-            new_arr = [None] * new_rows
-            for i in range(new_rows):
-                if i < old_rows:
-                    new_arr[i] = self._rows[i]
-                else:
-                    new_arr[i] = _LayoutCellSequenceData(self._style['cell-margin'])
-                    if 'row-size' in self._style:
-                        new_arr[i].parse_size(self._style['row-size'])
-            self._rows = new_arr
+            self._rows = [self._rows[i] if i < old_rows else self._new_row() for i in range(new_rows)]
 
         if old_cols != new_cols:
-            new_arr = [None] * new_cols
-            for i in range(new_cols):
-                if i < old_cols:
-                    new_arr[i] = self._columns[i]
-                else:
-                    new_arr[i] = _LayoutCellSequenceData(self._style['cell-margin'])
-                    if 'column-size' in self._style:
-                        new_arr[i].parse_size(self._style['column-size'])
-            self._columns = new_arr
+            self._columns = [self._columns[i] if i < old_cols else self._new_column() for i in range(new_cols)]
 
         self._column_count = new_cols
         self._row_count = new_rows
@@ -347,8 +343,9 @@ class _LayoutGridContent:
                     pass
                 elif i < row + rowspan and j < col + colspan:
                     self._cells[i][j] = _LayoutSpanFiller(cell)
-                else:
+                elif not isinstance(self._cells[i][j], LayoutCell):
                     self._cells[i][j] = self._new_cell()
+                    self._cells[i][j].realign(self._calc_cell_rect(i, j))
 
         cell._span = (rowspan, colspan)
         cell.realign(self._calc_cell_rect(row, col))
@@ -470,6 +467,69 @@ class _LayoutGridContent:
     def calculated_width(self):
         "If width is not specified by user, returns width calculated from columns sizes"
         return self._calculate_size(self._columns)
+    
+    def insert_row(self, index):
+        if index < 0 or index > self._row_count:
+            raise IndexError()
+        self._row_count += 1
+
+        self._cells.insert(index, [self._new_cell() for i in range(self._column_count)])
+        self._rows.insert(index, self._new_row())
+
+        for i in range(self._row_count):
+            for j in range(self._column_count):
+                cell = self._cells[i][j]
+                if isinstance(cell, LayoutCell) and cell._span[0] > 1 and i <= index < i + cell._span[0]:
+                    self.set_cell_span(i, j, cell._span[0] + 1, cell._span[1])
+
+        self.realign()
+
+    def insert_column(self, index):
+        if index < 0 or index > self._column_count:
+            raise IndexError()
+        self._column_count += 1
+
+        for row in self._cells:
+            row.insert(index, self._new_cell())
+        self._columns.insert(index, self._new_column())
+
+        for i in range(self._row_count):
+            for j in range(self._column_count):
+                cell = self._cells[i][j]
+                if isinstance(cell, LayoutCell) and cell._span[1] > 1 and j <= index < j + cell._span[1]:
+                    self.set_cell_span(i, j, cell._span[0], cell._span[1] + 1)
+        self.realign()
+
+    def remove_row(self, index):
+        if index < 0 or index >= self._row_count:
+            raise IndexError()
+        self._row_count -= 1
+
+        del self._cells[index]
+        del self._rows[index]
+
+        for i in range(self._row_count):
+            for j in range(self._column_count):
+                cell = self._cells[i][j]
+                if isinstance(cell, LayoutCell) and cell._span[0] > 1 and i <= index < i + cell._span[0]:
+                    self.set_cell_span(i, j, cell._span[0] - 1, cell._span[1])
+        self.realign()
+
+    def remove_column(self, index):
+        if index < 0 or index >= self._column_count:
+            raise IndexError()
+        self._column_count -= 1
+
+        for row in self._cells:
+            del row[index]
+        del self._columns[index]
+
+        for i in range(self._row_count):
+            for j in range(self._column_count):
+                cell = self._cells[i][j]
+                if isinstance(cell, LayoutCell) and cell._span[1] > 1 and j <= index < j + cell._span[1]:
+                    self.set_cell_span(i, j, cell._span[0], cell._span[1] - 1)
+        self.realign()
         
 
 class Layout(LayoutCell):
@@ -636,29 +696,79 @@ class Layout(LayoutCell):
         self.size = (self.content.calculated_width, self.content.calculated_height)
 
 
-class HBox(Layout):
+class _SingleSequenceLayout(Layout):
     def __init__(self, x, y, width, height, style={}, batch=None, group=None):
         super().__init__(x, y, width, height, 1, 1, style, batch, group)
 
-    def add(self, widget):
-        if self.cell(0).content is not None:
-            self.columns = self.columns + 1
-        self.cell(self.columns - 1).content = widget
+    def append(self, widget):
+        if not self.is_empty:
+            self._resize(1)
+        self.cell(self.count - 1).content = widget
         self.realign()
+
+    def _resize(self, count):
+        pass
+
+    def _remove_at(self, index):
+        pass
+
+    @property
+    def is_empty(self):
+        return self.cell(0).content is None
     
+    def remove(self, item):
+        if isinstance(item, int):
+            self._remove_at(item)
+        else:
+            if self.is_empty: return
+            for i in range(self.count):
+                if self.cell(i).content == item:
+                    self._remove_at(i)
+                    break
+
+class HBox(_SingleSequenceLayout):
+    def __init__(self, x, y, width, height, style={}, batch=None, group=None):
+        super().__init__(x, y, width, height, style, batch, group)
+
     def cell(self, index, cl=0):
         return super().cell(0, index)
-
-
-class VBox(Layout):
-    def __init__(self, x, y, width, height, style={}, batch=None, group=None):
-        super().__init__(x, y, width, height, 1, 1, style, batch, group)
-
-    def add(self, widget):
-        if self.cell(0).content is not None:
-            self.rows = self.rows + 1
-        self.cell(self.rows - 1).content = widget
-        self.realign()
     
-    def cell(self, index, rw=0):
+    @property
+    def count(self):
+        return self.columns if not self.is_empty else 0
+    
+    def _resize(self, count):
+        if self.columns + count < 0:
+            raise Exception("Size cannot be less than 0")
+        if self.columns + count == 0:
+            self.columns = 1
+            self.cell(0).content = None
+        else:
+            self.columns = max(self.columns + count, 1)
+
+    def _remove_at(self, index):
+        self._content.remove_column(index)
+
+
+class VBox(_SingleSequenceLayout):
+    def __init__(self, x, y, width, height, style={}, batch=None, group=None):
+        super().__init__(x, y, width, height, style, batch, group)
+
+    def cell(self, index, cl=0):
         return super().cell(index, 0)
+    
+    @property
+    def count(self):
+        return self.rows if not self.is_empty else 0
+    
+    def _resize(self, count):
+        if self.rows + count < 0:
+            raise Exception("Size cannot be less than 0")
+        if self.rows + count == 0:
+            self.rows = 1
+            self.cell(0).content = None
+        else:
+            self.rows = max(self.rows + count, 1)
+    
+    def _remove_at(self, index):
+        self._content.remove_row(index)

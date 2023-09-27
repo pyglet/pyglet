@@ -175,7 +175,7 @@ class PushButton(WidgetBase):
     def __init__(self, x, y, 
                  pressed=(150, 150, 150, 255), 
                  depressed=(230, 230, 230, 255),
-                 hover=(255, 255, 255, 255),
+                 hover=None,
                  width=None, height=None,
                  batch=None, group=None):
         """Create a push button.
@@ -196,6 +196,8 @@ class PushButton(WidgetBase):
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the push button.
         """
+        if hover is None:
+            hover = (255,255,255,255) if isinstance(depressed, tuple) else depressed 
         if type(pressed) != type(depressed) or type(hover) != type(depressed):
             raise Exception("pressed, depressed and hover values must be of equal types")
         image_provided = isinstance(depressed, pyglet.image.AbstractImage)
@@ -215,7 +217,7 @@ class PushButton(WidgetBase):
         self._user_group = group
         bg_group = Group(order=0, parent=group)
         if image_provided:
-            self._sprite = pyglet.sprite.Sprite(self._depressed_visual, x, y, batch=batch, group=bg_group)
+            self._sprite = pyglet.sprite.Sprite(self._depressed_visual, x, y, batch=self._batch, group=bg_group)
         else:
             self._sprite = pyglet.shapes.Rectangle(x, y, width, height, self._depressed_visual, self._batch, bg_group)
 
