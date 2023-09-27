@@ -1,5 +1,14 @@
-"""Requires: PyQT5
-   An example using PyQT5 and Pyglet together.
+"""An example sprite previewer using PyQT5 and Pyglet together.
+
+   Important:
+
+   1. This example uses PyQT5
+   2. PyQT5 uses a different licensing approach than pyglet's BSD-style
+      license: dual GPL / commercial licensing.
+
+   This may impose additional requirements on derivatives of this example.
+   Please consult the PyQT5 documentation for further information.
+
    This is a sprite previewer, you can edit the fragment and vertex shaders and compile it to get a live view.
    Errors and success will be printed in console.
 
