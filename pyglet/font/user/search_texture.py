@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Callable, Optional
 
 import pyglet
@@ -6,7 +7,7 @@ from pyglet.font.user import UserDefinedFontException
 
 
 class UserSearchTextureGlyphRenderer(base.GlyphRenderer):
-    def __init__(self, font: 'UserDefinedSearchTextureFont'):
+    def __init__(self, font: UserDefinedSearchTextureFont):
         self._font = font
         self._font.glyphs[self._font._default_char] = self.render(self._font._default_char)
         super().__init__(font)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict
 
 import pyglet
@@ -6,7 +7,7 @@ from pyglet.font.user import UserDefinedFontException
 
 
 class UserMappingGlyphRenderer(base.GlyphRenderer):
-    def __init__(self, font: 'UserDefinedMappingFont'):
+    def __init__(self, font: UserDefinedMappingFont):
         self._font = font
         self._font.glyphs[self._font.default_char] = self.render(self._font.default_char)
         super().__init__(font)
