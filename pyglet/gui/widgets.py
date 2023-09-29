@@ -307,8 +307,8 @@ class TextPushButton(PushButton):
         super().__init__(x, y, pressed=pressed, depressed=depressed, hover=hover, width=width, height=height, batch=batch, group=group)
         self._label = pyglet.text.Label(text, 
                                         x=x, y=y, width=self.width, height=self.height,
-                                        anchor_y='bottom',
-                                        batch=self._batch, color=text_color)
+                                        anchor_y='bottom', color=text_color,
+                                        batch=self._batch, group=Group(order=1, parent=self._user_group))
         self._label.content_halign = 'center'
         self._label.content_valign = 'center'
 
@@ -666,18 +666,19 @@ class TextEntry(WidgetBase):
         height = font.ascent - font.descent
 
         self._user_group = group
+        self._batch = batch
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
+        self._outline = pyglet.shapes.Rectangle(x, y, width, height, color[:3], batch, bg_group)
         self._outline.opacity = color[3]
 
         # Text and Caret:
-        self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
-        self._layout.x = x
-        self._layout.y = y
+        self._layout = IncrementalTextLayout(self._doc, width-p-p, height-p-p, multiline=False, batch=batch, group=fg_group)
+        self._layout.x = x+p
+        self._layout.y = y+p
         self._caret = Caret(self._layout, color=caret_color)
         self._caret.visible = False
 
@@ -686,8 +687,8 @@ class TextEntry(WidgetBase):
         super().__init__(x, y, width, height)
 
     def _update_position(self):
-        self._layout.position = self._x, self._y, 0
-        self._outline.position = self._x - self._pad, self._y - self._pad
+        self._layout.position = self._x + self._pad, self._y + self._pad, 0
+        self._outline.position = self._x, self._y
 
     @property
     def value(self):
@@ -731,8 +732,8 @@ class TextEntry(WidgetBase):
 
     def on_resize(self, width, height):
         super(TextEntry, self).on_resize(width, height)
-        self._layout.width, self._layout.height = width, height
-        self._outline.width, self._outline.height = width + self._pad * 2, height + self._pad * 2
+        self._layout.width, self._layout.height = width - self._pad * 2, height - self._pad * 2
+        self._outline.width, self._outline.height = width, height
 
     def on_key_press(self, symbol, modifiers):
         if not self._focus:

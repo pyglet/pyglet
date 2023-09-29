@@ -45,6 +45,9 @@ class Frame:
                 self._cells.setdefault((i, j), set()).add(widget)
         widget.update_groups(self._order)
 
+    def add_widgets(self, *widgets):
+        for widget in widgets: self.add_widget(widget)
+
     def remove_widget(self, widget):
         """Remove a Widget from the spatial hash."""
         self._all_widgets.remove(widget)
@@ -53,6 +56,9 @@ class Frame:
             for j in range(min_vec[1], max_vec[1] + 1):
                 cell = self._cells.get((i, j))
                 if cell is not None and widget in cell: cell.remove(widget)
+    
+    def remove_widgets(self, *widgets):
+        for widget in widgets: self.remove_widget(widget)
 
     def on_widgets_realign(self):
         widgets = self._all_widgets

@@ -166,13 +166,13 @@ class LayoutCell:
 
         if stretch_content[0]:
             content_width = self.width - padding[1] - padding[3]
-            if abs(content_width - self._content.width) >= 1:
+            if self._content.width is None or abs(content_width - self._content.width) >= 1:
                 self._content.width = content_width
         else:
             content_width = self._content.width or 0
         if stretch_content[1]:
             content_height = self.height - padding[0] - padding[2]
-            if abs(content_height - self._content.width) >= 1:
+            if self._content.height is None or abs(content_height - self._content.height) >= 1:
                 self._content.height = content_height
         else:
             content_height = self._content.height or 0
@@ -655,12 +655,19 @@ class Layout(LayoutCell):
     def draw(self):
         if self._batch is not None:
             self._batch.draw()
+            return
+
+        if self._background is not None:
+            self._background.draw()
         
         for row in range(self.rows):
             for col in range(self.columns):
                 cell = self.cell(row, col)
-                if isinstance(cell, LayoutCell) and cell.content is not None and cell.content._batch != self._batch:
-                    cell.content.draw()
+                if isinstance(cell, LayoutCell):
+                    if cell._background is not None:
+                        cell._background.draw()
+                    if cell.content is not None and cell.content._batch != self._batch:
+                        cell.content.draw()
 
     @LayoutCell.x.setter
     def x(self, value):
