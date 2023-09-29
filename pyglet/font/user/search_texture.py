@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import Callable, Optional
 
-import pyglet
 from pyglet.font import base
 from pyglet.font.user import UserDefinedFontException
+from pyglet.image import ImageData
 
 
 class UserSearchTextureGlyphRenderer(base.GlyphRenderer):
@@ -13,10 +13,7 @@ class UserSearchTextureGlyphRenderer(base.GlyphRenderer):
         super().__init__(font)
 
     def render(self, text: str):
-        image_data = self._font.search_texture(
-            text, size=self._font.size, bold=self._font.bold,
-            italic=self._font.italic, stretch=self._font.stretch
-        )
+        image_data = self._font.search_texture(text, **self._font._kwargs)
         glyph = self._font.create_glyph(image_data)
         glyph.set_bearings(-self._font.descent, 0, image_data.width)
         return glyph
@@ -33,7 +30,7 @@ class UserDefinedSearchTextureFont(base.Font):
         self, default_char: str, name: str, ascent: float, descent: float,
         size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
         dpi: int = None,locale: str = None,
-        search_texture: Callable[..., Optional[pyglet.image.ImageData]] = None
+        search_texture: Callable[..., Optional[ImageData]] = None
     ):
         """Create a custom font.
 
@@ -44,6 +41,9 @@ class UserDefinedSearchTextureFont(base.Font):
                 stretch=False, dpi=96
             ):
                 ...
+
+        This function should return an :py:class:`pyglet.image.ImageData` object.
+        If the glyph not found, ``None`` must be returned.
         """
         super().__init__()
         self._name = name
@@ -52,20 +52,15 @@ class UserDefinedSearchTextureFont(base.Font):
             raise UserDefinedFontException("A search_texture function must be provided.")
 
         self._default_char = default_char
-        if (
-            self.search_texture(
-                default_char, size=size, bold=bold,
-                italic=italic, stretch=stretch, dpi=dpi
-            )
-            is None
-        ):
+        self._kwargs = {"size": size, "bold": bold, "italic": italic, "stretch": stretch, "dpi": dpi}
+        if self.search_texture(default_char, **self._kwargs)is None:
             raise UserDefinedFontException(
                 "The search_texture function must return an ImageData "
                 f"for default character '{default_char}'."
             )
 
         if ascent is None or descent is None:
-            image = self.search_texture(default_char)
+            image = self.search_texture(default_char, **self._kwargs)
             if ascent is None:
                 ascent = image.height
             if descent is None:
@@ -106,13 +101,7 @@ class UserDefinedSearchTextureFont(base.Font):
             if c not in self.glyphs:
                 if not glyph_renderer:
                     glyph_renderer = self.glyph_renderer_class(self)
-                if (
-                    self.search_texture(
-                        c, size=self.size, bold=self.bold, italic=self.italic,
-                        stretch=self.stretch, dpi=self.dpi
-                    )
-                    is None
-                ):
+                if self.search_texture(c, **self._kwargs) is None:
                     c = self._default_char
                 else:
                     self.glyphs[c] = glyph_renderer.render(c)
