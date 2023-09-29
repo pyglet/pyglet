@@ -1,6 +1,7 @@
+import weakref
+
 from enum import Enum
 from typing import Tuple
-from functools import lru_cache
 
 import pyglet
 
@@ -241,8 +242,16 @@ class Context:
         else:
             self.object_space = ObjectSpace()
 
+        self._cached_programs = weakref.WeakValueDictionary()
+
     def __repr__(self):
         return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
+
+    def __enter__(self):
+        self.set_current()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return
 
     def attach(self, canvas):
         if self.canvas is not None:
@@ -309,7 +318,6 @@ class Context:
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
 
-    @lru_cache()
     def create_program(self, *sources: Tuple[str, str], program_class=None):
         """Create a ShaderProgram from OpenGL GLSL source.
 
@@ -328,9 +336,15 @@ class Context:
 
         .. versionadded:: 2.0.10
         """
+        if program := self._cached_programs.get(str(sources)):
+            return program
+
         program_class = program_class or pyglet.graphics.shader.ShaderProgram
         shaders = (pyglet.graphics.shader.Shader(src, srctype) for (src, srctype) in sources)
-        return program_class(*shaders)
+        program = program_class(*shaders)
+        self._cached_programs[str(sources)] = program
+
+        return program
 
     def delete_texture(self, texture_id):
         """Safely delete a Texture belonging to this context.
