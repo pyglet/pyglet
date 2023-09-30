@@ -31,16 +31,107 @@ Scrolling the mousewheel also zooms in.
 import os
 import sys
 import traceback
+import argparse
 
-from PyQt5.QtGui import QWheelEvent
+from textwrap import dedent
+from typing import TYPE_CHECKING, Final, Dict, List, Optional
 
+
+# Constants for choosing a Qt backend and summarizing their licensing
+ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
+
+PYSIDE2: Final[str] = 'PySide2'
+PYQT5: Final[str] = 'PyQt5'
+
+valid_backends: Final[Dict[str, str]] = {
+    PYSIDE2: "LGPL; may allow releasing under non-GPL licenses",
+    PYQT5: "Dual GPL / Commercial license; requires GPL or a fee"
+}
+
+# Default to PySide2 as part of allowing non-GPL licenses
+# This is necessary but not sufficient to allow this.
+DEFAULT: Final[str] = PYSIDE2
+
+
+# Argument parser for run-time config as __main__
+parser = argparse.ArgumentParser(
+    description=dedent('''\
+    A sprite & shader previewer using Qt and pyglet together.
+
+    It defaults to PySide2, but can run on PyQt5. The details of how may
+    be helpful to users who want to avoid spreading PyQt5's GPL license
+    while using it as a fallback. See the docstrings and comments in the
+    source to learn more.
+    '''),
+    formatter_class=argparse.RawTextHelpFormatter)
+
+# Generate options help text lines
+backend_column_width: Final[int] = max(map(len, valid_backends))
+help_lines: List[str] = ["Which Qt binding to use.\n"]
+
+for backend, description in valid_backends.items():
+   line_parts = [
+       f"{backend: <{backend_column_width}} - ",
+       '(Default) ' if backend == DEFAULT else '',
+       description
+   ]
+   help_lines.append(''.join(line_parts))
+
+# Add an optional single-value positional argument
+parser.add_argument('backend', nargs='?',
+    choices=valid_backends.keys(),
+    help='\n'.join(help_lines))
+
+
+# Use the 1st non-None Qt binding value: argument, env var, or default
+arguments = None
+if __name__ == "__main__":
+    arguments = parser.parse_args()
+
+reasons_with_backend_values: Final[Dict[str, Optional[str]]] = {
+   'first positional argument'       : None if not arguments else arguments.backend,
+   # An environment variable allows specifying the binding when
+   # importing the module instead of running it as a main program.
+   f'{ENV_VARIABLE!r} env variable'  : os.environ.get(ENV_VARIABLE, None),
+   'default'                         : DEFAULT
+}
+reason, backend = next(filter(
+    lambda t: t[1] is not None, reasons_with_backend_values.items()))
+
+print(f"Selected {backend} as the Qt binding from the {reason}'s value.")
+
+
+# Perform UI imports according to the detected configuration
 import pyglet
 
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QOpenGLWidget
-from pyglet.gl import glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glActiveTexture, GL_TEXTURE0, glBindTexture, \
-    GL_BLEND, glEnable, glBlendFunc, glDisable
+# Use PySide2 for type checking, static analysis, tests, and linting
+# to help avoid infection by PyQt5's GPL license since tools will mark
+# uses of PyQt5-specific features as missing. For example, pyright is
+# one of the strict type checking and linting tools which can help.
+if TYPE_CHECKING or backend == PYSIDE2:
+    from PySide2.QtGui import QWheelEvent
+    from PySide2.QtWidgets import QFileDialog
+    from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QOpenGLWidget
+
+elif backend == PYQT5:
+    from PyQt5.QtGui import QWheelEvent
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5 import QtCore, QtWidgets
+    from PyQt5.QtWidgets import QOpenGLWidget
+
+else:  # Handle import edge cases
+    raise ValueError(
+        f"Expected a value in {valid_backends},"
+        f" but got {backend!r} via {reason}")
+
+# Import the other constants after the UI libraries to avoid
+# cluttering the symbol table when debugging import problems.
+from pyglet.gl import (
+    glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glActiveTexture,
+    GL_TEXTURE0, glBindTexture, GL_BLEND, glEnable, glBlendFunc, glDisable
+)
+
 
 default_vertex_src = """#version 150 core
 in vec3 translate;
