@@ -697,9 +697,9 @@ When a player reaches the end of the current source, an :py:meth:`~pyglet.media.
 which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
 attribute has been set to ``True``), or move to the next queued source immediately.
 When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
-event is dispached, and playback stops until another source is queued.
+event is dispatched, and playback stops until another source is queued.
 
-For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
+For loop control you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
 at any time, but be aware that unless sufficient time is given for the future
 data to be decoded and buffered there may be a stutter or gap in playback.
 If set well in advance of the end of the source (say, several seconds), there
