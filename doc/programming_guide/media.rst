@@ -687,6 +687,11 @@ There are several properties that describe the player's current state:
             queued source.
 
 
+.. _guide-media-playbackevents:
+
+Handling playback events
+------------------------
+
 When a player reaches the end of the current source, an :py:meth:`~pyglet.media.Player.on_eos`
 (on end-of-source) event is dispatched. Players have a default handler for this event,
 which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
