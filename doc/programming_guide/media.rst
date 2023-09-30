@@ -414,11 +414,16 @@ For Linux and Mac OS::
 
     os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
 
-..note:: If your project is going to reply on FFmpeg, it's a good idea to
-         check at runtime that FFmpeg is being properly detected. This can be
-         done with a call to :py:func:`pyglet.media.have_ffmpeg`. If not `True`
-         you can show a message and exit gracefully, rather than crashing later
-         when failing to load media files.
+.. tip:: Prevent crashes by checking for FFmpeg before loading media!
+
+         Call :py:func:`pyglet.media.have_ffmpeg` to check whether
+         FFmpeg was detected correctly. If it returns ``False``, you can
+         take an appropriate action instead of crashing. Examples
+         include:
+
+         * Showing a helpful error in the GUI or console output
+         * Exiting gracefully after the the user clicks OK on a dialog
+         * Limiting the formats your project will attempt to load
 
 
 .. _guide-media-loading:
