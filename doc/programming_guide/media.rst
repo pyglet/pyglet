@@ -226,8 +226,8 @@ The following conditions can trigger the crash:
 #. A debugger paused or resumed the program while audio is playing
 #. Unpredictably when 2 or more sounds are playing
 
-The easiest fix is installing :ref:`installing OpenAL <guide-openal>`
-and restarting the program.
+The easiest fix is to :ref:`install OpenAL <guide-openal>` and restart
+the program.
 
 See `the GitHub issue <pulse-bug_>`_ for more information. The following
 are currently unclear:
