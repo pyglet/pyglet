@@ -1,3 +1,5 @@
+.. _guide-playing-media:
+
 Playing Sound and Video
 =======================
 
