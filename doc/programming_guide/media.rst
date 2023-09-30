@@ -240,6 +240,8 @@ are currently unclear:
    is being replaced by PipeWire.
 
 
+.. _guide-supportedmedia:
+
 Supported media types
 ---------------------
 
@@ -250,6 +252,8 @@ for FFmpeg. While FFmpeg supports a large array of formats and codecs, it may be
 unnecessarily large dependency when only simple audio playback is needed.
 
 These formats are supported natively under the following systems and codecs:
+
+.. _guide-supportedmedia-wmf:
 
 Windows Media Foundation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -270,6 +274,7 @@ The following is undocumented but known to work on **Windows 10**:
 
 * FLAC
 
+.. _guide-supportedmedia-gstreamer:
 
 GStreamer
 ^^^^^^^^^
@@ -282,6 +287,7 @@ but will often already be installed along with GStreamer.
 * OGG
 * M4A
 
+.. _guide-supportedmedia-coreaudio:
 
 CoreAudio
 ^^^^^^^^^
@@ -297,6 +303,7 @@ Supported on Mac operating systems.
 * SND
 * SD2
 
+.. _guide-supportedmedia-pyogg:
 
 PyOgg
 ^^^^^
@@ -317,6 +324,8 @@ Supports the following formats:
 * OPUS
 
 Refer to their installation guide found here: https://pyogg.readthedocs.io/en/latest/installation.html
+
+.. _guide-supportedmedia-ffmpeg:
 
 FFmpeg
 ^^^^^^
@@ -353,6 +362,8 @@ to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
 fix errors in the current implementation.
+
+.. _guide-media-ffmpeginstall:
 
 FFmpeg installation
 -------------------
@@ -406,6 +417,8 @@ For Linux and Mac OS::
          you can show a message and exit gracefully, rather than crashing later
          when failing to load media files.
 
+
+.. _guide-media-loading:
 
 Loading media
 -------------
@@ -489,6 +502,9 @@ already- loaded :class:`~pyglet.media.Source`::
 
     explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
+
+.. _guide-media-audiosynthesis:
+
 Audio Synthesis
 ---------------
 
@@ -532,6 +548,8 @@ An example of creating an envelope and waveforms::
 The waveforms you create with the synthesis module can be played like any
 other loaded sound. See the next sections for more detail on playback.
 
+.. _guide-media-simpleaudioplayback:
+
 Simple audio playback
 ---------------------
 
@@ -554,6 +572,8 @@ You can call :py:meth:`~pyglet.media.Source.play` on any
 The return value of :py:meth:`~pyglet.media.Source.play` is a
 :py:class:`~pyglet.media.player.Player`, which can either be
 discarded, or retained to maintain control over the sound's playback.
+
+.. _guide-media-controllingplayback:
 
 Controlling playback
 --------------------
@@ -675,6 +695,8 @@ or add an additional event as described in the reference. For example::
     my_player.on_eos = my_player.pause
 
 
+.. _guide-media-gaplessplayback:
+
 Gapless playback
 ----------------
 
@@ -686,6 +708,8 @@ with identical audio or video format. First create an instance of
 sources with the :func:`~pyglet.media.SourceGroup.add` method.
 Afterwards, you can queue the :py:class:`~pyglet.media.SourceGroup`
 on a Player as if it was a single source.
+
+.. _guide-media-incorporating_video:
 
 Incorporating video
 -------------------
@@ -704,6 +728,8 @@ format of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``. While the
 texture will typically be created only once and subsequentally updated each
 frame, you should make no such assumption in your application -- future
 versions of pyglet may use multiple texture objects.
+
+.. _guide-media-positionalaudio:
 
 Positional audio
 ----------------
@@ -731,6 +757,8 @@ describe the  position of the user in 3D space.
 
 Note that only mono sounds can be positioned. Stereo sounds will play back as
 normal, and only their volume and pitch properties will affect the sound.
+
+.. _guide-media-tickingtheclock:
 
 Ticking the clock
 -----------------
