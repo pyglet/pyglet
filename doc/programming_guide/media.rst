@@ -310,6 +310,9 @@ Supported on Mac operating systems.
 
 PyOgg
 ^^^^^
+
+.. _pyogg_install: https://pyogg.readthedocs.io/en/latest/installation.html
+
 Supported on Windows, Linux, and Mac operating systems.
 
 PyOgg is a lightweight Python library that provides Python bindings for Opus, Vorbis,
@@ -326,7 +329,8 @@ Supports the following formats:
 * FLAC
 * OPUS
 
-Refer to their installation guide found here: https://pyogg.readthedocs.io/en/latest/installation.html
+To install PyOgg, please see their `installation guide on readthedocs.io
+<pyogg_install_>`_.
 
 .. _guide-supportedmedia-ffmpeg:
 
