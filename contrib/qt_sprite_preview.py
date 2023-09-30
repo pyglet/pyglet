@@ -1,25 +1,50 @@
-"""An example sprite previewer using PyQT5 and Pyglet together.
+"""An example sprite previewer using Qt and pyglet together.
 
-Important:
+It allows you to edit the fragment and vertex shaders, then compile them
+to get a live view. Errors and success will be printed to the console.
+A brief feature overview is located after the license notes below.
 
-1. This example uses PyQT5 and requires it to run.
-2. PyQT5 uses a different licensing approach than pyglet's BSD-style
-   license: dual GPL / commercial licensing.
-3. This may impose additional requirements on derivatives of this
-   example, depending on which license you use.
 
-Please consult the PyQT5 documentation and that of the relevant
-software licenses for further information.
+Important license notes:
 
-This sprite previewer example allows you to edit the fragment and vertex
-shaders and compile them to get a live view. Errors and success will be
-printed to the console.
+1. Libraries can use licenses which impose requirements beyond those of
+   pyglet's BSD-style style license.
+2. This example defaults to using PySide2 by default, but can also use
+   PyQt5 due to their nearly-identical APIs.
+3. PySide2 uses the LGPL license while PyQt5 uses a GPL / commercial
+   dual-license approach.
+
+To the best knowledge of the contributors, this example and derivatives
+are only obligated to meet the restrictions of the LGPL because it does
+not use any PyQt5-specific features. Please see the following for more
+information:
+
+* The licenses and documentation for the libraries you plan to use
+* https://www.pythonguis.com/faq/pyqt5-vs-pyside2/
+
+If you need additional certainty, please consult a legal professional.
+
+
+Example features:
+
+You can choose the current Qt binding in two ways:
+
+1. Add PySide2 or PyQt5 as the first argument after the launch command
+   when running the script in the terminal
+2. Set the PYGLET_QT_BACKEND environment variable to either PySide2 or
+   PyQt5.
+
+The priority order is:
+
+1. positional argument
+2. environment variable
+3. default to PySide2
 
 To load images, choose File -> Open Image.
-Images loaded will be listed in the Images menu.
-By selecting an image in the menu list, it will be unloaded.
 
-Names in parentheses will be used for the sampler2D name.
+Images loaded will be listed in the Images menu. By selecting an image in
+the menu list, it will be unloaded. Names in parentheses will be used for
+the sampler2D name.
 
 You can open a shader (both vert and frag) at the same time. Text is
 allowed, but will load into the fragment shader. Saving a shader saves
