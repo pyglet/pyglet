@@ -109,6 +109,9 @@ class SpaceReader:
                     player.queue(self.source(parts[1], streaming=False))
                     reader = PlayerReader(player)
 
+        if player is not None:
+            self.space.add_player(player)
+
     def source(self, filename, **kwargs):
         filename = os.path.join(self.basedir, filename)
         return media.load(filename, **kwargs)
