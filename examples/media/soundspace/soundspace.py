@@ -37,44 +37,38 @@
 import math
 
 import pyglet
-from pyglet.gl import *
-from pyglet.math import Mat4, Vec3
-
-from . import reader
-
-pyglet.resource.path.append('res')
-pyglet.resource.reindex()
 
 # # Default to OpenAL if available:
 # pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
 
+from pyglet.gl import *
+from pyglet.graphics import Group
+from pyglet.math import Mat4, Vec3
 
-# def disc(r, x, y, slices=20, start=0, end=2*math.pi):
-#     d = (end - start) / (slices - 1)
-#     s = start
-#     points = [(x, y)] + [(x + r * math.cos(a*d+s), y + r * math.sin(a*d+s))
-#                          for a in range(slices)]
-#     points = ((GLfloat * 2) * len(points))(*points)
-#     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-#     glEnableClientState(GL_VERTEX_ARRAY)
-#     glVertexPointer(2, GL_FLOAT, 0, points)
-#     glDrawArrays(GL_TRIANGLE_FAN, 0, len(points))
-#     glPopClientAttrib()
+from . import reader
 
 
-# def circle(r, x, y, slices=20):
-#     d = 2 * math.pi / slices
-#     points = [(x + r * math.cos(a*d), y + r * math.sin(a*d)) for a in range(slices)]
-#     points = ((GLfloat * 2) * len(points))(*points)
-#     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-#     glEnableClientState(GL_VERTEX_ARRAY)
-#     glVertexPointer(2, GL_FLOAT, 0, points)
-#     glDrawArrays(GL_LINE_LOOP, 0, len(points))
-#     glPopClientAttrib()
+pyglet.resource.path.append('res')
+pyglet.resource.reindex()
 
 
 def orientation_angle(orientation):
     return math.atan2(orientation[2], orientation[0])
+
+
+# Shape hack functions
+def _update_line(line, x, y, x2, y2):
+    line._x = x
+    line._y = y
+    line._x2 = x2
+    line._y2 = y2
+    line._update_translation()
+    line._update_vertices()
+
+def _bordered_rect_alpha(rect, inner_alpha, border_alpha):
+    rect._rgba = rect._rgba[:3] + (inner_alpha,)
+    rect._border_rgba = rect._border_rgba[:3] + (border_alpha,)
+    rect._update_color()
 
 
 class Handle:
@@ -121,25 +115,6 @@ class LabelHandle(Handle):
     def hit_test(self, x, y, z):
         return None
 
-    # def draw(self):
-    #     if hasattr(self.player, 'label'):
-    #         x, _, y = self.player.position
-
-    #         # ech. fudge scale back to 1
-    #         mat = (GLfloat * 16)()
-    #         glGetFloatv(GL_MODELVIEW_MATRIX, mat)
-
-    #         glPushMatrix()
-    #         glTranslatef(x, y, 0)
-    #         glScalef(1/mat[0], 1/mat[5], 1/mat[10])
-    #         glTranslatef(0, -5, 0)
-
-    #         self.text.text = self.player.label
-    #         self.text.draw()
-
-    #         glPopMatrix()
-
-
 
 class PositionHandle(Handle):
     tip = 'position'
@@ -152,24 +127,15 @@ class PositionHandle(Handle):
             -self.radius * math.sqrt(3.0) / 2.0, -self.radius / 2.0,
             self.radius * math.sqrt(3.0) / 2.0, -self.radius / 2.0,
             (255, 0, 0, 255),
-            window.handle_batch)
+            window.handle_batch,
+            window.hgrp_position)
+        self._triangle.anchor_position = 0.0, -self.radius * 0.75
 
     def update_shapes(self):
         self._triangle.position = self.player.position[0], self.player.position[2]
 
     def delete(self):
         self._triangle.delete()
-
-    # def draw(self):
-    #     glPushMatrix()
-    #     glTranslatef(self.player.position[0], self.player.position[2], 0)
-    #     glColor3f(1, 0, 0)
-    #     glBegin(GL_TRIANGLES)
-    #     glVertex2f(0, self.radius)
-    #     glVertex2f(-self.radius * math.sqrt(3) / 2, -.5 * self.radius)
-    #     glVertex2f(self.radius * math.sqrt(3) / 2, -.5 * self.radius)
-    #     glEnd()
-    #     glPopMatrix()
 
     def pos(self):
         return self.player.position
@@ -188,7 +154,14 @@ class OrientationHandle(Handle):
 
     def __init__(self, window, player):
         super().__init__(window, player)
-        self._line = pyglet.shapes.Line(0, 0, 0, 0, color=(74, 74, 74), batch=window.handle_batch)
+        self._line = pyglet.shapes.Line(0, 0, 0, 0,
+                                        color=(74, 74, 74),
+                                        batch=window.handle_batch,
+                                        group=Group(0, window.hgrp_orientation))
+        self._disc = pyglet.shapes.Circle(0, 0, self.radius,
+                                          color=(255, 255, 0, 255),
+                                          batch=window.handle_batch,
+                                          group=Group(1, window.hgrp_orientation))
 
     def pos(self):
         x, _, z = self.player.position
@@ -199,39 +172,21 @@ class OrientationHandle(Handle):
             z += direction[2] / sz * self.length
         return x, 0, z
 
+    def get_orientation(self):
+        return NotImplementedError()
+
     def update_shapes(self):
         px, _, py = self.player.position
         x, _, y = self.pos()
 
-        self._line._x = px
-        self._line._y = py
-        self._line._x2 = x
-        self._line._y2 = y
-        self._line._update_vertices()
+        self._line._width = 1.0 / self.win.zoom
+        _update_line(self._line, x, y, px, py)
+
+        self._disc.position = x, y
 
     def delete(self):
         self._line.delete()
-
-    # def draw(self):
-    #     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
-
-    #     px, _, py = self.player.position
-    #     x, _, y = self.pos()
-
-    #     # Dashed line
-    #     glColor3f(.3, .3, .3)
-    #     glEnable(GL_LINE_STIPPLE)
-    #     glLineStipple(1, 0x7777)
-    #     glBegin(GL_LINES)
-    #     glVertex2f(px, py)
-    #     glVertex2f(x, y)
-    #     glEnd()
-
-    #     # This handle (orientation)
-    #     glColor3f(1, 1, 0)
-    #     disc(self.radius, x, y)
-
-    #     glPopAttrib()
+        self._disc.delete()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         px, py, pz = self.player.position
@@ -268,8 +223,8 @@ class ConeAngleHandle(Handle):
 
     def __init__(self, window, player):
         super().__init__(window, player)
-        self._sector = pyglet.shapes.Sector(0, 0, radius=self.length, color=self.fill_color, batch=window.handle_batch)
-        self._handle = pyglet.shapes.Circle(0, 0, radius=self.radius, color=self.color, batch=window.handle_batch)
+        self._sector = pyglet.shapes.Sector(0, 0, self.length, color=self.fill_color, batch=window.handle_batch)
+        self._handle = pyglet.shapes.Circle(0, 0, self.radius, color=self.color, batch=window.handle_batch)
 
     def pos(self):
         px, py, pz = self.player.position
@@ -285,9 +240,10 @@ class ConeAngleHandle(Handle):
     def update_shapes(self):
         px, _, py = self.player.position
         angle = orientation_angle(self.player.cone_orientation)
-        a = self.get_angle() * math.pi / 180.0
+        a = math.radians(self.get_angle())
 
-        self._sector.start_angle = a / 2.0
+        self._sector.angle = a
+        self._sector.rotation = math.degrees((-angle / 2.0) + (a / 4.0))
         self._sector.position = px, py
 
         x, _, y = self.pos()
@@ -297,26 +253,6 @@ class ConeAngleHandle(Handle):
     def delete(self):
         self._sector.delete()
         self._handle.delete()
-
-    # def draw(self):
-    #     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
-
-    #     # Fill
-    #     glEnable(GL_BLEND)
-    #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    #     glColor4f(*self.fill_color)
-    #     px, _, py = self.player.position
-    #     angle = orientation_angle(self.player.cone_orientation)
-    #     a = self.get_angle() * math.pi / 180.
-    #     disc(self.length, px, py,
-    #          start=angle - a/2,
-    #          end=angle + a/2)
-
-    #     # Handle
-    #     x, _, y = self.pos()
-    #     glColor4f(*self.color)
-    #     disc(self.radius, x, y)
-    #     glPopAttrib()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         px, py, pz = self.player.position
@@ -355,13 +291,6 @@ class ConeOuterAngleHandle(ConeAngleHandle):
         self.player.cone_outer_angle = angle
 
 
-class _WireframeGroup(pyglet.graphics.Group):
-    def set_state(self):
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    def unset_state(self):
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
-
 class MoreHandle(Handle):
     tip = 'More...'
     radius = .2
@@ -372,14 +301,29 @@ class MoreHandle(Handle):
 
     def __init__(self, window, player):
         super().__init__(window, player)
-        _gb0 = pyglet.graphics.Group(0)
-        _gb1 = _WireframeGroup(1)
-        self._box0 = pyglet.shapes.Rectangle(0, 0, self.open_width, self.open_height, color=(255, 255, 255, 204), group=_gb0, batch=window.handle_batch)
-        self._box1 = pyglet.shapes.Rectangle(0, 0, self.open_width, self.open_height, color=(0, 0, 0, 255), group=_gb1, batch=window.handle_batch)
-        self._circ0 = pyglet.shapes.Circle(0, 0, radius=self.radius, batch=window.handle_batch)
-        self._circ1 = pyglet.shapes.Circle(0, 0, radius=self.radius, color=(0, 0, 0, 255), batch=window.handle_batch)
-        self._line0 = pyglet.shapes.Line(0, 0, 0, 0, color=(0, 0, 0, 255), batch=window.handle_batch)
-        self._line1 = pyglet.shapes.Line(0, 0, 0, 0, color=(0, 0, 0, 255), batch=window.handle_batch)
+        self._box = pyglet.shapes.BorderedRectangle(0, 0, self.open_width, self.open_height, 1,
+                                                    (255, 255, 255), (0, 0, 0),
+                                                    window.handle_batch,
+                                                    Group(0, window.hgrp_label_more_collapsed))
+        # The BorderedRectangle vehemently defends itself from having differing alpha values,
+        # but hack them in cause we want them
+        _bordered_rect_alpha(self._box, 201, 255)
+
+        self._circ = pyglet.shapes.Circle(0, 0, self.radius,
+                                          batch=window.handle_batch,
+                                          group=Group(0, window.hgrp_label_more_collapsed))
+        self._outline = pyglet.shapes.Arc(0, 0, self.radius,
+                                          color=(0, 0, 0, 255),
+                                          batch=window.handle_batch,
+                                          group=Group(1, window.hgrp_label_more_collapsed))
+        self._line0 = pyglet.shapes.Line(0, 0, 0, 0,
+                                         color=(0, 0, 0, 255),
+                                         batch=window.handle_batch,
+                                         group=Group(2, window.hgrp_label_more_collapsed))
+        self._line1 = pyglet.shapes.Line(0, 0, 0, 0,
+                                         color=(0, 0, 0, 255),
+                                         batch=window.handle_batch,
+                                         group=Group(3, window.hgrp_label_more_collapsed))
 
     def pos(self):
         x, y, z = self.player.position
@@ -389,10 +333,9 @@ class MoreHandle(Handle):
         raise NotImplementedError()
 
     def update_shapes(self):
-        self._box0.visible = self.open
-        self._box1.visible = self.open
-        self._circ0.visible = not self.open
-        self._circ1.visible = not self.open
+        self._box.visible = self.open
+        self._circ.visible = not self.open
+        self._outline.visible = not self.open
         self._line0.visible = not self.open
         self._line1.visible = not self.open
 
@@ -400,72 +343,23 @@ class MoreHandle(Handle):
         if self.open:
             x -= 0.2
             z += 0.2
-            self._box0.position = x, z
-            self._box1.position = x, z
+            self._box.border = 1.0 / self.win.zoom
+            self._box.position = x, z - self.open_height
         else:
-            self._circ0.position = x, z
-            self._circ1.position = x, z
+            self._circ.position = x, z
+            self._outline.position = x, z
             r = self.radius - 0.1
-            self._line0._x = x - r
-            self._line0._y = z
-            self._line0._x2 = x + r
-            self._line0._x2 = r
-            self._line0._update_vertices()
-            self._line1._x = x
-            self._line1._y = z - r
-            self._line1._x2 = x
-            self._line1._x2 = z + r
-            self._line1._update_vertices()
+            self._line0._width = 1.0 / self.win.zoom
+            _update_line(self._line0, x - r, z, x + r, z)
+            self._line1._width = 1.0 / self.win.zoom
+            _update_line(self._line1, x, z - r, x, z + r)
 
     def delete(self):
-        self._box0.delete()
-        self._box1.delete()
-        self._circ0.delete()
-        self._circ1.delete()
-        self._line.delete()
-
-    # def draw(self):
-    #     x, _, z = self.pos()
-
-    #     if self.open:
-    #         x -= .2
-    #         z += .2
-    #         glPushAttrib(GL_ENABLE_BIT)
-    #         glEnable(GL_BLEND)
-
-    #         glColor4f(1, 1, 1, .8)
-    #         glBegin(GL_QUADS)
-    #         glVertex2f(x, z)
-    #         glVertex2f(x + self.open_width, z)
-    #         glVertex2f(x + self.open_width, z - self.open_height)
-    #         glVertex2f(x, z - self.open_height)
-    #         glEnd()
-
-    #         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    #         glColor4f(0, 0, 0, 1)
-    #         glBegin(GL_QUADS)
-    #         glVertex2f(x, z)
-    #         glVertex2f(x + self.open_width, z)
-    #         glVertex2f(x + self.open_width, z - self.open_height)
-    #         glVertex2f(x, z - self.open_height)
-    #         glEnd()
-    #         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
-    #         glPopAttrib()
-    #     else:
-    #         glColor3f(1, 1, 1)
-    #         disc(self.radius, x, z)
-
-    #         glColor3f(0, 0, 0)
-    #         circle(self.radius, x, z)
-
-    #         r = self.radius - 0.1
-    #         glBegin(GL_LINES)
-    #         glVertex2f(x - r, z)
-    #         glVertex2f(x + r, z)
-    #         glVertex2f(x, z - r)
-    #         glVertex2f(x, z + r)
-    #         glEnd()
+        self._box.delete()
+        self._circ.delete()
+        self._outline.delete()
+        self._line0.delete()
+        self._line1.delete()
 
     def begin_drag(self, offset):
         self.open = True
@@ -492,8 +386,14 @@ class SliderHandle(Handle):
 
     def __init__(self, window, player, x, z):
         super().__init__(window, player)
-        self._groove = pyglet.shapes.Rectangle(0, 0, 20, 20, batch=window.handle_batch)
-        self._thumb = pyglet.shapes.Circle(0, 0, radius=self.radius, color=(51, 51, 51, 255), batch=window.handle_batch)
+        self._groove = pyglet.shapes.Rectangle(0, 0, self.length, self.width,
+                                               color=(127, 127, 127, 255),
+                                               batch=window.handle_batch,
+                                               group=Group(0, window.hgrp_more_expanded))
+        self._thumb = pyglet.shapes.Circle(0, 0, self.radius,
+                                           color=(51, 51, 51, 255),
+                                           batch=window.handle_batch,
+                                           group=Group(1, window.hgrp_more_expanded))
         self.x = x
         self.z = z
 
@@ -504,32 +404,16 @@ class SliderHandle(Handle):
         return x, y, z
 
     def update_shapes(self):
-        x = self.x + self.player.position[0]
-        z = self.z + self.player.position[2]
-        self._groove.position = x, z
+        gx = self.x + self.player.position[0]
+        gz = self.z + self.player.position[2]
+        self._groove.position = gx, gz
+
+        x, _, z = self.pos()
         self._thumb.position = x, z
 
     def delete(self):
         self._groove.delete()
         self._thumb.delete()
-
-    # def draw(self):
-    #     x = self.x + self.player.position[0]
-    #     z = self.z + self.player.position[2]
-
-    #     # Groove
-    #     glColor3f(.5, .5, .5)
-    #     glBegin(GL_QUADS)
-    #     glVertex2f(x, z - self.width/2)
-    #     glVertex2f(x + self.length, z - self.width/2)
-    #     glVertex2f(x + self.length, z + self.width/2)
-    #     glVertex2f(x, z + self.width/2)
-    #     glEnd()
-
-    #     # Thumb
-    #     x, _, z = self.pos()
-    #     glColor3f(.2, .2, .2)
-    #     disc(self.radius, x, z)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         px, py, pz = self.player.position
@@ -615,13 +499,21 @@ class SoundSpaceWindow(pyglet.window.Window):
         self.tx = self.width/2
         self.ty = self.height/2
 
+        # The handle batch is drawn with a greatly zoomed view matrix
         self._grid_batch = pyglet.graphics.Batch()
-        self._grid = []
-        self._refresh_grid()
-
         self.handle_batch = pyglet.graphics.Batch()
         self.text_batch = pyglet.graphics.Batch()
 
+        # Various handle groups for proper rendering order
+        self.hgrp_position = Group(0)
+        self.hgrp_orientation = Group(1)
+        self.hgrp_cone_inner = Group(2)
+        self.hgrp_cone_outer = Group(3)
+        self.hgrp_label_more_collapsed = Group(4)
+        self.hgrp_more_expanded = Group(5)
+
+        self._grid = []
+        self._refresh_grid()
         self.players = []
         self.handles = []
         self.more_handles = []
@@ -692,27 +584,10 @@ class SoundSpaceWindow(pyglet.window.Window):
         for handle in self.handles + self.more_handles:
             handle.update_shapes()
 
-        # glLoadIdentity()
         self.view = Mat4()
-        # glPushAttrib(GL_CURRENT_BIT)
-        # glColor3f(1, 1, 1)
-        # glBegin(GL_LINES)
-        # for i in range(0, self.width, self.zoom):
-        #     glVertex2f(i, 0)
-        #     glVertex2f(i, self.height)
-        # for i in range(0, self.height, self.zoom):
-        #     glVertex2f(0, i)
-        #     glVertex2f(self.width, i)
         self._grid_batch.draw()
-        # glEnd()
-        # glPopAttrib()
 
-        # glPushMatrix()
-        # glLoadIdentity()
-        # glTranslatef(self.tx, self.ty, 0)
-        # glScalef(self.zoom, self.zoom, 1)
         self.view = Mat4().translate(Vec3(self.tx, self.ty, 0)).scale(Vec3(self.zoom, self.zoom, 0))
-        # glPopMatrix()
         self.handle_batch.draw()
 
         self.view = Mat4()
@@ -734,7 +609,22 @@ class SoundSpaceWindow(pyglet.window.Window):
         if handle:
             self.push_handlers(handle.begin_drag(offset))
         else:
-            self.push_handlers(PanView(self))
+            self.push_handlers(
+                on_mouse_press=self._pan_on_mouse_press_or_release,
+                on_mouse_release=self._pan_on_mouse_press_or_release,
+                on_mouse_drag=self._pan_on_mouse_drag,
+            )
+
+    def _pan_on_mouse_press_or_release(self, _x, _y, _b, _m):
+        self.remove_handlers(
+            on_mouse_press=self._pan_on_mouse_press_or_release,
+            on_mouse_release=self._pan_on_mouse_press_or_release,
+            on_mouse_drag=self._pan_on_mouse_drag,
+        )
+
+    def _pan_on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.tx += dx
+        self.ty += dy
 
     def on_mouse_motion(self, x, y, dx, dy):
         handle, offset = self.hit_test(x, y)
@@ -744,21 +634,6 @@ class SoundSpaceWindow(pyglet.window.Window):
             self.tip_player = handle.player
         else:
             self.tip.text = ''
-
-
-class PanView:
-    def __init__(self, window):
-        self.win = window
-
-    def on_mouse_release(self, x, y, button, modifiers):
-        self.win.remove_handlers(self)
-
-    def on_mouse_press(self, x, y, button, modifiers):
-        self.win.remove_handlers(self)
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        self.win.tx += dx
-        self.win.ty += dy
 
 
 if __name__ == '__main__':
