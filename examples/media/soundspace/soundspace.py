@@ -106,11 +106,16 @@ class Handle:
 class LabelHandle(Handle):
     def __init__(self, window, player):
         super().__init__(window, player)
-        self.text = pyglet.text.Label('', font_size=10, color=(0, 0, 0, 255),
+        txt = getattr(player, 'label', '')
+        self.text = pyglet.text.Label(txt, font_size=10, color=(0, 0, 0, 255),
                                       anchor_y='top', anchor_x='center', batch=window.text_batch)
 
     def delete(self):
         self.text.delete()
+
+    def update_shapes(self):
+        x, z = self.win.player_transform(self.player)
+        self.text.position = x, z - 5, 0
 
     def hit_test(self, x, y, z):
         return None
@@ -648,7 +653,7 @@ if __name__ == '__main__':
 
     w = SoundSpaceWindow()
     r = reader.SpaceReader(w)
-    r.read(pyglet.resource.file('space.txt'))
+    r.read(pyglet.resource.file('space.txt', 'r'))
     player_group = pyglet.media.PlayerGroup(w.players)
     player_group.play()
 

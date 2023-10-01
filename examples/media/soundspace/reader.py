@@ -82,22 +82,24 @@ class SpaceReader:
         elif hasattr(file, 'name'):
             self.basedir = os.path.dirname(file.name)
         reader = None
+        player = None
         lineno = 0
         for line in file:
             lineno += 1
 
-            if not isinstance('', bytes) and isinstance(line, bytes):
-                # decode bytes to str on Python 3
-                line = line.decode('ascii')
-
             if not line.strip() or line.startswith('#'):
                 continue
+
             if line.startswith(' '):
                 if not reader:
                     raise ReaderException('Unexpected indented block line %d' % lineno)
                 reader.line(line, lineno)
             else:
                 reader = None
+                if player is not None:
+                    self.space.add_player(player)
+                    player = None
+
                 parts = line.split()
                 if parts[0] == 'loop':
                     if len(parts) < 2:
@@ -105,7 +107,6 @@ class SpaceReader:
                     player = media.Player()
                     player.loop = True
                     player.queue(self.source(parts[1], streaming=False))
-                    self.space.add_player(player)
                     reader = PlayerReader(player)
 
     def source(self, filename, **kwargs):
