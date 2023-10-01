@@ -2,14 +2,14 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from pyglet.font import base
-from pyglet.font.user import UserDefinedFontException
+from pyglet.font.user import UserDefinedFontBase, UserDefinedFontException
 from pyglet.image import ImageData
 
 
 class UserSearchTextureGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font: UserDefinedSearchTextureFont):
         self._font = font
-        self._font.glyphs[self._font._default_char] = self.render(self._font._default_char)
+        self._font.glyphs[self._font.default_char] = self.render(self._font.default_char)
         super().__init__(font)
 
     def render(self, text: str):
@@ -19,7 +19,7 @@ class UserSearchTextureGlyphRenderer(base.GlyphRenderer):
         return glyph
 
 
-class UserDefinedSearchTextureFont(base.Font):
+class UserDefinedSearchTextureFont(UserDefinedFontBase):
     """A basic UserDefinedFont, it takes a function search_texture to
     get ImageData of a character.
     """
@@ -27,12 +27,27 @@ class UserDefinedSearchTextureFont(base.Font):
     glyph_renderer_class = UserSearchTextureGlyphRenderer
 
     def __init__(
-        self, default_char: str, name: str, ascent: float, descent: float,
-        size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
-        dpi: int = None,locale: str = None,
+        self, name: str, default_char: str, size: int, ascent: int = None,
+        descent: int = None, bold: bool = False, italic: bool = False,
+        stretch: bool = False, dpi: int = 96,locale: str = None,
         search_texture: Callable[..., Optional[ImageData]] = None
     ):
         """Create a custom font.
+
+        :Parameters:
+            `name` : str
+                Name of the font.
+            `default_char` : str
+                If a character in a string is not found in the font,
+                it will use this as fallback.
+            `size` : int
+                Font size.
+            `ascent` : int
+                Maximum ascent above the baseline, in pixels.
+            `descent` : int
+                Maximum descent below the baseline, in pixels. Usually negative.
+            `search_texture` : function
+                A function gets glyph of a character.
 
         The search_texture function should be defined like::
 
@@ -42,44 +57,30 @@ class UserDefinedSearchTextureFont(base.Font):
             ):
                 ...
 
-        This function should return an :py:class:`pyglet.image.ImageData` object.
+        This function should return a :py:class:`pyglet.image.ImageData` object.
         If the glyph not found, ``None`` must be returned.
         """
-        super().__init__()
-        self._name = name
         self.search_texture = search_texture
         if self.search_texture is None:
             raise UserDefinedFontException("A search_texture function must be provided.")
-
-        self._default_char = default_char
         self._kwargs = {"size": size, "bold": bold, "italic": italic, "stretch": stretch, "dpi": dpi}
         if self.search_texture(default_char, **self._kwargs)is None:
             raise UserDefinedFontException(
                 "The search_texture function must return an ImageData "
                 f"for default character '{default_char}'."
             )
-
         if ascent is None or descent is None:
             image = self.search_texture(default_char, **self._kwargs)
             if ascent is None:
                 ascent = image.height
             if descent is None:
                 descent = 0
-        self.ascent = ascent
-        self.descent = descent
+        super().__init__(
+                name, default_char, size, ascent, descent,
+                bold, italic, stretch, dpi, locale
+            )
 
-        self.bold = bold
-        self.italic = italic
-        self.stretch = stretch
-        self.dpi = dpi
-        self.size = size
-        self.locale = locale
-
-    @property
-    def name(self):
-        return self._name
-
-    def get_glyphs(self, text):
+    def get_glyphs(self, text: str):
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this

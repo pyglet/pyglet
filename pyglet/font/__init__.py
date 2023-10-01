@@ -22,7 +22,7 @@ import weakref
 from typing import Union, BinaryIO, Optional, Iterable
 
 import pyglet
-from pyglet.font.user.mapping import UserDefinedMappingFont
+from pyglet.font.user import UserDefinedFontBase
 from pyglet import gl
 
 
@@ -50,37 +50,15 @@ def _get_system_font_class():
     return _font_class
 
 
-def create_font(name: str, default_char: str, ascent: Optional[float] = None,
-                descent: Optional[float] = None, size: Optional[float] = 12,
-                bold: Optional[bool] = False, italic: Optional[bool] = False,
-                stretch: Optional[bool] = False, dpi: Optional[float] = 96,
-                font_class=UserDefinedMappingFont, **kwargs):
-    """Create a custom font using font_class.
+def add_font(font=UserDefinedFontBase):
+    """Add a custom font.
 
-    A strong reference needs to be applied to the returned font object,
-    otherwise pyglet may not find the font.
+    A strong reference needs to be applied to the font object,
+    otherwise pyglet may not find the font later.
 
     :Parameters:
-        `name` : str
-            Name of the font.
-        `default_char` : str
-            If a character in a string is not found in the font,
-            it will use this as fallback.
-        `size` : int
-            Font size.
-        `ascent` : int
-            Maximum ascent above the baseline, in pixels.
-        `descent` : int
-            Maximum descent below the baseline, in pixels. Usually negative.
-        `font_class` : `~pyglet.font.user.UserDefinedFont`
-            A font class defined by user.
-        `kwargs` : dict
-            Other parameters. For example, the default font_class need a
-            dict named `mappings`.
-
-    The rest of the font parameters are used for font lookups.
-
-    :rtype: `Font`
+        `font` : `~pyglet.font.user.UserDefinedFont`
+            A font class instance defined by user.
     """
     # Locate or create font cache
     shared_object_space = gl.current_context.object_space
@@ -89,42 +67,24 @@ def create_font(name: str, default_char: str, ascent: Optional[float] = None,
         shared_object_space.pyglet_font_font_hold = []
         # Match a tuple to specific name to reduce lookups.
         shared_object_space.pyglet_font_font_name_match = {}
-
     font_cache = shared_object_space.pyglet_font_font_cache
     font_hold = shared_object_space.pyglet_font_font_hold
 
     # Look for font name in font cache
-    descriptor = (name, size, bold, italic, stretch, dpi)
+    descriptor = (font.name, font.size, font.bold, font.italic, font.stretch, font.dpi)
     if descriptor in font_cache:
         raise Exception(f"A font with parameters {descriptor} has already been created.")
+    if _system_font_class.have_font(font.name):
+        raise Exception(f"Font name '{font.name}' already exists within the system fonts.")
 
-    if _system_font_class.have_font(name):
-        raise Exception(f"Font name '{name}' already exists within the system fonts.")
-
-    # Not in cache, create from scratch
-    font = font_class(default_char, name, ascent, descent,
-                      size, bold, italic, stretch, dpi, **kwargs)
-
-    # Save parameters for new-style layout classes to recover
-    # TODO: add properties to the Font classes, so these can be queried:
-    font.size = size
-    font.bold = bold
-    font.italic = italic
-    font.stretch = stretch
-    font.dpi = dpi
-
-    if name not in _user_fonts:
-        _user_fonts.append(name)
-
+    if font.name not in _user_fonts:
+        _user_fonts.append(font.name)
     # Cache font in weak-ref dictionary to avoid reloading while still in use
     font_cache[descriptor] = font
-
     # Hold onto refs of last three loaded fonts to prevent them being
     # collected if momentarily dropped.
     del font_hold[3:]
     font_hold.insert(0, font)
-
-    return font
 
 
 def have_font(name: str) -> bool:
@@ -132,39 +92,37 @@ def have_font(name: str) -> bool:
     return name in _user_fonts or _system_font_class.have_font(name)
 
 
-def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float] = None, bold: bool = False,
-         italic: bool = False,
-         stretch: bool = False, dpi: Optional[float] = None):
+def load(name: Union[str, Iterable[str]], size: Optional[int] = None,
+         bold: Optional[bool] = False, italic: Optional[bool] = False,
+         stretch: Optional[bool] = False, dpi: Optional[int] = None):
     """Load a font for rendering.
 
     A strong reference needs to be applied to the returned font object,
-    otherwise pyglet may not find the font.
+    otherwise pyglet may not find the font later.
 
     :Parameters:
         `name` : str, or list of str
             Font family, for example, "Times New Roman".  If a list of names
             is provided, the first one matching a known font is used.  If no
-            font can be matched to the name(s), a default font is used.  In
-            pyglet 1.1, the name may be omitted.
-        `size` : float
-            Size of the font, in points.  The returned font may be an exact
-            match or the closest available.
+            font can be matched to the name(s), a default font is used.
+        `size` : int
+            Size of the font, in points. The returned font may be an exact
+            match or the closest available. Defaults to 12.
         `bold` : bool
             If True, a bold variant is returned, if one exists for the given
             family and size.
         `italic` : bool
             If True, an italic variant is returned, if one exists for the given
             family and size.
-        `dpi` : float
+        `dpi` : int
             The assumed resolution of the display device, for the purposes of
-            determining the pixel size of the font.  Defaults to 96.
+            determining the pixel size of the font. Defaults to 96.
 
     :rtype: `Font`
     """
     # Arbitrary default size
     if size is None:
         size = 12
-
     if dpi is None:
         dpi = 96
 
@@ -175,7 +133,6 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
         shared_object_space.pyglet_font_font_hold = []
         # Match a tuple to specific name to reduce lookups.
         shared_object_space.pyglet_font_font_name_match = {}
-
     font_cache = shared_object_space.pyglet_font_font_cache
     font_hold = shared_object_space.pyglet_font_font_hold
     font_name_match = shared_object_space.pyglet_font_font_name_match
@@ -205,7 +162,6 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
 
     # Not in cache, create from scratch
     font = _system_font_class(name, size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
-
     # Save parameters for new-style layout classes to recover
     # TODO: add properties to the Font classes, so these can be queried:
     font.size = size
@@ -216,12 +172,10 @@ def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float]
 
     # Cache font in weak-ref dictionary to avoid reloading while still in use
     font_cache[descriptor] = font
-
     # Hold onto refs of last three loaded fonts to prevent them being
     # collected if momentarily dropped.
     del font_hold[3:]
     font_hold.insert(0, font)
-
     return font
 
 

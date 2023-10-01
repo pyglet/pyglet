@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import Dict
 
-import pyglet
 from pyglet.font import base
-from pyglet.font.user import UserDefinedFontException
+from pyglet.font.user import UserDefinedFontBase, UserDefinedFontException
+from pyglet.image import ImageData
 
 
 class UserMappingGlyphRenderer(base.GlyphRenderer):
@@ -19,49 +19,51 @@ class UserMappingGlyphRenderer(base.GlyphRenderer):
         return glyph
 
 
-class UserDefinedMappingFont(base.Font):
+class UserDefinedMappingFont(UserDefinedFontBase):
     """A basic UserDefinedFont, it takes a mappings of ImageData."""
 
     glyph_renderer_class = UserMappingGlyphRenderer
 
     def __init__(
-        self, default_char: str, name: str, ascent: float, descent: float,
-        size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
-        dpi: int = None, locale: str = None,
-        mappings: Dict[str, pyglet.image.ImageData]={}
+        self, name: str, default_char: str, size: int, ascent: int = None,
+        descent: int = None, bold: bool = False, italic: bool = False,
+        stretch: bool = False, dpi: int = 96, locale: str = None,
+        mappings: Dict[str, ImageData]={}
     ):
-        """Create a custom font using the mapping dict."""
-        super().__init__()
-        self._name = name
-        self.mappings: Dict[str, pyglet.image.ImageData] = mappings
+        """Create a custom font using the mapping dict.
 
+        :Parameters:
+            `name` : str
+                Name of the font.
+            `default_char` : str
+                If a character in a string is not found in the font,
+                it will use this as fallback.
+            `size` : int
+                Font size.
+            `ascent` : int
+                Maximum ascent above the baseline, in pixels.
+            `descent` : int
+                Maximum descent below the baseline, in pixels. Usually negative.
+            `mappings` : dict
+                A dict likes ``{character: ImageData}``.
+        """
+        self.mappings = mappings
         if default_char not in self.mappings:
             raise UserDefinedFontException(
                 f"Default character '{default_char}' must exist within your mappings."
             )
-        self.default_char = default_char
-
         if ascent is None or descent is None:
             image = list(mappings.values())[0]
             if ascent is None:
                 ascent = image.height
             if descent is None:
                 descent = 0
-        self.ascent = ascent
-        self.descent = descent
+        super().__init__(
+                name, default_char, size, ascent, descent,
+                bold, italic, stretch, dpi, locale
+            )
 
-        self.bold = bold
-        self.italic = italic
-        self.stretch = stretch
-        self.dpi = dpi
-        self.size = size
-        self.locale = locale
-
-    @property
-    def name(self):
-        return self._name
-
-    def get_glyphs(self, text):
+    def get_glyphs(self, text: str):
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this

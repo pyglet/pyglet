@@ -5,14 +5,16 @@ from PIL import Image
 from PIL.Image import Resampling
 
 from pyglet import app, clock, image, resource
-from pyglet.font import create_font
+from pyglet.font import add_font
+from pyglet.font.user.mapping import UserDefinedMappingFont
 from pyglet.font.user.search_texture import UserDefinedSearchTextureFont
 from pyglet.text import Label
 from pyglet.window import Window
 
 font_ascii = resource.image("ascii.png")
 font_sga = resource.image("sga.png")
-special_width = {
+image_cache = {}
+special_width_ascii = {
     " ": 0.375,
     ",": 0.5,
     "!": 0.5,
@@ -33,7 +35,16 @@ special_width = {
     "|": 0.5,
     "}": 0.5,
 }
-image_cache = {}
+special_width_sga = {
+    "C": 0.5,
+    "G": 0.625,
+    "I": 0.25,
+    "J": 0.25,
+    "L": 0.625,
+    "P": 0.625,
+    "S": 0.5,
+    "Y": 0.625,
+}
 lorem_ipsum = (
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
     "Donec a diam lectus. Sed sit amet ipsum mauris. Maecenas congue ligula "
@@ -56,11 +67,11 @@ def get_texture_ascii(char, size=8, **kwargs):
         image_cache.setdefault(("ascii", size), image.load("cache.png", file=cache))
     font_image = image_cache[("ascii", size)]
     x, y = ord(char) % 16 * size, size * 16 - (ord(char) // 16 + 1) * size
-    w = (special_width[char] if char in special_width else 0.75) * size
+    w = (special_width_ascii[char] if char in special_width_ascii else 0.75) * size
     return font_image.get_region(x, y, int(w), size).get_image_data()
 
 
-def create_font_sga():
+def get_sga_mappings():
     cache = BytesIO()
     font_sga.save("cache.png", file=cache)
     image_original = Image.open(cache)
@@ -72,13 +83,15 @@ def create_font_sga():
     mappings = {}
     for char in " " + string.ascii_letters:
         x, y = ord(char) % 16 * 24, 24 * 16 - (ord(char) // 16 + 1) * 24
-        mappings[char] = font_image.get_region(x, y, 18, 24).get_image_data()
-    return create_font("sga", default_char=" ", ascent=24, size=24, mappings=mappings)
+        cap = char.capitalize()
+        w = (special_width_sga[cap] if cap in special_width_sga else 0.75) * 24
+        mappings[char] = font_image.get_region(x, y, int(w), 24).get_image_data()
+    return mappings
 
 
-class CreateFontWindow(Window):
+class AddFontWindow(Window):
     def __init__(self):
-        super().__init__(640, 480, "create_font")
+        super().__init__(640, 480, "add_font")
         self.label_title = Label(
             "pyglet",
             font_name="ascii",
@@ -126,17 +139,19 @@ class CreateFontWindow(Window):
 if __name__ == "__main__":
     fonts = []
     for size in [16, 24, 32]:
-        fonts.append(
-            create_font(
-                "ascii",
-                default_char=" ",
-                ascent=size,
-                size=size,
-                font_class=UserDefinedSearchTextureFont,
-                search_texture=get_texture_ascii
-            )
+        ascii_font = UserDefinedSearchTextureFont(
+            "ascii",
+            default_char=" ",
+            size=size,
+            search_texture=get_texture_ascii,
         )
-    fonts.append(create_font_sga())
-    window = CreateFontWindow()
+        fonts.append(ascii_font)
+        add_font(ascii_font)
+
+    sga_font = UserDefinedMappingFont(
+        "sga", default_char=" ", size=24, mappings=get_sga_mappings()
+    )
+    add_font(sga_font)
+    window = AddFontWindow()
     clock.schedule_interval(window.draw, 1 / 60)
     app.run()
