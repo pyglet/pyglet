@@ -1,6 +1,6 @@
 import weakref
 
-from math import atan2, cos, sin, radians, pi
+from math import cos, sin, radians
 
 import pyglet
 
@@ -8,12 +8,12 @@ from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Vec2, Vec3, Mat4, clamp
 
 
-window = pyglet.window.Window(width=720, height=480, resizable=True)
-batch = pyglet.graphics.Batch()
-time = 0
-
-
 class FPSCamera:
+    """A 3D projection, "first person" camera controller.
+
+    This Camera class listens to Window and input events, and
+    updates the `Window.view` and `Window.projection` matrixes.
+    """
     def __init__(self, window, position=Vec3(0, 0, 0), target=Vec3(0, 0, -1), up=Vec3(0, 1, 0)):
         self.position = position
         self.target = target
@@ -32,6 +32,8 @@ class FPSCamera:
                           pyglet.window.key.A: "left",
                           pyglet.window.key.D: "right"}
 
+        self.inputs = {direction : False for direction in self.input_map.values()}
+
         self.mouse_look = Vec2()
         self.keybord_move = Vec3()
         self.controller_look = Vec2()
@@ -40,7 +42,6 @@ class FPSCamera:
         self._window = weakref.proxy(window)
         self._window.view = Mat4.look_at(position, target, up)
         self._window.push_handlers(self)
-        self._window.set_exclusive_mouse(True)
 
     def on_deactivate(self):
         # Prevent input from getting "stuck"
@@ -48,7 +49,7 @@ class FPSCamera:
 
     def on_resize(self, width, height):
         self._window.viewport = (0, 0, width, height)
-        self._window.projection = Mat4.perspective_projection(window.aspect_ratio, z_near=0.1, z_far=100, fov=45)
+        self._window.projection = Mat4.perspective_projection(self._window.aspect_ratio, z_near=0.1, z_far=100, fov=45)
         return pyglet.event.EVENT_HANDLED
 
     def on_refresh(self, dt):
@@ -60,12 +61,12 @@ class FPSCamera:
             self.yaw = self.yaw + self.controller_look.x
             self.pitch = clamp(self.pitch + self.controller_look.y, -89.0, 89.0)
 
-        if abs(self.mouse_look) > 0:
+        if abs(self.mouse_look) > 0.0:
             # Reset the vector back to 0 each time, because there is no event
             # for when the mouse stops moving. It will get "stuck" otherwise.
             self.yaw += self.mouse_look.x * 0.1
             self.pitch = clamp(self.pitch + self.mouse_look.y * 0.1, -89.0, 89.0)
-            self.mouse_look[:] = 0, 0
+            self.mouse_look[:] = 0.0, 0.0
 
         self.target = Vec3(cos(radians(self.yaw)) * cos(radians(self.pitch)),
                            sin(radians(self.pitch)),
@@ -78,6 +79,15 @@ class FPSCamera:
         if abs(self.controller_move) > self.deadzone:
             self.position += self.controller_move * speed
 
+        if self.inputs["forward"]:
+            self.position += (self.target * speed)
+        if self.inputs["backward"]:
+            self.position -= (self.target * speed)
+        if self.inputs["left"]:
+            self.position -= (self.target.cross(self.up).normalize() * speed)
+        if self.inputs["right"]:
+            self.position += (self.target.cross(self.up).normalize() * speed)
+
         if abs(self.keybord_move) > 0:
             self.position += self.keybord_move * speed
 
@@ -88,36 +98,24 @@ class FPSCamera:
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_look[:] = dx, dy
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        self._window.set_exclusive_mouse(True)
+
     # Keyboard input
 
     def on_key_press(self, symbol, mod):
+        if symbol == pyglet.window.key.ESCAPE:
+            self._window.set_exclusive_mouse(False)
+            return pyglet.event.EVENT_HANDLED
+
         if symbol in self.input_map:
-
             direction = self.input_map[symbol]
-
-            if direction == 'forward':
-                self.keybord_move += self.target
-            elif direction == 'backward':
-                self.keybord_move -= self.target
-            elif direction == 'left':
-                self.keybord_move -= self.target.cross(self.up).normalize()
-            elif direction == 'right':
-                self.keybord_move += self.target.cross(self.up).normalize()
-
+            self.inputs[direction] = True
 
     def on_key_release(self, symbol, mod):
         if symbol in self.input_map:
-
             direction = self.input_map[symbol]
-
-            if direction == 'forward':
-                self.keybord_move -= self.target
-            elif direction == 'backward':
-                self.keybord_move += self.target
-            elif direction == 'left':
-                self.keybord_move += self.target.cross(self.up).normalize()
-            elif direction == 'right':
-                self.keybord_move -= self.target.cross(self.up).normalize()
+            self.inputs[direction] = False
 
     # Controller input
 
@@ -126,25 +124,26 @@ class FPSCamera:
             self.controller_move = self.target * yvalue + self.target.cross(self.up).normalize() * xvalue
 
         elif stick == "rightstick":
-            self.controller_look[:] = xvalue, yvalue, 0
+            self.controller_look[:] = xvalue, yvalue
 
-
-
-@window.event
-def on_draw():
-    window.clear()
-    batch.draw()
 
 
 if __name__ == "__main__":
+    window = pyglet.window.Window(width=964, height=540, resizable=True)
+    batch = pyglet.graphics.Batch()
+
+    @window.event
+    def on_draw():
+        window.clear()
+        batch.draw()
+
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
     model_logo = pyglet.model.load("logo3d.obj", batch=batch)
     model_box = pyglet.model.load("box.obj", batch=batch)
 
-    # Set the application wide view matrix (camera):
-    # window.view = Mat4.look_at(position=Vec3(0, 0, 5), target=Vec3(0, 0, 0), up=Vec3(0, 1, 0))
+    # Camera controls the global projection & view matrixes:
     camera = FPSCamera(window, position=Vec3(0, 0, 5))
 
     if controllers := pyglet.input.get_controllers():
