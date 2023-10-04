@@ -1,4 +1,9 @@
+import weakref
+
 from enum import Enum
+from typing import Tuple
+
+import pyglet
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -208,12 +213,11 @@ class ObjectSpace:
         # the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
-        self.doomed_vaos = []
         self.doomed_shader_programs = []
 
 
 class Context:
-    """OpenGL context for drawing.
+    """An OpenGL context for drawing.
 
     Use `CanvasConfig.create_context` to create a context.
 
@@ -231,13 +235,23 @@ class Context:
         self.context_share = context_share
         self.canvas = None
 
+        self.doomed_vaos = []
+
         if context_share:
             self.object_space = context_share.object_space
         else:
             self.object_space = ObjectSpace()
 
+        self._cached_programs = weakref.WeakValueDictionary()
+
     def __repr__(self):
         return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
+
+    def __enter__(self):
+        self.set_current()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return
 
     def attach(self, canvas):
         if self.canvas is not None:
@@ -265,7 +279,7 @@ class Context:
 
         # Release Textures, Buffers, and VAOs on this context scheduled for
         # deletion. Note that the garbage collector may introduce a race
-        # condition, so operate on a copy, and clear the list afterwards.
+        # condition, so operate on a copy, and clear the list afterward.
         if self.object_space.doomed_textures:
             textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
@@ -276,15 +290,15 @@ class Context:
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
             self.object_space.doomed_buffers.clear()
-        if self.object_space.doomed_vaos:
-            vaos = self.object_space.doomed_vaos[:]
-            vaos = (gl.GLuint * len(vaos))(*vaos)
-            gl.glDeleteVertexArrays(len(vaos), vaos)
-            self.object_space.doomed_vaos.clear()
         if self.object_space.doomed_shader_programs:
             for program_id in self.object_space.doomed_shader_programs:
                 gl.glDeleteProgram(program_id)
             self.object_space.doomed_shader_programs.clear()
+        if self.doomed_vaos:
+            vaos = self.doomed_vaos[:]
+            vaos = (gl.GLuint * len(vaos))(*vaos)
+            gl.glDeleteVertexArrays(len(vaos), vaos)
+            self.doomed_vaos.clear()
 
     def destroy(self):
         """Release the context.
@@ -303,6 +317,34 @@ class Context:
             # Switch back to shadow context.
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
+
+    def create_program(self, *sources: Tuple[str, str], program_class=None):
+        """Create a ShaderProgram from OpenGL GLSL source.
+
+        This is a convenience method that takes one or more tuples of
+        (source_string, shader_type), and returns a
+        :py:class:`~pyglet.graphics.shader.ShaderProgram` instance.
+
+        `source_string` is OpenGL GLSL source code as a str, and `shader_type`
+        is the OpenGL shader type, such as "vertex" or "fragment". See
+        :py:class:`~pyglet.graphics.shader.Shader` for more information.
+
+        .. note:: This method is cached. Given the same shader sources, the
+                  same ShaderProgram instance will be returned. For more
+                  control over the ShaderProgram lifecycle, it is recommended
+                  to manually create Shaders and link ShaderPrograms.
+
+        .. versionadded:: 2.0.10
+        """
+        if program := self._cached_programs.get(str(sources)):
+            return program
+
+        program_class = program_class or pyglet.graphics.shader.ShaderProgram
+        shaders = (pyglet.graphics.shader.Shader(src, srctype) for (src, srctype) in sources)
+        program = program_class(*shaders)
+        self._cached_programs[str(sources)] = program
+
+        return program
 
     def delete_texture(self, texture_id):
         """Safely delete a Texture belonging to this context.
@@ -351,10 +393,10 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if gl.current_context and self.object_space is gl.current_context.object_space and False:
+        if gl.current_context is self:
             gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
         else:
-            self.object_space.doomed_vaos.append(vao_id)
+            self.doomed_vaos.append(vao_id)
 
     def delete_shader_program(self, program_id):
         """Safely delete a Shader Program belonging to this context.

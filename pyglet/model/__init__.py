@@ -87,25 +87,12 @@ def load(filename, file=None, decoder=None, batch=None, group=None):
 
 
 def get_default_shader():
-    try:
-        return pyglet.gl.current_context.model_default_plain_shader
-    except AttributeError:
-        vert_shader = shader.Shader(MaterialGroup.default_vert_src, 'vertex')
-        frag_shader = shader.Shader(MaterialGroup.default_frag_src, 'fragment')
-        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
-        pyglet.gl.current_context.model_default_plain_shader = default_shader_program
-        return pyglet.gl.current_context.model_default_plain_shader
-
+    return pyglet.gl.current_context.create_program((MaterialGroup.default_vert_src, 'vertex'),
+                                                    (MaterialGroup.default_frag_src, 'fragment'))
 
 def get_default_textured_shader():
-    try:
-        return pyglet.gl.current_context.model_default_textured_shader
-    except AttributeError:
-        vert_shader = shader.Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
-        frag_shader = shader.Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
-        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
-        pyglet.gl.current_context.model_default_textured_shader = default_shader_program
-        return current_context.model_default_textured_shader
+    return pyglet.gl.current_context.create_program((TexturedMaterialGroup.default_vert_src, 'vertex'),
+                                                    (TexturedMaterialGroup.default_frag_src, 'fragment'))
 
 
 class Model:

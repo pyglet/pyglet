@@ -79,7 +79,6 @@ class VertexDomain:
         self.program = program
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
-        self.vao = vertexarray.VertexArray()
 
         self.attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
@@ -98,6 +97,15 @@ class VertexDomain:
             attribute.buffer.element_size = attribute.stride
             attribute.buffer.attributes = (attribute,)
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
+
+        self.vao = vertexarray.VertexArray()
+        self.vao.bind()
+        for buffer, attributes in self.buffer_attributes:
+            buffer.bind()
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(buffer.ptr)
+        self.vao.unbind()
 
         # Create named attributes for each attribute
         self.attribute_names = {}
@@ -163,12 +171,8 @@ class VertexDomain:
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
 
         starts, sizes = self.allocator.get_allocated_regions()
         primcount = len(starts)
@@ -181,9 +185,6 @@ class VertexDomain:
             starts = (GLint * primcount)(*starts)
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawArrays(mode, starts, sizes, primcount)
-
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
     def draw_subset(self, mode, vertex_list):
         """Draw a specific VertexList in the domain.
@@ -199,17 +200,10 @@ class VertexDomain:
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
 
         glDrawArrays(mode, vertex_list.start, vertex_list.count)
-
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
     @property
     def is_empty(self):
@@ -339,6 +333,10 @@ class IndexedVertexDomain(VertexDomain):
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         self.index_buffer = BufferObject(self.index_allocator.capacity * self.index_element_size)
 
+        self.vao.bind()
+        self.index_buffer.bind_to_index_buffer()
+        self.vao.unbind()
+
     def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
         try:
@@ -414,13 +412,8 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind_to_index_buffer()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -436,10 +429,6 @@ class IndexedVertexDomain(VertexDomain):
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
-        self.index_buffer.unbind()
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
-
     def draw_subset(self, mode, vertex_list):
         """Draw a specific IndexedVertexList in the domain.
 
@@ -454,21 +443,12 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind_to_index_buffer()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +
                        vertex_list.index_start * self.index_element_size)
-
-        self.index_buffer.unbind()
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
 
 class IndexedVertexList(VertexList):

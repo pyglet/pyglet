@@ -127,10 +127,174 @@ from pyglet import graphics
 from pyglet.gl import *
 from pyglet.event import EventDispatcher
 from pyglet.text import runlist
-from pyglet.graphics import shader
 from pyglet.font.base import grapheme_break
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+
+layout_vertex_source = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+    in vec3 tex_coords;
+    in vec3 translation;
+    in vec2 anchor;
+    in float rotation;
+
+    out vec4 text_colors;
+    out vec2 texture_coords;
+    out vec4 vert_position;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_neganchor = mat4(1.0);
+
+    void main()
+    {
+        m_anchor[3][0] = anchor.x;
+        m_anchor[3][1] = anchor.y;
+        m_neganchor[3][0] = -anchor.x;
+        m_neganchor[3][1] = -anchor.y;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+
+        vert_position = vec4(position + translation, 1.0);
+        text_colors = colors;
+        texture_coords = tex_coords.xy;
+    }
+"""
+
+layout_fragment_source = """#version 330 core
+    in vec4 text_colors;
+    in vec2 texture_coords;
+    in vec4 vert_position;
+
+    out vec4 final_colors;
+
+    uniform sampler2D text;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
+
+    void main()
+    {
+        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
+layout_fragment_image_source = """#version 330 core
+    in vec4 text_colors;
+    in vec2 texture_coords;
+    in vec4 vert_position;
+
+    uniform sampler2D image_texture;
+
+    out vec4 final_colors;
+
+    uniform sampler2D text;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
+
+    void main()
+    {
+        final_colors = texture(image_texture, texture_coords.xy);
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
+decoration_vertex_source = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+    in vec3 translation;
+    in vec2 anchor;
+    in float rotation;
+
+    out vec4 vert_colors;
+    out vec4 vert_position;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_neganchor = mat4(1.0);
+
+    void main()
+    {
+        m_anchor[3][0] = anchor.x;
+        m_anchor[3][1] = anchor.y;
+        m_neganchor[3][0] = -anchor.x;
+        m_neganchor[3][1] = -anchor.y;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+
+        vert_position = vec4(position + translation, 1.0);
+        vert_colors = colors;
+    }
+"""
+
+decoration_fragment_source = """#version 330 core
+    in vec4 vert_colors;
+    in vec4 vert_position;
+
+    out vec4 final_colors;
+
+    uniform bool scissor;
+    uniform vec4 scissor_area;
+
+    void main()
+    {   
+        final_colors = vert_colors;
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
+
+def get_default_layout_shader():
+    return pyglet.gl.current_context.create_program((layout_vertex_source, 'vertex'),
+                                                    (layout_fragment_source, 'fragment'))
+
+
+def get_default_image_layout_shader():
+    return pyglet.gl.current_context.create_program((layout_vertex_source, 'vertex'),
+                                                    (layout_fragment_image_source, 'fragment'))
+
+
+def get_default_decoration_shader():
+    return pyglet.gl.current_context.create_program((decoration_vertex_source, 'vertex'),
+                                                    (decoration_fragment_source, 'fragment'))
+
 
 _distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
 
@@ -503,186 +667,7 @@ class _InvalidRange:
         return self.end > self.start
 
 
-layout_vertex_source = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 tex_coords;
-    in vec3 translation;
-    in vec2 anchor;
-    in float rotation;
-
-    out vec4 text_colors;
-    out vec2 texture_coords;
-    out vec4 vert_position;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    mat4 m_rotation = mat4(1.0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_neganchor = mat4(1.0);
-
-    void main()
-    {
-        m_anchor[3][0] = anchor.x;
-        m_anchor[3][1] = anchor.y;
-        m_neganchor[3][0] = -anchor.x;
-        m_neganchor[3][1] = -anchor.y;
-        m_rotation[0][0] =  cos(-radians(rotation));
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
-
-        vert_position = vec4(position + translation, 1.0);
-        text_colors = colors;
-        texture_coords = tex_coords.xy;
-    }
-"""
-
-layout_fragment_source = """#version 330 core
-    in vec4 text_colors;
-    in vec2 texture_coords;
-    in vec4 vert_position;
-
-    out vec4 final_colors;
-
-    uniform sampler2D text;
-    uniform bool scissor;
-    uniform vec4 scissor_area;
-
-    void main()
-    {
-        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        }
-    }
-"""
-
-layout_fragment_image_source = """#version 330 core
-    in vec4 text_colors;
-    in vec2 texture_coords;
-    in vec4 vert_position;
-    
-    uniform sampler2D image_texture;
-
-    out vec4 final_colors;
-
-    uniform sampler2D text;
-    uniform bool scissor;
-    uniform vec4 scissor_area;
-
-    void main()
-    {
-        final_colors = texture(image_texture, texture_coords.xy);
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        }
-    }
-"""
-
-decoration_vertex_source = """#version 330 core
-    in vec3 position;
-    in vec4 colors;
-    in vec3 translation;
-    in vec2 anchor;
-    in float rotation;
-
-    out vec4 vert_colors;
-    out vec4 vert_position;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    mat4 m_rotation = mat4(1.0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_neganchor = mat4(1.0);
-
-    void main()
-    {
-        m_anchor[3][0] = anchor.x;
-        m_anchor[3][1] = anchor.y;
-        m_neganchor[3][0] = -anchor.x;
-        m_neganchor[3][1] = -anchor.y;
-        m_rotation[0][0] =  cos(-radians(rotation));
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
-
-        vert_position = vec4(position + translation, 1.0);
-        vert_colors = colors;
-    }
-"""
-
-decoration_fragment_source = """#version 330 core
-    in vec4 vert_colors;
-    in vec4 vert_position;
-
-    out vec4 final_colors;
-
-    uniform bool scissor;
-    uniform vec4 scissor_area;
-
-    void main()
-    {   
-        final_colors = vert_colors;
-        if (scissor == true) {
-            if (vert_position.x < scissor_area[0]) discard;                     // left
-            if (vert_position.y < scissor_area[1]) discard;                     // bottom
-            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        }
-    }
-"""
-
-
-def get_default_layout_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_text_layout_shader
-    except AttributeError:
-        pyglet.gl.current_context.pyglet_text_layout_shader = shader.ShaderProgram(
-            shader.Shader(layout_vertex_source, 'vertex'),
-            shader.Shader(layout_fragment_source, 'fragment'),
-        )
-        return pyglet.gl.current_context.pyglet_text_layout_shader
-
-
-def get_default_image_layout_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_text_layout_image_shader
-    except AttributeError:
-        pyglet.gl.current_context.pyglet_text_layout_image_shader = shader.ShaderProgram(
-            shader.Shader(layout_vertex_source, 'vertex'),
-            shader.Shader(layout_fragment_image_source, 'fragment'),
-        )
-        return pyglet.gl.current_context.pyglet_text_layout_image_shader
-
-
-def get_default_decoration_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_text_decoration_shader
-    except AttributeError:
-        pyglet.gl.current_context.pyglet_text_decoration_shader = shader.ShaderProgram(
-            shader.Shader(decoration_vertex_source, 'vertex'),
-            shader.Shader(decoration_fragment_source, 'fragment'),
-        )
-        return pyglet.gl.current_context.pyglet_text_decoration_shader
+# ####################
 
 
 class TextLayoutGroup(graphics.Group):

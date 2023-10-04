@@ -136,12 +136,13 @@ for more information about running and writing tests.
 ## Contact
 
 pyglet is developed by many individual volunteers, and there is no central point of contact. If you have a question
-about developing with pyglet, or you wish to contribute, please join the [mailing list] or the [discord] server.
+about developing with pyglet, or you wish to contribute, please join the [mailing list], [discord] server, or [subreddit].
 
 For legal issues, please contact [Alex Holkner](mailto:Alex.Holkner@gmail.com).
 
 [discord]: https://discord.gg/QXyegWe
 [mailing list]: http://groups.google.com/group/pyglet-users
+[subreddit]: https://www.reddit.com/r/pyglet/
 [documentation]: https://pyglet.readthedocs.io
 [wiki]:  https://github.com/pyglet/pyglet/wiki
 [pypi]:  https://pypi.org/project/pyglet/

@@ -1,9 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
-from pyglet.util import with_metaclass
 
-
-class AbstractListener(with_metaclass(ABCMeta, object)):
+class AbstractListener(metaclass=ABCMeta):
     """The listener properties for positional audio.
 
     You can obtain the singleton instance of this class by calling

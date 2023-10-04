@@ -101,21 +101,15 @@ fragment_source = """#version 150 core
 
 
 def get_default_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_shapes_default_shader
-    except AttributeError:
-        _default_vert_shader = pyglet.graphics.shader.Shader(vertex_source, 'vertex')
-        _default_frag_shader = pyglet.graphics.shader.Shader(fragment_source, 'fragment')
-        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
-        pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
-        return default_shader_program
+    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+                                                    (fragment_source, 'fragment'))
 
 
 def _rotate_point(center, point, angle):
     prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
     now_angle = prev_angle + angle
     r = math.dist(point, center)
-    return (center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle))
+    return center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle)
 
 
 def _sat(vertices, point):

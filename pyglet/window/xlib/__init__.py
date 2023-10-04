@@ -1,9 +1,12 @@
+import locale
 import unicodedata
 import urllib.parse
+
 from ctypes import *
 from functools import lru_cache
 
 import pyglet
+
 from pyglet.window import WindowException, MouseCursorException
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
@@ -47,8 +50,7 @@ XA_ATOM = 4
 
 XDND_VERSION = 5
 
-# Do we have the November 2000 UTF8 extension?
-_have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
+_have_utf8 = locale.getlocale()[1] == 'UTF-8'
 
 # symbol,ctrl -> motion mapping
 _motion_map = {

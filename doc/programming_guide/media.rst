@@ -2,7 +2,7 @@ Playing Sound and Video
 =======================
 
 pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, XAudio2, DirectSound, or Pulseaudio, permitting hardware-accelerated
+either OpenAL, XAudio2, DirectSound, or PulseAudio, permitting hardware-accelerated
 mixing and surround-sound 3D positioning. Video is played into OpenGL
 textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
@@ -24,10 +24,15 @@ small number of short sounds, in which case those applications need not distribu
 Audio drivers
 -------------
 
-pyglet can use OpenAL, XAudio2, DirectSound, or Pulseaudio to play back audio. Only one
-of these drivers can be used in an application. In most cases you won't need
-to concern yourself with choosing a driver, but you can manually select one if
-desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
+pyglet can use OpenAL, XAudio2, DirectSound, or PulseAudio to play
+sound. Only one driver can be used at a time, but the selection can
+be changed by altering the configuration and restarting the program.
+
+The default driver preference order works well for most users. However,
+you may override it by setting a different preference sequence before
+the :py:mod:`pyglet.media` module is loaded. See
+:ref:`guide-audio-driver-order` to learn more.
+
 The available drivers depend on your operating system:
 
     .. list-table::
@@ -44,49 +49,76 @@ The available drivers depend on your operating system:
           -
         * - XAudio2
           -
-          - Pulseaudio
+          - PulseAudio [#pulseaudiof]_
 
-The audio driver can be set through the ``audio`` key of the
-:py:data:`pyglet.options` dictionary. For example::
+.. [#pulseaudiof] The :ref:`guide-pulseaudio` driver has limitations.
+     For audio-intensive programs, consider using :ref:`guide-openal`.
+
+.. [#openalf] OpenAL does not come preinstalled on Windows and some
+     Linux distributions.
+
+.. _guide-audio-driver-order:
+
+Choosing the audio driver
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``'audio'`` key of the :py:data:`pyglet.options` dictionary
+specifies the audio driver preference order.
+
+On import, the :mod:`pyglet.media` will try each entry from first to
+last until it either finds a working driver or runs out of entries. For
+example, the default is equivalent to setting the following value::
+
+   pyglet.options['audio'] = ('xaudio2', 'directsound', 'openal', 'pulse', 'silent')
+
+You can also set a custom preference order. For example, we could add
+this line before importing the media module::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'xaudio2', 'directsound', 'silent')
 
-This tells pyglet to try using the OpenAL driver first, and if not available
-to try Pulseaudio, XAudio2 and DirectSound in that order. If all else fails,
-no driver will be instantiated. The ``audio`` option can be a list of any of these
-strings, giving the preference order for each driver:
+It tells pyglet to try using the OpenAL driver first. If is not
+available,  try Pulseaudio, XAudio2, and DirectSound in that order.
+If all else fails, no driver will be instantiated and the game will
+run silently.
+
+The value for the ``'audio'`` key can be a list or tuple which contains
+one or more of the following strings:
 
     .. list-table::
         :header-rows: 1
 
         * - String
           - Audio driver
-        * - ``openal``
+        * - ``'openal'``
           - OpenAL
-        * - ``directsound``
+        * - ``'directsound'``
           - DirectSound
-        * - ``xaudio2``
+        * - ``'xaudio2'``
           - XAudio2
-        * - ``pulse``
-          - Pulseaudio
-        * - ``silent``
+        * - ``'pulse'``
+          - PulseAudio
+        * - ``'silent'``
           - No audio output
 
-You must set the ``audio`` option before importing :mod:`pyglet.media`.
-You  can alternatively set it through an environment variable;
+You must set any custom ``'audio'`` preference order before importing
+:mod:`pyglet.media`. This can also be set through an environment variable;
 see :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
 driver.
 
+.. _guide-xaudio2:
+
 XAudio2
-^^^^^^^^^^^
+^^^^^^^
 XAudio2 is only available on Windows Vista and above and is the replacement of
 DirectSound. This provides hardware accelerated audio support for newer operating
 systems.
 
 Note that in some stripped down versions of Windows 10, XAudio2 may not be available
 until the required DLL's are installed.
+
+.. _guide-directsound:
 
 DirectSound
 ^^^^^^^^^^^
@@ -95,25 +127,116 @@ DirectSound is available only on Windows, and is installed by default.
 pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not
 support hardware audio mixing or surround sound.
 
+.. _guide-openal:
+
 OpenAL
 ^^^^^^
 
-OpenAL is included with Mac OS X. Windows users can download a generic driver
-from `openal.org`_, or from their sound device's manufacturer. Most Linux
-distributions will have OpenAL available in the repositories for download.
-For example, Arch users can ``pacman -S openal`` and Ubuntu users can ``apt install libopenal1``.
+The favored driver for Mac OS X, but also available on other systems.
 
-Pulse
-^^^^^
+This driver has the following advantages:
 
-Pulseaudio can also be used directly on Linux, and is installed by default
-with most modern Linux distributions. Pulseaudio does not support positional
-audio, and is limited to stereo. It is recommended to use OpenAL if positional
-audio is required.
+* Either preinstalled or easy to install on supported platforms.
+* Implements features which may be absent from other drivers or
+  OS-specific versions of their backing APIs.
 
-.. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
-    distributions. It can be downloaded separately from your audio device
-    manufacturer or `openal.org <https://www.openal.org/downloads>`_
+Its main downsides are:
+
+* Not guaranteed to be installed on platforms other than Mac OS X
+* On recent Windows versions, the :ref:`guide-xaudio2` and
+  :ref:`guide-directsound` backends may support more features.
+
+Windows users can download an OpenAL implementation from `openal.org`_
+or their sound device's manufacturer.
+
+On Linux, the following apply:
+
+* It can usually be installed through your distro's package manager.
+* It may already be installed as a dependency of other packages.
+* It lacks the limitations of the :ref:`guide-pulseaudio` driver.
+
+The commands below should install OpenAL on the most common Linux
+distros:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Common Linux Distros
+      - Install Command
+
+    * - Ubuntu, Pop!_OS, Debian
+      - ``apt install libopenal1``
+
+    * - Arch, Manjaro
+      - ``pacman -S openal``
+
+    * - Fedora, Nobara
+      - ``dnf install openal-soft``
+
+You may need to prefix these commands with either ``sudo`` or another
+command. Consult your distro's documentation for more information.
+
+.. _guide-pulseaudio:
+
+PulseAudio
+^^^^^^^^^^
+
+The backend for this driver is nearly universally supported.
+
+Even distros using PipeWire often come with a PulseAudio compatibility
+layer preinstalled. If this driver fails to initialize, consult your
+distro's documentation to learn which audio back-ends you can install.
+
+This driver has the following downsides:
+
+#. Limited features compared to other drivers
+#. A bug which can crash your program under certain conditions.
+
+Missing features
+""""""""""""""""
+
+Although PulseAudio can theoretically support advanced multi-channel
+audio, the pyglet driver does not. The following features will not
+work properly:
+
+#. Positional audio: automatically changing the volume for individual
+   audio channels based on the position of the sound source
+#. Integration with surround sound
+
+Switching to :ref:`guide-openal` should automatically enable them.
+
+The bug
+"""""""
+
+.. _pulse-bug: https://github.com/pyglet/pyglet/issues/952
+
+The driver will initialize correctly, but pyglet will crash
+during execution.
+
+The traceback will contain a message like the one below:
+
+.. code-block:: console
+
+   Assertion 'q->front' failed at pulsecore/queue.c:81, function pa_queue_push(). Aborting.
+
+The following conditions can trigger the crash:
+
+#. A debugger paused or resumed the program while audio is playing
+#. Unpredictably when 2 or more sounds are playing
+
+The easiest fix is installing :ref:`installing OpenAL <guide-openal>`
+and restarting the program.
+
+See `the GitHub issue <pulse-bug_>`_ for more information. The following
+are currently unclear:
+
+#. How different PulseAudio implementations affect the bug (PipeWire vs original)
+#. How often the bug occurs for users on less common distros
+#. Its full details; it is believed to be an unpredictable
+   `concurrency issue involving locks <https://github.com/pyglet/pyglet/issues/952#issuecomment-1716821550>`_.
+#. Whether it is worth fixing; the workarounds are easy and PulseAudio
+   is being replaced by PipeWire.
+
 
 Supported media types
 ---------------------

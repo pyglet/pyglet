@@ -97,19 +97,31 @@ the number of seconds until the event loop needs to iterate again (unless
 there is an earlier user-input event); or ``None`` if the loop can wait
 for input indefinitely.
 
-Dispatching events manually
----------------------------
 
-Earlier versions of pyglet and certain other windowing toolkits such as
-PyGame and SDL require the application developer to write their own event
-loop. This is usually just an inconvenience compared to
-:py:func:`pyglet.app.run`, but can be necessary in some situations when
-combining pyglet with other toolkits.
+Creating a Custom Event Loop
+----------------------------
 
-A simple event loop usually has the following form::
+Many windowing toolkits requie the application developer to write their own
+event loop. This is also possible in pyglet, but is usually just an inconvenience
+compared to :py:func:`pyglet.app.run`. It can be necessary in some situations,
+such as when combining pyglet with other toolkits, but is strongly discouraged
+for the following reasons:
+
+* Keeping track of delta times between frames, and maintaining a stable frame
+  rate can be challenging. It is difficult to write a manual event loop that does
+  not waste CPU cycles and is still responsive to user input.
+* The :py:class:`~pyglet.app.EventLoop` class provides plenty of hooks for most
+  toolkits to be integrated without needing to resort to a manual event loop.
+* Because :py:class:`~pyglet.app.EventLoop` is tuned for specific operating
+  systems, it is more responsive to user events, and continues calling clock
+  functions while windows are being resized, and (on macOS) the menu bar is
+  being tracked.
+
+With that out of the way, a manual event loop usually has the following form::
 
     while True:
         pyglet.clock.tick()
+        pyglet.app.platform_event_loop.step(timeout)
 
         for window in pyglet.app.windows:
             window.switch_to()
@@ -117,26 +129,15 @@ A simple event loop usually has the following form::
             window.dispatch_event('on_draw')
             window.flip()
 
+The call to :py:func:`pyglet.clock.tick` is required for ensuring scheduled
+functions are called, including the internal data pump functions for playing
+sounds, animations, and video.
+
 The :py:meth:`~pyglet.window.Window.dispatch_events` method checks the window's
 operating system event queue for user input and dispatches any events found.
 The method does not wait for input -- if there are no events pending, control is
 returned to the program immediately.
 
-The call to :py:func:`pyglet.clock.tick` is required for ensuring scheduled
-functions are called, including the internal data pump functions for playing
-sounds, animations, and video.
-
-While it is possible to write your own event loop in this way, it is strongly
-discouraged for the following reasons:
-
-* The :py:class:`~pyglet.app.EventLoop` class provides plenty of hooks for most
-  toolkits to be integrated without needing to resort to a manual event loop.
-* Because :py:class:`~pyglet.app.EventLoop` is tuned for specific operating
-  systems, it is more responsive to user events, and continues calling clock
-  functions while windows are being resized, and (on macOS) the menu bar is
-  being tracked.
-* It is difficult to write a manual event loop that does not waste CPU cycles
-  and is still responsive to user input.
-
-The capability for writing manual event loops remains for legacy support and
-extreme cases where the developer knows what they are doing.
+The :py:meth:`~pyglet.window.Window.dispatch_event('on_draw')` method is optional
+if you are catching this Window event. If you are not using this event, your
+draw calls (`Batch.draw()`) should go here instead.
