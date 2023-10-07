@@ -109,7 +109,9 @@ class Player(pyglet.event.EventDispatcher):
         self._playlists = deque()
         self._audio_player = None
 
+        self._context = pyglet.gl.current_context
         self._texture = None
+
         # Desired play state (not an indication of actual state).
         self._playing = False
 
@@ -455,9 +457,12 @@ class Player(pyglet.event.EventDispatcher):
 
         image = source.get_next_video_frame()
         if image is not None:
-            if self._texture is None:
-                self._create_texture()
-            self._texture.blit_into(image, 0, 0, 0)
+
+            with self._context:
+                if self._texture is None:
+                    self._create_texture()
+                self._texture.blit_into(image, 0, 0, 0)
+
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
 
