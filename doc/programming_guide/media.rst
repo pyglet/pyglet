@@ -1,3 +1,5 @@
+.. _guide-media:
+
 Playing Sound and Video
 =======================
 
@@ -51,8 +53,9 @@ The available drivers depend on your operating system:
           -
           - PulseAudio [#pulseaudiof]_
 
-.. [#pulseaudiof] The :ref:`guide-pulseaudio` driver has limitations.
-     For audio-intensive programs, consider using :ref:`guide-openal`.
+.. [#pulseaudiof] The :ref:`guide-audio-driver-pulseaudio` driver has
+     limitations. For audio-intensive programs, consider using
+     :ref:`guide-audio-driver-openal`.
 
 .. [#openalf] OpenAL does not come preinstalled on Windows and some
      Linux distributions.
@@ -107,7 +110,7 @@ see :ref:`guide_environment-settings`.
 The following sections describe the requirements and limitations of each audio
 driver.
 
-.. _guide-xaudio2:
+.. _guide-audio-driver-xaudio2:
 
 XAudio2
 ^^^^^^^
@@ -118,7 +121,7 @@ systems.
 Note that in some stripped down versions of Windows 10, XAudio2 may not be available
 until the required DLL's are installed.
 
-.. _guide-directsound:
+.. _guide-audio-driver-directsound:
 
 DirectSound
 ^^^^^^^^^^^
@@ -127,7 +130,7 @@ DirectSound is available only on Windows, and is installed by default.
 pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not
 support hardware audio mixing or surround sound.
 
-.. _guide-openal:
+.. _guide-audio-driver-openal:
 
 OpenAL
 ^^^^^^
@@ -143,8 +146,9 @@ This driver has the following advantages:
 Its main downsides are:
 
 * Not guaranteed to be installed on platforms other than Mac OS X
-* On recent Windows versions, the :ref:`guide-xaudio2` and
-  :ref:`guide-directsound` backends may support more features.
+* On recent Windows versions, the :ref:`guide-audio-driver-xaudio2` and
+  :ref:`guide-audio-driver-directsound` backends may support more
+  features.
 
 Windows users can download an OpenAL implementation from `openal.org`_
 or their sound device's manufacturer.
@@ -153,7 +157,8 @@ On Linux, the following apply:
 
 * It can usually be installed through your distro's package manager.
 * It may already be installed as a dependency of other packages.
-* It lacks the limitations of the :ref:`guide-pulseaudio` driver.
+* It lacks the limitations of the :ref:`guide-audio-driver-pulseaudio`
+  driver.
 
 The commands below should install OpenAL on the most common Linux
 distros:
@@ -176,7 +181,7 @@ distros:
 You may need to prefix these commands with either ``sudo`` or another
 command. Consult your distro's documentation for more information.
 
-.. _guide-pulseaudio:
+.. _guide-audio-driver-pulseaudio:
 
 PulseAudio
 ^^^^^^^^^^
@@ -203,7 +208,7 @@ work properly:
    audio channels based on the position of the sound source
 #. Integration with surround sound
 
-Switching to :ref:`guide-openal` should automatically enable them.
+Switching to :ref:`guide-audio-driver-openal` should automatically enable them.
 
 The bug
 """""""
@@ -224,8 +229,8 @@ The following conditions can trigger the crash:
 #. A debugger paused or resumed the program while audio is playing
 #. Unpredictably when 2 or more sounds are playing
 
-The easiest fix is installing :ref:`installing OpenAL <guide-openal>`
-and restarting the program.
+The easiest fix is to :ref:`install OpenAL <guide-audio-driver-openal>`
+and restart the program.
 
 See `the GitHub issue <pulse-bug_>`_ for more information. The following
 are currently unclear:
@@ -238,6 +243,8 @@ are currently unclear:
    is being replaced by PipeWire.
 
 
+.. _guide-supportedmedia:
+
 Supported media types
 ---------------------
 
@@ -248,6 +255,8 @@ for FFmpeg. While FFmpeg supports a large array of formats and codecs, it may be
 unnecessarily large dependency when only simple audio playback is needed.
 
 These formats are supported natively under the following systems and codecs:
+
+.. _guide-supportedmedia-wmf:
 
 Windows Media Foundation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -268,6 +277,7 @@ The following is undocumented but known to work on **Windows 10**:
 
 * FLAC
 
+.. _guide-supportedmedia-gstreamer:
 
 GStreamer
 ^^^^^^^^^
@@ -280,6 +290,7 @@ but will often already be installed along with GStreamer.
 * OGG
 * M4A
 
+.. _guide-supportedmedia-coreaudio:
 
 CoreAudio
 ^^^^^^^^^
@@ -295,9 +306,13 @@ Supported on Mac operating systems.
 * SND
 * SD2
 
+.. _guide-supportedmedia-pyogg:
 
 PyOgg
 ^^^^^
+
+.. _pyogg_install: https://pyogg.readthedocs.io/en/latest/installation.html
+
 Supported on Windows, Linux, and Mac operating systems.
 
 PyOgg is a lightweight Python library that provides Python bindings for Opus, Vorbis,
@@ -314,7 +329,10 @@ Supports the following formats:
 * FLAC
 * OPUS
 
-Refer to their installation guide found here: https://pyogg.readthedocs.io/en/latest/installation.html
+To install PyOgg, please see their `installation guide on readthedocs.io
+<pyogg_install_>`_.
+
+.. _guide-supportedmedia-ffmpeg:
 
 FFmpeg
 ^^^^^^
@@ -351,6 +369,8 @@ to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
 fix errors in the current implementation.
+
+.. _guide-media-ffmpeginstall:
 
 FFmpeg installation
 -------------------
@@ -398,12 +418,19 @@ For Linux and Mac OS::
 
     os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
 
-..note:: If your project is going to reply on FFmpeg, it's a good idea to
-         check at runtime that FFmpeg is being properly detected. This can be
-         done with a call to :py:func:`pyglet.media.have_ffmpeg`. If not `True`
-         you can show a message and exit gracefully, rather than crashing later
-         when failing to load media files.
+.. tip:: Prevent crashes by checking for FFmpeg before loading media!
 
+         Call :py:func:`pyglet.media.have_ffmpeg` to check whether
+         FFmpeg was detected correctly. If it returns ``False``, you can
+         take an appropriate action instead of crashing. Examples
+         include:
+
+         * Showing a helpful error in the GUI or console output
+         * Exiting gracefully after the the user clicks OK on a dialog
+         * Limiting the formats your project will attempt to load
+
+
+.. _guide-media-loading:
 
 Loading media
 -------------
@@ -487,6 +514,9 @@ already- loaded :class:`~pyglet.media.Source`::
 
     explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
+
+.. _guide-media-audiosynthesis:
+
 Audio Synthesis
 ---------------
 
@@ -530,6 +560,8 @@ An example of creating an envelope and waveforms::
 The waveforms you create with the synthesis module can be played like any
 other loaded sound. See the next sections for more detail on playback.
 
+.. _guide-media-simpleaudioplayback:
+
 Simple audio playback
 ---------------------
 
@@ -552,6 +584,8 @@ You can call :py:meth:`~pyglet.media.Source.play` on any
 The return value of :py:meth:`~pyglet.media.Source.play` is a
 :py:class:`~pyglet.media.player.Player`, which can either be
 discarded, or retained to maintain control over the sound's playback.
+
+.. _guide-media-controllingplayback:
 
 Controlling playback
 --------------------
@@ -653,14 +687,19 @@ There are several properties that describe the player's current state:
             queued source.
 
 
+.. _guide-media-playbackevents:
+
+Handling playback events
+------------------------
+
 When a player reaches the end of the current source, an :py:meth:`~pyglet.media.Player.on_eos`
 (on end-of-source) event is dispatched. Players have a default handler for this event,
 which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
 attribute has been set to ``True``), or move to the next queued source immediately.
 When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
-event is dispached, and playback stops until another source is queued.
+event is dispatched, and playback stops until another source is queued.
 
-For loop contol you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
+For loop control you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
 at any time, but be aware that unless sufficient time is given for the future
 data to be decoded and buffered there may be a stutter or gap in playback.
 If set well in advance of the end of the source (say, several seconds), there
@@ -673,6 +712,8 @@ or add an additional event as described in the reference. For example::
     my_player.on_eos = my_player.pause
 
 
+.. _guide-media-gaplessplayback:
+
 Gapless playback
 ----------------
 
@@ -684,6 +725,8 @@ with identical audio or video format. First create an instance of
 sources with the :func:`~pyglet.media.SourceGroup.add` method.
 Afterwards, you can queue the :py:class:`~pyglet.media.SourceGroup`
 on a Player as if it was a single source.
+
+.. _guide-media-incorporating_video:
 
 Incorporating video
 -------------------
@@ -702,6 +745,8 @@ format of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``. While the
 texture will typically be created only once and subsequentally updated each
 frame, you should make no such assumption in your application -- future
 versions of pyglet may use multiple texture objects.
+
+.. _guide-media-positionalaudio:
 
 Positional audio
 ----------------
@@ -729,6 +774,8 @@ describe the  position of the user in 3D space.
 
 Note that only mono sounds can be positioned. Stereo sounds will play back as
 normal, and only their volume and pitch properties will affect the sound.
+
+.. _guide-media-tickingtheclock:
 
 Ticking the clock
 -----------------
