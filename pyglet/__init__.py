@@ -92,15 +92,6 @@ if getattr(sys, 'frozen', None):
 #:     this option overrides it (to either force vsync on or off).  If unset,
 #:     or set to None, the `pyglet.window.Window.vsync` property behaves
 #:     as documented.
-#: xsync
-#:     If set (the default), pyglet will attempt to synchronise the drawing of
-#:     double-buffered windows to the border updates of the X11 window
-#:     manager.  This improves the appearance of the window during resize
-#:     operations.  This option only affects double-buffered windows on
-#:     X11 servers supporting the Xsync extension with a window manager
-#:     that implements the _NET_WM_SYNC_REQUEST protocol.
-#:
-#:     .. versionadded:: 1.1
 #: search_local_libs
 #:     If False, pyglet won't try to search for libraries in the script
 #:     directory and its `lib` subdirectory. This is useful to load a local
@@ -129,8 +120,6 @@ options = {
     'debug_x11': False,
     'shadow_window': True,
     'vsync': None,
-    'xsync': True,
-    'xlib_fullscreen_override_redirect': False,
     'search_local_libs': True,
     'win32_gdi_font': False,
     'scale_with_dpi': False,
@@ -163,8 +152,6 @@ _option_types = {
     'debug_x11': bool,
     'shadow_window': bool,
     'vsync': bool,
-    'xsync': bool,
-    'xlib_fullscreen_override_redirect': bool,
     'search_local_libs': bool,
     'win32_gdi_font': bool,
     'scale_with_dpi': bool,
