@@ -597,7 +597,7 @@ class PygletWidget(QOpenGLWidget):
         }
     """
 
-    def __init__(self, width, height, parent, mainWindow):
+    def __init__(self, width, height, parent, mainWindow) -> None:
         super().__init__(parent)
         self.mainWindow = mainWindow
         self.setMinimumSize(width, height)
@@ -687,7 +687,7 @@ class PygletWidget(QOpenGLWidget):
         return self._viewport
 
     @viewport.setter
-    def viewport(self, values: Tuple[int, int, int, int]):
+    def viewport(self, values: Tuple[int, int, int, int]) -> None:
         self._viewport = values
         pr = 1.0
         x, y, w, h = values
@@ -698,7 +698,7 @@ class PygletWidget(QOpenGLWidget):
         return self._projection_matrix
 
     @projection.setter
-    def projection(self, matrix: pyglet.math.Mat4):
+    def projection(self, matrix: pyglet.math.Mat4) -> None:
         with self.ubo as window_block:
             window_block.projection[:] = matrix
 
@@ -715,7 +715,7 @@ class PygletWidget(QOpenGLWidget):
         return self._view_matrix
 
     @view.setter
-    def view(self, matrix: pyglet.math.Mat4):
+    def view(self, matrix: pyglet.math.Mat4) -> None:
 
         with self.ubo as window_block:
             window_block.view[:] = matrix
