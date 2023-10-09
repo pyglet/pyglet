@@ -722,7 +722,7 @@ class PygletWidget(QOpenGLWidget):
         self._view_matrix = matrix
 
 
-def excepthook(exc_type, exc_value, exc_tb):
+def excepthook(exc_type, exc_value, exc_tb) -> None:
     """Replacement for Python's default exception handler function.
 
     See the following for more information:
