@@ -325,10 +325,13 @@ class Ui_MainWindow:
     def setupUi(self, MainWindow: QtWidgets.QMainWindow):
         self._window = MainWindow
 
+        # Set up the central window widget object
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(820, 855)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
+        # Create layout for shader editing
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
@@ -361,12 +364,17 @@ class Ui_MainWindow:
         self.compileShaderBtn.clicked.connect(self.compileClick)
         self.compileShaderBtn.setObjectName("compile_shader_btn")
         self.verticalLayout_3.addWidget(self.compileShaderBtn)
+
+        # Initialize the pyglet widget we'll draw to and lay out the window
         self.openGLWidget = PygletWidget(800, 400, self.centralwidget, self)
         self.openGLWidget.setMinimumSize(QtCore.QSize(800, 400))
         self.openGLWidget.setObjectName("openGLWidget")
         self.verticalLayout_3.addWidget(self.openGLWidget)
         self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
+
+        # Set up the top menu
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 820, 21))
         self.menubar.setObjectName("menubar")
@@ -412,6 +420,7 @@ class Ui_MainWindow:
 
         self.menubar.addAction(self.imageMenu.menuAction())
 
+        # Perform localization & start accepting UI events
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
