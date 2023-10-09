@@ -57,6 +57,7 @@ import os
 import sys
 import traceback
 import argparse
+from pathlib import Path
 
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, Dict, List, Optional
@@ -499,12 +500,14 @@ class Ui_MainWindow:
 
     def loadShaders(self):
         options = self.get_file_dialog_options()
-        fileNames, _ = QFileDialog.getOpenFileNames(
+        file_names, _ = QFileDialog.getOpenFileNames(
             self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
             options=options)
 
-        for fileName in fileNames:
-            ext = os.path.splitext(fileName)[1]
+        for file_name in file_names:
+            file_path = Path(file_name)
+            ext = file_path.suffixes[-1]
+
             if ext == '.vert':
                 dest = self.vertex_source_edit
             elif ext in ('.txt', '.frag'):
@@ -512,9 +515,8 @@ class Ui_MainWindow:
             else:
                 dest = self.fragSourceEdit
 
-            with open(fileName, 'r') as f:
-                text = f.read()
-                dest.setText(text)
+            text = file_path.read_text()
+            dest.setText(text)
 
     def saveShaders(self):
         options = self.get_file_dialog_options()
