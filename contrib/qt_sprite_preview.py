@@ -520,19 +520,17 @@ class Ui_MainWindow:
 
     def saveShaders(self):
         options = self.get_file_dialog_options()
-        fileName, _ = QFileDialog.getSaveFileName(
+        file_name, _ = QFileDialog.getSaveFileName(
             self._window, "Saving Both Shader Files (vert and frag)", "",
             options=options)
 
-        if fileName:
-            vert_filename = f"{fileName}.vert"
-            frag_filename = f"{fileName}.frag"
+        if file_name:
+            base_path = Path(file_name)
+            vert_filename = base_path.with_suffix(".vert")
+            frag_filename = base_path.with_suffix(".frag")
 
-            with open(vert_filename, 'w') as f:
-                f.write(self.vertex_source_edit.toPlainText())
-
-            with open(frag_filename, 'w') as f:
-                f.write(self.fragSourceEdit.toPlainText())
+            vert_filename.write_text(self.vertex_source_edit.toPlainText())
+            frag_filename.write_text(self.fragSourceEdit.toPlainText())
 
     def removeImage(self, actionWidget):
         if self.imageMenu:
