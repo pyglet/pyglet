@@ -60,8 +60,7 @@ import argparse
 from pathlib import Path
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final, Dict, List, Optional
-
+from typing import TYPE_CHECKING, Final, Dict, List, Optional, Tuple
 
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
@@ -479,7 +478,6 @@ class Ui_MainWindow:
             print(f"Failed to compile shader: {err}")
         except Exception as err:
             print("Unexpected error", err)
-
     def loadImages(self) -> None:
         options = self.get_file_dialog_options()
         fileNames, _ = QFileDialog.getOpenFileNames(
@@ -615,7 +613,7 @@ class PygletWidget(QOpenGLWidget):
 
         pyglet.clock.schedule_interval(self.update_time_uniform, 1 / 60.0)
 
-    def wheelEvent(self, event: QWheelEvent):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         super().wheelEvent(event)
         if event.angleDelta().y() > 0:
             self.zoom *= 2
@@ -627,7 +625,7 @@ class PygletWidget(QOpenGLWidget):
         self.view = pyglet.math.Mat4().scale((self.zoom, self.zoom, 1.0))
         event.accept()
 
-    def update_time_uniform(self, dt):
+    def update_time_uniform(self, dt: float) -> None:
         self.elapsed += dt
 
         if self.mainWindow.program:
@@ -641,25 +639,25 @@ class PygletWidget(QOpenGLWidget):
 
             self.mainWindow.program.stop()
 
-    def _pyglet_update(self):
+    def _pyglet_update(self) -> None:
         # Tick the pyglet clock, so scheduled events can work.
         pyglet.clock.tick()
 
         # Force widget to update, otherwise paintGL will not be called.
         self.update()  # self.updateGL() for pyqt5
 
-    def paintGL(self):
+    def paintGL(self) -> None:
         """Pyglet equivalent of on_draw event for window"""
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.batch.draw()
 
-    def resizeGL(self, width, height):
+    def resizeGL(self, width: int, height: int) -> None:
         self.projection = pyglet.math.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
         self.viewport = 0, 0, width, height
 
-    def initializeGL(self):
+    def initializeGL(self) -> None:
         """Call anything that needs a context to be created."""
 
         self._projection_matrix = pyglet.math.Mat4()
@@ -678,25 +676,24 @@ class PygletWidget(QOpenGLWidget):
         self.viewport = 0, 0, self.width(), self.height()
 
     @property
-    def viewport(self):
+    def viewport(self) -> Tuple[int, int, int, int]:
         """The Window viewport
 
         The Window viewport, expressed as (x, y, width, height).
 
-        :rtype: (int, int, int, int)
         :return: The viewport size as a tuple of four ints.
         """
         return self._viewport
 
     @viewport.setter
-    def viewport(self, values):
+    def viewport(self, values: Tuple[int, int, int, int]):
         self._viewport = values
         pr = 1.0
         x, y, w, h = values
         pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     @property
-    def projection(self):
+    def projection(self) -> pyglet.math.Mat4:
         return self._projection_matrix
 
     @projection.setter
@@ -707,14 +704,12 @@ class PygletWidget(QOpenGLWidget):
         self._projection_matrix = matrix
 
     @property
-    def view(self):
+    def view(self) -> pyglet.math.Mat4:
         """The OpenGL window view matrix. Read-write.
 
         The default view is an identity matrix, but a custom
         :py:class:`pyglet.math.Mat4` instance can be set.
         Alternatively, you can supply a flat tuple of 16 values.
-
-        :type: :py:class:`pyglet.math.Mat4`
         """
         return self._view_matrix
 
