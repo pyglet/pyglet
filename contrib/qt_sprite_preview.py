@@ -60,7 +60,7 @@ import argparse
 from pathlib import Path
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Final, Dict, List, Optional, Tuple, Mapping
 
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
@@ -217,23 +217,30 @@ void main()
 
 
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
-    """A sprite group that uses multiple active textures.
-    """
+    """A sprite group which uses multiple textures and samplers."""
 
-    def __init__(self, textures, blend_src, blend_dest, program=None, parent=None):
+    def __init__(
+            self,
+            textures: Mapping[str, pyglet.image.Texture],
+            blend_src: int,
+            blend_dest: int,
+            program: Optional[pyglet.graphics.shader.ShaderProgram] = None,
+            parent: Optional[pyglet.graphics.Group] = None
+    ):
         """Create a sprite group for multiple textures and samplers.
-           All textures must share the same target type.
+
+        All textures must share the same target type.
 
         :Parameters:
-            `textures` : `dict`
-                Textures in samplername : texture.
-            `blend_src` : int
+            `textures` :
+                 A mapping of sampler names to texture data.
+            `blend_src` :
                 OpenGL blend source mode; for example,
                 ``GL_SRC_ALPHA``.
-            `blend_dest` : int
+            `blend_dest` :
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `~pyglet.graphics.Group`
+            `parent` :
                 Optional parent group.
         """
         self.images = textures
