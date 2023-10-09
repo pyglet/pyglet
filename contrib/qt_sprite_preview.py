@@ -469,8 +469,10 @@ class Ui_MainWindow:
     def loadImages(self):
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog
-        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
-                                                  options=options)
+        fileNames, _ = QFileDialog.getOpenFileNames(
+            self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
+            options=options)
+
         for fileName in fileNames:
             if not self.images:
                 self.imageMenu.removeAction(self.noImageAction)
@@ -492,8 +494,10 @@ class Ui_MainWindow:
         options = QFileDialog.Options()
 
         #options |= QFileDialog.DontUseNativeDialog
-        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
-                                                  options=options)
+        fileNames, _ = QFileDialog.getOpenFileNames(
+            self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
+            options=options)
+
         for fileName in fileNames:
             ext = os.path.splitext(fileName)[1]
             if ext == '.vert':
@@ -511,9 +515,10 @@ class Ui_MainWindow:
         options = QFileDialog.Options()
 
         # options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self._window, "Saving Both Shader Files (vert and frag)", "",
+        fileName, _ = QFileDialog.getSaveFileName(
+            self._window, "Saving Both Shader Files (vert and frag)", "",
+            options=options)
 
-                                                  options=options)
         if fileName:
             vert_filename = f"{fileName}.vert"
             frag_filename = f"{fileName}.frag"
