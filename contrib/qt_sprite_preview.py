@@ -314,13 +314,21 @@ class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
 class Ui_MainWindow:
     SPRITE_POSITION = (0, 0)
 
-    def __init__(self):
+    def __init__(self, use_native_file_dialog: bool = True):
+        self.use_native_file_dialog: bool = use_native_file_dialog
+
         self.images = []
 
         self.group = pyglet.graphics.Group()
 
         self.sprite = None
         self.program = None
+
+    def get_file_dialog_options(self):
+        options = QFileDialog.Options()
+        if not self.use_native_file_dialog:
+            options |= QFileDialog.DontUseNativeDialog
+        return options
 
     def setupUi(self, MainWindow: QtWidgets.QMainWindow):
         self._window = MainWindow
@@ -467,8 +475,7 @@ class Ui_MainWindow:
             print("Unexpected error", err)
 
     def loadImages(self):
-        options = QFileDialog.Options()
-        #options |= QFileDialog.DontUseNativeDialog
+        options = self.get_file_dialog_options()
         fileNames, _ = QFileDialog.getOpenFileNames(
             self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
             options=options)
@@ -491,9 +498,7 @@ class Ui_MainWindow:
             self.imageMenu.addAction(action)
 
     def loadShaders(self):
-        options = QFileDialog.Options()
-
-        #options |= QFileDialog.DontUseNativeDialog
+        options = self.get_file_dialog_options()
         fileNames, _ = QFileDialog.getOpenFileNames(
             self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
             options=options)
@@ -512,9 +517,7 @@ class Ui_MainWindow:
                 dest.setText(text)
 
     def saveShaders(self):
-        options = QFileDialog.Options()
-
-        # options |= QFileDialog.DontUseNativeDialog
+        options = self.get_file_dialog_options()
         fileName, _ = QFileDialog.getSaveFileName(
             self._window, "Saving Both Shader Files (vert and frag)", "",
             options=options)
