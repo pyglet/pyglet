@@ -290,14 +290,17 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
 
 class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
 
-    def __init__(self,
-                 imgs, x=0, y=0, z=0,
-                 blend_src=pyglet.gl.GL_SRC_ALPHA,
-                 blend_dest=pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 group=None,
-                 subpixel=False,
-                 program=None):
+    def __init__(
+            self,
+            imgs: Mapping[str, pyglet.image.Texture],
+            x: float = 0, y: float = 0, z: float = 0,
+            blend_src: int = pyglet.gl.GL_SRC_ALPHA,
+            blend_dest: int = pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
+            batch: Optional[pyglet.graphics.Batch] = None,
+            group: Optional[MultiTextureSpriteGroup] = None,
+            subpixel: bool = False,
+            program: pyglet.graphics.shader.ShaderProgram = None
+    ) -> None:
 
         self._x = x
         self._y = y
