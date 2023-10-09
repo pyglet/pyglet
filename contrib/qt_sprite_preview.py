@@ -621,8 +621,9 @@ class PygletWidget(QOpenGLWidget):
             self.zoom /= 2
 
         self.zoom = pyglet.math.clamp(self.zoom, 0.125, 40.0)
+        self.view = pyglet.math.Mat4().scale(pyglet.math.Vec3(
+            self.zoom, self.zoom, 1.0))
 
-        self.view = pyglet.math.Mat4().scale((self.zoom, self.zoom, 1.0))
         event.accept()
 
     def update_time_uniform(self, dt: float) -> None:
