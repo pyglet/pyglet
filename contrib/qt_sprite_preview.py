@@ -704,8 +704,13 @@ class PygletWidget(QOpenGLWidget):
 
         self._view_matrix = matrix
 
-      
+
 def excepthook(exc_type, exc_value, exc_tb):
+    """Replacement for Python's default exception handler function.
+
+    See the following for more information:
+    https://docs.python.org/3/library/sys.html#sys.excepthook
+    """
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print(tb)
 
