@@ -336,7 +336,7 @@ class Ui_MainWindow:
 
         return options
 
-    def setupUi(self, MainWindow: QtWidgets.QMainWindow):
+    def setupUi(self, MainWindow: QtWidgets.QMainWindow) -> None:
         self._window = MainWindow
 
         # Set up the central window widget object
@@ -438,7 +438,7 @@ class Ui_MainWindow:
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def compileClick(self):
+    def compileClick(self) -> None:
         if not self.images:
             print("No images have been loaded.")
             return
@@ -480,7 +480,7 @@ class Ui_MainWindow:
         except Exception as err:
             print("Unexpected error", err)
 
-    def loadImages(self):
+    def loadImages(self) -> None:
         options = self.get_file_dialog_options()
         fileNames, _ = QFileDialog.getOpenFileNames(
             self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
@@ -503,7 +503,7 @@ class Ui_MainWindow:
             self.images.append(image)
             self.imageMenu.addAction(action)
 
-    def loadShaders(self):
+    def loadShaders(self) -> None:
         options = self.get_file_dialog_options()
         file_names, _ = QFileDialog.getOpenFileNames(
             self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
@@ -523,7 +523,7 @@ class Ui_MainWindow:
             text = file_path.read_text()
             dest.setText(text)
 
-    def saveShaders(self):
+    def saveShaders(self) -> None:
         options = self.get_file_dialog_options()
         file_name, _ = QFileDialog.getSaveFileName(
             self._window, "Saving Both Shader Files (vert and frag)", "",
@@ -537,7 +537,7 @@ class Ui_MainWindow:
             vert_filename.write_text(self.vertex_source_edit.toPlainText())
             frag_filename.write_text(self.fragSourceEdit.toPlainText())
 
-    def removeImage(self, actionWidget):
+    def removeImage(self, actionWidget) -> None:
         if self.imageMenu:
             self.imageMenu.removeAction(actionWidget)
 
@@ -554,10 +554,10 @@ class Ui_MainWindow:
             if len(self.images) == 0:
                 self.imageMenu.addAction(self.noImageAction)
 
-    def closeProgram(self):
+    def closeProgram(self) -> None:
         app.exit()
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self, MainWindow) -> None:
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Sprite Shader Previewer"))
         self.label.setText(_translate("MainWindow", "Vertex Source:"))
