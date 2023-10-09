@@ -437,13 +437,18 @@ class Ui_MainWindow:
             self.program = pyglet.graphics.shader.ShaderProgram(vertex_, fragment_)
 
             if len(self.images) == 1:
-                self.sprite = pyglet.sprite.AdvancedSprite(self.images[0], x=self.SPRITE_POSITION[0],
-                                                           y=self.SPRITE_POSITION[1], group=self.group,
-                                                           batch=self.openGLWidget.batch, program=self.program)
+                self.sprite = pyglet.sprite.AdvancedSprite(
+                    self.images[0],
+                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
+                    group=self.group, batch=self.openGLWidget.batch,
+                    program=self.program)
             else:
                 textures = {image.shader_name: image.get_texture() for image in self.images}
-                self.sprite = MultiTextureSprite(textures, x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
-                                                 group=self.group, batch=self.openGLWidget.batch, program=self.program)
+                self.sprite = MultiTextureSprite(
+                    textures,
+                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
+                    group=self.group, batch=self.openGLWidget.batch,
+                    program=self.program)
 
             if self.program:
                 print("Successfully compiled shader.")
