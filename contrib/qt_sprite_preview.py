@@ -397,7 +397,7 @@ class Ui_MainWindow:
 
         MainWindow.setCentralWidget(self.centralwidget)
 
-        # Set up the top menu
+        # Set up the root top menu & status bar
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 820, 21))
         self.menubar.setObjectName("menubar")
@@ -408,6 +408,7 @@ class Ui_MainWindow:
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        # Add menu bar menus, entries, and hotkeys
         self.actionOpen_Image = QtWidgets.QAction(MainWindow)
         self.actionOpen_Image.setObjectName("actionOpen_Image")
         self.actionOpen_Image.triggered.connect(self.loadImages)
