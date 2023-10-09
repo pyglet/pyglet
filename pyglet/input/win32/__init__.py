@@ -12,9 +12,7 @@ from pyglet.input.win32.directinput import get_joysticks
 
 try:
     from pyglet.input.win32.wintab import get_tablets
-except Exception as e:
-    print(e)
-
+except:
     def get_tablets(display=None):
         import warnings
         warnings.warn("Failed to initialize wintab framework.")

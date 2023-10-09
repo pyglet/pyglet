@@ -232,7 +232,7 @@ class XA2SourceCallback(com.COMObject):
         if self.xa2_player:
             self.xa2_player.refill_source_player()
 
-    def onVoiceError(self, pBufferContext, hresult):
+    def OnVoiceError(self, pBufferContext, hresult):
         raise Exception("Error occurred during audio playback.", hresult)
 
 

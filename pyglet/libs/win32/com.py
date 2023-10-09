@@ -36,7 +36,6 @@ an interface.
 
 import sys
 import ctypes
-from typing import Any
 
 from pyglet.util import debug_print
 
