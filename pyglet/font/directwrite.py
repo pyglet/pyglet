@@ -266,13 +266,13 @@ class DWRITE_CLUSTER_METRICS(ctypes.Structure):
 class IDWriteFontFileStream(com.IUnknown):
     _methods_ = [
         ('ReadFileFragment',
-         com.STDMETHOD(c_void_p, POINTER(c_void_p), UINT64, UINT64, POINTER(c_void_p))),
+         com.STDMETHOD(POINTER(c_void_p), UINT64, UINT64, POINTER(c_void_p))),
         ('ReleaseFileFragment',
-         com.STDMETHOD(c_void_p, c_void_p)),
+         com.STDMETHOD(c_void_p)),
         ('GetFileSize',
-         com.STDMETHOD(c_void_p, POINTER(UINT64))),
+         com.STDMETHOD(POINTER(UINT64))),
         ('GetLastWriteTime',
-         com.STDMETHOD(c_void_p, POINTER(UINT64))),
+         com.STDMETHOD(POINTER(UINT64))),
     ]
 
 
@@ -288,7 +288,6 @@ class IDWriteFontFileLoader(com.pIUnknown):
         ('CreateStreamFromKey',
          com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
     ]
-
 
 class IDWriteLocalFontFileLoader(IDWriteFontFileLoader, com.pIUnknown):
     _methods_ = [
@@ -971,6 +970,7 @@ class MyFontFileStream(com.COMObject):
     _interfaces_ = [IDWriteFontFileStream]
 
     def __init__(self, data):
+        super().__init__()
         self._data = data
         self._size = len(data)
         self._ptrs = []
@@ -1003,12 +1003,13 @@ class LegacyFontFileLoader(com.COMObject):
     _interfaces_ = [IDWriteFontFileLoader_LI]
 
     def __init__(self):
+        super().__init__()
         self._streams = {}
 
     def CreateStreamFromKey(self, fontfileReferenceKey, fontFileReferenceKeySize, fontFileStream):
         convert_index = cast(fontfileReferenceKey, POINTER(c_uint32))
 
-        self._ptr = ctypes.cast(self._streams[convert_index.contents.value]._pointers[IDWriteFontFileStream],
+        self._ptr = ctypes.cast(self._streams[convert_index.contents.value].as_interface(IDWriteFontFileStream),
                                 POINTER(IDWriteFontFileStream))
         fontFileStream[0] = self._ptr
         return 0
@@ -1021,6 +1022,7 @@ class MyEnumerator(com.COMObject):
     _interfaces_ = [IDWriteFontFileEnumerator]
 
     def __init__(self, factory, loader):
+        super().__init__()
         self.factory = cast(factory, IDWriteFactory)
         self.key = "pyglet_dwrite"
         self.size = len(self.key)
@@ -1079,13 +1081,14 @@ class LegacyCollectionLoader(com.COMObject):
     _interfaces_ = [IDWriteFontCollectionLoader]
 
     def __init__(self, factory, loader):
+        super().__init__()
         self._enumerator = MyEnumerator(factory, loader)
 
     def AddFontData(self, fonts):
         self._enumerator.AddFontData(fonts)
 
     def CreateEnumeratorFromKey(self, factory, key, key_size, enumerator):
-        self._ptr = ctypes.cast(self._enumerator._pointers[IDWriteFontFileEnumerator],
+        self._ptr = ctypes.cast(self._enumerator.as_interface(IDWriteFontFileEnumerator),
                                 POINTER(IDWriteFontFileEnumerator))
 
         enumerator[0] = self._ptr
@@ -2389,7 +2392,7 @@ class Win32DirectWriteFont(base.Font):
 
             # Note: RegisterFontLoader takes a pointer. However, for legacy we implement our own callback interface.
             # Therefore we need to pass to the actual pointer directly.
-            cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader_LI])
+            cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
 
             cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
             cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
@@ -2443,7 +2446,7 @@ class Win32DirectWriteFont(base.Font):
                 cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
 
                 cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
-                cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader_LI])
+                cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
 
             cls._font_collection_loader.AddFontData(cls._font_cache)
 
