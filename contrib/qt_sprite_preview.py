@@ -545,7 +545,7 @@ class Ui_MainWindow:
             vert_filename.write_text(self.vertex_source_edit.toPlainText())
             frag_filename.write_text(self.fragSourceEdit.toPlainText())
 
-    def removeImage(self, actionWidget) -> None:
+    def removeImage(self, actionWidget: QtWidgets.QAction) -> None:
         if self.imageMenu:
             self.imageMenu.removeAction(actionWidget)
 
@@ -565,7 +565,7 @@ class Ui_MainWindow:
     def closeProgram(self) -> None:
         app.exit()
 
-    def retranslateUi(self, MainWindow) -> None:
+    def retranslateUi(self, MainWindow: QtWidgets.QMainWindow) -> None:
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Sprite Shader Previewer"))
         self.label.setText(_translate("MainWindow", "Vertex Source:"))
