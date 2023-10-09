@@ -322,7 +322,7 @@ class Ui_MainWindow:
         self.sprite = None
         self.program = None
 
-    def setupUi(self, MainWindow):
+    def setupUi(self, MainWindow: QtWidgets.QMainWindow):
         self._window = MainWindow
 
         MainWindow.setObjectName("MainWindow")
@@ -709,12 +709,18 @@ def excepthook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print(tb)
 
-   
+
 if __name__ == "__main__":
+    # Create the base Qt application and initialize the UI
     app = QtWidgets.QApplication(sys.argv)
     ui = Ui_MainWindow()
+    qt_window = QtWidgets.QMainWindow()
+    ui.setupUi(qt_window)
+    qt_window.show()
+
+    # Replace the default exception handling *after* everything is
+    # initialized to avoid swallowing fatal errors such as GL issues.
     sys.excepthook = excepthook
-    window = QtWidgets.QMainWindow()
-    ui.setupUi(window)
-    window.show()
+
+    # Start the application and return its exit code
     sys.exit(app.exec_())
