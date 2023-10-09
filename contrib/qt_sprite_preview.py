@@ -252,8 +252,8 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         for idx, name in enumerate(self.images):
             try:
                 self.program[name] = idx
-            except Exception:
-                print(f"Uniform: {name} not found.")
+            except pyglet.graphics.shader.ShaderException as e:
+                print(e)
 
         self.program.stop()
 
