@@ -226,7 +226,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             blend_dest: int,
             program: Optional[pyglet.graphics.shader.ShaderProgram] = None,
             parent: Optional[pyglet.graphics.Group] = None
-    ):
+    ) -> None:
         """Create a sprite group for multiple textures and samplers.
 
         All textures must share the same target type.
@@ -257,7 +257,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
 
         self.program.stop()
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
 
         for i, texture in enumerate(self.images.values()):
@@ -267,22 +267,22 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
         glActiveTexture(GL_TEXTURE0)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.texture!r}-{int(self.texture.id)})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
                 self.images == other.textures and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((id(self.parent),
                      id(self.images),
                      self.blend_src, self.blend_dest))
