@@ -325,10 +325,15 @@ class Ui_MainWindow:
         self.sprite = None
         self.program = None
 
-    def get_file_dialog_options(self):
+    def get_file_dialog_options(self) -> QFileDialog.Options:
+        """Convert instance attributes to a file dialog options object.
+
+        You may want to expand on this in your own application.
+        """
         options = QFileDialog.Options()
         if not self.use_native_file_dialog:
             options |= QFileDialog.DontUseNativeDialog
+
         return options
 
     def setupUi(self, MainWindow: QtWidgets.QMainWindow):
