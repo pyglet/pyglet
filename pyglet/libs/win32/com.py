@@ -317,7 +317,9 @@ class COMObject:
 
             def Release(self):
                 if self._vrefcount <= 0:
-                    raise RuntimeError(f"Bad memory management of {self}")
+                    assert _debug_com(
+                        f"COMObject {self}: Release while refcount was {self._vrefcount}"
+                    )
                 self._vrefcount -= 1
                 return self._vrefcount
 
