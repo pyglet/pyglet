@@ -90,6 +90,15 @@ parser = argparse.ArgumentParser(
     '''),
     formatter_class=argparse.RawTextHelpFormatter)
 
+# On Python 3.9+, argparse.BooleanOptionalAction is more concise
+# See https://docs.python.org/3.9/library/argparse.html#action
+parser.add_argument(
+    '--use-qt-file-dialog', dest='native_file_dialog', action='store_false',
+    help="Use Qt's file chooser instead of the system's. Helpful on Gnome DE."
+)
+parser.set_defaults(native_file_dialog=True)
+
+
 # Generate options help text lines
 backend_column_width: Final[int] = max(map(len, valid_backends))
 help_lines: List[str] = ["Which Qt binding to use.\n"]
@@ -337,7 +346,12 @@ class Ui_MainWindow:
     def get_file_dialog_options(self) -> QFileDialog.Options:
         """Convert instance attributes to a file dialog options object.
 
-        You may want to expand on this in your own application.
+        At the moment, it supports choosing which dialog to use. This is
+        helpful on certain Gnome and tiling Linux desktop configurations
+        which can have issues with the system file picker.
+
+        You may want to expand on this in your own application with
+        additional options.
         """
         options = QFileDialog.Options()
         if not self.use_native_file_dialog:
@@ -747,7 +761,7 @@ def excepthook(exc_type, exc_value, exc_tb) -> None:
 if __name__ == "__main__":
     # Create the base Qt application and initialize the UI
     app = QtWidgets.QApplication(sys.argv)
-    ui = Ui_MainWindow()
+    ui = Ui_MainWindow(use_native_file_dialog=arguments.native_file_dialog)
     qt_window = QtWidgets.QMainWindow()
     ui.setupUi(qt_window)
     qt_window.show()
