@@ -99,3 +99,8 @@ def new_rgba_color():
 @fixture(params=[NEW_RGB_COLOR, NEW_RGBA_COLOR])
 def new_rgb_or_rgba_color(request):
     return request.param
+
+
+@fixture(params=[180, -180])
+def new_nonzero_rotation(request) -> float:
+    return request.param
