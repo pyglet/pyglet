@@ -97,7 +97,6 @@ class XlibWindow(BaseWindow):
     _x_screen_id = None             # X screen index
     _x_ic = None                    # X input context
     _window = None                  # Xlib window handle
-    _override_redirect = False
 
     _x = 0
     _y = 0                          # Last known window position
@@ -253,22 +252,12 @@ class XlibWindow(BaseWindow):
             self.canvas = XlibCanvas(self.display, self._view)
 
             self.context.attach(self.canvas)
-            self.context.set_vsync(self._vsync) # XXX ?
+            self.context.set_vsync(self._vsync)  # XXX ?
 
-            # Setting null background pixmap disables drawing the background,
-            # preventing flicker while resizing (in theory).
-            #
-            # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration if
-            #            this is called.  As it doesn't seem to have any
-            #            effect anyway, it's just commented out.
-            # xlib.XSetWindowBackgroundPixmap(self._x_display, self._window, 0)
-
-            self._enable_xsync = (pyglet.options['xsync'] and
-                                  self.display._enable_xsync and
-                                  self.config.double_buffer)
+            self._enable_xsync = self.display._enable_xsync and self.config.double_buffer
 
             # Set supported protocols
-            protocols = []
+            protocols = list()
             protocols.append(xlib.XInternAtom(self._x_display, asbytes('WM_DELETE_WINDOW'), False))
             if self._enable_xsync:
                 protocols.append(xlib.XInternAtom(self._x_display,
@@ -301,8 +290,8 @@ class XlibWindow(BaseWindow):
                 self._xdnd_format = None
                 self._xdnd_position = (0, 0)  # For position callback.
 
-                VERSION = c_ulong(int(XDND_VERSION))
-                ptr = pointer(VERSION)
+                _version = c_ulong(int(XDND_VERSION))
+                ptr = pointer(_version)
 
                 xlib.XChangeProperty(self._x_display, self._window,
                                      self._xdnd_atoms['XdndAware'], XA_ATOM, 32,
@@ -313,16 +302,8 @@ class XlibWindow(BaseWindow):
         attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
 
-        self._override_redirect = False
         if self._fullscreen:
-            if pyglet.options['xlib_fullscreen_override_redirect']:
-                # Try not to use this any more, it causes problems; disabled
-                # by default in favour of _NET_WM_STATE_FULLSCREEN.
-                attributes.override_redirect = self._fullscreen
-                attributes_mask |= xlib.CWOverrideRedirect
-                self._override_redirect = True
-            else:
-                self._set_wm_state('_NET_WM_STATE_FULLSCREEN')
+            self._set_wm_state('_NET_WM_STATE_FULLSCREEN')
 
         if self._fullscreen:
             xlib.XMoveResizeWindow(self._x_display, self._window,
@@ -429,10 +410,6 @@ class XlibWindow(BaseWindow):
                 break
         xlib.XSelectInput(self._x_display, self._window, self._default_event_mask)
         self._mapped = True
-
-        if self._override_redirect:
-            # Possibly an override_redirect issue.
-            self.activate()
 
         self._update_view_size()
 
@@ -1426,11 +1403,6 @@ class XlibWindow(BaseWindow):
 
         modifiers = self._translate_modifiers(ev.xbutton.state)
         if ev.type == xlib.ButtonPress:
-            # override_redirect issue: manually activate this window if
-            # fullscreen.
-            if self._override_redirect and not self._active:
-                self.activate()
-
             if ev.xbutton.button == 4:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:

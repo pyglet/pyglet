@@ -34,6 +34,8 @@ class Timer:
             if m >= 5:
                 self.label.color = (180, 0, 0, 255)
 
+        window.draw(dt=dt)
+
 
 @window.event
 def on_key_press(symbol, modifiers):
@@ -59,7 +61,6 @@ timer = Timer()
 
 # Set timer and redraw update rate to 30 FPS
 pyglet.clock.schedule_interval(timer.update, 1/30.0)
-pyglet.clock.schedule_interval(window.draw, 1/30)
 
 # Launch the application
 pyglet.app.run()
