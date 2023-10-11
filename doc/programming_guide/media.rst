@@ -3,24 +3,27 @@
 Playing Sound and Video
 =======================
 
-pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, XAudio2, DirectSound, or PulseAudio, permitting hardware-accelerated
-mixing and surround-sound 3D positioning. Video is played into OpenGL
-textures, and so can be easily manipulated in real-time by applications
-and incorporated into 3D environments.
+pyglet can load and play many audio and video formats, often with
+support for surround sound and video effects.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_ v4 or v5, an
-optional component available for Linux, Windows and Mac OS X. FFmpeg needs
-to be installed separately.
+In practice, WAV files always load and MP3 usually does. The exact
+formats you can load are determined by which of the following are available:
 
-If FFmpeg is not present, pyglet will at a minimum be able to play WAV files
-only. Depending on the OS, an additional limited amount of compressed formats
-may also be supported, but only WAV is guaranteed (see "Supported media types
-" below). the This may be sufficient for many applications that require only a
-small number of short sounds, in which case those applications need not distribute FFmpeg.
+#. The built-in pyglet WAV file decoder (always available)
+#. Platform-specific APIs and libraries
+#. PyOgg
+#. `FFmpeg`_ version 4 or 5 (other versions not supported)
+
+Video is played into OpenGL textures, allowing real-time manipulation
+by applications. Examples include use in 3D environments or shader-based
+effects.
+
+Audio is played back with one of the following: OpenAL, XAudio2,
+DirectSound, or PulseAudio. Hardware-accelerated mixing is available
+on all of them. 3D positional audio and surround sound features are
+available on all back-ends other than PulseAudio.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
-
 .. _openal.org: https://www.openal.org/downloads
 
 Audio drivers
