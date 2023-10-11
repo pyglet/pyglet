@@ -339,8 +339,11 @@ To install PyOgg, please see their `installation guide on readthedocs.io
 
 FFmpeg
 ^^^^^^
-FFmpeg requires an external dependency, please see installation instructions
-in the next section below.
+
+.. note:: pyglet requires installing specific FFmpeg versions.
+
+          Please see :ref:`guide-media-ffmpeginstall` to learn
+          more.
 
 With FFmpeg, many common and less-common formats are supported. Due to the
 large number of combinations of audio and video codecs, options, and container
