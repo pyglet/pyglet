@@ -54,6 +54,7 @@ class ShapesDemo(pyglet.window.Window):
         self.square.rotation = self.time * 15
         self.rectangle.y = 200 + math.sin(self.time) * 190
         self.circle.radius = 75 + math.sin(self.time * 1.17) * 25
+        self.triangle.rotation = self.time * 15
 
         self.line.x = 360 + math.sin(self.time * 0.81) * 360
         self.line.x2 = 360 + math.sin(self.time * 1.34) * 360

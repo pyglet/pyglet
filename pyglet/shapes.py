@@ -191,6 +191,7 @@ class ShapeBase(ABC):
     """
 
     _rgba = (255, 255, 255, 255)
+    _rotation = 0
     _visible = True
     _x = 0
     _y = 0
@@ -251,6 +252,29 @@ class ShapeBase(ABC):
         """
         raise NotImplementedError("_update_vertices must be defined"
                                   "for every ShapeBase subclass")
+    @property
+    def rotation(self) -> float:
+        """Clockwise rotation of the shape in degrees.
+
+        It will be rotated about its (anchor_x, anchor_y) position,
+        which defaults to the first vertex point of the shape.
+
+        For most shapes, this is the lower left corner. The shapes
+        below default to the points their ``radius`` values are
+        measured from:
+
+            * :py:class:`.Circle`
+            * :py:class:`.Ellipse`
+            * :py:class:`.Arc`
+            * :py:class:`.Sector`
+            * :py:class:`.Star`
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation: float) -> None:
+        self._rotation = rotation
+        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     def draw(self):
         """Draw the shape at its current position.
@@ -553,22 +577,6 @@ class Arc(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
-    def rotation(self):
-        """Clockwise rotation of the arc, in degrees.
-
-        The arc will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
-
-    @property
     def angle(self):
         """The angle of the arc, in degrees.
 
@@ -630,6 +638,7 @@ class BezierCurve(ShapeBase):
                 Optional parent group of the curve.
         """
         self._points = list(points)
+        self._x, self._y = self._points[0]
         self._t = t
         self._segments = segments
         self._num_verts = self._segments * 2
@@ -656,7 +665,7 @@ class BezierCurve(ShapeBase):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._points[0]) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_vertices(self):
         if not self._visible:
@@ -903,22 +912,6 @@ class Ellipse(ShapeBase):
         self._b = value
         self._update_vertices()
 
-    @property
-    def rotation(self):
-        """Clockwise rotation of the arc, in degrees.
-
-        The arc will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
-
 
 class Sector(ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=360.0, start_angle=0,
@@ -1048,22 +1041,6 @@ class Sector(ShapeBase):
     def radius(self, value):
         self._radius = value
         self._update_vertices()
-
-    @property
-    def rotation(self):
-        """Clockwise rotation of the sector, in degrees.
-
-        The sector will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 class Line(ShapeBase):
@@ -1287,22 +1264,6 @@ class Rectangle(ShapeBase):
         self._height = value
         self._update_vertices()
 
-    @property
-    def rotation(self):
-        """Clockwise rotation of the rectangle, in degrees.
-
-        The Rectangle will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
-
 
 class BorderedRectangle(ShapeBase):
     def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
@@ -1449,22 +1410,6 @@ class BorderedRectangle(ShapeBase):
     def height(self, value):
         self._height = value
         self._update_vertices()
-
-    @property
-    def rotation(self):
-        """Clockwise rotation of the rectangle, in degrees.
-
-        The Rectangle will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
     @property
     def border_color(self):
@@ -1772,17 +1717,6 @@ class Star(ShapeBase):
         self._num_spikes = value
         self._update_vertices()
 
-    @property
-    def rotation(self):
-        """Rotation of the star, in degrees.
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
-
 
 class Polygon(ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255, 255), batch=None, group=None):
@@ -1806,6 +1740,7 @@ class Polygon(ShapeBase):
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._rotation = 0
         self._coordinates = list(coordinates)
+        self._x, self._y = self._coordinates[0]
         self._num_verts = (len(self._coordinates) - 2) * 3
 
         r, g, b, *a = color
@@ -1827,7 +1762,7 @@ class Polygon(ShapeBase):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._coordinates[0]) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_vertices(self):
         if not self._visible:
@@ -1846,22 +1781,6 @@ class Polygon(ShapeBase):
 
             # Flattening the list before setting vertices to it.
             self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
-
-    @property
-    def rotation(self):
-        """Clockwise rotation of the polygon, in degrees.
-
-        The Polygon will be rotated about its (anchor_x, anchor_y)
-        position.
-
-        :type: float
-        """
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
 
 __all__ = 'Arc', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector'

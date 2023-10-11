@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Print details of a media file that pyglet can open (requires FFmpeg).
 
 Usage::
@@ -7,12 +5,6 @@ Usage::
     media_info.py <filename>
 
 """
-
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import sys
 import pyglet
 
@@ -85,5 +77,5 @@ if __name__ == '__main__':
         source = pyglet.media.load(filename, streaming=True)
         print_source_info(source)
         del source
-    except pyglet.media.MediaDecodeException:
+    except pyglet.media.codecs.MediaException:
         print(f'Codec not available to open: {filename}')

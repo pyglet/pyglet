@@ -101,6 +101,11 @@ def new_rgb_or_rgba_color(request):
     return request.param
 
 
+@fixture(params=[180, -180])
+def new_nonzero_rotation(request) -> float:
+    return request.param
+
+
 def new_color_expected_alpha(new_rgb_or_rgba_color):
     return expected_alpha_for_color(new_rgb_or_rgba_color)
 
