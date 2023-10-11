@@ -339,16 +339,28 @@ To install PyOgg, please see their `installation guide on readthedocs.io
 
 FFmpeg
 ^^^^^^
+.. _FFmpeg's license overview: https://www.ffmpeg.org/legal.html
 
-.. note:: pyglet requires installing specific FFmpeg versions.
+.. note:: pyglet requires installing FFmpeg 4.X or 5.X
 
-          Please see :ref:`guide-media-ffmpeginstall` to learn
-          more.
+          See :ref:`guide-media-ffmpeginstall` to learn more.
 
-With FFmpeg, many common and less-common formats are supported. Due to the
-large number of combinations of audio and video codecs, options, and container
-formats, it is difficult to provide a complete yet useful list. Some of the
-supported audio formats are:
+FFmpeg is best when you need to support the maximum number of formats
+and encodings. Its main downsides are:
+
+* Large download size
+* Software license(s) which may be incompatible with certain projects
+
+See :ref:`guide-ffmpeg-licenses` to learn more.
+
+Supported Formats
+"""""""""""""""""
+
+It is impossible to list all its features here due to the large number
+of audio and video codecs, compile options, and container formats FFmpeg
+supports.
+
+Some of the audio formats it supports include:
 
 * AU
 * MP2
@@ -357,7 +369,7 @@ supported audio formats are:
 * WAV
 * WMA
 
-Some of the supported video formats are:
+Some of the video formats it supports include:
 
 * AVI
 * DivX
@@ -370,11 +382,40 @@ Some of the supported video formats are:
 * WMV
 * Webm
 
-For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
-to try playing back your target file with the ``media_player.py`` example.
+The easiest way to check whether a file will load through FFmpeg is to
+try playing it through the ``media_player.py`` example. New releases of
+FFmpeg may fix bugs and add support for new formats.
 
-New versions of FFmpeg as they are released may support additional formats, or
-fix errors in the current implementation.
+.. _guide-ffmpeg-licenses:
+
+FFmpeg & licenses
+"""""""""""""""""
+
+FFmpeg's code uses different licenses for different parts.
+
+The core of the project uses a modified LGPL license. However, certain
+parts of the project as well as certain builds of use the GPL. Use of
+software or components which use one or both of these licenses may be
+restricted by some organizations.
+
+pyglet's FFmpeg bindings do not rely on the optional GPL-licensed parts.
+Therefore, most projects should be free to use any license they choose
+for their own code as long as they use one of the following approaches:
+
+* Require users install FFmpeg themselves using either:
+
+  * The :ref:`guide-media-ffmpeginstall` section on this page
+  * Custom instructions for a specific FFmpeg version
+
+* Make FFmpeg optional as described at the end of
+  :ref:`guide-media-ffmpeginstall`
+* Bundle an LGPL-only build of FFmpeg
+
+See the following to learn more:
+
+* `FFmpeg's license overview`_
+* `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
+* `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
