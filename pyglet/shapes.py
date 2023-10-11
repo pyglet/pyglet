@@ -631,6 +631,7 @@ class BezierCurve(ShapeBase):
                 Optional parent group of the curve.
         """
         self._points = list(points)
+        self._x, self._y = self._points[0]
         self._t = t
         self._segments = segments
         self._num_verts = self._segments * 2
@@ -657,7 +658,7 @@ class BezierCurve(ShapeBase):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._points[0]) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_vertices(self):
         if not self._visible:
@@ -1732,6 +1733,7 @@ class Polygon(ShapeBase):
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._rotation = 0
         self._coordinates = list(coordinates)
+        self._x, self._y = self._coordinates[0]
         self._num_verts = (len(self._coordinates) - 2) * 3
 
         r, g, b, *a = color
@@ -1753,7 +1755,7 @@ class Polygon(ShapeBase):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._coordinates[0]) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_vertices(self):
         if not self._visible:
