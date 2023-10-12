@@ -282,6 +282,8 @@ class COMObject:
         super().__init_subclass__(**kwargs)
 
         implemented_leaf_interfaces = cls.__dict__.get('_interfaces_', ())
+        if not implemented_leaf_interfaces:
+            raise TypeError("At least one interface must be defined to use a COMObject")
 
         for interface_type in implemented_leaf_interfaces:
             for other in implemented_leaf_interfaces:
