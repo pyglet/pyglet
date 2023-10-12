@@ -297,16 +297,16 @@ class COMObject:
         _vtbl_pointers = []
         implemented_methods = {}
 
-        all_implemented_interfaces = []
+        # Map all leaf and inherited interfaces to the offset of the vtable containing
+        # their implementations
         _interface_to_vtbl_offset = {}
         for i, interface_type in enumerate(implemented_leaf_interfaces):
             bases = interface_type.get_interface_inheritance()
-            all_implemented_interfaces.extend(bases)
             for base in bases:
                 if base not in _interface_to_vtbl_offset:
                     _interface_to_vtbl_offset[base] = i * _ptr_size
 
-        if IUnknown in all_implemented_interfaces:
+        if IUnknown in _interface_to_vtbl_offset:
             def QueryInterface(self, iid_ptr, res_ptr):
                 ctypes.cast(res_ptr, ctypes.POINTER(ctypes.c_void_p))[0] = 0
                 return E_NOINTERFACE
