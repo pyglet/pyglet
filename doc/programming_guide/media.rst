@@ -341,7 +341,7 @@ FFmpeg
 ^^^^^^
 .. _FFmpeg's license overview: https://www.ffmpeg.org/legal.html
 
-.. note:: pyglet requires installing FFmpeg 4.X or 5.X
+.. note:: The most recent pyglet release can use FFmpeg 4.X, 5.X, or 6.X
 
           See :ref:`guide-media-ffmpeginstall` to learn more.
 
@@ -414,8 +414,10 @@ for their own code as long as they use one of the following approaches:
 See the following to learn more:
 
 * `FFmpeg's license overview`_
-* `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
-* `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
+* The license documentation for your specific FFmpeg version:
+  * `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
+  * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
+  * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
@@ -427,7 +429,8 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-Currently Pyglet supports versions 4.x and 5.x of FFmpeg.
+All recent pyglet versions support FFmpeg 4.x and 5.x. To use FFmpeg 6.X,
+you must use pyglet 2.0.8 or later.
 
 Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
