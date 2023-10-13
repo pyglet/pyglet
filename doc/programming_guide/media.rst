@@ -12,7 +12,7 @@ formats you can load are determined by which of the following are available:
 #. The built-in pyglet WAV file decoder (always available)
 #. Platform-specific APIs and libraries
 #. PyOgg
-#. `FFmpeg`_ version 4 or 5 (other versions not supported)
+#. `FFmpeg`_ version 4, 5, or 6
 
 Video is played into OpenGL textures, allowing real-time manipulation
 by applications. Examples include use in 3D environments or shader-based
