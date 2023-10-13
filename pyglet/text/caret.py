@@ -127,6 +127,7 @@ class Caret:
 
         Also disconnects the caret from further layout events.
         """
+        clock.unschedule(self._blink)
         self._list.delete()
         self._layout.remove_handlers(self)
 
