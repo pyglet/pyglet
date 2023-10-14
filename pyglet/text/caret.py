@@ -98,7 +98,7 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, batch, self._group, colors=('Bn', colors))
+        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group, colors=('Bn', colors))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -127,6 +127,7 @@ class Caret:
 
         Also disconnects the caret from further layout events.
         """
+        clock.unschedule(self._blink)
         self._list.delete()
         self._layout.remove_handlers(self)
 
