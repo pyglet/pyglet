@@ -423,6 +423,7 @@ See the following to learn more:
 
 * `FFmpeg's license overview`_
 * The license documentation for your specific FFmpeg version:
+
   * `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
   * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
   * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
