@@ -348,10 +348,13 @@ FFmpeg
           See :ref:`guide-media-ffmpeginstall` to learn more.
 
 FFmpeg is best when you need to support the maximum number of formats
-and encodings. Its main downsides are:
+and encodings. It is also worth considering the following:
 
-* Large download size
-* Software license(s) which may be incompatible with certain projects
+* Support for many formats and container types means large download size
+* FFmpeg's compile options allow it to be built and used under :ref:`either
+  the LGPL or GPL license <guide-ffmpeg-licenses>`
+
+See the following sections to learn more.
 
 See :ref:`guide-ffmpeg-licenses` to learn more.
 
