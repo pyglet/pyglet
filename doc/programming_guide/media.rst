@@ -416,8 +416,8 @@ for their own code as long as they use one of the following approaches:
   * The :ref:`guide-media-ffmpeginstall` section on this page
   * Custom instructions for a specific FFmpeg version
 
-* Make FFmpeg optional as described at the end of
-  :ref:`guide-media-ffmpeginstall`
+* Make FFmpeg optional as described at the end of the
+  :ref:`guide-media-ffmpeginstall` instructions
 * Bundle an LGPL-only build of FFmpeg
 
 See the following to learn more:
