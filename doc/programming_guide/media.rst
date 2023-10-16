@@ -6,8 +6,9 @@ Playing Sound and Video
 pyglet can load and play many audio and video formats, often with
 support for surround sound and video effects.
 
-In practice, WAV files always load and MP3 usually does. The exact
-formats you can load are determined by which of the following are available:
+WAV and MP3 files are the most commonly supported across platforms. The
+formats a specific computer can play are determined by which of the
+following are available:
 
 #. The built-in pyglet WAV file decoder (always available)
 #. Platform-specific APIs and libraries
