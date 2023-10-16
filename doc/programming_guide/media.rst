@@ -368,7 +368,7 @@ the large number of audio and video codecs, options, and container
 formats it supports. Refer to `the FFmpeg documentation`_ for
 more information.
 
-Some of the audio formats it supports include:
+Known supported audio formats include:
 
 * AU
 * MP2
@@ -377,7 +377,7 @@ Some of the audio formats it supports include:
 * WAV
 * WMA
 
-Some of the video formats it supports include:
+Known supported video formats include:
 
 * AVI
 * DivX
