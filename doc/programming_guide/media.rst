@@ -361,9 +361,12 @@ See :ref:`guide-ffmpeg-licenses` to learn more.
 Supported Formats
 """""""""""""""""
 
-It is impossible to list all its features here due to the large number
-of audio and video codecs, compile options, and container formats FFmpeg
-supports.
+.. _the FFmpeg documentation: https://ffmpeg.org/ffmpeg.html
+
+It is difficult to provide a complete list of FFmpeg's features due to
+the large number of audio and video codecs, options, and container
+formats it supports. Refer to `the FFmpeg documentation`_ for
+more information.
 
 Some of the audio formats it supports include:
 
