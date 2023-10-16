@@ -170,14 +170,14 @@ class Attribute:
         self.name = name
         self.location = location
         self.count = count
-
         self.gl_type = gl_type
-        self.c_type = _c_types[gl_type]
         self.normalize = normalize
 
-        self.align = sizeof(self.c_type)
-        self.size = count * self.align
-        self.stride = self.size
+        self.c_type = _c_types[gl_type]
+
+        self.element_size = sizeof(self.c_type)
+        self.byte_size = count * self.element_size
+        self.stride = self.byte_size
 
     def enable(self):
         """Enable the attribute."""
@@ -216,15 +216,11 @@ class Attribute:
 
         :rtype: `AbstractBufferRegion`
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
-        ptr_type = POINTER(self.c_type * array_count)
-        return buffer.get_region(byte_start, byte_size, ptr_type)
+        return buffer.get_region(start, count)
 
     def set_region(self, buffer, start, count, data):
-        """Set the data over a region of the buffer.
 
+        """Set the data over a region of the buffer.
         :Parameters:
             `buffer` : AbstractMappable`
                 The buffer to modify.
@@ -234,9 +230,10 @@ class Attribute:
                 Number of vertices to set.
             `data` : A sequence of data components.
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
+        byte_start = self.stride * start        # byte offset
+        byte_size = self.stride * count         # number of bytes
+        array_count = self.count * count        # umber of values
+
         data = (self.c_type * array_count)(*data)
         buffer.set_data_region(data, byte_start, byte_size)
 

@@ -11,6 +11,8 @@ the buffer.
 import sys
 import ctypes
 
+from functools import cache
+
 import pyglet
 from pyglet.gl import *
 
@@ -222,27 +224,28 @@ class BufferObject(AbstractBuffer):
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
-class MappableBufferObject(BufferObject, AbstractMappable):
+class AttributeBufferObject(BufferObject, AbstractMappable):
     """A buffer with system-memory backed store.
 
-    Updates to the data via `set_data`, `set_data_region` and `map` will be
-    held in local memory until `bind` is called.  The advantage is that fewer
-    OpenGL calls are needed, increasing performance.
-
-    There may also be less performance penalty for resizing this buffer.
-
-    Updates to data via :py:meth:`map` are committed immediately.
+    Updates to the data via `set_data` and `set_data_region` will be held
+    in local memory until `buffer_data` is called.  The advantage is that
+    fewer OpenGL calls are needed, which can increasing performance at the
+    expense of system memory.
     """
-    def __init__(self, size, usage=GL_DYNAMIC_DRAW):
-        super(MappableBufferObject, self).__init__(size, usage)
+    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+        super().__init__(size, usage)
+        self._size = size
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
-    def bind(self):
-        # Commit pending data
-        super(MappableBufferObject, self).bind()
+        self.attribute_stride = attribute.stride
+        self.attribute_count = attribute.count
+        self.attribute_ctype = attribute.c_type
+
+    def bind(self, target=GL_ARRAY_BUFFER):
+        super().bind(target)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
@@ -253,7 +256,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
             self._dirty_max = 0
 
     def set_data(self, data):
-        super(MappableBufferObject, self).set_data(data)
+        super().set_data(data)
         ctypes.memmove(self.data, data, self.size)
         self._dirty_min = 0
         self._dirty_max = self.size
@@ -263,17 +266,16 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         self._dirty_min = min(start, self._dirty_min)
         self._dirty_max = max(start + length, self._dirty_max)
 
-    def map(self, invalidate=False):
-        self._dirty_min = 0
-        self._dirty_max = self.size
-        return self.data
+    @cache
+    def get_region(self, start, count):
 
-    def unmap(self):
-        pass
+        byte_start = self.attribute_stride * start        # byte offset
+        byte_size = self.attribute_stride * count         # number of bytes
+        array_count = self.attribute_count * count        # number of values
 
-    def get_region(self, start, size, ptr_type):
-        array = ctypes.cast(self.data_ptr + start, ptr_type).contents
-        return BufferObjectRegion(self, start, start + size, array)
+        ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
+        array = ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
+        return BufferObjectRegion(self, byte_start, byte_start + byte_size, array)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -288,6 +290,8 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
+
+        self.get_region.cache_clear()
 
 
 class BufferObjectRegion:
