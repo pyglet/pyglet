@@ -11,7 +11,7 @@ the buffer.
 import sys
 import ctypes
 
-from functools import cache
+from functools import lru_cache
 
 import pyglet
 from pyglet.gl import *
@@ -97,36 +97,6 @@ class AbstractBuffer:
 
     def delete(self):
         """Delete this buffer, reducing system resource usage."""
-        raise NotImplementedError('abstract')
-
-
-class AbstractMappable:
-
-    def get_region(self, start, size, ptr_type):
-        """Map a region of the buffer into a ctypes array of the desired
-        type.  This region does not need to be unmapped, but will become
-        invalid if the buffer is resized.
-
-        Note that although a pointer type is required, an array is mapped.
-        For example::
-
-            get_region(0, ctypes.sizeof(c_int) * 20, ctypes.POINTER(c_int * 20))
-
-        will map bytes 0 to 80 of the buffer to an array of 20 ints.
-
-        Changes to the array may not be recognised until the region's
-        :py:meth:`AbstractBufferRegion.invalidate` method is called.
-
-        :Parameters:
-            `start` : int
-                Offset into the buffer to map from, in bytes
-            `size` : int
-                Size of the buffer region to map, in bytes
-            `ptr_type` : ctypes pointer type
-                Pointer type describing the array format to create
-
-        :rtype: :py:class:`AbstractBufferRegion`
-        """
         raise NotImplementedError('abstract')
 
 
@@ -224,7 +194,7 @@ class BufferObject(AbstractBuffer):
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
-class AttributeBufferObject(BufferObject, AbstractMappable):
+class AttributeBufferObject(BufferObject):
     """A buffer with system-memory backed store.
 
     Updates to the data via `set_data` and `set_data_region` will be held
@@ -266,7 +236,7 @@ class AttributeBufferObject(BufferObject, AbstractMappable):
         self._dirty_min = min(start, self._dirty_min)
         self._dirty_max = max(start + length, self._dirty_max)
 
-    @cache
+    @lru_cache(maxsize=None)
     def get_region(self, start, count):
 
         byte_start = self.attribute_stride * start        # byte offset
