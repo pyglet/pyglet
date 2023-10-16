@@ -6,7 +6,7 @@ import sys
 from typing import Optional, Union
 
 import pyglet
-from pyglet.customtypes import ByteString
+from pyglet.customtypes import ByteString, CallableArgsKwargs
 
 
 def asbytes(s: Union[str, ByteString]) -> bytes:
@@ -33,7 +33,7 @@ def asstr(s: Optional[Union[str, ByteString]]) -> str:
     return s.decode("utf-8")  # type: ignore
 
 
-def debug_print(enabled_or_option='debug'):
+def debug_print(enabled_or_option: Union[bool, str] = 'debug') -> CallableArgsKwargs[bool]:
     """Get a debug printer that is enabled based on a boolean input or a pyglet option.
     The debug print function returned should be used in an assert. This way it can be
     optimized out when running python with the -O flag.
@@ -59,12 +59,12 @@ def debug_print(enabled_or_option='debug'):
         enabled = pyglet.options.get(enabled_or_option, False)
 
     if enabled:
-        def _debug_print(*args, **kwargs):
+        def _debug_print(*args, **kwargs) -> bool:
             print(*args, **kwargs)
             return True
 
     else:
-        def _debug_print(*args, **kwargs):
+        def _debug_print(*args, **kwargs) -> bool:
             return True
 
     return _debug_print
