@@ -401,10 +401,11 @@ FFmpeg & licenses
 
 FFmpeg's code uses different licenses for different parts.
 
-The core of the project uses a modified LGPL license. However, certain
-optional parts FFmpeg can be compiled with use the GPL. Use of these
-components and any builds which include them may be restricted by some
-organizations. In some rare cases, this extends to both licenses.
+The core of the project uses a modified LGPL license. However, the GPL
+is used for certain optional parts. Using these components, as well as
+bundling FFmpeg binaries which include them, may require full GPL
+compliance. As a result, some organizations may restrict some or all
+use of FFmpeg.
 
 pyglet's FFmpeg bindings do not rely on the optional GPL-licensed parts.
 Therefore, most projects should be free to use any license they choose
