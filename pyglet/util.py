@@ -47,7 +47,7 @@ def debug_print(enabled_or_option: Union[bool, str] = 'debug') -> CallableArgsKw
             assert _debug_media('My debug statement')
 
     :parameters:
-        `enabled_or_options` : bool or str
+        `enabled_or_options` :
             If a bool is passed, debug printing is enabled if it is True. If str is passed
             debug printing is enabled if the pyglet option with that name is True.
 
