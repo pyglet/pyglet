@@ -9,7 +9,7 @@ import pyglet
 from pyglet.customtypes import ByteString
 
 
-def asbytes(s):
+def asbytes(s: Union[str, ByteString]) -> bytes:
     if isinstance(s, bytes):
         return s
     elif isinstance(s, str):
