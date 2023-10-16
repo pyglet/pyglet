@@ -3,8 +3,10 @@
 
 import os
 import sys
+from typing import Optional, Union
 
 import pyglet
+from pyglet.customtypes import ByteString
 
 
 def asbytes(s):
@@ -23,12 +25,12 @@ def asbytes_filename(s):
         return s.encode(encoding=sys.getfilesystemencoding())
 
 
-def asstr(s):
+def asstr(s: Optional[Union[str, ByteString]]) -> str:
     if s is None:
         return ''
     if isinstance(s, str):
         return s
-    return s.decode("utf-8")
+    return s.decode("utf-8")  # type: ignore
 
 
 def debug_print(enabled_or_option='debug'):
