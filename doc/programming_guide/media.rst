@@ -411,7 +411,7 @@ pyglet's FFmpeg bindings do not rely on the optional GPL-licensed parts.
 Therefore, most projects should be free to use any license they choose
 for their own code as long as they use one of the following approaches:
 
-* Require users install FFmpeg themselves using either:
+* Require users to install FFmpeg themselves using either:
 
   * The :ref:`guide-media-ffmpeginstall` section on this page
   * Custom instructions for a specific FFmpeg version
