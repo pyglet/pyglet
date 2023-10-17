@@ -38,12 +38,6 @@ class OpenALObject:
                                   error_code=error_code,
                                   error_string=str(error_string.value))
 
-    @classmethod
-    def _raise_error(cls, message):
-        """Raise an exception. Try to check for OpenAL error code too."""
-        cls._check_error(message)
-        raise OpenALException(message)
-
 
 class OpenALDevice(OpenALObject):
     """OpenAL audio device."""
@@ -53,15 +47,14 @@ class OpenALDevice(OpenALObject):
         if self._al_device is None:
             raise OpenALException('No OpenAL devices.')
 
-    def __del__(self):
-        assert _debug("Delete interface.OpenALDevice")
-        self.delete()
+        self.buffer_pool = OpenALBufferPool()
 
-    def delete(self):
-        if self._al_device is not None:
-            if alc.alcCloseDevice(self._al_device) == alc.ALC_FALSE:
-                self._raise_context_error('Failed to close device.')
-            self._al_device = None
+    def close(self):
+        """Close this ALDevice. No more buffers or contexts may exist on it."""
+        assert _debug("Closing interface.OpenALDevice")
+        if alc.alcCloseDevice(self._al_device) == alc.ALC_FALSE:
+            self._raise_context_error('Failed to close device.')
+        self._al_device = None
 
     @property
     def is_ready(self):
@@ -100,7 +93,9 @@ class OpenALDevice(OpenALObject):
                                   error_string=str(error_string.value))
 
     def _raise_context_error(self, message):
-        """Raise an exception. Try to check for OpenAL error code too."""
+        """Try to check for OpenAL error and raise that, and then
+        definitely raise an error with the given message.
+        """
         self.check_context_error(message)
         raise OpenALException(message)
 
@@ -109,20 +104,26 @@ class OpenALContext(OpenALObject):
     def __init__(self, device, al_context):
         self.device = device
         self._al_context = al_context
+        self._sources = set()
         self.make_current()
 
-    def __del__(self):
-        assert _debug("Delete interface.OpenALContext")
-        self.delete()
+    def delete_sources(self):
+        for s in tuple(self._sources):
+            s.delete()
 
     def delete(self):
-        if self._al_context is not None:
-            # TODO: Check if this context is current
+        assert _debug("Delete interface.OpenALContext")
+
+        if (
+            ctypes.cast(alc.alcGetCurrentContext(), ctypes.c_void_p).value ==
+            ctypes.cast(self._al_context, ctypes.c_void_p).value
+        ):
             alc.alcMakeContextCurrent(None)
             self.device.check_context_error('Failed to make context no longer current.')
-            alc.alcDestroyContext(self._al_context)
-            self.device.check_context_error('Failed to destroy context.')
-            self._al_context = None
+
+        alc.alcDestroyContext(self._al_context)
+        self.device.check_context_error('Failed to destroy context.')
+        self._al_context = None
 
     def make_current(self):
         alc.alcMakeContextCurrent(self._al_context)
@@ -130,34 +131,42 @@ class OpenALContext(OpenALObject):
 
     def create_source(self):
         self.make_current()
-        return OpenALSource(self)
+        new_source = OpenALSource(self)
+        self._sources.add(new_source)
+        return new_source
+
+    def source_deleted(self, source):
+        self._sources.remove(source)
 
 
 class OpenALSource(OpenALObject):
     def __init__(self, context):
-        self.context = weakref.ref(context)
-        self.buffer_pool = OpenALBufferPool(self.context)
+        self.context = context
 
         self._al_source = al.ALuint()
         al.alGenSources(1, self._al_source)
         self._check_error('Failed to create source.')
+
+        self.buffer_pool = context.device.buffer_pool
 
         self._state = None
         self._get_state()
 
         self._owned_buffers = {}
 
-    def __del__(self):
-        assert _debug("Delete interface.OpenALSource")
-        self.delete()
-
     def delete(self):
-        if self.context() and self._al_source is not None:
-            # Only delete source if the context still exists
-            al.alDeleteSources(1, self._al_source)
-            self._check_error('Failed to delete source.')
-            self.buffer_pool.clear()
-            self._al_source = None
+        if self.context is None:
+            assert _debug("Delete interface.OpenAlSource on deleted source, ignoring")
+            return
+
+        assert _debug("Delete interface.OpenALSource")
+        al.alDeleteSources(1, self._al_source)
+        self._check_error('Failed to delete source.')
+        self.context.source_deleted(self)
+
+        self.buffer_pool = None  # Reference breakup
+        self.context = None
+        self._al_source = None
 
     @property
     def is_initial(self):
@@ -207,8 +216,8 @@ class OpenALSource(OpenALObject):
     cone_outer_angle = _float_source_property(al.AL_CONE_OUTER_ANGLE)
     cone_outer_gain = _float_source_property(al.AL_CONE_OUTER_GAIN)
     sec_offset = _float_source_property(al.AL_SEC_OFFSET)
-    sample_offset = _float_source_property(al.AL_SAMPLE_OFFSET)
-    byte_offset = _float_source_property(al.AL_BYTE_OFFSET)
+    sample_offset = _int_source_property(al.AL_SAMPLE_OFFSET)
+    byte_offset = _int_source_property(al.AL_BYTE_OFFSET)
 
     del _int_source_property
     del _float_source_property
@@ -228,18 +237,17 @@ class OpenALSource(OpenALObject):
 
     def clear(self):
         self._set_int(al.AL_BUFFER, al.AL_NONE)
-        while self._owned_buffers:
-            buf_name, buf = self._owned_buffers.popitem()
-            self.buffer_pool.unqueue_buffer(buf)
+        self.buffer_pool.return_buffers(self._owned_buffers.values())
+        self._owned_buffers.clear()
 
     def get_buffer(self):
         return self.buffer_pool.get_buffer()
 
     def queue_buffer(self, buf):
         assert buf.is_valid
-        al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buf.al_buffer))
+        al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buf.al_name))
         self._check_error('Failed to queue buffer.')
-        self._add_buffer(buf)
+        self._owned_buffers[buf.name] = buf
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
@@ -248,8 +256,7 @@ class OpenALSource(OpenALObject):
             buffers = (al.ALuint * processed)()
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
             self._check_error('Failed to unqueue buffers from source.')
-            for buf in buffers:
-                self.buffer_pool.unqueue_buffer(self._pop_buffer(buf))
+            self.buffer_pool.return_buffers([self._owned_buffers.pop(bn) for bn in buffers])
         return processed
 
     def _get_state(self):
@@ -294,14 +301,6 @@ class OpenALSource(OpenALObject):
         x, y, z = map(float, values)
         al.alSource3f(self._al_source, key, x, y, z)
         self._check_error('Failed to set value.')
-
-    def _add_buffer(self, buf):
-        self._owned_buffers[buf.name] = buf
-
-    def _pop_buffer(self, al_buffer):
-        buf = self._owned_buffers.pop(al_buffer, None)
-        assert buf is not None
-        return buf
 
 
 OpenALOrientation = namedtuple("OpenALOrientation", ['at', 'up'])
@@ -392,55 +391,41 @@ class OpenALBuffer(OpenALObject):
         (2, 16): al.AL_FORMAT_STEREO16,
     }
 
-    def __init__(self, al_buffer, context):
-        self._al_buffer = al_buffer
-        self.context = context
-        assert self.is_valid
+    def __init__(self, al_name):
+        self.al_name = al_name
+        self.name = al_name.value
 
-    def __del__(self):
-        assert _debug("Delete interface.OpenALBuffer")
-        self.delete()
+        assert self.is_valid
 
     @property
     def is_valid(self):
         self._check_error('Before validate buffer.')
-        if self._al_buffer is None:
+        if self.al_name is None:
             return False
-        valid = bool(al.alIsBuffer(self._al_buffer))
+        valid = bool(al.alIsBuffer(self.al_name))
         if not valid:
             # Clear possible error due to invalid buffer
             al.alGetError()
         return valid
 
-    @property
-    def al_buffer(self):
-        assert self.is_valid
-        return self._al_buffer
-
-    @property
-    def name(self):
-        assert self.is_valid
-        return self._al_buffer.value
-
     def delete(self):
-        if self._al_buffer is not None and self.context() and self.is_valid:
-            al.alDeleteBuffers(1, ctypes.byref(self._al_buffer))
+        if self.al_name is not None and self.is_valid:
+            al.alDeleteBuffers(1, ctypes.byref(self.al_name))
             self._check_error('Error deleting buffer.')
-            self._al_buffer = None
+            self.al_name = None
 
-    def data(self, audio_data, audio_format, length=None):
+    def data(self, audio_data, audio_format):
         assert self.is_valid
-        length = length or audio_data.length
 
         try:
             al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
         except KeyError:
             raise MediaException(f"OpenAL does not support '{audio_format.sample_size}bit' audio.")
 
-        al.alBufferData(self._al_buffer,
+        al.alBufferData(self.al_name,
                         al_format,
-                        audio_data.data,
-                        length,
+                        audio_data.pointer,
+                        audio_data.length,
                         audio_format.sample_rate)
         self._check_error('Failed to add data to buffer.')
 
@@ -449,18 +434,15 @@ class OpenALBufferPool(OpenALObject):
     """At least Mac OS X doesn't free buffers when a source is deleted; it just
     detaches them from the source.  So keep our own recycled queue.
     """
-    def __init__(self, context):
-        self.context = context
-        self._buffers = []  # list of free buffer names
-
-    def __del__(self):
-        assert _debug("Delete interface.OpenALBufferPool")
-        self.clear()
+    def __init__(self):
+        self._buffers = []
+        """List of free buffer names"""
 
     def __len__(self):
         return len(self._buffers)
 
-    def clear(self):
+    def delete(self):
+        assert _debug("Delete interface.OpenALBufferPool")
         while self._buffers:
             self._buffers.pop().delete()
 
@@ -473,28 +455,25 @@ class OpenALBufferPool(OpenALObject):
         not be modified in any way, and may get changed by subsequent calls to
         get_buffers.
         """
-        buffers = []
-        while number > 0:
-            if self._buffers:
-                b = self._buffers.pop()
-            else:
-                b = self._create_buffer()
+        ret_buffers = []
+        while self._buffers and len(ret_buffers) < number:
+            b = self._buffers.pop()
             if b.is_valid:
-                # Protect against implementations that DO free buffers
-                # when they delete a source - carry on.
-                buffers.append(b)
-                number -= 1
+                ret_buffers.append(b)
+            # Otherwise the buffer doesn't exist on the OpenAL side
+            # anymore, forget about it
 
-        return buffers
+        # If we didn't get enough, create more buffers
+        if (missing := number - len(ret_buffers)) > 0:
+            names = (al.ALuint * missing)()
+            al.alGenBuffers(missing, names)
+            self._check_error('Error generating buffers.')
+            ret_buffers.extend(OpenALBuffer(al.ALuint(name)) for name in names)
 
-    def unqueue_buffer(self, buf):
-        """A buffer has finished playing, free it."""
-        if buf.is_valid:
-            self._buffers.append(buf)
+        return ret_buffers
 
-    def _create_buffer(self):
-        """Create a new buffer."""
-        al_buffer = al.ALuint()
-        al.alGenBuffers(1, al_buffer)
-        self._check_error('Error allocating buffer.')
-        return OpenALBuffer(al_buffer, self.context)
+    def return_buffers(self, buffers):
+        """Throw buffers not used anymore back into the pool."""
+        for buf in buffers:
+            if buf.is_valid:
+                self._buffers.append(buf)

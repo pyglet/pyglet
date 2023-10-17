@@ -82,14 +82,14 @@ def audio_format_3d(request):
 
 @pytest.fixture
 def buffer_(driver, audio_format):
-    buffer = driver.create_buffer(audio_format)
+    buffer = driver.create_buffer(audio_format, int(audio_format.bytes_per_second * 1.0))
     yield buffer
     buffer.delete()
 
 
 @pytest.fixture
 def buffer_3d(driver, audio_format_3d):
-    buffer = driver.create_buffer(audio_format_3d)
+    buffer = driver.create_buffer(audio_format_3d, int(audio_format_3d.bytes_per_second * 1.0))
     assert buffer.is3d
     yield buffer
     buffer.delete()
@@ -122,7 +122,7 @@ def test_driver_create():
 
 
 def test_create_buffer(driver, audio_format):
-    buf = driver.create_buffer(audio_format)
+    buf = driver.create_buffer(audio_format, int(audio_format.bytes_per_second * 1.0))
     del buf
 
 

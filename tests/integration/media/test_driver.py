@@ -10,16 +10,26 @@ pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
 import pyglet.app
+from pyglet.media.player import PlaybackTimer
 from pyglet.media.synthesis import Silence
 
 from .mock_player import MockPlayer
 
 
-class MockPlayerWithMockTime(MockPlayer):
+class _FakeDispatchEvent:
+    def dispatch_event(self, *_, **__):
+        pass
+
+
+class MockPlayerWithMockTime(MockPlayer, _FakeDispatchEvent):
+    def __init__(self, event_loop):
+        super().__init__(event_loop)
+        self.last_seek_time = 0.0
+        self.timer = PlaybackTimer()
 
     @property
     def time(self):
-        return 0
+        return self.timer.get_time()
 
 
 @pytest.fixture
@@ -32,8 +42,8 @@ class SilentTestSource(Silence):
         super().__init__(duration, frequency, sample_rate, envelope)
         self.bytes_read = 0
 
-    def get_audio_data(self, nbytes, compensation_time=0.0):
-        data = super(Silence, self).get_audio_data(nbytes, compensation_time)
+    def get_audio_data(self, nbytes):
+        data = super(Silence, self).get_audio_data(nbytes)
         if data is not None:
             self.bytes_read += data.length
         return data
@@ -114,14 +124,23 @@ def test_audio_player_clear(driver, player):
     audio_player = driver.create_audio_player(source, player)
     try:
         audio_player.play()
+        player.timer.start()
         player.wait(.5)
+
         assert 0. < audio_player.get_time() < 5.
 
         audio_player.stop()
+        player.timer.pause()
+
         source.seek(5.)
+        player.last_seek_time = 5.
+        player.timer.set_time(5.)
         audio_player.clear()
         audio_player.play()
+        player.timer.start()
+
         player.wait(.3)
+
         assert 5. <= audio_player.get_time() < 10.
 
     finally:
@@ -135,6 +154,7 @@ def test_audio_player_time(driver, player):
     audio_player = driver.create_audio_player(source, player)
     try:
         audio_player.play()
+        player.timer.start()
         last_time = audio_player.get_time()
         # Needs to run until at least the initial buffer is processed. Ideal time is 1 sec, so run
         # more than 1 sec.
