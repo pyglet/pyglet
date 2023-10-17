@@ -66,15 +66,13 @@ _gl_types = {
 
 def _make_attribute_property(attribute):
 
-    attrname = attribute.name
-
     def _attribute_getter(self):
-        region = attribute.get_region(attribute.buffer, self.start, self.count)
+        region = attribute.buffer.get_region(self.start, self.count)
         region.invalidate()
         return region.array
 
-    def _attribute_setter(self, values):
-        getattr(self, attrname)[:] = values
+    def _attribute_setter(self, data):
+        attribute.buffer.set_region(self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 

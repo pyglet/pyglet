@@ -207,20 +207,20 @@ class Attribute:
         will be ``3 * 4 = 12``.
 
         :Parameters:
-            `buffer` : `AbstractMappable`
+            `buffer` : `AttributeBufferObject`
                 The buffer to map.
             `start` : int
                 Offset of the first vertex to map.
             `count` : int
                 Number of vertices to map
 
-        :rtype: `AbstractBufferRegion`
+        :rtype: `BufferObjectRegion`
         """
         return buffer.get_region(start, count)
 
     def set_region(self, buffer, start, count, data):
-
         """Set the data over a region of the buffer.
+
         :Parameters:
             `buffer` : AbstractMappable`
                 The buffer to modify.
@@ -230,12 +230,7 @@ class Attribute:
                 Number of vertices to set.
             `data` : A sequence of data components.
         """
-        byte_start = self.stride * start        # byte offset
-        byte_size = self.stride * count         # number of bytes
-        array_count = self.count * count        # umber of values
-
-        data = (self.c_type * array_count)(*data)
-        buffer.set_data_region(data, byte_start, byte_size)
+        buffer.set_region(start, count, data)
 
     def __repr__(self):
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"

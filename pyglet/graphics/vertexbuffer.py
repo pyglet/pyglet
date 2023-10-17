@@ -152,7 +152,8 @@ class BufferObject(AbstractBuffer):
 
     def map(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        ptr = ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
+        ptr = ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY),
+                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def map_range(self, start, size, ptr_type):
@@ -202,6 +203,7 @@ class AttributeBufferObject(BufferObject):
     fewer OpenGL calls are needed, which can increasing performance at the
     expense of system memory.
     """
+
     def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
         super().__init__(size, usage)
         self._size = size
@@ -214,6 +216,8 @@ class AttributeBufferObject(BufferObject):
         self.attribute_count = attribute.count
         self.attribute_ctype = attribute.c_type
 
+        self._array = self.get_region(0, size).array
+
     def bind(self, target=GL_ARRAY_BUFFER):
         super().bind(target)
         size = self._dirty_max - self._dirty_min
@@ -225,27 +229,27 @@ class AttributeBufferObject(BufferObject):
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
 
-    def set_data(self, data):
-        super().set_data(data)
-        ctypes.memmove(self.data, data, self.size)
-        self._dirty_min = 0
-        self._dirty_max = self.size
-
-    def set_data_region(self, data, start, length):
-        ctypes.memmove(self.data_ptr + start, data, length)
-        self._dirty_min = min(start, self._dirty_min)
-        self._dirty_max = max(start + length, self._dirty_max)
-
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
-
-        byte_start = self.attribute_stride * start        # byte offset
-        byte_size = self.attribute_stride * count         # number of bytes
-        array_count = self.attribute_count * count        # number of values
+        byte_start = self.attribute_stride * start  # byte offset
+        byte_size = self.attribute_stride * count  # number of bytes
+        array_count = self.attribute_count * count  # number of values
 
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
         array = ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
         return BufferObjectRegion(self, byte_start, byte_start + byte_size, array)
+
+    def set_region(self, start, count, data):
+        byte_start = self.attribute_stride * start  # byte offset
+        byte_size = self.attribute_stride * count  # number of bytes
+
+        array_start = start * self.attribute_count
+        array_end = count * self.attribute_count + array_start
+
+        self._array[array_start:array_end] = data
+
+        self._dirty_min = min(self._dirty_min, byte_start)
+        self._dirty_max = max(self._dirty_max, byte_start + byte_size)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -261,6 +265,7 @@ class AttributeBufferObject(BufferObject):
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
+        self._array = self.get_region(0, size).array
         self.get_region.cache_clear()
 
 
