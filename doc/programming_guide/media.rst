@@ -3,24 +3,29 @@
 Playing Sound and Video
 =======================
 
-pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, XAudio2, DirectSound, or PulseAudio, permitting hardware-accelerated
-mixing and surround-sound 3D positioning. Video is played into OpenGL
-textures, and so can be easily manipulated in real-time by applications
-and incorporated into 3D environments.
+pyglet can load and play many audio and video formats, often with
+support for surround sound and video effects.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_ v4 or v5, an
-optional component available for Linux, Windows and Mac OS X. FFmpeg needs
-to be installed separately.
+WAV and MP3 files are the most commonly supported across platforms. The
+formats a specific computer can play are determined by which of the
+following are available:
 
-If FFmpeg is not present, pyglet will at a minimum be able to play WAV files
-only. Depending on the OS, an additional limited amount of compressed formats
-may also be supported, but only WAV is guaranteed (see "Supported media types
-" below). the This may be sufficient for many applications that require only a
-small number of short sounds, in which case those applications need not distribute FFmpeg.
+#. The built-in pyglet WAV file decoder (always available)
+#. Platform-specific APIs and libraries
+#. PyOgg
+#. :ref:`guide-supportedmedia-ffmpeg` version 4, 5, or 6
+
+Video is played into OpenGL textures, allowing real-time manipulation
+by applications. Examples include use in 3D environments or shader-based
+effects. To play video, :ref:`guide-supportedmedia-ffmpeg` must be
+installed.
+
+Audio is played back with one of the following: OpenAL, XAudio2,
+DirectSound, or PulseAudio. Hardware-accelerated mixing is available
+on all of them. 3D positional audio and surround sound features are
+available on all back-ends other than PulseAudio.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
-
 .. _openal.org: https://www.openal.org/downloads
 
 Audio drivers
@@ -336,13 +341,34 @@ To install PyOgg, please see their `installation guide on readthedocs.io
 
 FFmpeg
 ^^^^^^
-FFmpeg requires an external dependency, please see installation instructions
-in the next section below.
+.. _FFmpeg's license overview: https://www.ffmpeg.org/legal.html
 
-With FFmpeg, many common and less-common formats are supported. Due to the
-large number of combinations of audio and video codecs, options, and container
-formats, it is difficult to provide a complete yet useful list. Some of the
-supported audio formats are:
+.. note:: The most recent pyglet release can use FFmpeg 4.X, 5.X, or 6.X
+
+          See :ref:`guide-media-ffmpeginstall` to learn more.
+
+FFmpeg is best when you need to support the maximum number of formats
+and encodings. It is also worth considering the following:
+
+* Support for many formats and container types means large download size
+* FFmpeg's compile options allow it to be built and used under :ref:`either
+  the LGPL or GPL license <guide-ffmpeg-licenses>`
+
+See the following sections to learn more.
+
+See :ref:`guide-ffmpeg-licenses` to learn more.
+
+Supported Formats
+"""""""""""""""""
+
+.. _the FFmpeg documentation: https://ffmpeg.org/ffmpeg.html
+
+It is difficult to provide a complete list of FFmpeg's features due to
+the large number of audio and video codecs, options, and container
+formats it supports. Refer to `the FFmpeg documentation`_ for
+more information.
+
+Known supported audio formats include:
 
 * AU
 * MP2
@@ -351,7 +377,7 @@ supported audio formats are:
 * WAV
 * WMA
 
-Some of the supported video formats are:
+Known supported video formats include:
 
 * AVI
 * DivX
@@ -364,11 +390,44 @@ Some of the supported video formats are:
 * WMV
 * Webm
 
-For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
-to try playing back your target file with the ``media_player.py`` example.
+The easiest way to check whether a file will load through FFmpeg is to
+try playing it through the ``media_player.py`` example. New releases of
+FFmpeg may fix bugs and add support for new formats.
 
-New versions of FFmpeg as they are released may support additional formats, or
-fix errors in the current implementation.
+.. _guide-ffmpeg-licenses:
+
+FFmpeg & licenses
+"""""""""""""""""
+
+FFmpeg's code uses different licenses for different parts.
+
+The core of the project uses a modified LGPL license. However, the GPL
+is used for certain optional parts. Using these components, as well as
+bundling FFmpeg binaries which include them, may require full GPL
+compliance. As a result, some organizations may restrict some or all
+use of FFmpeg.
+
+pyglet's FFmpeg bindings do not rely on the optional GPL-licensed parts.
+Therefore, most projects should be free to use any license they choose
+for their own code as long as they use one of the following approaches:
+
+* Require users to install FFmpeg themselves using either:
+
+  * The :ref:`guide-media-ffmpeginstall` section on this page
+  * Custom instructions for a specific FFmpeg version
+
+* Make FFmpeg optional as described at the end of the
+  :ref:`guide-media-ffmpeginstall` instructions
+* Bundle an LGPL-only build of FFmpeg
+
+See the following to learn more:
+
+* `FFmpeg's license overview`_
+* The license documentation for your specific FFmpeg version:
+
+  * `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
+  * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
+  * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
@@ -380,7 +439,8 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-Currently Pyglet supports versions 4.x and 5.x of FFmpeg.
+All recent pyglet versions support FFmpeg 4.x and 5.x. To use FFmpeg 6.X,
+you must use pyglet 2.0.8 or later.
 
 Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
