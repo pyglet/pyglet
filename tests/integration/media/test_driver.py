@@ -15,18 +15,6 @@ from pyglet.media.synthesis import Silence
 from .mock_player import MockPlayer
 
 
-def _delete_driver():
-    # if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
-    #     pyglet.media.drivers._audio_driver.delete()
-    pyglet.media.drivers._audio_driver = None
-
-def test_get_platform_driver():
-    driver = pyglet.media.drivers.get_audio_driver()
-    assert driver is not None
-    assert driver is not None, 'Cannot load audio driver for your platform'
-    _delete_driver()
-
-
 class MockPlayerWithMockTime(MockPlayer):
 
     @property

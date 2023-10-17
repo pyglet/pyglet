@@ -23,7 +23,7 @@ def test_multiple_start_stop(performance):
     with performance.timer(30.):
         for _ in range(100):
             test_start_stop(performance)
-    
+
 
 def test_events():
     enter_mock = mock.MagicMock()
@@ -58,4 +58,3 @@ def test_sleep(performance):
         event_loop.run()
     assert not event_loop.is_running
     assert _sleep.returned.wait(1.)
-
