@@ -55,10 +55,11 @@ def draw(size, mode, **data):
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)
-        attribute.set_region(buffer, 0, size, array)
+        data = (attribute.c_type * len(array))(*array)
+        buffer.set_data(data)
+
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-
         buffers.append(buffer)      # Don't garbage collect it.
 
     glDrawArrays(mode, 0, size)
@@ -108,10 +109,12 @@ def draw_indexed(size, mode, indices, **data):
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)
-        attribute.set_region(buffer, 0, size, array)
+        data = (attribute.c_type * len(array))(*array)
+        buffer.set_data(data)
+
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-        buffers.append(buffer)
+        buffers.append(buffer)      # Don't garbage collect it.
 
     if size <= 0xff:
         index_type = GL_UNSIGNED_BYTE
