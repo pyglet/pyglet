@@ -47,6 +47,13 @@ def get_drivers():
     ids = []
 
     try:
+        from pyglet.media.drivers import silent
+        drivers.append(silent)
+        ids.append('Silent')
+    except:
+        pass
+
+    try:
         from pyglet.media.drivers import pulse
         drivers.append(pulse)
         ids.append('PulseAudio')
@@ -66,6 +73,14 @@ def get_drivers():
         ids.append('DirectSound')
     except:
         pass
+
+    try:
+        from pyglet.media.drivers import xaudio2
+        drivers.append(xaudio2)
+        ids.append('XAudio2')
+    except:
+        pass
+
 
     return {'params': drivers, 'ids': ids}
 
