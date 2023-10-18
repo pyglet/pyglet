@@ -55,6 +55,9 @@ class TestTexture3D(unittest.TestCase):
     def setUp(self):
         self.w = Window(visible=False)
 
+    def tearDown(self) -> None:
+        self.w.close()
+
     def test2(self):
         # Test 2 images of 32x32
         images = [self.create_image(32, 32, i + 1) for i in range(2)]
