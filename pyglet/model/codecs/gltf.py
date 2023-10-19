@@ -1,24 +1,14 @@
 import json
-import struct
+
+from urllib.request import urlopen
 
 import pyglet
 
 from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT
 from pyglet.gl import GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_TRIANGLES
 
-from .. import Model, Material, MaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
-
-# pyglet.graphics types
-_pyglet_types = {
-    GL_BYTE: 'b',
-    GL_UNSIGNED_BYTE: 'B',
-    GL_SHORT: 's',
-    GL_UNSIGNED_SHORT: 'S',
-    GL_UNSIGNED_INT: 'I',
-    GL_FLOAT: 'f',
-}
 
 # struct module types
 _struct_types = {
@@ -55,67 +45,123 @@ _targets = {
     GL_ARRAY_BUFFER: "array",
 }
 
-# GLTF to pyglet shorthand types:
-_attributes = {
-    'POSITION': 'v',
-    'NORMAL': 'n',
-    'TANGENT': None,
-    'TEXCOORD_0': '0t',
-    'TEXCOORD_1': '1t',
-    'COLOR_0': 'c',
-    'JOINTS_0': None,
-    'WEIGHTS_0': None
-}
-
 
 class Buffer:
-    # TODO: support GLB format
-    # TODO: support data uris
-    def __init__(self, length, uri):
-        self._length = length
-        self._uri = uri
+    def __init__(self, data):
+        self._length = data['byteLength']
+        self._uri = data['uri']
+
+        if self._uri.startswith('data'):
+            self._response = urlopen(self._uri)
+            self._file = self._response.file
+        else:
+            self._file = pyglet.resource.file(self._uri, 'rb')
 
     def read(self, offset, length):
-        file = pyglet.resource.file(self._uri, 'rb')
-        file.seek(offset)
-        data = file.read(length)
-        file.close()
-        return data
+        self._file.seek(offset)
+        return self._file.read(length)
+
+    def __del__(self):
+        try:
+            self._file.close()
+        except AttributeError:
+            pass
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self._length})"
 
 
 class BufferView:
-    def __init__(self, buffer, offset, length, target, stride):
-        self.buffer = buffer
-        self.offset = offset
-        self.length = length
-        self.target = target
-        self.stride = stride
+    def __init__(self, data, owner):
+        self.buffer_index = data.get('buffer')
+        self.offset = data.get('byteOffset', 0)
+        self.length = data.get('byteLength')
+        self.target = data.get('target')
+        self.stride = data.get('byteStride', 1)
+
+        self.buffer = owner.buffers[self.buffer_index]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(buffer={self.buffer_index})"
 
 
 class Accessor:
-    # TODO: support sparse accessors
-    def __init__(self, buffer_view, offset, comp_type, count,
-                 maximum, minimum, accessor_type, sparse):
-        self.buffer_view = buffer_view
-        self.offset = offset
-        self.component_type = comp_type
-        self.count = count
-        self.maximum = maximum
-        self.minimum = minimum
-        self.type = accessor_type
-        self.sparse = sparse
-        self.size = _component_sizes[comp_type] * _accessor_type_sizes[accessor_type]
+    def __init__(self, data, owner):
+        self.buffer_view_index = data.get('bufferView')
+        self.byte_offset = data.get('byteOffset')
+        self.component_type = data.get('componentType')
+        self.count = data.get('count')
+        self.type = data.get('type')
+        self.max = data.get('max')
+        self.min = data.get('min')
 
-    def read(self):
-        offset = self.offset + self.buffer_view.offset
-        length = self.size * self.count
-        stride = self.buffer_view.stride or 1
-        # TODO: handle stride
-        data = self.buffer_view.buffer.read(offset, length)
-        return data
+        self.buffer_view = owner.buffer_views[self.buffer_view_index]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(buffer_view={self.buffer_view_index})"
 
 
-def parse_gltf_file(file, filename, batch):
+class Attribute:
+    def __init__(self, name, index):
+        self.name = name
+        self.index = index
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, index={self.index})"
+
+
+class Primitive:
+    def __init__(self, data, owner):
+        self.attributes = {name: Attribute(name, index) for name, index in data.get('attributes').items()}
+        self.indices = data.get('indices')
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(attributes={len(self.attributes)}, indices={self.indices})"
+
+
+class Mesh:
+    def __init__(self, data, owner):
+        self.primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(primitives={len(self.primitives)})"
+
+
+class Node:
+    def __init__(self, data):
+        self.mesh = data.get('mesh')
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(mesh={self.mesh})"
+
+
+class Scene:
+    def __init__(self, data, owner):
+        self.nodes = [owner.nodes[i] for i in data['nodes']]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(nodes={self.nodes})"
+
+
+class GLTF:
+    def __init__(self, gltf_data: dict):
+        self._gltf_data = gltf_data
+        self.version = self._gltf_data['asset']['version']
+
+        self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
+        self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
+        self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
+        self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
+        self.nodes = [Node(data=data) for data in gltf_data['nodes']]
+
+        self.scenes = [Scene(data=data, owner=self) for data in gltf_data['scenes']]
+        self.default_scene = self.scenes[gltf_data['scene']]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}()"
+
+
+def load_gltf(filename, file=None):
 
     if file is None:
         file = pyglet.resource.file(filename, 'r')
@@ -124,101 +170,20 @@ def parse_gltf_file(file, filename, batch):
         file = pyglet.resource.file(filename, 'r')
 
     try:
-        data = json.load(file)
-    except json.JSONDecodeError:
-        raise ModelDecodeException('Json error. Does not appear to be a valid glTF file.')
+        gltf_data = json.load(file)
+    except json.JSONDecodeError as e:
+        raise ModelDecodeException(f"Json error. Does not appear to be a valid glTF file. {e}")
     finally:
         file.close()
 
-    if 'asset' not in data:
-        raise ModelDecodeException('Not a valid glTF file. Asset property not found.')
+    if 'asset' not in gltf_data:
+        raise ModelDecodeException("Not a valid glTF file. Asset property not found.")
     else:
-        if float(data['asset']['version']) < 2.0:
+        if float(gltf_data['asset']['version']) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
 
-    buffers = dict()
-    buffer_views = dict()
-    accessors = dict()
-    materials = dict()
 
-    for i, item in enumerate(data.get('buffers', [])):
-        buffers[i] = Buffer(item['byteLength'], item['uri'])
-
-    for i, item in enumerate(data.get('bufferViews', [])):
-        buffer_index = item['buffer']
-        buffer = buffers[buffer_index]
-        offset = item.get('byteOffset', 0)
-        length = item.get('byteLength')
-        target = item.get('target')
-        stride = item.get('byteStride', 1)
-        buffer_views[i] = BufferView(buffer, offset, length, target, stride)
-
-    for i, item in enumerate(data.get('accessors', [])):
-        buf_view_index = item.get('bufferView')
-        buf_view = buffer_views[buf_view_index]
-        offset = item.get('byteOffset', 0)
-        comp_type = item.get('componentType')
-        count = item.get('count')
-        maxi = item.get('max')
-        mini = item.get('min')
-        acc_type = item.get('type')
-        sparse = item.get('sparse', None)
-        accessors[i] = Accessor(buf_view, offset, comp_type, count, maxi, mini, acc_type, sparse)
-
-    vertex_lists = []
-
-    for mesh_data in data.get('meshes'):
-
-        for primitive in mesh_data.get('primitives', []):
-            indices = None
-            attribute_list = []
-            count = 0
-
-            for attribute_type, i in primitive['attributes'].items():
-                accessor = accessors[i]
-                attrib = _attributes[attribute_type]
-                if not attrib:
-                    # TODO: Add support for these attribute types to pyglet
-                    continue
-                attrib_size = _accessor_type_sizes[accessor.type]
-                pyglet_type = _pyglet_types[accessor.component_type]
-                pyglet_fmt = "{0}{1}{2}".format(attrib, attrib_size, pyglet_type)
-
-                count = accessor.count
-                struct_fmt = str(count * attrib_size) + _struct_types[accessor.component_type]
-                array = struct.unpack('<' + struct_fmt, accessor.read())
-
-                attribute_list.append((pyglet_fmt, array))
-
-            if 'indices' in primitive:
-                indices_index = primitive.get('indices')
-                accessor = accessors[indices_index]
-                attrib_size = _accessor_type_sizes[accessor.type]
-                fmt = str(accessor.count * attrib_size) + _struct_types[accessor.component_type]
-                indices = struct.unpack('<' + fmt, accessor.read())
-
-            # if 'material' in primitive:
-            #     material_index = primitive.get('material')
-            #     color = materials[material_index]
-            #     attribute_list.append(('c4f', color * count))
-
-            diffuse = [1.0, 1.0, 1.0]
-            ambient = [1.0, 1.0, 1.0]
-            specular = [1.0, 1.0, 1.0]
-            emission = [0.0, 0.0, 0.0]
-            shininess = 100.0
-            opacity = 1.0
-            material = Material("Default", diffuse, ambient, specular, emission, shininess, opacity)
-            group = MaterialGroup(material=material)
-
-            if indices:
-                vlist = batch.add_indexed(count, GL_TRIANGLES, group, indices, *attribute_list)
-            else:
-                vlist = batch.add(count, GL_TRIANGLES, group, *attribute_list)
-
-            vertex_lists.append(vlist)
-
-    return vertex_lists
+    return GLTF(gltf_data=gltf_data)
 
 
 ###################################################
@@ -229,15 +194,8 @@ class GLTFModelDecoder(ModelDecoder):
     def get_file_extensions(self):
         return ['.gltf']
 
-    def decode(self, file, filename, batch):
-
-        if not batch:
-            batch = pyglet.graphics.Batch()
-
-        vertex_lists = parse_gltf_file(file=file, filename=filename, batch=batch)
-        textures = {}
-
-        return Model(vertex_lists, textures, batch=batch)
+    def decode(self, filename, file, batch, group):
+        pass
 
 
 def get_decoders():

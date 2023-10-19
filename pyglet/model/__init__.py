@@ -52,9 +52,7 @@ import pyglet
 
 from pyglet import gl
 from pyglet import graphics
-from pyglet.gl import current_context
-from pyglet.math import Mat4, Vec3
-from pyglet.graphics import shader
+from pyglet.math import Mat4
 
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
