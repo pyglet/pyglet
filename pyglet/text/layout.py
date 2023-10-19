@@ -540,18 +540,15 @@ class _GlyphBox(_AbstractBox):
             x1 = x2
 
         if background_vertices:
-            background_indices = []
-            bg_count = len(background_vertices) // 2
+            bg_count = len(background_vertices) // 3
+            background_indices = [(0, 1, 2, 0, 2, 3)[i % 6] for i in range(bg_count * 3)]
             decoration_program = get_default_decoration_shader()
-            for bg_idx in range(bg_count):
-                background_indices.extend([element + (bg_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
-
-            background_list = decoration_program.vertex_list_indexed(bg_count * 4, GL_TRIANGLES, background_indices,
+            background_list = decoration_program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
                                                                      layout.batch, layout.background_decoration_group,
                                                                      position=('f', background_vertices),
                                                                      colors=('Bn', background_colors),
-                                                                     rotation=('f', (rotation,) * 4),
-                                                                     anchor=('f', (anchor_x, anchor_y) * 4))
+                                                                     rotation=('f', (rotation,) * bg_count),
+                                                                     anchor=('f', (anchor_x, anchor_y) * bg_count))
             context.add_list(background_list)
 
         if underline_vertices:
