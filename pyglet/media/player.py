@@ -285,28 +285,17 @@ class Player(pyglet.event.EventDispatcher):
             self.delete()
             self.dispatch_event('on_player_eos')
         else:
-            # XXX: Believe it or not, but this coupled with the fact the audio
-            # player only has a weakref to the source somehow causes the
-            # entire thread to hang upon accessing it in `set_source`.
-            # I am 20% sure this might be a python bug. Whatever; push it to a
-            # local to prevent the freeze.
-            __hold_on = self._source
-            old_audio_format = self._source.audio_format
-            old_video_format = self._source.video_format
-            self._set_source(new_source)
-
             if self._audio_player:
-                if old_audio_format == self._source.audio_format:
-                    self._audio_player.clear()
-                    self._audio_player.set_source(self._source)
+                if self._source.audio_format == new_source.audio_format:
+                    self._audio_player.set_source(new_source)
                 else:
                     self._audio_player.delete()
                     self._audio_player = None
-            if old_video_format != self._source.video_format:
+            if self._source.video_format != new_source.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
-            del __hold_on
+            self._set_source(new_source)
 
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
