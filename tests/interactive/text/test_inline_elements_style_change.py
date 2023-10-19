@@ -1,9 +1,10 @@
 import pytest
+
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
-from pyglet.text import caret, document, layout
-from pyglet.text.layout import TextDecorationGroup, IncrementalTextLayout
+from pyglet.text import caret, document
+from pyglet.text.layout import IncrementalTextLayout
 
 
 doctext = """ELEMENT.py test document.
@@ -42,23 +43,23 @@ doctext = doctext.replace('[element here]', '')
 class TestElement(document.InlineElement):
     vertex_list = None
 
-    def place(self, layout, x, y):
-        ## assert layout.document.text[self._position] == '\x00'
-            ### in bug 538, this fails after two characters are deleted.
+    def place(self, layout, x, y, z):
+        group = layout.foreground_decoration_group
+        program = pyglet.text.layout.get_default_layout_shader()
 
-        group = TextDecorationGroup(1, layout.top_group)
-        self.vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES,
-                                                    group,
-                                                    [0, 1, 2, 0, 2, 3],
-                                                    'v2i', ('c4B', [200, 200, 200, 255] * 4))
+        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
+                                                       [0, 1, 2, 0, 2, 3],
+                                                       colors=('Bn', (200, 200, 200, 255) * 4),
+                                                       group=group, batch=layout.batch)
 
         y += self.descent
         w = self.advance
         h = self.ascent - self.descent
-        self.vertex_list.position[:] = (x, y,
-                                        x + w, y,
-                                        x + w, y + h,
-                                        x, y + h)
+        self.vertex_list.position[:] = (x, y, z,
+                                        x + w, y, z,
+                                        x + w, y + h, z,
+                                        x, y + h, z)
+
     def remove(self, layout):
         self.vertex_list.delete()
         del self.vertex_list
