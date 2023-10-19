@@ -617,10 +617,8 @@ class PlayerTestCase(unittest.TestCase):
         self.player.next_source()
         self.assert_new_texture_created(self.video_format_2)
         self.assert_update_texture_unscheduled()
-        # schedule_once called twice:
-        #   - Once for seeking back to 0 the previous source in next_source()
-        #   - Once for scheduling the next source update_texture
-        assert self.mock_clock.schedule_once.call_count == 2
+        # schedule_once called for scheduling the next source update_texture
+        assert self.mock_clock.schedule_once.call_count == 1
         self.mock_clock.schedule_once.assert_called_with(self.player.update_texture, 0)
 
     def test_video_seek_next_frame(self):
