@@ -152,10 +152,6 @@ class AudioData:
                 self.pointer = ctypes.addressof(ctypes.c_int.from_buffer(data))
             except TypeError:
                 raise TypeError("Unsupported AudioData type.")
-        #       try:
-        #           self.pointer = ctypes.addressof(ctypes.c_int.from_buffer_copy(data))
-        #       except TypeError:
-        #           raise TypeError("Unsupported AudioData type.")
 
         self.data = data
         # In any case, `data` will support the buffer protocol by delivering at least
@@ -488,6 +484,7 @@ class StaticSource(Source):
     def get_queue_source(self) -> Optional['StaticMemorySource']:
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
+        return None
 
     def get_audio_data(self, num_bytes: float, compensation_time: float = 0.0) -> Optional[AudioData]:
         """The StaticSource does not provide audio data.

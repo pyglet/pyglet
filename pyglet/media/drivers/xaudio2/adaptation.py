@@ -189,16 +189,15 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
             assert self._xa2_source_voice.buffers_queued == 0
 
-            # Last buffer ran out naturally, out of AudioData; voice will now fall silent
             if self._pyglet_source_exhausted:
+                # Last buffer ran out naturally, out of AudioData; voice will now fall silent
                 assert _debug("Last buffer ended normally, dispatching eos")
                 MediaEvent('on_eos').sync_dispatch_to_player(self.player)
             else:
-                assert _debug("Last buffer ended normally, source is lagging behind")
                 # Shouldn't have ran out; supplier is running behind
                 # All we can do is wait; as long as voices are not stopped via `Stop`, they will
                 # immediately continue playing the new buffer once it arrives
-                pass
+                assert _debug("Last buffer ended normally, source is lagging behind")
 
     def _refill(self, refill_size: int) -> None:
         """Get one piece of AudioData and submit it to the voice.
