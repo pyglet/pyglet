@@ -19,15 +19,6 @@ class PlayerTest(MockPlayer, Player):
 
 @pytest.fixture
 def player(event_loop):
-    # When running this in the same session after other tests (not exactly sure which ones and
-    # why), the audio driver becomes None, causing players to not create audio players, to not
-    # consume the sources, and then fail the tests.
-    # Reloading the module here fixes that.
-    import pyglet.media.drivers
-    if pyglet.media.drivers._audio_driver is None:
-        import importlib
-        importlib.reload(pyglet.media.drivers)
-
     return PlayerTest(event_loop)
 
 
