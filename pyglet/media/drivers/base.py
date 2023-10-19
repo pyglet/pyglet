@@ -424,9 +424,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         pass
 
 
-AbstractAudioPlayer = AbstractAudioPlayer
-
-
 class AbstractAudioDriver(metaclass=ABCMeta):
     @abstractmethod
     def create_audio_player(self, source, player):

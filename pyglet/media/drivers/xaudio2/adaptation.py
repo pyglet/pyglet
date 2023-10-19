@@ -1,5 +1,4 @@
 from collections import deque
-from enum import IntEnum
 import math
 import threading
 from typing import Deque, Tuple, TYPE_CHECKING

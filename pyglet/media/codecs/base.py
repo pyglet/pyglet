@@ -597,7 +597,6 @@ class SourceGroup:
 
             if isinstance(old_source, StreamingSource):
                 old_source.delete()
-                del old_source
 
     def get_audio_data(self, num_bytes: float, compensation_time=0.0) -> Optional[AudioData]:
         """Get next audio packet.

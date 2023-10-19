@@ -812,7 +812,7 @@ enum_pa_update_mode = c_int
 PA_UPDATE_SET = 0
 PA_UPDATE_MERGE = 1
 PA_UPDATE_REPLACE = 2
-pa_update_mode_t = enum_pa_update_mode 	# /usr/include/pulse/proplist.h:345
+pa_update_mode_t = enum_pa_update_mode  # /usr/include/pulse/proplist.h:345
 # /usr/include/pulse/proplist.h:355
 pa_proplist_update = _lib.pa_proplist_update
 pa_proplist_update.restype = None
@@ -982,11 +982,6 @@ pa_context_get_server_protocol_version = _lib.pa_context_get_server_protocol_ver
 pa_context_get_server_protocol_version.restype = c_uint32
 pa_context_get_server_protocol_version.argtypes = [POINTER(pa_context)]
 
-enum_pa_update_mode = c_int
-PA_UPDATE_SET = 0
-PA_UPDATE_MERGE = 1
-PA_UPDATE_REPLACE = 2
-pa_update_mode_t = enum_pa_update_mode  # /usr/include/pulse/proplist.h:337
 # /usr/include/pulse/context.h:248
 pa_context_proplist_update = _lib.pa_context_proplist_update
 pa_context_proplist_update.restype = POINTER(pa_operation)
@@ -2948,12 +2943,12 @@ __all__ = ['pa_get_library_version', 'PA_API_VERSION', 'PA_PROTOCOL_VERSION',
            # Begin manually transferred proplist definitions #
            'pa_proplist', 'pa_proplist_new', 'pa_proplist_free', 'pa_proplist_key_valid',
            'pa_proplist_sets', 'pa_proplist_setp', 'pa_proplist_set', 'pa_proplist_gets',
-           'pa_proplist_get', 'pa_update_mode_t', 'PA_UPDATE_SET', 'PA_UPDATE_MERGE',
-           'PA_UPDATE_REPLACE', 'pa_proplist_update', 'pa_proplist_unset',
-           'pa_proplist_unset_many', 'pa_proplist_iterate', 'pa_proplist_to_string',
-           'pa_proplist_to_string_sep', 'pa_proplist_from_string',
-           'pa_proplist_contains', 'pa_proplist_clear', 'pa_proplist_copy',
-           'pa_proplist_size', 'pa_proplist_isempty', 'pa_proplist_equal',
+           'pa_proplist_get', 'pa_update_mode_t', 'pa_proplist_update',
+           'pa_proplist_unset', 'pa_proplist_unset_many', 'pa_proplist_iterate',
+           'pa_proplist_to_string', 'pa_proplist_to_string_sep',
+           'pa_proplist_from_string', 'pa_proplist_contains', 'pa_proplist_clear',
+           'pa_proplist_copy', 'pa_proplist_size', 'pa_proplist_isempty',
+           'pa_proplist_equal',
            # End manually transferred proplist definitions #
            'pa_context_event_cb_t', 'pa_context_new',
            'pa_context_new_with_proplist', 'pa_context_unref', 'pa_context_ref',

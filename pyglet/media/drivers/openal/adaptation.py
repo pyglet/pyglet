@@ -2,7 +2,6 @@ from collections import deque
 from typing import TYPE_CHECKING, List, Optional, Tuple
 import weakref
 
-from pyglet.media.codecs.base import AudioData
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.media.drivers.openal import interface
