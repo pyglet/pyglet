@@ -26,13 +26,13 @@ PA_INVALID_INDEX = _UINT32_MAX
 PA_INVALID_WRITABLE_SIZE = _SIZE_T_MAX
 
 
-def get_uint32_or_none(value: Optional[int]) -> Optional[int]:
-    if value is None or value == _UINT32_MAX:
+def get_uint32_or_none(value: int) -> Optional[int]:
+    if value == _UINT32_MAX:
         return None
     return value
 
 
-def get_bool_or_none(value: Optional[int]) -> Optional[bool]:
+def get_bool_or_none(value: int) -> Optional[bool]:
     if value < 0:
         return None
     elif value == 1:
@@ -220,23 +220,25 @@ class PulseAudioContext(PulseAudioMainloopChild):
     def server(self) -> Optional[str]:
         if self.is_ready:
             return get_ascii_str_or_none(pa.pa_context_get_server(self._pa_context))
-        else:
-            return None
+        return None
 
     @property
     def protocol_version(self) -> Optional[str]:
         if self._pa_context is not None:
             return get_uint32_or_none(pa.pa_context_get_protocol_version(self._pa_context))
+        return None
 
     @property
     def server_protocol_version(self) -> Optional[str]:
         if self._pa_context is not None:
             return get_uint32_or_none(pa.pa_context_get_server_protocol_version(self._pa_context))
+        return None
 
     @property
     def is_local(self) -> Optional[bool]:
         if self._pa_context is not None:
             return get_bool_or_none(pa.pa_context_is_local(self._pa_context))
+        return None
 
     def connect(self, server: Optional[bytes] = None) -> None:
         """Connect the context to a PulseAudio server.
