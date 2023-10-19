@@ -262,7 +262,9 @@ class Player(pyglet.event.EventDispatcher):
         """
         was_playing = self._playing
         self.pause()
+
         self._timer.reset()
+        self.last_seek_time = 0.0
 
         playlists = self._playlists
         if not playlists:
@@ -295,6 +297,7 @@ class Player(pyglet.event.EventDispatcher):
 
             if self._audio_player:
                 if old_audio_format == self._source.audio_format:
+                    self._audio_player.clear()
                     self._audio_player.set_source(self._source)
                 else:
                     self._audio_player.delete()
