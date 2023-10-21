@@ -285,17 +285,22 @@ class Player(pyglet.event.EventDispatcher):
             self.delete()
             self.dispatch_event('on_player_eos')
         else:
+            # Keeping a strong reference to old source directly as `_audio_player` only has
+            # a weakref and still accesses it in `set_source`
+            old_source = self._source
+            self._set_source(new_source)
+
             if self._audio_player:
-                if self._source.audio_format == new_source.audio_format:
-                    self._audio_player.set_source(new_source)
+                if self._source.audio_format == old_source.audio_format:
+                    self._audio_player.set_source(self._source)
                 else:
                     self._audio_player.delete()
                     self._audio_player = None
-            if self._source.video_format != new_source.video_format:
+            if self._source.video_format != old_source.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
-            self._set_source(new_source)
+            del old_source
 
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
