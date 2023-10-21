@@ -296,10 +296,6 @@ class XlibWindow(BaseWindow):
             self._utf8_atom = xlib.XInternAtom(self._x_display, asbytes('UTF8_STRING'), False)
             self._target_atom = xlib.XInternAtom(self._x_display, asbytes('TARGETS'), False)
             self._incr_atom = xlib.XInternAtom(self._x_display, asbytes('INCR'), False)
-            self._clipboard_mgr_atom = xlib.XInternAtom(self._x_display, asbytes('CLIPBOARD_MANAGER'), False)
-
-            #self._clipboard_mgr_targets = xlib.XInternAtom(self._x_display, asbytes('SAVE_TARGETS'), False)
-            #self._selection_atom = xlib.XInternAtom(self._x_display, asbytes('PYGLET_SELECTION'), False)
 
             # Support for drag and dropping files needs to be enabled.
             if self._file_drops:
