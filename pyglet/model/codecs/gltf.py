@@ -1,23 +1,26 @@
 import json
 
+from array import array
 from urllib.request import urlopen
 
 import pyglet
 
-from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT
-from pyglet.gl import GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_TRIANGLES
+from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
+from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
 
 from . import ModelDecodeException, ModelDecoder
 
 
-# struct module types
-_struct_types = {
+# array/struct types
+_array_types = {
     GL_BYTE: 'b',
     GL_UNSIGNED_BYTE: 'B',
     GL_SHORT: 'h',
     GL_UNSIGNED_SHORT: 'H',
-    GL_UNSIGNED_INT: 'I',
+    GL_INT: 'l',
+    GL_UNSIGNED_INT: 'L',
     GL_FLOAT: 'f',
+    GL_DOUBLE: 'd',
 }
 
 # OpenGL type sizes
@@ -26,8 +29,10 @@ _component_sizes = {
     GL_UNSIGNED_BYTE: 1,
     GL_SHORT: 2,
     GL_UNSIGNED_SHORT: 2,
+    GL_INT: 4,
     GL_UNSIGNED_INT: 4,
-    GL_FLOAT: 4
+    GL_FLOAT: 4,
+    GL_DOUBLE: 8,
 }
 
 _accessor_type_sizes = {
@@ -47,8 +52,9 @@ _targets = {
 
 
 class Buffer:
+    """Abstraction over unstructured bytes."""
     def __init__(self, data):
-        self._length = data['byteLength']
+        self.length = data['byteLength']
         self._uri = data['uri']
 
         if self._uri.startswith('data'):
@@ -68,51 +74,70 @@ class Buffer:
             pass
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(length={self._length})"
+        return f"{self.__class__.__name__}(length={self.length})"
 
 
 class BufferView:
+    """View over a section of a Buffer, with optional stride."""
     def __init__(self, data, owner):
-        self.buffer_index = data.get('buffer')
-        self.offset = data.get('byteOffset', 0)
+        self._buffer_index = data.get('buffer')
+        self._offset = data.get('byteOffset', 0)
         self.length = data.get('byteLength')
-        self.target = data.get('target')
         self.stride = data.get('byteStride', 1)
+        self.target = data.get('target')
+        self.target_alias = _targets[self.target]
 
-        self.buffer = owner.buffers[self.buffer_index]
+        self.buffer = owner.buffers[self._buffer_index]
+
+    def read(self, offset, element_size):
+
+        # TODO: stride should read chunks of X size
+
+        return self.buffer.read(self._offset + offset, self.length)[::self.stride]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(buffer={self.buffer_index})"
+        return f"{self.__class__.__name__}(buffer={self.buffer}, target={self.target_alias})"
 
 
 class Accessor:
     def __init__(self, data, owner):
-        self.buffer_view_index = data.get('bufferView')
+        self._buffer_view_index = data.get('bufferView')
         self.byte_offset = data.get('byteOffset')
         self.component_type = data.get('componentType')
-        self.count = data.get('count')
-        self.type = data.get('type')
+        self.type = data.get('type')        # VEC3, MAT4, etc.
+        self.count = data.get('count')      # The number of self.type
+
         self.max = data.get('max')
         self.min = data.get('min')
 
-        self.buffer_view = owner.buffer_views[self.buffer_view_index]
+        self._fmt = _array_types[self.component_type]
+
+        self.buffer_view = owner.buffer_views[self._buffer_view_index]
+
+    @property
+    def array(self):
+        return array(self._fmt, self.buffer_view.read(self.byte_offset))
+
+    def read(self):
+        # TODO: consider byte_offset, and whether to cast
+        return self.buffer_view.read(self.byte_offset)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(buffer_view={self.buffer_view_index})"
+        return f"{self.__class__.__name__}(buffer_view={self.buffer_view})"
 
 
 class Attribute:
-    def __init__(self, name, index):
+    def __init__(self, name, index, owner):
         self.name = name
-        self.index = index
+        self.accessor = owner.accessors[index]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name}, index={self.index})"
+        return f"{self.__class__.__name__}(name={self.name}, accessor={self.accessor})"
 
 
 class Primitive:
     def __init__(self, data, owner):
-        self.attributes = {name: Attribute(name, index) for name, index in data.get('attributes').items()}
+        self.attributes = {name: Attribute(name, index, owner) for name, index in data.get('attributes').items()}
         self.indices = data.get('indices')
 
     def __repr__(self):
@@ -128,8 +153,9 @@ class Mesh:
 
 
 class Node:
-    def __init__(self, data):
-        self.mesh = data.get('mesh')
+    def __init__(self, data, owner):
+        self._mesh_index = data.get('mesh')
+        self.mesh = owner.meshes[self._mesh_index]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(mesh={self.mesh})"
@@ -152,13 +178,13 @@ class GLTF:
         self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
         self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
-        self.nodes = [Node(data=data) for data in gltf_data['nodes']]
+        self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
 
         self.scenes = [Scene(data=data, owner=self) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data['scene']]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}(scenes={len(self.scenes)}, meshes={len(self.meshes)})"
 
 
 def load_gltf(filename, file=None):
