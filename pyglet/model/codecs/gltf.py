@@ -11,7 +11,6 @@ from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY
 from . import ModelDecodeException, ModelDecoder
 
 
-# array/struct types
 _array_types = {
     GL_BYTE: 'b',
     GL_UNSIGNED_BYTE: 'B',
@@ -23,8 +22,7 @@ _array_types = {
     GL_DOUBLE: 'd',
 }
 
-# OpenGL type sizes
-_component_sizes = {
+_gl_type_sizes = {
     GL_BYTE: 1,
     GL_UNSIGNED_BYTE: 1,
     GL_SHORT: 2,
@@ -35,7 +33,7 @@ _component_sizes = {
     GL_DOUBLE: 8,
 }
 
-_accessor_type_sizes = {
+_accessor_type_counts = {
     "SCALAR": 1,
     "VEC2": 2,
     "VEC3": 3,
@@ -63,9 +61,9 @@ class Buffer:
         else:
             self._file = pyglet.resource.file(self._uri, 'rb')
 
-    def read(self, offset, length):
+    def read(self, offset, byte_length) -> bytes:
         self._file.seek(offset)
-        return self._file.read(length)
+        return self._file.read(byte_length)
 
     def __del__(self):
         try:
@@ -83,61 +81,68 @@ class BufferView:
         self._buffer_index = data.get('buffer')
         self._offset = data.get('byteOffset', 0)
         self.length = data.get('byteLength')
-        self.stride = data.get('byteStride', 1)
+        self.stride = data.get('byteStride', 0)
         self.target = data.get('target')
         self.target_alias = _targets[self.target]
 
         self.buffer = owner.buffers[self._buffer_index]
 
-    def read(self, offset, element_size):
+    def read(self, offset: int, byte_length: int, count: int) -> bytes:
+        offset = self._offset + offset
+        bytestring = b""
 
-        # TODO: stride should read chunks of X size
+        for _ in range(count):
+            bytestring += self.buffer.read(offset, byte_length)
+            offset += byte_length + self.stride
 
-        return self.buffer.read(self._offset + offset, self.length)[::self.stride]
+        return bytestring
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(buffer={self.buffer}, target={self.target_alias})"
+        return f"{self.__class__.__name__}(buffer={self._buffer_index}, target={self.target_alias})"
 
 
 class Accessor:
     def __init__(self, data, owner):
         self._buffer_view_index = data.get('bufferView')
         self.byte_offset = data.get('byteOffset')
-        self.component_type = data.get('componentType')
-        self.type = data.get('type')        # VEC3, MAT4, etc.
-        self.count = data.get('count')      # The number of self.type
-
+        self.component_type = data.get('componentType')     # GL_FLOAT, GL_INT, etc
+        self.type = data.get('type')                        # VEC3, MAT4, etc.
+        self.count = data.get('count')                      # Number of self.type
         self.max = data.get('max')
         self.min = data.get('min')
 
         self._fmt = _array_types[self.component_type]
 
+        # The size of the GL type * the size of the data type.
+        # For example a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
+        self._byte_length = _gl_type_sizes[self.component_type] * _accessor_type_counts[self.type]
+
         self.buffer_view = owner.buffer_views[self._buffer_view_index]
 
-    @property
-    def array(self):
-        return array(self._fmt, self.buffer_view.read(self.byte_offset))
+    def read(self) -> bytes:
+        return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
 
-    def read(self):
-        # TODO: consider byte_offset, and whether to cast
-        return self.buffer_view.read(self.byte_offset)
+    def as_array(self):
+        return array(self._fmt, self.read())
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(buffer_view={self.buffer_view})"
+        return f"{self.__class__.__name__}(buffer_view={self._buffer_view_index})"
 
 
 class Attribute:
     def __init__(self, name, index, owner):
         self.name = name
+        self._accessor_index = index
         self.accessor = owner.accessors[index]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name}, accessor={self.accessor})"
+        return f"{self.__class__.__name__}(name={self.name}, accessor={self._accessor_index})"
 
 
 class Primitive:
     def __init__(self, data, owner):
         self.attributes = {name: Attribute(name, index, owner) for name, index in data.get('attributes').items()}
+        # TODO: point towards the right buffer/accessor:
         self.indices = data.get('indices')
 
     def __repr__(self):
