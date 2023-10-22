@@ -336,7 +336,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             pass
 
     def _create_bitmap(self, width, height):
-        self._data = (ctypes.c_byte * (4 * width * height))()
+        self._data = (BYTE * (4 * width * height))()
         self._bitmap = ctypes.c_void_p()
         self._format = PixelFormat32bppARGB
         gdiplus.GdipCreateBitmapFromScan0(width, height, width * 4,
