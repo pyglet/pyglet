@@ -1,4 +1,5 @@
 import ctypes
+import sys
 
 from ctypes import *
 from ctypes.wintypes import *
@@ -45,7 +46,6 @@ def POINTER_(obj):
 
 c_void_p = POINTER_(c_void)
 INT = c_int
-UBYTE = c_ubyte
 LPVOID = c_void_p
 HCURSOR = HANDLE
 LRESULT = LPARAM
@@ -61,6 +61,11 @@ LONG_PTR = HANDLE
 HDROP = HANDLE
 LPTSTR = LPWSTR
 LPSTREAM = c_void_p
+
+# Fixed in python 3.12. Is c_byte on other versions.
+# Ensure it's the same across all versions.
+if sys.version_info < (3, 12):
+    BYTE = c_ubyte
 
 LF_FACESIZE = 32
 CCHDEVICENAME = 32
@@ -572,12 +577,14 @@ class IStream(com.pIUnknown):
          com.STDMETHOD()),
     ]
 
+
 class DEV_BROADCAST_HDR(Structure):
     _fields_ = (
         ('dbch_size', DWORD),
         ('dbch_devicetype', DWORD),
         ('dbch_reserved', DWORD),
     )
+
 
 class DEV_BROADCAST_DEVICEINTERFACE(Structure):
     _fields_ = (
