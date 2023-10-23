@@ -3,12 +3,28 @@ pyglet 1.5.28
 Features
 --------
 - Add support for FFmpeg 6.0
-- Add support for mouse buttons 4 & 5
+- Add support for mouse buttons 4 & 5 on Windows and Linux
+- Windows: set higher timer precision when starting PlatformEventLoop.
+- font.DirectWrite: improve font name parser (set 'dw_legacy_naming' pyglet option for old behavior)
+- Extend keyboard F-key support (F16-24 on Windows, F21-24 on Linux. Mac limited to F20. (#773)
+- Avoid audio stutter by initializing the AudioDriver when the media module is first used.
+- macOS: add support for "on_file_drop" Window events
+- macOS: add CoreAudio decoder for supporting compressed audio formats out of the box (mp3, etc.)
+- macOS: add filename support for QuartzFont
+- macOS: New optional alternate event loop, to prevent M1 issues (set 'osx_alt_loop' pyglet option) (#794)
 
 Bugfixes
 --------
 - Backport of numerous media and font bugfixes from the master branch.
 - Fix BYTE windows type for Python 3.12
+- Skip calling CGDisplaySetDisplayMode if the current screen mode is the same (#891)
+- font.DirectWrite: Enable color font only for supported OS's
+- Fix get_default_screen() to get the primary monitor, not just the first in the list (#717)
+- Fix debug_win32 - LoadLibrary implementation (#748)
+- font.Directwrite: Fix 32 bit crashes (#771)
+- macOS: Fix memory leak with NSDate object returns.
+- Fix FFmpeg 4.0 not being found on MacOS
+- Varios XAudio2 fixes and cleanups (#877)
 
 
 pyglet 1.5.27
