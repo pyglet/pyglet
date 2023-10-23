@@ -142,11 +142,17 @@ class Attribute:
 class Primitive:
     def __init__(self, data, owner):
         self.attributes = {name: Attribute(name, index, owner) for name, index in data.get('attributes').items()}
-        # TODO: point towards the right buffer/accessor:
-        self.indices = data.get('indices')
+
+        # TODO: Confirm that this is right:
+        self.indices_index = data.get('indices')
+        self.indices_accessor = owner.accessors[self.indices_index]
+
+    @property
+    def indices(self):
+        return self.indices_accessor.as_array()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(attributes={len(self.attributes)}, indices={self.indices})"
+        return f"{self.__class__.__name__}(attributes={len(self.attributes)}, index_accessor={self.indices_index})"
 
 
 class Mesh:
