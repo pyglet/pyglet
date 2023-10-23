@@ -1,0 +1,80 @@
+name: PyTest
+
+on: [push, pull_request]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10' ]
+    name: Python ${{ matrix.python-version }} ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          sudo apt-get install xvfb
+      - name: Run tests
+        run: |
+          xvfb-run pytest tests/unit
+
+  osx:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10' ]
+    name: Python ${{ matrix.python-version }} OSX
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install pytest
+      - name: Run tests
+        run: |
+          pytest tests/unit
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10' ]
+    name: Python ${{ matrix.python-version }} Windows
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          release: false
+          install: mingw-w64-x86_64-mesa
+      - name: Install dependencies
+        run: |
+          pip install pytest
+      - name: Run tests
+        shell: pwsh
+        run: |
+          
+          $env:PYGLET_DEBUG_LIB = "True"
+          $env:PYGLET_DEBUG_GL_TRACE = "True"
+
+          mkdir D:\a\pyglet\pyglet\lib
+          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\pyglet\lib\
+
+          mkdir D:\a\pyglet\lib
+          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\lib\
+
+          # pytest tests/unit
+          python -m pyglet.info
