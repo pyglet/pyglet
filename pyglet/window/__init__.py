@@ -719,11 +719,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Swap the OpenGL front and back buffers.
 
         Call this method on a double-buffered window to update the
-        visible display with the back buffer.  The contents of the back buffer
-        is undefined after this operation.
+        visible display with the back buffer. Windows are
+        double-buffered by default unless you turn this feature off.
 
-        Windows are double-buffered by default.  This method is called
-        automatically by `EventLoop` after the :py:meth:`~pyglet.window.Window.on_draw` event.
+        The contents of the back buffer are undefined after this operation.
+
+        The default :py:attr:`~pyglet.app.event_loop` automatically
+        calls this method after the window's
+        :py:meth:`~pyglet.window.Window.on_draw` event.
         """
         raise NotImplementedError('abstract')
 
