@@ -1,6 +1,10 @@
 name: PyTest
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ 'master', 'pyglet-1.5-maintenance' ]
+  pull_request:
+    branches: [ 'master', 'pyglet-1.5-maintenance' ]
 
 jobs:
   linux:
