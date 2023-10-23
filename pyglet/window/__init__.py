@@ -651,8 +651,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         window instance cannot be reused once closed. To re-use windows,
         see :py:meth:`.set_visible` instead.
 
-        The `pyglet.app.EventLoop.on_window_close` event is dispatched on
-        `pyglet.app.event_loop` when this method is called.
+        The :py:meth:`pyglet.app.EventLoop.on_window_close` event is
+        dispatched by the :py:attr:`pyglet.app.event_loop` when this method
+        is called.
         """
         from pyglet import app
         if not self._context:
