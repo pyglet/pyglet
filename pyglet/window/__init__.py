@@ -273,9 +273,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     conventions.  This will ensure it is not obscured by other windows,
     and appears on an appropriate screen for the user.
 
-    To render into a window, you must first call `switch_to`, to make
-    it the current OpenGL context.  If you use only one window in the
-    application, there is no need to do this.
+    To render into a window, you must first call its :py:meth:`.switch_to`
+    method to make it the active OpenGL context. If you use only one
+    window in your application, you can skip this step as it will always
+    be the active context.
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
