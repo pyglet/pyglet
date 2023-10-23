@@ -680,7 +680,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         and advanced applications that must integrate their event loop
         into another framework.
 
-        Typical applications should use `pyglet.app.run`.
+        Typical applications should use :py:func:`pyglet.app.run`.
         """
         raise NotImplementedError('abstract')
 
