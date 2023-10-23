@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
+import sys
 
 from ctypes import *
 from ctypes.wintypes import *
@@ -96,6 +97,11 @@ LONG_PTR = HANDLE
 HDROP = HANDLE
 LPTSTR = LPWSTR
 LPSTREAM = c_void_p
+
+# Fixed in python 3.12. Is c_byte on other versions.
+# Ensure it's the same across all versions.
+if sys.version_info < (3, 12):
+    BYTE = c_ubyte
 
 LF_FACESIZE = 32
 CCHDEVICENAME = 32
