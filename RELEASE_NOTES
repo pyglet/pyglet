@@ -1,3 +1,16 @@
+pyglet 1.5.28
+
+Features
+--------
+- Add support for FFmpeg 6.0
+- Add support for mouse buttons 4 & 5
+
+Bugfixes
+--------
+- Backport of numerous media and font bugfixes from the master branch.
+- Fix BYTE windows type for Python 3.12
+
+
 pyglet 1.5.27
 
 Bugfixes
