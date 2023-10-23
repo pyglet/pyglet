@@ -638,7 +638,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Clear the window.
 
         This is a convenience method for clearing the color and depth
-        buffer.  The window must be the active context (see `switch_to`).
+        buffer.  The window must be the active context (see
+        :py:meth:`.switch_to`).
         """
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
