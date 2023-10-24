@@ -1095,6 +1095,13 @@ class Quaternion(tuple):
             return self
         return Quaternion(self[0] / m, self[1] / m, self[2] / m, self[3] / m)
 
+    def conjugate(self) -> Quaternion:
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
+
+    def __invert__(self) -> Quaternion:
+        # TODO:
+        raise NotImplementedError
+
     def __abs__(self) -> float:
         return _math.sqrt(self.w ** 2 + self.x ** 2 + self.y ** 2 + self.z ** 2)
 
