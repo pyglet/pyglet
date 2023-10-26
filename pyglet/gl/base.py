@@ -347,25 +347,24 @@ class Context:
         return program
 
     def delete_texture(self, texture_id):
-        """Safely delete a Texture belonging to this context.
+        """Safely delete a Texture belonging to this context's object space.
 
-        Usually, the Texture is released immediately using
-        ``glDeleteTextures``, however if another context that does not share
-        this context's object space is currently active, the deletion will
-        be deferred until an appropriate context is activated.
+        This method only marks the given texture for deletion until any
+        context with the same object space becomes active again, where
+        it will then be deleted via ``glDeleteTextures``.
+
+        This makes it safe to call from anywhere, including other threads.
 
         :Parameters:
             `texture_id` : int
                 The OpenGL name of the Texture to delete.
 
         """
-        if self.object_space is gl.current_context.object_space:
-            gl.glDeleteTextures(1, gl.GLuint(texture_id))
-        else:
-            self.object_space.doomed_textures.append(texture_id)
+        self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
-        """Safely delete a Buffer object belonging to this context.
+        """Safely delete a Buffer object belonging to this context's object
+        space.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
@@ -376,30 +375,11 @@ class Context:
 
         .. versionadded:: 1.1
         """
-        if self.object_space is gl.current_context.object_space and False:
-            gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
-        else:
-            self.object_space.doomed_buffers.append(buffer_id)
-
-    def delete_vao(self, vao_id):
-        """Safely delete a Vertex Array Object belonging to this context.
-
-        This method behaves similarly to `delete_texture`, though for
-        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
-
-        :Parameters:
-            `vao_id` : int
-                The OpenGL name of the Vertex Array to delete.
-
-        .. versionadded:: 2.0
-        """
-        if gl.current_context is self:
-            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
-        else:
-            self.doomed_vaos.append(vao_id)
+        self.object_space.doomed_buffers.append(buffer_id)
 
     def delete_shader_program(self, program_id):
-        """Safely delete a Shader Program belonging to this context.
+        """Safely delete a Shader Program belonging to this context's
+        object space.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteProgram`` instead of ``glDeleteTextures``.
@@ -410,10 +390,24 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if gl.current_context is self:
-            gl.glDeleteProgram(program_id)
-        else:
-            self.object_space.doomed_shader_programs.append(program_id)
+        self.object_space.doomed_shader_programs.append(program_id)
+
+    def delete_vao(self, vao_id):
+        """Safely delete a Vertex Array Object belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
+
+        As they cannot be shared, the given VAO will only be deleted
+        once this exact context is activated again.
+
+        :Parameters:
+            `vao_id` : int
+                The OpenGL name of the Vertex Array to delete.
+
+        .. versionadded:: 2.0
+        """
+        self.doomed_vaos.append(vao_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.
