@@ -12,6 +12,8 @@ __all__ = [
 
 
 R = TypeVar('R')
+R_co = TypeVar('R_co', covariant=True)
+
 
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
@@ -21,7 +23,7 @@ else:
 
 
 @runtime_checkable
-class CallableArgsKwargs(Protocol[R]):
+class CallableArgsKwargs(Protocol[R_co]):
     """3.8-friendly way of saying "a Callable taking *args & **kwargs."
 
     Use the R generic parameter to specify a return type::
