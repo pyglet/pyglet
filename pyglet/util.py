@@ -24,6 +24,7 @@ def asbytes_filename(s: Union[str, ByteString]) -> Optional[bytes]:
     elif isinstance(s, str):
         return s.encode(encoding=sys.getfilesystemencoding())
 
+    return None
 
 def asstr(s: Optional[Union[str, ByteString]]) -> str:
     if s is None:
