@@ -13,7 +13,7 @@ __all__ = [
 
 R = TypeVar('R')
 
-if TYPE_CHECKING or sys.version_info >= (3, 12):
+if sys.version_info >= (3, 12):
     from collections.abc import Buffer
 else:
     # Backwards compatible placeholder for `collections.abc.Buffer` from Python 3.12
