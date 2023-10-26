@@ -181,24 +181,23 @@ class Player(pyglet.event.EventDispatcher):
         source = self.source
 
         if playing and source:
-            if source.audio_format:
+            if source.audio_format is not None:
                 if self._audio_player is None:
                     self._create_audio_player()
-                if self._audio_player:
-                    # We succesfully created an audio player
+                if self._audio_player is not None:
                     self._audio_player.prefill_audio()
 
             if bl.logger is not None:
                 bl.logger.init_wall_time()
                 bl.logger.log("p.P._sp", 0.0)
 
-            if source.video_format:
-                if not self._texture:
+            if source.video_format is not None:
+                if self._texture is None:
                     self._create_texture()
 
-            if self._audio_player:
+            if self._audio_player is not None:
                 self._audio_player.play()
-            if source.video_format:
+            if source.video_format is not None:
                 pyglet.clock.schedule_once(self.update_texture, 0)
             # For audio synchronization tests, the following will
             # add a delay to de-synchronize the audio.
@@ -209,7 +208,7 @@ class Player(pyglet.event.EventDispatcher):
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
 
         else:
-            if self._audio_player:
+            if self._audio_player is not None:
                 self._audio_player.stop()
 
             pyglet.clock.unschedule(self.update_texture)
@@ -248,10 +247,10 @@ class Player(pyglet.event.EventDispatcher):
         The internal audio player and the texture will be deleted.
         """
         self._set_source(None)
-        if self._audio_player:
+        if self._audio_player is not None:
             self._audio_player.delete()
             self._audio_player = None
-        if self._texture:
+        if self._texture is not None:
             self._texture = None
 
     def next_source(self) -> None:
@@ -291,7 +290,7 @@ class Player(pyglet.event.EventDispatcher):
             old_source = self._source
             self._set_source(new_source)
 
-            if self._audio_player:
+            if self._audio_player is not None:
                 if self._source.audio_format == old_source.audio_format:
                     self._audio_player.set_source(self._source)
                 else:
@@ -304,6 +303,7 @@ class Player(pyglet.event.EventDispatcher):
             del old_source
 
             self._set_playing(was_playing)
+            self._audio_player.prefill_audio()
             self.dispatch_event('on_player_next_source')
 
     def seek(self, timestamp: float) -> None:
@@ -319,7 +319,7 @@ class Player(pyglet.event.EventDispatcher):
         playing = self._playing
         if playing:
             self.pause()
-        if not self.source:
+        if self.source is None:
             return
 
         if bl.logger is not None:
@@ -336,11 +336,11 @@ class Player(pyglet.event.EventDispatcher):
         self._source.seek(timestamp)
         self.last_seek_time = timestamp
 
-        if self._audio_player:
+        if self._audio_player is not None:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped
             self._audio_player.clear()
-        if self.source.video_format:
+        if self.source.video_format is not None:
             self.update_texture()
             pyglet.clock.unschedule(self.update_texture)
         self._set_playing(playing)
@@ -602,7 +602,7 @@ class Player(pyglet.event.EventDispatcher):
             self.pause()
             self._timer.reset()
 
-            if self.source:
+            if self.source is not None:
                 # Reset source to the beginning
                 self.seek(0.0)
             self._set_playing(was_playing)
@@ -627,18 +627,20 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         """
-        if self._audio_player:
-            self._audio_player.on_driver_reset()
+        if self._audio_player is None:
+            return
 
-            # Voice has been changed, will need to reset all options on the voice.
-            for attr in ('volume', 'min_distance', 'max_distance', 'position',
-                         'pitch', 'cone_orientation', 'cone_inner_angle',
-                         'cone_outer_angle', 'cone_outer_gain'):
-                value = getattr(self, attr)
-                setattr(self, attr, value)
+        self._audio_player.on_driver_reset()
 
-            if self._playing:
-                self._audio_player.play()
+        # Voice has been changed, will need to reset all options on the voice.
+        for attr in ('volume', 'min_distance', 'max_distance', 'position',
+                        'pitch', 'cone_orientation', 'cone_inner_angle',
+                        'cone_outer_angle', 'cone_outer_gain'):
+            value = getattr(self, attr)
+            setattr(self, attr, value)
+
+        if self._playing:
+            self._audio_player.play()
 
 
 Player.register_event_type('on_eos')
