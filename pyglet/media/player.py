@@ -8,7 +8,7 @@ import pyglet
 from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.codecs.base import PreciseStreamingSource, Source
+from pyglet.media.codecs.base import PreciseStreamingSource, Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
 
@@ -140,7 +140,7 @@ class Player(pyglet.event.EventDispatcher):
         Args:
             source (Source or Iterable[Source]): The source to queue.
         """
-        if isinstance(source, Source):
+        if isinstance(source, (Source, SourceGroup)):
             source = _one_item_playlist(source)
         else:
             try:
