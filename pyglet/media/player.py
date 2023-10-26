@@ -26,7 +26,8 @@ class PlaybackTimer:
 
     def start(self) -> None:
         """Start the timer."""
-        self._started_at = time.perf_counter()
+        if self._started_at is None:
+            self._started_at = time.perf_counter()
 
     def pause(self) -> None:
         """Pause the timer."""
