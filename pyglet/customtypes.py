@@ -2,7 +2,7 @@
 import ctypes
 import sys
 
-from typing import Union, TYPE_CHECKING, Protocol, TypeVar
+from typing import Union, TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
 __all__ = [
     'R',
@@ -26,6 +26,7 @@ else:
     from typing import ByteString
 
 
+@runtime_checkable
 class CallableArgsKwargs(Protocol[R]):
     """3.8-friendly way of saying "a Callable taking *args & **kwargs."
 
@@ -45,4 +46,4 @@ class CallableArgsKwargs(Protocol[R]):
     """
 
     def __call__(self, *args, **kwargs) -> R:
-        ...
+        raise NotImplementedError
