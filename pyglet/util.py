@@ -6,10 +6,10 @@ import sys
 from typing import Optional, Union
 
 import pyglet
-from pyglet.customtypes import ByteString, CallableArgsKwargs
+from pyglet.customtypes import Buffer, CallableArgsKwargs
 
 
-def asbytes(s: Union[str, ByteString]) -> bytes:
+def asbytes(s: Union[str, Buffer]) -> bytes:
     if isinstance(s, bytes):
         return s
     elif isinstance(s, str):
@@ -18,7 +18,7 @@ def asbytes(s: Union[str, ByteString]) -> bytes:
         return bytes(s)
 
 
-def asbytes_filename(s: Union[str, ByteString]) -> Optional[bytes]:
+def asbytes_filename(s: Union[str, Buffer]) -> Optional[bytes]:
     if isinstance(s, (bytes, bytearray, memoryview)):
         return s
     elif isinstance(s, str):
@@ -26,7 +26,7 @@ def asbytes_filename(s: Union[str, ByteString]) -> Optional[bytes]:
 
     return None
 
-def asstr(s: Optional[Union[str, ByteString]]) -> str:
+def asstr(s: Optional[Union[str, Buffer]]) -> str:
     if s is None:
         return ''
     if isinstance(s, str):
