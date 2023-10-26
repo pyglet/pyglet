@@ -18,7 +18,7 @@ R_co = TypeVar('R_co', covariant=True)
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
 else:
-    # Backwards compatible placeholder for `collections.abc.Buffer` from Python 3.12
+    # Best-effort placeholder for older Python versions
     Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]
 
 
