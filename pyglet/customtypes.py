@@ -6,6 +6,7 @@ from typing import Union, Protocol, TypeVar, runtime_checkable
 
 __all__ = [
     'R',
+    'R_co',
     "Buffer",
     'CallableArgsKwargs'
 ]
