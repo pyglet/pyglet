@@ -2,7 +2,7 @@
 import ctypes
 import sys
 
-from typing import Union, TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
+from typing import Union, Protocol, TypeVar, runtime_checkable
 
 __all__ = [
     'R',
