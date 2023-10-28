@@ -156,10 +156,10 @@ class Player(pyglet.event.EventDispatcher):
 
         self._set_playing(self._playing)
 
-    def _set_source(self, new_source: Source) -> None:
-        if self._source is not None:
-            self._source.seek(0.0)
-            self._source.is_player_source = False
+    def _set_source(self, new_source: Optional[Source]) -> None:
+        # if self._source is not None:
+        #     self._source.seek(0.0)
+        #     self._source.is_player_source = False
 
         if new_source is None:
             self._source = None
@@ -246,7 +246,9 @@ class Player(pyglet.event.EventDispatcher):
 
         The internal audio player and the texture will be deleted.
         """
-        self._set_source(None)
+        # self._set_source(None)
+        if self._source:
+            self.source.is_player_source = False
         if self._audio_player is not None:
             self._audio_player.delete()
             self._audio_player = None
@@ -266,22 +268,26 @@ class Player(pyglet.event.EventDispatcher):
         self._timer.reset()
         self.last_seek_time = 0.0
 
+        if self._source:
+            self.seek(0.0)
+            self.source.is_player_source = False
+
         playlists = self._playlists
         if not playlists:
-            self._set_source(None)
             return
 
         try:
             new_source = next(playlists[0])
         except StopIteration:
-            self._playlists.popleft()
-            if not self._playlists:
+            playlists.popleft()
+            if not playlists:
                 new_source = None
             else:
                 # Could someone queue an iterator which is empty??
-                new_source = next(self._playlists[0])
+                new_source = next(playlists[0])
 
         if new_source is None:
+            self._source = None
             self.delete()
             self.dispatch_event('on_player_eos')
         else:
@@ -303,7 +309,6 @@ class Player(pyglet.event.EventDispatcher):
             del old_source
 
             self._set_playing(was_playing)
-            self._audio_player.prefill_audio()
             self.dispatch_event('on_player_next_source')
 
     def seek(self, timestamp: float) -> None:
