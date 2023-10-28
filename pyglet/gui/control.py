@@ -21,6 +21,11 @@ CalculateFunc = Callable[[Repositionable, int, int, Window], PotitionTuple]
 CallBack = Union[CallBackFunc, CalculateFunc]
 IndexType = Union[int, str]
 
+__all__ = [
+    'RePositionFrame',
+    'GridFrame',
+]
+
 class RePositionFrame:
     """ A Frame Like Object that allows for repositioning of widgets
     you can give A function and A widget/shape to let it reposition itself
