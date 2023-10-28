@@ -506,20 +506,26 @@ class XInputDeviceManager(EventDispatcher):
                     if device.xinput_state.dwPacketNumber == device.packet_number:
                         continue
 
-                    for button, name in controller_api_to_pyglet.items():
-                        device.controls[name].value = device.xinput_state.Gamepad.wButtons & button
-
-                    device.controls['lefttrigger'].value = device.xinput_state.Gamepad.bLeftTrigger
-                    device.controls['righttrigger'].value = device.xinput_state.Gamepad.bRightTrigger
-                    device.controls['leftx'].value = device.xinput_state.Gamepad.sThumbLX
-                    device.controls['lefty'].value = device.xinput_state.Gamepad.sThumbLY
-                    device.controls['rightx'].value = device.xinput_state.Gamepad.sThumbRX
-                    device.controls['righty'].value = device.xinput_state.Gamepad.sThumbRY
-
-                    device.packet_number = device.xinput_state.dwPacketNumber
+                    # Post in main thread to avoid potential GL state issues
+                    pyglet.app.platform_event_loop.post_event(self, '_on_state_change', device)
 
             self._dev_lock.release()
             time.sleep(polling_rate)
+
+    @staticmethod
+    def _on_state_change(device):
+        # Handler to ensure Controller events are dispatched in the main thread.
+        # The _get_state method dispatches this by posting to the platform event loop.
+        for button, name in controller_api_to_pyglet.items():
+            device.controls[name].value = device.xinput_state.Gamepad.wButtons & button
+
+        device.controls['lefttrigger'].value = device.xinput_state.Gamepad.bLeftTrigger
+        device.controls['righttrigger'].value = device.xinput_state.Gamepad.bRightTrigger
+        device.controls['leftx'].value = device.xinput_state.Gamepad.sThumbLX
+        device.controls['lefty'].value = device.xinput_state.Gamepad.sThumbLY
+        device.controls['rightx'].value = device.xinput_state.Gamepad.sThumbRX
+        device.controls['righty'].value = device.xinput_state.Gamepad.sThumbRY
+        device.packet_number = device.xinput_state.dwPacketNumber
 
     def on_connect(self, device):
         """A device was connected."""
@@ -530,6 +536,7 @@ class XInputDeviceManager(EventDispatcher):
 
 XInputDeviceManager.register_event_type('on_connect')
 XInputDeviceManager.register_event_type('on_disconnect')
+XInputDeviceManager.register_event_type('_on_state_change')
 
 
 _device_manager = XInputDeviceManager()

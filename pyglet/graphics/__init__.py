@@ -55,10 +55,11 @@ def draw(size, mode, **data):
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)
-        attribute.set_region(buffer, 0, size, array)
+        data = (attribute.c_type * len(array))(*array)
+        buffer.set_data(data)
+
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-
         buffers.append(buffer)      # Don't garbage collect it.
 
     glDrawArrays(mode, 0, size)
@@ -108,10 +109,12 @@ def draw_indexed(size, mode, indices, **data):
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = BufferObject(size * attribute.stride)
-        attribute.set_region(buffer, 0, size, array)
+        data = (attribute.c_type * len(array))(*array)
+        buffer.set_data(data)
+
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-        buffers.append(buffer)
+        buffers.append(buffer)      # Don't garbage collect it.
 
     if size <= 0xff:
         index_type = GL_UNSIGNED_BYTE
@@ -188,24 +191,9 @@ def get_default_batch():
         return pyglet.gl.current_context.pyglet_graphics_default_batch
 
 
-def get_default_group():
-    try:
-        return pyglet.gl.current_context.pyglet_graphics_default_group
-    except AttributeError:
-        pyglet.gl.current_context.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
-        return pyglet.gl.current_context.pyglet_graphics_default_group
-
-
 def get_default_shader():
-    try:
-        return pyglet.gl.current_context.pyglet_graphics_default_shader
-    except AttributeError:
-        _default_vert_shader = pyglet.graphics.shader.Shader(_vertex_source, 'vertex')
-        _default_frag_shader = pyglet.graphics.shader.Shader(_fragment_source, 'fragment')
-        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
-        pyglet.gl.current_context.pyglet_graphics_default_shader = default_shader_program
-        return pyglet.gl.current_context.pyglet_graphics_default_shader
-
+    return pyglet.gl.current_context.create_program((_vertex_source, 'vertex'),
+                                                    (_fragment_source, 'fragment'))
 
 class Batch:
     """Manage a collection of drawables for batched rendering.

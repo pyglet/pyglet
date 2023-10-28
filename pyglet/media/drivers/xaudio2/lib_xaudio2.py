@@ -192,17 +192,19 @@ XAUDIO2_NO_VIRTUAL_AUDIO_CLIENT = 0x10000   # Used in CreateMasteringVoice to cr
 class IXAudio2VoiceCallback(com.Interface):
     _methods_ = [
         ('OnVoiceProcessingPassStart',
-         com.STDMETHOD(UINT32)),
+         com.VOIDMETHOD(UINT32)),
         ('OnVoiceProcessingPassEnd',
-         com.STDMETHOD()),
-        ('onStreamEnd',
-         com.STDMETHOD()),
-        ('onBufferStart',
-         com.STDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD()),
+        ('OnStreamEnd',
+         com.VOIDMETHOD()),
+        ('OnBufferStart',
+         com.VOIDMETHOD(ctypes.c_void_p)),
         ('OnBufferEnd',
-         com.STDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD(ctypes.c_void_p)),
         ('OnLoopEnd',
-         com.STDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD(ctypes.c_void_p)),
+        ('OnVoiceError',
+         com.VOIDMETHOD(ctypes.c_void_p, HRESULT))
     ]
 
 
@@ -220,19 +222,8 @@ class XA2SourceCallback(com.COMObject):
     _interfaces_ = [IXAudio2VoiceCallback]
 
     def __init__(self, xa2_player):
+        super().__init__()
         self.xa2_player = xa2_player
-
-    def OnVoiceProcessingPassStart(self, bytesRequired):
-        pass
-
-    def OnVoiceProcessingPassEnd(self):
-        pass
-
-    def onStreamEnd(self):
-        pass
-
-    def onBufferStart(self, pBufferContext):
-        pass
 
     def OnBufferEnd(self, pBufferContext):
         """At the end of playing one buffer, attempt to refill again.
@@ -241,10 +232,7 @@ class XA2SourceCallback(com.COMObject):
         if self.xa2_player:
             self.xa2_player.refill_source_player()
 
-    def OnLoopEnd(self, this, pBufferContext):
-        pass
-
-    def onVoiceError(self, this, pBufferContext, hresult):
+    def OnVoiceError(self, pBufferContext, hresult):
         raise Exception("Error occurred during audio playback.", hresult)
 
 
@@ -362,24 +350,18 @@ class IXAudio2MasteringVoice(IXAudio2Voice):
 class IXAudio2EngineCallback(com.Interface):
     _methods_ = [
         ('OnProcessingPassStart',
-         com.METHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD()),
         ('OnProcessingPassEnd',
-         com.METHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD()),
         ('OnCriticalError',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong)),
+         com.VOIDMETHOD(HRESULT)),
     ]
 
 
 class XA2EngineCallback(com.COMObject):
     _interfaces_ = [IXAudio2EngineCallback]
 
-    def OnProcessingPassStart(self):
-        pass
-
-    def OnProcessingPassEnd(self):
-        pass
-
-    def OnCriticalError(self, this, hresult):
+    def OnCriticalError(self, hresult):
         raise Exception("Critical Error:", hresult)
 
 

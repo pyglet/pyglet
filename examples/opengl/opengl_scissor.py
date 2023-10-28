@@ -2,15 +2,19 @@
 of the Window. To accomplish this, you can use an OpenGL Scissor
 area. In this example we define a custom Group that enforces this.
 Any Sprites/Labels that are assigned to this Group will not be drawn
-outside of the specified area. Drag the mouse to move the position.
+outside the specified area. Drag the mouse to move the position.
 """
 
 import pyglet
+
+from pyglet.sprite import Sprite
 from pyglet.gl import glEnable, glScissor, glDisable, GL_SCISSOR_TEST
 
 
 window = pyglet.window.Window(width=500, height=500)
 batch = pyglet.graphics.Batch()
+
+label = pyglet.text.Label("Drag the mouse to move the scissor area.", x=5, y=5, batch=batch)
 
 
 @window.event
@@ -44,8 +48,8 @@ class ScissorGroup(pyglet.graphics.Group):
 
     """
 
-    def __init__(self, x, y, width, height, parent=None):
-        super().__init__(parent)
+    def __init__(self, x, y, width, height, order=0, parent=None):
+        super().__init__(order, parent)
         self.x, self.y = x, y
         self.width, self.height = width, height
 
@@ -78,8 +82,7 @@ sprites = []
 img = pyglet.resource.image('pyglet.png')
 for x in range(5):
     for y in range(5):
-        sprite = pyglet.sprite.Sprite(
-            img, x*img.width, y*img.height, group=scissor_group, batch=batch)
+        sprite = Sprite(img, x*img.width, y*img.height, group=scissor_group, batch=batch)
         sprites.append(sprite)
 
 

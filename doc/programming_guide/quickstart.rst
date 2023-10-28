@@ -193,6 +193,7 @@ demonstrates playing many short audio samples simultaneously, as in a game.
 .. [#mp3] MP3 and other compressed audio formats require FFmpeg to be installed.
           Uncompressed WAV files can be played without FFmpeg.
 
+
 Where to next?
 --------------
 

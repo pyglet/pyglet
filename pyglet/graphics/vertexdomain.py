@@ -23,11 +23,9 @@ primitives of the same OpenGL primitive mode.
 
 import ctypes
 
-import pyglet
-
 from pyglet.gl import *
 from pyglet.graphics import allocation, shader, vertexarray
-from pyglet.graphics.vertexbuffer import BufferObject, MappableBufferObject
+from pyglet.graphics.vertexbuffer import BufferObject, AttributeBufferObject
 
 
 def _nearest_pow2(v):
@@ -66,6 +64,20 @@ _gl_types = {
 }
 
 
+def _make_attribute_property(attribute):
+
+    def _attribute_getter(self):
+        region = attribute.buffer.get_region(self.start, self.count)
+        region.invalidate()
+        return region.array
+
+    def _attribute_setter(self, data):
+        attribute.buffer.set_region(self.start, self.count, data)
+
+    return property(_attribute_getter, _attribute_setter)
+
+
+
 class VertexDomain:
     """Management of a set of vertex lists.
 
@@ -79,10 +91,11 @@ class VertexDomain:
         self.program = program
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
-        self.vao = vertexarray.VertexArray()
 
-        self.attributes = []
-        self.buffer_attributes = []  # list of (buffer, attributes)
+        self.attribute_names = {}       # name: attribute
+        self.buffer_attributes = []     # list of (buffer, attributes)
+
+        self._property_dict = {}        # name: property(_getter, _setter)
 
         for name, meta in attribute_meta.items():
             assert meta['format'][0] in _gl_types, f"'{meta['format']}' is not a valid atrribute format for '{name}'."
@@ -91,27 +104,27 @@ class VertexDomain:
             gl_type = _gl_types[meta['format'][0]]
             normalize = 'n' in meta['format']
             attribute = shader.Attribute(name, location, count, gl_type, normalize)
-            self.attributes.append(attribute)
-
-            # Create buffer:
-            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity)
-            attribute.buffer.element_size = attribute.stride
-            attribute.buffer.attributes = (attribute,)
-            self.buffer_attributes.append((attribute.buffer, (attribute,)))
-
-        # Create named attributes for each attribute
-        self.attribute_names = {}
-        for attribute in self.attributes:
             self.attribute_names[attribute.name] = attribute
 
-    def __del__(self):
-        # Break circular refs that Python GC seems to miss even when forced
-        # collection.
-        for attribute in self.attributes:
-            try:
-                del attribute.buffer
-            except AttributeError:
-                pass
+            # Create buffer:
+            attribute.buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity, attribute)
+
+            self.buffer_attributes.append((attribute.buffer, (attribute,)))
+
+            # Create custom property to be used in the VertexList:
+            self._property_dict[attribute.name] = _make_attribute_property(attribute)
+
+        # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
+        self._vertexlist_class = type("VertexList", (VertexList,), self._property_dict)
+
+        self.vao = vertexarray.VertexArray()
+        self.vao.bind()
+        for buffer, attributes in self.buffer_attributes:
+            buffer.bind()
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(buffer.ptr)
+        self.vao.unbind()
 
     def safe_alloc(self, count):
         """Allocate vertices, resizing the buffers if necessary."""
@@ -121,7 +134,7 @@ class VertexDomain:
             capacity = _nearest_pow2(e.requested_capacity)
             self.version += 1
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.element_size)
+                buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.alloc(count)
 
@@ -133,7 +146,7 @@ class VertexDomain:
             capacity = _nearest_pow2(e.requested_capacity)
             self.version += 1
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.element_size)
+                buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
@@ -149,7 +162,7 @@ class VertexDomain:
         :rtype: :py:class:`VertexList`
         """
         start = self.safe_alloc(count)
-        return VertexList(self, start, count)
+        return self._vertexlist_class(self, start, count)
 
     def draw(self, mode):
         """Draw all vertices in the domain.
@@ -163,12 +176,8 @@ class VertexDomain:
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
 
         starts, sizes = self.allocator.get_allocated_regions()
         primcount = len(starts)
@@ -181,9 +190,6 @@ class VertexDomain:
             starts = (GLint * primcount)(*starts)
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawArrays(mode, starts, sizes, primcount)
-
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
     def draw_subset(self, mode, vertex_list):
         """Draw a specific VertexList in the domain.
@@ -199,17 +205,10 @@ class VertexDomain:
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
 
         glDrawArrays(mode, vertex_list.start, vertex_list.count)
-
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
     @property
     def is_empty(self):
@@ -227,8 +226,6 @@ class VertexList:
         self.domain = domain
         self.start = start
         self.count = count
-        self._caches = {}
-        self._cache_versions = {}
 
     def draw(self, mode):
         """Draw this vertex list in the given OpenGL mode.
@@ -253,16 +250,13 @@ class VertexList:
         new_start = self.domain.safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
-            for attribute in self.domain.attributes:
+            for attribute in self.domain.attribute_names.values():
                 old = attribute.get_region(attribute.buffer, self.start, self.count)
                 new = attribute.get_region(attribute.buffer, new_start, self.count)
                 new.array[:] = old.array[:]
                 new.invalidate()
         self.start = new_start
         self.count = count
-
-        for version in self._cache_versions:
-            self._cache_versions[version] = None
 
     def delete(self):
         """Delete this group."""
@@ -293,32 +287,9 @@ class VertexList:
         self.domain = domain
         self.start = new_start
 
-        for version in self._cache_versions:
-            self._cache_versions[version] = None
-
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
         attribute.set_region(attribute.buffer, self.start, self.count, data)
-
-    def __getattr__(self, name):
-        """dynamic access to vertex attributes, for backwards compatibility.
-        """
-        domain = self.domain
-        if self._cache_versions.get(name, None) != domain.version:
-            attribute = domain.attribute_names[name]
-            self._caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
-            self._cache_versions[name] = domain.version
-
-        region = self._caches[name]
-        region.invalidate()
-        return region.array
-
-    def __setattr__(self, name, value):
-        # Allow setting vertex attributes directly without overwriting them:
-        if 'domain' in self.__dict__ and name in self.__dict__['domain'].attribute_names:
-            getattr(self, name)[:] = value
-            return
-        super().__setattr__(name, value)
 
 
 class IndexedVertexDomain(VertexDomain):
@@ -338,6 +309,13 @@ class IndexedVertexDomain(VertexDomain):
         self.index_c_type = shader._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
         self.index_buffer = BufferObject(self.index_allocator.capacity * self.index_element_size)
+
+        self.vao.bind()
+        self.index_buffer.bind_to_index_buffer()
+        self.vao.unbind()
+
+        # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
+        self._vertexlist_class = type("IndexedVertexList", (IndexedVertexList,), self._property_dict)
 
     def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
@@ -373,7 +351,7 @@ class IndexedVertexDomain(VertexDomain):
         """
         start = self.safe_alloc(count)
         index_start = self.safe_index_alloc(index_count)
-        return IndexedVertexList(self, start, count, index_start, index_count)
+        return self._vertexlist_class(self, start, count, index_start, index_count)
 
     def get_index_region(self, start, count):
         """Get a data from a region of the index buffer.
@@ -414,13 +392,8 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind_to_index_buffer()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -436,10 +409,6 @@ class IndexedVertexDomain(VertexDomain):
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
-        self.index_buffer.unbind()
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
-
     def draw_subset(self, mode, vertex_list):
         """Draw a specific IndexedVertexList in the domain.
 
@@ -454,21 +423,12 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, _ in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(attribute.buffer.ptr)
-        self.index_buffer.bind_to_index_buffer()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +
                        vertex_list.index_start * self.index_element_size)
-
-        self.index_buffer.unbind()
-        for buffer, _ in self.buffer_attributes:
-            buffer.unbind()
 
 
 class IndexedVertexList(VertexList):

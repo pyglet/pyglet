@@ -3,27 +3,73 @@
 Keyboard input
 ==============
 
-pyglet has support for low-level keyboard input suitable for games as well as
-locale- and device-independent Unicode text entry.
+pyglet provides multiple types of keyboard input abstraction:
 
-Keyboard input requires a window which has focus.  The operating system
-usually decides which application window has keyboard focus.  Typically this
-window appears above all others and may be decorated differently, though this
-is platform-specific (for example, some Linux window managers couple
-keyboard focus with the mouse pointer).
+#. Cross-platform key press/release events suitable for game controls
+#. Unicode text entry with automatic locale and platform handling
+#. Cross-platform detection of common text editing actions
 
-You can request keyboard focus for a window with the
-:py:meth:`~pyglet.window.Window.activate` method, but you should not rely
-on this -- it may simply provide a visual cue to the user indicating that
-the window requires user input, without actually getting focus.
 
-Windows created with the
-:py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS` or
-:py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
-style cannot receive keyboard focus.
+All of them have the following restrictions:
 
-It is not possible to use pyglet's keyboard or text events without a window;
-consider using Python built-in functions such as ``input`` instead.
+#. There must be at least one pyglet :py:class:`~pyglet.window.Window`
+   instance which can hold keyboard focus
+
+#. Windows created with the following styles cannot hold keyboard focus:
+
+   * :py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`
+   * :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
+
+
+If your project's requirements fall outside these restrictions, you
+should consider alternatives. Examples include:
+
+* Python's built-in :py:func:`input` function
+* The `Textual <https://www.textualize.io/projects/#textual>`_ terminal UI
+  framework
+
+
+Keyboard Focus Conventions
+--------------------------
+
+Keyboard focus is where the user's keyboard input is sent.
+
+Desktop operating systems often follow these conventions:
+
+#. Only one window can have focus
+#. Clicking a window gives it focus
+#. The window with focus is displayed above all others
+#. The window with focus has a distinct title bar style
+#. Windows can have focus taken away
+#. Windows can request focus
+
+However, the items above are not guaranteed to be true.
+
+For example, pyglet allows you to request focus from the OS by calling
+:py:meth:`Window.activate <pyglet.window.Window.activate>`. However,
+the OS may not support the feature. Even if it does support it, the OS
+may not only refuse, but do so without notifying the user focus was
+requested.
+
+Deviations from the conventions can occur for any of the following
+reasons:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Cause
+     - Example(s)
+
+   * - Modal dialogs
+     - Permission requests and error notifications
+
+   * - User settings
+     - Window focus is set to follow the mouse
+
+   * - Platform quirks
+     - Split screen utilities and Linux window managers
+       with multi-focus modes
+
 
 Keyboard events
 ---------------
@@ -165,10 +211,10 @@ similar functionality in allowing players to set up their own key bindings.
 Remembering key state
 ^^^^^^^^^^^^^^^^^^^^^
 
-pyglet provides the convenience class
-:py:class:`~pyglet.window.key.KeyStateHandler` for storing the
-current keyboard state.  This can be pushed onto the event handler stack of
-any window and subsequently queried as a dict::
+:py:class:`~pyglet.window.key.KeyStateHandler` is a convenience class which
+stores the current keyboard state.  Instances can be pushed onto the event
+handler stack of any window and subsequently queried using key code constants
+as keys::
 
     from pyglet.window import key
 
@@ -182,16 +228,16 @@ any window and subsequently queried as a dict::
 
 .. _guide_text-and-motion-events:
 
-Text and motion events
-----------------------
+Text Input and Motion Events
+----------------------------
 
-pyglet decouples the keys that the user presses from the Unicode text that is
-input.  There are several benefits to this:
+pyglet offers Unicode text input events in addition to individual key events.
+There are several benefits to this:
 
-* The complex task of mapping modifiers and key symbols to Unicode characters
-  is taken care of automatically and correctly.
-* Key repeat is applied to keys held down according to the user's operating
-  system preferences.
+* Automatic and correct mapping of platform-specific modifiers and key symbols
+  to Unicode characters
+* Key repeat for held keys is automatically applied to text input according to
+  the user's operating system preferences.
 * Dead keys and compose keys are automatically interpreted to produce
   diacritic marks or combining characters.
 * Keyboard input can be routed via an input palette, for example to input
@@ -210,46 +256,41 @@ When text is entered into a window, the
         pass
 
 The only parameter provided is a Unicode string.
-For keyboard input this will usually be one character long,
-however more complex input methods such as an input palette may
-provide an entire word or phrase at once.
+Although this will usually be one character long for direct keyboard
+input, more complex input methods such as an input palettes may provide
+entire words or phrases at once.
 
-You should always use the :py:meth:`~pyglet.window.Window.on_text`
-event when you need to determine a string from a sequence of keystrokes.
-Conversely, you never use :py:meth:`~pyglet.window.Window.on_text` when you
-require keys to be pressed (for example, to control the movement of the player
-in a game).
+How does this differ from :py:meth:`~pyglet.window.Window.on_key_press`?
+
+* Always use the :py:meth:`~pyglet.window.Window.on_text`
+  event when you need a string from a series of keystrokes
+* Never use the :py:meth:`~pyglet.window.Window.on_text` event when you
+  need individual presses, such as controlling player movement in a game
+
+
+.. _guide_keyboard-motion-events:
 
 Motion events
 ^^^^^^^^^^^^^
 
-In addition to entering text, users press keys on the keyboard to navigate
-around text widgets according to well-ingrained conventions.  For example,
-pressing the left arrow key moves the cursor one character to the left.
+In addition to key presses and entering new text, pyglet also supports common
+text editing motions:
 
-While you might be tempted to use the
-:py:meth:`~pyglet.window.Window.on_key_press` event to capture these
-events, there are a couple of problems:
+* Selecting text
+* Moving the caret in response to non-character keys
+* Deleting, copying, and pasting text
 
-* Key repeat events are not generated for
-  :py:meth:`~pyglet.window.Window.on_key_press`, yet users expect
-  that holding down the left arrow key will eventually move the character to
-  the beginning of the line.
-* Different operating systems have different conventions for the behaviour of
-  keys.  For example, on Windows it is customary for the Home key to move the
-  cursor to the beginning of the line, whereas on Mac OS X the same key moves
-  to the beginning of the document.
+pyglet automatically detects and translates platform-specific versions of
+supported motions into cross-platform
+:py:meth:`~pyglet.window.Window.on_text_motion` events. These events are
+intended be handled by the :py:meth:`Caret <pyglet.text.caret.Caret.on_text_motion>`
+of any active :py:class:`~pyglet.text.layout.IncrementalTextLayout`, such
+as those used in :py:class:`~pyglet.gui.widgets.TextEntry` fields.
 
-pyglet windows provide the :py:meth:`~pyglet.window.Window.on_text_motion`
-event, which takes care of these problems by abstracting away the key presses
-and providing your application only with the intended cursor motion::
-
-    def on_text_motion(motion):
-        pass
-
-`motion` is an integer which is a constant defined in
-:py:mod:`pyglet.window.key`. The following table shows the defined text motions
-and their keyboard mapping on each operating system.
+The `motion` argument to the event handler will be a constant value
+defined in :py:mod:`pyglet.window.key`. The table below lists the
+supported text motions with their keyboard mapping on each supported
+platform.
 
     .. list-table::
         :header-rows: 1
@@ -274,6 +315,14 @@ and their keyboard mapping on each operating system.
           - Move the cursor right
           - Right
           - Right
+        * - ``MOTION_COPY``
+          - Copy the current selection to the clipboard
+          - Ctrl + C
+          - Command + C
+        * - ``MOTION_PASTE``
+          - Paste the clipboard contents into the current document
+          - Ctrl + V
+          - Command + V
         * - ``MOTION_PREVIOUS_WORD``
           - Move the cursor to the previous word
           - Ctrl + Left
@@ -315,6 +364,80 @@ and their keyboard mapping on each operating system.
           - Delete
           - Delete
 
+If you believe pyglet needs to add support for a motion which is
+currently missing, please skip to
+:ref:`guide_keyboard-adding-new-motion-events`.
+
+Customizing this behavior for an individual project is currently
+difficult due to the way carets and text entry fields are interconnected.
+However, using :py:meth:`~pyglet.window.Window.on_key_press` to handle
+motion events should still be avoided for the following reasons:
+
+* Supported platforms can assign a key to different motions. For example
+  the Home key moves the cursor to the start of a line on Windows, but
+  to the beginning of a document on Mac OS.
+* Users expect holding down a motion's keys to repeat it released. For
+  example, holding Backspace deletes multiple characters. However, only
+  one :py:meth:`~pyglet.window.Window.on_key_press` event occurs per
+  keypress.
+
+
+.. _guide_keyboard-adding-new-motion-events:
+
+Adding New Motions
+""""""""""""""""""
+
+Before adding a new motion, please do the following:
+
+#. Consult the previous section & each platform's documentation to be
+   sure it is:
+
+   #. A common text operation present on every platform
+   #. Not already implemented by pyglet
+
+#. Attempt to find the corresponding functionality in
+   `Apple's NSTextView documentation
+   <https://developer.apple.com/documentation/appkit/nstextview/>`_
+
+#. Discuss the addition and any remaining questions with maintainers by either:
+
+   * `Filing a GitHub Issue <https://github.com/pyglet/pyglet/issues>`_
+   * `Discord or the mailing list <https://github.com/pyglet/pyglet#contact>`_
+
+Then, once you're ready:
+
+#. Add the motion constant to :py:mod:`pyglet.window.key`
+
+#. Add an entry for the constant in the :ref:`guide_keyboard-motion-events`
+   section
+
+#. Implement shared handling behavior in :py:meth:`~pyglet.text.caret.Caret.on_text_motion`
+
+#. Implement Mac support (usually the most confusing step)
+
+   #. Open `pyglet/window/cocoa/pyglet_textview.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/cocoa/pyglet_textview.py>`_
+   #. Implement a corresponding handler method on
+      ``PygletTextView_Implementation`` (pyglet's subclass of ``NSTextView``)
+
+#. Add the Windows keyboard shortcut
+
+   #. Open `pyglet/window/win32/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/win32/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
+
+#. Add the Linux keyboard shortcut
+
+   #. Open `pyglet/window/xlib/__init__.py
+      <https://github.com/pyglet/pyglet/blob/master/pyglet/window/xlib/__init__.py>`_
+   #. Add the keyboard shortcut to the ``_motion_map`` dictionary
+
+
+Be sure to test your changes before making a PR if possible!
+
+If you do not have access to a specific platform above, include this in your PR's
+notes.
+
 Keyboard exclusivity
 --------------------
 
@@ -328,15 +451,19 @@ application which should not be closed, or a game in which it is possible for
 a user to accidentally press one of these keys.
 
 To enable this mode, call
-:py:meth:`~pyglet.window.Window.set_exclusive_keyboard` for the window on
-which it should apply.  On Mac OS X the dock and menu bar will slide out of
-view while exclusive keyboard is activated.
+:py:meth:`Window.set_exclusive_keyboard <pyglet.window.Window.set_exclusive_keyboard>`
+on the window  it should apply to. On Mac OS X, the dock and menu bar
+will slide out of view while exclusive keyboard is activated.
 
 The following restrictions apply on Windows:
 
-* Most keys are not disabled: a user can still switch away from your
-  application using Ctrl+Escape, Alt+Escape, the Windows key or
-  Ctrl+Alt+Delete.  Only the Alt+Tab combination is disabled.
+* Only Alt+Tab can be disabled
+* Users will still be able to switch applications through:
+
+  * Ctrl+Escape
+  * Alt+Escape
+  * the Windows key
+  * Ctrl+Alt+Delete
 
 The following restrictions apply on Mac OS X:
 

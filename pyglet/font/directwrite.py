@@ -266,29 +266,28 @@ class DWRITE_CLUSTER_METRICS(ctypes.Structure):
 class IDWriteFontFileStream(com.IUnknown):
     _methods_ = [
         ('ReadFileFragment',
-         com.STDMETHOD(c_void_p, POINTER(c_void_p), UINT64, UINT64, POINTER(c_void_p))),
+         com.STDMETHOD(POINTER(c_void_p), UINT64, UINT64, POINTER(c_void_p))),
         ('ReleaseFileFragment',
-         com.STDMETHOD(c_void_p, c_void_p)),
+         com.STDMETHOD(c_void_p)),
         ('GetFileSize',
-         com.STDMETHOD(c_void_p, POINTER(UINT64))),
+         com.STDMETHOD(POINTER(UINT64))),
         ('GetLastWriteTime',
-         com.STDMETHOD(c_void_p, POINTER(UINT64))),
+         com.STDMETHOD(POINTER(UINT64))),
     ]
 
 
 class IDWriteFontFileLoader_LI(com.IUnknown):  # Local implementation use only.
     _methods_ = [
         ('CreateStreamFromKey',
-         com.STDMETHOD(c_void_p, c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
+         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
     ]
 
 
 class IDWriteFontFileLoader(com.pIUnknown):
     _methods_ = [
         ('CreateStreamFromKey',
-         com.STDMETHOD(c_void_p, c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
+         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
     ]
-
 
 class IDWriteLocalFontFileLoader(IDWriteFontFileLoader, com.pIUnknown):
     _methods_ = [
@@ -452,13 +451,13 @@ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT = 0
 class IDWriteTextAnalysisSource(com.IUnknown):
     _methods_ = [
         ('GetTextAtPosition',
-         com.METHOD(HRESULT, c_void_p, UINT32, POINTER(c_wchar_p), POINTER(UINT32))),
+         com.STDMETHOD(UINT32, POINTER(c_wchar_p), POINTER(UINT32))),
         ('GetTextBeforePosition',
-         com.STDMETHOD(UINT32, c_wchar_p, POINTER(UINT32))),
+         com.STDMETHOD(UINT32, POINTER(c_wchar_p), POINTER(UINT32))),
         ('GetParagraphReadingDirection',
          com.METHOD(DWRITE_READING_DIRECTION)),
         ('GetLocaleName',
-         com.STDMETHOD(c_void_p, UINT32, POINTER(UINT32), POINTER(c_wchar_p))),
+         com.STDMETHOD(UINT32, POINTER(UINT32), POINTER(c_wchar_p))),
         ('GetNumberSubstitution',
          com.STDMETHOD(UINT32, POINTER(UINT32), c_void_p)),
     ]
@@ -467,7 +466,7 @@ class IDWriteTextAnalysisSource(com.IUnknown):
 class IDWriteTextAnalysisSink(com.IUnknown):
     _methods_ = [
         ('SetScriptAnalysis',
-         com.STDMETHOD(c_void_p, UINT32, UINT32, POINTER(DWRITE_SCRIPT_ANALYSIS))),
+         com.STDMETHOD(UINT32, UINT32, POINTER(DWRITE_SCRIPT_ANALYSIS))),
         ('SetLineBreakpoints',
          com.STDMETHOD(UINT32, UINT32, c_void_p)),
         ('SetBidiLevel',
@@ -524,7 +523,7 @@ class TextAnalysis(com.COMObject):
 
         analyzer.AnalyzeScript(self, 0, text_length, self)
 
-    def SetScriptAnalysis(self, this, textPosition, textLength, scriptAnalysis):
+    def SetScriptAnalysis(self, textPosition, textLength, scriptAnalysis):
         # textPosition - The index of the first character in the string that the result applies to
         # textLength - How many characters of the string from the index that the result applies to
         # scriptAnalysis - The analysis information for all glyphs starting at position for length.
@@ -542,10 +541,10 @@ class TextAnalysis(com.COMObject):
         return 0
         # return 0x80004001
 
-    def GetTextBeforePosition(self, this, textPosition, textString, textLength):
+    def GetTextBeforePosition(self, textPosition, textString, textLength):
         raise Exception("Currently not implemented.")
 
-    def GetTextAtPosition(self, this, textPosition, textString, textLength):
+    def GetTextAtPosition(self, textPosition, textString, textLength):
         # This method will retrieve a substring of the text in this layout
         #   to be used in an analysis step.
         # Arguments:
@@ -568,7 +567,7 @@ class TextAnalysis(com.COMObject):
     def GetParagraphReadingDirection(self):
         return 0
 
-    def GetLocaleName(self, this, textPosition, textLength, localeName):
+    def GetLocaleName(self, textPosition, textLength, localeName):
         self.__local_name = c_wchar_p("")  # TODO: Add more locales.
         localeName[0] = self.__local_name
         textLength[0] = self._textlength - textPosition
@@ -954,16 +953,16 @@ class IDWriteTextLayout1(IDWriteTextLayout, IDWriteTextFormat, com.pIUnknown):
 class IDWriteFontFileEnumerator(com.IUnknown):
     _methods_ = [
         ('MoveNext',
-         com.STDMETHOD(c_void_p, POINTER(BOOL))),
+         com.STDMETHOD(POINTER(BOOL))),
         ('GetCurrentFontFile',
-         com.STDMETHOD(c_void_p, c_void_p)),
+         com.STDMETHOD(c_void_p)),
     ]
 
 
 class IDWriteFontCollectionLoader(com.IUnknown):
     _methods_ = [
         ('CreateEnumeratorFromKey',
-         com.STDMETHOD(c_void_p, c_void_p, c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileEnumerator)))),
+         com.STDMETHOD(c_void_p, c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileEnumerator)))),
     ]
 
 
@@ -971,20 +970,12 @@ class MyFontFileStream(com.COMObject):
     _interfaces_ = [IDWriteFontFileStream]
 
     def __init__(self, data):
+        super().__init__()
         self._data = data
         self._size = len(data)
         self._ptrs = []
 
-    def AddRef(self, this):
-        return 1
-
-    def Release(self, this):
-        return 1
-
-    def QueryInterface(self, this, refiid, tester):
-        return 0
-
-    def ReadFileFragment(self, this, fragmentStart, fileOffset, fragmentSize, fragmentContext):
+    def ReadFileFragment(self, fragmentStart, fileOffset, fragmentSize, fragmentContext):
         if fileOffset + fragmentSize > self._size:
             return 0x80004005  # E_FAIL
 
@@ -997,14 +988,14 @@ class MyFontFileStream(com.COMObject):
         fragmentContext[0] = None
         return 0
 
-    def ReleaseFileFragment(self, this, fragmentContext):
+    def ReleaseFileFragment(self, fragmentContext):
         return 0
 
-    def GetFileSize(self, this, fileSize):
+    def GetFileSize(self, fileSize):
         fileSize[0] = self._size
         return 0
 
-    def GetLastWriteTime(self, this, lastWriteTime):
+    def GetLastWriteTime(self, lastWriteTime):
         return 0x80004001  # E_NOTIMPL
 
 
@@ -1012,21 +1003,13 @@ class LegacyFontFileLoader(com.COMObject):
     _interfaces_ = [IDWriteFontFileLoader_LI]
 
     def __init__(self):
+        super().__init__()
         self._streams = {}
 
-    def QueryInterface(self, this, refiid, tester):
-        return 0
-
-    def AddRef(self, this):
-        return 1
-
-    def Release(self, this):
-        return 1
-
-    def CreateStreamFromKey(self, this, fontfileReferenceKey, fontFileReferenceKeySize, fontFileStream):
+    def CreateStreamFromKey(self, fontfileReferenceKey, fontFileReferenceKeySize, fontFileStream):
         convert_index = cast(fontfileReferenceKey, POINTER(c_uint32))
 
-        self._ptr = ctypes.cast(self._streams[convert_index.contents.value]._pointers[IDWriteFontFileStream],
+        self._ptr = ctypes.cast(self._streams[convert_index.contents.value].as_interface(IDWriteFontFileStream),
                                 POINTER(IDWriteFontFileStream))
         fontFileStream[0] = self._ptr
         return 0
@@ -1039,6 +1022,7 @@ class MyEnumerator(com.COMObject):
     _interfaces_ = [IDWriteFontFileEnumerator]
 
     def __init__(self, factory, loader):
+        super().__init__()
         self.factory = cast(factory, IDWriteFactory)
         self.key = "pyglet_dwrite"
         self.size = len(self.key)
@@ -1057,7 +1041,7 @@ class MyEnumerator(com.COMObject):
     def AddFontData(self, fonts):
         self._font_data = fonts
 
-    def MoveNext(self, this, hasCurrentFile):
+    def MoveNext(self, hasCurrentFile):
 
         self.current_index += 1
         if self.current_index != len(self._font_data):
@@ -1087,7 +1071,7 @@ class MyEnumerator(com.COMObject):
 
         pass
 
-    def GetCurrentFontFile(self, this, fontFile):
+    def GetCurrentFontFile(self, fontFile):
         fontFile = cast(fontFile, POINTER(IDWriteFontFile))
         fontFile[0] = self._font_files[self.current_index]
         return 0
@@ -1097,24 +1081,14 @@ class LegacyCollectionLoader(com.COMObject):
     _interfaces_ = [IDWriteFontCollectionLoader]
 
     def __init__(self, factory, loader):
+        super().__init__()
         self._enumerator = MyEnumerator(factory, loader)
 
     def AddFontData(self, fonts):
         self._enumerator.AddFontData(fonts)
 
-    def AddRef(self, this):
-        self._i = 1
-        return 1
-
-    def Release(self, this):
-        self._i = 0
-        return 1
-
-    def QueryInterface(self, this, refiid, tester):
-        return 0
-
-    def CreateEnumeratorFromKey(self, this, factory, key, key_size, enumerator):
-        self._ptr = ctypes.cast(self._enumerator._pointers[IDWriteFontFileEnumerator],
+    def CreateEnumeratorFromKey(self, factory, key, key_size, enumerator):
+        self._ptr = ctypes.cast(self._enumerator.as_interface(IDWriteFontFileEnumerator),
                                 POINTER(IDWriteFontFileEnumerator))
 
         enumerator[0] = self._ptr
@@ -2418,7 +2392,7 @@ class Win32DirectWriteFont(base.Font):
 
             # Note: RegisterFontLoader takes a pointer. However, for legacy we implement our own callback interface.
             # Therefore we need to pass to the actual pointer directly.
-            cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader_LI])
+            cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
 
             cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
             cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
@@ -2472,7 +2446,7 @@ class Win32DirectWriteFont(base.Font):
                 cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
 
                 cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
-                cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader_LI])
+                cls._write_factory.RegisterFontFileLoader(cls._font_loader.as_interface(IDWriteFontFileLoader_LI))
 
             cls._font_collection_loader.AddFontData(cls._font_cache)
 

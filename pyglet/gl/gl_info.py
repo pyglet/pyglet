@@ -63,10 +63,12 @@ class GLInfo:
 
         This method is called automatically for the default context.
         """
-        from pyglet.gl.gl import glGetString, glGetStringi, GL_NUM_EXTENSIONS
-
         self._have_context = True
+
         if not self._have_info:
+
+            from pyglet.gl.gl import glGetString, glGetStringi, GL_NUM_EXTENSIONS
+
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)

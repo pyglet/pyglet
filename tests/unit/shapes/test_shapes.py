@@ -23,8 +23,19 @@ from pyglet.shapes import *
     (Star, (1, 1, 20, 11, 5)),
     (Polygon, ((0, 0), (1, 1), (2, 2)))
 ])
-def shape_keywords_only(request):
-    class_, positional_args = request.param
+def shape_and_positionals(request):
+    return request.param
+
+
+# Enable type-specific behavior; just Line + rotation at the moment
+@pytest.fixture
+def shape_type(shape_and_positionals):
+    return shape_and_positionals[0]
+
+
+@pytest.fixture
+def shape_keywords_only(shape_and_positionals):
+    class_, positional_args = shape_and_positionals
     return partial(class_, *positional_args)
 
 
@@ -44,6 +55,17 @@ def test_init_sets_opacity_from_rgba_value_as_color_argument(rgba_shape):
 
 def test_init_sets_opacity_to_255_for_rgb_value_as_color_argument(shape_keywords_only):
     assert shape_keywords_only(color=(0, 0, 0)).opacity == 255
+
+
+def test_init_sets_rotation_to_zero(rgb_or_rgba_shape, shape_type):
+    if shape_type is Line:
+        pytest.xfail("Rotation test not yet valid for line due to design ambiguity")
+    assert rgb_or_rgba_shape.rotation == 0
+
+
+def test_rotation_prop_sets_rotation(rgb_or_rgba_shape, new_nonzero_rotation):
+    rgb_or_rgba_shape.rotation = new_nonzero_rotation
+    assert rgb_or_rgba_shape.rotation == new_nonzero_rotation
 
 
 def test_setting_color_sets_color_rgb_channels(rgb_or_rgba_shape, new_rgb_or_rgba_color):

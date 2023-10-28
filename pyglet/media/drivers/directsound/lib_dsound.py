@@ -270,7 +270,6 @@ class IDirectSound(com.pIUnknown):
         ('Initialize', 
          com.STDMETHOD(com.LPGUID)),
     ]
-    _type_ = com.COMInterface
 
 DirectSoundCreate = lib.DirectSoundCreate
 DirectSoundCreate.argtypes = \

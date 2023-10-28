@@ -3,7 +3,7 @@ from tests.base.interactive import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document
-from pyglet.text.layout import TextDecorationGroup, IncrementalTextLayout
+from pyglet.text.layout import IncrementalTextLayout
 
 
 doctext = """ELEMENT.py test document.
@@ -70,28 +70,31 @@ Aliquam erat volutpat.
 class TestElement(document.InlineElement):
     vertex_list = None
 
-    def place(self, layout, x, y):
-        group = TextDecorationGroup(1, layout.top_group)
-        self.vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES,
-                                                    group,
-                                                    [0, 1, 2, 0, 2, 3],
-                                                    'v2i', ('c4B', (200, 200, 200, 255) * 4))
+    def place(self, layout, x, y, z):
+        group = layout.foreground_decoration_group
+        program = pyglet.text.layout.get_default_decoration_shader()
+
+        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
+                                                       [0, 1, 2, 0, 2, 3],
+                                                       colors=('Bn', (200, 200, 200, 255) * 4),
+                                                       group=group, batch=layout.batch)
 
         y += self.descent
         w = self.advance
         h = self.ascent - self.descent
-        self.vertex_list.position[:] = (x, y,
-                                        x + w, y,
-                                        x + w, y + h,
-                                        x, y + h)
+        self.vertex_list.position[:] = (x, y, z,
+                                        x + w, y, z,
+                                        x + w, y + h, z,
+                                        x, y + h, z)
+
     def remove(self, layout):
         self.vertex_list.delete()
         del self.vertex_list
 
 
-class TestWindow(pyglet.window.Window):
+class BaseTestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
-        super(TestWindow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
         self.document = pyglet.text.decode_attributed(doctext)
@@ -108,7 +111,7 @@ class TestWindow(pyglet.window.Window):
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
     def on_resize(self, width, height):
-        super(TestWindow, self).on_resize(width, height)
+        super().on_resize(width, height)
         self.layout.begin_update()
         self.layout.x = self.margin
         self.layout.y = self.margin
@@ -121,12 +124,12 @@ class TestWindow(pyglet.window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        pyglet.gl.glClearColor(0, 0, 0, 1)
+        pyglet.gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 
     def on_key_press(self, symbol, modifiers):
-        super(TestWindow, self).on_key_press(symbol, modifiers)
+        super().on_key_press(symbol, modifiers)
         if symbol == pyglet.window.key.TAB:
             self.caret.on_text('\t')
 
@@ -145,7 +148,7 @@ class InlineElementTestCase(InteractiveTestCase):
     def test_inline_elements(self):
         self.window = None
         try:
-            self.window = TestWindow(resizable=True, visible=False)
+            self.window = BaseTestWindow(resizable=True, visible=False)
             self.window.set_visible()
             pyglet.app.run()
             self.user_verify('Pass test?', take_screenshot=False)

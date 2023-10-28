@@ -213,7 +213,16 @@ MODESWITCH    = 0xff7e
 SCRIPTSWITCH  = 0xff7e
 FUNCTION      = 0xffd2
 
-# Text motion constants: these are allowed to clash with key constants
+# Text motion constants
+# These are allowed to clash with key constants since they are
+# abstractions of keyboard shortcuts. See the following for more
+# information:
+#
+# 1. doc/programming_guide/keyboard.rst
+# 2. doc/modules/window_key.rst
+#
+# To add new motions, consult the Adding New Motions section of
+# doc/programming_guide/keyboard.rst
 MOTION_UP                = UP
 MOTION_RIGHT             = RIGHT
 MOTION_DOWN              = DOWN

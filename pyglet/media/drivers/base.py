@@ -4,10 +4,9 @@ import weakref
 from abc import ABCMeta, abstractmethod
 
 import pyglet
-from pyglet.util import with_metaclass
 
 
-class AbstractAudioPlayer(with_metaclass(ABCMeta)):
+class AbstractAudioPlayer(metaclass=ABCMeta):
     """Base class for driver audio players.
     """
 
@@ -165,7 +164,10 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta)):
 
     @property
     def source(self):
-        """Source to play from."""
+        """Source to play from.
+        May be swapped out for one of an equal audio format, but ensure that
+        the player has been paused and cleared beforehand.
+        """
         return self._source
 
     @source.setter
@@ -173,7 +175,7 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta)):
         self._source = weakref.proxy(value)
 
 
-class AbstractAudioDriver(with_metaclass(ABCMeta)):
+class AbstractAudioDriver(metaclass=ABCMeta):
     @abstractmethod
     def create_audio_player(self, source, player):
         pass

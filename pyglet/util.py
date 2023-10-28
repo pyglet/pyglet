@@ -31,37 +31,6 @@ def asstr(s):
     return s.decode("utf-8")
 
 
-def with_metaclass(meta, *bases):
-    """
-    Function from jinja2/_compat.py. License: BSD.
-    Use it like this::
-        class BaseForm:
-            pass
-        class FormType(type):
-            pass
-        class Form(with_metaclass(FormType, BaseForm)):
-            pass
-    This requires a bit of explanation: the basic idea is to make a
-    dummy metaclass for one level of class instantiation that replaces
-    itself with the actual metaclass.  Because of internal type checks
-    we also need to make sure that we downgrade the custom metaclass
-    for one level to something closer to type (that's why __call__ and
-    __init__ comes back from type etc.).
-    This has the advantage over six.with_metaclass of not introducing
-    dummy classes into the final MRO.
-    """
-    class MetaClass(meta):
-        __call__ = type.__call__
-        __init__ = type.__init__
-
-        def __new__(cls, name, this_bases, d):
-            if this_bases is None:
-                return type.__new__(cls, name, (), d)
-            return meta(name, bases, d)
-
-    return MetaClass('temporary_class', None, {})
-
-
 def debug_print(enabled_or_option='debug'):
     """Get a debug printer that is enabled based on a boolean input or a pyglet option.
     The debug print function returned should be used in an assert. This way it can be
@@ -114,8 +83,9 @@ class CodecRegistry:
         will be return if no encoders for that extension are available.
         """
         if filename:
-            extension = os.path.splitext(filename)[1].lower()
-            return self._encoder_extensions.get(extension, [])
+            root, ext = os.path.splitext(filename)
+            extension = ext if ext else root        # If only ".ext" is provided
+            return self._encoder_extensions.get(extension.lower(), [])
         return self._encoders
 
     def get_decoders(self, filename=None):
@@ -124,8 +94,9 @@ class CodecRegistry:
         will be return if no encoders for that extension are available.
         """
         if filename:
-            extension = os.path.splitext(filename)[1].lower()
-            return self._decoder_extensions.get(extension, [])
+            root, ext = os.path.splitext(filename)
+            extension = ext if ext else root        # If only ".ext" is provided
+            return self._decoder_extensions.get(extension.lower(), [])
         return self._decoders
 
     def add_decoders(self, module):

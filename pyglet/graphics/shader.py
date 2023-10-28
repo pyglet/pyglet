@@ -170,14 +170,14 @@ class Attribute:
         self.name = name
         self.location = location
         self.count = count
-
         self.gl_type = gl_type
-        self.c_type = _c_types[gl_type]
         self.normalize = normalize
 
-        self.align = sizeof(self.c_type)
-        self.size = count * self.align
-        self.stride = self.size
+        self.c_type = _c_types[gl_type]
+
+        self.element_size = sizeof(self.c_type)
+        self.byte_size = count * self.element_size
+        self.stride = self.byte_size
 
     def enable(self):
         """Enable the attribute."""
@@ -207,20 +207,16 @@ class Attribute:
         will be ``3 * 4 = 12``.
 
         :Parameters:
-            `buffer` : `AbstractMappable`
+            `buffer` : `AttributeBufferObject`
                 The buffer to map.
             `start` : int
                 Offset of the first vertex to map.
             `count` : int
                 Number of vertices to map
 
-        :rtype: `AbstractBufferRegion`
+        :rtype: `BufferObjectRegion`
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
-        ptr_type = POINTER(self.c_type * array_count)
-        return buffer.get_region(byte_start, byte_size, ptr_type)
+        return buffer.get_region(start, count)
 
     def set_region(self, buffer, start, count, data):
         """Set the data over a region of the buffer.
@@ -234,11 +230,7 @@ class Attribute:
                 Number of vertices to set.
             `data` : A sequence of data components.
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
-        data = (self.c_type * array_count)(*data)
-        buffer.set_data_region(data, byte_start, byte_size)
+        buffer.set_region(start, count, data)
 
     def __repr__(self):
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
@@ -729,8 +721,8 @@ class Shader:
         result_str = create_string_buffer(log_length.value)
         glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
-            return ("OpenGL returned the following message when compiling the '{0}' shader: "
-                    "\n{1}".format(self.type, result_str.value.decode('utf8')))
+            return (f"OpenGL returned the following message when compiling the "
+                    f"'{self.type}' shader: \n{result_str.value.decode('utf8')}")
         else:
             return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
 
@@ -936,8 +928,6 @@ class ShaderProgram:
 class ComputeShaderProgram:
     """OpenGL Compute Shader Program"""
 
-    __slots__ = '_shader', '_id', '_context', '_uniforms', '_uniform_blocks', '__weakref__', 'limits'
-
     def __init__(self, source: str):
         """Create an OpenGL ComputeShaderProgram from source."""
         if not (gl_info.have_version(4, 3) or gl_info.have_extension("GL_ARB_compute_shader")):
@@ -954,12 +944,10 @@ class ComputeShaderProgram:
         self._uniforms = _introspect_uniforms(self._id, True)
         self._uniform_blocks = _introspect_uniform_blocks(self)
 
-        self.limits = {
-            'work_group_count':       self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_COUNT),
-            'work_group_size':        self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_SIZE),
-            'work_group_invocations': self._get_value(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS),
-            'shared_memory_size':     self._get_value(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE),
-        }
+        self.max_work_group_size = self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_SIZE)
+        self.max_work_group_count = self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_COUNT)
+        self.max_shared_memory_size = self._get_value(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE)
+        self.max_work_group_invocations = self._get_value(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
 
     @staticmethod
     def _get_tuple(parameter: int):

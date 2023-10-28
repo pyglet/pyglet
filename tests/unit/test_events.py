@@ -25,7 +25,7 @@ def dispatcher():
 
 @pytest.fixture
 def mock_handler(dispatcher):
-    "Event handler mock."
+    """Event handler mock."""
     # Make a mock behave like a function by replicating the FunctionType specs.
     # Function objects provide these attributes:
     # __doc__         documentation string
@@ -41,20 +41,34 @@ def mock_handler(dispatcher):
     return mock_handler
 
 
+class ClassInstanceHandler:
+    called = False
+    args = None
+    kwargs = None
+
+    def mock_event(self, *args, **kwargs):
+        self.called = True
+        self.args = args
+        self.kwargs = kwargs
+        return EVENT_HANDLED
+
+    def mock_event2(self, *args, **kwargs):
+        self.called = True
+        self.args = args
+        self.kwargs = kwargs
+        return EVENT_HANDLED
+
+
+
 @pytest.fixture
-def mock_instance_handler(dispatcher):
+def class_instance_handler(dispatcher):
     """Class event handler.
 
-    If an instance is given to push_handlers and it implements methods with similar
-    names as the events, those will become event handlers. This mock imitates this
-    behaviour.
+    If a class instance is given to push_handlers, and it implements methods with
+    the same names as the events, those will become event handlers.
     """
     dispatcher.register_event_type('mock_event')
-    mock_instance_handler = mock.Mock()
-    mock_handler = mock.Mock(spec=types.MethodType)
-    mock_handler.__name__ = 'mock_event'
-    mock_instance_handler.mock_event = mock_handler
-    return mock_instance_handler
+    return ClassInstanceHandler()
 
 
 def test_register_event_type(dispatcher):
@@ -76,18 +90,14 @@ def test_push_handlers_kwargs(dispatcher, mock_handler):
     assert mock_handler.called
 
 
-def test_push_handlers_instance(dispatcher, mock_instance_handler):
-    dispatcher.push_handlers(mock_instance_handler)
-    result = dispatcher.dispatch_event('mock_event')
+def test_push_handlers_instance(dispatcher, class_instance_handler):
+    dispatcher.register_event_type('mock_event')
+    dispatcher.push_handlers(class_instance_handler)
+    result = dispatcher.dispatch_event('mock_event', 1, 2)
     assert result == EVENT_HANDLED
-    # Cannot just check that mock_instance_handler.mock_event.called is True because
-    # EventDispatcher took a WeakMethod of a Mock, and it cannot reconstruct the
-    # original Mock method. But we check instead that mock_instance_handler had a
-    # method call.
-    calls = mock_instance_handler.method_calls
-    assert len(calls) == 1
-    name, args, kwargs = calls[0]
-    assert name == 'mock_event.__self__'
+    assert class_instance_handler.called
+    assert class_instance_handler.args == (1, 2)
+    assert class_instance_handler.kwargs == {}
 
 
 def test_push_handlers_not_setup(dispatcher):

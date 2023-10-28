@@ -4,6 +4,7 @@ import fcntl
 import ctypes
 import warnings
 
+from os import readv
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
@@ -306,7 +307,6 @@ class EvdevDevice(XlibSelectDevice, Device):
         self._filename = filename
 
         fileno = os.open(filename, os.O_RDONLY)
-        # event_version = EVIOCGVERSION(fileno).value
 
         self._id = EVIOCGID(fileno)
         self.id_bustype = self._id.bustype
@@ -357,6 +357,9 @@ class EvdevDevice(XlibSelectDevice, Device):
         self.controls.sort(key=lambda c: c._event_code)
         os.close(fileno)
 
+        self._event_size = ctypes.sizeof(InputEvent)
+        self._event_buffer = (InputEvent * 64)()
+
         super().__init__(display, name)
 
     def get_guid(self):
@@ -405,17 +408,16 @@ class EvdevDevice(XlibSelectDevice, Device):
             return
 
         try:
-            events = (InputEvent * 64)()
-            bytes_read = os.readv(self._fileno, events)
+            bytes_read = readv(self._fileno, self._event_buffer)
         except OSError:
             self.close()
             return
 
-        n_events = bytes_read // ctypes.sizeof(InputEvent)
-        for event in events[:n_events]:
+        n_events = bytes_read // self._event_size
+
+        for event in self._event_buffer[:n_events]:
             try:
-                control = self.control_map[(event.type, event.code)]
-                control.value = event.value
+                self.control_map[(event.type, event.code)].value = event.value
             except KeyError:
                 pass
 
@@ -651,5 +653,4 @@ def _create_controller(device):
 
 def get_controllers(display=None):
     return [controller for controller in
-            [_create_controller(device) for device in get_devices(display)]
-            if controller is not None]
+            [_create_controller(device) for device in get_devices(display)] if controller]

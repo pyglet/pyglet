@@ -1,33 +1,171 @@
-"""Requires: PyQT5
-   An example using PyQT5 and Pyglet together.
-   This is a sprite previewer, you can edit the fragment and vertex shaders and compile it to get a live view.
-   Errors and success will be printed in console.
+"""An example sprite previewer using Qt and pyglet together.
 
-   To load images, choose File -> Open Image.
-   Images loaded will be listed in the Images menu.
-   By selecting an image in the menu list, it will be unloaded.
+It allows you to edit the fragment and vertex shaders, then compile them
+to get a live view. Errors and success will be printed to the console.
+A brief feature overview is located after the license notes below.
 
-   Names in parentheses will be used for the sampler2D name.
 
-   You can open a shader (both vert and frag) at the same time. Text is allowed, but will load into the fragment shader.
-   Saving a shader saves both frag and vertex (IE: test becomes test.vert and test.frag)
+Important license notes:
 
-   Scrolling mouswheel also zooms in
+1. Libraries can use licenses which impose requirements beyond those of
+   pyglet's BSD-style style license.
+2. This example defaults to using PySide2 by default, but can also use
+   PyQt5 due to their nearly-identical APIs.
+3. PySide2 uses the LGPL license while PyQt5 uses a GPL / commercial
+   dual-license approach.
+
+To the best knowledge of the contributors, this example and derivatives
+are only obligated to meet the restrictions of the LGPL because it does
+not use any PyQt5-specific features. Please see the following for more
+information:
+
+* The licenses and documentation for the libraries you plan to use
+* https://www.pythonguis.com/faq/pyqt5-vs-pyside2/
+
+If you need additional certainty, please consult a legal professional.
+
+
+Example features:
+
+You can choose the current Qt binding in two ways:
+
+1. Add PySide2 or PyQt5 as the first argument after the launch command
+   when running the script in the terminal
+2. Set the PYGLET_QT_BACKEND environment variable to either PySide2 or
+   PyQt5.
+
+The priority order is:
+
+1. positional argument
+2. environment variable
+3. default to PySide2
+
+To load images, choose File -> Open Image.
+
+Images loaded will be listed in the Images menu. By selecting an image in
+the menu list, it will be unloaded. Names in parentheses will be used for
+the sampler2D name.
+
+You can open a shader (both vert and frag) at the same time. Text is
+allowed, but will load into the fragment shader. Saving a shader saves
+both frag and vertex (IE: test becomes test.vert and test.frag)
+
+Scrolling the mousewheel also zooms in.
 """
 
 import os
 import sys
 import traceback
+import argparse
+from pathlib import Path
 
-from PyQt5.QtGui import QWheelEvent
+from textwrap import dedent
+from typing import TYPE_CHECKING, Final, Dict, List, Optional, Tuple, Mapping
 
+# Constants for choosing a Qt backend and summarizing their licensing
+ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
+
+PYSIDE2: Final[str] = 'PySide2'
+PYQT5: Final[str] = 'PyQt5'
+
+valid_backends: Final[Dict[str, str]] = {
+    PYSIDE2: "LGPL; may allow releasing under non-GPL licenses",
+    PYQT5: "Dual GPL / Commercial license; requires GPL or a fee"
+}
+
+# Default to PySide2 as part of allowing non-GPL licenses
+# This is necessary but not sufficient to allow this.
+DEFAULT: Final[str] = PYSIDE2
+
+
+# Argument parser for run-time config as __main__
+parser = argparse.ArgumentParser(
+    description=dedent('''\
+    A sprite & shader previewer using Qt and pyglet together.
+
+    It defaults to PySide2, but can run on PyQt5. The details of how may
+    be helpful to users who want to avoid spreading PyQt5's GPL license
+    while using it as a fallback. See the docstrings and comments in the
+    source to learn more.
+    '''),
+    formatter_class=argparse.RawTextHelpFormatter)
+
+# On Python 3.9+, argparse.BooleanOptionalAction is more concise
+# See https://docs.python.org/3.9/library/argparse.html#action
+parser.add_argument(
+    '--use-qt-file-dialog', dest='native_file_dialog', action='store_false',
+    help="Use Qt's file chooser instead of the system's. Helpful on Gnome DE."
+)
+parser.set_defaults(native_file_dialog=True)
+
+
+# Generate options help text lines
+backend_column_width: Final[int] = max(map(len, valid_backends))
+help_lines: List[str] = ["Which Qt binding to use.\n"]
+
+for backend, description in valid_backends.items():
+   line_parts = [
+       f"{backend: <{backend_column_width}} - ",
+       '(Default) ' if backend == DEFAULT else '',
+       description
+   ]
+   help_lines.append(''.join(line_parts))
+
+# Add an optional single-value positional argument
+parser.add_argument('backend', nargs='?',
+    choices=valid_backends.keys(),
+    help='\n'.join(help_lines))
+
+
+# Use the 1st non-None Qt binding value: argument, env var, or default
+arguments = None
+if __name__ == "__main__":
+    arguments = parser.parse_args()
+
+reasons_with_backend_values: Final[Dict[str, Optional[str]]] = {
+   'first positional argument'       : None if not arguments else arguments.backend,
+   # An environment variable allows specifying the binding when
+   # importing the module instead of running it as a main program.
+   f'{ENV_VARIABLE!r} env variable'  : os.environ.get(ENV_VARIABLE, None),
+   'default'                         : DEFAULT
+}
+reason, backend = next(filter(
+    lambda t: t[1] is not None, reasons_with_backend_values.items()))
+
+print(f"Selected {backend} as the Qt binding from the {reason}'s value.")
+
+
+# Perform UI imports according to the detected configuration
 import pyglet
 
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QOpenGLWidget
-from pyglet.gl import glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glActiveTexture, GL_TEXTURE0, glBindTexture, \
-    GL_BLEND, glEnable, glBlendFunc, glDisable
+# Use PySide2 for type checking, static analysis, tests, and linting
+# to help avoid infection by PyQt5's GPL license since tools will mark
+# uses of PyQt5-specific features as missing. For example, pyright is
+# one of the strict type checking and linting tools which can help.
+if TYPE_CHECKING or backend == PYSIDE2:
+    from PySide2.QtGui import QWheelEvent
+    from PySide2.QtWidgets import QFileDialog
+    from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QOpenGLWidget
+
+elif backend == PYQT5:
+    from PyQt5.QtGui import QWheelEvent
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5 import QtCore, QtWidgets
+    from PyQt5.QtWidgets import QOpenGLWidget
+
+else:  # Handle import edge cases
+    raise ValueError(
+        f"Expected a value in {valid_backends},"
+        f" but got {backend!r} via {reason}")
+
+# Import the other constants after the UI libraries to avoid
+# cluttering the symbol table when debugging import problems.
+from pyglet.gl import (
+    glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glActiveTexture,
+    GL_TEXTURE0, glBindTexture, GL_BLEND, glEnable, glBlendFunc, glDisable
+)
+
 
 default_vertex_src = """#version 150 core
 in vec3 translate;
@@ -88,23 +226,30 @@ void main()
 
 
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
-    """A sprite group that uses multiple active textures.
-    """
+    """A sprite group which uses multiple textures and samplers."""
 
-    def __init__(self, textures, blend_src, blend_dest, program=None, parent=None):
+    def __init__(
+            self,
+            textures: Mapping[str, pyglet.image.Texture],
+            blend_src: int,
+            blend_dest: int,
+            program: Optional[pyglet.graphics.shader.ShaderProgram] = None,
+            parent: Optional[pyglet.graphics.Group] = None
+    ) -> None:
         """Create a sprite group for multiple textures and samplers.
-           All textures must share the same target type.
+
+        All textures must share the same target type.
 
         :Parameters:
-            `textures` : `dict`
-                Textures in samplername : texture.
-            `blend_src` : int
+            `textures` :
+                 A mapping of sampler names to texture data.
+            `blend_src` :
                 OpenGL blend source mode; for example,
                 ``GL_SRC_ALPHA``.
-            `blend_dest` : int
+            `blend_dest` :
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `~pyglet.graphics.Group`
+            `parent` :
                 Optional parent group.
         """
         self.images = textures
@@ -116,12 +261,12 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         for idx, name in enumerate(self.images):
             try:
                 self.program[name] = idx
-            except Exception:
-                print(f"Uniform: {name} not found.")
+            except pyglet.graphics.shader.ShaderException as e:
+                print(e)
 
         self.program.stop()
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
 
         for i, texture in enumerate(self.images.values()):
@@ -131,22 +276,22 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
         glActiveTexture(GL_TEXTURE0)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.texture!r}-{int(self.texture.id)})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
                 self.images == other.textures and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((id(self.parent),
                      id(self.images),
                      self.blend_src, self.blend_dest))
@@ -154,14 +299,17 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
 
 class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
 
-    def __init__(self,
-                 imgs, x=0, y=0, z=0,
-                 blend_src=pyglet.gl.GL_SRC_ALPHA,
-                 blend_dest=pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 group=None,
-                 subpixel=False,
-                 program=None):
+    def __init__(
+            self,
+            imgs: Mapping[str, pyglet.image.Texture],
+            x: float = 0, y: float = 0, z: float = 0,
+            blend_src: int = pyglet.gl.GL_SRC_ALPHA,
+            blend_dest: int = pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
+            batch: Optional[pyglet.graphics.Batch] = None,
+            group: Optional[MultiTextureSpriteGroup] = None,
+            subpixel: bool = False,
+            program: pyglet.graphics.shader.ShaderProgram = None
+    ) -> None:
 
         self._x = x
         self._y = y
@@ -185,7 +333,9 @@ class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
 class Ui_MainWindow:
     SPRITE_POSITION = (0, 0)
 
-    def __init__(self):
+    def __init__(self, use_native_file_dialog: bool = True):
+        self.use_native_file_dialog: bool = use_native_file_dialog
+
         self.images = []
 
         self.group = pyglet.graphics.Group()
@@ -193,13 +343,32 @@ class Ui_MainWindow:
         self.sprite = None
         self.program = None
 
-    def setupUi(self, MainWindow):
+    def get_file_dialog_options(self) -> QFileDialog.Options:
+        """Convert instance attributes to a file dialog options object.
+
+        At the moment, it supports choosing which dialog to use. This is
+        helpful on certain Gnome and tiling Linux desktop configurations
+        which can have issues with the system file picker.
+
+        You may want to expand on this in your own application with
+        additional options.
+        """
+        options = QFileDialog.Options()
+        if not self.use_native_file_dialog:
+            options |= QFileDialog.DontUseNativeDialog
+
+        return options
+
+    def setupUi(self, MainWindow: QtWidgets.QMainWindow) -> None:
         self._window = MainWindow
 
+        # Set up the central window widget object
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(820, 855)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
+        # Create layout for shader editing
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
@@ -232,12 +401,17 @@ class Ui_MainWindow:
         self.compileShaderBtn.clicked.connect(self.compileClick)
         self.compileShaderBtn.setObjectName("compile_shader_btn")
         self.verticalLayout_3.addWidget(self.compileShaderBtn)
+
+        # Initialize the pyglet widget we'll draw to and lay out the window
         self.openGLWidget = PygletWidget(800, 400, self.centralwidget, self)
         self.openGLWidget.setMinimumSize(QtCore.QSize(800, 400))
         self.openGLWidget.setObjectName("openGLWidget")
         self.verticalLayout_3.addWidget(self.openGLWidget)
         self.gridLayout.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
+
+        # Set up the root top menu & status bar
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 820, 21))
         self.menubar.setObjectName("menubar")
@@ -248,6 +422,7 @@ class Ui_MainWindow:
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        # Add menu bar menus, entries, and hotkeys
         self.actionOpen_Image = QtWidgets.QAction(MainWindow)
         self.actionOpen_Image.setObjectName("actionOpen_Image")
         self.actionOpen_Image.triggered.connect(self.loadImages)
@@ -283,10 +458,11 @@ class Ui_MainWindow:
 
         self.menubar.addAction(self.imageMenu.menuAction())
 
+        # Perform localization & start accepting UI events
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-    def compileClick(self):
+    def compileClick(self) -> None:
         if not self.images:
             print("No images have been loaded.")
             return
@@ -308,13 +484,18 @@ class Ui_MainWindow:
             self.program = pyglet.graphics.shader.ShaderProgram(vertex_, fragment_)
 
             if len(self.images) == 1:
-                self.sprite = pyglet.sprite.AdvancedSprite(self.images[0], x=self.SPRITE_POSITION[0],
-                                                           y=self.SPRITE_POSITION[1], group=self.group,
-                                                           batch=self.openGLWidget.batch, program=self.program)
+                self.sprite = pyglet.sprite.AdvancedSprite(
+                    self.images[0],
+                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
+                    group=self.group, batch=self.openGLWidget.batch,
+                    program=self.program)
             else:
                 textures = {image.shader_name: image.get_texture() for image in self.images}
-                self.sprite = MultiTextureSprite(textures, x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
-                                                 group=self.group, batch=self.openGLWidget.batch, program=self.program)
+                self.sprite = MultiTextureSprite(
+                    textures,
+                    x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
+                    group=self.group, batch=self.openGLWidget.batch,
+                    program=self.program)
 
             if self.program:
                 print("Successfully compiled shader.")
@@ -322,12 +503,12 @@ class Ui_MainWindow:
             print(f"Failed to compile shader: {err}")
         except Exception as err:
             print("Unexpected error", err)
+    def loadImages(self) -> None:
+        options = self.get_file_dialog_options()
+        fileNames, _ = QFileDialog.getOpenFileNames(
+            self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
+            options=options)
 
-    def loadImages(self):
-        options = QFileDialog.Options()
-        #options |= QFileDialog.DontUseNativeDialog
-        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Select Image Files", "", "Image Files (*.png *.jpg *.jpeg *.bmp)",
-                                                  options=options)
         for fileName in fileNames:
             if not self.images:
                 self.imageMenu.removeAction(self.noImageAction)
@@ -345,14 +526,16 @@ class Ui_MainWindow:
             self.images.append(image)
             self.imageMenu.addAction(action)
 
-    def loadShaders(self):
-        options = QFileDialog.Options()
+    def loadShaders(self) -> None:
+        options = self.get_file_dialog_options()
+        file_names, _ = QFileDialog.getOpenFileNames(
+            self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
+            options=options)
 
-        #options |= QFileDialog.DontUseNativeDialog
-        fileNames, _ = QFileDialog.getOpenFileNames(self._window, "Load Shader Files", "", "Shader Files (*.vert *.frag *.txt)",
-                                                  options=options)
-        for fileName in fileNames:
-            ext = os.path.splitext(fileName)[1]
+        for file_name in file_names:
+            file_path = Path(file_name)
+            ext = file_path.suffixes[-1]
+
             if ext == '.vert':
                 dest = self.vertex_source_edit
             elif ext in ('.txt', '.frag'):
@@ -360,28 +543,24 @@ class Ui_MainWindow:
             else:
                 dest = self.fragSourceEdit
 
-            with open(fileName, 'r') as f:
-                text = f.read()
-                dest.setText(text)
+            text = file_path.read_text()
+            dest.setText(text)
 
-    def saveShaders(self):
-        options = QFileDialog.Options()
+    def saveShaders(self) -> None:
+        options = self.get_file_dialog_options()
+        file_name, _ = QFileDialog.getSaveFileName(
+            self._window, "Saving Both Shader Files (vert and frag)", "",
+            options=options)
 
-        # options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self._window, "Saving Both Shader Files (vert and frag)", "",
+        if file_name:
+            base_path = Path(file_name)
+            vert_filename = base_path.with_suffix(".vert")
+            frag_filename = base_path.with_suffix(".frag")
 
-                                                  options=options)
-        if fileName:
-            vert_filename = f"{fileName}.vert"
-            frag_filename = f"{fileName}.frag"
+            vert_filename.write_text(self.vertex_source_edit.toPlainText())
+            frag_filename.write_text(self.fragSourceEdit.toPlainText())
 
-            with open(vert_filename, 'w') as f:
-                f.write(self.vertex_source_edit.toPlainText())
-
-            with open(frag_filename, 'w') as f:
-                f.write(self.fragSourceEdit.toPlainText())
-
-    def removeImage(self, actionWidget):
+    def removeImage(self, actionWidget: QtWidgets.QAction) -> None:
         if self.imageMenu:
             self.imageMenu.removeAction(actionWidget)
 
@@ -398,10 +577,10 @@ class Ui_MainWindow:
             if len(self.images) == 0:
                 self.imageMenu.addAction(self.noImageAction)
 
-    def closeProgram(self):
+    def closeProgram(self) -> None:
         app.exit()
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self, MainWindow: QtWidgets.QMainWindow) -> None:
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Sprite Shader Previewer"))
         self.label.setText(_translate("MainWindow", "Vertex Source:"))
@@ -443,7 +622,7 @@ class PygletWidget(QOpenGLWidget):
         }
     """
 
-    def __init__(self, width, height, parent, mainWindow):
+    def __init__(self, width, height, parent, mainWindow) -> None:
         super().__init__(parent)
         self.mainWindow = mainWindow
         self.setMinimumSize(width, height)
@@ -459,7 +638,7 @@ class PygletWidget(QOpenGLWidget):
 
         pyglet.clock.schedule_interval(self.update_time_uniform, 1 / 60.0)
 
-    def wheelEvent(self, event: QWheelEvent):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         super().wheelEvent(event)
         if event.angleDelta().y() > 0:
             self.zoom *= 2
@@ -467,11 +646,12 @@ class PygletWidget(QOpenGLWidget):
             self.zoom /= 2
 
         self.zoom = pyglet.math.clamp(self.zoom, 0.125, 40.0)
+        self.view = pyglet.math.Mat4().scale(pyglet.math.Vec3(
+            self.zoom, self.zoom, 1.0))
 
-        self.view = pyglet.math.Mat4().scale((self.zoom, self.zoom, 1.0))
         event.accept()
 
-    def update_time_uniform(self, dt):
+    def update_time_uniform(self, dt: float) -> None:
         self.elapsed += dt
 
         if self.mainWindow.program:
@@ -485,25 +665,25 @@ class PygletWidget(QOpenGLWidget):
 
             self.mainWindow.program.stop()
 
-    def _pyglet_update(self):
+    def _pyglet_update(self) -> None:
         # Tick the pyglet clock, so scheduled events can work.
         pyglet.clock.tick()
 
         # Force widget to update, otherwise paintGL will not be called.
         self.update()  # self.updateGL() for pyqt5
 
-    def paintGL(self):
+    def paintGL(self) -> None:
         """Pyglet equivalent of on_draw event for window"""
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.batch.draw()
 
-    def resizeGL(self, width, height):
+    def resizeGL(self, width: int, height: int) -> None:
         self.projection = pyglet.math.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
         self.viewport = 0, 0, width, height
 
-    def initializeGL(self):
+    def initializeGL(self) -> None:
         """Call anything that needs a context to be created."""
 
         self._projection_matrix = pyglet.math.Mat4()
@@ -522,65 +702,73 @@ class PygletWidget(QOpenGLWidget):
         self.viewport = 0, 0, self.width(), self.height()
 
     @property
-    def viewport(self):
+    def viewport(self) -> Tuple[int, int, int, int]:
         """The Window viewport
 
         The Window viewport, expressed as (x, y, width, height).
 
-        :rtype: (int, int, int, int)
         :return: The viewport size as a tuple of four ints.
         """
         return self._viewport
 
     @viewport.setter
-    def viewport(self, values):
+    def viewport(self, values: Tuple[int, int, int, int]) -> None:
         self._viewport = values
         pr = 1.0
         x, y, w, h = values
         pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     @property
-    def projection(self):
+    def projection(self) -> pyglet.math.Mat4:
         return self._projection_matrix
 
     @projection.setter
-    def projection(self, matrix: pyglet.math.Mat4):
+    def projection(self, matrix: pyglet.math.Mat4) -> None:
         with self.ubo as window_block:
             window_block.projection[:] = matrix
 
         self._projection_matrix = matrix
 
     @property
-    def view(self):
+    def view(self) -> pyglet.math.Mat4:
         """The OpenGL window view matrix. Read-write.
 
         The default view is an identity matrix, but a custom
         :py:class:`pyglet.math.Mat4` instance can be set.
         Alternatively, you can supply a flat tuple of 16 values.
-
-        :type: :py:class:`pyglet.math.Mat4`
         """
         return self._view_matrix
 
     @view.setter
-    def view(self, matrix: pyglet.math.Mat4):
+    def view(self, matrix: pyglet.math.Mat4) -> None:
 
         with self.ubo as window_block:
             window_block.view[:] = matrix
 
         self._view_matrix = matrix
 
-      
-def excepthook(exc_type, exc_value, exc_tb):
+
+def excepthook(exc_type, exc_value, exc_tb) -> None:
+    """Replacement for Python's default exception handler function.
+
+    See the following for more information:
+    https://docs.python.org/3/library/sys.html#sys.excepthook
+    """
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print(tb)
 
-   
+
 if __name__ == "__main__":
+    # Create the base Qt application and initialize the UI
     app = QtWidgets.QApplication(sys.argv)
-    ui = Ui_MainWindow()
+    ui = Ui_MainWindow(use_native_file_dialog=arguments.native_file_dialog)
+    qt_window = QtWidgets.QMainWindow()
+    ui.setupUi(qt_window)
+    qt_window.show()
+
+    # Replace the default exception handling *after* everything is
+    # initialized to avoid swallowing fatal errors such as GL issues.
     sys.excepthook = excepthook
-    window = QtWidgets.QMainWindow()
-    ui.setupUi(window)
-    window.show()
+
+    # Start the application and return its exit code
     sys.exit(app.exec_())
