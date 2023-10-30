@@ -94,6 +94,7 @@ class XA2EngineCallback(com.COMObject):
     _interfaces_ = [lib.IXAudio2EngineCallback]
 
     def __init__(self, lock):
+        super().__init__()
         self._lock = lock
 
     def OnProcessingPassStart(self):
@@ -171,7 +172,7 @@ class XAudio2Driver:
         #   and the main thread runs
         # - the main thread runs a critical operation on the player such as `delete` to completion
         # - the callback is resumed and breaks as the audio player is deleted.
-        self._engine_callback = XA2EngineCallback(self._lock)
+        self._engine_callback = XA2EngineCallback(self.lock)
 
         self._emitting_voices = []  # Contains all of the emitting source voices.
         self._voice_pool = defaultdict(list)
@@ -437,7 +438,7 @@ class XAudio2Driver:
 
         wfx_format = create_xa2_waveformat(audio_format)
 
-        callback = lib.XAudio2VoiceCallback()
+        callback = XAudio2VoiceCallback()
         self._xaudio2.CreateSourceVoice(ctypes.byref(voice),
                                         ctypes.byref(wfx_format),
                                         0,
