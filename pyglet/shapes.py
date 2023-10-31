@@ -5,12 +5,11 @@ such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicable). To create more
-complex shapes than what is provided here, the lower level
-graphics API is more appropriate.
-You can also use the ``in`` operator to check whether a point is
-inside a shape.
-See the :ref:`guide_graphics` for more details.
+and opacity, and rotation (where applicable).
+The Python ``in`` operator to check whether a point is inside a shape.
+
+To create more complex shapes than what is provided here, the lower level
+graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
 
 A simple example of drawing shapes::
 
