@@ -336,7 +336,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             pass
 
     def _create_bitmap(self, width, height):
-        self._data = (ctypes.c_byte * (4 * width * height))()
+        self._data = (BYTE * (4 * width * height))()
         self._bitmap = ctypes.c_void_p()
         self._format = PixelFormat32bppARGB
         gdiplus.GdipCreateBitmapFromScan0(width, height, width * 4,
@@ -532,6 +532,12 @@ class GDIPlusFont(Win32Font):
         self._name = name
 
         family = ctypes.c_void_p()
+
+        # GDI will add @ in front of a localized font for some Asian languages. However, GDI will also not find it
+        # based on that name (???). Here we remove it before checking font collections.
+        if name[0] == "@":
+            name = name[1:]
+
         name = ctypes.c_wchar_p(name)
 
         # Look in private collection first:
@@ -540,6 +546,9 @@ class GDIPlusFont(Win32Font):
 
         # Then in system collection:
         if not family:
+            if _debug_font:
+                print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}")
+
             gdiplus.GdipCreateFontFamilyFromName(name, None, ctypes.byref(family))
 
         # Nothing found, use default font.
