@@ -75,6 +75,13 @@ pyglet.shapes
   .. autoattribute:: height
 
 
+.. autoclass:: Box
+  :show-inheritance:
+
+  .. autoattribute:: width
+  .. autoattribute:: height
+
+
 .. autoclass:: BorderedRectangle
   :show-inheritance:
 
