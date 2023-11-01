@@ -1220,11 +1220,14 @@ class Texture(AbstractImage):
         self.id = tex_id
         self._context = pyglet.gl.current_context
 
+    def delete(self):
+        glDeleteTextures(1, self.id)
+        self.id = None
+
     def __del__(self):
-        try:
+        if self.id is not None:
             self._context.delete_texture(self.id)
-        except Exception:
-            pass
+            self.id = None
 
     def bind(self, texture_unit: int = 0):
         """Bind to a specific Texture Unit by number."""

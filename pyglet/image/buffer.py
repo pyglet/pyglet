@@ -13,6 +13,7 @@ class Renderbuffer:
 
     def __init__(self, width, height, internal_format, samples=1):
         """Create an instance of a Renderbuffer object."""
+        self._context = pyglet.gl.current_context
         self._id = GLuint()
         self._width = width
         self._height = height
@@ -49,13 +50,12 @@ class Renderbuffer:
 
     def delete(self):
         glDeleteRenderbuffers(1, self._id)
+        self._id = None
 
     def __del__(self):
-        try:
-            glDeleteRenderbuffers(1, self._id)
-        # Python interpreter is shutting down:
-        except Exception:
-            pass
+        if self._id is not None:
+            self._context.delete_renderbuffer(self._id.value)
+            self._id = None
 
     def __repr__(self):
         return "{}(id={})".format(self.__class__.__name__, self._id.value)
@@ -71,6 +71,7 @@ class Framebuffer:
 
         .. versionadded:: 2.0
         """
+        self._context = pyglet.gl.current_context
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
         self._attachment_types = 0
@@ -105,10 +106,13 @@ class Framebuffer:
             self.unbind()
 
     def delete(self):
-        try:
-            glDeleteFramebuffers(1, self._id)
-        except Exception:
-            pass
+        glDeleteFramebuffers(1, self._id)
+        self._id = None
+
+    def __del__(self):
+        if self._id is not None:
+            self._context.delete_framebuffer(self._id.value)
+            self._id = None
 
     @property
     def is_complete(self):
