@@ -236,7 +236,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         while self._events and self._events[0][0] <= read_index:
             _, event = self._events.pop(0)
-            assert _debug('PulseAudioPlayer: Dispatch event', event)
+            assert _debug(f'PulseAudioPlayer: Dispatch event {event}')
             event.sync_dispatch_to_player(self.player)
 
     def _add_event_at_write_index(self, event_name):
@@ -313,7 +313,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         else:
             read_index = 0
 
-        assert _debug('_get_read_index ->', read_index)
+        assert _debug(f'_get_read_index -> {read_index}')
         return read_index
 
     def _get_write_index(self):
@@ -323,7 +323,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         else:
             write_index = 0
 
-        assert _debug('_get_write_index ->', write_index)
+        assert _debug(f'_get_write_index -> {write_index}')
         return write_index
 
     def _get_timing_info(self):
@@ -365,7 +365,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         dt /= 1000000
         time = timestamp + dt
 
-        assert _debug('get_time ->', time)
+        assert _debug('get_time -> {time}')
         return time
 
     def set_volume(self, volume):
