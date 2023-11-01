@@ -443,6 +443,14 @@ class TextEntry(WidgetBase):
         self._layout.width = value
         self._outline.width = value
 
+    @property
+    def focus(self) -> bool:
+        return self._focus
+
+    @focus.setter
+    def focus(self, value: bool) -> None:
+        self._set_focus(value)
+
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
