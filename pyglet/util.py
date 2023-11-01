@@ -6,7 +6,7 @@ import sys
 from typing import Optional, Union
 
 import pyglet
-from pyglet.customtypes import Buffer, CallableArgsKwargs
+from pyglet.customtypes import Buffer, DebugPrintCallable
 
 
 def asbytes(s: Union[str, Buffer]) -> bytes:
@@ -34,10 +34,13 @@ def asstr(s: Optional[Union[str, Buffer]]) -> str:
     return s.decode("utf-8")  # type: ignore
 
 
-def debug_print(enabled_or_option: Union[bool, str] = 'debug') -> CallableArgsKwargs[bool]:
-    """Get a debug printer that is enabled based on a boolean input or a pyglet option.
-    The debug print function returned should be used in an assert. This way it can be
-    optimized out when running python with the -O flag.
+def debug_print(pyglet_option_name: str = 'debug') -> DebugPrintCallable:
+    """Get a debug print callable based on a pyglet option name.
+
+    The debug print function returned should be used in an assert so
+    it can automatically be removed when running Python with the -O
+    flag. Both of the returned functions return True to ensure the
+    types for this work.
 
     Usage example::
 
@@ -47,18 +50,16 @@ def debug_print(enabled_or_option: Union[bool, str] = 'debug') -> CallableArgsKw
         def some_func():
             assert _debug_media('My debug statement')
 
-    :parameters:
-        `enabled_or_options` :
-            If a bool is passed, debug printing is enabled if it is True. If str is passed
-            debug printing is enabled if the pyglet option with that name is True.
+    Args:
+        `pyglet_option_name` :
+            The name of a pyglet option to load the debug flag from.
 
-    :returns: Function for debug printing.
+    Returns:
+        A callable which returns ``True``  so it to be used
+        as a way of auto-removing it when run with ``-O``.
+
     """
-    if isinstance(enabled_or_option, bool):
-        enabled = enabled_or_option
-    else:
-        enabled = pyglet.options.get(enabled_or_option, False)
-
+    enabled = pyglet.options.get(pyglet_option_name, False)
     if enabled:
         def _debug_print(*args, **kwargs) -> bool:
             print(*args, **kwargs)
