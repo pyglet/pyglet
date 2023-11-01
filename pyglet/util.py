@@ -34,6 +34,17 @@ def asstr(s: Optional[Union[str, Buffer]]) -> str:
     return s.decode("utf-8")  # type: ignore
 
 
+# Keep these outside of the function since we don't need to re-define
+# the function each time we make a call since no state is persisted.
+def _debug_print_real(arg: str) -> bool:
+    print(arg)
+    return True
+
+
+def _debug_print_dummy(arg: str) -> bool:
+    return True
+
+
 def debug_print(pyglet_option_name: str = 'debug') -> DebugPrintCallable:
     """Get a debug print callable based on a pyglet option name.
 
@@ -61,15 +72,8 @@ def debug_print(pyglet_option_name: str = 'debug') -> DebugPrintCallable:
     """
     enabled = pyglet.options.get(pyglet_option_name, False)
     if enabled:
-        def _debug_print(arg: str) -> bool:
-            print(arg)
-            return True
-
-    else:
-        def _debug_print(arg: str) -> bool:
-            return True
-
-    return _debug_print
+        return _debug_print_real
+    return _debug_print_dummy
 
 
 class CodecRegistry:
