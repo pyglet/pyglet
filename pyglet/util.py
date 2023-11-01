@@ -61,12 +61,12 @@ def debug_print(pyglet_option_name: str = 'debug') -> DebugPrintCallable:
     """
     enabled = pyglet.options.get(pyglet_option_name, False)
     if enabled:
-        def _debug_print(*args, **kwargs) -> bool:
-            print(*args, **kwargs)
+        def _debug_print(arg: str) -> bool:
+            print(arg)
             return True
 
     else:
-        def _debug_print(*args, **kwargs) -> bool:
+        def _debug_print(arg: str) -> bool:
             return True
 
     return _debug_print
