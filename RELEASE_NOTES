@@ -3,7 +3,7 @@ draft
 pyglet 2.0.10
 
 - gui: Add TextEntry.focus property to allow programmatic focus control.
-- gui: Allow set TextEntry.width
+- gui: Allow set TextEntry.width and TextEntry.height
 
 pyglet 2.0.9
 

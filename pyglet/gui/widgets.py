@@ -444,6 +444,16 @@ class TextEntry(WidgetBase):
         self._outline.width = value
 
     @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        self._layout.height = value
+        self._outline.height = value
+    
+    @property
     def focus(self) -> bool:
         return self._focus
 
