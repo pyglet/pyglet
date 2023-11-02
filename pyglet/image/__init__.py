@@ -1226,8 +1226,11 @@ class Texture(AbstractImage):
 
     def __del__(self):
         if self.id is not None:
-            self._context.delete_texture(self.id)
-            self.id = None
+            try:
+                self._context.delete_texture(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def bind(self, texture_unit: int = 0):
         """Bind to a specific Texture Unit by number."""

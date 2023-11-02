@@ -54,8 +54,11 @@ class Renderbuffer:
 
     def __del__(self):
         if self._id is not None:
-            self._context.delete_renderbuffer(self._id.value)
-            self._id = None
+            try:
+                self._context.delete_renderbuffer(self._id.value)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{}(id={})".format(self.__class__.__name__, self._id.value)
@@ -111,8 +114,11 @@ class Framebuffer:
 
     def __del__(self):
         if self._id is not None:
-            self._context.delete_framebuffer(self._id.value)
-            self._id = None
+            try:
+                self._context.delete_framebuffer(self._id.value)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     @property
     def is_complete(self):
@@ -206,13 +212,6 @@ class Framebuffer:
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()
-
-    def __del__(self):
-        try:
-            glDeleteFramebuffers(1, self._id)
-        # Python interpreter is shutting down:
-        except Exception:
-            pass
 
     def __repr__(self):
         return "{}(id={})".format(self.__class__.__name__, self._id.value)

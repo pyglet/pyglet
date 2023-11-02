@@ -170,8 +170,11 @@ class BufferObject(AbstractBuffer):
 
     def __del__(self):
         if self.id is not None:
-            self._context.delete_buffer(self.id)
-            self.id = None
+            try:
+                self._context.delete_buffer(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def resize(self, size):
         # Map, create a copy, then reinitialize.

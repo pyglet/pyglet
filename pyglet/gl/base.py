@@ -208,42 +208,14 @@ class CanvasConfig(Config):
         return True
 
 
-class _ObjectPurgatory:
-    def __init__(self, deletion_function, delete_array=True):
-        self.list = []
-        self.deletion_function = deletion_function
-        self.delete_array = delete_array
-
-    def append(self, name):
-        self.list.append(name)
-
-    def delete(self):
-        # Release all objects scheduled for deletion.
-        # Note that the garbage collector introduces a race condition:
-        # It may add other objects through `append` while this method runs.
-        # So, drain the list relying on `pop`'s atomicity.
-        if not self.list:
-            return
-
-        local = []
-        while self.list:
-            local.append(self.list.pop())
-
-        if self.delete_array:
-            self.deletion_function(len(local), (gl.GLuint * len(local))(*local))
-        else:
-            for name in local:
-                self.deletion_function(gl.GLuint(name))
-
-
 class ObjectSpace:
     def __init__(self):
         # Objects scheduled for deletion the next time this object space is active.
-        self.doomed_textures = _ObjectPurgatory(gl.glDeleteTextures)
-        self.doomed_buffers = _ObjectPurgatory(gl.glDeleteBuffers)
-        self.doomed_shader_programs = _ObjectPurgatory(gl.glDeleteProgram, False)
-        self.doomed_shaders = _ObjectPurgatory(gl.glDeleteShader, False)
-        self.doomed_renderbuffers = _ObjectPurgatory(gl.glDeleteRenderbuffers)
+        self.doomed_textures = []
+        self.doomed_buffers = []
+        self.doomed_shader_programs = []
+        self.doomed_shaders = []
+        self.doomed_renderbuffers = []
 
 
 class Context:
@@ -265,8 +237,8 @@ class Context:
         self.context_share = context_share
         self.canvas = None
 
-        self.doomed_vaos = _ObjectPurgatory(gl.glDeleteVertexArrays)
-        self.doomed_framebuffers = _ObjectPurgatory(gl.glDeleteFramebuffers)
+        self.doomed_vaos = []
+        self.doomed_framebuffers = []
 
         if context_share:
             self.object_space = context_share.object_space
@@ -308,13 +280,44 @@ class Context:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
 
-        self.object_space.doomed_textures.delete()
-        self.object_space.doomed_buffers.delete()
-        self.object_space.doomed_shader_programs.delete()
-        self.object_space.doomed_shaders.delete()
-        self.object_space.doomed_renderbuffers.delete()
-        self.doomed_vaos.delete()
-        self.doomed_framebuffers.delete()
+        if self.object_space.doomed_textures:
+            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
+        if self.object_space.doomed_buffers:
+            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
+        if self.object_space.doomed_shader_programs:
+            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
+                                            gl.glDeleteProgram)
+        if self.object_space.doomed_shaders:
+            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
+        if self.object_space.doomed_renderbuffers:
+            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
+
+        if self.doomed_vaos:
+            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
+        if self.doomed_framebuffers:
+            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
+
+    # For the functions below:
+    # The garbage collector introduces a race condition.
+    # The provided list might be appended to (and only appended to) while this
+    # method runs, as it's a `doomed_*` list either on the context or
+    # its object space. This is why we drain it relying on `pop`s atomicity.
+    def _delete_objects(self, list_, deletion_func):
+        """Release all OpenGL objects in the given list using the supplied
+        deletion function with the signature ``(GLuint count, GLuint *names)``.
+        """
+        to_delete = []
+        while list_:
+            to_delete.append(list_.pop())
+
+        deletion_func(len(to_delete), (gl.GLuint * len(to_delete))(*to_delete))
+
+    def _delete_objects_one_by_one(self, list_, deletion_func):
+        """Similar to ``_delete_objects``, but assumes the deletion functions's
+        signature to be ``(GLuint name)``, calling it once for each object.
+        """
+        while list_:
+            deletion_func(gl.GLuint(list_.pop()))
 
     def destroy(self):
         """Release the context.
@@ -334,11 +337,25 @@ class Context:
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
 
-    def _safe_to_delete_from_object_space(self):
-        return (self.object_space is gl.current_context.object_space and
-                threading.current_thread() is threading.main_thread())
+    def _safe_to_operate_on_object_space(self):
+        """Return whether it is safe to interact with this context's object
+        space.
 
-    def _safe_to_delete_from_self(self):
+        This is considered to be the case if the currently active context's
+        object space is the same as this context's object space and this
+        method is called from the main thread.
+        """
+        return (
+            self.object_space is gl.current_context.object_space and
+            threading.current_thread() is threading.main_thread()
+        )
+
+    def _safe_to_operate_on(self):
+        """Return whether it is safe to interact with this context.
+
+        This is considered to be the case if it's the current context and this
+        method is called from the main thread.
+        """
         return gl.current_context is self and threading.current_thread() is threading.main_thread()
 
     def create_program(self, *sources: Tuple[str, str], program_class=None):
@@ -386,7 +403,7 @@ class Context:
                 The OpenGL name of the Texture to delete.
 
         """
-        if self._safe_to_delete_from_object_space():
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteTextures(1, gl.GLuint(texture_id))
         else:
             self.object_space.doomed_textures.append(texture_id)
@@ -404,7 +421,7 @@ class Context:
 
         .. versionadded:: 1.1
         """
-        if self._safe_to_delete_from_object_space():
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
         else:
             self.object_space.doomed_buffers.append(buffer_id)
@@ -422,7 +439,7 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if self._safe_to_delete_from_object_space():
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteProgram(gl.GLuint(program_id))
         else:
             self.object_space.doomed_shader_programs.append(program_id)
@@ -439,7 +456,7 @@ class Context:
 
         .. versionadded:: 2.0.XXX
         """
-        if self._safe_to_delete_from_object_space():
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteShader(gl.GLuint(shader_id))
         else:
             self.object_space.doomed_shaders.append(shader_id)
@@ -457,7 +474,7 @@ class Context:
 
         .. versionadded:: 2.0.XXX
         """
-        if self._safe_to_delete_from_object_space():
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteRenderbuffers(1, gl.GLuint(rbo_id))
         else:
             self.object_space.doomed_renderbuffers.append(rbo_id)
@@ -465,11 +482,12 @@ class Context:
     def delete_vao(self, vao_id):
         """Safely delete a Vertex Array Object belonging to this context.
 
-        This method behaves similarly to `delete_texture`, though for
-        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
+        If this context is not the current context or this method is not
+        called from the main thread, its deletion will be postponed until
+        this context is next made active again.
 
-        As they cannot be shared, the given VAO will only be deleted
-        once this exact context is activated again.
+        Otherwise, this method will immediately delete the VAO via
+        ``glDeleteVertexArrays``.
 
         :Parameters:
             `vao_id` : int
@@ -477,7 +495,7 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if self._safe_to_delete_from_self():
+        if self._safe_to_operate_on():
             gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
         else:
             self.doomed_vaos.append(vao_id)
@@ -494,7 +512,7 @@ class Context:
 
         .. versionadded:: 2.0.XXX
         """
-        if self._safe_to_delete_from_self():
+        if self._safe_to_operate_on():
             gl.glDeleteFramebuffers(1, gl.GLuint(fbo_id))
         else:
             self.doomed_framebuffers.append(fbo_id)

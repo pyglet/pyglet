@@ -37,7 +37,11 @@ class VertexArray:
 
     def __del__(self):
         if self._id is not None:
-            self._context.delete_vao(self.id)
+            try:
+                self._context.delete_vao(self.id)
+                self._id = None
+            except (ImportError, AttributeError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{}(id={})".format(self.__class__.__name__, self._id.value)

@@ -741,10 +741,13 @@ class Shader:
 
     def __del__(self):
         if self._id is not None:
-            glDeleteShader(self._id)
-            if _debug_gl_shaders:
-                print(f"Destroyed {self.type} Shader '{self._id}'")
-            self._id = None
+            try:
+                self._context.delete_shader(self._id)
+                if _debug_gl_shaders:
+                    print(f"Destroyed {self.type} Shader '{self._id}'")
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
@@ -807,8 +810,11 @@ class ShaderProgram:
 
     def __del__(self):
         if self._id is not None:
-            self._context.delete_shader_program(self._id)
-            self._id = None
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:
@@ -1013,8 +1019,11 @@ class ComputeShaderProgram:
 
     def __del__(self):
         if self._id is not None:
-            self._context.delete_shader_program(self._id)
-            self._id = None
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:
