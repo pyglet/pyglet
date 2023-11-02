@@ -1221,6 +1221,9 @@ class Texture(AbstractImage):
         self._context = pyglet.gl.current_context
 
     def delete(self):
+        """Delete this texture and the memory it occupies.
+        After this, it may not be used anymore.
+        """
         glDeleteTextures(1, self.id)
         self.id = None
 
@@ -1485,8 +1488,10 @@ class TextureRegion(Texture):
         return "{}(id={}, size={}x{}, owner={}x{})".format(self.__class__.__name__, self.id, self.width, self.height,
                                                            self.owner.width, self.owner.height)
 
-    # only the owner Texture should handle deletion
     def delete(self):
+        """Deleting a TextureRegion has no effect. Operate on the owning
+        texture instead.
+        """
         pass
 
     def __del__(self):
