@@ -1166,11 +1166,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Make this window the current OpenGL rendering context.
 
         Only one OpenGL context can be active at a time. This method
-        the current window context as the active one.
+        sets the current window context as the active one.
 
-        In most cases, you use this method instead of directly calling
-        :py:meth:`pyglet.gl.Context.set_current`. The latter does not
-        perform platform-specific state management tasks.
+        In most cases, you should use this method instead of directly
+        calling :py:meth:`pyglet.gl.Context.set_current`. The latter
+        will not perform platform-specific state management tasks for
+        you.
         """
         raise NotImplementedError('abstract')
 
