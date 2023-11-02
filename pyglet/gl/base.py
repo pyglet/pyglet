@@ -454,7 +454,7 @@ class Context:
             `shader_id` : int
                 The OpenGL name of the Shader to delete.
 
-        .. versionadded:: 2.0.XXX
+        .. versionadded:: 2.0.10
         """
         if self._safe_to_operate_on_object_space():
             gl.glDeleteShader(gl.GLuint(shader_id))
@@ -472,7 +472,7 @@ class Context:
             `rbo_id` : int
                 The OpenGL name of the Shader Program to delete.
 
-        .. versionadded:: 2.0.XXX
+        .. versionadded:: 2.0.10
         """
         if self._safe_to_operate_on_object_space():
             gl.glDeleteRenderbuffers(1, gl.GLuint(rbo_id))
@@ -510,7 +510,7 @@ class Context:
             `fbo_id` : int
                 The OpenGL name of the Framebuffer Object to delete.
 
-        .. versionadded:: 2.0.XXX
+        .. versionadded:: 2.0.10
         """
         if self._safe_to_operate_on():
             gl.glDeleteFramebuffers(1, gl.GLuint(fbo_id))
