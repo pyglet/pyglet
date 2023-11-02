@@ -1482,8 +1482,11 @@ class TextureRegion(Texture):
         return "{}(id={}, size={}x{}, owner={}x{})".format(self.__class__.__name__, self.id, self.width, self.height,
                                                            self.owner.width, self.owner.height)
 
+    # only the owner Texture should handle deletion
+    def delete(self):
+        pass
+
     def __del__(self):
-        # only the owner Texture should handle deletion
         pass
 
 
