@@ -62,8 +62,7 @@ def errcheck(result, func, arguments):
             print(name)
 
     from pyglet import gl
-    context = gl.current_context
-    if not context:
+    if not gl.current_context:
         raise GLException('No GL context; create a Window first')
     error = gl.glGetError()
     if error:

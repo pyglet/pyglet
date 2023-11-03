@@ -1220,11 +1220,20 @@ class Texture(AbstractImage):
         self.id = tex_id
         self._context = pyglet.gl.current_context
 
+    def delete(self):
+        """Delete this texture and the memory it occupies.
+        After this, it may not be used anymore.
+        """
+        glDeleteTextures(1, self.id)
+        self.id = None
+
     def __del__(self):
-        try:
-            self._context.delete_texture(self.id)
-        except Exception:
-            pass
+        if self.id is not None:
+            try:
+                self._context.delete_texture(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def bind(self, texture_unit: int = 0):
         """Bind to a specific Texture Unit by number."""
@@ -1479,8 +1488,13 @@ class TextureRegion(Texture):
         return "{}(id={}, size={}x{}, owner={}x{})".format(self.__class__.__name__, self.id, self.width, self.height,
                                                            self.owner.width, self.owner.height)
 
+    def delete(self):
+        """Deleting a TextureRegion has no effect. Operate on the owning
+        texture instead.
+        """
+        pass
+
     def __del__(self):
-        # only the owner Texture should handle deletion
         pass
 
 

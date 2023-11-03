@@ -674,6 +674,7 @@ class Shader:
     """
 
     def __init__(self, source_string: str, shader_type: str):
+        self._context = pyglet.gl.current_context
         self._id = None
         self.type = shader_type
 
@@ -689,6 +690,7 @@ class Shader:
         source_length = c_int(len(shader_source_utf8))
 
         shader_id = glCreateShader(shader_type)
+        self._id = shader_id
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -708,8 +710,6 @@ class Shader:
 
         elif _debug_gl_shaders:
             print(self._get_shader_log(shader_id))
-
-        self._id = shader_id
 
     @property
     def id(self):
@@ -735,16 +735,19 @@ class Shader:
         glGetShaderSource(shader_id, source_length, None, source_str)
         return source_str.value.decode('utf8')
 
-    def __del__(self):
-        try:
-            glDeleteShader(self._id)
-            if _debug_gl_shaders:
-                print(f"Destroyed {self.type} Shader '{self._id}'")
+    def delete(self):
+        glDeleteShader(self._id)
+        self._id = None
 
-        except Exception:
-            # Interpreter is shutting down,
-            # or Shader failed to compile.
-            pass
+    def __del__(self):
+        if self._id is not None:
+            try:
+                self._context.delete_shader(self._id)
+                if _debug_gl_shaders:
+                    print(f"Destroyed {self.type} Shader '{self._id}'")
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
@@ -756,6 +759,8 @@ class ShaderProgram:
     __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
     def __init__(self, *shaders: Shader):
+        self._id = None
+
         assert shaders, "At least one Shader object is required."
         self._id = _link_program(*shaders)
         self._context = pyglet.gl.current_context
@@ -799,13 +804,17 @@ class ShaderProgram:
     def __exit__(self, *_):
         glUseProgram(0)
 
+    def delete(self):
+        glDeleteProgram(self._id)
+        self._id = None
+
     def __del__(self):
-        try:
-            self._context.delete_shader_program(self.id)
-        except Exception:
-            # Interpreter is shutting down,
-            # or ShaderProgram failed to link.
-            pass
+        if self._id is not None:
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:
@@ -930,6 +939,8 @@ class ComputeShaderProgram:
 
     def __init__(self, source: str):
         """Create an OpenGL ComputeShaderProgram from source."""
+        self._id = None
+
         if not (gl_info.have_version(4, 3) or gl_info.have_extension("GL_ARB_compute_shader")):
             raise ShaderException("Compute Shader not supported. OpenGL Context version must be at least "
                                   "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension.")
@@ -1002,13 +1013,17 @@ class ComputeShaderProgram:
     def __exit__(self, *_):
         glUseProgram(0)
 
+    def delete(self):
+        glDeleteProgram(self._id)
+        self._id = None
+
     def __del__(self):
-        try:
-            self._context.delete_shader_program(self.id)
-        except Exception:
-            # Interpreter is shutting down,
-            # or ShaderProgram failed to link.
-            pass
+        if self._id is not None:
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:
