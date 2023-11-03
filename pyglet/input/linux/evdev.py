@@ -4,7 +4,6 @@ import fcntl
 import ctypes
 import warnings
 
-from os import readv
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
@@ -21,6 +20,8 @@ from pyglet.app.xlib import XlibSelectDevice
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
+
+c = pyglet.lib.load_library('c')
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -408,7 +409,7 @@ class EvdevDevice(XlibSelectDevice, Device):
             return
 
         try:
-            bytes_read = readv(self._fileno, self._event_buffer)
+            bytes_read = c.read(self._fileno, self._event_buffer, self._event_size)
         except OSError:
             self.close()
             return
