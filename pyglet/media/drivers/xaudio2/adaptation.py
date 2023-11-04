@@ -226,8 +226,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._write_cursor += audio_data.length
 
     def _update_play_cursor(self) -> None:
+        voice = self._xa2_source_voice
         self._play_cursor = (
-            self._xa2_source_voice.samples_played * self.source.audio_format.bytes_per_frame
+            (voice.samples_played - voice.samples_played_at_last_recycle) *
+            self.source.audio_format.bytes_per_frame
         )
 
     def get_play_cursor(self) -> int:
