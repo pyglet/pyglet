@@ -300,24 +300,29 @@ class Context:
     # For the functions below:
     # The garbage collector introduces a race condition.
     # The provided list might be appended to (and only appended to) while this
-    # method runs, as it's a `doomed_*` list either on the context or
-    # its object space. This is why we drain it relying on `pop`s atomicity.
+    # method runs, as it's a `doomed_*` list either on the context or its
+    # object space. If `count` wasn't stored in a local, this method might
+    # leak objects.
     def _delete_objects(self, list_, deletion_func):
         """Release all OpenGL objects in the given list using the supplied
         deletion function with the signature ``(GLuint count, GLuint *names)``.
         """
-        to_delete = []
-        while list_:
-            to_delete.append(list_.pop())
+        count = len(list_)
+        to_delete = list_[:count]
+        del list_[:count]
 
-        deletion_func(len(to_delete), (gl.GLuint * len(to_delete))(*to_delete))
+        deletion_func(count, (gl.GLuint * count)(*to_delete))
 
     def _delete_objects_one_by_one(self, list_, deletion_func):
         """Similar to ``_delete_objects``, but assumes the deletion functions's
         signature to be ``(GLuint name)``, calling it once for each object.
         """
-        while list_:
-            deletion_func(gl.GLuint(list_.pop()))
+        count = len(list_)
+        to_delete = list_[:count]
+        del list_[:count]
+
+        for name in to_delete:
+            deletion_func(gl.GLuint(name))
 
     def destroy(self):
         """Release the context.
