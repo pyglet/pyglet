@@ -18,7 +18,17 @@ class WidgetBase(EventDispatcher):
         self._height = height
         self._bg_group = None
         self._fg_group = None
-        self.enabled = True
+        self._enabled = True
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, new_enabled: bool) -> None:
+        if self._enabled == new_enabled:
+            return
+        self._enabled = new_enabled
 
     def update_groups(self, order):
         pass
