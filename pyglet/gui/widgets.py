@@ -22,6 +22,11 @@ class WidgetBase(EventDispatcher):
 
     @property
     def enabled(self) -> bool:
+        """Get/set whether this widget is enabled.
+
+        Override this property on subclasses to respond to changes in
+        status cleanly.
+        """
         return self._enabled
 
     @enabled.setter
