@@ -601,7 +601,7 @@ class WICEncoder(ImageEncoder):
 
         frame.SetPixelFormat(byref(default_format))
 
-        data = (c_byte * size).from_buffer(bytearray(image_data))
+        data = (BYTE * size).from_buffer(bytearray(image_data))
 
         frame.WritePixels(image.height, pitch, size, data)
 

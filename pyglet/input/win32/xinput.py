@@ -113,8 +113,8 @@ ERROR_SUCCESS = 0
 class XINPUT_GAMEPAD(Structure):
     _fields_ = [
         ('wButtons', WORD),
-        ('bLeftTrigger', UBYTE),
-        ('bRightTrigger', UBYTE),
+        ('bLeftTrigger', BYTE),
+        ('bRightTrigger', BYTE),
         ('sThumbLX', SHORT),
         ('sThumbLY', SHORT),
         ('sThumbRX', SHORT),

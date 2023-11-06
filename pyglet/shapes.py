@@ -5,12 +5,11 @@ such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicable). To create more
-complex shapes than what is provided here, the lower level
-graphics API is more appropriate.
-You can also use the ``in`` operator to check whether a point is
-inside a shape.
-See the :ref:`guide_graphics` for more details.
+and opacity, and rotation (where applicable).
+The Python ``in`` operator to check whether a point is inside a shape.
+
+To create more complex shapes than what is provided here, the lower level
+graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
 
 A simple example of drawing shapes::
 
@@ -1466,6 +1465,122 @@ class BorderedRectangle(ShapeBase):
         self._update_color()
 
 
+class Box(ShapeBase):
+    def __init__(self, x, y, width, height, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+        """Create an unfilled rectangular shape, with optional thickness.
+
+        The box's anchor point defaults to the (x, y) coordinates,
+        which are at the bottom left.
+        Changing the thickness of the box will extend the walls inward;
+        the outward dimesions will not be affected.
+
+        :Parameters:
+            `x` : float
+                The X coordinate of the box.
+            `y` : float
+                The Y coordinate of the box.
+            `width` : float
+                The width of the box.
+            `height` : float
+                The height of the box.
+            `thickness` : float
+                The thickness of the lines that make up the box.
+            `color` : (int, int, int, int)
+                The RGB or RGBA color of the box, specified as a tuple
+                of 3 or 4 ints in the range of 0-255. RGB colors will
+                be treated as having an opacity of 255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the box to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the box.
+        """
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+        self._thickness = thickness
+
+        self._num_verts = 8
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
+        program = get_default_shader()
+        self._batch = batch or Batch()
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._create_vertex_list()
+        self._update_vertices()
+
+    def __contains__(self, point):
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        x, y = self._x - self._anchor_x, self._y - self._anchor_y
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
+
+    def _create_vertex_list(self):
+        #   3        6
+        #     2    7
+        #     1    4
+        #   0        5
+        indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
+        self._vertex_list = self._group.program.vertex_list_indexed(
+            self._num_verts, self._draw_mode, indices, self._batch, self._group,
+            colors=('Bn', self._rgba * self._num_verts),
+            translation=('f', (self._x, self._y) * self._num_verts))
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = self._rgba * self._num_verts
+
+    def _update_vertices(self):
+        if not self._visible:
+            self._vertex_list.position[:] = (0, 0) * self._num_verts
+        else:
+
+            t = self._thickness
+            left = -self._anchor_x
+            bottom = -self._anchor_y
+            right = left + self._width
+            top = bottom + self._height
+
+            x1 = left
+            x2 = left + t
+            x3 = right - t
+            x4 = right
+            y1 = bottom
+            y2 = bottom + t
+            y3 = top - t
+            y4 = top
+                                             #  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7
+            self._vertex_list.position[:] =  x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+
+    @property
+    def width(self):
+        """The width of the Box.
+
+        :type: float
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+        self._update_vertices()
+
+    @property
+    def height(self):
+        """The height of the Box.
+
+        :type: float
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        self._update_vertices()
+
+
 class Triangle(ShapeBase):
     def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255, 255),
                  batch=None, group=None):
@@ -1776,4 +1891,5 @@ class Polygon(ShapeBase):
             self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
 
 
-__all__ = 'Arc', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector'
+__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle',
+           'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector', 'ShapeBase')
