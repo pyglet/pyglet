@@ -653,6 +653,43 @@ class Win32Window(BaseWindow):
 
         return icon
 
+    def set_clipboard_text(self, text: str):
+        valid = _user32.OpenClipboard(self._view_hwnd)
+        if not valid:
+            return
+
+        _user32.EmptyClipboard()
+
+        size = (len(text) + 1) * sizeof(WCHAR)  # UTF-16
+
+        cb_data = _kernel32.GlobalAlloc(GMEM_MOVEABLE, size)
+        locked_data = _kernel32.GlobalLock(cb_data)
+        memmove(locked_data, text, size)  # Trying to encode in utf-16 causes garbled text. Accepts str fine?
+        _kernel32.GlobalUnlock(cb_data)
+
+        _user32.SetClipboardData(CF_UNICODETEXT, cb_data)
+
+        _user32.CloseClipboard()
+
+    def get_clipboard_text(self) -> str:
+        text = ''
+
+        valid = _user32.OpenClipboard(self._view_hwnd)
+        if not valid:
+            print("Could not open clipboard")
+            return ''
+
+        cb_obj = _user32.GetClipboardData(CF_UNICODETEXT)
+        if cb_obj:
+            locked_data = _kernel32.GlobalLock(cb_obj)
+            if locked_data:
+                text = ctypes.wstring_at(locked_data)
+
+                _kernel32.GlobalUnlock(cb_obj)
+
+        _user32.CloseClipboard()
+        return text
+
     # Private util
 
     def _client_to_window_size(self, width, height):

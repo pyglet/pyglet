@@ -211,7 +211,18 @@ _user32.RegisterDeviceNotificationW.restype = HANDLE
 _user32.RegisterDeviceNotificationW.argtypes = [HANDLE, LPVOID, DWORD]
 _user32.UnregisterDeviceNotification.restype = BOOL
 _user32.UnregisterDeviceNotification.argtypes = [HANDLE]
-
+_user32.SetClipboardData.restype = HANDLE
+_user32.SetClipboardData.argtypes = [UINT, HANDLE]
+_user32.EmptyClipboard.restype = BOOL
+_user32.EmptyClipboard.argtypes = []
+_user32.OpenClipboard.restype = BOOL
+_user32.OpenClipboard.argtypes = [HWND]
+_user32.CloseClipboard.restype = BOOL
+_user32.CloseClipboard.argtypes = []
+_user32.GetClipboardData.restype = HANDLE
+_user32.GetClipboardData.argtypes = [UINT]
+_user32.SetClipboardData.restype = HANDLE
+_user32.SetClipboardData.argtypes = [UINT, HANDLE]
 
 # dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int

@@ -798,6 +798,25 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         raise NotImplementedError()
 
+    def get_clipboard_text(self) -> str:
+        """Access the system clipboard and attempt to retrieve text.
+
+        :rtype: `str`
+        :return: A string from the clipboard. String will be empty if no text found.
+        """
+        raise NotImplementedError()
+
+    def set_clipboard_text(self, text: str):
+        """Access the system clipboard and set a text string as the clipboard data.
+
+        This will clear the existing clipboard.
+
+        :Parameters:
+            `text` : str
+                Text you want to place in the clipboard.
+        """
+        raise NotImplementedError()
+
     def minimize(self):
         """Minimize the window.
         """
