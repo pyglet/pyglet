@@ -64,14 +64,16 @@ _gl_types = {
 }
 
 
-def _make_attribute_property(attribute):
+def _make_attribute_property(name):
 
     def _attribute_getter(self):
+        attribute = self.domain.attribute_names[name]
         region = attribute.buffer.get_region(self.start, self.count)
         region.invalidate()
         return region.array
 
     def _attribute_setter(self, data):
+        attribute = self.domain.attribute_names[name]
         attribute.buffer.set_region(self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
@@ -84,11 +86,10 @@ class VertexDomain:
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
-    version = 0
     _initial_count = 16
 
     def __init__(self, program, attribute_meta):
-        self.program = program
+        self.program = program          # Needed a reference for migration
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
 
@@ -112,7 +113,7 @@ class VertexDomain:
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
             # Create custom property to be used in the VertexList:
-            self._property_dict[attribute.name] = _make_attribute_property(attribute)
+            self._property_dict[attribute.name] = _make_attribute_property(name)
 
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         self._vertexlist_class = type("VertexList", (VertexList,), self._property_dict)
@@ -132,7 +133,6 @@ class VertexDomain:
             return self.allocator.alloc(count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self.version += 1
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
@@ -144,7 +144,6 @@ class VertexDomain:
             return self.allocator.realloc(start, count, new_count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self.version += 1
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
@@ -323,7 +322,6 @@ class IndexedVertexDomain(VertexDomain):
             return self.index_allocator.alloc(count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self.version += 1
             self.index_buffer.resize(capacity * self.index_element_size)
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.alloc(count)
@@ -334,7 +332,6 @@ class IndexedVertexDomain(VertexDomain):
             return self.index_allocator.realloc(start, count, new_count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self.version += 1
             self.index_buffer.resize(capacity * self.index_element_size)
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.realloc(start, count, new_count)
