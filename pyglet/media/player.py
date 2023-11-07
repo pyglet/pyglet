@@ -157,10 +157,6 @@ class Player(pyglet.event.EventDispatcher):
         self._set_playing(self._playing)
 
     def _set_source(self, new_source: Optional[Source]) -> None:
-        # if self._source is not None:
-        #     self._source.seek(0.0)
-        #     self._source.is_player_source = False
-
         if new_source is None:
             self._source = None
         else:
@@ -246,7 +242,6 @@ class Player(pyglet.event.EventDispatcher):
 
         The internal audio player and the texture will be deleted.
         """
-        # self._set_source(None)
         if self._source:
             self.source.is_player_source = False
         if self._audio_player is not None:
