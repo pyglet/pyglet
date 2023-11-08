@@ -38,13 +38,13 @@ def _debug_print_dummy(arg: str) -> bool:
 
 
 def debug_print(pyglet_option_name: str = 'debug') -> Callable[[str], bool]:
-    """Get a debug printer controlled by the given ``pyglet.options`` key.
+    """Get a debug printer controlled by the given ``pyglet.options`` name.
 
     This allows repurposing ``assert`` to write cleaner, more efficient
     debug output:
 
     #. Debug printers fit into a one-line ``assert`` statements instead
-       of longer, slower key-lookup``if`` statements
+       of longer, slower key-lookup ``if`` statements
     #. Running Python with the -O flag makes pyglet run faster by
        skipping all ``assert`` statements
 
