@@ -2,7 +2,7 @@
 import ctypes
 import sys
 
-from typing import Union, Callable
+from typing import Union
 
 __all__ = [
     "Buffer",
