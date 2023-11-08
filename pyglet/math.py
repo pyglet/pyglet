@@ -1019,6 +1019,14 @@ class Quaternion(tuple):
     def __new__(cls, w: float = 1.0, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> Quaternion:
         return super().__new__(Quaternion, (w, x, y, z))
 
+    @classmethod
+    def from_mat3(cls) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
+
+    @classmethod
+    def from_mat4(cls) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
+
     def to_mat4(self) -> Mat4:
         w = self.w
         x = self.x
@@ -1070,40 +1078,39 @@ class Quaternion(tuple):
         return Mat3((a, b, c, e, f, g, i, j, k))
 
     @property
-    def w(self):
+    def w(self) -> float:
         return self[0]
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self[1]
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self[2]
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self[3]
 
+    def conjugate(self) -> Quaternion:
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
+
     @property
-    def mag(self):
+    def mag(self) -> float:
         return self.__abs__()
 
-    def normalize(self):
+    def normalize(self) -> Quaternion:
         m = self.__abs__()
         if m == 0:
             return self
         return Quaternion(self[0] / m, self[1] / m, self[2] / m, self[3] / m)
 
-    def conjugate(self) -> Quaternion:
-        return Quaternion(self.w, -self.x, -self.y, -self.z)
-
-    def __invert__(self) -> Quaternion:
-        # TODO:
-        raise NotImplementedError
-
     def __abs__(self) -> float:
         return _math.sqrt(self.w ** 2 + self.x ** 2 + self.y ** 2 + self.z ** 2)
+
+    def __invert__(self) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(w={self[0]}, x={self[1]}, y={self[2]}, z={self[3]})"
