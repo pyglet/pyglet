@@ -52,7 +52,7 @@ from pyglet.event import EventDispatcher as _EventDispatcher
 
 from pyglet.util import debug_print
 
-_debug_net = debug_print(True)
+_debug_net = debug_print('debug_net')
 
 
 class Client(_EventDispatcher):
