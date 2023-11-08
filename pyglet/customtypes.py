@@ -6,7 +6,6 @@ from typing import Union, Callable
 
 __all__ = [
     "Buffer",
-    "DebugPrintCallable"
 ]
 
 
@@ -15,6 +14,3 @@ if sys.version_info >= (3, 12):
 else:
     # Best-effort placeholder for older Python versions
     Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]
-
-
-DebugPrintCallable = Callable[[str], bool]

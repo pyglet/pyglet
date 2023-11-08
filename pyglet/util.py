@@ -3,10 +3,10 @@
 
 import os
 import sys
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 import pyglet
-from pyglet.customtypes import Buffer, DebugPrintCallable
+from pyglet.customtypes import Buffer
 
 
 def asbytes(s: Union[str, Buffer]) -> bytes:
@@ -45,7 +45,7 @@ def _debug_print_dummy(arg: str) -> bool:
     return True
 
 
-def debug_print(pyglet_option_name: str = 'debug') -> DebugPrintCallable:
+def debug_print(pyglet_option_name: str = 'debug') -> Callable[[str], bool]:
     """Get a debug print callable based on a pyglet option name.
 
     The debug print function returned should be used in an assert so
