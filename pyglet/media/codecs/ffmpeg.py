@@ -1,6 +1,6 @@
 """Use ffmpeg to decode audio and video media.
 """
-
+import sys
 from collections import deque
 from ctypes import (c_int, c_int32, c_uint8, c_char_p,
                     addressof, byref, cast, POINTER, Structure, create_string_buffer, memmove)
@@ -8,7 +8,7 @@ from ctypes import (c_int, c_int32, c_uint8, c_char_p,
 import pyglet
 import pyglet.lib
 from pyglet import image
-from pyglet.util import asbytes, asbytes_filename, asstr
+from pyglet.util import asbytes, asstr
 from . import MediaDecoder
 from .base import AudioData, SourceInfo, StaticSource
 from .base import StreamingSource, VideoFormat, AudioFormat
@@ -510,10 +510,12 @@ class FFmpegSource(StreamingSource):
         self._file = None
         self._memory_file = None
 
+        encoded_filename = filename.encode(sys.getfilesystemencoding())
+
         if file:
-            self._file, self._memory_file = ffmpeg_open_memory_file(asbytes_filename(filename), file)
+            self._file, self._memory_file = ffmpeg_open_memory_file(encoded_filename, file)
         else:
-            self._file = ffmpeg_open_filename(asbytes_filename(filename))
+            self._file = ffmpeg_open_filename(encoded_filename)
 
         if not self._file:
             raise FFmpegException('Could not open "{0}"'.format(filename))
