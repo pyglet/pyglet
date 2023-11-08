@@ -245,7 +245,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         return False
 
     def _refill(self, write_size):
-        assert _debug('_refill', write_size)
+        assert _debug(f'_refill {write_size}')
 
         while write_size > self.min_buffer_size:
             audio_data = self._get_audiodata()

@@ -52,7 +52,7 @@ from pyglet.event import EventDispatcher as _EventDispatcher
 
 from pyglet.util import debug_print
 
-_debug_net = debug_print(True)
+_debug_net = debug_print('debug_net')
 
 
 class Client(_EventDispatcher):
@@ -235,12 +235,12 @@ class Server(_EventDispatcher):
 
     def on_connection(self, connection):
         """Event for new Client connections."""
-        assert _debug_net("Connected <---", connection)
+        assert _debug_net(f"Connected <--- {connection}")
         connection.set_handler('on_disconnect', self.on_disconnect)
 
     def on_disconnect(self, connection):
         """Event for disconnected Clients."""
-        assert _debug_net("Disconnected --->", connection)
+        assert _debug_net(f"Disconnected ---> {connection}")
 
 
 Server.register_event_type('on_connection')

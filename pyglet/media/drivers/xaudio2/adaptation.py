@@ -213,7 +213,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
             event_cursor = self._write_cursor + event.timestamp * self.source.audio_format.bytes_per_second
-            assert _debug('Adding event', event, 'at', event_cursor)
+            assert _debug(f'Adding event {event} at {event_cursor}')
             self._events.append((event_cursor, event))
 
     def _add_audiodata_timestamp(self, audio_data):
