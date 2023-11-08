@@ -18,14 +18,6 @@ def asbytes(s: Union[str, Buffer]) -> bytes:
         return bytes(s)
 
 
-def asbytes_filename(s: Union[str, Buffer]) -> Optional[bytes]:
-    if isinstance(s, (bytes, bytearray, memoryview)):
-        return s
-    elif isinstance(s, str):
-        return s.encode(encoding=sys.getfilesystemencoding())
-
-    return None
-
 def asstr(s: Optional[Union[str, Buffer]]) -> str:
     if s is None:
         return ''
