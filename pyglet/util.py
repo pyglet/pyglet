@@ -38,28 +38,42 @@ def _debug_print_dummy(arg: str) -> bool:
 
 
 def debug_print(pyglet_option_name: str = 'debug') -> Callable[[str], bool]:
-    """Get a debug print callable based on a pyglet option name.
+    """Get a debug printer controlled by the given ``pyglet.options`` key.
 
-    The debug print function returned should be used in an assert so
-    it can automatically be removed when running Python with the -O
-    flag. Both of the returned functions return True to ensure the
-    types for this work.
+    This allows repurposing ``assert`` to write cleaner, more efficient
+    debug output:
+
+    #. Debug printers fit into a one-line ``assert`` statements instead
+       of longer, slower key-lookup``if`` statements
+    #. Running Python with the -O flag makes pyglet run faster by
+       skipping all ``assert`` statements
 
     Usage example::
 
-        from pyglet.debug import debug_print
+        from pyglet.util import debug_print
+
+
         _debug_media = debug_print('debug_media')
 
+
         def some_func():
+            # Python will skip the line below when run with -O
             assert _debug_media('My debug statement')
+
+            # The rest of the function will run as normal
+            ...
+
+    For more information, please see `the Python command line
+    documentation <https://docs.python.org/3/using/cmdline.html#cmdoption-O>`_.
 
     Args:
         `pyglet_option_name` :
-            The name of a pyglet option to load the debug flag from.
+            The name of a key in :attr:`pyglet.options` to read the
+            debug flag's value from.
 
     Returns:
-        A callable which returns ``True``  so it to be used
-        as a way of auto-removing it when run with ``-O``.
+        A callable which prints a passed string and returns ``True``
+        to allow auto-removal when running with ``-O``.
 
     """
     enabled = pyglet.options.get(pyglet_option_name, False)
