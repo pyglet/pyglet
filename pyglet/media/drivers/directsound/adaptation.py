@@ -145,11 +145,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def _refill(self, write_size):
         while write_size > 0:
-            assert _debug('_refill, write_size =', write_size)
+            assert _debug(f'_refill, write_size = {write_size}')
             audio_data = self._get_audiodata()
 
             if audio_data is not None:
-                assert _debug('write', audio_data.length)
+                assert _debug(f'write {audio_data.length}')
                 length = min(write_size, audio_data.length)
                 self.write(audio_data, length)
                 write_size -= length
@@ -191,14 +191,14 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         # Set the write cursor back to eos_cursor or play_cursor to prevent gaps
         if self._play_cursor < self._eos_cursor:
             cursor_diff = self._write_cursor - self._eos_cursor
-            assert _debug('Moving cursor back', cursor_diff)
+            assert _debug(f'Moving cursor back {cursor_diff}')
             self._write_cursor = self._eos_cursor
             self._write_cursor_ring -= cursor_diff
             self._write_cursor_ring %= self._buffer_size
 
         else:
             cursor_diff = self._play_cursor - self._eos_cursor
-            assert _debug('Moving cursor back', cursor_diff)
+            assert _debug(f'Moving cursor back {cursor_diff}')
             self._write_cursor = self._play_cursor
             self._write_cursor_ring -= cursor_diff
             self._write_cursor_ring %= self._buffer_size
@@ -207,7 +207,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         for event in audio_data.events:
             event_cursor = self._write_cursor + event.timestamp * \
                            self.source.audio_format.bytes_per_second
-            assert _debug('Adding event', event, 'at', event_cursor)
+            assert _debug(f'Adding event {event} at {event_cursor}')
             self._events.append((event_cursor, event))
 
     def _add_audiodata_timestamp(self, audio_data):
