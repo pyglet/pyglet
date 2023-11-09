@@ -1,12 +1,16 @@
 """Holds type aliases used throughout the codebase."""
 import ctypes
+import sys
 
 from typing import Union
 
-
 __all__ = [
-    "Buffer"
+    "Buffer",
 ]
 
-# Backwards compatible placeholder for `collections.abc.Buffer` from Python 3.12
-Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]
+
+if sys.version_info >= (3, 12):
+    from collections.abc import Buffer
+else:
+    # Best-effort placeholder for older Python versions
+    Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]

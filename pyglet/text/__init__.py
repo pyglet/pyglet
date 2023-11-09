@@ -271,6 +271,8 @@ class DocumentLabel(layout.TextLayout):
 
     @color.setter
     def color(self, color):
+        r, g, b, *a = color
+        color = r, g, b, a[0] if a else 255
         self.document.set_style(0, len(self.document.text), {'color': color})
 
     @property

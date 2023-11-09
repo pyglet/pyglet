@@ -398,8 +398,6 @@ class WMFSource(Source):
 
     def __init__(self, filename, file=None):
         assert any([self.decode_audio, self.decode_video]), "Source must decode audio, video, or both, not none."
-        self._current_audio_sample = None
-        self._current_audio_buffer = None
         self._current_video_sample = None
         self._current_video_buffer = None
         self._timestamp = 0
@@ -522,9 +520,9 @@ class WMFSource(Source):
             imfmedia.GetGUID(MF_MT_SUBTYPE, ctypes.byref(guid_compressed))
 
             if guid_compressed == MFAudioFormat_PCM or guid_compressed == MFAudioFormat_Float:
-                assert _debug('WMFAudioDecoder: Found Uncompressed Audio:', guid_compressed)
+                assert _debug(f'WMFAudioDecoder: Found Uncompressed Audio: {guid_compressed}')
             else:
-                assert _debug('WMFAudioDecoder: Found Compressed Audio:', guid_compressed)
+                assert _debug(f'WMFAudioDecoder: Found Compressed Audio: {guid_compressed}')
                 # If audio is compressed, attempt to decompress it by forcing source reader to use PCM
                 mf_mediatype = IMFMediaType()
 
@@ -615,20 +613,13 @@ class WMFSource(Source):
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         flags = DWORD()
         timestamp = ctypes.c_longlong()
-        audio_data_length = DWORD()
 
-        # If we have an audio sample already in use and we call this again, release the memory of buffer and sample.
-        # Can only release after the data is played or else glitches and pops can be heard.
-        if self._current_audio_sample:
-            self._current_audio_buffer.Release()
-            self._current_audio_sample.Release()
-
-        self._current_audio_sample = IMFSample()
-        self._current_audio_buffer = IMFMediaBuffer()
+        imf_sample = IMFSample()
+        imf_buffer = IMFMediaBuffer()
 
         while True:
             self._source_reader.ReadSample(self._audio_stream_index, 0, None, ctypes.byref(flags),
-                                           ctypes.byref(timestamp), ctypes.byref(self._current_audio_sample))
+                                           ctypes.byref(timestamp), ctypes.byref(imf_sample))
 
             if flags.value & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED:
                 assert _debug('WMFAudioDecoder: Data is no longer valid.')
@@ -638,20 +629,23 @@ class WMFSource(Source):
                 assert _debug('WMFAudioDecoder: End of data from stream source.')
                 break
 
-            if not self._current_audio_sample:
+            if not imf_sample:
                 assert _debug('WMFAudioDecoder: No sample.')
                 continue
 
             # Convert to single buffer as a sample could potentially(rarely) have multiple buffers.
-            self._current_audio_sample.ConvertToContiguousBuffer(ctypes.byref(self._current_audio_buffer))
+            imf_sample.ConvertToContiguousBuffer(ctypes.byref(imf_buffer))
 
             audio_data_ptr = POINTER(BYTE)()
+            audio_data_length = DWORD()
 
-            self._current_audio_buffer.Lock(ctypes.byref(audio_data_ptr), None, ctypes.byref(audio_data_length))
-            self._current_audio_buffer.Unlock()
+            imf_buffer.Lock(ctypes.byref(audio_data_ptr), None, ctypes.byref(audio_data_length))
 
-            audio_data = create_string_buffer(audio_data_length.value)
-            memmove(audio_data, audio_data_ptr, audio_data_length.value)
+            audio_data = ctypes.string_at(audio_data_ptr, audio_data_length.value)
+
+            imf_buffer.Unlock()
+            imf_buffer.Release()
+            imf_sample.Release()
 
             return AudioData(audio_data,
                              audio_data_length.value,
@@ -688,6 +682,7 @@ class WMFSource(Source):
                 # changes if the stride is added/changed before playback?
                 stride = ctypes.c_uint32()
                 new.GetUINT32(MF_MT_DEFAULT_STRIDE, ctypes.byref(stride))
+                new.Release()
 
                 self._stride = stride.value
 
@@ -773,15 +768,14 @@ class WMFSource(Source):
             assert _debug('WMFVideoDecoder: Setting configuration attributes.')
 
     def __del__(self):
+        if self._source_reader:
+            self._source_reader.Release()
+
         if self._stream_obj:
             self._stream_obj.Release()
 
         if self._imf_bytestream:
             self._imf_bytestream.Release()
-
-        if self._current_audio_sample:
-            self._current_audio_buffer.Release()
-            self._current_audio_sample.Release()
 
         if self._current_video_sample:
             self._current_video_buffer.Release()

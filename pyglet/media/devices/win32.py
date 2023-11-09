@@ -83,15 +83,15 @@ IID_IMMDeviceEnumerator = com.GUID(0xa95664d2, 0x9614, 0x4f35, 0xa7, 0x46, 0xde,
 class IMMNotificationClient(com.IUnknown):
     _methods_ = [
         ('OnDeviceStateChanged',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, LPCWSTR, DWORD)),
+         com.STDMETHOD(LPCWSTR, DWORD)),
         ('OnDeviceAdded',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, LPCWSTR)),
+         com.STDMETHOD(LPCWSTR)),
         ('OnDeviceRemoved',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, LPCWSTR)),
+         com.STDMETHOD(LPCWSTR)),
         ('OnDefaultDeviceChanged',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, EDataFlow, ERole, LPCWSTR)),
+         com.STDMETHOD(EDataFlow, ERole, LPCWSTR)),
         ('OnPropertyValueChanged',
-         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, LPCWSTR, PROPERTYKEY)),
+         com.STDMETHOD(LPCWSTR, PROPERTYKEY)),
     ]
 
 
@@ -113,7 +113,7 @@ class AudioNotificationCB(com.COMObject):
         self.audio_devices = audio_devices
         self._lost = False
 
-    def OnDeviceStateChanged(self, this, pwstrDeviceId, dwNewState):
+    def OnDeviceStateChanged(self, pwstrDeviceId, dwNewState):
         device = self.audio_devices.get_cached_device(pwstrDeviceId)
 
         old_state = device.state
@@ -126,17 +126,17 @@ class AudioNotificationCB(com.COMObject):
         device.state = dwNewState
         self.audio_devices.dispatch_event('on_device_state_changed', device, pyglet_old_state, pyglet_new_state)
 
-    def OnDeviceAdded(self, this, pwstrDeviceId):
+    def OnDeviceAdded(self, pwstrDeviceId):
         dev = self.audio_devices.add_device(pwstrDeviceId)
         assert _debug(f"Audio device was added {pwstrDeviceId}: {dev}")
         self.audio_devices.dispatch_event('on_device_added', dev)
 
-    def OnDeviceRemoved(self, this, pwstrDeviceId):
+    def OnDeviceRemoved(self, pwstrDeviceId):
         dev = self.audio_devices.remove_device(pwstrDeviceId)
         assert _debug(f"Audio device was removed {pwstrDeviceId} : {dev}")
         self.audio_devices.dispatch_event('on_device_removed', dev)
 
-    def OnDefaultDeviceChanged(self, this, flow, role, pwstrDeviceId):
+    def OnDefaultDeviceChanged(self, flow, role, pwstrDeviceId):
         # Only support eConsole role right now
         if role == 0:
             if pwstrDeviceId is None:
@@ -149,7 +149,7 @@ class AudioNotificationCB(com.COMObject):
 
             self.audio_devices.dispatch_event('on_default_changed', device, pyglet_flow)
 
-    def OnPropertyValueChanged(self, this, pwstrDeviceId, key):
+    def OnPropertyValueChanged(self, pwstrDeviceId, key):
         pass
 
 
@@ -259,7 +259,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
-            assert _debug("No default audio output was found.", err)
+            assert _debug(f"No default audio output was found. {err}")
             return None
 
     def get_default_input(self) -> Optional[Win32AudioDevice]:
@@ -274,7 +274,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
-            assert _debug("No default input output was found.", err)
+            assert _debug(f"No default input output was found. {err}")
             return None
 
     def get_cached_device(self, dev_id) -> Win32AudioDevice:

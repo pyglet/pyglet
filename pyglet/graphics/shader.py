@@ -170,14 +170,14 @@ class Attribute:
         self.name = name
         self.location = location
         self.count = count
-
         self.gl_type = gl_type
-        self.c_type = _c_types[gl_type]
         self.normalize = normalize
 
-        self.align = sizeof(self.c_type)
-        self.size = count * self.align
-        self.stride = self.size
+        self.c_type = _c_types[gl_type]
+
+        self.element_size = sizeof(self.c_type)
+        self.byte_size = count * self.element_size
+        self.stride = self.byte_size
 
     def enable(self):
         """Enable the attribute."""
@@ -207,20 +207,16 @@ class Attribute:
         will be ``3 * 4 = 12``.
 
         :Parameters:
-            `buffer` : `AbstractMappable`
+            `buffer` : `AttributeBufferObject`
                 The buffer to map.
             `start` : int
                 Offset of the first vertex to map.
             `count` : int
                 Number of vertices to map
 
-        :rtype: `AbstractBufferRegion`
+        :rtype: `BufferObjectRegion`
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
-        ptr_type = POINTER(self.c_type * array_count)
-        return buffer.get_region(byte_start, byte_size, ptr_type)
+        return buffer.get_region(start, count)
 
     def set_region(self, buffer, start, count, data):
         """Set the data over a region of the buffer.
@@ -234,11 +230,7 @@ class Attribute:
                 Number of vertices to set.
             `data` : A sequence of data components.
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
-        data = (self.c_type * array_count)(*data)
-        buffer.set_data_region(data, byte_start, byte_size)
+        buffer.set_region(start, count, data)
 
     def __repr__(self):
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
@@ -682,6 +674,7 @@ class Shader:
     """
 
     def __init__(self, source_string: str, shader_type: str):
+        self._context = pyglet.gl.current_context
         self._id = None
         self.type = shader_type
 
@@ -697,6 +690,7 @@ class Shader:
         source_length = c_int(len(shader_source_utf8))
 
         shader_id = glCreateShader(shader_type)
+        self._id = shader_id
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -716,8 +710,6 @@ class Shader:
 
         elif _debug_gl_shaders:
             print(self._get_shader_log(shader_id))
-
-        self._id = shader_id
 
     @property
     def id(self):
@@ -743,16 +735,19 @@ class Shader:
         glGetShaderSource(shader_id, source_length, None, source_str)
         return source_str.value.decode('utf8')
 
-    def __del__(self):
-        try:
-            glDeleteShader(self._id)
-            if _debug_gl_shaders:
-                print(f"Destroyed {self.type} Shader '{self._id}'")
+    def delete(self):
+        glDeleteShader(self._id)
+        self._id = None
 
-        except Exception:
-            # Interpreter is shutting down,
-            # or Shader failed to compile.
-            pass
+    def __del__(self):
+        if self._id is not None:
+            try:
+                self._context.delete_shader(self._id)
+                if _debug_gl_shaders:
+                    print(f"Destroyed {self.type} Shader '{self._id}'")
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
@@ -764,6 +759,8 @@ class ShaderProgram:
     __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
     def __init__(self, *shaders: Shader):
+        self._id = None
+
         assert shaders, "At least one Shader object is required."
         self._id = _link_program(*shaders)
         self._context = pyglet.gl.current_context
@@ -807,13 +804,17 @@ class ShaderProgram:
     def __exit__(self, *_):
         glUseProgram(0)
 
+    def delete(self):
+        glDeleteProgram(self._id)
+        self._id = None
+
     def __del__(self):
-        try:
-            self._context.delete_shader_program(self.id)
-        except Exception:
-            # Interpreter is shutting down,
-            # or ShaderProgram failed to link.
-            pass
+        if self._id is not None:
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:
@@ -938,6 +939,8 @@ class ComputeShaderProgram:
 
     def __init__(self, source: str):
         """Create an OpenGL ComputeShaderProgram from source."""
+        self._id = None
+
         if not (gl_info.have_version(4, 3) or gl_info.have_extension("GL_ARB_compute_shader")):
             raise ShaderException("Compute Shader not supported. OpenGL Context version must be at least "
                                   "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension.")
@@ -1010,13 +1013,17 @@ class ComputeShaderProgram:
     def __exit__(self, *_):
         glUseProgram(0)
 
+    def delete(self):
+        glDeleteProgram(self._id)
+        self._id = None
+
     def __del__(self):
-        try:
-            self._context.delete_shader_program(self.id)
-        except Exception:
-            # Interpreter is shutting down,
-            # or ShaderProgram failed to link.
-            pass
+        if self._id is not None:
+            try:
+                self._context.delete_shader_program(self._id)
+                self._id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def __setitem__(self, key, value):
         try:

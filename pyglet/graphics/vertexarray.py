@@ -27,10 +27,8 @@ class VertexArray:
         glBindVertexArray(0)
 
     def delete(self):
-        try:
-            glDeleteVertexArrays(1, self._id)
-        except Exception:
-            pass
+        glDeleteVertexArrays(1, self._id)
+        self._id = None
 
     __enter__ = bind
 
@@ -38,11 +36,12 @@ class VertexArray:
         glBindVertexArray(0)
 
     def __del__(self):
-        try:
-            self._context.delete_vao(self.id)
-        # Python interpreter is shutting down:
-        except ImportError:
-            pass
+        if self._id is not None:
+            try:
+                self._context.delete_vao(self.id)
+                self._id = None
+            except (ImportError, AttributeError):
+                pass  # Interpreter is shutting down
 
     def __repr__(self):
         return "{}(id={})".format(self.__class__.__name__, self._id.value)

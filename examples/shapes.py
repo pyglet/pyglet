@@ -43,6 +43,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.polygon = shapes.Polygon([400, 100], [500, 10], [600, 100], [550, 175], [450, 150], batch=self.batch)
 
+        self.box = shapes.Box(60, 40, 200, 100, thickness=2, color=(244, 55, 55), batch=self.batch)
+
     def on_draw(self):
         """Clear the screen and draw shapes"""
         self.clear()

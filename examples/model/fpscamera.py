@@ -9,10 +9,16 @@ from pyglet.math import Vec2, Vec3, Mat4, clamp
 
 
 class FPSCamera:
-    """A 3D projection, "first person" camera controller.
+    """A 3D projection "first person" camera example.
 
-    This Camera class listens to Window and input events, and
-    updates the `Window.view` and `Window.projection` matrixes.
+    Windows in pyglet contain `view` and `projection` matrices,
+    which are shared with all default shaders in a `WindowBlock` UBO.
+    This Camera class handles events from the mouse & keyboard and
+    Controller, and updates these Window matrices.
+
+    Note mouse input will be captured once you click on the Window,
+    which sets the mouse as exclusive. Pressing ESC once will set
+    the mouse as non-exclusive.
     """
     def __init__(self, window, position=Vec3(0, 0, 0), target=Vec3(0, 0, -1), up=Vec3(0, 1, 0)):
         self.position = position
@@ -42,6 +48,8 @@ class FPSCamera:
         self._window = weakref.proxy(window)
         self._window.view = Mat4.look_at(position, target, up)
         self._window.push_handlers(self)
+
+        self._exclusive_mouse = False
 
     def on_deactivate(self):
         # Prevent input from getting "stuck"
@@ -96,15 +104,20 @@ class FPSCamera:
     # Mouse input
 
     def on_mouse_motion(self, x, y, dx, dy):
+        if not self._exclusive_mouse:
+            return
         self.mouse_look[:] = dx, dy
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self._window.set_exclusive_mouse(True)
+        if not self._exclusive_mouse:
+            self._exclusive_mouse = True
+            self._window.set_exclusive_mouse(True)
 
     # Keyboard input
 
     def on_key_press(self, symbol, mod):
         if symbol == pyglet.window.key.ESCAPE:
+            self._exclusive_mouse = False
             self._window.set_exclusive_mouse(False)
             return pyglet.event.EVENT_HANDLED
 

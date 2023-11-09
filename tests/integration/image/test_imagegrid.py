@@ -44,6 +44,9 @@ class ImageGridTestCase(unittest.TestCase):
     def setUp(self):
         self.w = Window(visible=False)
 
+    def tearDown(self) -> None:
+        self.w.close()
+
     def testSquare(self):
         # Test a 3x3 grid with no padding and 4x4 images
         rows = cols = 3

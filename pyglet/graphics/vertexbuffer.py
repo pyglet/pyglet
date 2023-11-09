@@ -11,6 +11,8 @@ the buffer.
 import sys
 import ctypes
 
+from functools import lru_cache
+
 import pyglet
 from pyglet.gl import *
 
@@ -98,36 +100,6 @@ class AbstractBuffer:
         raise NotImplementedError('abstract')
 
 
-class AbstractMappable:
-
-    def get_region(self, start, size, ptr_type):
-        """Map a region of the buffer into a ctypes array of the desired
-        type.  This region does not need to be unmapped, but will become
-        invalid if the buffer is resized.
-
-        Note that although a pointer type is required, an array is mapped.
-        For example::
-
-            get_region(0, ctypes.sizeof(c_int) * 20, ctypes.POINTER(c_int * 20))
-
-        will map bytes 0 to 80 of the buffer to an array of 20 ints.
-
-        Changes to the array may not be recognised until the region's
-        :py:meth:`AbstractBufferRegion.invalidate` method is called.
-
-        :Parameters:
-            `start` : int
-                Offset into the buffer to map from, in bytes
-            `size` : int
-                Size of the buffer region to map, in bytes
-            `ptr_type` : ctypes pointer type
-                Pointer type describing the array format to create
-
-        :rtype: :py:class:`AbstractBufferRegion`
-        """
-        raise NotImplementedError('abstract')
-
-
 class BufferObject(AbstractBuffer):
     """Lightweight representation of an OpenGL Buffer Object.
 
@@ -180,7 +152,8 @@ class BufferObject(AbstractBuffer):
 
     def map(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        ptr = ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
+        ptr = ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY),
+                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def map_range(self, start, size, ptr_type):
@@ -191,20 +164,17 @@ class BufferObject(AbstractBuffer):
     def unmap(self):
         glUnmapBuffer(GL_ARRAY_BUFFER)
 
-    def __del__(self):
-        try:
-            if self.id is not None:
-                self._context.delete_buffer(self.id)
-        except:
-            pass
-
     def delete(self):
-        buffer_id = GLuint(self.id)
-        try:
-            glDeleteBuffers(1, buffer_id)
-        except Exception:
-            pass
+        glDeleteBuffers(1, self.id)
         self.id = None
+
+    def __del__(self):
+        if self.id is not None:
+            try:
+                self._context.delete_buffer(self.id)
+                self.id = None
+            except (AttributeError, ImportError):
+                pass  # Interpreter is shutting down
 
     def resize(self, size):
         # Map, create a copy, then reinitialize.
@@ -222,27 +192,31 @@ class BufferObject(AbstractBuffer):
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
-class MappableBufferObject(BufferObject, AbstractMappable):
+class AttributeBufferObject(BufferObject):
     """A buffer with system-memory backed store.
 
-    Updates to the data via `set_data`, `set_data_region` and `map` will be
-    held in local memory until `bind` is called.  The advantage is that fewer
-    OpenGL calls are needed, increasing performance.
-
-    There may also be less performance penalty for resizing this buffer.
-
-    Updates to data via :py:meth:`map` are committed immediately.
+    Updates to the data via `set_data` and `set_data_region` will be held
+    in local memory until `buffer_data` is called.  The advantage is that
+    fewer OpenGL calls are needed, which can increasing performance at the
+    expense of system memory.
     """
-    def __init__(self, size, usage=GL_DYNAMIC_DRAW):
-        super(MappableBufferObject, self).__init__(size, usage)
+
+    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+        super().__init__(size, usage)
+        self._size = size
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
-    def bind(self):
-        # Commit pending data
-        super(MappableBufferObject, self).bind()
+        self.attribute_stride = attribute.stride
+        self.attribute_count = attribute.count
+        self.attribute_ctype = attribute.c_type
+
+        self._array = self.get_region(0, size).array
+
+    def bind(self, target=GL_ARRAY_BUFFER):
+        super().bind(target)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
@@ -252,28 +226,27 @@ class MappableBufferObject(BufferObject, AbstractMappable):
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
 
-    def set_data(self, data):
-        super(MappableBufferObject, self).set_data(data)
-        ctypes.memmove(self.data, data, self.size)
-        self._dirty_min = 0
-        self._dirty_max = self.size
+    @lru_cache(maxsize=None)
+    def get_region(self, start, count):
+        byte_start = self.attribute_stride * start  # byte offset
+        byte_size = self.attribute_stride * count  # number of bytes
+        array_count = self.attribute_count * count  # number of values
 
-    def set_data_region(self, data, start, length):
-        ctypes.memmove(self.data_ptr + start, data, length)
-        self._dirty_min = min(start, self._dirty_min)
-        self._dirty_max = max(start + length, self._dirty_max)
+        ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
+        array = ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
+        return BufferObjectRegion(self, byte_start, byte_start + byte_size, array)
 
-    def map(self, invalidate=False):
-        self._dirty_min = 0
-        self._dirty_max = self.size
-        return self.data
+    def set_region(self, start, count, data):
+        byte_start = self.attribute_stride * start  # byte offset
+        byte_size = self.attribute_stride * count  # number of bytes
 
-    def unmap(self):
-        pass
+        array_start = start * self.attribute_count
+        array_end = count * self.attribute_count + array_start
 
-    def get_region(self, start, size, ptr_type):
-        array = ctypes.cast(self.data_ptr + start, ptr_type).contents
-        return BufferObjectRegion(self, start, start + size, array)
+        self._array[array_start:array_end] = data
+
+        self._dirty_min = min(self._dirty_min, byte_start)
+        self._dirty_max = max(self._dirty_max, byte_start + byte_size)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -288,6 +261,9 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
+
+        self._array = self.get_region(0, size).array
+        self.get_region.cache_clear()
 
 
 class BufferObjectRegion:

@@ -15,18 +15,6 @@ from pyglet.media.synthesis import Silence
 from .mock_player import MockPlayer
 
 
-def _delete_driver():
-    # if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
-    #     pyglet.media.drivers._audio_driver.delete()
-    pyglet.media.drivers._audio_driver = None
-
-def test_get_platform_driver():
-    driver = pyglet.media.drivers.get_audio_driver()
-    assert driver is not None
-    assert driver is not None, 'Cannot load audio driver for your platform'
-    _delete_driver()
-
-
 class MockPlayerWithMockTime(MockPlayer):
 
     @property
@@ -59,6 +47,13 @@ def get_drivers():
     ids = []
 
     try:
+        from pyglet.media.drivers import silent
+        drivers.append(silent)
+        ids.append('Silent')
+    except:
+        pass
+
+    try:
         from pyglet.media.drivers import pulse
         drivers.append(pulse)
         ids.append('PulseAudio')
@@ -78,6 +73,14 @@ def get_drivers():
         ids.append('DirectSound')
     except:
         pass
+
+    try:
+        from pyglet.media.drivers import xaudio2
+        drivers.append(xaudio2)
+        ids.append('XAudio2')
+    except:
+        pass
+
 
     return {'params': drivers, 'ids': ids}
 

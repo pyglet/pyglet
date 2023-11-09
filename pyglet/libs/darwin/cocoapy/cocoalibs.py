@@ -218,6 +218,7 @@ NSApplicationDidUnhideNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUn
 NSApplicationDidUpdateNotification = c_void_p.in_dll(appkit, 'NSApplicationDidUpdateNotification')
 NSPasteboardURLReadingFileURLsOnlyKey = c_void_p.in_dll(appkit, 'NSPasteboardURLReadingFileURLsOnlyKey')
 NSPasteboardTypeURL = c_void_p.in_dll(appkit, 'NSPasteboardTypeURL')
+NSPasteboardTypeString = c_void_p.in_dll(appkit, 'NSPasteboardTypeString')
 NSDeviceSize = c_void_p.in_dll(appkit, 'NSDeviceSize')
 NSDeviceResolution = c_void_p.in_dll(appkit, 'NSDeviceResolution')
 NSDragOperationGeneric = 4

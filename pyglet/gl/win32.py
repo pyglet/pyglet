@@ -244,7 +244,7 @@ class Win32ARBContext(_BaseWin32Context):
         if self.config.forward_compatible:
             flags |= wglext_arb.WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if self.config.debug:
-            flags |= wglext_arb.WGL_DEBUG_BIT_ARB
+            flags |= wglext_arb.WGL_CONTEXT_DEBUG_BIT_ARB
         if flags:
             attribs.extend([wglext_arb.WGL_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)
