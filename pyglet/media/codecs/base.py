@@ -563,10 +563,15 @@ class SourceGroup:
     def __init__(self) -> None:
         self.audio_format = None
         self.video_format = None
+        self.info = None
         self.duration = 0.0
         self._timestamp_offset = 0.0
         self._dequeued_durations = []
         self._sources = []
+        self.is_player_source = False
+
+    def is_precise(self) -> bool:
+        return False
 
     def seek(self, time: float) -> None:
         if self._sources:
@@ -574,6 +579,7 @@ class SourceGroup:
 
     def add(self, source: Source) -> None:
         self.audio_format = self.audio_format or source.audio_format
+        self.info = self.info or source.info
         source = source.get_queue_source()
         assert (source.audio_format == self.audio_format), "Sources must share the same audio format."
         self._sources.append(source)
