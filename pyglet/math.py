@@ -26,6 +26,7 @@ from collections.abc import Iterator as _Iterator
 
 
 number = _typing.Union[float, int]
+Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
 
@@ -627,7 +628,7 @@ class Mat3(tuple):
     the "@" operator.
     """
 
-    def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3:
+    def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
         """Create a 3x3 Matrix
 
         A Mat3 can be created with a list or tuple of 9 values.
@@ -639,7 +640,7 @@ class Mat3(tuple):
             `values` : tuple of float or int
                 A tuple or list containing 9 floats or ints.
         """
-        new = super().__new__(Mat3, values)
+        new = super().__new__(cls, values)
         assert len(new) == 9, "A 3x3 Matrix requires 9 values"
         return new
 
@@ -720,10 +721,10 @@ class Mat3(tuple):
 
 class Mat4(tuple):
 
-    def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
-                                                 0.0, 1.0, 0.0, 0.0,
-                                                 0.0, 0.0, 1.0, 0.0,
-                                                 0.0, 0.0, 0.0, 1.0,)) -> Mat4:
+    def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
+                                                              0.0, 1.0, 0.0, 0.0,
+                                                              0.0, 0.0, 1.0, 0.0,
+                                                              0.0, 0.0, 0.0, 1.0,)) -> Mat4T:
         """Create a 4x4 Matrix.
 
         `Mat4` is an immutable 4x4 Matrix, which includs most common
@@ -738,7 +739,7 @@ class Mat4(tuple):
         .. note:: Matrix multiplication is performed using the "@" operator.
         """
 
-        new = super().__new__(Mat4, values)
+        new = super().__new__(cls, values)
         assert len(new) == 16, "A 4x4 Matrix requires 16 values"
         return new
 
