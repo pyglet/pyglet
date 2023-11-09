@@ -1,12 +1,9 @@
 import platform
+
 from ctypes import c_uint32, c_int, byref
 
-from pyglet.gl.base import Config, DisplayConfig, Context
-
 from pyglet.gl import ContextException
-
-from pyglet.display.cocoa import CocoaCanvas
-
+from pyglet.gl.base import Config, DisplayConfig, Context
 from pyglet.libs.darwin import cocoapy, quartz
 
 
@@ -239,9 +236,6 @@ class CocoaDisplayConfig(DisplayConfig):
             share_context)
 
         return CocoaContext(self, nscontext, share)
-
-    def compatible(self, canvas):
-        return isinstance(canvas, CocoaCanvas)
 
 
 class CocoaContext(Context):

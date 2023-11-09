@@ -189,9 +189,6 @@ class DisplayConfig(Config):
         self.opengl_api = base_config.opengl_api or self.opengl_api
         self.debug = base_config.debug
 
-    def compatible(self, canvas):
-        raise NotImplementedError('abstract')
-
     def create_context(self, share):
         """Create a GL context that satisifies this configuration.
 
@@ -259,8 +256,6 @@ class Context:
     def attach(self, canvas):
         if self.canvas is not None:
             self.detach()
-        if not self.config.compatible(canvas):
-            raise RuntimeError(f'Cannot attach {canvas} to {self}')
         self.canvas = canvas
 
     def detach(self):

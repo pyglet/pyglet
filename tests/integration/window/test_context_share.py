@@ -3,12 +3,14 @@
 
 from ctypes import *
 
-from pyglet import window, canvas
+import pyglet
+
+from pyglet import window
 from pyglet.gl import *
 
 
 def create_context(share):
-    display = canvas.get_display()
+    display = pyglet.display.get_display()
     screen = display.get_default_screen()
     config = screen.get_best_config()
     return config.create_context(share)

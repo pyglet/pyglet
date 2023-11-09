@@ -1,21 +1,19 @@
 import warnings
+
 from ctypes import *
 
-from .base import Config, DisplayConfig, Context
-from pyglet.display.xlib import XlibCanvas
+from pyglet import gl
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
 from pyglet.gl import glx_info
 from pyglet.gl import glxext_mesa
 from pyglet.gl import lib
-from pyglet import gl
+from pyglet.gl.base import Config, DisplayConfig, Context
 
 
 class XlibConfig(Config):
 
     def match(self, canvas):
-        if not isinstance(canvas, XlibCanvas):
-            raise RuntimeError('Canvas must be an instance of XlibCanvas')
 
         x_display = canvas.display._display
         x_screen = canvas.display.x_screen
@@ -103,10 +101,6 @@ class XlibDisplayConfig(DisplayConfig):
 
     def create_context(self, share):
         return XlibContext(self, share)
-
-    def compatible(self, canvas):
-        # TODO check more
-        return isinstance(canvas, XlibCanvas)
 
     def _create_glx_context(self, share):
         raise NotImplementedError('abstract')

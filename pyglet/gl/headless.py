@@ -1,7 +1,6 @@
 from ctypes import *
 
 from pyglet import gl
-from pyglet.display.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
 from pyglet.libs.egl.egl import *
 
@@ -20,8 +19,6 @@ _fake_gl_attributes = {
 
 class HeadlessConfig(Config):
     def match(self, canvas):
-        if not isinstance(canvas, HeadlessCanvas):
-            raise RuntimeError('Canvas must be an instance of HeadlessCanvas')
 
         display_connection = canvas.display._display_connection
 
@@ -84,10 +81,6 @@ class HeadlessDisplayConfig(DisplayConfig):
 
         for name, value in _fake_gl_attributes.items():
             setattr(self, name, value)
-
-    def compatible(self, canvas):
-        # TODO check more
-        return isinstance(canvas, HeadlessCanvas)
 
     def create_context(self, share):
         return HeadlessContext(self, share)

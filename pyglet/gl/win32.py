@@ -7,7 +7,7 @@ from pyglet.gl import wgl
 from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
-from pyglet.libs.win32 import _user32, _kernel32, _gdi32
+from pyglet.libs.win32 import _gdi32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 
@@ -121,10 +121,6 @@ class Win32DisplayConfig(DisplayConfig):
         self.stencil_size = self._pfd.cStencilBits
         self.aux_buffers = self._pfd.cAuxBuffers
 
-    def compatible(self, canvas):
-        # TODO more careful checking
-        return isinstance(canvas, Win32Canvas)
-
     def create_context(self, share):
         return Win32Context(self, share)
 
@@ -165,10 +161,6 @@ class Win32DisplayConfigARB(DisplayConfig):
 
         for name, value in zip(names, values):
             setattr(self, name, value)
-
-    def compatible(self, canvas):
-        # TODO more careful checking
-        return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share):
         if wgl_info.have_extension('WGL_ARB_create_context'):
