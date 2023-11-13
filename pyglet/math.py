@@ -621,25 +621,19 @@ class Vec4:
 
 
 class Mat3(tuple):
-    """A 3x3 Matrix class
+    """A 3x3 Matrix
 
     `Mat3` is an immutable 3x3 Matrix, including most common
-    operators. Matrix multiplication must be performed using
-    the "@" operator.
+    operators.
+
+    A Matrix can be created with a list or tuple of 12 values.
+    If no values are provided, an "identity matrix" will be created
+    (1.0 on the main diagonal). Mat3 objects are immutable, so
+    all operations return a new Mat3 object.
+
+    .. note:: Matrix multiplication is performed using the "@" operator.
     """
-
     def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
-        """Create a 3x3 Matrix
-
-        A Mat3 can be created with a list or tuple of 9 values.
-        If no values are provided, an "identity matrix" will be created
-        (1.0 on the main diagonal). Matrix objects are immutable, so
-        all operations return a new Mat3 object.
-
-        :Parameters:
-            `values` : tuple of float or int
-                A tuple or list containing 9 floats or ints.
-        """
         new = super().__new__(cls, values)
         assert len(new) == 9, "A 3x3 Matrix requires 9 values"
         return new
@@ -720,25 +714,23 @@ class Mat3(tuple):
 
 
 class Mat4(tuple):
+    """A 4x4 Matrix
 
+    `Mat4` is an immutable 4x4 Matrix, which includs most common
+    operators. This includes class methods for creating orthogonal
+    and perspective projection matrixes, to be used by OpenGL.
+
+    A Matrix can be created with a list or tuple of 16 values.
+    If no values are provided, an "identity matrix" will be created
+    (1.0 on the main diagonal). Mat4 objects are immutable, so
+    all operations return a new Mat4 object.
+
+    .. note:: Matrix multiplication is performed using the "@" operator.
+    """
     def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
                                                               0.0, 1.0, 0.0, 0.0,
                                                               0.0, 0.0, 1.0, 0.0,
                                                               0.0, 0.0, 0.0, 1.0,)) -> Mat4T:
-        """Create a 4x4 Matrix.
-
-        `Mat4` is an immutable 4x4 Matrix, which includs most common
-        operators. This includes class methods for creating orthogonal
-        and perspective projection matrixes, to be used by OpenGL.
-
-        A Matrix can be created with a list or tuple of 16 values.
-        If no values are provided, an "identity matrix" will be created
-        (1.0 on the main diagonal). Matrix objects are immutable, so
-        all operations return a new Mat4 object.
-
-        .. note:: Matrix multiplication is performed using the "@" operator.
-        """
-
         new = super().__new__(cls, values)
         assert len(new) == 16, "A 4x4 Matrix requires 16 values"
         return new
