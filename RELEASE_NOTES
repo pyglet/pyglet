@@ -1,3 +1,10 @@
+pyglet 2.0.11
+
+Bugfixes
+--------
+- macOS: prevent crash when scanning for Controllers if device.transport is None #995
+
+
 pyglet 2.0.10
 
 Changes and Improvements
