@@ -107,17 +107,20 @@ class Accessor:
         self.byte_offset = data.get('byteOffset')
         self.component_type = data.get('componentType')     # GL_FLOAT, GL_INT, etc
         self.type = data.get('type')                        # VEC3, MAT4, etc.
-        self.count = data.get('count')                      # Number of self.type
+        self.count = data.get('count')                      # count of self.type
         self.max = data.get('max')
         self.min = data.get('min')
 
+        # The Python format type:
         self._fmt = _array_types[self.component_type]
 
-        # The size of the GL type * the size of the data type.
-        # For example a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
+        # The byte size of the `GL type` multiplied by the length of the GLSL `data type`.
+        # For example: a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
         self._byte_length = _gl_type_sizes[self.component_type] * _accessor_type_counts[self.type]
 
         self.buffer_view = owner.buffer_views[self._buffer_view_index]
+        self.target = self.buffer_view.target
+        self.target_alias = self.buffer_view.target_alias
 
     def read(self) -> bytes:
         return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
@@ -134,9 +137,17 @@ class Attribute:
         self.name = name
         self._accessor_index = index
         self.accessor = owner.accessors[index]
+        self.target = self.accessor.buffer_view.target
+        self.target_alias = self.accessor.buffer_view.target_alias
+
+    def read(self):
+        return self.accessor.read()
+
+    def as_array(self):
+        return self.accessor.as_array()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name}, accessor={self._accessor_index})"
+        return f"{self.__class__.__name__}(name='{self.name}', accessor={self._accessor_index}, target={self.target_alias})"
 
 
 class Primitive:
