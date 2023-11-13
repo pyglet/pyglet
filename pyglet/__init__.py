@@ -340,8 +340,8 @@ if TYPE_CHECKING:
     from . import gl
     from . import graphics
     from . import gui
-    from . import input
     from . import image
+    from . import input
     from . import lib
     from . import math
     from . import media
