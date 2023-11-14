@@ -614,10 +614,6 @@ class Controller(EventDispatcher):
     def _initialize_controls(self):
 
         def add_axis(control, axis_name):
-
-            control.min = 0
-            control.max = 0
-
             if not (control.min or control.max):
                 warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
                 return
