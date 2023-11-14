@@ -79,16 +79,16 @@ class BufferView:
     """View over a section of a Buffer, with optional stride."""
     def __init__(self, data, owner):
         self._buffer_index = data.get('buffer')
-        self._offset = data.get('byteOffset', 0)
+        self.buffer = owner.buffers[self._buffer_index]
+
+        self.offset = data.get('byteOffset', 0)
         self.length = data.get('byteLength')
         self.stride = data.get('byteStride', 0)
         self.target = data.get('target')
-        self.target_alias = _targets[self.target]
+        self.target_name = _targets[self.target]
 
-        self.buffer = owner.buffers[self._buffer_index]
-
-    def read(self, offset: int, byte_length: int, count: int) -> bytes:
-        offset = self._offset + offset
+    def read(self, read_offset: int, byte_length: int, count: int) -> bytes:
+        offset = self.offset + read_offset
         bytestring = b""
 
         for _ in range(count):
@@ -98,12 +98,14 @@ class BufferView:
         return bytestring
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(buffer={self._buffer_index}, target={self.target_alias})"
+        return f"{self.__class__.__name__}(buffer={self._buffer_index}, target={self.target_name})"
 
 
 class Accessor:
     def __init__(self, data, owner):
         self._buffer_view_index = data.get('bufferView')
+        self.buffer_view = owner.buffer_views[self._buffer_view_index]
+
         self.byte_offset = data.get('byteOffset')
         self.component_type = data.get('componentType')     # GL_FLOAT, GL_INT, etc
         self.type = data.get('type')                        # VEC3, MAT4, etc.
@@ -112,21 +114,17 @@ class Accessor:
         self.min = data.get('min')
 
         # The Python format type:
-        self._fmt = _array_types[self.component_type]
+        self.fmt = _array_types[self.component_type]
 
         # The byte size of the `GL type` multiplied by the length of the GLSL `data type`.
         # For example: a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
         self._byte_length = _gl_type_sizes[self.component_type] * _accessor_type_counts[self.type]
 
-        self.buffer_view = owner.buffer_views[self._buffer_view_index]
-        self.target = self.buffer_view.target
-        self.target_alias = self.buffer_view.target_alias
-
     def read(self) -> bytes:
         return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
 
     def as_array(self):
-        return array(self._fmt, self.read())
+        return array(self.fmt, self.read())
 
     def __repr__(self):
         return f"{self.__class__.__name__}(buffer_view={self._buffer_view_index})"
@@ -137,8 +135,12 @@ class Attribute:
         self.name = name
         self._accessor_index = index
         self.accessor = owner.accessors[index]
+
+        # Aliases
+        self.count = self.accessor.count
+        self.fmt = self.accessor.fmt
         self.target = self.accessor.buffer_view.target
-        self.target_alias = self.accessor.buffer_view.target_alias
+        self.target_name = self.accessor.buffer_view.target_name
 
     def read(self):
         return self.accessor.read()
@@ -147,7 +149,7 @@ class Attribute:
         return self.accessor.as_array()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name='{self.name}', accessor={self._accessor_index}, target={self.target_alias})"
+        return f"{self.__class__.__name__}(name='{self.name}', accessor={self._accessor_index}, target={self.target_name})"
 
 
 class Primitive:
