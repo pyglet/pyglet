@@ -137,8 +137,9 @@ class Attribute:
         self.accessor = owner.accessors[index]
 
         # Aliases
-        self.count = self.accessor.count
         self.fmt = self.accessor.fmt
+        self.type = self.accessor.type
+        self.count = self.accessor.count
         self.target = self.accessor.buffer_view.target
         self.target_name = self.accessor.buffer_view.target_name
 
@@ -149,7 +150,7 @@ class Attribute:
         return self.accessor.as_array()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name='{self.name}', accessor={self._accessor_index}, target={self.target_name})"
+        return f"{self.__class__.__name__}(name='{self.name}', type={self.type}, count={self.count})"
 
 
 class Primitive:
