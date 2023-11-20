@@ -1,45 +1,98 @@
+from collections import deque
 import math
+import threading
+from typing import Deque, Tuple, TYPE_CHECKING
 
-import pyglet
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, MediaEvent
+from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 from pyglet.util import debug_print
 from . import interface
 
+if TYPE_CHECKING:
+    from pyglet.media.codecs import AudioData, AudioFormat, Source
+    from pyglet.media.player import Player
+
+
 _debug = debug_print('debug_media')
 
 
-def _convert_coordinates(coordinates):
+def _convert_coordinates(coordinates: Tuple[float, float, float]) -> Tuple[float, float, float]:
     x, y, z = coordinates
     return x, y, -z
 
 
+class XAudio2Driver(AbstractAudioDriver):
+    def __init__(self) -> None:
+        self._xa2_driver = interface.XAudio2Driver()
+        self._xa2_listener = self._xa2_driver.create_listener()
+        self._listener = XAudio2Listener(self._xa2_listener, self._xa2_driver)
+
+        self.worker = PlayerWorkerThread()
+        self.worker.start()
+
+    def get_performance(self) -> interface.lib.XAUDIO2_PERFORMANCE_DATA:
+        assert self._xa2_driver is not None
+        return self._xa2_driver.get_performance()
+
+    def create_audio_player(self, source: 'Source', player: 'Player') -> 'XAudio2AudioPlayer':
+        assert self._xa2_driver is not None
+        return XAudio2AudioPlayer(self, source, player)
+
+    def get_listener(self) -> 'XAudio2Listener':
+        return self._listener
+
+    def delete(self) -> None:
+        if self._xa2_driver is not None:
+            self.worker.stop()
+            self.worker = None
+            self._xa2_driver._delete_driver()
+            self._xa2_driver = None
+            self._xa2_listener = None
+
+
+class XAudio2Listener(AbstractListener):
+    def __init__(self, xa2_listener, xa2_driver) -> None:
+        self._xa2_listener = xa2_listener
+        self._xa2_driver = xa2_driver
+
+    def _set_volume(self, volume: float) -> None:
+        self._volume = volume
+        self._xa2_driver.volume = volume
+
+    def _set_position(self, position: Tuple[float, float, float]) -> None:
+        self._position = position
+        self._xa2_listener.position = _convert_coordinates(position)
+
+    def _set_forward_orientation(self, orientation: Tuple[float, float, float]) -> None:
+        self._forward_orientation = orientation
+        self._set_orientation()
+
+    def _set_up_orientation(self, orientation: Tuple[float, float, float]) -> None:
+        self._up_orientation = orientation
+        self._set_orientation()
+
+    def _set_orientation(self) -> None:
+        self._xa2_listener.orientation = (
+            _convert_coordinates(self._forward_orientation) +
+            _convert_coordinates(self._up_orientation))
+
+
 class XAudio2AudioPlayer(AbstractAudioPlayer):
-    # Need to cache these because pyglet API allows update separately, but
-    # DSound requires both to be set at once.
-    _cone_inner_angle = 360
-    _cone_outer_angle = 360
-
-    min_buffer_size = 9600
-
-    max_buffer_count = 3  # Max in queue at once, increasing may impact performance depending on buffer size.
-
-    def __init__(self, driver, xa2_driver, source, player):
-        super(XAudio2AudioPlayer, self).__init__(source, player)
+    def __init__(self, driver: 'XAudio2Driver', source: 'Source', player: 'Player') -> None:
+        super().__init__(source, player)
         # We keep here a strong reference because the AudioDriver is anyway
         # a singleton object which will only be deleted when the application
         # shuts down. The AudioDriver does not keep a ref to the AudioPlayer.
         self.driver = driver
-        self._xa2_driver = xa2_driver
 
-        # If cleared, we need to check when it's done clearing.
-        self._flushing = False
+        # Need to cache these because pyglet API allows update separately, but
+        # XAudio2 requires both to be set at once.
+        self._cone_inner_angle = 360
+        self._cone_outer_angle = 360
 
-        # If deleted, we need to make sure it's done deleting.
-        self._deleted = False
-
-        # Desired play state (may be actually paused due to underrun -- not
-        # implemented yet).
+        # Desired play state. (`True` doesn't necessarily mean the player is playing.
+        # It may be silent due to either underrun or because a flush is in progress.)
         self._playing = False
 
         # Theoretical write and play cursors for an infinite buffer.  play
@@ -48,302 +101,200 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._write_cursor = 0
         self._play_cursor = 0
 
-        # List of (play_cursor, MediaEvent), in sort order
-        self._events = []
+        self._audio_data_in_use: Deque['AudioData'] = deque()
+        self._pyglet_source_exhausted = False
 
-        # List of (cursor, timestamp), in sort order (cursor gives expiry
-        # place of the timestamp)
-        self._timestamps = []
+        # A lock to be held whenever modifying things relating to the in-use audio data.
+        # Ensures that the XAudio2 callbacks will not interfere with the
+        # player operations.
+        self._audio_data_lock = threading.Lock()
 
-        # This will be True if the last buffer has already been submitted.
-        self.buffer_end_submitted = False
+        self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(source.audio_format, self)
 
-        self._buffers = []  # Current buffers in queue waiting to be played.
-
-        self._xa2_source_voice = self._xa2_driver.get_source_voice(source, self)
-
-        self._buffer_size = int(source.audio_format.sample_rate * 2)
-
-    def on_driver_destroy(self):
+    def on_driver_destroy(self) -> None:
         self.stop()
         self._xa2_source_voice = None
 
-    def on_driver_reset(self):
-        self._xa2_source_voice = self._xa2_driver.get_source_voice(self.source, self)
+    def on_driver_reset(self) -> None:
+        self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(self.source.audio_format, self)
 
-        # Queue up any buffers that are still in queue but weren't deleted. This does not pickup where the last sample
-        # played, only where the last buffer was submitted. As such it's possible for audio to be replayed if buffer is
-        # large enough.
-        for cx2_buffer in self._buffers:
-            self._xa2_source_voice.submit_buffer(cx2_buffer)
+        # Queue up any buffers that are still in queue but weren't deleted. This does not
+        # pickup where the last sample played, only where the last buffer was submitted.
+        # As such, audio will be replayed.
+        # TODO: Make best effort by using XAUDIO2_BUFFER.PlayBegin in conjunction
+        # with last playback sample
+        for audio_data in self._audio_data_in_use:
+            xa2_buffer = interface.create_xa2_buffer(audio_data)
+            self._xa2_source_voice.submit_buffer(xa2_buffer)
 
-    def __del__(self):
-        if self._xa2_source_voice:
+    def delete(self) -> None:
+        if self.driver._xa2_driver is None:
+            assert _debug("Xaudio2: Player deleted, driver is gone")
+            # Driver was deleted, voice is gone; just break up some references and return
+            self.driver = None
             self._xa2_source_voice = None
+            self._audio_data_in_use.clear()
+            return
 
-    def delete(self):
-        """Called from Player. Docs says to cleanup resources, but other drivers wait for GC to do it?"""
-        if self._xa2_source_voice:
-            self._deleted = True
+        assert _debug("XAudio2: Player deleted, returning voice")
 
-            if not self._buffers:
-                self._xa2_driver.return_voice(self._xa2_source_voice)
+        self.stop()
+        self.driver._xa2_driver.return_voice(self._xa2_source_voice, self._audio_data_in_use)
+        self.driver = None
+        self._xa2_source_voice = None
 
-    def play(self):
-        assert _debug('XAudio2 play')
+    def play(self) -> None:
+        assert _debug(f'XAudio2 play: {self._playing=}')
 
         if not self._playing:
             self._playing = True
-            if not self._flushing:
-                self._xa2_source_voice.play()
+            self._xa2_source_voice.play()
+            self.driver.worker.add(self)
 
         assert _debug('return XAudio2 play')
 
-    def stop(self):
+    def stop(self) -> None:
         assert _debug('XAudio2 stop')
 
         if self._playing:
+            self.driver.worker.remove(self)
+            # no callback could possibly be running after this lock is released.
+            with self.driver._xa2_driver.lock:
+                self._xa2_source_voice.stop()
             self._playing = False
-            self.buffer_end_submitted = False
-            self._xa2_source_voice.stop()
 
         assert _debug('return XAudio2 stop')
 
-    def clear(self):
+    def clear(self) -> None:
         assert _debug('XAudio2 clear')
-        super(XAudio2AudioPlayer, self).clear()
+        super().clear()
         self._play_cursor = 0
         self._write_cursor = 0
-        self.buffer_end_submitted = False
-        self._deleted = False
+        self._pyglet_source_exhausted = False
+        self.driver._xa2_driver.return_voice(self._xa2_source_voice, self._audio_data_in_use)
+        self._audio_data_in_use = deque()
+        self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(self.source.audio_format, self)
 
-        if self._buffers:
-            self._flushing = True
+    def on_buffer_end(self, buffer_context_ptr: int) -> None:
+        # Called from the XAudio2 thread.
+        # A buffer stopped being played by the voice, it should by all means be the first one
+        with self._audio_data_lock:
+            assert self._audio_data_in_use
+            self._audio_data_in_use.popleft()
+            # This should cause the AudioData to lose all its references and be gc'd
 
-        self._xa2_source_voice.flush()
-        self._buffers.clear()
-        del self._events[:]
-        del self._timestamps[:]
+            if self._audio_data_in_use:
+                assert _debug(f"Buffer ended, others remain: {len(self._audio_data_in_use)=}")
+                return
 
-    def _restart(self, dt):
-        """Prefill audio and attempt to replay audio."""
-        if self._playing and self._xa2_source_voice:
-            self.refill_source_player()
-            self._xa2_source_voice.play()
+            assert self._xa2_source_voice.buffers_queued == 0
 
-    def refill_source_player(self):
-        """Obtains audio data from the source, puts it into a buffer to submit to the voice.
-        Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
-        consume it. This submits the buffer retrieved from the decoder in it's entirety.
+            if self._pyglet_source_exhausted:
+                # Last buffer ran out naturally, out of AudioData; voice will now fall silent
+                assert _debug("Last buffer ended normally, dispatching eos")
+                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
+            else:
+                # Shouldn't have ran out; supplier is running behind
+                # All we can do is wait; as long as voices are not stopped via `Stop`, they will
+                # immediately continue playing the new buffer once it arrives
+                assert _debug("Last buffer ended normally, source is lagging behind")
+
+    def _refill(self, refill_size: int) -> None:
+        """Get one piece of AudioData and submit it to the voice.
+        This method will release the lock around the call to `get_audio_data`,
+        so make sure it's held upon calling.
         """
-        if not self._xa2_source_voice:
+        assert _debug(f"XAudio2: Retrieving new buffer of {refill_size}B")
+
+        self._audio_data_lock.release()
+        audio_data = self._get_and_compensate_audio_data(refill_size, self._play_cursor)
+        self._audio_data_lock.acquire()
+
+        if audio_data is None:
+            assert _debug(f"XAudio2: Source is out of data")
+            self._pyglet_source_exhausted = True
+            if not self._audio_data_in_use:
+                MediaEvent('on_eos').sync_dispatch_to_player(self.player)
             return
 
-        buffers_queued = self._xa2_source_voice.buffers_queued
+        xa2_buffer = interface.create_xa2_buffer(audio_data)
+        self._audio_data_in_use.append(audio_data)
+        self._xa2_source_voice.submit_buffer(xa2_buffer)
+        assert _debug(f"XAudio2: Submitted buffer of size {audio_data.length}B")
 
-        # Free any buffers that have ended.
-        while len(self._buffers) > buffers_queued:
-            # Clean out any buffers that have played.
-            buffer = self._buffers.pop(0)
-            self._play_cursor += buffer.AudioBytes
-            del buffer  # Does this remove AudioData within the buffer? Let GC remove or explicit remove?
+        self.append_events(self._write_cursor, audio_data.events)
+        self._write_cursor += audio_data.length
 
-        # We have to wait for all of the buffers we are flushing to end before we restart next buffer.
-        # When voice reaches 0 buffers, it is available for re-use.
-        if self._flushing:
-            if buffers_queued == 0:
-                self._flushing = False
+    def _update_play_cursor(self) -> None:
+        voice = self._xa2_source_voice
+        self._play_cursor = (
+            (voice.samples_played - voice.samples_played_at_last_recycle) *
+            self.source.audio_format.bytes_per_frame
+        )
 
-                # This is required because the next call to play will come before all flushes are done.
-                # Restart at next available opportunity.
-                pyglet.clock.schedule_once(self._restart, 0)
-            return
+    def get_play_cursor(self) -> int:
+        return self._play_cursor
 
-        if self._deleted:
-            if buffers_queued == 0:
-                self._deleted = False
-                self._xa2_driver.return_voice(self._xa2_source_voice)
-            return
+    def work(self) -> None:
+        with self._audio_data_lock:
+            self._update_play_cursor()
+            self.dispatch_media_events(self._play_cursor)
+            self._maybe_refill()
 
-        # Wait for the playback to hit 0 buffers before we eos.
-        if self.buffer_end_submitted:
-            if buffers_queued == 0:
-                self._xa2_source_voice.stop()
-                MediaEvent("on_eos").sync_dispatch_to_player(self.player)
-        else:
-            current_buffers = []
-            while buffers_queued < self.max_buffer_count:
-                audio_data = self.source.get_audio_data(self._buffer_size, 0.0)
-                if audio_data:
-                    assert _debug(
-                        'Xaudio2: audio data - length: {}, duration: {}, buffer size: {}'.format(audio_data.length,
-                                                                                                 audio_data.duration,
-                                                                                                 self._buffer_size))
+    def _maybe_refill(self) -> bool:
+        if self._pyglet_source_exhausted:
+            return False
 
-                    if audio_data.length == 0:  # Sometimes audio data has 0 length at the front?
-                        continue
+        remaining_bytes = self._write_cursor - self._play_cursor
+        if remaining_bytes >= self._buffered_data_comfortable_limit:
+            return False
 
-                    x2_buffer = self._xa2_driver.create_buffer(audio_data)
+        missing_bytes = self._singlebuffer_ideal_size - remaining_bytes
+        self._refill(self.source.audio_format.align_ceil(missing_bytes))
+        return True
 
-                    current_buffers.append(x2_buffer)
+    def prefill_audio(self) -> None:
+        with self._audio_data_lock:
+            self._maybe_refill()
 
-                    self._write_cursor += x2_buffer.AudioBytes  # We've pushed this many bytes into the source player.
-
-                    self._add_audiodata_events(audio_data)
-                    self._add_audiodata_timestamp(audio_data)
-
-                    buffers_queued += 1
-                else:
-                    # End of audio data, set last packet as end.
-                    self.buffer_end_submitted = True
-                    break
-
-            # We submit the buffers here, just in-case the end of stream was found.
-            for cx2_buffer in current_buffers:
-                self._xa2_source_voice.submit_buffer(cx2_buffer)
-
-            # Store buffers temporarily, otherwise they get GC'd.
-            self._buffers.extend(current_buffers)
-
-        self._dispatch_pending_events()
-
-    def _dispatch_new_event(self, event_name):
-        MediaEvent(event_name).sync_dispatch_to_player(self.player)
-
-    def _add_audiodata_events(self, audio_data):
-        for event in audio_data.events:
-            event_cursor = self._write_cursor + event.timestamp * self.source.audio_format.bytes_per_second
-            assert _debug(f'Adding event {event} at {event_cursor}')
-            self._events.append((event_cursor, event))
-
-    def _add_audiodata_timestamp(self, audio_data):
-        ts_cursor = self._write_cursor + audio_data.length
-        self._timestamps.append(
-            (ts_cursor, audio_data.timestamp + audio_data.duration))
-
-    def _dispatch_pending_events(self):
-        pending_events = []
-        while self._events and self._events[0][0] <= self._play_cursor:
-            _, event = self._events.pop(0)
-            pending_events.append(event)
-
-        assert _debug('Dispatching pending events: {}'.format(pending_events))
-        assert _debug('Remaining events: {}'.format(self._events))
-
-        for event in pending_events:
-            event.sync_dispatch_to_player(self.player)
-
-    def _cleanup_timestamps(self):
-        while self._timestamps and self._timestamps[0][0] < self._play_cursor:
-            del self._timestamps[0]
-
-    def get_time(self):
-        self.update_play_cursor()
-        if self._timestamps:
-            cursor, ts = self._timestamps[0]
-            result = ts + (self._play_cursor - cursor) / float(self.source.audio_format.bytes_per_second)
-        else:
-            result = None
-
-        return result
-
-    def set_volume(self, volume):
+    def set_volume(self, volume: float) -> None:
         self._xa2_source_voice.volume = volume
 
-    def set_position(self, position):
+    def set_position(self, position: Tuple[float, float, float]) -> None:
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.position = _convert_coordinates(position)
 
-    def set_min_distance(self, min_distance):
+    def set_min_distance(self, min_distance: float) -> None:
         """Not a true min distance, but similar effect. Changes CurveDistanceScaler default is 1."""
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.distance_scaler = min_distance
 
-    def set_max_distance(self, max_distance):
+    def set_max_distance(self, max_distance: float) -> None:
         """No such thing built into xaudio2"""
         return
 
-    def set_pitch(self, pitch):
+    def set_pitch(self, pitch: float) -> None:
         self._xa2_source_voice.frequency = pitch
 
-    def set_cone_orientation(self, cone_orientation):
+    def set_cone_orientation(self, cone_orientation: Tuple[float, float, float]) -> None:
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.cone_orientation = _convert_coordinates(cone_orientation)
 
-    def set_cone_inner_angle(self, cone_inner_angle):
+    def set_cone_inner_angle(self, cone_inner_angle: float) -> None:
         if self._xa2_source_voice.is_emitter:
             self._cone_inner_angle = int(cone_inner_angle)
             self._set_cone_angles()
 
-    def set_cone_outer_angle(self, cone_outer_angle):
+    def set_cone_outer_angle(self, cone_outer_angle: float) -> None:
         if self._xa2_source_voice.is_emitter:
             self._cone_outer_angle = int(cone_outer_angle)
             self._set_cone_angles()
 
-    def _set_cone_angles(self):
+    def _set_cone_angles(self) -> None:
         inner = min(self._cone_inner_angle, self._cone_outer_angle)
         outer = max(self._cone_inner_angle, self._cone_outer_angle)
         self._xa2_source_voice.set_cone_angles(math.radians(inner), math.radians(outer))
 
-    def set_cone_outer_gain(self, cone_outer_gain):
+    def set_cone_outer_gain(self, cone_outer_gain: float) -> None:
         if self._xa2_source_voice.is_emitter:
             self._xa2_source_voice.cone_outside_volume = cone_outer_gain
-
-    def prefill_audio(self):
-        # Cannot refill during a flush. Schedule will handle it.
-        if not self._flushing:
-            self.refill_source_player()
-
-
-class XAudio2Driver(AbstractAudioDriver):
-    def __init__(self):
-        self._xa2_driver = interface.XAudio2Driver()
-        self._xa2_listener = self._xa2_driver.create_listener()
-
-        assert self._xa2_driver is not None
-        assert self._xa2_listener is not None
-
-    def __del__(self):
-        self.delete()
-
-    def get_performance(self):
-        assert self._xa2_driver is not None
-        return self._xa2_driver.get_performance()
-
-    def create_audio_player(self, source, player):
-        assert self._xa2_driver is not None
-        return XAudio2AudioPlayer(self, self._xa2_driver, source, player)
-
-    def get_listener(self):
-        assert self._xa2_driver is not None
-        assert self._xa2_listener is not None
-        return XAudio2Listener(self._xa2_listener, self._xa2_driver)
-
-    def delete(self):
-        self._xa2_listener = None
-
-
-class XAudio2Listener(AbstractListener):
-    def __init__(self, xa2_listener, xa2_driver):
-        self._xa2_listener = xa2_listener
-        self._xa2_driver = xa2_driver
-
-    def _set_volume(self, volume):
-        self._volume = volume
-        self._xa2_driver.volume = volume
-
-    def _set_position(self, position):
-        self._position = position
-        self._xa2_listener.position = _convert_coordinates(position)
-
-    def _set_forward_orientation(self, orientation):
-        self._forward_orientation = orientation
-        self._set_orientation()
-
-    def _set_up_orientation(self, orientation):
-        self._up_orientation = orientation
-        self._set_orientation()
-
-    def _set_orientation(self):
-        self._xa2_listener.orientation = _convert_coordinates(self._forward_orientation) + _convert_coordinates(
-            self._up_orientation)
