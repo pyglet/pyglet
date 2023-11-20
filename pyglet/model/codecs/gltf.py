@@ -7,6 +7,7 @@ import pyglet
 
 from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
 from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
+from pyglet.gl import GL_REPEAT
 
 from . import ModelDecodeException, ModelDecoder
 
@@ -61,9 +62,9 @@ class Buffer:
         else:
             self._file = pyglet.resource.file(self._uri, 'rb')
 
-    def read(self, offset, byte_length) -> bytes:
+    def read(self, offset, nbytes) -> bytes:
         self._file.seek(offset)
-        return self._file.read(byte_length)
+        return self._file.read(nbytes)
 
     def __del__(self):
         try:
@@ -93,7 +94,7 @@ class BufferView:
 
         for _ in range(count):
             bytestring += self.buffer.read(offset, byte_length)
-            offset += byte_length + self.stride
+            offset += self.stride or byte_length
 
         return bytestring
 
@@ -113,6 +114,11 @@ class Accessor:
         self.max = data.get('max')
         self.min = data.get('min')
 
+        # This is a 'sparse' accessor:
+        self.sparse = data.get('sparse')
+        if self.sparse:
+            raise NotImplementedError("Not yet implmented")
+
         # The Python format type:
         self.fmt = _array_types[self.component_type]
 
@@ -122,6 +128,8 @@ class Accessor:
 
     def read(self) -> bytes:
         return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
+        # assert self._byte_length * self.count == len(readbytes), "insufficient bytes read"
+        # return readbytes
 
     def as_array(self):
         return array(self.fmt, self.read())
@@ -143,11 +151,8 @@ class Attribute:
         self.target = self.accessor.buffer_view.target
         self.target_name = self.accessor.buffer_view.target_name
 
-    def read(self):
-        return self.accessor.read()
-
-    def as_array(self):
-        return self.accessor.as_array()
+        self.read = self.accessor.read
+        self.as_array = self.accessor.as_array
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name='{self.name}', type={self.type}, count={self.count})"
@@ -169,8 +174,94 @@ class Primitive:
         return f"{self.__class__.__name__}(attributes={len(self.attributes)}, index_accessor={self.indices_index})"
 
 
+class Material:
+    def __init__(self, data):
+        self.name = data.get('name')
+        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+        self.normal_texture = data.get('normalTexture')
+        self.occlusion_texture = data.get('occlusionTexture')
+        self.emissive_texture = data.get('emissiveTexture')
+        self.emissive_factor = data.get('emissiveFactor', (0.0, 0.0, 0.0))
+        self.alpha_mode = data.get('alphaMode', 'OPAQUE')
+        self.alpha_cutoff = data.get('alphaCutoff', 0.5)
+        self.double_sided = data.get('doubleSided', False)
+        # self.extensions = data.get('extensions')
+        # self.extras = data.get('extras')
+
+
+class Texture:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        self._sampler_index = data.get('sampler')
+        if self._sampler_index:
+            self.sampler = owner.samplers[self._sampler_index]
+        else:
+            self.sampler = Sampler({})
+        self.source = data.get('source')            # technically not required
+
+        # self.extensions = data.get('extensions')
+        # self.extras = data.get('extras')
+
+
+class MinFilter:
+    pass
+
+
+class MagFilter:
+    pass
+
+
+class Sampler:
+    def __init__(self, data):
+        # TODO: make objects for min/mag filter objects
+        self.name = data.get('name')
+        self.min_filter = data.get('minFilter')
+        self.mag_filter = data.get('magFilter')
+        self.wrap_s = data.get('wrapS', GL_REPEAT)
+        self.wrap_t = data.get('wrapT', GL_REPEAT)
+        # self.extensions = data.get('extensions')
+        # self.extras = data.get('extras')
+
+
+class Image:
+    def __init__(self, data, owner):
+        self.uri = data.get('uri')
+        self._buffer_view_index = data.get('bufferView')
+        self.buffer_view = owner.buffer_views[self._buffer_view_index] if self._buffer_view_index else None
+        self.mime_type = data.get('mimeType')
+        self.name = data.get('name')
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+    def load(self):
+        # TODO: load from either URI or bufferview
+        # if self.uri:
+        #     return
+        # else:
+        #
+        raise NotImplementedError
+
+
+class Camera:
+    def __init__(self, camera_type, data):
+        self.type = camera_type
+
+        # Perspective
+        self.aspect_ratio = data.get('aspectRatio')     # Not required
+        self.yfov = data.get('yfov')
+
+        # Orthographic
+        self.xmag = data.get('xmag')
+        self.ymag = data.get('ymag')
+
+        # Shared
+        self.zfar = data.get('zfar')        # Not required for Perspective
+        self.znear = data.get('znear')
+
+
 class Mesh:
     def __init__(self, data, owner):
+        self.data = data
         self.primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
 
     def __repr__(self):
@@ -179,25 +270,52 @@ class Mesh:
 
 class Node:
     def __init__(self, data, owner):
-        self._mesh_index = data.get('mesh')
-        self.mesh = owner.meshes[self._mesh_index]
+        self.data = data
+        self._owner = owner
+        self._child_indices = self.data.get('children', [])
+
+        _mesh_index = data.get('mesh')
+        self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
+
+        self.matrix = data.get('matrix')            # Mat4
+        self.translation = data.get('translation')  # Vec3
+        self.rotation = data.get('rotation')        # Quaternion
+        self.scale = data.get('scale')              # Vec3
+
+        # TODO: handle global and local transforms:
+        # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
+
+    @property
+    def children(self):
+        return [self._owner.nodes[i] for i in self._child_indices]
+
+    def __iter__(self):
+        yield self
+        for child in self.children:
+            yield child
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(mesh={self.mesh})"
+        return f"{self.__class__.__name__}(mesh={self.mesh}, children={self._child_indices})"
 
 
 class Scene:
     def __init__(self, data, owner):
-        self.nodes = [owner.nodes[i] for i in data['nodes']]
+        self._nodes = [owner.nodes[i] for i in data['nodes']]
+
+    def __iter__(self):
+        for parent_node in self._nodes:
+            for node in parent_node:
+                yield node
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(nodes={self.nodes})"
+        return f"{self.__class__.__name__}(parent_nodes={self._nodes})"
 
 
 class GLTF:
     def __init__(self, gltf_data: dict):
         self._gltf_data = gltf_data
         self.version = self._gltf_data['asset']['version']
+        self.generator = self._gltf_data['asset'].get('generator', 'unknown')
 
         self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
         self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
@@ -205,8 +323,16 @@ class GLTF:
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
 
+        self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
+        self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
+
+        self.materials = []
+        self.textures = []
+        self.samplers = []
+
+
         self.scenes = [Scene(data=data, owner=self) for data in gltf_data['scenes']]
-        self.default_scene = self.scenes[gltf_data['scene']]
+        self.default_scene = self.scenes[gltf_data.get('scene', 0)]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(scenes={len(self.scenes)}, meshes={len(self.meshes)})"
@@ -230,7 +356,7 @@ def load_gltf(filename, file=None):
     if 'asset' not in gltf_data:
         raise ModelDecodeException("Not a valid glTF file. Asset property not found.")
     else:
-        if float(gltf_data['asset']['version']) < 2.0:
+        if float(gltf_data['asset'].get('version', 0)) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
 
 
