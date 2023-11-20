@@ -5,8 +5,17 @@ tools/genwrappers.py pulseaudio
 
 Do not modify this file.
 
-IMPORTANT: struct_timeval is incorrectly parsed by tools/genwrappers.py and
-was manually edited in this file.
+!!! IMPORTANT !!!
+
+Despite the warning up there, this file has been manually modified:
+- struct_timeval, stemming from <sys/time.h>, is incorrectly parsed by
+  tools/genwrappers.py and was manually edited and shifted to the top.
+- All `pa_proplist_*` function definitions and the definition of an
+  associated enum have been copypasted over from a different run of this
+  script on a (likely) later version of PulseAudio's headers.
+  - This includes modifiction of `__all__` at the very end of the file.
+- All definitions of opaque structs (_opaque_struct dummy member) were
+  duplicated. Those duplicates have been manually removed.
 """
 
 import ctypes
@@ -32,6 +41,11 @@ class c_void(Structure):
     # POINTER(None) == c_void_p is actually written as
     # POINTER(c_void), so it can be treated as a real pointer.
     _fields_ = [('dummy', c_int)]
+
+
+class struct_timeval(Structure):
+    _fields_ = [("tv_sec", c_long),
+                ("tv_usec", c_long)]
 
 
 # /usr/include/pulse/version.h:40
@@ -338,11 +352,6 @@ class struct_pa_timing_info(Structure):
     ]
 
 
-class struct_timeval(Structure):
-    _fields_ = [("tv_sec", c_long),
-                ("tv_usec", c_long)]
-
-
 struct_pa_timing_info._fields_ = [
     ('timestamp', struct_timeval),
     ('synchronized_clocks', c_int),
@@ -440,15 +449,6 @@ struct_pa_mainloop_api._fields_ = [
 ]
 
 
-class struct_pa_mainloop_api(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_mainloop_api._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_mainloop_api = struct_pa_mainloop_api  # /usr/include/pulse/mainloop-api.h:47
 enum_pa_io_event_flags = c_int
 PA_IO_EVENT_NULL = 0
@@ -469,15 +469,6 @@ struct_pa_io_event._fields_ = [
 ]
 
 
-class struct_pa_io_event(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_io_event._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_io_event = struct_pa_io_event  # /usr/include/pulse/mainloop-api.h:59
 pa_io_event_cb_t = CFUNCTYPE(None, POINTER(pa_mainloop_api), POINTER(pa_io_event), c_int, pa_io_event_flags_t,
                              POINTER(None))  # /usr/include/pulse/mainloop-api.h:61
@@ -494,15 +485,6 @@ struct_pa_time_event._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-
-class struct_pa_time_event(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_time_event._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 pa_time_event = struct_pa_time_event  # /usr/include/pulse/mainloop-api.h:66
 
@@ -521,15 +503,6 @@ struct_pa_defer_event._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-
-class struct_pa_defer_event(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_defer_event._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 pa_defer_event = struct_pa_defer_event  # /usr/include/pulse/mainloop-api.h:73
 pa_defer_event_cb_t = CFUNCTYPE(None, POINTER(pa_mainloop_api), POINTER(pa_defer_event),
@@ -738,15 +711,6 @@ struct_pa_operation._fields_ = [
 ]
 
 
-class struct_pa_operation(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_operation._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_operation = struct_pa_operation  # /usr/include/pulse/operation.h:33
 pa_operation_notify_cb_t = CFUNCTYPE(None, POINTER(pa_operation), POINTER(None))  # /usr/include/pulse/operation.h:36
 # /usr/include/pulse/operation.h:39
@@ -785,15 +749,6 @@ struct_pa_context._fields_ = [
 ]
 
 
-class struct_pa_context(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_context._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_context = struct_pa_context  # /usr/include/pulse/context.h:154
 pa_context_notify_cb_t = CFUNCTYPE(None, POINTER(pa_context), POINTER(None))  # /usr/include/pulse/context.h:157
 pa_context_success_cb_t = CFUNCTYPE(None, POINTER(pa_context), c_int, POINTER(None))  # /usr/include/pulse/context.h:160
@@ -809,16 +764,122 @@ struct_pa_proplist._fields_ = [
 ]
 
 
-class struct_pa_proplist(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_proplist._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_proplist = struct_pa_proplist  # /usr/include/pulse/proplist.h:272
+
+# Begin manually transferred pa_proplist definitions #
+
+# /usr/include/pulse/proplist.h:281
+pa_proplist_new = _lib.pa_proplist_new
+pa_proplist_new.restype = POINTER(pa_proplist)
+pa_proplist_new.argtypes = []
+
+# /usr/include/pulse/proplist.h:284
+pa_proplist_free = _lib.pa_proplist_free
+pa_proplist_free.restype = None
+pa_proplist_free.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:287
+pa_proplist_key_valid = _lib.pa_proplist_key_valid
+pa_proplist_key_valid.restype = c_int
+pa_proplist_key_valid.argtypes = [c_char_p]
+
+# /usr/include/pulse/proplist.h:293
+pa_proplist_sets = _lib.pa_proplist_sets
+pa_proplist_sets.restype = c_int
+pa_proplist_sets.argtypes = [POINTER(pa_proplist), c_char_p, c_char_p]
+
+# /usr/include/pulse/proplist.h:301
+pa_proplist_setp = _lib.pa_proplist_setp
+pa_proplist_setp.restype = c_int
+pa_proplist_setp.argtypes = [POINTER(pa_proplist), c_char_p]
+
+# /usr/include/pulse/proplist.h:314
+pa_proplist_set = _lib.pa_proplist_set
+pa_proplist_set.restype = c_int
+pa_proplist_set.argtypes = [POINTER(pa_proplist), c_char_p, POINTER(None), c_size_t]
+
+# /usr/include/pulse/proplist.h:320
+pa_proplist_gets = _lib.pa_proplist_gets
+pa_proplist_gets.restype = c_char_p
+pa_proplist_gets.argtypes = [POINTER(pa_proplist), c_char_p]
+
+# /usr/include/pulse/proplist.h:328
+pa_proplist_get = _lib.pa_proplist_get
+pa_proplist_get.restype = c_int
+pa_proplist_get.argtypes = [POINTER(pa_proplist), c_char_p, POINTER(POINTER(None)), POINTER(c_size_t)]
+
+enum_pa_update_mode = c_int
+PA_UPDATE_SET = 0
+PA_UPDATE_MERGE = 1
+PA_UPDATE_REPLACE = 2
+pa_update_mode_t = enum_pa_update_mode  # /usr/include/pulse/proplist.h:345
+# /usr/include/pulse/proplist.h:355
+pa_proplist_update = _lib.pa_proplist_update
+pa_proplist_update.restype = None
+pa_proplist_update.argtypes = [POINTER(pa_proplist), pa_update_mode_t, POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:360
+pa_proplist_unset = _lib.pa_proplist_unset
+pa_proplist_unset.restype = c_int
+pa_proplist_unset.argtypes = [POINTER(pa_proplist), c_char_p]
+
+# /usr/include/pulse/proplist.h:367
+pa_proplist_unset_many = _lib.pa_proplist_unset_many
+pa_proplist_unset_many.restype = c_int
+pa_proplist_unset_many.argtypes = [POINTER(pa_proplist), POINTER(c_char_p)]
+
+# /usr/include/pulse/proplist.h:378
+pa_proplist_iterate = _lib.pa_proplist_iterate
+pa_proplist_iterate.restype = c_char_p
+pa_proplist_iterate.argtypes = [POINTER(pa_proplist), POINTER(POINTER(None))]
+
+# /usr/include/pulse/proplist.h:384
+pa_proplist_to_string = _lib.pa_proplist_to_string
+pa_proplist_to_string.restype = c_char_p
+pa_proplist_to_string.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:389
+pa_proplist_to_string_sep = _lib.pa_proplist_to_string_sep
+pa_proplist_to_string_sep.restype = c_char_p
+pa_proplist_to_string_sep.argtypes = [POINTER(pa_proplist), c_char_p]
+
+# /usr/include/pulse/proplist.h:393
+pa_proplist_from_string = _lib.pa_proplist_from_string
+pa_proplist_from_string.restype = POINTER(pa_proplist)
+pa_proplist_from_string.argtypes = [c_char_p]
+
+# /usr/include/pulse/proplist.h:397
+pa_proplist_contains = _lib.pa_proplist_contains
+pa_proplist_contains.restype = c_int
+pa_proplist_contains.argtypes = [POINTER(pa_proplist), c_char_p]
+
+# /usr/include/pulse/proplist.h:400
+pa_proplist_clear = _lib.pa_proplist_clear
+pa_proplist_clear.restype = None
+pa_proplist_clear.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:404
+pa_proplist_copy = _lib.pa_proplist_copy
+pa_proplist_copy.restype = POINTER(pa_proplist)
+pa_proplist_copy.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:407
+pa_proplist_size = _lib.pa_proplist_size
+pa_proplist_size.restype = c_uint
+pa_proplist_size.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:410
+pa_proplist_isempty = _lib.pa_proplist_isempty
+pa_proplist_isempty.restype = c_int
+pa_proplist_isempty.argtypes = [POINTER(pa_proplist)]
+
+# /usr/include/pulse/proplist.h:414
+pa_proplist_equal = _lib.pa_proplist_equal
+pa_proplist_equal.restype = c_int
+pa_proplist_equal.argtypes = [POINTER(pa_proplist), POINTER(pa_proplist)]
+
+# End of manually transferred pa_proplist definitions #
+
 pa_context_event_cb_t = CFUNCTYPE(None, POINTER(pa_context), c_char_p, POINTER(pa_proplist),
                                   POINTER(None))  # /usr/include/pulse/context.h:167
 # /usr/include/pulse/context.h:172
@@ -921,11 +982,6 @@ pa_context_get_server_protocol_version = _lib.pa_context_get_server_protocol_ver
 pa_context_get_server_protocol_version.restype = c_uint32
 pa_context_get_server_protocol_version.argtypes = [POINTER(pa_context)]
 
-enum_pa_update_mode = c_int
-PA_UPDATE_SET = 0
-PA_UPDATE_MERGE = 1
-PA_UPDATE_REPLACE = 2
-pa_update_mode_t = enum_pa_update_mode  # /usr/include/pulse/proplist.h:337
 # /usr/include/pulse/context.h:248
 pa_context_proplist_update = _lib.pa_context_proplist_update
 pa_context_proplist_update.restype = POINTER(pa_operation)
@@ -1204,15 +1260,6 @@ struct_pa_stream._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-
-class struct_pa_stream(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_stream._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 pa_stream = struct_pa_stream  # /usr/include/pulse/stream.h:335
 pa_stream_success_cb_t = CFUNCTYPE(None, POINTER(pa_stream), c_int, POINTER(None))  # /usr/include/pulse/stream.h:338
@@ -2500,15 +2547,6 @@ struct_pa_threaded_mainloop._fields_ = [
 ]
 
 
-class struct_pa_threaded_mainloop(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_threaded_mainloop._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_threaded_mainloop = struct_pa_threaded_mainloop  # /usr/include/pulse/thread-mainloop.h:246
 # /usr/include/pulse/thread-mainloop.h:251
 pa_threaded_mainloop_new = _lib.pa_threaded_mainloop_new
@@ -2586,15 +2624,6 @@ struct_pa_mainloop._fields_ = [
 ]
 
 
-class struct_pa_mainloop(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_mainloop._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_mainloop = struct_pa_mainloop  # /usr/include/pulse/mainloop.h:78
 # /usr/include/pulse/mainloop.h:81
 pa_mainloop_new = _lib.pa_mainloop_new
@@ -2662,15 +2691,6 @@ struct_pollfd._fields_ = [
 ]
 
 
-class struct_pollfd(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pollfd._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 pa_poll_func = CFUNCTYPE(c_int, POINTER(struct_pollfd), c_ulong, c_int,
                          POINTER(None))  # /usr/include/pulse/mainloop.h:124
 # /usr/include/pulse/mainloop.h:127
@@ -2688,15 +2708,6 @@ struct_pa_signal_event._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-
-class struct_pa_signal_event(Structure):
-    __slots__ = [
-    ]
-
-
-struct_pa_signal_event._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 pa_signal_event = struct_pa_signal_event  # /usr/include/pulse/mainloop-signal.h:39
 pa_signal_cb_t = CFUNCTYPE(None, POINTER(pa_mainloop_api), POINTER(pa_signal_event), c_int,
@@ -2928,7 +2939,18 @@ __all__ = ['pa_get_library_version', 'PA_API_VERSION', 'PA_PROTOCOL_VERSION',
            'pa_operation_notify_cb_t', 'pa_operation_ref', 'pa_operation_unref',
            'pa_operation_cancel', 'pa_operation_get_state',
            'pa_operation_set_state_callback', 'pa_context', 'pa_context_notify_cb_t',
-           'pa_context_success_cb_t', 'pa_context_event_cb_t', 'pa_context_new',
+           'pa_context_success_cb_t',
+           # Begin manually transferred proplist definitions #
+           'pa_proplist', 'pa_proplist_new', 'pa_proplist_free', 'pa_proplist_key_valid',
+           'pa_proplist_sets', 'pa_proplist_setp', 'pa_proplist_set', 'pa_proplist_gets',
+           'pa_proplist_get', 'pa_update_mode_t', 'pa_proplist_update',
+           'pa_proplist_unset', 'pa_proplist_unset_many', 'pa_proplist_iterate',
+           'pa_proplist_to_string', 'pa_proplist_to_string_sep',
+           'pa_proplist_from_string', 'pa_proplist_contains', 'pa_proplist_clear',
+           'pa_proplist_copy', 'pa_proplist_size', 'pa_proplist_isempty',
+           'pa_proplist_equal',
+           # End manually transferred proplist definitions #
+           'pa_context_event_cb_t', 'pa_context_new',
            'pa_context_new_with_proplist', 'pa_context_unref', 'pa_context_ref',
            'pa_context_set_state_callback', 'pa_context_set_event_callback',
            'pa_context_errno', 'pa_context_is_pending', 'pa_context_get_state',

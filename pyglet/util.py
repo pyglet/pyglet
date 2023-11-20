@@ -2,6 +2,7 @@
 """
 
 import os
+import math
 import sys
 from typing import Optional, Union, Callable
 
@@ -80,6 +81,22 @@ def debug_print(pyglet_option_name: str = 'debug') -> Callable[[str], bool]:
     if enabled:
         return _debug_print_real
     return _debug_print_dummy
+
+
+# Based on: https://stackoverflow.com/a/56225940
+def closest_power_of_two(x: int) -> int:
+    if x <= 2:
+        return 2
+    if (x >> (x.bit_length() - 2)) & 1:
+        return 1 << math.ceil(math.log2(x))
+    else:
+        return 1 << math.floor(math.log2(x))
+
+
+def next_or_equal_power_of_two(x: int) -> int:
+    if x <= 1:
+        return 1
+    return 1 << math.ceil(math.log2(x))
 
 
 class CodecRegistry:
