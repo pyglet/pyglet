@@ -10,7 +10,6 @@ from subprocess import call
 THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
 DIST_DIR = op.join(THIS_DIR, 'dist')
-GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
 
 
 def clean():
@@ -47,9 +46,8 @@ def docs():
 
 
 def dist():
-    """Create all files to distribute Pyglet"""
-    docs()
-    call(GENDIST_TOOL)
+    """Create files to distribute pyglet"""
+    call(['python', '-m', 'build'])
 
 
 def _print_usage():
