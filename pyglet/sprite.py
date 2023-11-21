@@ -233,9 +233,6 @@ class Sprite(event.EventDispatcher):
     _rotation = 0
     _opacity = 255
     _rgb = (255, 255, 255)
-    _scale = 1.0
-    _scale_x = 1.0
-    _scale_y = 1.0
     _visible = True
     _vertex_list = None
     group_class = SpriteGroup
@@ -246,6 +243,7 @@ class Sprite(event.EventDispatcher):
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
                  group=None,
+                 image_mesh_generator=None,
                  subpixel=False):
         """Create a sprite.
 
@@ -286,9 +284,18 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
+        self._width = self._texture.width
+        self._height = self._texture.height
+
         self._batch = batch
         self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
         self._subpixel = subpixel
+        
+        if image_mesh_generator is not None:
+            self._mesh_gen = image_mesh_generator
+        else:
+            self._mesh_gen = DefaultImageMeshGenerator()
+        
         self._create_vertex_list()
 
     @property
@@ -429,34 +436,36 @@ class Sprite(event.EventDispatcher):
             self._texture = texture
             self._create_vertex_list()
         else:
-            self._vertex_list.tex_coords[:] = texture.tex_coords
-        self._texture = texture
+            self._texture = texture
+            self._update_tex_coords()
+
+    def set_image_mesh_generator(self, generator):
+        self._vertex_list.delete()
+        self._mesh_gen = generator
+        self._create_vertex_list()
 
     def _create_vertex_list(self):
+        vertices = self._mesh_gen.get_vertices(self)
+        self._vert_count = len(vertices) // 3
         self._vertex_list = self.program.vertex_list_indexed(
-            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
-            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
-            translate=('f', (self._x, self._y, self._z) * 4),
-            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
-            rotation=('f', (self._rotation,) * 4),
-            tex_coords=('f', self._texture.tex_coords))
-        self._update_position()
-
+            self._vert_count,
+            pyglet.gl.GL_TRIANGLES,
+            self._mesh_gen.get_indices(self),
+            self._batch,
+            self._group,
+            position=('f', vertices),
+            rotation=('f', (self._rotation,) * self._vert_count),
+            colors=('Bn', (*self._rgb, int(self._opacity)) * self._vert_count),
+            tex_coords=('f', self._mesh_gen.get_tex_coords(self)),
+            translate=('f', (self._x, self._y, self._z) * self._vert_count),
+            scale=('f', (1.0, 1.0) * self._vert_count),
+        )
+    
     def _update_position(self):
-        if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        else:
-            img = self._texture
-            x1 = -img.anchor_x
-            y1 = -img.anchor_y
-            x2 = x1 + img.width
-            y2 = y1 + img.height
-            vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
+        self._vertex_list.position[:] = self._mesh_gen.get_vertices(self)
 
-            if not self._subpixel:
-                self._vertex_list.position[:] = tuple(map(int, vertices))
-            else:
-                self._vertex_list.position[:] = vertices
+    def _update_tex_coords(self):
+        self._vertex_list.tex_coords[:] = self._mesh_gen.get_tex_coords(self)
 
     @property
     def position(self):
@@ -475,7 +484,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, position):
         self._x, self._y, self._z = position
-        self._vertex_list.translate[:] = position * 4
+        self._vertex_list.translate[:] = position * self._vert_count
 
     @property
     def x(self):
@@ -488,7 +497,7 @@ class Sprite(event.EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self._vertex_list.translate[:] = (x, self._y, self._z) * 4
+        self._vertex_list.translate[:] = (x, self._y, self._z) * self._vert_count
 
     @property
     def y(self):
@@ -501,7 +510,7 @@ class Sprite(event.EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self._vertex_list.translate[:] = (self._x, y, self._z) * 4
+        self._vertex_list.translate[:] = (self._x, y, self._z) * self._vert_count
 
     @property
     def z(self):
@@ -514,7 +523,7 @@ class Sprite(event.EventDispatcher):
     @z.setter
     def z(self, z):
         self._z = z
-        self._vertex_list.translate[:] = (self._x, self._y, z) * 4
+        self._vertex_list.translate[:] = (self._x, self._y, z) * self._vert_count
 
     @property
     def rotation(self):
@@ -530,7 +539,7 @@ class Sprite(event.EventDispatcher):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._vertex_list.rotation[:] = (self._rotation,) * 4
+        self._vertex_list.rotation[:] = (self._rotation,) * self._vert_count
 
     @property
     def scale(self):
@@ -539,14 +548,16 @@ class Sprite(event.EventDispatcher):
         A scaling factor of 1 (the default) has no effect.  A scale of 2 will
         draw the sprite at twice the native size of its image.
 
-        :type: float
+        :type: (float, float)
         """
-        return self._scale
+        return (self.scale_x, self.scale_y)
 
     @scale.setter
     def scale(self, scale):
-        self._scale = scale
-        self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y) * 4
+        self._width = int(self._texture.width * scale)
+        self._height = int(self._texture.height * scale)
+        self._update_position()
+        self._update_tex_coords()
 
     @property
     def scale_x(self):
@@ -557,12 +568,13 @@ class Sprite(event.EventDispatcher):
 
         :type: float
         """
-        return self._scale_x
+        return self._width / self._texture.width
 
     @scale_x.setter
     def scale_x(self, scale_x):
-        self._scale_x = scale_x
-        self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y) * 4
+        self._width = int(self._texture.width * scale_x)
+        self._update_position()
+        self._update_tex_coords()
 
     @property
     def scale_y(self):
@@ -573,12 +585,13 @@ class Sprite(event.EventDispatcher):
 
         :type: float
         """
-        return self._scale_y
+        return self._height / self._texture.height
 
     @scale_y.setter
     def scale_y(self, scale_y):
-        self._scale_y = scale_y
-        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y) * 4
+        self._width = int(self._texture.width * scale_y)
+        self._update_position()
+        self._update_tex_coords()
 
     def update(self, x=None, y=None, z=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -617,11 +630,11 @@ class Sprite(event.EventDispatcher):
             translations_outdated = True
 
         if translations_outdated:
-            self._vertex_list.translate[:] = (self._x, self._y, self._z) * 4
+            self._vertex_list.translate[:] = (self._x, self._y, self._z) * self._vert_count
 
         if rotation is not None and rotation != self._rotation:
             self._rotation = rotation
-            self._vertex_list.rotation[:] = (rotation,) * 4
+            self._vertex_list.rotation[:] = (rotation,) * self._vert_count
 
         scales_outdated = False
 
@@ -637,7 +650,7 @@ class Sprite(event.EventDispatcher):
             scales_outdated = True
 
         if scales_outdated:
-            self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
+            self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * self._vert_count
 
     @property
     def width(self):
@@ -647,12 +660,13 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        w = self._texture.width * abs(self._scale_x) * abs(self._scale)
-        return w if self._subpixel else int(w)
+        return self._width
 
     @width.setter
     def width(self, width):
-        self.scale_x = width / (self._texture.width * abs(self._scale))
+        self._width = width
+        self._update_position()
+        self._update_tex_coords()
 
     @property
     def height(self):
@@ -662,12 +676,13 @@ class Sprite(event.EventDispatcher):
 
         :type: int
         """
-        h = self._texture.height * abs(self._scale_y) * abs(self._scale)
-        return h if self._subpixel else int(h)
+        return self._height
 
     @height.setter
     def height(self, height):
-        self.scale_y = height / (self._texture.height * abs(self._scale))
+        self._height = height
+        self._update_position()
+        self._update_tex_coords()
 
     @property
     def opacity(self):
@@ -688,7 +703,7 @@ class Sprite(event.EventDispatcher):
     @opacity.setter
     def opacity(self, opacity):
         self._opacity = opacity
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * self._vert_count
 
     @property
     def color(self):
@@ -707,7 +722,7 @@ class Sprite(event.EventDispatcher):
     @color.setter
     def color(self, rgb):
         self._rgb = list(map(int, rgb))
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * self._vert_count
 
     @property
     def visible(self):
@@ -831,5 +846,136 @@ class AdvancedSprite(pyglet.sprite.Sprite):
         self._program = program
 
 
+class ImageMeshGenerator:
+    def get_vertices(self, image): pass
+    def get_tex_coords(self, image): pass
+    def get_indices(self, image): pass
 
 
+class DefaultImageMeshGenerator(ImageMeshGenerator):
+    def get_vertices(self, image):
+        if not image._visible:
+            return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+        tex = image._texture
+        x1 = -tex.anchor_x * image.scale_x
+        y1 = -tex.anchor_y * image.scale_y
+        x2 = x1 + image.width
+        y2 = y1 + image.height
+        vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
+
+        if not image._subpixel:
+            return tuple(map(int, vertices))
+        else:
+            return vertices
+
+    def get_tex_coords(self, image):
+        return image._texture.tex_coords
+
+    def get_indices(self, image):
+        return [0, 1, 2, 0, 2, 3]
+    
+
+class NinePatchImageMeshGenerator(ImageMeshGenerator):
+    def __init__(self, top, right, bottom, left, pixel_size=1):
+        self.left = left
+        self.bottom = bottom
+        self.top = top
+        self.right = right
+        self.pixel_size = pixel_size
+
+    def get_indices(self, image):
+        indices = []
+
+        # [0, 1, 2, 0, 2, 3]
+        for y in range(3):
+            for x in range(3):
+                indices.extend([
+                    x + y * 4,
+                    (x + 1) + y * 4,
+                    (x + 1) + (y + 1) * 4,
+                    x + y * 4,
+                    (x + 1) + (y + 1) * 4,
+                    x + (y + 1) * 4,
+                ])
+
+        return indices
+
+    def get_tex_coords(self, image):
+        width, height = image._texture.width, image._texture.height
+
+        # Texture coordinates, in pixels
+        u1 = 0
+        v1 = 0
+        u2 = self.left / width
+        v2 = self.bottom / height
+        u3 = (width - self.right) / width
+        v3 = (height - self.top) / height
+        u4 = 1
+        v4 = 1
+
+        # Scale texture coordinates as it may be in an atlas.
+        (tu1, tv1, _,
+         _, _, _,
+         tu2, tv2, _,
+         _, _, _) = image._texture.tex_coords
+        u_scale = tu2 - tu1
+        u_bias = tu1
+
+        v_scale = tv2 - tv1
+        v_bias = tv1
+
+        u1, u2, u3, u4 = [u_bias + u_scale * s for s in (u1, u2, u3, u4)]
+        v1, v2, v3, v4 = [v_bias + v_scale * s for s in (v1, v2, v3, v4)]
+
+        # 3D texture coordinates, bottom-left to top-right
+        return (
+            u1, v1, 0,
+            u2, v1, 0,
+            u3, v1, 0,
+            u4, v1, 0,
+            u1, v2, 0,
+            u2, v2, 0,
+            u3, v2, 0,
+            u4, v2, 0,
+            u1, v3, 0,
+            u2, v3, 0,
+            u3, v3, 0,
+            u4, v3, 0,
+            u1, v4, 0,
+            u2, v4, 0,
+            u3, v4, 0,
+            u4, v4, 0,
+        )
+
+    def get_vertices(self, image):
+        tex = image._texture
+        x1 = -tex.anchor_x * image.scale_x
+        y1 = -tex.anchor_y * image.scale_y
+        x2 = x1 + self.left * self.pixel_size
+        y2 = y1 + self.bottom * self.pixel_size
+        x3 = x1 + image.width - self.right * self.pixel_size
+        y3 = y1 + image.height - self.top * self.pixel_size
+        x4 = x1 + image.width
+        y4 = y1 + image.height
+        z = 0
+
+        # To match tex coords, vertices are bottom-left to top-right
+        return (
+            x1, y1, z,
+            x2, y1, z,
+            x3, y1, z,
+            x4, y1, z,
+            x1, y2, z,
+            x2, y2, z,
+            x3, y2, z,
+            x4, y2, z,
+            x1, y3, z,
+            x2, y3, z,
+            x3, y3, z,
+            x4, y3, z,
+            x1, y4, z,
+            x2, y4, z,
+            x3, y4, z,
+            x4, y4, z,
+        )

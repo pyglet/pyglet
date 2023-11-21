@@ -336,7 +336,7 @@ class ShapeBase(ABC):
 
     @position.setter
     def position(self, values):
-        self._x, self._y = values
+        self._x, self._y = values[0], values[1]
         self._update_translation()
 
     @property

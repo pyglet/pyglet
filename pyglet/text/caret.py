@@ -386,6 +386,12 @@ class Caret:
         self._update(line=line)
         self._next_attributes.clear()
 
+    def select_all(self):
+        self._mark = 0
+        self._position = len(self._layout.document.text)
+        self._update()
+        self._next_attributes.clear()
+
     def _update(self, line=None, update_ideal_x=True):
         if line is None:
             line = self._layout.get_line_from_position(self._position)

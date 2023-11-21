@@ -59,7 +59,7 @@ class WidgetBase(EventDispatcher):
 
     @position.setter
     def position(self, values):
-        self._x, self._y = values
+        self._x, self._y = values[0], values[1]
         self._update_position()
 
     @property
@@ -69,6 +69,10 @@ class WidgetBase(EventDispatcher):
         :type: int
         """
         return self._width
+    
+    @width.setter
+    def width(self, value):
+        self.on_resize(value, self._height)
 
     @property
     def height(self):
@@ -77,6 +81,18 @@ class WidgetBase(EventDispatcher):
         :type: int
         """
         return self._height
+    
+    @height.setter
+    def height(self, value):
+        self.on_resize(self._width, value)
+
+    @property
+    def size(self):
+        return (self.width, self.height)
+
+    @size.setter
+    def size(self, size_value):
+        self.on_resize(size_value[0], size_value[1])
 
     @property
     def aabb(self):
@@ -103,6 +119,14 @@ class WidgetBase(EventDispatcher):
     @value.setter
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
+    
+    def draw(self):
+        """Draw widget manually in case batch is not provided"""
+        pass
+    
+    def on_resize(self, width, height):
+        self._width = width
+        self._height = height
 
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
@@ -134,6 +158,12 @@ class WidgetBase(EventDispatcher):
     def on_text_motion_select(self, motion):
         pass
 
+    def on_key_press(self, symbol, modifiers):
+        pass
+    
+    def on_key_release(self, symbol, modifiers):
+        pass
+
 
 class PushButton(WidgetBase):
     """Instance of a push button.
@@ -142,7 +172,12 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+    def __init__(self, x, y, 
+                 pressed=(150, 150, 150, 255), 
+                 depressed=(230, 230, 230, 255),
+                 hover=None,
+                 width=None, height=None,
+                 batch=None, group=None):
         """Create a push button.
 
         :Parameters:
@@ -150,29 +185,44 @@ class PushButton(WidgetBase):
                 X coordinate of the push button.
             `y` : int
                 Y coordinate of the push button.
-            `pressed` : `~pyglet.image.AbstractImage`
-                Image to display when the button is pressed.
-            `depresseed` : `~pyglet.image.AbstractImage`
-                Image to display when the button isn't pressed.
-            `hover` : `~pyglet.image.AbstractImage`
-                Image to display when the button is being hovered over.
+            `pressed` : `~pyglet.image.AbstractImage` or (int, int, int, int)
+                Image or color to display when the button is pressed.
+            `depresseed` : `~pyglet.image.AbstractImage` or (int, int, int, int)
+                Image or color to display when the button isn't pressed.
+            `hover` : `~pyglet.image.AbstractImage` or (int, int, int, int)
+                Image or color to display when the button is being hovered over.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the push button to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the push button.
         """
-        super().__init__(x, y, depressed.width, depressed.height)
-        self._pressed_img = pressed
-        self._depressed_img = depressed
-        self._hover_img = hover or depressed
+        if hover is None:
+            hover = (255,255,255,255) if isinstance(depressed, tuple) else depressed 
+        if type(pressed) != type(depressed) or type(hover) != type(depressed):
+            raise Exception("pressed, depressed and hover values must be of equal types")
+        image_provided = isinstance(depressed, pyglet.image.AbstractImage)
+        
+        if width is None:
+            width = depressed.width if image_provided else 50
+        if height is None:
+            height = depressed.height if image_provided else 50
+        
+        super().__init__(x, y, width, height)
+        self._pressed_visual = pressed
+        self._depressed_visual = depressed
+        self._hover_visual = hover or depressed
 
         # TODO: add `draw` method or make Batch required.
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
+        if image_provided:
+            self._sprite = pyglet.sprite.Sprite(self._depressed_visual, x, y, batch=self._batch, group=bg_group)
+        else:
+            self._sprite = pyglet.shapes.Rectangle(x, y, width, height, self._depressed_visual, self._batch, bg_group)
 
         self._pressed = False
+        self._hovered = False
 
     def _update_position(self):
         self._sprite.position = self._x, self._y, 0
@@ -181,11 +231,25 @@ class PushButton(WidgetBase):
     def value(self):
         return self._pressed
     
+    def _get_current_visual(self):
+        if self._pressed:
+            return self._pressed_visual
+        elif self._hovered:
+            return self._hover_visual
+        else:
+            return self._depressed_visual
+    
+    def _update_visual_state(self):
+        if isinstance(self._sprite, pyglet.sprite.Sprite):
+            self._sprite.image = self._get_current_visual()
+        else:
+            self._sprite.color = self._get_current_visual()
+    
     @value.setter
     def value(self, value):
         assert type(value) is bool, "This Widget's value must be True or False."
         self._pressed = value
-        self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
+        self._update_visual_state()
 
     def update_groups(self, order):
         self._sprite.group = Group(order=order + 1, parent=self._user_group)
@@ -193,30 +257,81 @@ class PushButton(WidgetBase):
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled or not self._check_hit(x, y):
             return
-        self._sprite.image = self._pressed_img
         self._pressed = True
+        self._update_visual_state()
         self.dispatch_event('on_press')
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled or not self._pressed:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._hovered = self._check_hit(x, y)
         self._pressed = False
+        self._update_visual_state()
         self.dispatch_event('on_release')
 
     def on_mouse_motion(self, x, y, dx, dy):
-        if not self.enabled or self._pressed:
+        if not self.enabled:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._hovered = self._check_hit(x, y)
+        self._update_visual_state()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if not self.enabled or self._pressed:
+        if not self.enabled:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._hovered = self._check_hit(x, y)
+        self._update_visual_state()
 
+    def on_resize(self, width, height):
+        super(PushButton, self).on_resize(width, height)
+        self._sprite.width = width
+        self._sprite.height = height
+
+    def draw(self):
+        self._sprite.draw()
 
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
+
+class TextPushButton(PushButton):
+    """Instance of a button with a label inside."""
+
+    def __init__(self, x, y, 
+                 text,
+                 pressed=(150, 150, 150, 255), 
+                 depressed=(230, 230, 230, 255),
+                 hover=(255, 255, 255, 255),
+                 text_color=(0, 0, 0, 255),
+                 width=None, height=None,
+                 batch=None, group=None):
+        
+        super().__init__(x, y, pressed=pressed, depressed=depressed, hover=hover, width=width, height=height, batch=batch, group=group)
+        self._label = pyglet.text.Label(text, 
+                                        x=x, y=y, width=self.width, height=self.height,
+                                        anchor_y='bottom', color=text_color,
+                                        batch=self._batch, group=Group(order=1, parent=self._user_group))
+        self._label.content_halign = 'center'
+        self._label.content_valign = 'center'
+
+    def _update_position(self):
+        super()._update_position()
+        self._label.position = (self.x, self.y, 0)
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self._label.width = width
+        self._label.height = height
+
+    def draw(self):
+        super().draw()
+        self._label.draw()
+
+    @property
+    def text(self):
+        return self._label.text
+    
+    @text.setter
+    def text(self, value):
+        self._label.text = value
 
 
 class ToggleButton(PushButton):
@@ -225,20 +340,26 @@ class ToggleButton(PushButton):
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
-    def _get_release_image(self, x, y):
-        return self._hover_img if self._check_hit(x, y) else self._depressed_img
-
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled or not self._check_hit(x, y):
             return
         self._pressed = not self._pressed
-        self._sprite.image = self._pressed_img if self._pressed else self._get_release_image(x, y)
+        self._update_visual_state()
         self.dispatch_event('on_toggle', self._pressed)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
-        if not self.enabled or self._pressed:
+        if not self.enabled:
             return
-        self._sprite.image = self._get_release_image(x, y)
+        self._hovered = self._check_hit(x, y)
+        self._update_visual_state()
+
+    def _get_current_visual(self):
+        if self._hovered:
+            return self._hover_visual
+        elif self._pressed:
+            return self._pressed_visual
+        else:
+            return self._depressed_visual
 
 
 ToggleButton.register_event_type('on_toggle')
@@ -252,7 +373,16 @@ class Slider(WidgetBase):
     scrolling the mouse wheel.
     """
 
-    def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
+    def __init__(self, 
+                 x, y,
+                 width, height,
+                 base=(230, 230, 230, 255),
+                 knob=(150, 150, 150, 255), 
+                 edge=0,
+                 value_range=(0, 1),
+                 integer=False,
+                 orientation='horizontal', 
+                 batch=None, group=None):
         """Create a slider.
 
         :Parameters:
@@ -260,42 +390,113 @@ class Slider(WidgetBase):
                 X coordinate of the slider.
             `y` : int
                 Y coordinate of the slider.
-            `base` : `~pyglet.image.AbstractImage`
-                Image to display as the background to the slider.
-            `knob` : `~pyglet.image.AbstractImage`
-                Knob that moves to show the position of the slider.
-            `edge` : int
+            `base` : `~pyglet.image.AbstractImage` or (int, int, int, int)
+                Image or color to display as the background to the slider.
+            `knob` : `~pyglet.image.AbstractImage` or (int, int, int, int)
+                Knob or color that moves to show the position of the slider.
+            `edge` : int or (int, int)
                 Pixels from the maximum and minimum position of the slider,
                 to the edge of the base image.
+            `value_range` : (float, float)
+                Slider value range.
+            `integer` : bool
+                Is slider counts only in integer numbers.
+            `orientation` : str
+                Optional parent group of the slider.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the slider to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the slider.
+
         """
-        super().__init__(x, y, base.width, knob.height)
+        if type(base) != type(knob):
+            raise Exception("base and knob values must be of equal types")
+        assert orientation in ('horizontal', 'vertical'), "Unknown orientation type, must be 'horizontal' or 'vertical'"
+        image_provided = isinstance(base, pyglet.image.AbstractImage)
+
+        if width is None:
+            width = max(base.width, knob.width) if image_provided else (100 if orientation == 'horizontal' else 20)
+        if height is None:
+            height = max(base.height, knob.height) if image_provided else (100 if orientation == 'vertical' else 20)
+        super().__init__(x, y, width, height)
+
+        self.value_range = value_range
+        self._horizontal = orientation == 'horizontal'
+        self._integer = integer
+        if isinstance(edge, int):
+            edge = (edge, edge)
         self._edge = edge
         self._base_img = base
         self._knob_img = knob
-        self._half_knob_width = knob.width / 2
-        self._half_knob_height = knob.height / 2
-        self._knob_img.anchor_y = knob.height / 2
-
-        self._min_knob_x = x + edge
-        self._max_knob_x = x + base.width - knob.width - edge
 
         self._user_group = group
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
-        self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
+        if image_provided:
+            self._base_spr = pyglet.sprite.Sprite(self._base_img, batch=batch, group=bg_group)
+            self._knob_spr = pyglet.sprite.Sprite(self._knob_img, batch=batch, group=fg_group)
+        else:
+            self._base_spr = pyglet.shapes.Rectangle(x, y, width, height, self._base_img, batch=batch, group=bg_group)
+            self._knob_spr = pyglet.shapes.Rectangle(x, y, min(width, height), min(width, height), self._knob_img, batch=batch, group=fg_group)
+
+        if self._horizontal:
+            self._base_display_style = ('padding', ((self.height - self._base_spr.height) / 2,) * 2)
+            self._knob_display_style = ('padding', ((self.height - self._knob_spr.height) / 2,) * 2)
+            self._min_knob_size = self._knob_spr.width
+        else:
+            self._base_display_style = ('padding', ((self.width - self._base_spr.width) / 2,) * 2)
+            self._knob_display_style = ('padding', ((self.width - self._knob_spr.width) / 2,) * 2)
+            self._min_knob_size = self._knob_spr.height
+
+        self._knob_size = 0
 
         self._value = 0
         self._in_update = False
 
-    def _update_position(self):
-        self._base_spr.position = self._x, self._y, 0
-        self._knob_spr.position = self._x + self._edge, self._y + self._base_img.height / 2, 0
+        self.on_resize(self.width, self.height)
 
+    
+    def _update_position(self):
+        if self._horizontal:
+            self._base_spr.x = self._x
+            self._base_spr.y = self._y + self._calculate_offset(self._base_display_style, self.height)
+            self._knob_spr.y = self._y + self._calculate_offset(self._knob_display_style, self.height)
+        else:
+            self._base_spr.x = self._x + self._calculate_offset(self._base_display_style, self.width)
+            self._base_spr.y = self._y
+            self._knob_spr.x = self._x + self._calculate_offset(self._knob_display_style, self.width)
+        self.value = self._value
+
+    def on_resize(self, width, height):
+        super(Slider, self).on_resize(width, height)
+        if self._horizontal:
+            self._base_spr.width = width
+            self._base_spr.height = self._calculate_size(self._base_display_style, self.height)
+            self._knob_spr.width = max(self.knob_size, self._min_knob_size)
+            self._knob_spr.height = self._calculate_size(self._knob_display_style, self.height)
+        else:
+            self._base_spr.height = height
+            self._base_spr.width = self._calculate_size(self._base_display_style, self.width)
+            self._knob_spr.height = max(self.knob_size, self._min_knob_size)
+            self._knob_spr.width = self._calculate_size(self._knob_display_style, self.width)
+        self._update_position()
+
+    def _calculate_offset(self, display_style, max_size):
+        if display_style[0] == 'padding':
+            return display_style[1][0]
+        if display_style[0] == 'percent':
+            return max_size * (1 - display_style[1] / 100) / 2
+        if display_style[0] == 'pixels':
+            return (max_size - display_style[1]) / 2
+        
+    def _calculate_size(self, display_style, max_size):
+        if display_style[0] == 'padding':
+            return max_size - display_style[1][0] - display_style[1][1]
+        if display_style[0] == 'percent':
+            return max_size * display_style[1] / 100
+        if display_style[0] == 'pixels':
+            return display_style[1]
+        
     @property
     def value(self):
         return self._value
@@ -303,9 +504,24 @@ class Slider(WidgetBase):
     @value.setter
     def value(self, value):
         assert type(value) in (int, float), "This Widget's value must be an int or float."
+        if self._integer: value = round(value)
+        value = min(max(value, self.value_range[0]), self.value_range[1])
         self._value = value
-        x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
-        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
+
+        if self._horizontal:
+            min_x, max_x = self._min_x, self._max_x
+            self._knob_spr.x = (
+                (value - self._value_range[0]) / 
+                (self._value_range[1] - self._value_range[0]) *
+                (max_x - min_x) + min_x
+            )
+        else:
+            min_y, max_y = self._min_y, self._max_y
+            self._knob_spr.y = (
+                (value - self._value_range[0]) / 
+                (self._value_range[1] - self._value_range[0]) *
+                (max_y - min_y) + min_y
+            )
 
     def update_groups(self, order):
         self._base_spr.group = Group(order=order + 1, parent=self._user_group)
@@ -313,52 +529,101 @@ class Slider(WidgetBase):
 
     @property
     def _min_x(self):
-        return self._x + self._edge
+        return self._x + self._edge[0] - max(self._min_knob_size - self.knob_size, 0) / 2
 
     @property
     def _max_x(self):
-        return self._x + self._width - self._edge
+        return self._x + self._width - self._edge[1] - max(self._min_knob_size / 2, self.knob_size)
 
     @property
     def _min_y(self):
-        return self._y - self._half_knob_height
+        return self._y + self._edge[0] - max(self._min_knob_size - self.knob_size, 0) / 2
 
     @property
     def _max_y(self):
-        return self._y + self._half_knob_height + self._base_img.height / 2
+        return self._y + self._height - self._edge[1] - max(self._min_knob_size / 2, self.knob_size)
+
+    @property
+    def value_range(self):
+        return self._value_range
+    
+    @value_range.setter
+    def value_range(self, value):
+        assert value[0] < value[1], "Range Min must be < Range Max"
+        self._value_range = value
+    
+    @property
+    def knob_size(self):
+        return self._knob_size
+    
+    @knob_size.setter
+    def knob_size(self, value):
+        self._knob_size = value
+        self.on_resize(self.width, self.height)
 
     def _check_hit(self, x, y):
-        return self._min_x < x < self._max_x and self._min_y < y < self._max_y
+        return self.x < x < self.x + self.width and self.y < y < self.y + self.height
 
-    def _update_knob(self, x):
-        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
-        self._value = abs(((self._knob_spr.x - self._min_knob_x) * 100) / (self._min_knob_x - self._max_knob_x))
+    def _update_knob(self, x, y):
+        if self._horizontal:
+            x -= self.knob_size / 2
+            min_x, max_x = self._min_x, self._max_x
+            if min_x < max_x:
+                self.value = (
+                    (x - min_x) / (max_x - min_x) *
+                    (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+                )
+            else:
+                self.value = 0
+        else:
+            y -= self.knob_size / 2
+            min_y, max_y = self._min_y, self._max_y
+            if min_y < max_y:
+                self.value = (
+                    (y - min_y) / (max_y - min_y) *
+                    (self.value_range[1] - self.value_range[0]) + self.value_range[0]
+                )
+            else:
+                self.value = 0
         self.dispatch_event('on_change', self._value)
+
+    def set_sprite_style(self, sprite_name, size_type, value):
+        if sprite_name == 'base':
+            self._base_display_style = (size_type, value)
+            self.on_resize(self.width, self.height)
+        elif sprite_name == 'knob':
+            self._knob_display_style = (size_type, value)
+            self.on_resize(self.width, self.height)
+        else:
+            raise Exception('Unknown sprite type:', sprite_name)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled:
             return
         if self._check_hit(x, y):
             self._in_update = True
-            self._update_knob(x)
+            self._update_knob(x, y)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if not self.enabled:
             return
         if self._in_update:
-            self._update_knob(x)
+            self._update_knob(x, y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if not self.enabled:
             return
         if self._check_hit(x, y):
-            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
+            self.value += scroll_y
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled:
             return
         self._in_update = False
 
+    def draw(self):
+        self._base_spr.draw()
+        self._knob_spr.draw()
 
 Slider.register_event_type('on_change')
 
@@ -401,18 +666,19 @@ class TextEntry(WidgetBase):
         height = font.ascent - font.descent
 
         self._user_group = group
+        self._batch = batch
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
+        self._outline = pyglet.shapes.Rectangle(x, y, width, height, color[:3], batch, bg_group)
         self._outline.opacity = color[3]
 
         # Text and Caret:
-        self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
-        self._layout.x = x
-        self._layout.y = y
+        self._layout = IncrementalTextLayout(self._doc, width-p-p, height-p-p, multiline=False, batch=batch, group=fg_group)
+        self._layout.x = x+p
+        self._layout.y = y+p
         self._caret = Caret(self._layout, color=caret_color)
         self._caret.visible = False
 
@@ -421,8 +687,8 @@ class TextEntry(WidgetBase):
         super().__init__(x, y, width, height)
 
     def _update_position(self):
-        self._layout.position = self._x, self._y, 0
-        self._outline.position = self._x - self._pad, self._y - self._pad
+        self._layout.position = self._x + self._pad, self._y + self._pad, 0
+        self._outline.position = self._x, self._y
 
     @property
     def value(self):
@@ -492,6 +758,17 @@ class TextEntry(WidgetBase):
         else:
             self._set_focus(False)
 
+    def on_resize(self, width, height):
+        super(TextEntry, self).on_resize(width, height)
+        self._layout.width, self._layout.height = width - self._pad * 2, height - self._pad * 2
+        self._outline.width, self._outline.height = width, height
+
+    def on_key_press(self, symbol, modifiers):
+        if not self._focus:
+            return
+        if symbol == pyglet.window.key.A and modifiers & pyglet.window.key.MOD_CTRL:
+            self._caret.select_all()
+
     def on_text(self, text):
         if not self.enabled:
             return
@@ -519,6 +796,10 @@ class TextEntry(WidgetBase):
         if not self.enabled:
             return
         """Text has been commited via Enter/Return key."""
+
+    def draw(self):
+        self._outline.draw()
+        self._layout.draw()
 
 
 TextEntry.register_event_type('on_commit')
