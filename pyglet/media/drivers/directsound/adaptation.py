@@ -139,7 +139,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._has_underrun = False
 
         # DSound buffer
-        self._buffer_size = self._singlebuffer_ideal_size
+        self._buffer_size = self._buffered_data_ideal_size
         self._ds_buffer = self.driver._ds_driver.create_buffer(source.audio_format, self._buffer_size)
         self._ds_buffer.current_position = 0
 

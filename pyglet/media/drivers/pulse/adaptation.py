@@ -162,7 +162,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         self._pyglet_source_exhausted = False
         self._pending_bytes = 0
-        self._audio_data_buffer = _AudioDataBuffer(self._singlebuffer_ideal_size,
+        self._audio_data_buffer = _AudioDataBuffer(self._buffered_data_ideal_size,
                                                    self._buffered_data_comfortable_limit)
 
         # A lock that should be held whenever the audio data buffer is accessed, or

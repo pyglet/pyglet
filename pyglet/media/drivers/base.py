@@ -17,6 +17,13 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
     for it to operate.
     """
 
+    audio_sync_required_measurements = 8
+    audio_desync_time_critical = 0.280
+    audio_desync_time_minor = 0.030
+    audio_minor_desync_correction_time = 0.012
+
+    audio_buffer_length = 0.9
+
     def __init__(self, source, player):
         """Create a new audio player.
 
@@ -35,22 +42,26 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
         afmt = source.audio_format
         # How much data should ideally be in memory ready to be played.
-        self._singlebuffer_ideal_size = max(32768, afmt.timestamp_to_bytes_aligned(0.9))
+        self._buffered_data_ideal_size = max(
+            32768,
+            afmt.timestamp_to_bytes_aligned(self.audio_buffer_length),
+        )
 
         # At which point a driver should try and refill data from the source
-        self._buffered_data_comfortable_limit = int(self._singlebuffer_ideal_size * (2/3))
+        self._buffered_data_comfortable_limit = int(self._buffered_data_ideal_size * (2/3))
 
         # A deque of (play_cursor, MediaEvent)
         self._events = deque()
 
         # Audio synchronization
-        self.AUDIO_SYNC_REQUIRED_MEASUREMENTS = 8
-        # Consider critical desync when any measurement is off by more than 280ms
-        self.audio_sync_critical_difference = afmt.timestamp_to_bytes_aligned(0.280)
-        # Only initiate sync when average is off by more than 30ms
-        self.audio_sync_minimal_difference = afmt.timestamp_to_bytes_aligned(0.030)
+        self.desync_bytes_critical = afmt.timestamp_to_bytes_aligned(
+            self.audio_desync_time_critical)
+        self.desync_bytes_minor = afmt.timestamp_to_bytes_aligned(
+            self.audio_desync_time_minor)
+        self.desync_correction_bytes_minor = afmt.timestamp_to_bytes_aligned(
+            self.audio_minor_desync_correction_time)
 
-        self.audio_sync_measurements = deque(maxlen=self.AUDIO_SYNC_REQUIRED_MEASUREMENTS)
+        self.audio_sync_measurements = deque(maxlen=self.audio_sync_required_measurements)
         self.audio_sync_cumul_measurements = 0
 
         # Bytes that have been skipped or artificially added to compensate for audio
@@ -288,26 +299,27 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
             diff_bytes = self.source.audio_format.timestamp_to_bytes_aligned(audio_time - p_time)
 
-            if abs(diff_bytes) >= self.audio_sync_critical_difference:
+            if abs(diff_bytes) >= self.desync_bytes_critical:
                 self.audio_sync_measurements.clear()
                 self.audio_sync_cumul_measurements = 0
                 return diff_bytes, True
 
-            if len(self.audio_sync_measurements) == self.AUDIO_SYNC_REQUIRED_MEASUREMENTS:
+            required_measurement_count = self.audio_sync_measurements.maxlen
+            if len(self.audio_sync_measurements) == required_measurement_count:
                 self.audio_sync_cumul_measurements -= self.audio_sync_measurements[0]
             self.audio_sync_measurements.append(diff_bytes)
             self.audio_sync_cumul_measurements += diff_bytes
 
-        if len(self.audio_sync_measurements) == self.AUDIO_SYNC_REQUIRED_MEASUREMENTS:
+        if len(self.audio_sync_measurements) == required_measurement_count:
             avg_diff = self.source.audio_format.align(
-                self.audio_sync_cumul_measurements // self.AUDIO_SYNC_REQUIRED_MEASUREMENTS)
+                self.audio_sync_cumul_measurements // required_measurement_count)
 
             # print(
             #     f"{diff_bytes:>6}, {avg_diff:>6} | "
             #     f"{(diff_bytes / self.source.audio_format.bytes_per_second):>9.6f}, "
             #     f"{(avg_diff / self.source.audio_format.bytes_per_second):>9.6f}"
             # )
-            if abs(avg_diff) > self.audio_sync_minimal_difference:
+            if abs(avg_diff) > self.desync_bytes_minor:
                 return avg_diff, False
         # else:
         #     if audio_time is not None:
@@ -342,7 +354,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
             compensated_bytes = min(
                 requested_size - afmt.align_ceil(1024),
                 desync_bytes,
-                afmt.timestamp_to_bytes_aligned(0.012),
+                self.desync_correction_bytes_minor,
             )
 
             audio_data = self.source.get_audio_data(requested_size - compensated_bytes)
@@ -364,7 +376,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
             # likely already noticable in context of whatever the application does.
             compensated_bytes = (-desync_bytes
                                  if extreme_desync
-                                 else min(-desync_bytes, afmt.timestamp_to_bytes_aligned(0.012)))
+                                 else min(-desync_bytes, self.desync_correction_bytes_minor))
 
             audio_data = self.source.get_audio_data(requested_size + compensated_bytes)
             if audio_data is not None:

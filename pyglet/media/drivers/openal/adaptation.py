@@ -199,7 +199,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if remaining_bytes >= self._buffered_data_comfortable_limit:
             return False
 
-        missing_bytes = self._singlebuffer_ideal_size - remaining_bytes
+        missing_bytes = self._buffered_data_ideal_size - remaining_bytes
         self._refill(self.source.audio_format.align_ceil(missing_bytes))
         return True
 
