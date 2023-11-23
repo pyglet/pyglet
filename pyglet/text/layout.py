@@ -139,6 +139,7 @@ layout_vertex_source = """#version 330 core
     in vec3 translation;
     in vec2 anchor;
     in float rotation;
+    in float visible;
 
     out vec4 text_colors;
     out vec2 texture_coords;
@@ -165,7 +166,7 @@ layout_vertex_source = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0) * visible;
 
         vert_position = vec4(position + translation, 1.0);
         text_colors = colors;
@@ -227,7 +228,8 @@ decoration_vertex_source = """#version 330 core
     in vec3 translation;
     in vec2 anchor;
     in float rotation;
-
+    in float visible;
+    
     out vec4 vert_colors;
     out vec4 vert_position;
 
@@ -252,7 +254,7 @@ decoration_vertex_source = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0) * visible;
 
         vert_position = vec4(position + translation, 1.0);
         vert_colors = colors;
@@ -414,7 +416,7 @@ class _AbstractBox:
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, rotation, visible, anchor_x, anchor_y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -451,7 +453,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.advance = advance
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, rotation, visible, anchor_x, anchor_y, context):
         assert self.glyphs
         program = get_default_layout_shader()
 
@@ -500,6 +502,7 @@ class _GlyphBox(_AbstractBox):
                                                   colors=('Bn', colors),
                                                   tex_coords=('f', tex_coords),
                                                   rotation=('f', ((rotation,) * 4) * n_glyphs),
+                                                  visible=('f', ((visible,) * 4) * n_glyphs),
                                                   anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
         context.add_list(vertex_list)
 
@@ -548,6 +551,7 @@ class _GlyphBox(_AbstractBox):
                                                                      position=('f', background_vertices),
                                                                      colors=('Bn', background_colors),
                                                                      rotation=('f', (rotation,) * bg_count),
+                                                                     visible=('f', (visible,) * bg_count),
                                                                      anchor=('f', (anchor_x, anchor_y) * bg_count))
             context.add_list(background_list)
 
@@ -559,6 +563,7 @@ class _GlyphBox(_AbstractBox):
                                                             position=('f', underline_vertices),
                                                             colors=('Bn', underline_colors),
                                                             rotation=('f', (rotation,) * ul_count),
+                                                            visible=('f', (visible,) * ul_count),
                                                             anchor=('f', (anchor_x, anchor_y) * ul_count))
             context.add_list(underline_list)
 
@@ -597,7 +602,7 @@ class _InlineElementBox(_AbstractBox):
         self.element = element
         self.placed = False
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, rotation, visible, anchor_x, anchor_y, context):
         self.element.place(layout, x, y, z)
         self.placed = True
         context.add_box(self)
@@ -912,14 +917,14 @@ class TextLayout:
 
         self._width = width
         self._height = height
-        self._multiline = multiline       
+        self._multiline = multiline
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
         self._dpi = dpi or 96
         self.document = document
-        
+
     @property
     def _flow_glyphs(self):
         if self._multiline:
@@ -1077,7 +1082,7 @@ class TextLayout:
     @property
     def rotation(self):
         """Rotation of the layout.
-        
+
         :type: float
         """
         return self._rotation
@@ -1109,7 +1114,9 @@ class TextLayout:
             self._y = y
             self._z = z
             self._update()
+            #print("BOXES")
         else:
+            #print("NNO BOXES")
             dx = x - self._x
             dy = y - self._y
             dz = z - self._z
@@ -1125,7 +1132,7 @@ class TextLayout:
 
     @property
     def visible(self):
-        """True if the layout will be drawn.
+        """True if the layout will be visible when drawn.
 
         :type: bool
         """
@@ -1136,10 +1143,8 @@ class TextLayout:
         if value != self._visible:
             self._visible = value
 
-            if value:
-                self._update()
-            else:
-                self.delete()
+            for _vertex_list in self._vertex_lists:
+                _vertex_list.visible[:] = (value,) * _vertex_list.count
 
     @property
     def width(self):
@@ -1453,12 +1458,7 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        if self._visible:
-            self._init_document()
-        else:
-            if self.document.text:
-                # Update content width and height, since text may change while hidden.
-                self._get_lines()
+        self._init_document()
 
     def on_delete_text(self, start, end):
         """Event handler for `AbstractDocument.on_delete_text`.
@@ -1466,8 +1466,7 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        if self._visible:
-            self._init_document()
+        self._init_document()
 
     def on_style_text(self, start, end, attributes):
         """Event handler for `AbstractDocument.on_style_text`.
@@ -1845,7 +1844,7 @@ class TextLayout:
 
     def _create_vertex_lists(self, x, y, z, i, boxes, context):
         for box in boxes:
-            box.place(self, i, x, y, z, self._rotation, self._x, self._y, context)
+            box.place(self, i, x, y, z, self._rotation, self._visible, self._x, self._y, context)
             x += box.advance
             i += box.length
 
