@@ -201,7 +201,8 @@ class DocumentLabel(layout.TextLayout):
     def __init__(self, document=None,
                  x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
+                 multiline=False, dpi=None, batch=None, group=None, rotation=0,
+                 init_document=False):
         """Create a label for a given document.
 
         :Parameters:
@@ -236,16 +237,21 @@ class DocumentLabel(layout.TextLayout):
                 The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-
+            `init_document` : bool
+                If True the document will be initialized. If subclassing then
+                you may want to avoid duplicate initializations by changing
+                to False.
         """
-        super().__init__(document, width, height, multiline, dpi, batch, group)
+        super().__init__(document, width, height, multiline, dpi, batch, group, init_document=False)
         self._x = x
         self._y = y
         self._z = z
         self._rotation = rotation
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
-        self._update()
+
+        if init_document:
+            self._update()
 
     @property
     def text(self):

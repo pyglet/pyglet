@@ -876,7 +876,7 @@ class TextLayout:
 
     def __init__(self, document, width=None, height=None,
                  multiline=False, dpi=None, batch=None, group=None,
-                 wrap_lines=True):
+                 wrap_lines=True, init_document=True):
         """Create a text layout.
 
         :Parameters:
@@ -901,7 +901,10 @@ class TextLayout:
             `wrap_lines` : bool
                 If True and `multiline` is True, the text is word-wrapped using
                 the specified width.
-
+            `init_document` : bool
+                If True the document will be initialized. If subclassing then
+                you may want to avoid duplicate initializations by changing
+                to False.
         """
         self.content_width = 0
         self.content_height = 0
@@ -923,7 +926,9 @@ class TextLayout:
         self._wrap_lines_invariant()
 
         self._dpi = dpi or 96
-        self.document = document
+        self._set_document(document)
+        if init_document:
+            self._init_document()
 
     @property
     def _flow_glyphs(self):
@@ -970,12 +975,15 @@ class TextLayout:
 
     @document.setter
     def document(self, document):
+        self._set_document(document)
+        self._init_document()
+
+    def _set_document(self, document):
         if self._document:
             self._document.remove_handlers(self)
             self._uninit_document()
         document.push_handlers(self)
         self._document = document
-        self._init_document()
 
     @property
     def batch(self):
@@ -1107,16 +1115,17 @@ class TextLayout:
         return self._x, self._y, self._z
 
     @position.setter
-    def position(self, values):
-        x, y, z = values
+    def position(self, position):
+        self._set_position(position)
+
+    def _set_position(self, position):
+        x, y, z = position
         if self._boxes:
             self._x = x
             self._y = y
             self._z = z
             self._update()
-            #print("BOXES")
         else:
-            #print("NNO BOXES")
             dx = x - self._x
             dy = y - self._y
             dz = z - self._z
@@ -1868,7 +1877,6 @@ class ScrollableTextLayout(TextLayout):
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._update_scissor_area()
 
     def _update_scissor_area(self):
         if not self.document.text:
@@ -1910,7 +1918,8 @@ class ScrollableTextLayout(TextLayout):
 
     @position.setter
     def position(self, position):
-        self.x, self.y, self.z = position
+        super()._set_position(position)
+        self._update_scissor_area()
 
     @property
     def anchor_x(self):
