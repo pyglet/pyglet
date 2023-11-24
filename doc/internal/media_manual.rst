@@ -135,6 +135,8 @@ audio data to prevent the main thread/event loop from locking up on I/O
 operations. The ``PlayerWorkerThread`` will regularly call
 :ref:`audioplayer-work` on each ``AudioPlayer``.
 
+This method may be called when already playing, and has no effect in that case.
+
 .. _audioplayer-stop:
 
 ``stop``
@@ -147,6 +149,8 @@ cause it to continue from where it stopped.
 The first thing this method should do is to remove itself from its driver's
 ``PlayerWorkerThread`` to ensure :ref:`audioplayer-work` won't be called while
 it stops.
+
+This method may be called when already stopped, and has no effect in that case.
 
 .. _audioplayer-prefill_audio:
 
