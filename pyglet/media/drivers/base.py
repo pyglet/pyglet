@@ -293,6 +293,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
         :rtype: int, bool
         """
+        required_measurement_count = self.audio_sync_measurements.maxlen
         if audio_time is not None:
             p_time = self.player.time
             audio_time += self.player.last_seek_time
@@ -304,7 +305,6 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
                 self.audio_sync_cumul_measurements = 0
                 return diff_bytes, True
 
-            required_measurement_count = self.audio_sync_measurements.maxlen
             if len(self.audio_sync_measurements) == required_measurement_count:
                 self.audio_sync_cumul_measurements -= self.audio_sync_measurements[0]
             self.audio_sync_measurements.append(diff_bytes)
