@@ -871,7 +871,8 @@ class TextLayout:
     _multiline = False
     _visible = True
 
-    def __init__(self, document, width=None, height=None,
+    def __init__(self, document, x=0, y=0, z=0, width=None, height=None,
+                 anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None,
                  wrap_lines=True, init_document=True):
         """Create a text layout.
@@ -879,10 +880,26 @@ class TextLayout:
         :Parameters:
             `document` : `AbstractDocument`
                 Document to display.
+            `x` : int
+                X coordinate of the label.
+            `y` : int
+                Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the layout in pixels, or None
             `height` : int
                 Height of the layout in pixels, or None
+            `anchor_x` : str
+                Anchor point of the X coordinate: one of ``"left"``,
+                ``"center"`` or ``"right"``.
+            `anchor_y` : str
+                Anchor point of the Y coordinate: one of ``"bottom"``,
+                ``"baseline"``, ``"center"`` or ``"top"``.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
             `multiline` : bool
                 If False, newline and paragraph characters are ignored, and
                 text is not word-wrapped.
@@ -903,6 +920,13 @@ class TextLayout:
                 you may want to avoid duplicate initializations by changing
                 to False.
         """
+        self._x = x
+        self._y = y
+        self._z = z
+        self._rotation = rotation
+        self._anchor_x = anchor_x
+        self._anchor_y = anchor_y
+
         self.content_width = 0
         self.content_height = 0
 
@@ -1856,8 +1880,10 @@ class ScrollableTextLayout(TextLayout):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
+    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         wrap_lines)
 
     def _update_scissor_area(self):
         if not self.document.text:
@@ -2015,7 +2041,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
 
         self.glyphs = []
         self.lines = []
@@ -2029,7 +2056,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         wrap_lines)
 
     def _update_scissor_area(self):
         area = (self._x + self._get_left_anchor(), self._y + self._get_bottom_anchor(self._get_lines()),
