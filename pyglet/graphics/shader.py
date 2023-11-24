@@ -870,7 +870,10 @@ class ShaderProgram:
                     initial_arrays.append((name, array))
                 attributes[name] = {**attributes[name], **{'format': fmt}}
             except KeyError:
-                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
+                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch.get_domain(False, mode, group, self, attributes)
@@ -915,7 +918,10 @@ class ShaderProgram:
                     initial_arrays.append((name, array))
                 attributes[name] = {**attributes[name], **{'format': fmt}}
             except KeyError:
-                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
+                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch.get_domain(True, mode, group, self, attributes)

@@ -27,8 +27,8 @@ class SilentTestSource(Silence):
         super().__init__(duration, frequency, sample_rate, envelope)
         self.bytes_read = 0
 
-    def get_audio_data(self, nbytes, compensation_time=0.0):
-        data = super(Silence, self).get_audio_data(nbytes, compensation_time)
+    def get_audio_data(self, nbytes):
+        data = super().get_audio_data(nbytes)
         if data is not None:
             self.bytes_read += data.length
         return data

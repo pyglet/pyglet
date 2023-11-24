@@ -1,10 +1,10 @@
 """Testing the events"""
-
-
-import pytest
+import gc
 import types
+
 from tests import mock
 
+import pytest
 import pyglet
 
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
@@ -201,7 +201,8 @@ def test_weakref_to_instance_method(dispatcher):
     watcher = mock.Mock()
     weakref.finalize(handler, watcher)
     dispatcher.push_handlers(handler.mock_event)
-    handler = None
+    del handler
+    gc.collect()    # ensure references are cleared
     assert watcher.called
 
 
@@ -212,7 +213,8 @@ def test_weakref_to_instance(dispatcher):
     watcher = mock.Mock()
     weakref.finalize(handler, watcher)
     dispatcher.push_handlers(handler)
-    handler = None
+    del handler
+    gc.collect()    # ensure references are cleared
     assert watcher.called
 
 
@@ -220,6 +222,7 @@ def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     dispatcher.register_event_type('mock_event')
     handler = DummyHandler()
     dispatcher.push_handlers(handler.mock_event)
-    handler = None
+    del handler
+    gc.collect()    # ensure references are cleared
     result = dispatcher.dispatch_event('mock_event')
     assert result is False
