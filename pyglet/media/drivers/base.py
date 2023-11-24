@@ -90,87 +90,8 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         """Ran regularly by the worker thread. This method should fill up
         the player's buffers if required, and dispatch any necessary events.
         """
-        # The general flow for a work method should be something like:
-        # update_play_cursor()
-        # dispatch_media_events()
-        # if not source_exhausted:
-        #   if play_cursor_too_close_to_write_cursor():
-        #     get_and_submit_new_audio_data()
-        #     if not source_exhausted:
-        #       return
-        #     else:
-        #       update_play_cursor()
-        #   else:
-        #     return
-        # if play_cursor > write_cursor and not _has_underrun:
-        #   _has_underrun = True
-        #   dispatch_on_eos()
-        #
-        # Player backends might report an underflow or buffer ends via a callback.
-        # In that case, it should look something like this, but beware to protect
-        # appropiate sections (any time variables and buffers are used which get accessed by both
-        # callbacks and the work method) with a lock, otherwise you are probably opening yourself
-        # up to really unlucky issues where the callback is unscheduled in favor of the work
-        # method or vice versa, which may leave some variables in inconclusive states.
-        # work:
-        #  update_play_cursor()
-        #  dispatch_media_events()
-        #  if not source_exhausted:
-        #    if play_cursor_too_close_to_write_cursor():
-        #      get_and_submit_new_audio_data()
-        #      if _has_underrun:
-        #        if source_exhausted:
-        #          dispatch_eon_eos()
-        #        else:
-        #          restart_player()
-        #          _has_underrun = False
-        #
-        # on_underrun:
-        #   if source_exhausted:
-        #     dispatch_on_eos()
-        #   else:
-        #     _has_underrun = True
-        #
-        # Implementing this method in tandem with the others safely is prone to pitfalls,
-        # so here's some hints:
-        # It may get called from the worker thread. While that happens, the worker thread
-        # will hold its operation lock.
-        # These things could theoretically happen to the player while `work` is being
-        # called:
-        #
-        # It may get paused/unpaused.
-        # - Receiving data after getting paused/unpaused is typically not a problem.
-        #   Realistically, this won't happen as all implementations include a
-        #   `self.driver.worker.remove/add(self)` snippet in their `play`/`pause`
-        #   implementations.
-        #
-        # It may get deleted.
-        # - In this case, attempting to continue with the data will cause some sort of error
-        #   To combat this, all `delete` implementations contain a form of
-        #   `self.driver.worker.remove(self)`.
-        #
-        # It may *not* get cleared.
-        # - It is illegal to call `clear`` on an unpaused player, and only playing players
-        #   are in the worker thread.
-        #
-        # A native callback may run which changes the internal state of the player
-        # - See above; protecting some sections with a lock local to the player
-        #   Be sure to never hold the lock around get_audio_data; that ruins the entire
-        #   point of running work outside of native callbacks.
-        #
-        # NOTE: In order for these calls to be more reliable, `remove` should be the first
-        # statement in such implementations and `add` the last one, to ensure that `work`
-        # will not be run after/not start before player attributes have been changed.
-        #
-        # Don't assume `work` stops being called just because it dispatched `on_eos`!
-        #
-        # This method may also be called from the main thread through `prefill_audio`.
-        # This will only happen before the player is started: `work` will never interfere
-        # with itself.
-        # Audioplayers are not threadsafe and should only be interacted with through the main
-        # thread.
-        # TODO: That last line is more directed to pyglet users, maybe throw it into the docs
-        # somewhere.
+        # This method is tricky to implement. See "Media manual" in pyglet's
+        # development guide.
         pass
 
     @abstractmethod
