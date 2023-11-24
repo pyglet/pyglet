@@ -98,7 +98,9 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group, colors=('Bn', colors))
+        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
+                                                     colors=('Bn', colors),
+                                                     visible=('f', (1, 1)))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
