@@ -862,6 +862,8 @@ class TextLayout:
     _ascent = 0
     _descent = 0
     _line_count = 0
+    _anchor_left = 0
+    _anchor_bottom = 0
     _x = 0
     _y = 0
     _z = 0
@@ -1139,7 +1141,10 @@ class TextLayout:
             _vertex_list.translation[:] = (self._x, self._y, self._z) * _vertex_list.count
 
     def _update_anchor(self):
-        anchor = (self._get_left_anchor(), self._get_top_anchor())
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+
+        anchor = (self._anchor_left, self._get_top_anchor())
         for _vertex_list in self._vertex_lists:
             _vertex_list.anchor[:] = anchor * _vertex_list.count
 
@@ -1301,7 +1306,7 @@ class TextLayout:
 
         :type: int
         """
-        return self._x + self._get_left_anchor()
+        return self._x + self._anchor_left
 
     @property
     def right(self):
@@ -1324,7 +1329,7 @@ class TextLayout:
 
         :type: int
         """
-        return self._y + self._get_bottom_anchor()
+        return self._y + self._anchor_bottom
 
     @property
     def top(self):
@@ -1421,6 +1426,8 @@ class TextLayout:
         if not self._document or not self._document.text:
             self._ascent = 0
             self._descent = 0
+            self._anchor_left = 0
+            self._anchor_bottom = 0
             return
 
         lines = self._get_lines()
@@ -1430,12 +1437,13 @@ class TextLayout:
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
-        anchor_left = self._get_left_anchor()
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
         anchor_top = self._get_top_anchor()
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(line.x, line.y, anchor_left, anchor_top, line.start, line.boxes, context)
+            self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
@@ -2404,7 +2412,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._ascent = lines[0].ascent
         self._descent = lines[0].descent
 
-        left_anchor = self._get_left_anchor()
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
         top_anchor = self._get_top_anchor()
 
         for line in lines:
@@ -2418,7 +2427,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             elif y + line.ascent < self._translate_y - self.height:
                 break
 
-            self._create_vertex_lists(line.x, y, left_anchor, top_anchor, line.start, line.boxes, context)
+            self._create_vertex_lists(line.x, y, self._anchor_left, top_anchor, line.start, line.boxes, context)
 
         # Update translation as new and old lines aren't guaranteed to update the translation after.
         if update_view_translation:
