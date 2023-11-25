@@ -1942,8 +1942,7 @@ class ScrollableTextLayout(TextLayout):
         if not self.document.text:
             return
 
-        area = (self._x + self._get_left_anchor(), self._y + self._get_bottom_anchor(self._get_lines()),
-                self._width, self._height)
+        area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
             group.scissor_area = area
@@ -2113,8 +2112,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                          wrap_lines)
 
     def _update_scissor_area(self):
-        area = (self._x + self._get_left_anchor(), self._y + self._get_bottom_anchor(self._get_lines()),
-                self._width, self._height)
+        area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
             group.scissor_area = area
