@@ -859,6 +859,9 @@ class TextLayout:
     group_class = TextLayoutGroup
     decoration_class = TextDecorationGroup
 
+    _ascent = 0
+    _descent = 0
+    _line_count = 0
     _x = 0
     _y = 0
     _z = 0
@@ -1136,7 +1139,7 @@ class TextLayout:
             _vertex_list.translation[:] = (self._x, self._y, self._z) * _vertex_list.count
 
     def _update_anchor(self):
-        anchor = (self._get_left_anchor(), self._get_top_anchor(self._get_lines()))
+        anchor = (self._get_left_anchor(), self._get_top_anchor())
         for _vertex_list in self._vertex_lists:
             _vertex_list.anchor[:] = anchor * _vertex_list.count
 
@@ -1291,6 +1294,52 @@ class TextLayout:
         self._content_valign = content_valign
         self._update()
 
+    @property
+    def left(self):
+        """
+        The x-coordinate of the left side of the layout.
+
+        :type: int
+        """
+        return self._x + self._get_left_anchor()
+
+    @property
+    def right(self):
+        """
+        The x-coordinate of the right side of the layout.
+
+        :type: int
+        """
+        if self._width is None:
+            width = self.content_width
+        else:
+            width = self._width
+
+        return self.left + width
+
+    @property
+    def bottom(self):
+        """
+        The y-coordinate of the bottom side of the layout.
+
+        :type: int
+        """
+        return self._y + self._get_bottom_anchor()
+
+    @property
+    def top(self):
+        """
+        The y-coordinate of the top side of the layout.
+
+        :type: int
+        """
+        if self._height is None:
+            height = self.content_height
+        else:
+            height = self._height
+
+        return self.bottom + height
+
     def _wrap_lines_invariant(self):
         self._wrap_lines = self._multiline and self._wrap_lines_flag
         assert not self._wrap_lines or self._width, \
@@ -1353,7 +1402,8 @@ class TextLayout:
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 0, len_text)]
         self.content_width = 0
-        self._flow_lines(lines, 0, len(lines))
+        self._line_count = len(lines)
+        self._flow_lines(lines, 0, self._line_count)
         return lines
 
     def _update(self):
@@ -1369,15 +1419,19 @@ class TextLayout:
         self.group_cache.clear()
 
         if not self._document or not self._document.text:
+            self._ascent = 0
+            self._descent = 0
             return
 
         lines = self._get_lines()
+        self._ascent = lines[0].ascent
+        self._descent = lines[0].descent
 
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
         anchor_left = self._get_left_anchor()
-        anchor_top = self._get_top_anchor(lines)
+        anchor_top = self._get_top_anchor()
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
@@ -1412,7 +1466,7 @@ class TextLayout:
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
-    def _get_top_anchor(self, lines):
+    def _get_top_anchor(self):
         """Returns the anchor for the Y axis from the top."""
         if self._height is None:
             height = self.content_height
@@ -1431,20 +1485,19 @@ class TextLayout:
         if self._anchor_y == 'top':
             return -offset
         elif self._anchor_y == 'baseline':
-            return lines[0].ascent - offset
+            return self._ascent - offset
         elif self._anchor_y == 'bottom':
             return height - offset
         elif self._anchor_y == 'center':
-            if len(lines) == 1 and self._height is None:
+            if self._line_count == 1 and self._height is None:
                 # This "looks" more centered than considering all of the descent.
-                line = lines[0]
-                return line.ascent // 2 - line.descent // 4
+                return self._ascent // 2 - self._descent // 4
             else:
                 return height // 2 - offset
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
-    def _get_bottom_anchor(self, lines):
+    def _get_bottom_anchor(self):
         """Returns the anchor for the Y axis from the bottom."""
         height = self._height or self.content_height
 
@@ -1453,9 +1506,9 @@ class TextLayout:
         elif self._anchor_y == 'bottom':
             return 0
         elif self._anchor_y == 'center':
-            return -height // 2
+            return -(height // 2)
         elif self._anchor_y == 'baseline':
-            return -height + lines[0].ascent
+            return -(height + self._ascent)
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
@@ -2160,6 +2213,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update_visible_lines()
         self._update_vertex_lists()
 
+        self._line_count = len(self.lines)
+        self._ascent = self.lines[0].ascent
+        self._descent = self.lines[0].descent
+
         # Update group cache areas if the count has changed. Usually if it starts with no text.
         # Group cache is only cleared in a regular TextLayout. May need revisiting if that changes.
         if len_groups != len(self.group_cache):
@@ -2344,10 +2401,15 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
 
-        left_anchor = self._get_left_anchor()
-        top_anchor = self._get_top_anchor(self.lines[invalid_start:invalid_end])
+        lines = self.lines[invalid_start:invalid_end]
+        self._line_count = len(lines)
+        self._ascent = lines[0].ascent
+        self._descent = lines[0].descent
 
-        for line in self.lines[invalid_start:invalid_end]:
+        left_anchor = self._get_left_anchor()
+        top_anchor = self._get_top_anchor()
+
+        for line in lines:
             line.delete(self)
             context.line = line
             y = line.y
@@ -2775,7 +2837,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :rtype: int
         """
-        return len(self.lines)
+        return self._line_count
 
     def ensure_line_visible(self, line):
         """Adjust `view_y` so that the line with the given index is visible.
