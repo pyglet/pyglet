@@ -242,7 +242,7 @@ class _UniformArray:
     Types with a length longer than 1 will be returned as tuples as an inner list would not support individual value
     reassignment. Array data must either be set in full, or by indexing."""
 
-    _slots_ = ('uniform', 'gl_type', 'gl_getter', 'gl_setter', 'is_matrix', 'dsa', '_c_array', '_ptr')
+    __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr')
     def __init__(self, uniform, gl_getter, gl_setter, gl_type, is_matrix, dsa):
         self._uniform = uniform
         self._gl_type = gl_type
@@ -265,12 +265,9 @@ class _UniformArray:
         raise ShaderException("Deleting items is not support for UniformArrays.")
 
     def __getitem__(self, key):
-        """Return as a tuple.
-        Returning as a list may imply setting inner list elements will update values.
-        """
+        #Return as a tuple. Returning as a list may imply setting inner list elements will update values.
         if isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-            sliced_data = self._c_array[start:stop:step]
+            sliced_data = self._c_array[key]
             if self._uniform.length > 1:
                 return [tuple(data) for data in sliced_data]
             else:
@@ -281,8 +278,7 @@ class _UniformArray:
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-            self._c_array[start:stop:step] = value
+            self._c_array[key] = value
             self._update_uniform(self._ptr)
             return
 
