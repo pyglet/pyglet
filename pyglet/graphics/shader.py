@@ -236,31 +236,128 @@ class Attribute:
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 
-class _Uniform:
-    __slots__ = 'program', 'name', 'type', 'location', 'length', 'count', 'get', 'set'
+class _UniformArray:
+    """Wrapper of the GLSL array data inside a Uniform.
+    Allows access to get and set items for a more Pythonic implementation.
+    Types with a length longer than 1 will be returned as tuples as an inner list would not support individual value
+    reassignment. Array data must either be set in full, or by indexing."""
 
-    def __init__(self, program, name, uniform_type, location, dsa):
+    _slots_ = ('uniform', 'gl_type', 'gl_getter', 'gl_setter', 'is_matrix', 'dsa', '_c_array', '_ptr')
+    def __init__(self, uniform, gl_getter, gl_setter, gl_type, is_matrix, dsa):
+        self._uniform = uniform
+        self._gl_type = gl_type
+        self._gl_getter = gl_getter
+        self._gl_setter = gl_setter
+        self._is_matrix = is_matrix
+        self._dsa = dsa
+
+        if self._uniform.length > 1:
+            self._c_array = (gl_type * self._uniform.length * self._uniform.size)()
+        else:
+            self._c_array = (gl_type * self._uniform.size)()
+
+        self._ptr = cast(self._c_array, POINTER(gl_type))
+
+    def __len__(self):
+        return self._uniform.size
+
+    def __delitem__(self, key):
+        raise ShaderException("Deleting items is not support for UniformArrays.")
+
+    def __getitem__(self, key):
+        """Return as a tuple.
+        Returning as a list may imply setting inner list elements will update values.
+        """
+        if isinstance(key, slice):
+            start, stop, step = key.start, key.stop, key.step
+            sliced_data = self._c_array[start:stop:step]
+            if self._uniform.length > 1:
+                return [tuple(data) for data in sliced_data]
+            else:
+                return tuple([data for data in sliced_data])
+
+        value = self._c_array[key]
+        return tuple(value) if self._uniform.length > 1 else value
+
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            start, stop, step = key.start, key.stop, key.step
+            self._c_array[start:stop:step] = value
+            self._update_uniform(self._ptr)
+            return
+
+        self._c_array[key] = value
+
+        if self._uniform.length > 1:
+            assert len(value) == self._uniform.length, f"Setting this key requires {self._uniform.length} values, received {len(value)}."
+            data = (self._gl_type * self._uniform.length)(*value)
+        else:
+            data = self._gl_type(value)
+
+        self._update_uniform(data, offset=key)
+
+    def get(self):
+        self._gl_getter(self._uniform.program, self._uniform.location, self._ptr)
+        return self
+
+    def set(self, values):
+        assert len(self._c_array) == len(
+            values), f"Size of data ({len(values)}) does not match size of the uniform: {len(self._c_array)}."
+
+        self._c_array[:] = values
+        self._update_uniform(self._ptr)
+
+    def _update_uniform(self, data, offset=0):
+        if offset != 0:
+            size = 1
+        else:
+            size = self._uniform.size
+
+        if self._dsa:
+            self._gl_setter(self._uniform.program, self._uniform.location + offset, size, data)
+        else:
+            glUseProgram(self._uniform.program)
+            self._gl_setter(self._uniform.location + offset, size, data)
+
+    def __repr__(self):
+        data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
+        return f"UniformArray(uniform={self._uniform.name}, data={data})"
+
+class _Uniform:
+    __slots__ = 'program', 'name', 'type', 'size', 'location', 'length', 'count', 'get', 'set'
+
+    def __init__(self, program, name, uniform_type, size, location, dsa):
         self.program = program
         self.name = name
         self.type = uniform_type
         self.location = location
+        self.size = size
 
         gl_type, gl_setter_legacy, gl_setter_dsa, length, count = _uniform_setters[uniform_type]
         gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
         gl_getter = _uniform_getters[gl_type]
 
+        # Argument length of data
         self.length = length
+
+        # Currently unused from _uniform_setters
         self.count = count
 
         is_matrix = uniform_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4,
                                      GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4,
                                      GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3)
 
-        c_array = (gl_type * length)()
-        ptr = cast(c_array, POINTER(gl_type))
+        # If it's an array, use the wrapper object.
+        if size > 1:
+            array = _UniformArray(self, gl_getter, gl_setter, gl_type, is_matrix, dsa)
+            self.get = array.get
+            self.set = array.set
+        else:
+            c_array = (gl_type * length)()
+            ptr = cast(c_array, POINTER(gl_type))
 
-        self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
-        self.set = self._create_setter_func(program, location, gl_setter, c_array, length, count, ptr, is_matrix, dsa)
+            self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
+            self.set = self._create_setter_func(program, location, gl_setter, c_array, length, count, ptr, is_matrix, dsa)
 
     @staticmethod
     def _create_getter_func(program, location, gl_getter, c_array, length):
@@ -322,7 +419,7 @@ class _Uniform:
             return setter_func
 
     def __repr__(self):
-        return f"Uniform('{self.name}', location={self.location}, length={self.length}, count={self.count})"
+        return f"Uniform('{self.name}', location={self.location}, length={self.length}, size={self.size})"
 
 
 class UniformBlock:
@@ -544,10 +641,22 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict:
 
     for index in range(_get_number(program_id, GL_ACTIVE_UNIFORMS)):
         u_name, u_type, u_size = _query_uniform(program_id, index)
+
+        # Multidimensional arrays cannot be fully inspected via OpenGL calls.
+        array_count = u_name.count("[0]")
+        if array_count > 1:
+            raise ShaderException("Multidimensional arrays are not currently supported.")
+
         loc = glGetUniformLocation(program_id, create_string_buffer(u_name.encode('utf-8')))
         if loc == -1:      # Skip uniforms that may be inside a Uniform Block
             continue
-        uniforms[u_name] = _Uniform(program_id, u_name, u_type, loc, have_dsa)
+
+        # Strip [0] from array name for a more user-friendly name.
+        if array_count == 1:
+            u_name = u_name.strip('[0]')
+
+        assert u_name not in uniforms, f"{u_name} exists twice in the shader. Possible name clash with an array."
+        uniforms[u_name] = _Uniform(program_id, u_name, u_type, u_size, loc, have_dsa)
 
     if _debug_gl_shaders:
         for uniform in uniforms.values():
