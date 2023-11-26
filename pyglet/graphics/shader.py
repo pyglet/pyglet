@@ -1,11 +1,10 @@
+import warnings
 from ctypes import *
 from weakref import proxy
 
 import pyglet
-
 from pyglet.gl import *
 from pyglet.graphics.vertexbuffer import BufferObject
-
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
 
@@ -925,9 +924,14 @@ class ShaderProgram:
         try:
             uniform = self._uniforms[key]
         except KeyError as err:
-            raise ShaderException(f"A Uniform with the name `{key}` was not found.\n"
-                                  f"The spelling may be incorrect, or if not in use it "
-                                  f"may have been optimized out by the OpenGL driver.") from err
+            msg = (f"A Uniform with the name `{key}` was not found.\n"
+            f"The spelling may be incorrect, or if not in use it "
+            f"may have been optimized out by the OpenGL driver.")
+            if _debug_gl_shaders:
+                warnings.warn(msg)
+                return
+            else:
+                raise ShaderException(msg) from err
         try:
             uniform.set(value)
         except GLException as err:
@@ -937,9 +941,14 @@ class ShaderProgram:
         try:
             uniform = self._uniforms[item]
         except KeyError as err:
-            raise ShaderException(f"A Uniform with the name `{item}` was not found.\n"
-                                  f"The spelling may be incorrect, or if not in use it "
-                                  f"may have been optimized out by the OpenGL driver.") from err
+            msg = (f"A Uniform with the name `{item}` was not found.\n"
+            f"The spelling may be incorrect, or if not in use it "
+            f"may have been optimized out by the OpenGL driver.")
+            if _debug_gl_shaders:
+                warnings.warn(msg)
+                return
+            else:
+                raise ShaderException() from err
         try:
             return uniform.get()
         except GLException as err:
@@ -1140,9 +1149,14 @@ class ComputeShaderProgram:
         try:
             uniform = self._uniforms[key]
         except KeyError as err:
-            raise ShaderException(f"A Uniform with the name `{key}` was not found.\n"
-                                  f"The spelling may be incorrect, or if not in use it "
-                                  f"may have been optimized out by the OpenGL driver.") from err
+            msg = (f"A Uniform with the name `{key}` was not found.\n"
+            f"The spelling may be incorrect, or if not in use it "
+            f"may have been optimized out by the OpenGL driver.")
+            if _debug_gl_shaders:
+                warnings.warn(msg)
+                return
+            else:
+                raise ShaderException() from err
         try:
             uniform.set(value)
         except GLException as err:
@@ -1152,9 +1166,14 @@ class ComputeShaderProgram:
         try:
             uniform = self._uniforms[item]
         except KeyError as err:
-            raise ShaderException(f"A Uniform with the name `{item}` was not found.\n"
-                                  f"The spelling may be incorrect, or if not in use it "
-                                  f"may have been optimized out by the OpenGL driver.") from err
+            msg = (f"A Uniform with the name `{item}` was not found.\n"
+            f"The spelling may be incorrect, or if not in use it "
+            f"may have been optimized out by the OpenGL driver.")
+            if _debug_gl_shaders:
+                warnings.warn(msg)
+                return
+            else:
+                raise ShaderException(msg) from err
         try:
             return uniform.get()
         except GLException as err:
