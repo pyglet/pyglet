@@ -137,8 +137,10 @@ layout_vertex_source = """#version 330 core
     in vec4 colors;
     in vec3 tex_coords;
     in vec3 translation;
+    in vec3 view_translation;
     in vec2 anchor;
     in float rotation;
+    in float visible;
 
     out vec4 text_colors;
     out vec2 texture_coords;
@@ -151,23 +153,18 @@ layout_vertex_source = """#version 330 core
     } window;
 
     mat4 m_rotation = mat4(1.0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_neganchor = mat4(1.0);
+    vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
 
     void main()
     {
-        m_anchor[3][0] = anchor.x;
-        m_anchor[3][1] = anchor.y;
-        m_neganchor[3][0] = -anchor.x;
-        m_neganchor[3][1] = -anchor.y;
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
 
-        vert_position = vec4(position + translation, 1.0);
+        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -225,9 +222,11 @@ decoration_vertex_source = """#version 330 core
     in vec3 position;
     in vec4 colors;
     in vec3 translation;
+    in vec3 view_translation;
     in vec2 anchor;
     in float rotation;
-
+    in float visible;
+    
     out vec4 vert_colors;
     out vec4 vert_position;
 
@@ -238,23 +237,18 @@ decoration_vertex_source = """#version 330 core
     } window;
 
     mat4 m_rotation = mat4(1.0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_neganchor = mat4(1.0);
+    vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
 
     void main()
     {
-        m_anchor[3][0] = anchor.x;
-        m_anchor[3][1] = anchor.y;
-        m_neganchor[3][0] = -anchor.x;
-        m_neganchor[3][1] = -anchor.y;
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_anchor * m_rotation * m_neganchor * vec4(position + translation, 1.0);
+        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
 
-        vert_position = vec4(position + translation, 1.0);
+        vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         vert_colors = colors;
     }
 """
@@ -414,7 +408,7 @@ class _AbstractBox:
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -451,7 +445,7 @@ class _GlyphBox(_AbstractBox):
         self.glyphs = glyphs
         self.advance = advance
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y, context):
         assert self.glyphs
         program = get_default_layout_shader()
 
@@ -465,7 +459,7 @@ class _GlyphBox(_AbstractBox):
         vertices = []
         tex_coords = []
         baseline = 0
-        x1 = x
+        x1 = line_x
         for start, end, baseline in context.baseline_iter.ranges(i, i + n_glyphs):
             baseline = layout.parse_distance(baseline)
             assert len(self.glyphs[start - i:end - i]) == end - start
@@ -474,9 +468,9 @@ class _GlyphBox(_AbstractBox):
                 v0, v1, v2, v3 = glyph.vertices
                 v0 += x1
                 v2 += x1
-                v1 += y + baseline
-                v3 += y + baseline
-                vertices.extend(map(round, [v0, v1, z, v2, v1, z, v2, v3, z, v0, v3, z]))
+                v1 += line_y + baseline
+                v3 += line_y + baseline
+                vertices.extend(map(round, [v0, v1, 0, v2, v1, 0, v2, v3, 0, v0, v3, 0]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
                 x1 += glyph.advance
@@ -495,11 +489,15 @@ class _GlyphBox(_AbstractBox):
         for glyph_idx in range(n_glyphs):
             indices.extend([element + (glyph_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
 
+        t_position = (x, y, z)
+
         vertex_list = program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
                                                   position=('f', vertices),
+                                                  translation=('f', t_position * 4 * n_glyphs),
                                                   colors=('Bn', colors),
                                                   tex_coords=('f', tex_coords),
                                                   rotation=('f', ((rotation,) * 4) * n_glyphs),
+                                                  visible=('f', ((visible,) * 4) * n_glyphs),
                                                   anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
         context.add_list(vertex_list)
 
@@ -513,9 +511,9 @@ class _GlyphBox(_AbstractBox):
         background_colors = []
         underline_vertices = []
         underline_colors = []
-        y1 = y + self.descent + baseline
-        y2 = y + self.ascent + baseline
-        x1 = x
+        y1 = line_y + self.descent + baseline
+        y2 = line_y +self.ascent + baseline
+        x1 = line_x
 
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
@@ -527,14 +525,14 @@ class _GlyphBox(_AbstractBox):
                 if len(bg) != 4:
                     raise ValueError(f"Background color requires 4 values (R, G, B, A). Value received: {bg}")
 
-                background_vertices.extend([x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z])
+                background_vertices.extend([x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
                 if len(underline) != 4:
                     raise ValueError(f"Underline color requires 4 values (R, G, B, A). Value received: {underline}")
 
-                underline_vertices.extend([x1, y + baseline - 2, z, x2, y + baseline - 2, z])
+                underline_vertices.extend([x1, line_y + baseline - 2, 0, x2, line_y + baseline - 2, 0])
                 underline_colors.extend(underline * 2)
 
             x1 = x2
@@ -546,8 +544,10 @@ class _GlyphBox(_AbstractBox):
             background_list = decoration_program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
                                                                      layout.batch, layout.background_decoration_group,
                                                                      position=('f', background_vertices),
+                                                                     translation=('f', t_position * bg_count),
                                                                      colors=('Bn', background_colors),
                                                                      rotation=('f', (rotation,) * bg_count),
+                                                                     visible=('f', (visible,) * bg_count),
                                                                      anchor=('f', (anchor_x, anchor_y) * bg_count))
             context.add_list(background_list)
 
@@ -557,8 +557,10 @@ class _GlyphBox(_AbstractBox):
             underline_list = decoration_program.vertex_list(ul_count, GL_LINES,
                                                             layout.batch, layout.foreground_decoration_group,
                                                             position=('f', underline_vertices),
+                                                            translation=('f', t_position * ul_count),
                                                             colors=('Bn', underline_colors),
                                                             rotation=('f', (rotation,) * ul_count),
+                                                            visible=('f', (visible,) * ul_count),
                                                             anchor=('f', (anchor_x, anchor_y) * ul_count))
             context.add_list(underline_list)
 
@@ -597,7 +599,7 @@ class _InlineElementBox(_AbstractBox):
         self.element = element
         self.placed = False
 
-    def place(self, layout, i, x, y, z, rotation, anchor_x, anchor_y, context):
+    def place(self, layout, i, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y, context):
         self.element.place(layout, x, y, z)
         self.placed = True
         context.add_box(self)
@@ -857,6 +859,11 @@ class TextLayout:
     group_class = TextLayoutGroup
     decoration_class = TextDecorationGroup
 
+    _ascent = 0
+    _descent = 0
+    _line_count = 0
+    _anchor_left = 0
+    _anchor_bottom = 0
     _x = 0
     _y = 0
     _z = 0
@@ -869,18 +876,35 @@ class TextLayout:
     _multiline = False
     _visible = True
 
-    def __init__(self, document, width=None, height=None,
+    def __init__(self, document, x=0, y=0, z=0, width=None, height=None,
+                 anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None,
-                 wrap_lines=True):
+                 wrap_lines=True, init_document=True):
         """Create a text layout.
 
         :Parameters:
             `document` : `AbstractDocument`
                 Document to display.
+            `x` : int
+                X coordinate of the label.
+            `y` : int
+                Y coordinate of the label.
+            `z` : int
+                Z coordinate of the label.
             `width` : int
                 Width of the layout in pixels, or None
             `height` : int
                 Height of the layout in pixels, or None
+            `anchor_x` : str
+                Anchor point of the X coordinate: one of ``"left"``,
+                ``"center"`` or ``"right"``.
+            `anchor_y` : str
+                Anchor point of the Y coordinate: one of ``"bottom"``,
+                ``"baseline"``, ``"center"`` or ``"top"``.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
             `multiline` : bool
                 If False, newline and paragraph characters are ignored, and
                 text is not word-wrapped.
@@ -896,8 +920,18 @@ class TextLayout:
             `wrap_lines` : bool
                 If True and `multiline` is True, the text is word-wrapped using
                 the specified width.
-
+            `init_document` : bool
+                If True the document will be initialized. If subclassing then
+                you may want to avoid duplicate initializations by changing
+                to False.
         """
+        self._x = x
+        self._y = y
+        self._z = z
+        self._rotation = rotation
+        self._anchor_x = anchor_x
+        self._anchor_y = anchor_y
+
         self.content_width = 0
         self.content_height = 0
 
@@ -912,14 +946,16 @@ class TextLayout:
 
         self._width = width
         self._height = height
-        self._multiline = multiline       
+        self._multiline = multiline
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
         self._dpi = dpi or 96
-        self.document = document
-        
+        self._set_document(document)
+        if init_document:
+            self._init_document()
+
     @property
     def _flow_glyphs(self):
         if self._multiline:
@@ -965,12 +1001,15 @@ class TextLayout:
 
     @document.setter
     def document(self, document):
+        self._set_document(document)
+        self._init_document()
+
+    def _set_document(self, document):
         if self._document:
             self._document.remove_handlers(self)
             self._uninit_document()
         document.push_handlers(self)
         self._document = document
-        self._init_document()
 
     @property
     def batch(self):
@@ -1013,16 +1052,11 @@ class TextLayout:
         self._set_x(x)
 
     def _set_x(self, x):
+        self._x = x
         if self._boxes:
-            self._x = x
             self._update()
         else:
-            dx = x - self._x
-            for vertex_list in self._vertex_lists:
-                vertices = vertex_list.position[:]
-                vertices[::3] = [x + dx for x in vertices[::3]]
-                vertex_list.position[:] = vertices
-            self._x = x
+            self._update_translation()
 
     @property
     def y(self):
@@ -1039,16 +1073,11 @@ class TextLayout:
         self._set_y(y)
 
     def _set_y(self, y):
+        self._y = y
         if self._boxes:
-            self._y = y
             self._update()
         else:
-            dy = y - self._y
-            for vertex_list in self._vertex_lists:
-                vertices = vertex_list.position[:]
-                vertices[1::3] = [y + dy for y in vertices[1::3]]
-                vertex_list.position[:] = vertices
-            self._y = y
+            self._update_translation()
 
     @property
     def z(self):
@@ -1063,21 +1092,16 @@ class TextLayout:
         self._set_z(z)
 
     def _set_z(self, z):
+        self._z = z
         if self._boxes:
-            self._z = z
             self._update()
         else:
-            dz = z - self.z
-            for vertex_list in self._vertex_lists:
-                vertices = vertex_list.position[:]
-                vertices[2::3] = [z + dz for z in vertices[2::3]]
-                vertex_list.position[:] = vertices
-            self._z = z
+            self._update_translation()
 
     @property
     def rotation(self):
         """Rotation of the layout.
-        
+
         :type: float
         """
         return self._rotation
@@ -1102,30 +1126,31 @@ class TextLayout:
         return self._x, self._y, self._z
 
     @position.setter
-    def position(self, values):
-        x, y, z = values
+    def position(self, position):
+        self._set_position(position)
+
+    def _set_position(self, position):
+        self._x, self._y, self._z = position
         if self._boxes:
-            self._x = x
-            self._y = y
-            self._z = z
             self._update()
         else:
-            dx = x - self._x
-            dy = y - self._y
-            dz = z - self._z
-            for vertex_list in self._vertex_lists:
-                vertices = vertex_list.position[:]
-                vertices[::3] = [x + dx for x in vertices[::3]]
-                vertices[1::3] = [y + dy for y in vertices[1::3]]
-                vertices[2::3] = [z + dz for z in vertices[2::3]]
-                vertex_list.position[:] = vertices
-            self._x = x
-            self._y = y
-            self._z = z
+            self._update_translation()
+
+    def _update_translation(self):
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.translation[:] = (self._x, self._y, self._z) * _vertex_list.count
+
+    def _update_anchor(self):
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+
+        anchor = (self._anchor_left, self._get_top_anchor())
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.anchor[:] = anchor * _vertex_list.count
 
     @property
     def visible(self):
-        """True if the layout will be drawn.
+        """True if the layout will be visible when drawn.
 
         :type: bool
         """
@@ -1136,10 +1161,8 @@ class TextLayout:
         if value != self._visible:
             self._visible = value
 
-            if value:
-                self._update()
-            else:
-                self.delete()
+            for _vertex_list in self._vertex_lists:
+                _vertex_list.visible[:] = (value,) * _vertex_list.count
 
     @property
     def width(self):
@@ -1213,7 +1236,7 @@ class TextLayout:
     @anchor_x.setter
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
-        self._update()
+        self._update_anchor()
 
     @property
     def anchor_y(self):
@@ -1245,7 +1268,7 @@ class TextLayout:
     @anchor_y.setter
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
-        self._update()
+        self._update_anchor()
 
     @property
     def content_valign(self):
@@ -1275,6 +1298,52 @@ class TextLayout:
     def content_valign(self, content_valign):
         self._content_valign = content_valign
         self._update()
+
+    @property
+    def left(self):
+        """
+        The x-coordinate of the left side of the layout.
+
+        :type: int
+        """
+        return self._x + self._anchor_left
+
+    @property
+    def right(self):
+        """
+        The x-coordinate of the right side of the layout.
+
+        :type: int
+        """
+        if self._width is None:
+            width = self.content_width
+        else:
+            width = self._width
+
+        return self.left + width
+
+    @property
+    def bottom(self):
+        """
+        The y-coordinate of the bottom side of the layout.
+
+        :type: int
+        """
+        return self._y + self._anchor_bottom
+
+    @property
+    def top(self):
+        """
+        The y-coordinate of the top side of the layout.
+
+        :type: int
+        """
+        if self._height is None:
+            height = self.content_height
+        else:
+            height = self._height
+
+        return self.bottom + height
 
     def _wrap_lines_invariant(self):
         self._wrap_lines = self._multiline and self._wrap_lines_flag
@@ -1338,7 +1407,8 @@ class TextLayout:
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 0, len_text)]
         self.content_width = 0
-        self._flow_lines(lines, 0, len(lines))
+        self._line_count = len(lines)
+        self._flow_lines(lines, 0, self._line_count)
         return lines
 
     def _update(self):
@@ -1354,19 +1424,26 @@ class TextLayout:
         self.group_cache.clear()
 
         if not self._document or not self._document.text:
+            self._ascent = 0
+            self._descent = 0
+            self._anchor_left = 0
+            self._anchor_bottom = 0
             return
 
         lines = self._get_lines()
+        self._ascent = lines[0].ascent
+        self._descent = lines[0].descent
 
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
-        left = self._get_left()
-        top = self._get_top(lines)
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+        anchor_top = self._get_top_anchor()
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(left + line.x, top + line.y, self._z, line.start, line.boxes, context)
+            self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
@@ -1381,22 +1458,24 @@ class TextLayout:
             _vertex_list.colors = colors[start:start + len(_vertex_list.colors)]
             start += len(_vertex_list.colors)
 
-    def _get_left(self):
+    def _get_left_anchor(self):
+        """Returns the anchor for the X axis from the left."""
         if self._multiline:
             width = self._width if self._wrap_lines else self.content_width
         else:
             width = self.content_width
 
         if self._anchor_x == 'left':
-            return self._x
+            return 0
         elif self._anchor_x == 'center':
-            return self._x - width // 2
+            return -(width // 2)
         elif self._anchor_x == 'right':
-            return self._x - width
+            return -width
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
-    def _get_top(self, lines):
+    def _get_top_anchor(self):
+        """Returns the anchor for the Y axis from the top."""
         if self._height is None:
             height = self.content_height
             offset = 0
@@ -1412,32 +1491,32 @@ class TextLayout:
                 assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
         if self._anchor_y == 'top':
-            return self._y - offset
+            return -offset
         elif self._anchor_y == 'baseline':
-            return self._y + lines[0].ascent - offset
+            return self._ascent - offset
         elif self._anchor_y == 'bottom':
-            return self._y + height - offset
+            return height - offset
         elif self._anchor_y == 'center':
-            if len(lines) == 1 and self._height is None:
+            if self._line_count == 1 and self._height is None:
                 # This "looks" more centered than considering all of the descent.
-                line = lines[0]
-                return self._y + line.ascent // 2 - line.descent // 4
+                return self._ascent // 2 - self._descent // 4
             else:
-                return self._y + height // 2 - offset
+                return height // 2 - offset
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
-    def _get_bottom(self, lines):
+    def _get_bottom_anchor(self):
+        """Returns the anchor for the Y axis from the bottom."""
         height = self._height or self.content_height
 
         if self._anchor_y == 'top':
-            return self._y - height
+            return -height
         elif self._anchor_y == 'bottom':
-            return self._y
+            return 0
         elif self._anchor_y == 'center':
-            return self._y - height // 2
+            return -(height // 2)
         elif self._anchor_y == 'baseline':
-            return self._y - height + lines[0].ascent
+            return -(height + self._ascent)
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
@@ -1453,12 +1532,7 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        if self._visible:
-            self._init_document()
-        else:
-            if self.document.text:
-                # Update content width and height, since text may change while hidden.
-                self._get_lines()
+        self._init_document()
 
     def on_delete_text(self, start, end):
         """Event handler for `AbstractDocument.on_delete_text`.
@@ -1466,8 +1540,7 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        if self._visible:
-            self._init_document()
+        self._init_document()
 
     def on_style_text(self, start, end, attributes):
         """Event handler for `AbstractDocument.on_style_text`.
@@ -1843,9 +1916,10 @@ class TextLayout:
 
         return line_index
 
-    def _create_vertex_lists(self, x, y, z, i, boxes, context):
+    def _create_vertex_lists(self, line_x, line_y, anchor_x, anchor_y, i, boxes, context):
+        x = self._x
         for box in boxes:
-            box.place(self, i, x, y, z, self._rotation, self._x, self._y, context)
+            box.place(self, i, x, self._y, self._z, line_x, line_y, self._rotation, self._visible, anchor_x, anchor_y, context)
             x += box.advance
             i += box.length
 
@@ -1867,14 +1941,17 @@ class ScrollableTextLayout(TextLayout):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._update_scissor_area()
+    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         wrap_lines)
 
     def _update_scissor_area(self):
         if not self.document.text:
             return
-        area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
+
+        area = (self.left, self.bottom, self._width, self._height)
+
         for group in self.group_cache.values():
             group.scissor_area = area
 
@@ -1906,12 +1983,22 @@ class ScrollableTextLayout(TextLayout):
         self._update_scissor_area()
 
     @property
+    def z(self):
+        return self._z
+
+    @z.setter
+    def z(self, z):
+        super()._set_z(z)
+        self._update_scissor_area()
+
+    @property
     def position(self):
         return self._x, self._y, self._z
 
     @position.setter
     def position(self, position):
-        self.x, self.y, self.z = position
+        super()._set_position(position)
+        self._update_scissor_area()
 
     @property
     def anchor_x(self):
@@ -1920,7 +2007,7 @@ class ScrollableTextLayout(TextLayout):
     @anchor_x.setter
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
-        super()._update()
+        self._update_anchor()
         self._update_scissor_area()
 
     @property
@@ -1930,14 +2017,13 @@ class ScrollableTextLayout(TextLayout):
     @anchor_y.setter
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
-        super()._update()
+        self._update_anchor()
         self._update_scissor_area()
 
-    # Offset of content within viewport
-
-    def _update_translation(self):
+    def _update_view_translation(self):
+        # Offset of content within viewport
         for _vertex_list in self._vertex_lists:
-            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y, 0) * _vertex_list.count
+            _vertex_list.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * _vertex_list.count
 
     @property
     def view_x(self):
@@ -1954,8 +2040,10 @@ class ScrollableTextLayout(TextLayout):
 
     @view_x.setter
     def view_x(self, view_x):
-        self._translate_x = max(0, min(self.content_width - self._width, view_x))
-        self._update_translation()
+        translation = max(0, min(self.content_width - self._width, view_x))
+        if translation != self._translate_x:
+            self._translate_x = translation
+            self._update_view_translation()
 
     @property
     def view_y(self):
@@ -1976,8 +2064,10 @@ class ScrollableTextLayout(TextLayout):
     @view_y.setter
     def view_y(self, view_y):
         # view_y must be negative.
-        self._translate_y = min(0, max(self.height - self.content_height, view_y))
-        self._update_translation()
+        translation = min(0, max(self.height - self.content_height, view_y))
+        if translation != self._translate_y:
+            self._translate_y = translation
+            self._update_view_translation()
 
 
 class IncrementalTextLayout(TextLayout, EventDispatcher):
@@ -2011,7 +2101,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
 
         self.glyphs = []
         self.lines = []
@@ -2025,12 +2116,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._update_translation()
-        self._update_scissor_area()
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         wrap_lines)
 
     def _update_scissor_area(self):
-        area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
+        area = (self.left, self.bottom, self._width, self._height)
+
         for group in self.group_cache.values():
             group.scissor_area = area
         self.background_decoration_group.scissor_area = area
@@ -2127,6 +2218,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
+
+        self._line_count = len(self.lines)
+        self._ascent = self.lines[0].ascent
+        self._descent = self.lines[0].descent
 
         # Update group cache areas if the count has changed. Usually if it starts with no text.
         # Group cache is only cleared in a regular TextLayout. May need revisiting if that changes.
@@ -2285,7 +2380,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.visible_lines.start = start
         self.visible_lines.end = end
 
-    def _update_vertex_lists(self, update_translation=True):
+    def _update_vertex_lists(self, update_view_translation=True):
         # Find lines that have been affected by style changes
         style_invalid_start, style_invalid_end = self.invalid_style.validate()
         self.invalid_vertex_lines.invalidate(
@@ -2312,10 +2407,16 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
 
-        left = self._get_left()
-        top = self._get_top(self.lines[invalid_start:invalid_end])
+        lines = self.lines[invalid_start:invalid_end]
+        self._line_count = len(lines)
+        self._ascent = lines[0].ascent
+        self._descent = lines[0].descent
 
-        for line in self.lines[invalid_start:invalid_end]:
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+        top_anchor = self._get_top_anchor()
+
+        for line in lines:
             line.delete(self)
             context.line = line
             y = line.y
@@ -2326,11 +2427,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             elif y + line.ascent < self._translate_y - self.height:
                 break
 
-            self._create_vertex_lists(left + line.x, top + y, self._z, line.start, line.boxes, context)
+            self._create_vertex_lists(line.x, y, self._anchor_left, top_anchor, line.start, line.boxes, context)
 
         # Update translation as new and old lines aren't guaranteed to update the translation after.
-        if update_translation:
-            self._update_translation()
+        if update_view_translation:
+            self._update_view_translation()
 
     @property
     def x(self):
@@ -2338,9 +2439,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @x.setter
     def x(self, x):
-        self._x = x
-        self._uninit_document()
-        self._init_document()
+        super()._set_x(x)
         self._update_scissor_area()
 
     @property
@@ -2349,9 +2448,16 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @y.setter
     def y(self, y):
-        self._y = y
-        self._uninit_document()
-        self._init_document()
+        super()._set_y(y)
+        self._update_scissor_area()
+
+    @property
+    def z(self):
+        return self._z
+
+    @z.setter
+    def z(self, z):
+        super()._set_z(z)
         self._update_scissor_area()
 
     @property
@@ -2360,10 +2466,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @position.setter
     def position(self, position):
-        self._x, self._y, self._z = position
-        self._uninit_document()
-        self._init_document()
+        super()._set_position(position)
+        self._update_view_translation()
         self._update_scissor_area()
+
+    def _update_translation(self):
+        for line in self.lines:
+            for vlist in line.vertex_lists:
+                vlist.translation[:] = (self._x, self._y, self._z) * vlist.count
 
     @property
     def anchor_x(self):
@@ -2372,6 +2482,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @anchor_x.setter
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
+        self._update_anchor()
         self._update_scissor_area()
 
     @property
@@ -2381,6 +2492,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @anchor_y.setter
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
+        self._update_anchor()
         self._update_scissor_area()
 
     @property
@@ -2426,12 +2538,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.invalid_flow.invalidate(0, len(self.document.text))
         self._update()
 
-    # Offset of content within viewport
-
-    def _update_translation(self):
+    def _update_view_translation(self):
+        # Offset of content within viewport
         for line in self.lines:
             for vlist in line.vertex_lists:
-                vlist.translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
+                vlist.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
 
         self.dispatch_event('on_translation_update')
 
@@ -2450,8 +2561,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @view_x.setter
     def view_x(self, view_x):
-        self._translate_x = max(0, min(self.content_width - self._width, view_x))
-        self._update_translation()
+        translation = max(0, min(self.content_width - self._width, view_x))
+        if translation != self._translate_x:
+            self._translate_x = translation
+            self._update_view_translation()
 
     @property
     def view_y(self):
@@ -2473,10 +2586,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def view_y(self, view_y):
         # Invalidate invisible/visible lines when y scrolls
         # view_y must be negative.
-        self._translate_y = min(0, max(self.height - self.content_height, view_y))
-        self._update_visible_lines()
-        self._update_vertex_lists(update_translation=False)
-        self._update_translation()
+        translation = min(0, max(self.height - self.content_height, view_y))
+        if translation != self._translate_y:
+            self._translate_y = translation
+            self._update_visible_lines()
+            self._update_vertex_lists(update_view_translation=False)
+            self._update_view_translation()
 
     # Visible selection
 
@@ -2729,7 +2844,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :rtype: int
         """
-        return len(self.lines)
+        return self._line_count
 
     def ensure_line_visible(self, line):
         """Adjust `view_y` so that the line with the given index is visible.
