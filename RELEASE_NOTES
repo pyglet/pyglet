@@ -1,3 +1,46 @@
+pyglet 2.0.11
+
+Bugfixes
+--------
+- macOS: prevent crash when scanning for Controllers if device.transport is None #995
+
+
+pyglet 2.0.10
+
+Changes and Improvements
+------------------------
+- sprite: moving Sprites is now about 35% faster (as tested on R5 5600X)
+- gui: Add TextEntry.focus property to allow programmatic focus control
+- gui: Allow set TextEntry.width and TextEntry.height
+- Window: Add experimental Window.get_clipboard_text and Window.set_clipboard_text methods
+- experimental: Add new pyglet.experimental package for easier wider testing of new ideas
+- experimental: Add `geoshader_sprite.py` that is more complex, but faster than the standard Sprite
+- experimental: Add `net` module with Server/Client proof of concept
+- tests: Add new interactive spot test to visually confirm shapes are working as expected
+- shapes: Move rotate functionality to ShapeBase class, and allow all shapes to rotate
+- VertexDomain: bind all buffers to VAO in __init__, and avoid binding each draw
+- gl.Context: Add a new cached `Context.create_program` method to assist in shader reuse
+- examples.model.fpscamera: fix drifting input, and other improvements
+- contrib.qt_sprite_preview.py: Modify to allow using either PySide2 or PyQt5 (#959)
+- examples: Carry over the soundspace example (#972)
+- media: The "Silent" audio driver now behaves more like a real driver
+- text: Add RGB color setter fallback for HTML labels, assuming 255 alpha
+- shapes: Add a new (unfilled) Box shape
+- gl: Take threading into account when deleting OpenGL objects (#988)
+
+Bugfixes
+--------
+- gl: Stop storing doomed VAOs in object space (#918)
+- xlib: Do a better job of detecting UTF8 capability (#520)
+- media.Player: for Video playback, set context when updating Textures
+- shapes: fix re-positioning of BezierCurve and Polygon shapes
+- media.codecs: Fix use-after-frees and memory leaks in the wmf decoder #962
+- text.Caret: Fix caret blinking (#971)
+- text.layout: Fix incorrect background color vertex data
+- Windows: Implement fix for ctypes.wintypes.BYTE in Python < 3.12 (#977)
+- input.evdev: Fix for pypy3 by removing usage of os.readv
+
+
 pyglet 2.0.9
 
 Changes and Improvements

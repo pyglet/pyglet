@@ -273,9 +273,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     conventions.  This will ensure it is not obscured by other windows,
     and appears on an appropriate screen for the user.
 
-    To render into a window, you must first call `switch_to`, to make
-    it the current OpenGL context.  If you use only one window in the
-    application, there is no need to do this.
+    To render into a window, you must first call its :py:meth:`.switch_to`
+    method to make it the active OpenGL context. If you use only one
+    window in your application, you can skip this step as it will always
+    be the active context.
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
@@ -638,7 +639,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Clear the window.
 
         This is a convenience method for clearing the color and depth
-        buffer.  The window must be the active context (see `switch_to`).
+        buffer.  The window must be the active context (see
+        :py:meth:`.switch_to`).
         """
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -646,10 +648,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Close the window.
 
         After closing the window, the GL context will be invalid.  The
-        window instance cannot be reused once closed (see also `set_visible`).
+        window instance cannot be reused once closed. To re-use windows,
+        see :py:meth:`.set_visible` instead.
 
-        The `pyglet.app.EventLoop.on_window_close` event is dispatched on
-        `pyglet.app.event_loop` when this method is called.
+        The :py:meth:`pyglet.app.EventLoop.on_window_close` event is
+        dispatched by the :py:attr:`pyglet.app.event_loop` when this method
+        is called.
         """
         from pyglet import app
         if not self._context:
@@ -676,7 +680,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         and advanced applications that must integrate their event loop
         into another framework.
 
-        Typical applications should use `pyglet.app.run`.
+        Typical applications should use :py:func:`pyglet.app.run`.
         """
         raise NotImplementedError('abstract')
 
@@ -715,11 +719,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Swap the OpenGL front and back buffers.
 
         Call this method on a double-buffered window to update the
-        visible display with the back buffer.  The contents of the back buffer
-        is undefined after this operation.
+        visible display with the back buffer. Windows are
+        double-buffered by default unless you turn this feature off.
 
-        Windows are double-buffered by default.  This method is called
-        automatically by `EventLoop` after the :py:meth:`~pyglet.window.Window.on_draw` event.
+        The contents of the back buffer are undefined after this operation.
+
+        The default :py:attr:`~pyglet.app.event_loop` automatically
+        calls this method after the window's
+        :py:meth:`~pyglet.window.Window.on_draw` event.
         """
         raise NotImplementedError('abstract')
 
@@ -788,6 +795,25 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         :rtype: `MouseCursor`
         :return: A mouse cursor which can be used with `set_mouse_cursor`.
+        """
+        raise NotImplementedError()
+
+    def get_clipboard_text(self) -> str:
+        """Access the system clipboard and attempt to retrieve text.
+
+        :rtype: `str`
+        :return: A string from the clipboard. String will be empty if no text found.
+        """
+        raise NotImplementedError()
+
+    def set_clipboard_text(self, text: str):
+        """Access the system clipboard and set a text string as the clipboard data.
+
+        This will clear the existing clipboard.
+
+        :Parameters:
+            `text` : str
+                Text you want to place in the clipboard.
         """
         raise NotImplementedError()
 
@@ -1158,10 +1184,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def switch_to(self):
         """Make this window the current OpenGL rendering context.
 
-        Only one OpenGL context can be active at a time.  This method sets
-        the current window's context to be current.  You should use this
-        method in preference to `pyglet.gl.Context.set_current`, as it may
-        perform additional initialisation functions.
+        Only one OpenGL context can be active at a time. This method
+        sets the current window context as the active one.
+
+        In most cases, you should use this method instead of directly
+        calling :py:meth:`pyglet.gl.Context.set_current`. The latter
+        will not perform platform-specific state management tasks for
+        you.
         """
         raise NotImplementedError('abstract')
 

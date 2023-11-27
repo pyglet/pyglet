@@ -621,7 +621,7 @@ def get_apple_remote(display=None):
 
 def _create_controller(device, display):
 
-    if not device.transport and device.transport.upper() in ('USB', 'BLUETOOTH'):
+    if not device.transport or not device.transport.upper() in ('USB', 'BLUETOOTH'):
         return
 
     if device.is_joystick() or device.is_gamepad() or device.is_multi_axis():

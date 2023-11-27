@@ -21,6 +21,7 @@ NSColor = cocoapy.ObjCClass('NSColor')
 NSEvent = cocoapy.ObjCClass('NSEvent')
 NSArray = cocoapy.ObjCClass('NSArray')
 NSImage = cocoapy.ObjCClass('NSImage')
+NSPasteboard = cocoapy.ObjCClass('NSPasteboard')
 
 quartz = cocoapy.quartz
 cf = cocoapy.cf
@@ -566,6 +567,33 @@ class CocoaWindow(BaseWindow):
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
+
+    def set_clipboard_text(self, text: str):
+        with AutoReleasePool():
+            pasteboard = NSPasteboard.generalPasteboard()
+
+            pasteboard.clearContents()
+
+            array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeString)
+            pasteboard.declareTypes_owner_(array, None)
+
+            text_nsstring = cocoapy.get_NSString(text)
+
+            pasteboard.setString_forType_(text_nsstring, cocoapy.NSPasteboardTypeString)
+
+    def get_clipboard_text(self) -> str:
+        text = ''
+        with AutoReleasePool():
+            pasteboard = NSPasteboard.generalPasteboard()
+
+            if pasteboard.types().containsObject_(cocoapy.NSPasteboardTypeString):
+                text_obj = pasteboard.stringForType_(cocoapy.NSPasteboardTypeString)
+                if text_obj:
+                    text = text_obj.UTF8String().decode('utf-8')
+
+        return text
+
+
 
 
 __all__ = ["CocoaWindow"]

@@ -19,6 +19,43 @@ def _check(hresult):
         raise DirectSoundNativeError(hresult)
 
 
+def _create_wave_format(audio_format):
+    wfx = lib.WAVEFORMATEX()
+    wfx.wFormatTag = lib.WAVE_FORMAT_PCM
+    wfx.nChannels = audio_format.channels
+    wfx.nSamplesPerSec = audio_format.sample_rate
+    wfx.wBitsPerSample = audio_format.sample_size
+    wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels // 8
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign
+    return wfx
+
+
+def _create_buffer_desc(wave_format, buffer_size):
+    dsbdesc = lib.DSBUFFERDESC()
+    dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
+    dsbdesc.dwFlags = (lib.DSBCAPS_GLOBALFOCUS |
+                        lib.DSBCAPS_GETCURRENTPOSITION2 |
+                        lib.DSBCAPS_CTRLFREQUENCY |
+                        lib.DSBCAPS_CTRLVOLUME)
+    if wave_format.nChannels == 1:
+        dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
+    dsbdesc.dwBufferBytes = buffer_size
+    dsbdesc.lpwfxFormat = ctypes.pointer(wave_format)
+
+    return dsbdesc
+
+
+def _create_primary_buffer_desc():
+    """Primary buffer with 3D and volume capabilities"""
+    buffer_desc = lib.DSBUFFERDESC()
+    buffer_desc.dwSize = ctypes.sizeof(buffer_desc)
+    buffer_desc.dwFlags = (lib.DSBCAPS_CTRL3D |
+                            lib.DSBCAPS_CTRLVOLUME |
+                            lib.DSBCAPS_PRIMARYBUFFER)
+
+    return buffer_desc
+
+
 class DirectSoundDriver:
     def __init__(self):
         assert _debug('Constructing DirectSoundDriver')
@@ -36,89 +73,39 @@ class DirectSoundDriver:
             self._native_dsound.SetCooperativeLevel(hwnd, lib.DSSCL_NORMAL)
         )
 
-        self._buffer_factory = DirectSoundBufferFactory(self._native_dsound)
-        self.primary_buffer = self._buffer_factory.create_primary_buffer()
+        self.primary_buffer = self._create_primary_buffer()
 
-    def __del__(self):
-        try:
-            self.primary_buffer = None
-            self._native_dsound.Release()
-        except ValueError:
-            pass
+    def delete(self):
+        self.primary_buffer.delete()
+        self.primary_buffer = None
+        self._native_dsound.Release()
 
-    def create_buffer(self, audio_format):
-        return self._buffer_factory.create_buffer(audio_format)
+    def create_buffer(self, audio_format, buffer_size):
+        wave_format = _create_wave_format(audio_format)
+        buffer_desc = _create_buffer_desc(wave_format, buffer_size)
+        return DirectSoundBuffer(
+                self._create_native_buffer(buffer_desc),
+                audio_format,
+                buffer_size)
 
     def create_listener(self):
         return self.primary_buffer.create_listener()
 
-
-class DirectSoundBufferFactory:
-    default_buffer_size = 2.0
-
-    def __init__(self, native_dsound):
-        # We only keep a weakref to native_dsound which is owned by
-        # interface.DirectSoundDriver
-        self._native_dsound = weakref.proxy(native_dsound)
-
-    def create_buffer(self, audio_format):
-        buffer_size = int(audio_format.sample_rate * self.default_buffer_size)
-        wave_format = self._create_wave_format(audio_format)
-        buffer_desc = self._create_buffer_desc(wave_format, buffer_size)
+    def _create_primary_buffer(self):
         return DirectSoundBuffer(
-                self._create_buffer(buffer_desc),
-                audio_format,
-                buffer_size)
-
-    def create_primary_buffer(self):
-        return DirectSoundBuffer(
-                self._create_buffer(self._create_primary_buffer_desc()),
+                self._create_native_buffer(_create_primary_buffer_desc()),
                 None,
                 0)
 
-    def _create_buffer(self, buffer_desc):
+    def _create_native_buffer(self, buffer_desc):
         buf = lib.IDirectSoundBuffer()
         _check(
             self._native_dsound.CreateSoundBuffer(buffer_desc, ctypes.byref(buf), None)
         )
         return buf
 
-    @staticmethod
-    def _create_wave_format(audio_format):
-        wfx = lib.WAVEFORMATEX()
-        wfx.wFormatTag = lib.WAVE_FORMAT_PCM
-        wfx.nChannels = audio_format.channels
-        wfx.nSamplesPerSec = audio_format.sample_rate
-        wfx.wBitsPerSample = audio_format.sample_size
-        wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels // 8
-        wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign
-        return wfx
 
-    @classmethod
-    def _create_buffer_desc(cls, wave_format, buffer_size):
-        dsbdesc = lib.DSBUFFERDESC()
-        dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
-        dsbdesc.dwFlags = (lib.DSBCAPS_GLOBALFOCUS |
-                           lib.DSBCAPS_GETCURRENTPOSITION2 |
-                           lib.DSBCAPS_CTRLFREQUENCY |
-                           lib.DSBCAPS_CTRLVOLUME)
-        if wave_format.nChannels == 1:
-            dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
-        dsbdesc.dwBufferBytes = buffer_size
-        dsbdesc.lpwfxFormat = ctypes.pointer(wave_format)
-
-        return dsbdesc
-
-    @classmethod
-    def _create_primary_buffer_desc(cls):
-        """Primary buffer with 3D and volume capabilities"""
-        buffer_desc = lib.DSBUFFERDESC()
-        buffer_desc.dwSize = ctypes.sizeof(buffer_desc)
-        buffer_desc.dwFlags = (lib.DSBCAPS_CTRL3D |
-                               lib.DSBCAPS_CTRLVOLUME |
-                               lib.DSBCAPS_PRIMARYBUFFER)
-
-        return buffer_desc
+_CurrentPosition = namedtuple('_CurrentPosition', ['play_cursor', 'write_cursor'])
 
 
 class DirectSoundBuffer:
@@ -134,12 +121,6 @@ class DirectSoundBuffer:
                                                ctypes.byref(self._native_buffer3d))
         else:
             self._native_buffer3d = None
-
-    def __del__(self):
-        try:
-            self.delete()
-        except OSError:
-            pass
 
     def delete(self):
         if self._native_buffer is not None:
@@ -164,8 +145,6 @@ class DirectSoundBuffer:
             self._native_buffer.SetVolume(value)
         )
 
-    _CurrentPosition = namedtuple('_CurrentPosition', ['play_cursor', 'write_cursor'])
-
     @property
     def current_position(self):
         """Tuple of current play position and current write position.
@@ -176,7 +155,7 @@ class DirectSoundBuffer:
             self._native_buffer.GetCurrentPosition(play_cursor,
                                                    write_cursor)
         )
-        return self._CurrentPosition(play_cursor.value, write_cursor.value)
+        return _CurrentPosition(play_cursor.value, write_cursor.value)
 
     @current_position.setter
     def current_position(self, value):
@@ -341,7 +320,7 @@ class DirectSoundBuffer:
         native_listener = lib.IDirectSound3DListener()
         self._native_buffer.QueryInterface(lib.IID_IDirectSound3DListener,
                                            ctypes.byref(native_listener))
-        return DirectSoundListener(self, native_listener)
+        return DirectSoundListener(native_listener)
 
     def play(self):
         _check(
@@ -367,9 +346,9 @@ class DirectSoundBuffer:
             self._native_buffer.Lock(write_cursor,
                                      write_size,
                                      ctypes.byref(pointer.audio_ptr_1),
-                                     pointer.audio_length_1,
+                                     ctypes.byref(pointer.audio_length_1),
                                      ctypes.byref(pointer.audio_ptr_2),
-                                     pointer.audio_length_2,
+                                     ctypes.byref(pointer.audio_length_2),
                                      0)
         )
         return pointer
@@ -384,14 +363,8 @@ class DirectSoundBuffer:
 
 
 class DirectSoundListener:
-    def __init__(self, ds_buffer, native_listener):
-        # We only keep a weakref to ds_buffer as it is owned by
-        # interface.DirectSound or a DirectSoundAudioPlayer
-        self.ds_buffer = weakref.proxy(ds_buffer)
+    def __init__(self, native_listener):
         self._native_listener = native_listener
-
-    def __del__(self):
-        self.delete()
 
     def delete(self):
         if self._native_listener:

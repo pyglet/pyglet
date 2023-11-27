@@ -2,12 +2,15 @@
 """
 
 import os
+import math
 import sys
+from typing import Optional, Union, Callable
 
 import pyglet
+from pyglet.customtypes import Buffer
 
 
-def asbytes(s):
+def asbytes(s: Union[str, Buffer]) -> bytes:
     if isinstance(s, bytes):
         return s
     elif isinstance(s, str):
@@ -16,56 +19,84 @@ def asbytes(s):
         return bytes(s)
 
 
-def asbytes_filename(s):
-    if isinstance(s, bytes):
-        return s
-    elif isinstance(s, str):
-        return s.encode(encoding=sys.getfilesystemencoding())
-
-
-def asstr(s):
+def asstr(s: Optional[Union[str, Buffer]]) -> str:
     if s is None:
         return ''
     if isinstance(s, str):
         return s
-    return s.decode("utf-8")
+    return s.decode("utf-8")  # type: ignore
 
 
-def debug_print(enabled_or_option='debug'):
-    """Get a debug printer that is enabled based on a boolean input or a pyglet option.
-    The debug print function returned should be used in an assert. This way it can be
-    optimized out when running python with the -O flag.
+# Keep these outside of the function since we don't need to re-define
+# the function each time we make a call since no state is persisted.
+def _debug_print_real(arg: str) -> bool:
+    print(arg)
+    return True
+
+
+def _debug_print_dummy(arg: str) -> bool:
+    return True
+
+
+def debug_print(pyglet_option_name: str = 'debug') -> Callable[[str], bool]:
+    """Get a debug printer controlled by the given ``pyglet.options`` name.
+
+    This allows repurposing ``assert`` to write cleaner, more efficient
+    debug output:
+
+    #. Debug printers fit into a one-line ``assert`` statements instead
+       of longer, slower key-lookup ``if`` statements
+    #. Running Python with the ``-O`` flag makes pyglet run faster by
+       skipping all ``assert`` statements
 
     Usage example::
 
-        from pyglet.debug import debug_print
+        from pyglet.util import debug_print
+
+
         _debug_media = debug_print('debug_media')
 
+
         def some_func():
+            # Python will skip the line below when run with -O
             assert _debug_media('My debug statement')
 
-    :parameters:
-        `enabled_or_options` : bool or str
-            If a bool is passed, debug printing is enabled if it is True. If str is passed
-            debug printing is enabled if the pyglet option with that name is True.
+            # The rest of the function will run as normal
+            ...
 
-    :returns: Function for debug printing.
+    For more information, please see `the Python command line
+    documentation <https://docs.python.org/3/using/cmdline.html#cmdoption-O>`_.
+
+    Args:
+        `pyglet_option_name` :
+            The name of a key in :attr:`pyglet.options` to read the
+            debug flag's value from.
+
+    Returns:
+        A callable which prints a passed string and returns ``True``
+        to allow auto-removal when running with ``-O``.
+
     """
-    if isinstance(enabled_or_option, bool):
-        enabled = enabled_or_option
-    else:
-        enabled = pyglet.options.get(enabled_or_option, False)
-
+    enabled = pyglet.options.get(pyglet_option_name, False)
     if enabled:
-        def _debug_print(*args, **kwargs):
-            print(*args, **kwargs)
-            return True
+        return _debug_print_real
+    return _debug_print_dummy
 
+
+# Based on: https://stackoverflow.com/a/56225940
+def closest_power_of_two(x: int) -> int:
+    if x <= 2:
+        return 2
+    if (x >> (x.bit_length() - 2)) & 1:
+        return 1 << math.ceil(math.log2(x))
     else:
-        def _debug_print(*args, **kwargs):
-            return True
+        return 1 << math.floor(math.log2(x))
 
-    return _debug_print
+
+def next_or_equal_power_of_two(x: int) -> int:
+    if x <= 1:
+        return 1
+    return 1 << math.ceil(math.log2(x))
 
 
 class CodecRegistry:

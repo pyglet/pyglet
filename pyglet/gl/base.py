@@ -1,6 +1,7 @@
 import weakref
 
 from enum import Enum
+import threading
 from typing import Tuple
 
 import pyglet
@@ -209,11 +210,12 @@ class CanvasConfig(Config):
 
 class ObjectSpace:
     def __init__(self):
-        # Textures and buffers scheduled for deletion
-        # the next time this object space is active.
+        # Objects scheduled for deletion the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
         self.doomed_shader_programs = []
+        self.doomed_shaders = []
+        self.doomed_renderbuffers = []
 
 
 class Context:
@@ -236,6 +238,7 @@ class Context:
         self.canvas = None
 
         self.doomed_vaos = []
+        self.doomed_framebuffers = []
 
         if context_share:
             self.object_space = context_share.object_space
@@ -277,28 +280,49 @@ class Context:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
 
-        # Release Textures, Buffers, and VAOs on this context scheduled for
-        # deletion. Note that the garbage collector may introduce a race
-        # condition, so operate on a copy, and clear the list afterward.
         if self.object_space.doomed_textures:
-            textures = self.object_space.doomed_textures[:]
-            textures = (gl.GLuint * len(textures))(*textures)
-            gl.glDeleteTextures(len(textures), textures)
-            self.object_space.doomed_textures.clear()
+            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
         if self.object_space.doomed_buffers:
-            buffers = self.object_space.doomed_buffers[:]
-            buffers = (gl.GLuint * len(buffers))(*buffers)
-            gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space.doomed_buffers.clear()
+            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
         if self.object_space.doomed_shader_programs:
-            for program_id in self.object_space.doomed_shader_programs:
-                gl.glDeleteProgram(program_id)
-            self.object_space.doomed_shader_programs.clear()
+            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
+                                            gl.glDeleteProgram)
+        if self.object_space.doomed_shaders:
+            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
+        if self.object_space.doomed_renderbuffers:
+            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
+
         if self.doomed_vaos:
-            vaos = self.doomed_vaos[:]
-            vaos = (gl.GLuint * len(vaos))(*vaos)
-            gl.glDeleteVertexArrays(len(vaos), vaos)
-            self.doomed_vaos.clear()
+            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
+        if self.doomed_framebuffers:
+            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
+
+    # For the functions below:
+    # The garbage collector introduces a race condition.
+    # The provided list might be appended to (and only appended to) while this
+    # method runs, as it's a `doomed_*` list either on the context or its
+    # object space. If `count` wasn't stored in a local, this method might
+    # leak objects.
+    def _delete_objects(self, list_, deletion_func):
+        """Release all OpenGL objects in the given list using the supplied
+        deletion function with the signature ``(GLuint count, GLuint *names)``.
+        """
+        count = len(list_)
+        to_delete = list_[:count]
+        del list_[:count]
+
+        deletion_func(count, (gl.GLuint * count)(*to_delete))
+
+    def _delete_objects_one_by_one(self, list_, deletion_func):
+        """Similar to ``_delete_objects``, but assumes the deletion functions's
+        signature to be ``(GLuint name)``, calling it once for each object.
+        """
+        count = len(list_)
+        to_delete = list_[:count]
+        del list_[:count]
+
+        for name in to_delete:
+            deletion_func(gl.GLuint(name))
 
     def destroy(self):
         """Release the context.
@@ -317,6 +341,27 @@ class Context:
             # Switch back to shadow context.
             if gl._shadow_window is not None:
                 gl._shadow_window.switch_to()
+
+    def _safe_to_operate_on_object_space(self):
+        """Return whether it is safe to interact with this context's object
+        space.
+
+        This is considered to be the case if the currently active context's
+        object space is the same as this context's object space and this
+        method is called from the main thread.
+        """
+        return (
+            self.object_space is gl.current_context.object_space and
+            threading.current_thread() is threading.main_thread()
+        )
+
+    def _safe_to_operate_on(self):
+        """Return whether it is safe to interact with this context.
+
+        This is considered to be the case if it's the current context and this
+        method is called from the main thread.
+        """
+        return gl.current_context is self and threading.current_thread() is threading.main_thread()
 
     def create_program(self, *sources: Tuple[str, str], program_class=None):
         """Create a ShaderProgram from OpenGL GLSL source.
@@ -347,25 +392,30 @@ class Context:
         return program
 
     def delete_texture(self, texture_id):
-        """Safely delete a Texture belonging to this context.
+        """Safely delete a Texture belonging to this context's object space.
 
-        Usually, the Texture is released immediately using
-        ``glDeleteTextures``, however if another context that does not share
-        this context's object space is currently active, the deletion will
-        be deferred until an appropriate context is activated.
+        This method will delete the texture immediately via
+        ``glDeleteTextures`` if the current context's object space is the same
+        as this context's object space and it is called from the main thread.
+
+        Otherwise, the texture will only be marked for deletion, postponing
+        it until any context with the same object space becomes active again.
+
+        This makes it safe to call from anywhere, including other threads.
 
         :Parameters:
             `texture_id` : int
                 The OpenGL name of the Texture to delete.
 
         """
-        if self.object_space is gl.current_context.object_space:
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteTextures(1, gl.GLuint(texture_id))
         else:
             self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
-        """Safely delete a Buffer object belonging to this context.
+        """Safely delete a Buffer object belonging to this context's object
+        space.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
@@ -376,30 +426,14 @@ class Context:
 
         .. versionadded:: 1.1
         """
-        if self.object_space is gl.current_context.object_space and False:
+        if self._safe_to_operate_on_object_space():
             gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
         else:
             self.object_space.doomed_buffers.append(buffer_id)
 
-    def delete_vao(self, vao_id):
-        """Safely delete a Vertex Array Object belonging to this context.
-
-        This method behaves similarly to `delete_texture`, though for
-        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
-
-        :Parameters:
-            `vao_id` : int
-                The OpenGL name of the Vertex Array to delete.
-
-        .. versionadded:: 2.0
-        """
-        if gl.current_context is self:
-            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
-        else:
-            self.doomed_vaos.append(vao_id)
-
     def delete_shader_program(self, program_id):
-        """Safely delete a Shader Program belonging to this context.
+        """Safely delete a Shader Program belonging to this context's
+        object space.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteProgram`` instead of ``glDeleteTextures``.
@@ -410,10 +444,83 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if gl.current_context is self:
-            gl.glDeleteProgram(program_id)
+        if self._safe_to_operate_on_object_space():
+            gl.glDeleteProgram(gl.GLuint(program_id))
         else:
             self.object_space.doomed_shader_programs.append(program_id)
+
+    def delete_shader(self, shader_id):
+        """Safely delete a Shader belonging to this context's object space.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteShader`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `shader_id` : int
+                The OpenGL name of the Shader to delete.
+
+        .. versionadded:: 2.0.10
+        """
+        if self._safe_to_operate_on_object_space():
+            gl.glDeleteShader(gl.GLuint(shader_id))
+        else:
+            self.object_space.doomed_shaders.append(shader_id)
+
+    def delete_renderbuffer(self, rbo_id):
+        """Safely delete a Renderbuffer Object belonging to this context's
+        object space.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteRenderbuffers`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `rbo_id` : int
+                The OpenGL name of the Shader Program to delete.
+
+        .. versionadded:: 2.0.10
+        """
+        if self._safe_to_operate_on_object_space():
+            gl.glDeleteRenderbuffers(1, gl.GLuint(rbo_id))
+        else:
+            self.object_space.doomed_renderbuffers.append(rbo_id)
+
+    def delete_vao(self, vao_id):
+        """Safely delete a Vertex Array Object belonging to this context.
+
+        If this context is not the current context or this method is not
+        called from the main thread, its deletion will be postponed until
+        this context is next made active again.
+
+        Otherwise, this method will immediately delete the VAO via
+        ``glDeleteVertexArrays``.
+
+        :Parameters:
+            `vao_id` : int
+                The OpenGL name of the Vertex Array to delete.
+
+        .. versionadded:: 2.0
+        """
+        if self._safe_to_operate_on():
+            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
+        else:
+            self.doomed_vaos.append(vao_id)
+
+    def delete_framebuffer(self, fbo_id):
+        """Safely delete a Framebuffer Object belonging to this context.
+
+        This method behaves similarly to `delete_vao`, though for
+        ``glDeleteFramebuffers`` instead of ``glDeleteVertexArrays``.
+
+        :Parameters:
+            `fbo_id` : int
+                The OpenGL name of the Framebuffer Object to delete.
+
+        .. versionadded:: 2.0.10
+        """
+        if self._safe_to_operate_on():
+            gl.glDeleteFramebuffers(1, gl.GLuint(fbo_id))
+        else:
+            self.doomed_framebuffers.append(fbo_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.

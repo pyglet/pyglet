@@ -4,6 +4,7 @@
 """
 
 import sys
+import warnings
 
 from pyglet.event import EventDispatcher
 
@@ -375,6 +376,9 @@ class Joystick(EventDispatcher):
         self.button_controls = []
 
         def add_axis(control):
+            if not (control.min or control.max):
+                warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
+                return
             name = control.name
             scale = 2.0 / (control.max - control.min)
             bias = -1.0 - control.min * scale
@@ -610,6 +614,9 @@ class Controller(EventDispatcher):
     def _initialize_controls(self):
 
         def add_axis(control, axis_name):
+            if not (control.min or control.max):
+                warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
+                return
             tscale = 1.0 / (control.max - control.min)
             scale = 2.0 / (control.max - control.min)
             bias = -1.0 - control.min * scale

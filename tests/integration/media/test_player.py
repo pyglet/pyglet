@@ -27,14 +27,15 @@ class SilentTestSource(Silence):
         super().__init__(duration, frequency, sample_rate, envelope)
         self.bytes_read = 0
 
-    def get_audio_data(self, nbytes, compensation_time=0.0):
-        data = super(Silence, self).get_audio_data(nbytes, compensation_time)
+    def get_audio_data(self, nbytes):
+        data = super().get_audio_data(nbytes)
         if data is not None:
             self.bytes_read += data.length
         return data
 
-    def has_fully_played(self):
-        return self.bytes_read == self._max_offset
+    @property
+    def max_offset(self):
+        return self._max_offset
 
 
 def test_player_play(player):
@@ -47,7 +48,7 @@ def test_player_play(player):
         'on_eos',
         'on_player_eos'
     )
-    assert source.has_fully_played(), 'Source not fully played'
+    assert source.bytes_read == source.max_offset, 'Source not fully played'
 
 
 def test_player_play_multiple(player):
@@ -64,7 +65,7 @@ def test_player_play_multiple(player):
         'on_player_eos'
     )
     for source in sources:
-        assert source.has_fully_played(), 'Source not fully played'
+        assert source.bytes_read == source.max_offset, 'Source not fully played'
 
 
 def test_multiple_fire_and_forget_players():

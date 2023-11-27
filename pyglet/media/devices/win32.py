@@ -259,7 +259,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
-            assert _debug("No default audio output was found.", err)
+            assert _debug(f"No default audio output was found. {err}")
             return None
 
     def get_default_input(self) -> Optional[Win32AudioDevice]:
@@ -274,7 +274,7 @@ class Win32AudioDeviceManager(base.AbstractAudioDeviceManager):
             cached_dev.state = dev_state
             return cached_dev
         except OSError as err:
-            assert _debug("No default input output was found.", err)
+            assert _debug(f"No default input output was found. {err}")
             return None
 
     def get_cached_device(self, dev_id) -> Win32AudioDevice:

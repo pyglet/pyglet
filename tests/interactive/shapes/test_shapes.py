@@ -16,6 +16,7 @@ from pyglet.shapes import (
     Triangle,
     Star,
     Polygon,
+    Box,
     ShapeBase
 )
 from pyglet.text import Label
@@ -47,6 +48,7 @@ shape_configs = [
     (Line, (0, 0, PX_SIZE_2, PX_SIZE_2), {}),
     (Rectangle, (PX_SIZE, PX_SIZE_2), {}),
     (BorderedRectangle, (PX_SIZE_2, PX_SIZE), {}),
+    (Box, (PX_SIZE_2, PX_SIZE_2), {}),
 
     (Triangle, (-PX_SIZE, 0, 0, PX_SIZE, PX_SIZE, 0), {}),
     (Star, (PX_SIZE_2, PX_SIZE, 5), {}),

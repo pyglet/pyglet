@@ -50,6 +50,7 @@ class PlayerTestCase(unittest.TestCase):
         type(mock_source).video_format = mock.PropertyMock(return_value=video_format)
         type(mock_source.get_queue_source.return_value).audio_format = mock.PropertyMock(return_value=audio_format)
         type(mock_source.get_queue_source.return_value).video_format = mock.PropertyMock(return_value=video_format)
+        type(mock_source.get_queue_source.return_value).duration = mock.PropertyMock(return_value=None)
         if video_format:
             mock_source.video_format.frame_rate = 30
         return mock_source

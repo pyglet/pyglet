@@ -247,6 +247,9 @@ class SynthesisSource(Source):
         self._offset = min(max(offset, 0), self._max_offset) & 0xfffffffe
         self._envelope_generator = self._envelope.get_generator(self.audio_format.sample_rate, self._duration)
 
+    def is_precise(self) -> bool:
+        return True
+
 
 class Silence(SynthesisSource):
     def __init__(self, duration, frequency=440, sample_rate=44800, envelope=None):

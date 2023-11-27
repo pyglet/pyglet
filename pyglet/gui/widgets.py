@@ -433,6 +433,34 @@ class TextEntry(WidgetBase):
         assert type(value) is str, "This Widget's value must be a string."
         self._doc.text = value
 
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+        self._layout.width = value
+        self._outline.width = value
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        self._layout.height = value
+        self._outline.height = value
+    
+    @property
+    def focus(self) -> bool:
+        return self._focus
+
+    @focus.setter
+    def focus(self, value: bool) -> None:
+        self._set_focus(value)
+
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 

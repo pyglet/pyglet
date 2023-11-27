@@ -25,7 +25,7 @@ from collections.abc import Iterable as _Iterable
 from collections.abc import Iterator as _Iterator
 
 
-number = _typing.Union[float, int]
+Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
 
@@ -38,7 +38,7 @@ class Vec2:
 
     """A two-dimensional vector represented as an X Y coordinate pair."""
 
-    def __init__(self, x: number = 0.0, y: number = 0.0) -> None:
+    def __init__(self, x: float = 0.0, y: float = 0.0) -> None:
         self.x = x
         self.y = y
 
@@ -73,13 +73,13 @@ class Vec2:
     def __sub__(self, other: Vec2) -> Vec2:
         return Vec2(self.x - other.x, self.y - other.y)
 
-    def __mul__(self, scalar: number) -> Vec2:
+    def __mul__(self, scalar: float) -> Vec2:
         return Vec2(self.x * scalar, self.y * scalar)
 
-    def __truediv__(self, scalar: number) -> Vec2:
+    def __truediv__(self, scalar: float) -> Vec2:
         return Vec2(self.x / scalar, self.y / scalar)
 
-    def __floordiv__(self, scalar: number) -> Vec2:
+    def __floordiv__(self, scalar: float) -> Vec2:
         return Vec2(self.x // scalar, self.y // scalar)
 
     def __abs__(self) -> float:
@@ -114,9 +114,6 @@ class Vec2:
                 The magnitude of the vector.
             `angle` : int or float :
                 The angle of the vector in radians.
-
-        :returns: A new vector with the given angle and magnitude.
-        :rtype: Vec2
         """
         return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
 
@@ -127,9 +124,6 @@ class Vec2:
         :parameters:
             `magnitude` : int or float :
                 The magnitude of the new vector.
-
-        :returns: A new vector with the magnitude.
-        :rtype: Vec2
         """
         return self.normalize() * magnitude
 
@@ -139,19 +133,13 @@ class Vec2:
         :parameters:
             `heading` : int or float :
                 The angle of the new vector in radians.
-
-        :returns: A new vector with the given heading.
-        :rtype: Vec2
         """
         mag = self.__abs__()
         return Vec2(mag * _math.cos(heading), mag * _math.sin(heading))
 
     @property
     def heading(self) -> float:
-        """The angle of the vector in radians.
-
-        :type: float
-        """
+        """The angle of the vector in radians."""
         return _math.atan2(self.y, self.x)
 
     @property
@@ -159,21 +147,11 @@ class Vec2:
         """The magnitude, or length of the vector. The distance between the coordinates and the origin.
 
         Alias of abs(self).
-
-        :type: float
         """
         return self.__abs__()
 
     def limit(self, maximum: float) -> Vec2:
-        """Limit the magnitude of the vector to the value used for the max parameter.
-
-        :parameters:
-            `maximum`  : int or float :
-                The maximum magnitude for the vector.
-
-        :returns: Either self or a new vector with the maximum magnitude.
-        :rtype: Vec2
-        """
+        """Limit the magnitude of the vector to passed maximum value."""
         if self.x ** 2 + self.y ** 2 > maximum * maximum:
             return self.from_magnitude(maximum)
         return self
@@ -188,9 +166,6 @@ class Vec2:
                 The amount of interpolation.
                 Some value between 0.0 (this vector) and 1.0 (other vector).
                 0.5 is halfway inbetween.
-
-        :returns: A new interpolated vector.
-        :rtype: Vec2
         """
         return Vec2(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)))
@@ -200,15 +175,7 @@ class Vec2:
         return self - normal * 2 * normal.dot(self)
 
     def rotate(self, angle: float) -> Vec2:
-        """Create a new Vector rotated by the angle. The magnitude remains unchanged.
-
-        :parameters:
-            `angle` : int or float :
-                The angle to rotate by
-
-        :returns: A new rotated vector of the same magnitude.
-        :rtype: Vec2
-        """
+        """Create a new Vector rotated by the angle. The magnitude remains unchanged."""
         s = _math.sin(angle)
         c = _math.cos(angle)
         return Vec2(c * self.x - s * self.y, s * self.x + c * self.y)
@@ -218,40 +185,18 @@ class Vec2:
         return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2))
 
     def normalize(self) -> Vec2:
-        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector.
-
-        :returns: A unit vector with the same heading.
-        :rtype: Vec2
-        """
+        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         d = self.__abs__()
         if d:
             return Vec2(self.x / d, self.y / d)
         return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec2:
-        """Restrict the value of the X and Y components of the vector to be within the given values.
-
-        :parameters:
-            `min_val` : int or float :
-                The minimum value
-            `max_val` : int or float :
-                The maximum value
-
-        :returns: A new vector with clamped X and Y components.
-        :rtype: Vec2
-        """
+        """Restrict the value of the X and Y components of the vector to be within the given values."""
         return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
 
     def dot(self, other: Vec2) -> float:
-        """Calculate the dot product of this vector and another 2D vector.
-
-        :parameters:
-            `other`  : Vec2 :
-                The other vector.
-
-        :returns: The dot product of the two vectors.
-        :rtype: float
-        """
+        """Calculate the dot product of this vector and another 2D vector."""
         return self.x * other.x + self.y * other.y
 
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
@@ -273,7 +218,7 @@ class Vec3:
 
     """A three-dimensional vector represented as X Y Z coordinates."""
 
-    def __init__(self, x: number = 0.0, y: number = 0.0, z: number = 0.0) -> None:
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         self.x = x
         self.y = y
         self.z = z
@@ -320,13 +265,13 @@ class Vec3:
     def __sub__(self, other: Vec3) -> Vec3:
         return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def __mul__(self, scalar: number) -> Vec3:
+    def __mul__(self, scalar: float) -> Vec3:
         return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
 
-    def __truediv__(self, scalar: number) -> Vec3:
+    def __truediv__(self, scalar: float) -> Vec3:
         return Vec3(self.x / scalar, self.y / scalar, self.z / scalar)
 
-    def __floordiv__(self, scalar: number) -> Vec3:
+    def __floordiv__(self, scalar: float) -> Vec3:
         return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
 
     def __abs__(self) -> float:
@@ -354,94 +299,44 @@ class Vec3:
     def from_magnitude(self, magnitude: float) -> Vec3:
         """Create a new Vector of the given magnitude by normalizing,
         then scaling the vector. The rotation remains unchanged.
-
-        :parameters:
-            `magnitude` : int or float :
-                The magnitude of the new vector.
-
-        :returns: A new vector with the magnitude.
-        :rtype: Vec3
         """
         return self.normalize() * magnitude
 
     def limit(self, maximum: float) -> Vec3:
-        """Limit the magnitude of the vector to the value used for the max parameter.
-
-        :parameters:
-            `maximum`  : int or float :
-                The maximum magnitude for the vector.
-
-        :returns: Either self or a new vector with the maximum magnitude.
-        :rtype: Vec3
-        """
+        """Limit the magnitude of the vector to the passed maximum value."""
         if self.x ** 2 + self.y ** 2 + self.z ** 2 > maximum * maximum * maximum:
             return self.from_magnitude(maximum)
         return self
 
     def cross(self, other: Vec3) -> Vec3:
-        """Calculate the cross product of this vector and another 3D vector.
-
-        :parameters:
-            `other`  : Vec3 :
-                The other vector.
-
-        :returns: The cross product of the two vectors.
-        :rtype: float
-        """
+        """Calculate the cross product of this vector and another 3D vector."""
         return Vec3((self.y * other.z) - (self.z * other.y),
                     (self.z * other.x) - (self.x * other.z),
                     (self.x * other.y) - (self.y * other.x))
 
     def dot(self, other: Vec3) -> float:
-        """Calculate the dot product of this vector and another 3D vector.
-
-        :parameters:
-            `other`  : Vec3 :
-                The other vector.
-
-        :returns: The dot product of the two vectors.
-        :rtype: float
-        """
+        """Calculate the dot product of this vector and another 3D vector."""
         return self.x * other.x + self.y * other.y + self.z * other.z
 
     def lerp(self, other: Vec3, alpha: float) -> Vec3:
         """Create a new Vec3 linearly interpolated between this vector and another Vec3.
 
-        :parameters:
-            `other`  : Vec3 :
-                The vector to linearly interpolate with.
-            `alpha` : float or int :
-                The amount of interpolation.
-                Some value between 0.0 (this vector) and 1.0 (other vector).
-                0.5 is halfway inbetween.
-
-        :returns: A new interpolated vector.
-        :rtype: Vec3
+        The `alpha` parameter dictates the amount of interpolation.
+        This should be a value between 0.0 (this vector) and 1.0 (other vector).
+        For example; 0.5 is the midway point between both vectors.
         """
         return Vec3(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
                     self.z + (alpha * (other.z - self.z)))
 
     def distance(self, other: Vec3) -> float:
-        """Calculate the distance between this vector and another 3D vector.
-
-        :parameters:
-            `other`  : Vec3 :
-                The other vector
-
-        :returns: The distance between the two vectors.
-        :rtype: float
-        """
+        """Get the distance between this vector and another 3D vector."""
         return _math.sqrt(((other.x - self.x) ** 2) +
                           ((other.y - self.y) ** 2) +
                           ((other.z - self.z) ** 2))
 
     def normalize(self) -> Vec3:
-        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector.
-
-        :returns: A unit vector with the same rotation.
-        :rtype: Vec3
-        """
+        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         try:
             d = self.__abs__()
             return Vec3(self.x / d, self.y / d, self.z / d)
@@ -449,17 +344,7 @@ class Vec3:
             return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec3:
-        """Restrict the value of the X,  Y and Z components of the vector to be within the given values.
-
-        :parameters:
-            `min_val` : int or float :
-                The minimum value
-            `max_val` : int or float :
-                The maximum value
-
-        :returns: A new vector with clamped X, Y and Z components.
-        :rtype: Vec3
-        """
+        """Restrict the value of the X, Y and Z components of the vector to be within the given values."""
         return Vec3(clamp(self.x, min_val, max_val),
                     clamp(self.y, min_val, max_val),
                     clamp(self.z, min_val, max_val))
@@ -483,7 +368,7 @@ class Vec4:
 
     """A four-dimensional vector represented as X Y Z W coordinates."""
 
-    def __init__(self, x: number = 0.0, y: number = 0.0, z: number = 0.0, w: number = 0.0) -> None:
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 0.0) -> None:
         self.x = x
         self.y = y
         self.z = z
@@ -522,13 +407,13 @@ class Vec4:
     def __sub__(self, other: Vec4) -> Vec4:
         return Vec4(self.x - other.x, self.y - other.y, self.z - other.z, self.w - other.w)
 
-    def __mul__(self, scalar: number) -> Vec4:
+    def __mul__(self, scalar: float) -> Vec4:
         return Vec4(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
 
-    def __truediv__(self, scalar: number) -> Vec4:
+    def __truediv__(self, scalar: float) -> Vec4:
         return Vec4(self.x / scalar, self.y / scalar, self.z / scalar, self.w / scalar)
 
-    def __floordiv__(self, scalar: number) -> Vec4:
+    def __floordiv__(self, scalar: float) -> Vec4:
         return Vec4(self.x // scalar, self.y // scalar, self.z // scalar, self.w // scalar)
 
     def __abs__(self) -> float:
@@ -567,16 +452,9 @@ class Vec4:
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
         """Create a new Vec4 linearly interpolated between this one and another Vec4.
 
-        :parameters:
-            `other`  : Vec4 :
-                The vector to linearly interpolate with.
-            `alpha` : float or int :
-                The amount of interpolation.
-                Some value between 0.0 (this vector) and 1.0 (other vector).
-                0.5 is halfway inbetween.
-
-        :returns: A new interpolated vector.
-        :rtype: Vec4
+        The `alpha` parameter dictates the amount of interpolation.
+        This should be a value between 0.0 (this vector) and 1.0 (other vector).
+        For example; 0.5 is the midway point between both vectors.
         """
         return Vec4(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
@@ -620,26 +498,20 @@ class Vec4:
 
 
 class Mat3(tuple):
-    """A 3x3 Matrix class
+    """A 3x3 Matrix
 
     `Mat3` is an immutable 3x3 Matrix, including most common
-    operators. Matrix multiplication must be performed using
-    the "@" operator.
+    operators.
+
+    A Matrix can be created with a list or tuple of 12 values.
+    If no values are provided, an "identity matrix" will be created
+    (1.0 on the main diagonal). Mat3 objects are immutable, so
+    all operations return a new Mat3 object.
+
+    .. note:: Matrix multiplication is performed using the "@" operator.
     """
-
-    def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3:
-        """Create a 3x3 Matrix
-
-        A Mat3 can be created with a list or tuple of 9 values.
-        If no values are provided, an "identity matrix" will be created
-        (1.0 on the main diagonal). Matrix objects are immutable, so
-        all operations return a new Mat3 object.
-
-        :Parameters:
-            `values` : tuple of float or int
-                A tuple or list containing 9 floats or ints.
-        """
-        new = super().__new__(Mat3, values)
+    def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
+        new = super().__new__(cls, values)
         assert len(new) == 9, "A 3x3 Matrix requires 9 values"
         return new
 
@@ -719,26 +591,24 @@ class Mat3(tuple):
 
 
 class Mat4(tuple):
+    """A 4x4 Matrix
 
-    def __new__(cls, values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
-                                                 0.0, 1.0, 0.0, 0.0,
-                                                 0.0, 0.0, 1.0, 0.0,
-                                                 0.0, 0.0, 0.0, 1.0,)) -> Mat4:
-        """Create a 4x4 Matrix.
+    `Mat4` is an immutable 4x4 Matrix, which includs most common
+    operators. This includes class methods for creating orthogonal
+    and perspective projection matrixes, to be used by OpenGL.
 
-        `Mat4` is an immutable 4x4 Matrix, which includs most common
-        operators. This includes class methods for creating orthogonal
-        and perspective projection matrixes, to be used by OpenGL.
+    A Matrix can be created with a list or tuple of 16 values.
+    If no values are provided, an "identity matrix" will be created
+    (1.0 on the main diagonal). Mat4 objects are immutable, so
+    all operations return a new Mat4 object.
 
-        A Matrix can be created with a list or tuple of 16 values.
-        If no values are provided, an "identity matrix" will be created
-        (1.0 on the main diagonal). Matrix objects are immutable, so
-        all operations return a new Mat4 object.
-
-        .. note:: Matrix multiplication is performed using the "@" operator.
-        """
-
-        new = super().__new__(Mat4, values)
+    .. note:: Matrix multiplication is performed using the "@" operator.
+    """
+    def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
+                                                              0.0, 1.0, 0.0, 0.0,
+                                                              0.0, 0.0, 1.0, 0.0,
+                                                              0.0, 0.0, 0.0, 1.0,)) -> Mat4T:
+        new = super().__new__(cls, values)
         assert len(new) == 16, "A 4x4 Matrix requires 16 values"
         return new
 
@@ -796,24 +666,12 @@ class Mat4(tuple):
 
     @classmethod
     def from_rotation(cls, angle: float, vector: Vec3) -> Mat4:
-        """Create a rotation matrix from an angle and Vec3.
-
-        :Parameters:
-            `angle` : A `float` :
-                The angle as a float.
-            `vector` : A `Vec3`, or 3 component tuple of float or int :
-                Vec3 or tuple with x, y and z translation values
-        """
+        """Create a rotation matrix from an angle and Vec3."""
         return cls().rotate(angle, vector)
 
     @classmethod
     def from_scale(cls: type[Mat4T], vector: Vec3) -> Mat4T:
-        """Create a scale matrix from a Vec3.
-
-        :Parameters:
-            `vector` : A `Vec3`, or 3 component tuple of float or int
-                Vec3 or tuple with x, y and z scale values
-        """
+        """Create a scale matrix from a Vec3."""
         return cls((vector[0], 0.0, 0.0, 0.0,
                     0.0, vector[1], 0.0, 0.0,
                     0.0, 0.0, vector[2], 0.0,
@@ -821,12 +679,7 @@ class Mat4(tuple):
 
     @classmethod
     def from_translation(cls: type[Mat4T], vector: Vec3) -> Mat4T:
-        """Create a translation matrix from a Vec3.
-
-        :Parameters:
-            `vector` : A `Vec3`, or 3 component tuple of float or int
-                Vec3 or tuple with x, y and z translation values
-        """
+        """Create a translation matrix from a Vec3."""
         return cls((1.0, 0.0, 0.0, 0.0,
                     0.0, 1.0, 0.0, 0.0,
                     0.0, 0.0, 1.0, 0.0,
@@ -1011,3 +864,109 @@ class Mat4(tuple):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
+
+
+class Quaternion(tuple):
+    """Quaternion"""
+
+    def __new__(cls, w: float = 1.0, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> Quaternion:
+        return super().__new__(Quaternion, (w, x, y, z))
+
+    @classmethod
+    def from_mat3(cls) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
+
+    @classmethod
+    def from_mat4(cls) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
+
+    def to_mat4(self) -> Mat4:
+        w = self.w
+        x = self.x
+        y = self.y
+        z = self.z
+
+        a = 1 - (y ** 2 + z ** 2) * 2
+        b = 2 * (x * y - z * w)
+        c = 2 * (x * z + y * w)
+
+        e = 2 * (x * y + z * w)
+        f = 1 - (x ** 2 + z ** 2) * 2
+        g = 2 * (y * z - x * w)
+
+        i = 2 * (x * z - y * w)
+        j = 2 * (y * z + x * w)
+        k = 1 - (x ** 2 + y ** 2) * 2
+
+        # a, b, c, -
+        # e, f, g, -
+        # i, j, k, -
+        # -, -, -, -
+
+        return Mat4((a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0))
+
+    def to_mat3(self) -> Mat3:
+        w = self.w
+        x = self.x
+        y = self.y
+        z = self.z
+
+        a = 1 - (y ** 2 + z ** 2) * 2
+        b = 2 * (x * y - z * w)
+        c = 2 * (x * z + y * w)
+
+        e = 2 * (x * y + z * w)
+        f = 1 - (x ** 2 + z ** 2) * 2
+        g = 2 * (y * z - x * w)
+
+        i = 2 * (x * z - y * w)
+        j = 2 * (y * z + x * w)
+        k = 1 - (x ** 2 + y ** 2) * 2
+
+        # a, b, c, -
+        # e, f, g, -
+        # i, j, k, -
+        # -, -, -, -
+
+        return Mat3((a, b, c, e, f, g, i, j, k))
+
+    @property
+    def w(self) -> float:
+        return self[0]
+
+    @property
+    def x(self) -> float:
+        return self[1]
+
+    @property
+    def y(self) -> float:
+        return self[2]
+
+    @property
+    def z(self) -> float:
+        return self[3]
+
+    def conjugate(self) -> Quaternion:
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
+
+    @property
+    def mag(self) -> float:
+        return self.__abs__()
+
+    def normalize(self) -> Quaternion:
+        m = self.__abs__()
+        if m == 0:
+            return self
+        return Quaternion(self[0] / m, self[1] / m, self[2] / m, self[3] / m)
+
+    def __abs__(self) -> float:
+        return _math.sqrt(self.w ** 2 + self.x ** 2 + self.y ** 2 + self.z ** 2)
+
+    def __invert__(self) -> Quaternion:
+        raise NotImplementedError("Not yet implemented")
+
+    def __matmul__(self, other):
+        raise NotImplementedError("Not yet implemented")
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(w={self[0]}, x={self[1]}, y={self[2]}, z={self[3]})"
