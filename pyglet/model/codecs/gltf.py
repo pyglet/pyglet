@@ -177,7 +177,10 @@ class Primitive:
 class Material:
     def __init__(self, data):
         self.name = data.get('name')
+
+        # TODO: parse this:
         self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+
         self.normal_texture = data.get('normalTexture')
         self.occlusion_texture = data.get('occlusionTexture')
         self.emissive_texture = data.get('emissiveTexture')
@@ -197,18 +200,17 @@ class Texture:
             self.sampler = owner.samplers[self._sampler_index]
         else:
             self.sampler = Sampler({})
-        self.source = data.get('source')            # technically not required
+        self.source = data.get('source')            # technically NOT required
+        self.image = owner.images[self.source]
+
+        # Aliases
+        self.min_filter = self.sampler.min_filter
+        self.mag_filter = self.sampler.mag_filter
+        self.wrap_s = self.sampler.wrap_s
+        self.wrap_t = self.sampler.wrap_t
 
         # self.extensions = data.get('extensions')
         # self.extras = data.get('extras')
-
-
-class MinFilter:
-    pass
-
-
-class MagFilter:
-    pass
 
 
 class Sampler:
@@ -326,10 +328,9 @@ class GLTF:
         self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
         self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
 
-        self.materials = []
-        self.textures = []
-        self.samplers = []
-
+        self.samplers = [Sampler(data=data) for data in gltf_data.get('samplers', [])]
+        self.textures = [Texture(data=data, owner=self) for data in gltf_data.get('textures', [])]
+        self.materials = [Material(data) for data in gltf_data.get('materials')]
 
         self.scenes = [Scene(data=data, owner=self) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
