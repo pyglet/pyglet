@@ -21,7 +21,13 @@ from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joysti
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
 
-c = pyglet.lib.load_library('c')
+try:
+    from os import readv as _os_readv
+except ImportError:
+    # Workaround for missing os.readv in PyPy
+    c = pyglet.lib.load_library('c')
+    def _os_readv(fd, buffers):
+        return c.read(fd, buffers, 3072)
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -409,7 +415,7 @@ class EvdevDevice(XlibSelectDevice, Device):
             return
 
         try:
-            bytes_read = c.read(self._fileno, self._event_buffer, self._event_size)
+            bytes_read = _os_readv(self._fileno, self._event_buffer)
         except OSError:
             self.close()
             return
@@ -536,6 +542,8 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
         self._device_names = new_device_files
 
         for name in appeared:
+            # The endpoints can take a moment to become readable after they
+            # appear, so set a retry count of '10' rather than arbitray wait time
             future = self._thread_pool.submit(self._make_device, name, count=10)
             future.add_done_callback(self._make_device_callback)
 
