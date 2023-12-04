@@ -97,6 +97,7 @@ class VertexDomain:
         self.buffer_attributes = []     # list of (buffer, attributes)
 
         self._property_dict = {}        # name: property(_getter, _setter)
+        self._dirty_attribs = set()
 
         for name, meta in attribute_meta.items():
             assert meta['format'][0] in _gl_types, f"'{meta['format']}' is not a valid atrribute format for '{name}'."
@@ -108,7 +109,7 @@ class VertexDomain:
             self.attribute_names[attribute.name] = attribute
 
             # Create buffer:
-            attribute.buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity, attribute)
+            attribute.buffer = AttributeBufferObject(self._dirty_attribs, attribute.stride * self.allocator.capacity, attribute)
 
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
@@ -175,8 +176,9 @@ class VertexDomain:
 
         """
         self.vao.bind()
-        for buffer, _ in self.buffer_attributes:
+        for buffer in self._dirty_attribs:
             buffer.bind()
+        self._dirty_attribs.clear()
 
         starts, sizes = self.allocator.get_allocated_regions()
         primcount = len(starts)
@@ -204,8 +206,9 @@ class VertexDomain:
 
         """
         self.vao.bind()
-        for buffer, _ in self.buffer_attributes:
+        for buffer in self._dirty_attribs:
             buffer.bind()
+        self._dirty_attribs.clear()
 
         glDrawArrays(mode, vertex_list.start, vertex_list.count)
 
@@ -389,8 +392,9 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-        for buffer, _ in self.buffer_attributes:
+        for buffer in self._dirty_attribs:
             buffer.bind()
+        self._dirty_attribs.clear()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -420,8 +424,9 @@ class IndexedVertexDomain(VertexDomain):
 
         """
         self.vao.bind()
-        for buffer, _ in self.buffer_attributes:
+        for buffer in self._dirty_attribs:
             buffer.bind()
+        self._dirty_attribs.clear()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +

@@ -201,8 +201,9 @@ class AttributeBufferObject(BufferObject):
     expense of system memory.
     """
 
-    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+    def __init__(self, dirty_set, size, attribute, usage=GL_DYNAMIC_DRAW):
         super().__init__(size, usage)
+        self._dirty_set = dirty_set
         self._size = size
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
@@ -248,6 +249,8 @@ class AttributeBufferObject(BufferObject):
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_start + byte_size)
 
+        self._dirty_set.add(self)
+
     def resize(self, size):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
@@ -264,6 +267,9 @@ class AttributeBufferObject(BufferObject):
 
         self._array = self.get_region(0, size).array
         self.get_region.cache_clear()
+
+        if self in self._dirty_set:
+            self._dirty_set.remove(self)
 
 
 class BufferObjectRegion:
