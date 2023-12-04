@@ -176,7 +176,7 @@ class VertexDomain:
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.bind()
+            buffer.sub_data()
 
         starts, sizes = self.allocator.get_allocated_regions()
         primcount = len(starts)
@@ -205,7 +205,7 @@ class VertexDomain:
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.bind()
+            buffer.sub_data()
 
         glDrawArrays(mode, vertex_list.start, vertex_list.count)
 
@@ -390,7 +390,7 @@ class IndexedVertexDomain(VertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.bind()
+            buffer.sub_data()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -421,7 +421,7 @@ class IndexedVertexDomain(VertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.bind()
+            buffer.sub_data()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +
