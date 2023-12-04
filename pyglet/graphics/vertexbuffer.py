@@ -201,9 +201,9 @@ class AttributeBufferObject(BufferObject):
     expense of system memory.
     """
 
-    def __init__(self, dirty_set, size, attribute, usage=GL_DYNAMIC_DRAW):
+    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
         super().__init__(size, usage)
-        self._dirty_set = dirty_set
+        self._dirty = False
         self._size = size
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
@@ -216,8 +216,13 @@ class AttributeBufferObject(BufferObject):
 
         self._array = self.get_region(0, size).array
 
-    def bind(self, target=GL_ARRAY_BUFFER):
-        super().bind(target)
+    def sub_data(self):
+        """Updates the buffer if any data has been changed or invalidated. Allows submitting multiple changes at once,
+        rather than having to call glBufferSubData for every change."""
+        if not self._dirty:
+            return
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.id)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
@@ -226,6 +231,8 @@ class AttributeBufferObject(BufferObject):
                 glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self.data_ptr + self._dirty_min)
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
+
+            self._dirty = False
 
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
@@ -249,7 +256,7 @@ class AttributeBufferObject(BufferObject):
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_start + byte_size)
 
-        self._dirty_set.add(self)
+        self._dirty = True
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -268,9 +275,12 @@ class AttributeBufferObject(BufferObject):
         self._array = self.get_region(0, size).array
         self.get_region.cache_clear()
 
-        if self in self._dirty_set:
-            self._dirty_set.remove(self)
+        self._dirty = False
 
+    def invalidate(self):
+        super().invalidate()
+
+        self._dirty = True
 
 class BufferObjectRegion:
     """A mapped region of a MappableBufferObject."""
