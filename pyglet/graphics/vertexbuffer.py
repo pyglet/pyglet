@@ -303,3 +303,4 @@ class BufferObjectRegion:
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)
+        buffer._dirty = True
