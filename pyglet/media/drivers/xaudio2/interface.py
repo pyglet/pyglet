@@ -317,7 +317,7 @@ class XAudio2Driver:
         for source_voice in self._emitting_voices:
             self.apply3d(source_voice)
 
-        # self._xaudio2.CommitChanges(0)
+        self._xaudio2.CommitChanges(0)
 
     def _calculate3d(self, listener, emitter):
         lib.X3DAudioCalculate(
