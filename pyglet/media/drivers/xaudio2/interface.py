@@ -140,7 +140,6 @@ class XAudio2Driver:
         self._xaudio2 = None
         self._dead = False
 
-        self.lock = threading.Lock()
         # A lock that will prevent XAudio2 from running any callbacks (processing audio at all)
         # while it is held. Must be acquired by audio players in certain situations in order to
         # ensure that the following, very unlikely, sequence of events does not happen:
@@ -150,9 +149,10 @@ class XAudio2Driver:
         #   and the main thread runs
         # - the main thread runs a critical operation on the player such as `delete` to completion
         # - the callback is resumed and breaks as the audio player is deleted.
+        self.lock = threading.Lock()
         self._engine_callback = XA2EngineCallback(self.lock)
 
-        self._emitting_voices = []  # Contains all of the emitting source voices.
+        self._emitting_voices = []  # Contains all playing source voices with an emitter.
         self._voice_pool = defaultdict(list)
         self._in_use = {}  # All voices currently in use, mapped to their audio player.
 
@@ -315,34 +315,29 @@ class XAudio2Driver:
     def _calculate_3d_sources(self, dt):
         """We calculate the 3d emitters and sources every 15 fps, committing everything after deferring all changes."""
         for source_voice in self._emitting_voices:
-            self.apply3d(source_voice)
+            self.apply3d(source_voice, 1)
 
         self._xaudio2.CommitChanges(0)
 
-    def _calculate3d(self, listener, emitter):
+    def apply3d(self, source_voice, commit):
+        """Calculates and sets output matrix and frequency ratio on the voice based on the listener and the voice's
+           emitter. Commit determines the operation set, whether the settings are applied immediately (0) or to
+           be committed together at a later time.
+        """
         lib.X3DAudioCalculate(
             self._x3d_handle,
-            listener,
-            emitter,
+            self._listener.listener,
+            source_voice._emitter,
             lib.default_dsp_calculation,
             self._dsp_settings,
         )
+        source_voice._voice.SetOutputMatrix(self._master_voice,
+                                            1,
+                                            self._mvoice_details.InputChannels,
+                                            self._dsp_settings.pMatrixCoefficients,
+                                            commit)
 
-    def _apply3d(self, voice, commit):
-        """Calculates the output channels based on the listener and emitter and default DSP settings.
-           Commit determines if the settings are applied immediately (0) or committed at once through the xaudio driver.
-        """
-        voice.SetOutputMatrix(self._master_voice,
-                              1,
-                              self._mvoice_details.InputChannels,
-                              self._dsp_settings.pMatrixCoefficients,
-                              commit)
-
-        voice.SetFrequencyRatio(self._dsp_settings.DopplerFactor, commit)
-
-    def apply3d(self, source_voice, commit=1):
-        self._calculate3d(self._listener.listener, source_voice._emitter)
-        self._apply3d(source_voice._voice, commit)
+        source_voice._voice.SetFrequencyRatio(self._dsp_settings.DopplerFactor, commit)
 
     def delete(self):
         self._delete_driver()
@@ -369,7 +364,6 @@ class XAudio2Driver:
         """
         if voice.is_emitter:
             self._emitting_voices.remove(voice)
-
         self._in_use.pop(voice)
 
         assert _debug(f"XA2AudioDriver: Resetting {voice}...")
@@ -403,7 +397,6 @@ class XAudio2Driver:
         voice.acquired(player.on_buffer_end, audio_format.sample_rate)
         if voice.is_emitter:
             self._emitting_voices.append(voice)
-
         self._in_use[voice] = player
 
         return voice
