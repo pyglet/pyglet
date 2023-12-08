@@ -183,6 +183,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_voice.cone_orientation = _convert_coordinates(self.player.cone_orientation)
             self._xa2_source_voice.cone_outside_volume = self.player.cone_outer_gain
             self._set_cone_angles()
+            self.driver._xa2_driver.apply3d(self._xa2_source_voice, 2)
+            self.driver._xa2_driver._xaudio2.CommitChanges(2)
 
     def on_buffer_end(self, buffer_context_ptr: int) -> None:
         # Called from the XAudio2 thread.
