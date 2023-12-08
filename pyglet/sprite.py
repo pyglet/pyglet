@@ -435,16 +435,31 @@ class Sprite(event.EventDispatcher):
     def _create_vertex_list(self):
         self._vertex_list = self.program.vertex_list_indexed(
             4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
             scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
             rotation=('f', (self._rotation,) * 4),
             tex_coords=('f', self._texture.tex_coords))
-        self._update_position()
 
-    def _update_position(self):
+    def set_instance(self):
+        """Creates an instance. Original is deleted."""
+        self._vertex_list.delete()
+
+        self._vertex_list = self.program.vertex_list_instanced_indexed(
+            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
+            translate=('fx', (self._x, self._y, self._z)),
+            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+            rotation=('f', (self._rotation,) * 4),
+            tex_coords=('f', self._texture.tex_coords))
+
+        return self._vertex_list
+
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             img = self._texture
             x1 = -img.anchor_x
@@ -454,9 +469,12 @@ class Sprite(event.EventDispatcher):
             vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
 
             if not self._subpixel:
-                self._vertex_list.position[:] = tuple(map(int, vertices))
+                return tuple(map(int, vertices))
             else:
-                self._vertex_list.position[:] = vertices
+                return vertices
+
+    def _update_position(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def position(self):

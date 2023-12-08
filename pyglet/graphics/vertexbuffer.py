@@ -251,7 +251,11 @@ class AttributeBufferObject(BufferObject):
         array_start = start * self.attribute_count
         array_end = count * self.attribute_count + array_start
 
+        #print("SETTING REGION", start, count, data, array_start, array_end, self.size, self._array[:])
+
         self._array[array_start:array_end] = data
+
+        #print("REGION AFTER!", self._array[:])
 
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_start + byte_size)

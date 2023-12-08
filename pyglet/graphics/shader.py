@@ -150,7 +150,7 @@ _attribute_types = {
 class Attribute:
     """Abstract accessor for an attribute in a mapped buffer."""
 
-    def __init__(self, name, location, count, gl_type, normalize):
+    def __init__(self, name, location, count, gl_type, normalize, instance):
         """Create the attribute accessor.
 
         :Parameters:
@@ -164,6 +164,8 @@ class Attribute:
                 OpenGL type enumerant; for example, ``GL_FLOAT``
             `normalize`: bool
                 True if OpenGL should normalize the values
+            `instance`: bool
+                True if OpenGL should treat this as an instanced attribute.
 
         """
         self.name = name
@@ -171,6 +173,7 @@ class Attribute:
         self.count = count
         self.gl_type = gl_type
         self.normalize = normalize
+        self.instance = instance
 
         self.c_type = _c_types[gl_type]
 
@@ -196,6 +199,9 @@ class Attribute:
 
         """
         glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
+
+    def set_divisor(self):
+        glVertexAttribDivisor(self.location, 1)
 
     def get_region(self, buffer, start, count):
         """Map a buffer region using this attribute as an accessor.
@@ -990,10 +996,67 @@ class ShaderProgram:
                                       f"Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(False, mode, group, self, attributes)
+        domain = batch.get_domain(False, False, mode, group, self, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count)
+
+        for name, array in initial_arrays:
+            vlist.set_attribute_data(name, array)
+
+        return vlist
+
+    def vertex_list_instanced(self, count, mode, batch=None, group=None, **data):
+        attributes = self._attributes.copy()
+        initial_arrays = []
+
+        for name, fmt in data.items():
+            try:
+                if isinstance(fmt, tuple):
+                    fmt, array = fmt
+                    initial_arrays.append((name, array))
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}")
+
+        batch = batch or pyglet.graphics.get_default_batch()
+        domain = batch.get_domain(False, True, mode, group, self, attributes)
+
+        # Create vertex list and initialize
+        vlist = domain.create(count)
+
+        for name, array in initial_arrays:
+            vlist.set_attribute_data(name, array)
+
+        return vlist
+
+    def vertex_list_instanced_indexed(self, count, mode, indices, batch=None, group=None, **data):
+        attributes = self._attributes.copy()
+        initial_arrays = []
+
+        for name, fmt in data.items():
+            try:
+                if isinstance(fmt, tuple):
+                    fmt, array = fmt
+                    initial_arrays.append((name, array))
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}")
+
+        batch = batch or pyglet.graphics.get_default_batch()
+
+        domain = batch.get_domain(True, True, mode, group, self, attributes)
+
+        # Create vertex list and initialize
+        vlist = domain.create(count, len(indices))
+        start = vlist.start
+        vlist.indices = [i + start for i in indices]
 
         for name, array in initial_arrays:
             vlist.set_attribute_data(name, array)
@@ -1038,7 +1101,7 @@ class ShaderProgram:
                                       f"Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(True, mode, group, self, attributes)
+        domain = batch.get_domain(True, False, mode, group, self, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))

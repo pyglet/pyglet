@@ -195,6 +195,18 @@ def get_default_shader():
     return pyglet.gl.current_context.create_program((_vertex_source, 'vertex'),
                                                     (_fragment_source, 'fragment'))
 
+_domain_class_map = {
+    # Indexed, Instanced : Domain
+    (False, False) : vertexdomain.VertexDomain,
+    (True, False) : vertexdomain.IndexedVertexDomain,
+    (False, True) : vertexdomain.InstancedVertexDomain,
+    (True, True) : vertexdomain.InstancedIndexedVertexDomain
+}
+
+# To do for migrating?
+_vertex_class_map = {
+}
+
 class Batch:
     """Manage a collection of drawables for batched rendering.
 
@@ -281,7 +293,7 @@ class Batch:
             domain = batch.get_domain(False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
-    def get_domain(self, indexed, mode, group, program, attributes):
+    def get_domain(self, indexed, instanced, mode, group, program, attributes):
         """Get, or create, the vertex domain corresponding to the given arguments."""
         if group is None:
             group = ShaderGroup(program=program)
@@ -292,15 +304,12 @@ class Batch:
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (indexed, mode, program, str(attributes))
+        key = (indexed, instanced, mode, program, str(attributes))
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            if indexed:
-                domain = vertexdomain.IndexedVertexDomain(program, attributes)
-            else:
-                domain = vertexdomain.VertexDomain(program, attributes)
+            domain = _domain_class_map[(indexed, instanced)](program, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 
@@ -330,10 +339,12 @@ class Batch:
 
             # Draw domains using this group
             domain_map = self.group_map[group]
-            for (formats, mode, indexed, program_id), domain in list(domain_map.items()):
+
+            # (indexed, instanced, mode, program, str(attributes))
+            for (indexed, instanced, mode, program_id, formats), domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(formats, mode, indexed, program_id)]
+                    del domain_map[(indexed, instanced, mode, program_id, formats)]
                     continue
                 draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))
 
