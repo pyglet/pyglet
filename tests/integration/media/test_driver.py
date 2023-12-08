@@ -22,6 +22,18 @@ class _FakeDispatchEvent:
 
 
 class MockPlayerWithMockTime(MockPlayer, _FakeDispatchEvent):
+    volume = 1.0
+    min_distance = 1.0
+    max_distance = 100000000.
+
+    position = (0, 0, 0)
+    pitch = 1.0
+
+    cone_orientation = (0, 0, 1)
+    cone_inner_angle = 360.
+    cone_outer_angle = 360.
+    cone_outer_gain = 1.
+
     def __init__(self, event_loop):
         super().__init__(event_loop)
         self.last_seek_time = 0.0
