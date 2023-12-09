@@ -569,6 +569,19 @@ class Arc(ShapeBase):
         self._vertex_list.position[:] = vertices
 
     @property
+    def radius(self):
+        """The radius of the arc.
+
+        :type: float
+        """
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        self._radius = value
+        self._update_vertices()
+    
+    @property
     def angle(self):
         """The angle of the arc.
 
