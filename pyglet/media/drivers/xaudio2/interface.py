@@ -458,13 +458,6 @@ class XA2SourceVoice:
         else:
             self._emitter = None
 
-    def delete(self):
-        self._emitter = None
-        self._voice.Stop(0, 0)
-        self._voice.FlushSourceBuffers()
-        self._voice = None
-        self._callback.on_buffer_end = None
-
     def destroy(self):
         """Completely destroy the voice."""
         self._emitter = None
@@ -481,13 +474,6 @@ class XA2SourceVoice:
         """
         self._callback.on_buffer_end = on_buffer_end_cb
         self._voice.SetSourceSampleRate(sample_rate)
-
-    def reset(self):
-        """When a voice is returned to the pool, reset position on emitter."""
-        if self._emitter is not None:
-            self.position = (0, 0, 0)
-
-        self._callback.on_buffer_end = None
 
     @property
     def buffers_queued(self):
