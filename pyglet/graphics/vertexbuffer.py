@@ -201,29 +201,19 @@ class AttributeBufferObject(BufferObject):
     expense of system memory.
     """
 
-    def __init__(self, allocator_capacity, attribute, usage=GL_DYNAMIC_DRAW):
-
-        nbytes = attribute.stride * allocator_capacity
-
-        super().__init__(nbytes, usage)
-        self._dirty = False
-        self._size = nbytes
-        self.data = (ctypes.c_byte * nbytes)()
-        # self.data_ptr = ctypes.addressof(self.data)
+    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+        # size is the allocator size
+        size = attribute.stride * size  # nbytes
+        super().__init__(size, usage)
+        self.data = (attribute.c_type * (attribute.stride * attribute.count * size))()
+        self.data_ptr = ctypes.addressof(self.data)
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
+        self._dirty = False
 
         self.attribute_stride = attribute.stride
         self.attribute_count = attribute.count
         self.attribute_ctype = attribute.c_type
-        self.attribute_name = attribute.name
-
-        # self._array = self.get_region(0, nbytes).array
-        self._ctypes_array = (attribute.c_type * (attribute.stride * attribute.count * allocator_capacity))()
-        self._ctypes_array_ptr = ctypes.addressof(self._ctypes_array)
-
-        # print(attribute.name, attribute.c_type, attribute.count, ctypes.sizeof(attribute.c_type), attribute.stride, nbytes)
-        # assert ctypes.sizeof(self._array) == ctypes.sizeof(self._ctypes_array),  f"{ctypes.sizeof(self._array)} != {ctypes.sizeof(self._ctypes_array)}"
 
     def sub_data(self):
         """Updates the buffer if any data has been changed or invalidated. Allows submitting multiple changes at once,
@@ -237,68 +227,49 @@ class AttributeBufferObject(BufferObject):
             if size == self.size:
                 glBufferData(GL_ARRAY_BUFFER, self.size, self.data, self.usage)
             else:
-                # glBufferData(GL_ARRAY_BUFFER, self.size, self.data, self.usage)
-                # glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self.data_ptr + self._dirty_min)
-                glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self._ctypes_array_ptr + self._dirty_min)
+                glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self.data_ptr + self._dirty_min)
 
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
-
             self._dirty = False
 
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
         byte_start = self.attribute_stride * start  # byte offset
         array_count = self.attribute_count * count  # number of values
-
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
-        # array = ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
-        # return BufferObjectRegion(self, byte_start, byte_start + byte_size, array)
-
-        return ctypes.cast(self._ctypes_array_ptr + byte_start, ptr_type).contents
+        return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
 
     def set_region(self, start, count, data):
+        array_start = self.attribute_count * start
+        array_end = self.attribute_count * count + array_start
+
+        self.data[array_start:array_end] = data
+
+        # replicated from self.invalidate_region
         byte_start = self.attribute_stride * start  # byte offset
-        byte_size = self.attribute_stride * count  # number of bytes
-
-        array_start = start * self.attribute_count
-        array_end = count * self.attribute_count + array_start
-
-        # self._array[array_start:array_end] = data
-        self._ctypes_array[array_start:array_end] = data
-
+        byte_size = self.attribute_stride * count   # number of bytes
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_start + byte_size)
-
         self._dirty = True
 
     def resize(self, size):
-        print("Resize", size, self.size, len(self._ctypes_array), self.attribute_ctype)
-        new_array = (self.attribute_ctype * (self.attribute_stride * self.attribute_count * size))()
-        ctypes.memmove(new_array, self._ctypes_array, ctypes.sizeof(self._ctypes_array))
-        self._ctypes_array = new_array
-        self._ctypes_array_ptr = ctypes.addressof(new_array)
-
-        # size = size * self.attribute_stride
-        # data = (ctypes.c_byte * size)()
-        # ctypes.memmove(data, self.data, min(size, self.size))
-        # self.data = data
-        # self.data_ptr = ctypes.addressof(self.data)
-        #
-        # self.size = size
-
-        self.size = size * self.attribute_stride
+        size = self.attribute_stride * size
+        data = (self.attribute_ctype * (size * self.attribute_count))()
+        ctypes.memmove(data, self.data, min(size, self.size))
+        self.data = data
+        self.data_ptr = ctypes.addressof(data)
+        self.size = size
 
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        glBufferData(GL_ARRAY_BUFFER, self.size, self._ctypes_array, self.usage)
+        glBufferData(GL_ARRAY_BUFFER, self.size, self.data, self.usage)
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
+        self._dirty = False
 
         self.get_region.cache_clear()
-
-        self._dirty = False
 
     def invalidate(self):
         super().invalidate()
@@ -310,15 +281,3 @@ class AttributeBufferObject(BufferObject):
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_end)
         self._dirty = True
-
-
-# class BufferObjectRegion:
-#     """A mapped region of a MappableBufferObject."""
-#
-#     __slots__ = 'buffer', 'start', 'end', 'array'
-#
-#     def __init__(self, buffer, start, end, array):
-#         self.buffer = buffer
-#         self.start = start
-#         self.end = end
-#         self.array = array
