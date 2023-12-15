@@ -473,7 +473,6 @@ class ShapeBase(ABC):
             self._vertex_list.delete()
             self._batch = batch
             self._create_vertex_list()
-            self._update_vertices()
 
 
 class Arc(ShapeBase):
@@ -534,17 +533,17 @@ class Arc(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -566,7 +565,10 @@ class Arc(ShapeBase):
                 chord_points = *points[-1], *points[0]
                 vertices.extend(chord_points)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def angle(self):
@@ -642,7 +644,6 @@ class BezierCurve(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def _make_curve(self, t):
         n = len(self._points) - 1
@@ -656,12 +657,13 @@ class BezierCurve(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -680,7 +682,10 @@ class BezierCurve(ShapeBase):
                 line_points = *coords[i], *coords[i + 1]
                 vertices.extend(line_points)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def points(self):
@@ -750,7 +755,6 @@ class Circle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -759,12 +763,13 @@ class Circle(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._segments*3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -781,7 +786,10 @@ class Circle(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def radius(self):
@@ -841,7 +849,6 @@ class Ellipse(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -855,12 +862,13 @@ class Ellipse(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._segments*3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -876,7 +884,10 @@ class Ellipse(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def a(self):
@@ -956,7 +967,6 @@ class Sector(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -970,12 +980,13 @@ class Sector(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -993,7 +1004,10 @@ class Sector(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def angle(self):
@@ -1080,7 +1094,6 @@ class Line(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1102,12 +1115,13 @@ class Line(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = self._anchor_y - self._width / 2
@@ -1126,7 +1140,10 @@ class Line(ShapeBase):
             dx = x1 * cr - y2 * sr
             dy = x1 * sr + y2 * cr
 
-            self._vertex_list.position[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
+            return (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def width(self):
@@ -1205,7 +1222,6 @@ class Rectangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1216,19 +1232,23 @@ class Rectangle(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+             return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
             x2 = x1 + self._width
             y2 = y1 + self._height
 
-            self._vertex_list.position[:] = x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+            return x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def width(self):
@@ -1329,7 +1349,6 @@ class BorderedRectangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1341,15 +1360,16 @@ class BorderedRectangle(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
         self._vertex_list = self._group.program.vertex_list_indexed(
             8, self._draw_mode, indices, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
             translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             bx1 = -self._anchor_x
             by1 = -self._anchor_y
@@ -1361,8 +1381,12 @@ class BorderedRectangle(ShapeBase):
             ix2 = bx2 - b
             iy2 = by2 - b
 
-            self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+            return (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
                                              bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
+
 
     @property
     def border(self):
@@ -1510,7 +1534,6 @@ class Box(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1526,15 +1549,16 @@ class Box(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
         self._vertex_list = self._group.program.vertex_list_indexed(
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
 
             t = self._thickness
@@ -1551,8 +1575,11 @@ class Box(ShapeBase):
             y2 = bottom + t
             y3 = top - t
             y4 = top
-                                             #  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7
-            self._vertex_list.position[:] =  x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+                    #  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7
+            return  x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def width(self):
@@ -1627,7 +1654,6 @@ class Triangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1636,12 +1662,13 @@ class Triangle(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1649,7 +1676,10 @@ class Triangle(ShapeBase):
             y2 = self._y2 + y1 - self._y
             x3 = self._x3 + x1 - self._x
             y3 = self._y3 + y1 - self._y
-            self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
+            return (x1, y1, x2, y2, x3, y3)
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def x2(self):
@@ -1763,13 +1793,14 @@ class Star(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             rotation=('f', (self._rotation,) * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -1793,7 +1824,10 @@ class Star(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+        return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
     def outer_radius(self):
@@ -1859,7 +1893,6 @@ class Polygon(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
@@ -1869,12 +1902,13 @@ class Polygon(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             # Adjust all coordinates by the anchor.
             trans_x, trans_y = self._coordinates[0]
@@ -1888,7 +1922,10 @@ class Polygon(ShapeBase):
                 triangles += [coords[0], coords[n + 1], coords[n + 2]]
 
             # Flattening the list before setting vertices to it.
-            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
+            return tuple(value for coordinate in triangles for value in coordinate)
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
 
 __all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle',
