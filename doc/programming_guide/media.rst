@@ -230,7 +230,7 @@ If this occurs, the traceback will contain a message like the one below:
 
 The following conditions can trigger the crash:
 
-#. A debugger paused or resumed the program while audio is playing
+#. A debugger pausing or resuming the program while audio is playing
 #. Unpredictably when 2 or more sounds are playing
 
 The two easiest fixes are:
