@@ -219,8 +219,8 @@ Older pyglet versions
 
 .. _pulse-bug: https://github.com/pyglet/pyglet/issues/952
 
-On pyglet versions prior to 2.0.10, the PulseAudio driver will initialize correctly,
-but can crash pyglet under certain conditions.
+On pyglet versions prior to 2.0.10, the PulseAudio driver can crash under
+certain conditions.
 
 If this occurs, the traceback will contain a message like the one below:
 
