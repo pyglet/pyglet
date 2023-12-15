@@ -198,8 +198,8 @@ layer preinstalled. If this driver fails to initialize, consult your
 distro's documentation to learn which audio back-ends you can install.
 
 The main downside of this driver is a limited set of features compared
-to other drivers. For pyglet versions prior to 2.0.10, there are additional
-considerations related to a potential crash.
+to other drivers. For pyglet versions lower than 2.0.10, this driver can
+crash under certain conditions.
 
 Missing features
 """"""""""""""""
