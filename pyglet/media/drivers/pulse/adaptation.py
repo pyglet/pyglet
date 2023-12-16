@@ -260,14 +260,20 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def _maybe_write_pending(self) -> None:
         with self._audio_data_lock:
-            if self._pending_bytes > 0 and self._audio_data_buffer.available > 0:
-                written = self._write_to_stream(self._pending_bytes)
-                self._pending_bytes -= written
-                # If the stream underran before, trigger it for immediate playback.
-                # Unsure whether this call is really needed, but it shouldn't break anything.
-                if self._has_underrun:
-                    self.stream.trigger().wait().delete()
-                    self._has_underrun = False
+            if self._pending_bytes == 0 or self._audio_data_buffer.available == 0:
+                return
+
+            written = self._write_to_stream(self._pending_bytes)
+            self._pending_bytes -= written
+            if not self._has_underrun:
+                return
+
+            self._has_underrun = False
+
+        # If the stream has underrun, trigger it again for immediate playback.
+        # Unsure whether this is really needed, but better be safe.
+        # Make sure to not hold the audio data lock, as `wait` reenters the PA loop.
+        self.stream.trigger().wait().delete()
 
     def work(self) -> None:
         with self.driver.mainloop.lock:
