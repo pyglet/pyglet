@@ -202,11 +202,11 @@ class AttributeBufferObject(BufferObject):
     """
 
     def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
-        # size is the allocator size
-        size = attribute.stride * size  # nbytes
+        # size is the allocator size * attribute.stride
         super().__init__(size, usage)
         self.data = (attribute.c_type * (attribute.stride * attribute.count * size))()
         self.data_ptr = ctypes.addressof(self.data)
+
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
         self._dirty = False
@@ -240,7 +240,6 @@ class AttributeBufferObject(BufferObject):
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
         return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
-
     def set_region(self, start, count, data):
         array_start = self.attribute_count * start
         array_end = self.attribute_count * count + array_start
@@ -255,7 +254,6 @@ class AttributeBufferObject(BufferObject):
         self._dirty = True
 
     def resize(self, size):
-        size = self.attribute_stride * size
         data = (self.attribute_ctype * (size * self.attribute_count))()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data

@@ -69,10 +69,7 @@ def _make_attribute_property(name):
     def _attribute_getter(self):
         attribute = self.domain.attribute_names[name]
         region = attribute.buffer.get_region(self.start, self.count)
-
         attribute.buffer.invalidate_region(self.start, self.count)
-
-        # return region.array
         return region
 
     def _attribute_setter(self, data):
@@ -111,7 +108,7 @@ class VertexDomain:
             self.attribute_names[attribute.name] = attribute
 
             # Create buffer:
-            attribute.buffer = AttributeBufferObject(self.allocator.capacity, attribute)
+            attribute.buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity, attribute)
 
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
@@ -137,7 +134,7 @@ class VertexDomain:
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity)
+                buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.alloc(count)
 
@@ -148,7 +145,7 @@ class VertexDomain:
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity)
+                buffer.resize(capacity * buffer.attribute_stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
