@@ -219,12 +219,16 @@ class XAudio2Driver:
 
         self._xaudio2.RegisterForCallbacks(self._engine_callback)
 
+        self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
         self._master_voice = lib.IXAudio2MasteringVoice()
         self._xaudio2.CreateMasteringVoice(byref(self._master_voice),
                                            lib.XAUDIO2_DEFAULT_CHANNELS,
                                            lib.XAUDIO2_DEFAULT_SAMPLERATE,
                                            0, device_id, None, self.category)
+        self._master_voice.GetVoiceDetails(byref(self._mvoice_details))
 
+        self._x3d_handle = None
+        self._dsp_settings = None
         if self.allow_3d:
             self.enable_3d()
 
@@ -290,9 +294,6 @@ class XAudio2Driver:
         self._x3d_handle = lib.X3DAUDIO_HANDLE()
         lib.X3DAudioInitialize(channel_mask.value, lib.X3DAUDIO_SPEED_OF_SOUND, self._x3d_handle)
 
-        self._mvoice_details = lib.XAUDIO2_VOICE_DETAILS()
-        self._master_voice.GetVoiceDetails(byref(self._mvoice_details))
-
         matrix = (FLOAT * self._mvoice_details.InputChannels)()
         self._dsp_settings = lib.X3DAUDIO_DSP_SETTINGS()
         self._dsp_settings.SrcChannelCount = 1
@@ -315,11 +316,17 @@ class XAudio2Driver:
     def _calculate_3d_sources(self, dt):
         """We calculate the 3d emitters and sources every 15 fps, committing everything after deferring all changes."""
         for source_voice in self._emitting_voices:
-            self.apply3d(source_voice, 1)
+            self._apply3d(source_voice, 1)
 
-        self._xaudio2.CommitChanges(0)
+        self._xaudio2.CommitChanges(1)
 
-    def apply3d(self, source_voice, commit):
+    def apply3d(self, source_voice):
+        """Apply and immediately commit positional audio effects for the given voice."""
+        if self._x3d_handle is not None:
+            self._apply3d(source_voice, 2)
+            self._xaudio2.CommitChanges(2)
+
+    def _apply3d(self, source_voice, commit):
         """Calculates and sets output matrix and frequency ratio on the voice based on the listener and the voice's
            emitter. Commit determines the operation set, whether the settings are applied immediately (0) or to
            be committed together at a later time.
@@ -451,13 +458,6 @@ class XA2SourceVoice:
         else:
             self._emitter = None
 
-    def delete(self):
-        self._emitter = None
-        self._voice.Stop(0, 0)
-        self._voice.FlushSourceBuffers()
-        self._voice = None
-        self._callback.on_buffer_end = None
-
     def destroy(self):
         """Completely destroy the voice."""
         self._emitter = None
@@ -474,13 +474,6 @@ class XA2SourceVoice:
         """
         self._callback.on_buffer_end = on_buffer_end_cb
         self._voice.SetSourceSampleRate(sample_rate)
-
-    def reset(self):
-        """When a voice is returned to the pool, reset position on emitter."""
-        if self._emitter is not None:
-            self.position = (0, 0, 0)
-
-        self._callback.on_buffer_end = None
 
     @property
     def buffers_queued(self):
