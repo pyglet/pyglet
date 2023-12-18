@@ -584,6 +584,20 @@ class PulseAudioStream(PulseAudioMainloopChild):
             pa.pa_stream_prebuf(self._pa_stream, clump.pa_callback, None),
         )
 
+    def flush(
+        self,
+        callback: Optional[PulseAudioContextSuccessCallback] = None,
+    ) -> 'PulseAudioOperation':
+        context = self.context()
+        assert context is not None
+        assert self._pa_stream is not None
+
+        clump = PulseAudioStreamSuccessCallbackLump(context, callback)
+        return PulseAudioOperation(
+            clump,
+            pa.pa_stream_flush(self._pa_stream, clump.pa_callback, None),
+        )
+
     def resume(
         self,
         callback: Optional[PulseAudioContextSuccessCallback] = None,

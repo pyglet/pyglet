@@ -320,7 +320,12 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             ti = self._update_and_get_timing_info()
             assert not ti.read_index_corrupt
             self._last_clear_read_index = ti.read_index
-            self.stream.prebuf().wait().delete()
+            f = self.stream.flush()
+            p = self.stream.prebuf()
+            while f.is_running and p.is_running:
+                self.stream.mainloop.wait()
+            f.delete()
+            p.delete()
 
     def play(self) -> None:
         assert _debug('PulseAudioPlayer.play')
