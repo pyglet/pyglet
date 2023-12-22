@@ -609,14 +609,6 @@ class Arc(ShapeBase):
         self._start_angle = angle
         self._update_vertices()
 
-    def draw(self):
-        """Draw the shape at its current position.
-
-        Using this method is not recommended. Instead, add the
-        shape to a `pyglet.graphics.Batch` for efficient rendering.
-        """
-        self._vertex_list.draw(self._draw_mode)
-
 
 class BezierCurve(ShapeBase):
     _draw_mode = GL_LINES
