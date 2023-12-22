@@ -456,7 +456,7 @@ class PulseAudioStream(PulseAudioMainloopChild):
         assert self._pa_stream is not None
         return pa.pa_stream_get_sample_spec(self._pa_stream)[0]
 
-    def connect_playback(self) -> None:
+    def connect_playback(self, tlength: int = _UINT32_MAX, minreq: int = _UINT32_MAX) -> None:
         context = self.context()
         assert self._pa_stream is not None
         assert context is not None
@@ -466,9 +466,9 @@ class PulseAudioStream(PulseAudioMainloopChild):
         buffer_attr = pa.pa_buffer_attr()
         buffer_attr.fragsize = _UINT32_MAX  # Irrelevant for playback
         buffer_attr.maxlength = _UINT32_MAX
-        buffer_attr.tlength = _UINT32_MAX
+        buffer_attr.tlength = tlength
         buffer_attr.prebuf = _UINT32_MAX
-        buffer_attr.minreq = _UINT32_MAX
+        buffer_attr.minreq = minreq
 
         flags = (pa.PA_STREAM_START_CORKED |
                  pa.PA_STREAM_INTERPOLATE_TIMING |
@@ -582,6 +582,20 @@ class PulseAudioStream(PulseAudioMainloopChild):
         return PulseAudioOperation(
             clump,
             pa.pa_stream_prebuf(self._pa_stream, clump.pa_callback, None),
+        )
+
+    def flush(
+        self,
+        callback: Optional[PulseAudioContextSuccessCallback] = None,
+    ) -> 'PulseAudioOperation':
+        context = self.context()
+        assert context is not None
+        assert self._pa_stream is not None
+
+        clump = PulseAudioStreamSuccessCallbackLump(context, callback)
+        return PulseAudioOperation(
+            clump,
+            pa.pa_stream_flush(self._pa_stream, clump.pa_callback, None),
         )
 
     def resume(

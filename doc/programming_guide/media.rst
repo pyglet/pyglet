@@ -191,15 +191,10 @@ command. Consult your distro's documentation for more information.
 PulseAudio
 ^^^^^^^^^^
 
-The backend for this driver is nearly universally supported.
+This backend is almost always supported, but it has limited features.
 
-Even distros using PipeWire often come with a PulseAudio compatibility
-layer preinstalled. If this driver fails to initialize, consult your
-distro's documentation to learn which audio back-ends you can install.
-
-The main downside of this driver is a limited set of features compared
-to other drivers. For pyglet versions lower than 2.0.10, this driver can
-crash under certain conditions.
+If it fails to initialize, consult your distro's documentation to learn
+which supported audio back-ends you can install.
 
 Missing features
 """"""""""""""""
@@ -213,37 +208,6 @@ work properly:
 #. Integration with surround sound
 
 Switching to :ref:`guide-audio-driver-openal` should automatically enable them.
-
-Older pyglet versions
-"""""""""""""""""""""
-
-.. _pulse-bug: https://github.com/pyglet/pyglet/issues/952
-
-On pyglet versions prior to 2.0.10, the PulseAudio driver can crash under
-certain conditions.
-
-If this occurs, the traceback will contain a message like the one below:
-
-.. code-block:: console
-
-   Assertion 'q->front' failed at pulsecore/queue.c:81, function pa_queue_push(). Aborting.
-
-The following conditions can trigger the crash:
-
-#. A debugger pausing or resuming the program while audio is playing
-#. Unpredictably when 2 or more sounds are playing
-
-The two easiest fixes are:
-
-#. Upgrading to pyglet 2.0.10 or later
-#. :ref:`installing OpenAL <guide-audio-driver-openal>`
-
-See `the GitHub issue <pulse-bug_>`_ for more information. The following
-are currently unclear:
-
-#. How different PulseAudio implementations affect the bug (PipeWire vs original)
-#. How often the bug occurs for users on less common distros
-
 
 .. _guide-supportedmedia:
 
