@@ -476,9 +476,9 @@ class ShapeBase(ABC):
 
 
 class Arc(ShapeBase):
-    _draw_mode = GL_LINES
+    #_draw_mode = GL_LINES
 
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
+    def __init__(self, x, y, radius, segments=None, width=1, angle=math.tau, start_angle=0,
                  closed=False, color=(255, 255, 255, 255), batch=None, group=None):
         """Create an Arc.
 
@@ -496,6 +496,8 @@ class Arc(ShapeBase):
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
+            `width` : float
+                The desired width of the line used for the arc.
             `angle` : float
                 The angle of the arc, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
@@ -517,12 +519,15 @@ class Arc(ShapeBase):
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
-        self._num_verts = self._segments * 2 + (2 if closed else 0)
+        #self._num_verts = self._segments * 2 + (2 if closed else 0)
+        #Each segment is now 6 vertices long
+        self._num_verts = self._segments * 6 + (6 if closed else 0)
 
         # handle both 3 and 4 byte colors
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
+        self._width = width
         self._angle = angle
         self._start_angle = start_angle
         self._closed = closed
@@ -541,6 +546,48 @@ class Arc(ShapeBase):
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
+    def _get_segment(self, p0, p1, p2, p3):
+        v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
+        v_normal = Vec2(-v_np1p2.y,v_np1p2.x)
+
+        # Prep the miter vectors to the normal vector in case it is only one segment
+        v_miter1 = v_normal
+        v_miter2 = v_normal
+        scale1 = scale2 = self._width
+
+        if p0:
+            # Compute the miter joint vector
+            v_np0p1 = Vec2(p1[0] - p0[0], p1[1] - p0[1]).normalize()
+            v_normal_p0p1 = Vec2(-v_np0p1.y,v_np0p1.x)
+            # Add the 2 normal vectors and normalize to get miter vector
+            v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
+
+        if p3:
+            # Compute the miter joint vector
+            v_np2p3 = Vec2(p3[0] - p2[0], p3[1] - p2[1]).normalize()
+            v_normal_p2p3 = Vec2(-v_np2p3.y,v_np2p3.x)
+            # Add the 2 normal vectors and normalize to get miter vector
+            v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
+
+        miter1ScaledP = v_miter1.from_magnitude(scale1 / 2.0)
+        miter1ScaledN = v_miter1.from_magnitude(-scale1 / 2.0)
+        miter2ScaledP = v_miter2.from_magnitude(scale2 / 2.0)
+        miter2ScaledN = v_miter2.from_magnitude(-scale2 / 2.0)
+
+        v1 = (p1[0] + miter1ScaledP.x, p1[1] + miter1ScaledP.y)
+
+        v2 = (p2[0] + miter2ScaledP.x, p2[1] + miter2ScaledP.y)
+
+        v3 = (p1[0] + miter1ScaledN.x, p1[1] + miter1ScaledN.y)
+
+        v4 = (p2[0] + miter2ScaledP.x, p2[1] + miter2ScaledP.y)
+
+        v5 = (p2[0] + miter2ScaledN.x, p2[1] + miter2ScaledN.y)
+
+        v6 = (p1[0] + miter1ScaledN.x, p1[1] + miter1ScaledN.y)
+
+        return (v1[0],v1[1],v2[0],v2[1],v3[0],v3[1],v4[0],v4[1],v5[0],v5[1],v6[0],v6[1])
+
     def _get_vertices(self):
         if not self._visible:
             return (0, 0) * self._num_verts
@@ -558,12 +605,29 @@ class Arc(ShapeBase):
             # Create a list of doubled-up points from the points:
             vertices = []
             for i in range(len(points) - 1):
-                line_points = *points[i], *points[i + 1]
-                vertices.extend(line_points)
+                prevPoint = None
+                nextPoint = None
+                if i > 0:
+                    prevPoint = points[i - 1]
+                elif self._closed:
+                    prevPoint = points[-1]
+
+                if i + 2 < len(points):
+                    nextPoint = points[i + 2]
+                elif self._closed:
+                    nextPoint = points[0]
+
+                segment = self._get_segment(prevPoint, points[i], points[i + 1], nextPoint)
+                vertices.extend(segment)
 
             if self._closed:
-                chord_points = *points[-1], *points[0]
-                vertices.extend(chord_points)
+                prevPoint = None
+                nextPoint = None
+                if len(points) > 2:
+                    prevPoint = points[-2]
+                    nextPoint = points[1]
+                segment = self._get_segment(prevPoint, points[-1], points[0], nextPoint)
+                vertices.extend(segment)
 
             return vertices
 
@@ -582,7 +646,16 @@ class Arc(ShapeBase):
     def radius(self, value):
         self._radius = value
         self._update_vertices()
-    
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, width):
+        self._width = width
+        self._update_vertices()
+
     @property
     def angle(self):
         """The angle of the arc.
