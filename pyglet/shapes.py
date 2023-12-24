@@ -553,7 +553,7 @@ class Arc(ShapeBase):
         # Prep the miter vectors to the normal vector in case it is only one segment
         v_miter1 = v_normal
         v_miter2 = v_normal
-        scale1 = scale2 = self._width
+        scale1 = scale2 = self._width / 2.0
 
         if p0:
             # Compute the miter joint vector
@@ -561,6 +561,7 @@ class Arc(ShapeBase):
             v_normal_p0p1 = Vec2(-v_np0p1.y,v_np0p1.x)
             # Add the 2 normal vectors and normalize to get miter vector
             v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
+            scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
 
         if p3:
             # Compute the miter joint vector
@@ -568,11 +569,12 @@ class Arc(ShapeBase):
             v_normal_p2p3 = Vec2(-v_np2p3.y,v_np2p3.x)
             # Add the 2 normal vectors and normalize to get miter vector
             v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
+            scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
 
-        miter1ScaledP = v_miter1.from_magnitude(scale1 / 2.0)
-        miter1ScaledN = v_miter1.from_magnitude(-scale1 / 2.0)
-        miter2ScaledP = v_miter2.from_magnitude(scale2 / 2.0)
-        miter2ScaledN = v_miter2.from_magnitude(-scale2 / 2.0)
+        miter1ScaledP = v_miter1.from_magnitude(scale1)
+        miter1ScaledN = v_miter1.from_magnitude(-scale1)
+        miter2ScaledP = v_miter2.from_magnitude(scale2)
+        miter2ScaledN = v_miter2.from_magnitude(-scale2)
 
         v1 = (p1[0] + miter1ScaledP.x, p1[1] + miter1ScaledP.y)
 
