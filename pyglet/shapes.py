@@ -478,8 +478,8 @@ class ShapeBase(ABC):
 class Arc(ShapeBase):
     #_draw_mode = GL_LINES
 
-    def __init__(self, x, y, radius, segments=None, width=1, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
+                 closed=False, width=1, color=(255, 255, 255, 255), batch=None, group=None):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
@@ -496,8 +496,6 @@ class Arc(ShapeBase):
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
-            `width` : float
-                The desired width of the line used for the arc.
             `angle` : float
                 The angle of the arc, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
@@ -506,6 +504,8 @@ class Arc(ShapeBase):
             `closed` : bool
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
+            `width` : float
+                The desired width of the line used for the arc.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
