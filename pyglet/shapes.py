@@ -49,6 +49,7 @@ import math
 from abc import ABC, abstractmethod
 
 import pyglet
+import time
 
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
@@ -476,7 +477,6 @@ class ShapeBase(ABC):
 
 
 class Arc(ShapeBase):
-    #_draw_mode = GL_LINES
 
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
                  closed=False, width=1, color=(255, 255, 255, 255), batch=None, group=None):
@@ -519,9 +519,6 @@ class Arc(ShapeBase):
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
-        #self._num_verts = self._segments * 2 + (2 if closed else 0)
-        #Each segment is now 6 vertices long
-        self._num_verts = self._segments * 6 + (6 if closed else 0)
 
         # handle both 3 and 4 byte colors
         r, g, b, *a = color
@@ -530,8 +527,12 @@ class Arc(ShapeBase):
         self._width = width
         self._angle = angle
         self._start_angle = start_angle
-        self._closed = closed
+        # Only set closed if the angle isn't tau
+        self._closed = closed if abs(math.tau - self._angle) > 1e-9 else False
         self._rotation = 0
+
+        #Each segment is now 6 vertices long
+        self._num_verts = self._segments * 6 + (6 if self._closed else 0)
 
         self._batch = batch or Batch()
         program = get_default_shader()
@@ -546,54 +547,11 @@ class Arc(ShapeBase):
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_segment(self, p0, p1, p2, p3):
-        v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
-        v_normal = Vec2(-v_np1p2.y,v_np1p2.x)
-
-        # Prep the miter vectors to the normal vector in case it is only one segment
-        v_miter1 = v_normal
-        v_miter2 = v_normal
-        scale1 = scale2 = self._width / 2.0
-
-        if p0:
-            # Compute the miter joint vector
-            v_np0p1 = Vec2(p1[0] - p0[0], p1[1] - p0[1]).normalize()
-            v_normal_p0p1 = Vec2(-v_np0p1.y,v_np0p1.x)
-            # Add the 2 normal vectors and normalize to get miter vector
-            v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
-            scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
-
-        if p3:
-            # Compute the miter joint vector
-            v_np2p3 = Vec2(p3[0] - p2[0], p3[1] - p2[1]).normalize()
-            v_normal_p2p3 = Vec2(-v_np2p3.y,v_np2p3.x)
-            # Add the 2 normal vectors and normalize to get miter vector
-            v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
-            scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
-
-        miter1ScaledP = v_miter1.from_magnitude(scale1)
-        miter1ScaledN = v_miter1.from_magnitude(-scale1)
-        miter2ScaledP = v_miter2.from_magnitude(scale2)
-        miter2ScaledN = v_miter2.from_magnitude(-scale2)
-
-        v1 = (p1[0] + miter1ScaledP.x, p1[1] + miter1ScaledP.y)
-
-        v2 = (p2[0] + miter2ScaledP.x, p2[1] + miter2ScaledP.y)
-
-        v3 = (p1[0] + miter1ScaledN.x, p1[1] + miter1ScaledN.y)
-
-        v4 = (p2[0] + miter2ScaledP.x, p2[1] + miter2ScaledP.y)
-
-        v5 = (p2[0] + miter2ScaledN.x, p2[1] + miter2ScaledN.y)
-
-        v6 = (p1[0] + miter1ScaledN.x, p1[1] + miter1ScaledN.y)
-
-        return (v1[0],v1[1],v2[0],v2[1],v3[0],v3[1],v4[0],v4[1],v5[0],v5[1],v6[0],v6[1])
-
     def _get_vertices(self):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
+            start_time = time.process_time_ns()
             x = -self._anchor_x
             y = -self._anchor_y
             r = self._radius
@@ -604,7 +562,80 @@ class Arc(ShapeBase):
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
                        y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
-            # Create a list of doubled-up points from the points:
+            # Create a list of doubled-up points from the points
+
+            # Stores the miter for the next point which will become the previous
+            prev_miter = None
+            prev_scale = None
+            def get_segment(p0, p1, p2, p3):
+                """Computes a line segment between the points p1 and p2.
+
+                If points p0 or p3 are supplied then the segment p1->p2 will have the correct "miter" angle
+                for each end respectively 
+
+                :Parameters:
+                    `p0` : (float, float)
+                        The "previous" point for the segment p1->p2 which is used to compute the "miter"
+                        angle of the start of the segment.  If None is supplied then the start of the line
+                        is 90 degrees to the segment p1->p2.
+                    `p1` : (float, float)
+                        The origin of the segment p1->p2.
+                    `p2` : (float, float)
+                        The end of the segment p1->p2
+                    `p3` : (float, float)
+                        The "following" point for the segment p1->p2 which is used to compute the "miter"
+                        angle to the end of the segment.  If None is supplied then the end of the line is
+                        90 degrees to the segment p1->p2.
+                """
+                # These are declared above this function to allow easy reuse from previous runs
+                nonlocal prev_miter
+                nonlocal prev_scale
+                v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
+                v_normal = Vec2(-v_np1p2.y,v_np1p2.x)
+
+                # Prep the miter vectors to the normal vector in case it is only one segment
+                v_miter2 = v_normal
+                scale1 = scale2 = self._width / 2.0
+
+                # miter1 is either already computed or the normal
+                v_miter1 = v_normal
+                if prev_miter and prev_scale:
+                    v_miter1 = prev_miter
+                    scale1 = prev_scale
+                elif p0:
+                    # Compute the miter joint vector for the start of the segment
+                    v_np0p1 = Vec2(p1[0] - p0[0], p1[1] - p0[1]).normalize()
+                    v_normal_p0p1 = Vec2(-v_np0p1.y,v_np0p1.x)
+                    # Add the 2 normal vectors and normalize to get miter vector
+                    v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
+                    scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
+
+                if p3:
+                    # Compute the miter joint vector for the end of the segment
+                    v_np2p3 = Vec2(p3[0] - p2[0], p3[1] - p2[1]).normalize()
+                    v_normal_p2p3 = Vec2(-v_np2p3.y,v_np2p3.x)
+                    # Add the 2 normal vectors and normalize to get miter vector
+                    v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
+                    scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
+
+                # Make these tuples instead of Vec2 because accessing
+                # members of Vec2 is suprisingly slow
+                miter1ScaledP = (v_miter1.x * scale1, v_miter1.y * scale1)
+                miter2ScaledP = (v_miter2.x * scale2, v_miter2.y * scale2)
+
+                v1 = (p1[0] + miter1ScaledP[0], p1[1] + miter1ScaledP[1])
+                v2 = (p2[0] + miter2ScaledP[0], p2[1] + miter2ScaledP[1])
+                v3 = (p1[0] - miter1ScaledP[0], p1[1] - miter1ScaledP[1])
+                v4 = (p2[0] + miter2ScaledP[0], p2[1] + miter2ScaledP[1])
+                v5 = (p2[0] - miter2ScaledP[0], p2[1] - miter2ScaledP[1])
+                v6 = (p1[0] - miter1ScaledP[0], p1[1] - miter1ScaledP[1])
+
+                # Setup for next run of function
+                prev_miter = v_miter2
+                prev_scale = scale2
+
+                return (v1[0],v1[1],v2[0],v2[1],v3[0],v3[1],v4[0],v4[1],v5[0],v5[1],v6[0],v6[1])
+
             vertices = []
             for i in range(len(points) - 1):
                 prevPoint = None
@@ -613,13 +644,17 @@ class Arc(ShapeBase):
                     prevPoint = points[i - 1]
                 elif self._closed:
                     prevPoint = points[-1]
+                elif abs(self._angle - math.tau) <= 1e-9:
+                    prevPoint = points[-2]
 
                 if i + 2 < len(points):
                     nextPoint = points[i + 2]
                 elif self._closed:
                     nextPoint = points[0]
+                elif abs(self._angle - math.tau) <= 1e-9:
+                    nextPoint = points[1]
 
-                segment = self._get_segment(prevPoint, points[i], points[i + 1], nextPoint)
+                segment = get_segment(prevPoint, points[i], points[i + 1], nextPoint)
                 vertices.extend(segment)
 
             if self._closed:
@@ -628,9 +663,11 @@ class Arc(ShapeBase):
                 if len(points) > 2:
                     prevPoint = points[-2]
                     nextPoint = points[1]
-                segment = self._get_segment(prevPoint, points[-1], points[0], nextPoint)
+                segment = get_segment(prevPoint, points[-1], points[0], nextPoint)
                 vertices.extend(segment)
 
+            stop_time = time.process_time_ns()
+            print(f"Calltime: {(stop_time - start_time) / 1e6}")
             return vertices
 
     def _update_vertices(self):
