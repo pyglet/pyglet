@@ -551,7 +551,6 @@ class Arc(ShapeBase):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
-            start_time = time.process_time_ns()
             x = -self._anchor_x
             y = -self._anchor_y
             r = self._radius
@@ -666,8 +665,6 @@ class Arc(ShapeBase):
                 segment = get_segment(prevPoint, points[-1], points[0], nextPoint)
                 vertices.extend(segment)
 
-            stop_time = time.process_time_ns()
-            print(f"Calltime: {(stop_time - start_time) / 1e6}")
             return vertices
 
     def _update_vertices(self):
