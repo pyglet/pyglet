@@ -49,7 +49,6 @@ import math
 from abc import ABC, abstractmethod
 
 import pyglet
-import time
 
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
@@ -479,7 +478,7 @@ class ShapeBase(ABC):
 class Arc(ShapeBase):
 
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, width=1, color=(255, 255, 255, 255), batch=None, group=None):
+                 closed=False, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
@@ -504,8 +503,8 @@ class Arc(ShapeBase):
             `closed` : bool
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
-            `width` : float
-                The desired width of the line used for the arc.
+            `thickness` : float
+                The desired thickness or width of the line used for the arc.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -524,7 +523,7 @@ class Arc(ShapeBase):
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        self._width = width
+        self._thickness = thickness
         self._angle = angle
         self._start_angle = start_angle
         # Only set closed if the angle isn't tau
@@ -594,7 +593,7 @@ class Arc(ShapeBase):
 
                 # Prep the miter vectors to the normal vector in case it is only one segment
                 v_miter2 = v_normal
-                scale1 = scale2 = self._width / 2.0
+                scale1 = scale2 = self._thickness / 2.0
 
                 # miter1 is either already computed or the normal
                 v_miter1 = v_normal
@@ -633,7 +632,7 @@ class Arc(ShapeBase):
                 prev_miter = v_miter2
                 prev_scale = scale2
 
-                return (v1[0],v1[1],v2[0],v2[1],v3[0],v3[1],v4[0],v4[1],v5[0],v5[1],v6[0],v6[1])
+                return (v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1])
 
             vertices = []
             for i in range(len(points) - 1):
@@ -684,12 +683,12 @@ class Arc(ShapeBase):
         self._update_vertices()
 
     @property
-    def width(self):
-        return self._width
+    def thickness(self):
+        return self._thickness
 
-    @width.setter
-    def width(self, width):
-        self._width = width
+    @thickness.setter
+    def thickness(self, thickness):
+        self._thickness = thickness
         self._update_vertices()
 
     @property
