@@ -988,7 +988,7 @@ class ShaderProgram:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
                     initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt}}
+                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': False}}
             except KeyError:
                 raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
                                       f"check the spelling.\nIf the attribute is not in use in the "
@@ -1006,7 +1006,7 @@ class ShaderProgram:
 
         return vlist
 
-    def vertex_list_instanced(self, count, mode, batch=None, group=None, **data):
+    def vertex_list_instanced(self, count, mode, instance_attributes, batch=None, group=None, **data):
         attributes = self._attributes.copy()
         initial_arrays = []
 
@@ -1015,7 +1015,7 @@ class ShaderProgram:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
                     initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt}}
+                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': name in instance_attributes}}
             except KeyError:
                 raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
                                       f"check the spelling.\nIf the attribute is not in use in the "
@@ -1033,7 +1033,9 @@ class ShaderProgram:
 
         return vlist
 
-    def vertex_list_instanced_indexed(self, count, mode, indices, batch=None, group=None, **data):
+    def vertex_list_instanced_indexed(self, count, mode, indices, instance_attributes, batch=None, group=None, **data):
+        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
+
         attributes = self._attributes.copy()
         initial_arrays = []
 
@@ -1042,9 +1044,17 @@ class ShaderProgram:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
                     initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt}}
+
+                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': name in instance_attributes}}
             except KeyError:
                 raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}")
+
+        for attribute_name in instance_attributes:
+            if attribute_name not in attributes:
+                raise ShaderException(f"An attribute with the name `{attribute_name}` was not found. Please "
                                       f"check the spelling.\nIf the attribute is not in use in the "
                                       f"program, it may have been optimized out by the OpenGL driver.\n"
                                       f"Valid names: \n{list(attributes)}")
@@ -1093,7 +1103,7 @@ class ShaderProgram:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
                     initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt}}
+                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': False}}
             except KeyError:
                 raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
                                       f"check the spelling.\nIf the attribute is not in use in the "

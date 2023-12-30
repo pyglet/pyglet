@@ -260,9 +260,8 @@ class VertexInstance:
     def domain(self):
         return self._vertex_list.domain
 
-    def set_translate(self, values):
-        attribute = self.domain.attribute_names['translate']
-        attribute.set_region(attribute.buffer, self.id - 1, 1, values)
+    def delete(self):
+        self._vertex_list.delete_instance(self)
 
 
 
@@ -280,7 +279,15 @@ class InstancedIndexedVertexList(IndexedVertexList, InstancedVertexList):
                     assert attribute.name in kwargs, f"{attribute.name} is defined as an instance attribute, keyword argument not found."
                     attribute.set_region(attribute.buffer, instance_id-1, 1, kwargs[attribute.name])
 
-        return VertexInstance(self, instance_id)
+        return self.domain._vertexinstance_class(self, instance_id)
+
+    def delete_instance(self, instance):
+        if instance.id != self.domain._instances:
+            raise Exception("Only the last instance added can be removed.")
+
+        self.domain._instances -= 1
+
+        self.domain.instance_allocator.dealloc(instance.id, 1)
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
@@ -290,6 +297,8 @@ class InstancedIndexedVertexList(IndexedVertexList, InstancedVertexList):
             count = self.count
 
         attribute.set_region(attribute.buffer, self.start, count, data)
+
+
 
 
 class VertexDomain:
@@ -317,8 +326,8 @@ class VertexDomain:
             count = meta['count']
             gl_type = _gl_types[meta['format'][0]]
             normalize = 'n' in meta['format']
-            instance = 'x' in meta['format']
-            attribute = shader.Attribute(name, location, count, gl_type, normalize, instance)
+
+            attribute = shader.Attribute(name, location, count, gl_type, normalize, meta['instance'])
             self.attribute_names[attribute.name] = attribute
 
             # Create buffer:
@@ -433,6 +442,32 @@ class VertexDomain:
         return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
+def _make_instance_attribute_property(name):
+
+    def _attribute_getter(self):
+        attribute = self.domain.attribute_names[name]
+        region = attribute.buffer.get_region(self.start, self.count)
+        region.invalidate()
+        return region.array
+
+    def _attribute_setter(self, data):
+        attribute = self.domain.attribute_names[name]
+        attribute.set_region(attribute.buffer, self.id - 1, 1, data)
+
+    return property(_attribute_getter, _attribute_setter)
+
+def _make_restricted_instance_attribute_property(name):
+
+    def _attribute_getter(self):
+        attribute = self.domain.attribute_names[name]
+        region = attribute.buffer.get_region(self.start, self.count)
+        return region
+
+    def _attribute_setter(self, data):
+        raise Exception(f"Attribute '{name}' is not an instanced attribute.")
+
+    return property(_attribute_getter, _attribute_setter)
+
 class InstancedVertexDomain(VertexDomain):
     _vertex_class = InstancedVertexList
 
@@ -440,6 +475,15 @@ class InstancedVertexDomain(VertexDomain):
         super().__init__(program, attribute_meta)
         self._instances = 1
         self.instance_allocator = allocation.Allocator(self._initial_count)
+
+        self._instance_properties = {}
+        for name, attribute in self.attribute_names.items():
+            if attribute.instance:
+                self._instance_properties[name] = _make_instance_attribute_property(name)
+            else:
+                self._instance_properties[name] = _make_restricted_instance_attribute_property(name)
+
+        self._vertexinstance_class = type(self._vertex_class.__name__, (VertexInstance,), self._instance_properties)
 
     def safe_alloc_instance(self, count):
         try:
@@ -534,11 +578,6 @@ class InstancedVertexDomain(VertexDomain):
         return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
-
-
-
-
-
 class IndexedVertexDomain(VertexDomain):
     """Management of a set of indexed vertex lists.
 
@@ -565,6 +604,7 @@ class IndexedVertexDomain(VertexDomain):
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,),
                                       self._property_dict)
+
 
 
     def safe_index_alloc(self, count):

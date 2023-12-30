@@ -105,7 +105,6 @@ class Allocator:
         :Parameters:
             `size` : int
                 Size of region to allocate.
-               Wh
         :rtype: int
         :return: Starting index of the allocated region.
         """

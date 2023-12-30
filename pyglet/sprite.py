@@ -74,6 +74,12 @@ from pyglet import clock
 from pyglet import event
 from pyglet import graphics
 from pyglet import image
+from typing import TYPE_CHECKING
+
+from pyglet.graphics.instance import InstanceSource
+
+if TYPE_CHECKING:
+    from pyglet.graphics.shader import ShaderProgram
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -145,11 +151,11 @@ fragment_array_source = """#version 150 core
 """
 
 
-def get_default_shader():
+def get_default_shader() -> 'ShaderProgram':
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                     (fragment_source, 'fragment'))
 
-def get_default_array_shader():
+def get_default_array_shader() -> 'ShaderProgram':
    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                    (fragment_array_source, 'fragment'))
 
@@ -238,6 +244,7 @@ class Sprite(event.EventDispatcher):
     _scale_y = 1.0
     _visible = True
     _vertex_list = None
+    _instanced = False
     group_class = SpriteGroup
 
     def __init__(self,
@@ -441,21 +448,6 @@ class Sprite(event.EventDispatcher):
             scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
             rotation=('f', (self._rotation,) * 4),
             tex_coords=('f', self._texture.tex_coords))
-
-    def set_instance(self):
-        """Creates an instance. Original is deleted."""
-        self._vertex_list.delete()
-
-        self._vertex_list = self.program.vertex_list_instanced_indexed(
-            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
-            position=('f', self._get_vertices()),
-            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
-            translate=('fx', (self._x, self._y, self._z)),
-            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
-            rotation=('f', (self._rotation,) * 4),
-            tex_coords=('f', self._texture.tex_coords))
-
-        return self._vertex_list
 
     def _get_vertices(self):
         if not self._visible:
@@ -849,5 +841,28 @@ class AdvancedSprite(pyglet.sprite.Sprite):
         self._program = program
 
 
+
+class SpriteInstanceSource(Sprite, InstanceSource):
+    invalid_attributes = ('tex_coords', 'position')
+
+    def __init__(self, img, attributes, x=0, y=0, z=0, blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA, batch=None,
+                 group=None, subpixel=False):
+        for name in attributes:
+            if name in self.invalid_attributes:
+                raise Exception(f"Attribute '{name}' is not allowed in this instance source.")
+
+        InstanceSource.__init__(self, attributes)
+        Sprite.__init__(self, img, x, y, z, blend_src, blend_dest, batch, group, subpixel)
+
+    def _create_vertex_list(self):
+        self._vertex_list = self.program.vertex_list_instanced_indexed(
+            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self.attributes,
+            self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', (*self._rgb, int(self._opacity)) * (1 if 'colors' in self.attributes else 4)),
+            translate=('f', (self._x, self._y, self._z) * (1 if 'translate' in self.attributes else 4)),
+            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * (1 if 'scale' in self.attributes else 4)),
+            rotation=('f', (self._rotation,) * (1 if 'rotation' in self.attributes else 4)),
+            tex_coords=('f', self._texture.tex_coords))
 
 

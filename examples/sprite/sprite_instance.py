@@ -1,6 +1,8 @@
 import pyglet
 import random
 
+from pyglet.graphics.instance import InstanceSource
+
 window = pyglet.window.Window(1920, 1080, vsync=False)
 
 # Set example resource path.
@@ -24,35 +26,44 @@ scales = [1.0, 0.75, 0.5, 0.25]
 
 sprites = []
 # Create 1000 sprites at various scales.
-sprite = pyglet.sprite.Sprite(image,
+instance_sprite = pyglet.sprite.SpriteInstanceSource(image, ('translate', 'colors'),
                               x=random.randint(0, window.width),
                               y=random.randint(0, window.height),
-                              batch=batch)  # specify the batch to enter the sprites in.
-base_instance = sprite.set_instance()
-print("Base Instance", base_instance)
+                              batch=batch)
 
-instance = base_instance.add_instance(translate=(100, 50, 0))
-# for i in range(1000):
-#     sprite = pyglet.sprite.Sprite(image,
-#                                   x=random.randint(0, window.width),
-#                                   y=random.randint(0, window.height),
-#                                   batch=batch)  # specify the batch to enter the sprites in.
-#     created = True
+instance = instance_sprite.create(translate=(100, 50, 0), colors=(255, 255, 255, 255))
 
-    # Randomize scale.
-    # sprite.scale = random.choice(scales)
+for i in range(10):
+    sprite_instance = instance_sprite.create(
+        translate=(random.randint(0, window.width), random.randint(0, window.height), 0),
+        colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255)
+    )
 
-    # Random color multiplier.
-    #sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    #Randomize scale.
+    #sprite_instance.scale = random.choice(scales)
+
+    #Random color multiplier.
+    #sprite_instance.colors = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
-    #sprites.append(sprite)
+    sprites.append(sprite_instance)
 
 #fps = pyglet.window.FPSDisplay(window)
 
 @window.event
 def on_key_press(symbol, modifiers):
-    instance.set_translate((random.randint(0, window.width), random.randint(0, window.height), 0))
+    if symbol == pyglet.window.key.SPACE:
+        instance.translate = (random.randint(0, window.width), random.randint(0, window.height), 0)
+        # instance.translate[:] = (random.randint(0, window.width), random.randint(0, window.height), 0)
+    elif symbol == pyglet.window.key.DELETE:
+        del_instance = instance_sprite.pop()
+        sprites.remove(del_instance)
+    elif symbol == pyglet.window.key.INSERT:
+        sprite_instance = instance_sprite.create(
+            translate=(random.randint(0, window.width), random.randint(0, window.height), 0),
+            colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255)
+        )
+        sprites.append(sprite_instance)
 
 @window.event
 def on_draw():
