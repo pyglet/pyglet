@@ -165,7 +165,7 @@ class BufferObject(AbstractBuffer):
         glUnmapBuffer(GL_ARRAY_BUFFER)
 
     def delete(self):
-        glDeleteBuffers(1, self.id)
+        glDeleteBuffers(1, GLuint(self.id))
         self.id = None
 
     def __del__(self):
