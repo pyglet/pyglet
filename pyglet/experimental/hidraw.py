@@ -149,11 +149,12 @@ class HIDRawDevice(XlibSelectDevice, Device):
         self.phys = HIDIOCGRAWPHYS(fileno).decode('utf-8')
         self.uniq = HIDIOCGRAWUNIQ(fileno).decode('utf-8')
 
-        # Query the descriptor size and set the size on the Report struct.
+        # Query the descriptor size and set the size on the Report struct:
         desc_size = HIDIOCGRDESCSIZE(fileno).value
         _buffer = HIDRawReportDescriptor(size=desc_size)
-
-        self.report_descriptor = HIDIOCGRDESC(fileno, _buffer)
+        # Query the descriptor, and save the raw bytes:
+        _report_descriptor = HIDIOCGRDESC(fileno, _buffer)
+        self.report_descriptor = bytes(_report_descriptor.values[:desc_size])
 
         self.controls = []
         self.control_map = {}
