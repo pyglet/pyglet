@@ -342,6 +342,13 @@ class Caret:
         self._update(line=line)
         self._next_attributes.clear()
 
+    def select_all(self):
+        """Select all text in the document."""
+        self._mark = 0
+        self._position = len(self._layout.document.text)
+        self._update()
+        self._next_attributes.clear()
+
     def select_word(self, x, y):
         """Select the word at the given window coordinate.
 
