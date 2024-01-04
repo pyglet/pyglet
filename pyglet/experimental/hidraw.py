@@ -12,6 +12,7 @@ from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
 from ctypes import c_int32 as _s32
 from ctypes import c_int64 as _s64
+from ctypes import create_string_buffer
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -84,6 +85,15 @@ def _IOW(type, nr):
     return f
 
 
+def _IORW(type, nr):
+    def f(fileno, buffer):
+        request = _IOC(_IOC_READ | _IOC_WRITE, ord(type), nr, ctypes.sizeof(buffer))
+        fcntl.ioctl(fileno, request, buffer)
+        return buffer
+
+    return f
+
+
 # From /linux/blob/master/include/uapi/linux/hidraw.h
 
 
@@ -110,14 +120,12 @@ HIDIOCGRDESC = _IOR('H', 0x02, HIDRawReportDescriptor)
 HIDIOCGRAWINFO = _IOR('H', 0x03, HIDRawDevInfo)
 HIDIOCGRAWNAME = _IOR_str('H', 0x04)
 HIDIOCGRAWPHYS = _IOR_str('H', 0x05)
-# TODO: implement these
-# HIDIOCSFEATURE = _IORW('H', 0x06)
-# HIDIOCGFEATURE = _IORW('H', 0x07)
+HIDIOCSFEATURE = _IORW('H', 0x06)
+HIDIOCGFEATURE = _IORW('H', 0x07)
 HIDIOCGRAWUNIQ = _IOR_str('H', 0x08)
-
-HIDRAW_FIRST_MINOR = 0
-HIDRAW_MAX_DEVICES = 64
-HIDRAW_BUFFER_SIZE = 64
+# HIDRAW_FIRST_MINOR = 0
+# HIDRAW_MAX_DEVICES = 64
+# HIDRAW_BUFFER_SIZE = 64
 
 
 def get_set_bits(bytestring):
@@ -141,25 +149,31 @@ class HIDRawDevice(XlibSelectDevice, Device):
         fileno = os.open(filename, os.O_RDWR | os.O_NONBLOCK)
 
         self.info = HIDIOCGRAWINFO(fileno)
-
         self.bus_type = {BUS_USB: 'usb', BUS_BLUETOOTH: 'bluetooth'}.get(self.info.bustype)
-
-        name = HIDIOCGRAWNAME(fileno).decode('utf-8')
-
         self.phys = HIDIOCGRAWPHYS(fileno).decode('utf-8')
         self.uniq = HIDIOCGRAWUNIQ(fileno).decode('utf-8')
+        name = HIDIOCGRAWNAME(fileno).decode('utf-8')
 
-        # Query the descriptor size and set the size on the Report struct:
+        # Query the descriptor size:
         desc_size = HIDIOCGRDESCSIZE(fileno).value
-        _buffer = HIDRawReportDescriptor(size=desc_size)
         # Query the descriptor, and save the raw bytes:
-        _report_descriptor = HIDIOCGRDESC(fileno, _buffer)
+        _report_descriptor = HIDIOCGRDESC(fileno, HIDRawReportDescriptor(size=desc_size))
         self.report_descriptor = bytes(_report_descriptor.values[:desc_size])
 
         self.controls = []
         self.control_map = {}
 
+        os.close(fileno)
         super().__init__(display, name)
+
+    def get_feature_report(self, number=0x00, length=256) -> bytes:
+        # Make a buffer, and set the first byte to the report number:
+        buffer = create_string_buffer(length + 1)
+        buffer[0] = number
+
+        HIDIOCGFEATURE(self._fileno, buffer=buffer)
+
+        return buffer.raw
 
     # TODO: HIDRaw version
     # def get_guid(self):
