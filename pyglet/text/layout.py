@@ -131,7 +131,6 @@ from pyglet.font.base import grapheme_break
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-
 layout_vertex_source = """#version 330 core
     in vec3 position;
     in vec4 colors;
@@ -447,12 +446,11 @@ class _GlyphBox(_AbstractBox):
 
     def place(self, layout, i, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y, context):
         assert self.glyphs
-        program = get_default_layout_shader()
 
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, program, order=1, parent=layout.group)
+            group = layout.group_class(self.owner, layout.program, order=1, parent=layout.group)
             layout.group_cache[self.owner] = group
 
         n_glyphs = self.length
@@ -491,14 +489,14 @@ class _GlyphBox(_AbstractBox):
 
         t_position = (x, y, z)
 
-        vertex_list = program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
-                                                  position=('f', vertices),
-                                                  translation=('f', t_position * 4 * n_glyphs),
-                                                  colors=('Bn', colors),
-                                                  tex_coords=('f', tex_coords),
-                                                  rotation=('f', ((rotation,) * 4) * n_glyphs),
-                                                  visible=('f', ((visible,) * 4) * n_glyphs),
-                                                  anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
+        vertex_list = layout.program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
+                                                         position=('f', vertices),
+                                                         translation=('f', t_position * 4 * n_glyphs),
+                                                         colors=('Bn', colors),
+                                                         tex_coords=('f', tex_coords),
+                                                         rotation=('f', ((rotation,) * 4) * n_glyphs),
+                                                         visible=('f', ((visible,) * 4) * n_glyphs),
+                                                         anchor=('f', ((anchor_x, anchor_y) * 4) * n_glyphs))
         context.add_list(vertex_list)
 
         # Decoration (background color and underline)
@@ -512,7 +510,7 @@ class _GlyphBox(_AbstractBox):
         underline_vertices = []
         underline_colors = []
         y1 = line_y + self.descent + baseline
-        y2 = line_y +self.ascent + baseline
+        y2 = line_y + self.ascent + baseline
         x1 = line_x
 
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
@@ -878,7 +876,7 @@ class TextLayout:
 
     def __init__(self, document, x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None,
+                 multiline=False, dpi=None, batch=None, group=None, program=None,
                  wrap_lines=True, init_document=True):
         """Create a text layout.
 
@@ -917,6 +915,8 @@ class TextLayout:
                 Optional Group to parent all internal Groups that this text
                 layout uses.  Note that layouts with the same Groups will
                 be rendered simultaneously in a Batch.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional graphics shader to use. Will affect all glyphs.
             `wrap_lines` : bool
                 If True and `multiline` is True, the text is word-wrapped using
                 the specified width.
@@ -947,6 +947,8 @@ class TextLayout:
         self._width = width
         self._height = height
         self._multiline = multiline
+
+        self._program = program or get_default_layout_shader()
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
@@ -1036,6 +1038,18 @@ class TextLayout:
             self._batch = batch
             self._own_batch = False
             self._update()
+
+    @property
+    def program(self):
+        return self._program
+
+    @program.setter
+    def program(self, shader_program):
+        if self._program == shader_program:
+            return
+
+        self._program = shader_program
+        self._update()
 
     @property
     def x(self):
@@ -1919,7 +1933,8 @@ class TextLayout:
     def _create_vertex_lists(self, line_x, line_y, anchor_x, anchor_y, i, boxes, context):
         x = self._x
         for box in boxes:
-            box.place(self, i, x, self._y, self._z, line_x, line_y, self._rotation, self._visible, anchor_x, anchor_y, context)
+            box.place(self, i, x, self._y, self._z, line_x, line_y, self._rotation, self._visible, anchor_x, anchor_y,
+                      context)
             x += box.advance
             i += box.length
 
@@ -2102,7 +2117,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _translate_y = 0
 
     def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+                 multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
 
         self.glyphs = []
         self.lines = []
@@ -2117,7 +2132,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         wrap_lines)
+                         program, wrap_lines)
 
     def _update_scissor_area(self):
         area = (self.left, self.bottom, self._width, self._height)
