@@ -247,10 +247,13 @@ class AttributeBufferObject(BufferObject):
         self.data[array_start:array_end] = data
 
         # replicated from self.invalidate_region
-        byte_start = self.attribute_stride * start  # byte offset
-        byte_size = self.attribute_stride * count   # number of bytes
-        self._dirty_min = min(self._dirty_min, byte_start)
-        self._dirty_max = max(self._dirty_max, byte_start + byte_size)
+        byte_start = self.attribute_stride * start
+        byte_end = byte_start + self.attribute_stride * count
+        # As of Python 3.11, this is faster than min/max:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
         self._dirty = True
 
     def resize(self, size):
@@ -276,6 +279,9 @@ class AttributeBufferObject(BufferObject):
     def invalidate_region(self, start, count):
         byte_start = self.attribute_stride * start
         byte_end = byte_start + self.attribute_stride * count
-        self._dirty_min = min(self._dirty_min, byte_start)
-        self._dirty_max = max(self._dirty_max, byte_end)
+        # As of Python 3.11, this is faster than min/max:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
         self._dirty = True
