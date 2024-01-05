@@ -1402,6 +1402,28 @@ class TextLayout:
             box.delete(self)
         self._boxes.clear()
 
+    def get_as_texture(self, min_filter=GL_NEAREST, mag_filter=GL_NEAREST) -> pyglet.image.Texture:
+        """Returns a Texture with the TextLayout drawn to it. Each call to this function returns a new
+        Texture.
+        ~Warning: Usage is recommended only if you understand how texture generation affects your application.
+        """
+        framebuffer = pyglet.image.Framebuffer()
+        temp_pos = self.position
+        width = int(round(self.content_width))
+        height = int(round(self.content_height))
+        texture = pyglet.image.Texture.create(width, height, min_filter=min_filter, mag_filter=mag_filter)
+        depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
+        framebuffer.attach_texture(texture)
+        framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
+
+        self.position = (0-self._anchor_left, 0-self._anchor_bottom, 0)
+        framebuffer.bind()
+        self.draw()
+        framebuffer.unbind()
+
+        self.position = temp_pos
+        return texture
+
     def draw(self):
         """Draw this text layout.
 
