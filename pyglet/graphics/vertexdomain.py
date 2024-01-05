@@ -288,7 +288,10 @@ class VertexList:
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
-        attribute.set_region(attribute.buffer, self.start, self.count, data)
+        array_start = attribute.count * self.start
+        array_end = attribute.count * self.count + array_start
+        attribute.buffer.data[array_start:array_end] = data
+        attribute.buffer.invalidate_region(self.start, self.count)
 
 
 class IndexedVertexDomain(VertexDomain):
