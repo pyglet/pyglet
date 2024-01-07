@@ -24,6 +24,13 @@ from operator import mul as _mul
 from collections.abc import Iterable as _Iterable
 from collections.abc import Iterator as _Iterator
 
+try:
+    from math import sumprod as _sumprod
+except ImportError:
+    # TODO: remove Python < 3.12 fallback when 3.11 is EOL
+    def _sumprod(itera, iterb):
+        return sum(map(_mul, itera, iterb))
+
 
 Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
@@ -565,9 +572,9 @@ class Mat3(tuple):
             r0 = self[0::3]
             r1 = self[1::3]
             r2 = self[2::3]
-            return Vec3(sum(map(_mul, r0, other)),
-                        sum(map(_mul, r1, other)),
-                        sum(map(_mul, r2, other)))
+            return Vec3(_sumprod(r0, other),
+                        _sumprod(r1, other),
+                        _sumprod(r2, other))
 
         if not isinstance(other, Mat3):
             raise TypeError("Can only multiply with Mat3 or Vec3 types")
@@ -582,9 +589,9 @@ class Mat3(tuple):
         c2 = other[6:9]
 
         # Multiply and sum rows * columns:
-        return Mat3((sum(map(_mul, c0, r0)), sum(map(_mul, c0, r1)), sum(map(_mul, c0, r2)),
-                     sum(map(_mul, c1, r0)), sum(map(_mul, c1, r1)), sum(map(_mul, c1, r2)),
-                     sum(map(_mul, c2, r0)), sum(map(_mul, c2, r1)), sum(map(_mul, c2, r2))))
+        return Mat3((_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2),
+                     _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2),
+                     _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2)))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
@@ -834,10 +841,10 @@ class Mat4(tuple):
             r1 = self[1::4]
             r2 = self[2::4]
             r3 = self[3::4]
-            return Vec4(sum(map(_mul, r0, other)),
-                        sum(map(_mul, r1, other)),
-                        sum(map(_mul, r2, other)),
-                        sum(map(_mul, r3, other)))
+            return Vec4(_sumprod(r0, other),
+                        _sumprod(r1, other),
+                        _sumprod(r2, other),
+                        _sumprod(r3, other))
 
         if not isinstance(other, Mat4):
             raise TypeError("Can only multiply with Mat4 or Vec4 types")
@@ -853,10 +860,10 @@ class Mat4(tuple):
         c3 = other[12:16]
 
         # Multiply and sum rows * columns:
-        return Mat4((sum(map(_mul, c0, r0)), sum(map(_mul, c0, r1)), sum(map(_mul, c0, r2)), sum(map(_mul, c0, r3)),
-                     sum(map(_mul, c1, r0)), sum(map(_mul, c1, r1)), sum(map(_mul, c1, r2)), sum(map(_mul, c1, r3)),
-                     sum(map(_mul, c2, r0)), sum(map(_mul, c2, r1)), sum(map(_mul, c2, r2)), sum(map(_mul, c2, r3)),
-                     sum(map(_mul, c3, r0)), sum(map(_mul, c3, r1)), sum(map(_mul, c3, r2)), sum(map(_mul, c3, r3))))
+        return Mat4((_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2), _sumprod(c0, r3),
+                     _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
+                     _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
+                     _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3)))
 
     # def __getitem__(self, item):
     #     row = [slice(0, 4), slice(4, 8), slice(8, 12), slice(12, 16)][item]
