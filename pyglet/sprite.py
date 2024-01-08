@@ -691,7 +691,7 @@ class Sprite(event.EventDispatcher):
 
     @opacity.setter
     def opacity(self, opacity):
-        self._rgba[3] = opacity
+        self._rgba = (*self._rgba[:3], opacity)
         self._vertex_list.colors[:] = self._rgba * 4
 
     @property
