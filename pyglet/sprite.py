@@ -231,8 +231,7 @@ class Sprite(event.EventDispatcher):
     _frame_index = 0
     _paused = False
     _rotation = 0
-    _opacity = 255
-    _rgb = (255, 255, 255)
+    _rgba = (255, 255, 255, 255)
     _scale = 1.0
     _scale_x = 1.0
     _scale_y = 1.0
@@ -436,7 +435,7 @@ class Sprite(event.EventDispatcher):
         self._vertex_list = self.program.vertex_list_indexed(
             4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
             position=('f', self._get_vertices()),
-            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
+            colors=('Bn', self._rgba * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
             scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
             rotation=('f', (self._rotation,) * 4),
@@ -444,14 +443,14 @@ class Sprite(event.EventDispatcher):
 
     def _get_vertices(self):
         if not self._visible:
-            return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         else:
             img = self._texture
             x1 = -img.anchor_x
             y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
-            vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
+            vertices = x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0
 
             if not self._subpixel:
                 return tuple(map(int, vertices))
@@ -684,14 +683,16 @@ class Sprite(event.EventDispatcher):
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
         make the sprite appear translucent.
 
+        If opacity is not an int, a :py:class:`TypeError` will be raised.
+
         :type: int
         """
-        return self._opacity
+        return self._rgba[3]
 
     @opacity.setter
     def opacity(self, opacity):
-        self._opacity = opacity
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
+        self._rgba[3] = opacity
+        self._vertex_list.colors[:] = self._rgba * 4
 
     @property
     def color(self):
@@ -700,17 +701,29 @@ class Sprite(event.EventDispatcher):
         This property sets the color of the sprite's vertices. This allows the
         sprite to be drawn with a color tint.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        The color is specified as either an RGBA tuple of integers
+        '(red, green, blue, opacity)' or an RGB tuple of integers
+        `(red, blue, green)`.
 
-        :type: (int, int, int)
+        If there are fewer than three components, a :py:func`ValueError`
+        will be raised. Each color component must be an int in the range
+        0 (dark) to 255 (saturated). If any component is not an int, a
+        :py:class:`TypeError` will be raised.
+
+        :type: (int, int, int, int)
         """
-        return self._rgb
+        return self._rgba
 
     @color.setter
-    def color(self, rgb):
-        self._rgb = list(map(int, rgb))
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
+    def color(self, rgba):
+        # ValueError raised by unpacking if len(rgba) < 3
+        r, g, b, *a = rgba
+        new_color = r, g, b, a[0] if a else 255
+
+        # Only update if we actually have to
+        if new_color != self._rgba:
+            self._rgba = new_color
+            self._vertex_list.colors[:] = new_color * 4
 
     @property
     def visible(self):
