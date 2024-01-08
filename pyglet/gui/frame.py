@@ -75,6 +75,16 @@ class Frame:
             if widget in widgets:
                 widgets.remove(widget)
 
+    def on_key_press(self, symbol, modifiers):
+        """Pass the event to any widgets within range of the mouse"""
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.on_key_press(symbol, modifiers)
+
+    def on_key_release(self, symbol, modifiers):
+        """Pass the event to any widgets within range of the mouse"""
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.on_key_release(symbol, modifiers)
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(x, y), set()):

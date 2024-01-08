@@ -200,8 +200,9 @@ class DocumentLabel(layout.TextLayout):
 
     def __init__(self, document=None,
                  x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
+                 anchor_x='left', anchor_y='baseline', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None,
+                 init_document=True):
         """Create a label for a given document.
 
         :Parameters:
@@ -223,6 +224,10 @@ class DocumentLabel(layout.TextLayout):
             `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
             `multiline` : bool
                 If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
@@ -232,20 +237,13 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
-            `rotation`: float
-                The amount to rotate the label in degrees. A positive amount
-                will be a clockwise rotation, negative values will result in
-                counter-clockwise rotation.
-
+            `init_document` : bool
+                If True the document will be initialized. If subclassing then
+                you may want to avoid duplicate initializations by changing
+                to False.
         """
-        super().__init__(document, width, height, multiline, dpi, batch, group)
-        self._x = x
-        self._y = y
-        self._z = z
-        self._rotation = rotation
-        self._anchor_x = anchor_x
-        self._anchor_y = anchor_y
-        self._update()
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         init_document=init_document)
 
     @property
     def text(self):
@@ -386,9 +384,9 @@ class Label(DocumentLabel):
                  font_name=None, font_size=None, bold=False, italic=False, stretch=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline',
+                 anchor_x='left', anchor_y='baseline', rotation=0,
                  align='left',
-                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
+                 multiline=False, dpi=None, batch=None, group=None):
         """Create a plain text label.
 
         :Parameters:
@@ -423,6 +421,10 @@ class Label(DocumentLabel):
             `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
             `align` : str
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
@@ -436,14 +438,11 @@ class Label(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
-            `rotation`: float
-                The amount to rotate the label in degrees. A positive amount
-                will be a clockwise rotation, negative values will result in
-                counter-clockwise rotation.
 
         """
         doc = decode_text(text)
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
@@ -465,8 +464,8 @@ class HTMLLabel(DocumentLabel):
 
     def __init__(self, text='', location=None,
                  x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline',
-                 multiline=False, dpi=None, batch=None, group=None, rotation=0):
+                 anchor_x='left', anchor_y='baseline', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None):
         """Create a label with an HTML string.
 
         :Parameters:
@@ -491,6 +490,10 @@ class HTMLLabel(DocumentLabel):
             `anchor_y` : str
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
+            `rotation`: float
+                The amount to rotate the label in degrees. A positive amount
+                will be a clockwise rotation, negative values will result in
+                counter-clockwise rotation.
             `multiline` : bool
                 If True, the label will be word-wrapped and render paragraph
                 and line breaks.  You must also set the width of the label.
@@ -500,16 +503,13 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
-            `rotation`: float
-                The amount to rotate the label in degrees. A positive amount
-                will be a clockwise rotation, negative values will result in
-                counter-clockwise rotation.
 
         """
         self._text = text
         self._location = location
         doc = decode_html(text, location)
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, multiline, dpi, batch, group, rotation)
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+                         init_document=False)
 
     @property
     def text(self):

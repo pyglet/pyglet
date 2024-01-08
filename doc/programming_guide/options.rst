@@ -1,8 +1,7 @@
 Runtime Options
 ===============
 
-.. automodule:: pyglet
-   :members:
+.. autodata:: pyglet.options
 
 
 .. _guide_environment-settings:

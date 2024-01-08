@@ -80,7 +80,7 @@ class SilentAudioPlayer(AbstractAudioPlayer):
                 return
 
             data = self._get_and_compensate_audio_data(
-                self.source.audio_format.align(self._singlebuffer_ideal_size - remaining),
+                self.source.audio_format.align(self._buffered_data_ideal_size - remaining),
                 self._pseudo_play_cursor)
 
             if data is None:

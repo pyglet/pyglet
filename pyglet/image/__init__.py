@@ -1224,7 +1224,7 @@ class Texture(AbstractImage):
         """Delete this texture and the memory it occupies.
         After this, it may not be used anymore.
         """
-        glDeleteTextures(1, self.id)
+        glDeleteTextures(1, GLuint(self.id))
         self.id = None
 
     def __del__(self):

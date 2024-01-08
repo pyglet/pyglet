@@ -165,7 +165,7 @@ class BufferObject(AbstractBuffer):
         glUnmapBuffer(GL_ARRAY_BUFFER)
 
     def delete(self):
-        glDeleteBuffers(1, self.id)
+        glDeleteBuffers(1, GLuint(self.id))
         self.id = None
 
     def __del__(self):
@@ -203,6 +203,7 @@ class AttributeBufferObject(BufferObject):
 
     def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
         super().__init__(size, usage)
+        self._dirty = False
         self._size = size
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
@@ -215,8 +216,13 @@ class AttributeBufferObject(BufferObject):
 
         self._array = self.get_region(0, size).array
 
-    def bind(self, target=GL_ARRAY_BUFFER):
-        super().bind(target)
+    def sub_data(self):
+        """Updates the buffer if any data has been changed or invalidated. Allows submitting multiple changes at once,
+        rather than having to call glBufferSubData for every change."""
+        if not self._dirty:
+            return
+
+        glBindBuffer(GL_ARRAY_BUFFER, self.id)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
@@ -225,6 +231,8 @@ class AttributeBufferObject(BufferObject):
                 glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self.data_ptr + self._dirty_min)
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
+
+            self._dirty = False
 
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
@@ -248,6 +256,8 @@ class AttributeBufferObject(BufferObject):
         self._dirty_min = min(self._dirty_min, byte_start)
         self._dirty_max = max(self._dirty_max, byte_start + byte_size)
 
+        self._dirty = True
+
     def resize(self, size):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
@@ -265,6 +275,12 @@ class AttributeBufferObject(BufferObject):
         self._array = self.get_region(0, size).array
         self.get_region.cache_clear()
 
+        self._dirty = False
+
+    def invalidate(self):
+        super().invalidate()
+
+        self._dirty = True
 
 class BufferObjectRegion:
     """A mapped region of a MappableBufferObject."""
@@ -287,3 +303,4 @@ class BufferObjectRegion:
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)
+        buffer._dirty = True

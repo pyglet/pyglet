@@ -1372,7 +1372,7 @@ class XlibWindow(BaseWindow):
 
         # Search all of them (usually 8)
         if three_or_more:
-            data, count = self.get_single_property(self._xdnd_source, self._xdnd_atoms['XdndTypeList'], XA_ATOM)
+            data, count, _ = self.get_single_property(self._xdnd_source, self._xdnd_atoms['XdndTypeList'], XA_ATOM)
 
             data = cast(data, POINTER(xlib.Atom))
         else:

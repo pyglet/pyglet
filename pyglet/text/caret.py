@@ -98,7 +98,9 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group, colors=('Bn', colors))
+        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
+                                                     colors=('Bn', colors),
+                                                     visible=('f', (1, 1)))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -338,6 +340,13 @@ class Caret:
         line = self._layout.get_line_from_point(x, y)
         self._position = self._layout.get_position_on_line(line, x)
         self._update(line=line)
+        self._next_attributes.clear()
+
+    def select_all(self):
+        """Select all text in the document."""
+        self._mark = 0
+        self._position = len(self._layout.document.text)
+        self._update()
         self._next_attributes.clear()
 
     def select_word(self, x, y):

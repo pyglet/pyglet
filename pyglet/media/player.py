@@ -171,17 +171,17 @@ class Player(pyglet.event.EventDispatcher):
 
     def _set_playing(self, playing: bool) -> None:
         # stopping = self._playing and not playing
-        # starting = not self._playing and playing
+        starting = not self._playing and playing
 
         self._playing = playing
         source = self.source
 
         if playing and source:
             if source.audio_format is not None:
-                if self._audio_player is None:
+                if (was_created := self._audio_player is None):
                     self._create_audio_player()
-                    if self._audio_player is not None:
-                        self._audio_player.prefill_audio()
+                if self._audio_player is not None and (was_created or starting):
+                    self._audio_player.prefill_audio()
 
             if bl.logger is not None:
                 bl.logger.init_wall_time()
@@ -294,7 +294,6 @@ class Player(pyglet.event.EventDispatcher):
             if self._audio_player is not None:
                 if self._source.audio_format == old_source.audio_format:
                     self._audio_player.set_source(self._source)
-                    self._audio_player.prefill_audio()
                 else:
                     self._audio_player.delete()
                     self._audio_player = None
@@ -341,7 +340,6 @@ class Player(pyglet.event.EventDispatcher):
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped
             self._audio_player.clear()
-            self._audio_player.prefill_audio()
         if self.source.video_format is not None:
             self.update_texture()
             pyglet.clock.unschedule(self.update_texture)

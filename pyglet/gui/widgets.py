@@ -126,6 +126,12 @@ class WidgetBase(EventDispatcher):
     def _update_position(self):
         raise NotImplementedError("Unable to reposition this Widget")
 
+    def on_key_press(self, symbol, modifiers):
+        pass
+
+    def on_key_release(self, symbol, modifiers):
+        pass
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         pass
 
