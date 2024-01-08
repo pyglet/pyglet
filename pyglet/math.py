@@ -20,16 +20,17 @@ import math as _math
 import typing as _typing
 import warnings as _warnings
 
-from operator import mul as _mul
 from collections.abc import Iterable as _Iterable
 from collections.abc import Iterator as _Iterator
 
 try:
     from math import sumprod as _sumprod
 except ImportError:
+    from operator import mul as _mul
+
     # TODO: remove Python < 3.12 fallback when 3.11 is EOL
-    def _sumprod(itera, iterb):
-        return sum(map(_mul, itera, iterb))
+    def _sumprod(p, q, /):
+        return sum(map(_mul, p, q))
 
 
 Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
