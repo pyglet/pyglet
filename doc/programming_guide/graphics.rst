@@ -109,7 +109,7 @@ will return dictionaries showing the metadata for these objects::
     >>> for uniform in program.uniforms.items():
     ...     print(uniform)
     ...
-    ('projection': {'location': 0, 'length': 16, 'count': 1})
+    ('time', {'location': 2, 'length': 1, 'size': 1})
 
 
 .. note::
