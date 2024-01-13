@@ -175,8 +175,7 @@ class Attribute:
         self.c_type = _c_types[gl_type]
 
         self.element_size = sizeof(self.c_type)
-        self.byte_size = count * self.element_size
-        self.stride = self.byte_size
+        self.stride = count * self.element_size
 
     def enable(self):
         """Enable the attribute."""
@@ -317,6 +316,7 @@ class _UniformArray:
     def __repr__(self):
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
         return f"UniformArray(uniform={self._uniform.name}, data={data})"
+
 
 class _Uniform:
     __slots__ = 'program', 'name', 'type', 'size', 'location', 'length', 'count', 'get', 'set'

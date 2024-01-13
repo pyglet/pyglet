@@ -202,19 +202,18 @@ class AttributeBufferObject(BufferObject):
     """
 
     def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+        # size is the allocator size * attribute.stride
         super().__init__(size, usage)
-        self._dirty = False
-        self._size = size
-        self.data = (ctypes.c_byte * size)()
+        self.data = (attribute.c_type * (attribute.stride * attribute.count * size))()
         self.data_ptr = ctypes.addressof(self.data)
+
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
+        self._dirty = False
 
         self.attribute_stride = attribute.stride
         self.attribute_count = attribute.count
         self.attribute_ctype = attribute.c_type
-
-        self._array = self.get_region(0, size).array
 
     def sub_data(self):
         """Updates the buffer if any data has been changed or invalidated. Allows submitting multiple changes at once,
@@ -229,41 +228,39 @@ class AttributeBufferObject(BufferObject):
                 glBufferData(GL_ARRAY_BUFFER, self.size, self.data, self.usage)
             else:
                 glBufferSubData(GL_ARRAY_BUFFER, self._dirty_min, size, self.data_ptr + self._dirty_min)
+
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
-
             self._dirty = False
 
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
         byte_start = self.attribute_stride * start  # byte offset
-        byte_size = self.attribute_stride * count  # number of bytes
         array_count = self.attribute_count * count  # number of values
-
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
-        array = ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
-        return BufferObjectRegion(self, byte_start, byte_start + byte_size, array)
+        return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start, count, data):
-        byte_start = self.attribute_stride * start  # byte offset
-        byte_size = self.attribute_stride * count  # number of bytes
+        array_start = self.attribute_count * start
+        array_end = self.attribute_count * count + array_start
 
-        array_start = start * self.attribute_count
-        array_end = count * self.attribute_count + array_start
+        self.data[array_start:array_end] = data
 
-        self._array[array_start:array_end] = data
-
-        self._dirty_min = min(self._dirty_min, byte_start)
-        self._dirty_max = max(self._dirty_max, byte_start + byte_size)
-
+        # replicated from self.invalidate_region
+        byte_start = self.attribute_stride * start
+        byte_end = byte_start + self.attribute_stride * count
+        # As of Python 3.11, this is faster than min/max:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
         self._dirty = True
 
     def resize(self, size):
-        data = (ctypes.c_byte * size)()
+        data = (self.attribute_ctype * (size * self.attribute_count))()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
-        self.data_ptr = ctypes.addressof(self.data)
-
+        self.data_ptr = ctypes.addressof(data)
         self.size = size
 
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
@@ -271,36 +268,20 @@ class AttributeBufferObject(BufferObject):
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
-
-        self._array = self.get_region(0, size).array
-        self.get_region.cache_clear()
-
         self._dirty = False
+
+        self.get_region.cache_clear()
 
     def invalidate(self):
         super().invalidate()
-
         self._dirty = True
 
-class BufferObjectRegion:
-    """A mapped region of a MappableBufferObject."""
-
-    __slots__ = 'buffer', 'start', 'end', 'array'
-
-    def __init__(self, buffer, start, end, array):
-        self.buffer = buffer
-        self.start = start
-        self.end = end
-        self.array = array
-
-    def invalidate(self):
-        """Mark this region as changed.
-
-        The buffer may not be updated with the latest contents of the
-        array until this method is called.  (However, it may not be updated
-        until the next time the buffer is used, for efficiency).
-        """
-        buffer = self.buffer
-        buffer._dirty_min = min(buffer._dirty_min, self.start)
-        buffer._dirty_max = max(buffer._dirty_max, self.end)
-        buffer._dirty = True
+    def invalidate_region(self, start, count):
+        byte_start = self.attribute_stride * start
+        byte_end = byte_start + self.attribute_stride * count
+        # As of Python 3.11, this is faster than min/max:
+        if byte_start < self._dirty_min:
+            self._dirty_min = byte_start
+        if byte_end > self._dirty_max:
+            self._dirty_max = byte_end
+        self._dirty = True
