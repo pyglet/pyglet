@@ -202,7 +202,7 @@ class DocumentLabel(layout.TextLayout):
                  x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None,
-                 init_document=True):
+                 program=None, init_document=True):
         """Create a label for a given document.
 
         :Parameters:
@@ -237,13 +237,15 @@ class DocumentLabel(layout.TextLayout):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional graphics shader to use. Will affect all glyphs.
             `init_document` : bool
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing
                 to False.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         init_document=init_document)
+                         program, init_document=init_document)
 
     @property
     def text(self):
@@ -386,7 +388,7 @@ class Label(DocumentLabel):
                  x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
                  align='left',
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, program=None):
         """Create a plain text label.
 
         :Parameters:
@@ -438,11 +440,13 @@ class Label(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional graphics shader to use. Will affect all glyphs.
 
         """
         doc = decode_text(text)
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         init_document=False)
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch,
+                                       group, program, init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
@@ -465,7 +469,7 @@ class HTMLLabel(DocumentLabel):
     def __init__(self, text='', location=None,
                  x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None):
+                 multiline=False, dpi=None, batch=None, group=None, program=None):
         """Create a label with an HTML string.
 
         :Parameters:
@@ -503,13 +507,15 @@ class HTMLLabel(DocumentLabel):
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional graphics shader to use. Will affect all glyphs.
 
         """
         self._text = text
         self._location = location
         doc = decode_html(text, location)
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         init_document=False)
+                         program, init_document=False)
 
     @property
     def text(self):
