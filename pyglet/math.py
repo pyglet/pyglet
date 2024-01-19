@@ -946,12 +946,17 @@ class Quaternion(tuple):
     def z(self) -> float:
         return self[3]
 
-    def conjugate(self) -> Quaternion:
-        return Quaternion(self.w, -self.x, -self.y, -self.z)
-
     @property
     def mag(self) -> float:
         return self.__abs__()
+
+    def conjugate(self) -> Quaternion:
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
+
+    def dot(self, other: Quaternion) -> float:
+        a, b, c, d = self
+        e, f, g, h = other
+        return a * e + b * f + c * g + d * h
 
     def normalize(self) -> Quaternion:
         m = self.__abs__()
@@ -962,11 +967,33 @@ class Quaternion(tuple):
     def __abs__(self) -> float:
         return _math.sqrt(self.w ** 2 + self.x ** 2 + self.y ** 2 + self.z ** 2)
 
-    def __invert__(self) -> Quaternion:
-        raise NotImplementedError("Not yet implemented")
+    def __add__(self, other: Quaternion) -> Quaternion:
+        a, b, c, d = self
+        e, f, g, h = other
+        return Quaternion(a + e, b + f, c + g, d + h)
 
-    def __matmul__(self, other):
-        raise NotImplementedError("Not yet implemented")
+    def __sub__(self, other: Quaternion) -> Quaternion:
+        a, b, c, d = self
+        e, f, g, h = other
+        return Quaternion(a - e, b - f, c - g, d - h)
+
+    def __mul__(self, scalar: float) -> Quaternion:
+        w, x = self.w * scalar, self.x * scalar
+        y, z = self.y * scalar, self.z * scalar
+        return Quaternion(w, x, y, z)
+
+    def __truediv__(self, other: Quaternion) -> Quaternion:
+        return ~self @ other
+
+    def __invert__(self) -> Quaternion:
+        return self.conjugate() * (1 / self.dot(self))
+
+    def __matmul__(self, other: Quaternion) -> Quaternion:
+        a, u = self[0], Vec3(*self[1:])
+        b, v = other[0], Vec3(*other[1:])
+        scalar = a * b - u.dot(v)
+        vector = v * a + u * b + u.cross(v)
+        return Quaternion(scalar, *vector)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(w={self[0]}, x={self[1]}, y={self[2]}, z={self[3]})"
