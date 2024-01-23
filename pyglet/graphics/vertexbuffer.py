@@ -204,7 +204,8 @@ class AttributeBufferObject(BufferObject):
     def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
         # size is the allocator size * attribute.stride
         super().__init__(size, usage)
-        self.data = (attribute.c_type * size)()
+        number = size // attribute.element_size
+        self.data = (attribute.c_type * number)()
         self.data_ptr = ctypes.addressof(self.data)
 
         self._dirty_min = sys.maxsize
@@ -257,7 +258,9 @@ class AttributeBufferObject(BufferObject):
         self._dirty = True
 
     def resize(self, size):
-        data = (self.attribute_ctype * size)()
+        # size is the allocator size * attribute.stride
+        number = size // ctypes.sizeof(self.attribute_ctype)
+        data = (self.attribute_ctype * number)()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
         self.data_ptr = ctypes.addressof(data)
