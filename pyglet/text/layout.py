@@ -1979,9 +1979,9 @@ class ScrollableTextLayout(TextLayout):
     _translate_y = 0
 
     def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+                 multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         wrap_lines)
+                         program, wrap_lines)
 
     def _update_scissor_area(self):
         if not self.document.text:
