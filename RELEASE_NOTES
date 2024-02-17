@@ -1,8 +1,24 @@
 pyglet 2.0.11
 
+Changes and Improvements
+------------------------
+- media: major internal audio cleanup, bugfixes, and improvements on all platforms.
+- various typing and documentation improvements.
+- math: add Quaternion class with common methods.
+- shader: add support for setting and getting arrays in a Uniform via wrapper. (#1005)
+- shapes: add radius property get and set to Arc class. (#1013)
+- sprite, shapes: Avoid extra step of updating vertex list after creation. (#1016)
+- shapes: allow setting the line thickness of Arc and BezierCurve shapes. (#1028, #1030)
+- text: add Caret.select_all method.
+
 Bugfixes
 --------
-- macOS: prevent crash when scanning for Controllers if device.transport is None #995
+- macOS: prevent crash when scanning for Controllers if device.transport is None. (#995)
+- input: avoid crash when encountering controls with invalid min/max values. (#986)
+- xlib: fix missed argument in window drag.
+- media: fix bad behavior when clearing XAudio2AudioPlayer. (#1011)
+- pyglet.__init__: don't install debug_trace until after module proxies #1046
+- media: numerous fixes to race conditions and deadlocks across all backends.
 
 
 pyglet 2.0.10
