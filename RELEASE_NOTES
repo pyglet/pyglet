@@ -10,6 +10,10 @@ Changes and Improvements
 - sprite, shapes: Avoid extra step of updating vertex list after creation. (#1016)
 - shapes: allow setting the line thickness of Arc and BezierCurve shapes. (#1028, #1030)
 - text: add Caret.select_all method.
+- text: performance improvements on instantiation, visibility, anchors, positions. (#1004)
+- text: add left, right, bottom, top attributes. (#1004)
+- text: add program argument for custom shaders. (#1037)
+- text: add get_as_texture function to render text to a new texture. (#1037)
 
 Bugfixes
 --------
