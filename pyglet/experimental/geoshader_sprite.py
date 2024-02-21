@@ -80,8 +80,8 @@ geometry_source = """#version 150
         // Calculate the left, bottom, right, top:
         float tl = geo_tex_coords[0].s;
         float tb = geo_tex_coords[0].t;
-        float tr = geo_tex_coords[0].s + geo_tex_coords[0].p;
-        float tt = geo_tex_coords[0].t + geo_tex_coords[0].q;
+        float tr = geo_tex_coords[0].p;
+        float tt = geo_tex_coords[0].q;
 
         // Emit a triangle strip creating a quad (4 vertices).
         // Here we need to make sure the rotation is applied before we position the sprite.
@@ -232,7 +232,6 @@ class Sprite(event.EventDispatcher):
     _frame_index = 0
     _paused = False
     _rotation = 0
-    _rgba = [255, 255, 255, 255]
     _scale = 1.0
     _scale_x = 1.0
     _scale_y = 1.0
@@ -278,6 +277,8 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._z = z
         self._img = img
+
+        self._rgba = [255, 255, 255, 255]
 
         if isinstance(img, image.Animation):
             self._animation = img
