@@ -1561,10 +1561,12 @@ class Texture3D(Texture, UniformTextureSequence):
 
     def __setitem__(self, index, value):
         if type(index) is slice:
+            glBindTexture(self.target, self.id)
+
             for item, image in zip(self[index], value):
                 image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, item.z)
         else:
-            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, self[index].z)
+            self.blit_into(value, value.anchor_x, value.anchor_y, self[index].z)
 
     def __iter__(self):
         return iter(self.items)
@@ -1647,7 +1649,8 @@ class TextureArray(Texture, UniformTextureSequence):
         self._verify_size(image)
         start_length = len(self.items)
         item = self.region_class(0, 0, start_length, image.width, image.height, self)
-        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length)
+
+        self.blit_into(image, image.anchor_x, image.anchor_y, start_length)
         self.items.append(item)
         return item
 
@@ -1655,6 +1658,8 @@ class TextureArray(Texture, UniformTextureSequence):
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
+
+        glBindTexture(self.target, self.id)
 
         start_length = len(self.items)
         for i, image in enumerate(images):
@@ -1679,6 +1684,8 @@ class TextureArray(Texture, UniformTextureSequence):
 
     def __setitem__(self, index, value):
         if type(index) is slice:
+            glBindTexture(self.target, self.id)
+
             for old_item, image in zip(self[index], value):
                 self._verify_size(image)
                 item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
@@ -1687,7 +1694,7 @@ class TextureArray(Texture, UniformTextureSequence):
         else:
             self._verify_size(value)
             item = self.region_class(0, 0, index, value.width, value.height, self)
-            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, index)
+            self.blit_into(value, value.anchor_x, value.anchor_y, index)
             self.items[index] = item
 
     def __iter__(self):
