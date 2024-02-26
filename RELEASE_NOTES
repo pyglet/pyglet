@@ -23,6 +23,7 @@ Bugfixes
 - media: fix bad behavior when clearing XAudio2AudioPlayer. (#1011)
 - pyglet.__init__: don't install debug_trace until after module proxies #1046
 - media: numerous fixes to race conditions and deadlocks across all backends.
+- experimental: Fix incorrect texture UVs and final positioning for GeometryShader Sprite.
 
 
 pyglet 2.0.10
