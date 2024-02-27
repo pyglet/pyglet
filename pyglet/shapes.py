@@ -2058,5 +2058,96 @@ class Polygon(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
 
-__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle',
+class MultiLine(ShapeBase):
+    def __init__(self, *coordinates, closed=False, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+        """Create multiple connected lines from a sequence of coordinates
+
+        The shape's anchor point defaults to the first vertex point.
+
+        :Parameters:
+            `coordinates` : List[[int, int]]
+                The coordinates for each point in the shape.
+            `closed` : bool
+                If True, the first and last coordinate will be connected with a line.
+                defaults to False.
+            `thickness` : float
+                The desired thickness or width used for the line segments.
+            `color` : (int, int, int, int)
+                The RGB or RGBA color of the shape, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the shape to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the shape.
+        """
+        # len(self._coordinates) = the number of vertices in the shape.
+        self._thickness = thickness
+        self._closed = closed
+        self._rotation = 0
+        self._coordinates = list(coordinates)
+        if closed:
+            # connect final point with first
+            self._coordinates.append(self._coordinates[0])
+        self._x, self._y = self._coordinates[0]
+        self._num_verts = (len(self._coordinates) - 1) * 6
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
+        program = get_default_shader()
+        self._batch = batch or Batch()
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._create_vertex_list()
+
+    def _create_vertex_list(self):
+        self._vertex_list = self._group.program.vertex_list(
+            self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', self._rgba * self._num_verts),
+            translation=('f', (self._x, self._y) * self._num_verts))
+
+    def _get_vertices(self):
+        if not self._visible:
+            return (0, 0) * self._num_verts
+        else:
+            trans_x, trans_y = self._coordinates[0]
+            trans_x += self._anchor_x
+            trans_y += self._anchor_y
+            coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
+
+            # Create a list of triangles from segments between 2 points:
+            triangles = []
+            prev_miter = None
+            prev_scale = None
+            for i in range(len(coords) - 1):
+                prevPoint = None
+                nextPoint = None
+                if i > 0:
+                    prevPoint = coords[i - 1]
+
+                if i + 2 < len(coords):
+                    nextPoint = coords[i + 2]
+
+                prev_miter, prev_scale, *segment = _get_segment(prevPoint, coords[i], coords[i + 1], nextPoint,
+                                                                self._thickness, prev_miter, prev_scale)
+                triangles.extend(segment)
+
+            return triangles
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
+
+    @property
+    def thickness(self):
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness):
+        self._thickness = thickness
+        self._update_vertices()
+
+
+__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'MultiLine', 'Rectangle',
            'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector', 'ShapeBase')
