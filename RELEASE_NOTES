@@ -14,6 +14,7 @@ Changes and Improvements
 - text: add left, right, bottom, top attributes. (#1004)
 - text: add program argument for custom shaders. (#1037)
 - text: add get_as_texture function to render text to a new texture. (#1037)
+- font: skip pre-parsing all system fonts to improve speed. Check only when needed.
 
 Bugfixes
 --------
@@ -24,6 +25,7 @@ Bugfixes
 - pyglet.__init__: don't install debug_trace until after module proxies #1046
 - media: numerous fixes to race conditions and deadlocks across all backends.
 - experimental: Fix incorrect texture UVs and final positioning for GeometryShader Sprite.
+- image: add missing binding calls for blit_to/texture methods.
 
 
 pyglet 2.0.10
