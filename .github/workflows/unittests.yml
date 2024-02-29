@@ -55,6 +55,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          release: false
+          install: mingw-w64-x86_64-mesa
       - uses: ssciwr/setup-mesa-dist-win@v2
       - name: Install dependencies
         run: |
@@ -73,4 +78,4 @@ jobs:
           copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\lib\
 
           # pytest tests/unit
-          python -m pyglet.info
+          # python -m pyglet.info
