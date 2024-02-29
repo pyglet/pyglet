@@ -68,14 +68,14 @@ jobs:
         shell: pwsh
         run: |
           
-          $env:PYGLET_DEBUG_LIB = "True"
-          $env:PYGLET_DEBUG_GL_TRACE = "True"
+#          $env:PYGLET_DEBUG_LIB = "True"
+#          $env:PYGLET_DEBUG_GL_TRACE = "True"
+#
+#          mkdir D:\a\pyglet\pyglet\lib
+#          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\pyglet\lib\
+#
+#          mkdir D:\a\pyglet\lib
+#          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\lib\
 
-          mkdir D:\a\pyglet\pyglet\lib
-          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\pyglet\lib\
-
-          mkdir D:\a\pyglet\lib
-          copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\lib\
-
-          # pytest tests/unit
-          # python -m pyglet.info
+          python -m pyglet.info
+          pytest tests/unit
