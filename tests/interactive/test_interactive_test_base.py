@@ -7,7 +7,7 @@ from tests import mock
 import os
 import pytest
 import shutil
-from .interactive import InteractiveTestCase
+from ..base.interactive import InteractiveTestCase
 import tempfile
 import unittest
 
