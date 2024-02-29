@@ -23,6 +23,7 @@ jobs:
       - name: Run tests
         run: |
           xvfb-run pytest tests/unit
+          xvfb-run pytest tests/integration/graphics          
 
   osx:
     runs-on: macos-latest
@@ -42,6 +43,7 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/unit
+          pytest tests/integration/graphics
 
   windows:
     runs-on: windows-latest
