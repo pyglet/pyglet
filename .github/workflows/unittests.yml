@@ -73,4 +73,4 @@ jobs:
           copy C:\msys64\mingw64\bin\opengl32.dll D:\a\pyglet\lib\
 
           # pytest tests/unit
-          # python -m pyglet.info
+          python -m pyglet.info
