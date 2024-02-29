@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10', 'pypy-3.10' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10' ]
     name: Python ${{ matrix.python-version }} ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,13 +22,13 @@ jobs:
           sudo apt-get install xvfb
       - name: Run tests
         run: |
-          xvfb-run pytest -v tests --ignore=tests/interactive --ignore=tests/integration/font
+          xvfb-run pytest tests --ignore=tests/interactive
 
   osx:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
     name: Python ${{ matrix.python-version }} OSX
     steps:
       - uses: actions/checkout@v3
@@ -41,14 +41,13 @@ jobs:
           pip install pytest
       - name: Run tests
         run: |
-          pytest tests/unit
-          pytest tests/integration/graphics
+          pytest tests --ignore=tests/interactive
 
   windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10' ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
     name: Python ${{ matrix.python-version }} Windows
     steps:
       - uses: actions/checkout@v3
