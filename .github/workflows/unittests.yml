@@ -67,5 +67,4 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          python -m pyglet.info
-          pytest tests/unit
+          pytest tests --ignore=tests/interactive
