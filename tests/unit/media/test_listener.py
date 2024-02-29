@@ -40,6 +40,7 @@ def check_modifying_values(listener):
     assert listener.up_orientation == (0, -1, 0)
 
 
+@skip_if_continuous_integration()
 @pytest.mark.skipif(not has_openal, reason="Test requires OpenAL")
 def test_openal_listener():
     driver = openal.create_audio_driver()
@@ -50,7 +51,7 @@ def test_openal_listener():
     del listener
 
 
-@skip_if_continuous_integration()   # test user cannot connect to PulseAudio daemon
+@skip_if_continuous_integration()
 @pytest.mark.skipif(not has_pulse, reason="Test requires PulseAudio")
 def test_pulse_listener():
     driver = pulse.create_audio_driver()
@@ -61,6 +62,7 @@ def test_pulse_listener():
     del listener
 
 
+@skip_if_continuous_integration()
 @pytest.mark.skipif(not has_directsound, reason="Test requires DirectSound")
 def test_directsound_listener():
     driver = directsound.create_audio_driver()
