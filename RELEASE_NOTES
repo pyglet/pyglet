@@ -2,7 +2,7 @@ pyglet 2.0.12
 
 Bugfixes
 --------
-- graphics: fit Batch/Group migration.
+- graphics: fix Batch/Group migration.
 
 
 pyglet 2.0.11
