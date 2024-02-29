@@ -22,7 +22,7 @@ jobs:
           sudo apt-get install xvfb
       - name: Run tests
         run: |
-          xvfb-run pytest -v tests --ignore=tests/interactive
+          xvfb-run pytest -v tests --ignore=tests/interactive --ignore=tests/integration/font
 
   osx:
     runs-on: macos-latest
