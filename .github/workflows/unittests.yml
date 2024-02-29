@@ -22,8 +22,7 @@ jobs:
           sudo apt-get install xvfb
       - name: Run tests
         run: |
-          xvfb-run pytest tests/unit
-          xvfb-run pytest tests/integration/graphics          
+          xvfb-run pytest tests/unit tests/integration/graphics
 
   osx:
     runs-on: macos-latest
