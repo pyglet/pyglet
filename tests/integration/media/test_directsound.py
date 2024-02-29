@@ -6,20 +6,14 @@ import math
 import random
 import time
 
-from pyglet.media.codecs import AudioFormat
-import pyglet
-_debug = False
-pyglet.options['debug_media'] = _debug
-
-try:
-    from pyglet.media.drivers import directsound
-    from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer
-    from pyglet.media.drivers.directsound.adaptation import _gain2db, _db2gain
-except ImportError:
-    directsound = None
-
 import pytest
-pytestmark = pytest.mark.skipif(directsound is None, reason='No DirectSound available.')
+from ...annotations import skip_if_continuous_integration, require_platform, Platform
+
+from pyglet.media.codecs import AudioFormat
+
+
+pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
+
 
 def almost_equal(a, b, e=0.0001):
     assert abs(a-b) <= e
