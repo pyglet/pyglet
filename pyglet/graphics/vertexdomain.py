@@ -276,11 +276,9 @@ class VertexList:
 
         new_start = domain.safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
-            old = old_attribute.get_region(old_attribute.buffer, self.start, self.count)
             new_attribute = domain.attribute_names[key]
-            new = new_attribute.get_region(new_attribute.buffer, new_start, self.count)
-            new.array[:] = old.array[:]
-            new.invalidate()
+            old_data = old_attribute.buffer.get_region(self.start, self.count)
+            new_attribute.buffer.set_region(new_start, self.count, old_data)
 
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
