@@ -9,10 +9,11 @@ import time
 import pytest
 from ...annotations import skip_if_continuous_integration, require_platform, Platform
 
+pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
+
 from pyglet.media.codecs import AudioFormat
 from pyglet.media.drivers.directsound.adaptation import DirectSoundDriver, _db2gain, _gain2db
 
-pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
 
 
 def almost_equal(a, b, e=0.0001):
