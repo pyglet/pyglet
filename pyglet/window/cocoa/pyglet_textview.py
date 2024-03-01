@@ -4,7 +4,7 @@ from pyglet.window import key
 
 from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
 from pyglet.libs.darwin.cocoapy import PyObjectEncoding, send_super
-from pyglet.libs.darwin.cocoapy import CFSTR, cfstring_to_string
+from pyglet.libs.darwin.cocoapy import CFSTR, cfstring_to_string, cf
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')
@@ -24,6 +24,10 @@ class PygletTextView_Implementation:
         self.setFieldEditor_(False)
         self.empty_string = CFSTR("")
         return self
+
+    @PygletTextView.method('v')
+    def dealloc(self):
+        cf.CFRelease(self.empty_string)
 
     # Other functions still seem to work?
     @PygletTextView.method('v@')
