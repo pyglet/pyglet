@@ -25,10 +25,6 @@ class PygletTextView_Implementation:
         self.empty_string = CFSTR("")
         return self
 
-    @PygletTextView.method('v')
-    def dealloc(self):
-        self.empty_string.release()
-
     # Other functions still seem to work?
     @PygletTextView.method('v@')
     def keyDown_(self, nsevent):
