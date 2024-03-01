@@ -1,19 +1,23 @@
 """Test a specific audio driver for platform. Only checks the use of the
 interface. Any playback is silent."""
+import time
 
 import pytest
-import time
+
+from ...annotations import skip_if_continuous_integration, require_platform, Platform
 
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
-import pyglet.app
 from pyglet.media.player import PlaybackTimer
 from pyglet.media.synthesis import Silence
 
 from .mock_player import MockPlayer
+
+
+pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
 
 
 class _FakeDispatchEvent:
