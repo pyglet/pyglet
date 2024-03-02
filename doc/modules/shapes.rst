@@ -111,3 +111,9 @@ pyglet.shapes
 
 .. autoclass:: Polygon
   :show-inheritance:
+
+
+.. autoclass:: MultiLine
+  :show-inheritance:
+
+  .. autoattribute:: thickness
