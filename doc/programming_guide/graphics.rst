@@ -95,9 +95,10 @@ afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProg
     frag_shader = Shader(fragment_source, 'fragment')
     program = ShaderProgram(vert_shader, frag_shader)
 
-:py:class:`~pyglet.graphics.shader.ShaderProgram` internally introspect on creation. There are several properties
-that can be queried to inspect the various vertex attributes, uniforms, and uniform
-blocks that are available::
+:py:class:`~pyglet.graphics.shader.ShaderProgram` internally introspects on creation. There are
+several properties that can be queried to inspect the various vertex attributes, uniforms,
+and uniform blocks that are available. For example, the `uniforms` and `attributes` properties
+will return dictionaries showing the metadata for these objects::
 
     >>> for attribute in program.attributes.items():
     ...     print(attribute)
@@ -108,7 +109,7 @@ blocks that are available::
     >>> for uniform in program.uniforms.items():
     ...     print(uniform)
     ...
-    ('projection', Uniform('projection', location=0, length=16, count=1))
+    ('time', {'location': 2, 'length': 1, 'size': 1})
 
 
 .. note::
@@ -127,15 +128,14 @@ to change functionality during run time.
     When setting uniforms, the program must be binded at the time of setting. This restriction does not exist in
     OpenGL 4.1+, but if you plan to support older contexts (such as 3.3), this must be accounted for.
 
-Uniform's can be accessed either as a key or as a property on the :py:class:`~pyglet.graphics.shader.ShaderProgram`
-itself.
-
-For example if your uniform in your shader is::
+Uniforms can be accessed as a key on the :py:class:`~pyglet.graphics.shader.ShaderProgram`
+itself. For example if your uniform in your shader is::
 
     uniform float time;
 
-Then you can set (or get) the value using the property: `program.time = 1.5` or as a key using a string
-`program['time'] = 1.5`.
+Then you can set (or get) the value using the uniform name as a key::
+
+    program['time'] = delta_time
 
 
 Uniform Buffer Objects (Uniform Blocks)

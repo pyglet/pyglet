@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.10'
+version = '2.0.12'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -166,20 +166,17 @@ _option_types = {
 }
 
 
-for key in options:
-    """Read defaults for options from environment"""
-    assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
-    env = f'PYGLET_{key.upper()}'
-    try:
-        value = os.environ[env]
-        if _option_types[key] is tuple:
-            options[key] = value.split(',')
-        elif _option_types[key] is bool:
-            options[key] = value in ('true', 'TRUE', 'True', '1')
-        elif _option_types[key] is int:
-            options[key] = int(value)
-    except KeyError:
-        pass
+for _key in options:
+    """Check Environment Variables for pyglet options"""
+    assert _key in _option_types, f"Option '{_key}' must have a type set in _option_types."
+
+    if _value := os.environ.get(f'PYGLET_{_key.upper()}'):
+        if _option_types[_key] is tuple:
+            options[_key] = _value.split(',')
+        elif _option_types[_key] is bool:
+            options[_key] = _value in ('true', 'TRUE', 'True', '1')
+        elif _option_types[_key] is int:
+            options[_key] = int(_value)
 
 
 if compat_platform == 'cygwin':
@@ -193,10 +190,15 @@ if compat_platform == 'cygwin':
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
 
+
 # Call tracing
 # ------------
 
 _trace_filename_abbreviations = {}
+_trace_thread_count = 0
+_trace_args = options['debug_trace_args']
+_trace_depth = options['debug_trace_depth']
+_trace_flush = options['debug_trace_flush']
 
 
 def _trace_repr(value, size=40):
@@ -207,7 +209,7 @@ def _trace_repr(value, size=40):
 
 
 def _trace_frame(thread, frame, indent):
-    from pyglet import lib
+
     if frame.f_code is lib._TraceFunction.__call__.__code__:
         is_ctypes = True
         func = frame.f_locals['self']._func
@@ -224,13 +226,13 @@ def _trace_frame(thread, frame, indent):
             filename = _trace_filename_abbreviations[path]
         except KeyError:
             # Trim path down
-            dir = ''
+            directory = ''
             path, filename = os.path.split(path)
-            while len(dir + filename) < 30:
-                filename = os.path.join(dir, filename)
-                path, dir = os.path.split(path)
-                if not dir:
-                    filename = os.path.join('', filename)
+
+            while len(directory + filename) < 30:
+                filename = os.path.join(directory, filename)
+                path, directory = os.path.split(path)
+                if not directory:
                     break
             else:
                 filename = os.path.join('...', filename)
@@ -280,14 +282,6 @@ def _install_trace():
     global _trace_thread_count
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
-
-
-_trace_thread_count = 0
-_trace_args = options['debug_trace_args']
-_trace_depth = options['debug_trace_depth']
-_trace_flush = options['debug_trace_flush']
-if options['debug_trace']:
-    _install_trace()
 
 
 # Lazy loading
@@ -372,3 +366,8 @@ else:
     shapes = _ModuleProxy('shapes')
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
+
+
+# Call after creating proxies:
+if options['debug_trace']:
+    _install_trace()

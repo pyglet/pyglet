@@ -69,8 +69,8 @@ def _make_attribute_property(name):
     def _attribute_getter(self):
         attribute = self.domain.attribute_names[name]
         region = attribute.buffer.get_region(self.start, self.count)
-        region.invalidate()
-        return region.array
+        attribute.buffer.invalidate_region(self.start, self.count)
+        return region
 
     def _attribute_setter(self, data):
         attribute = self.domain.attribute_names[name]
@@ -276,11 +276,9 @@ class VertexList:
 
         new_start = domain.safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
-            old = old_attribute.get_region(old_attribute.buffer, self.start, self.count)
             new_attribute = domain.attribute_names[key]
-            new = new_attribute.get_region(new_attribute.buffer, new_start, self.count)
-            new.array[:] = old.array[:]
-            new.invalidate()
+            old_data = old_attribute.buffer.get_region(self.start, self.count)
+            new_attribute.buffer.set_region(new_start, self.count, old_data)
 
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
@@ -288,7 +286,10 @@ class VertexList:
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
-        attribute.set_region(attribute.buffer, self.start, self.count, data)
+        array_start = attribute.count * self.start
+        array_end = attribute.count * self.count + array_start
+        attribute.buffer.data[array_start:array_end] = data
+        attribute.buffer.invalidate_region(self.start, self.count)
 
 
 class IndexedVertexDomain(VertexDomain):

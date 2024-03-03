@@ -76,6 +76,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.multiLine.rotation = self.time * -15
 
+        self.multiLine.rotation = self.time * -15
+
 
 if __name__ == "__main__":
     demo = ShapesDemo(720, 480)
