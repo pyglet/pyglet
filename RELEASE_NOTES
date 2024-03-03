@@ -1,8 +1,12 @@
 pyglet 2.0.13
 
+Changes and Improvements
+------------------------
+- shapes: Add new MultiLine shape. (#1057)
+
 Bugfixes
 --------
-- input.win32: Fix broken xinput get_devices and get_controllers methods #1060
+- input.win32: Fix broken xinput get_devices and get_controllers methods (#1060)
 
 
 pyglet 2.0.12
