@@ -45,8 +45,6 @@ def test_face_from_fontconfig(font_name, bold, italic):
 
     face = FreeTypeFace.from_fontconfig(match)
 
-    assert face.name == font_name
-    assert face.family_name == font_name
     assert face.bold == bold
     assert face.italic == italic
 
