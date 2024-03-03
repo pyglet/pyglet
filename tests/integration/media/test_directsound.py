@@ -11,7 +11,8 @@ from ...annotations import skip_if_continuous_integration, require_platform, Pla
 
 try:
     from pyglet.media.codecs import AudioFormat
-    from pyglet.media.drivers.directsound.adaptation import DirectSoundDriver, _db2gain, _gain2db
+    from pyglet.media.drivers.directsound.adaptation import _db2gain, _gain2db
+    from pyglet.media.drivers.directsound.interface import DirectSoundDriver
 except ImportError:
     AudioFormat = DirectSoundDriver = _db2gain = _gain2db = None
 
