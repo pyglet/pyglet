@@ -1,3 +1,10 @@
+pyglet 2.0.13
+
+Bugfixes
+--------
+- input.win32: Fix broken xinput get_devices and get_controllers methods #1060
+
+
 pyglet 2.0.12
 
 Bugfixes
