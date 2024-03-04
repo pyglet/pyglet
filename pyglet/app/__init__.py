@@ -33,6 +33,8 @@ import sys
 import weakref
 import platform
 
+from typing import Union
+
 import pyglet
 
 from pyglet import compat_platform
@@ -67,7 +69,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval=1/60):
+def run(interval: Union[float, None] = 1/60) -> None:
     """Begin processing events, scheduled functions, and window updates.
 
     This is a convenience function, equivalent to::
@@ -78,7 +80,7 @@ def run(interval=1/60):
     event_loop.run(interval)
 
 
-def exit():
+def exit() -> None:
     """Exit the application event loop.
 
     Causes the application event loop to finish if it's currenting

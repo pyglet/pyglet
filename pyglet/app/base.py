@@ -2,6 +2,8 @@ import sys
 import queue
 import threading
 
+from typing import Union
+
 from pyglet import app
 from pyglet import clock
 from pyglet import event
@@ -119,7 +121,7 @@ class EventLoop(event.EventDispatcher):
             window.dispatch_event('on_refresh', dt)
             window.flip()
 
-    def run(self, interval=1/60):
+    def run(self, interval: Union[float, None] = 1/60) -> None:
         """Begin processing events, scheduled functions and window updates.
 
         :Parameters:
@@ -137,8 +139,10 @@ class EventLoop(event.EventDispatcher):
         implementation is platform-specific.
         """
         if interval is None:
-            # User will handle scheduling Window.draw manually
+            # User will schedule Window.draw manually
             pass
+        elif interval == 0:
+            self.clock.schedule(self._redraw_windows)
         else:
             self.clock.schedule_interval(self._redraw_windows, interval)
 
