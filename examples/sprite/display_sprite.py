@@ -26,6 +26,5 @@ def on_resize(width, height):
 def on_draw():
     window.clear()
     sprite.draw()
-
-pyglet.clock.schedule_interval(window.draw, 1/60)
+    
 pyglet.app.run()

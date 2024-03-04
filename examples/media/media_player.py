@@ -371,9 +371,6 @@ def main(target, dbg_file, debug):
     window.set_visible(True)
     window.set_default_video_size()
 
-    # Redraw at 60 FPS
-    pyglet.clock.schedule_interval(window.draw, 1 / 60)
-
     # this is an async call
     player.play()
     window.gui_update_state()

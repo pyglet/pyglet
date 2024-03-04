@@ -194,5 +194,4 @@ def on_draw():
     batch.draw()
 
 
-pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()

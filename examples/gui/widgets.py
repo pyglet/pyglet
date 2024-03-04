@@ -79,8 +79,4 @@ text_entry.set_handler('on_commit', text_entry_handler)
 text_entry_label = pyglet.text.Label("Text: None", x=300, y=100, batch=batch, color=(0, 0, 0, 255))
 
 
-# Redraw at 60 FPS
-pyglet.clock.schedule_interval(window.draw, 1 / 60)
-
-# Run the application
 pyglet.app.run()

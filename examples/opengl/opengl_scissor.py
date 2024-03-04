@@ -92,5 +92,4 @@ def on_mouse_drag(x, y, dx, dy, *etc):
     scissor_group.y += dy
 
 
-pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()

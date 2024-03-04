@@ -67,15 +67,15 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run():
-    """Begin processing events and scheduled functions.
+def run(interval=1/60):
+    """Begin processing events, scheduled functions, and window updates.
 
     This is a convenience function, equivalent to::
 
-        pyglet.app.event_loop.run()
+        pyglet.app.event_loop.run(interval)
 
     """
-    event_loop.run()
+    event_loop.run(interval)
 
 
 def exit():

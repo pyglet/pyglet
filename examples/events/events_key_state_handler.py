@@ -27,7 +27,6 @@ def on_draw():
 
 
 pyglet.clock.schedule_interval(update, 1/60)
-pyglet.clock.schedule_interval(window.draw, 1/60)
 
 
 if __name__ == '__main__':

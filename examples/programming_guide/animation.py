@@ -41,8 +41,4 @@ def on_draw():
     sprite.draw()
 
 
-# Redraw at 60 FPS
-pyglet.clock.schedule_interval(window.draw, 1 / 60)
-
-# Start the application
 pyglet.app.run()

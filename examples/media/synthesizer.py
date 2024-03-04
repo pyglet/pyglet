@@ -65,8 +65,4 @@ class Keyboard:
 
 if __name__ == "__main__":
     keyboard = Keyboard()
-
-    # Redraw at 60 FPS
-    pyglet.clock.schedule_interval(keyboard.window.draw, 1 / 60)
-
     pyglet.app.run()

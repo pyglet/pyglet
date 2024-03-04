@@ -10,14 +10,12 @@ w1.switch_to()
 s1 = pyglet.shapes.Rectangle(100, 100, 100, 100, color=(50, 50, 200))
 s1.anchor_position = 50, 50
 
+
 @w1.event
 def on_draw():
     w1.clear()
     s1.rotation -= 0.5
     s1.draw()
-
-# Redraw Window 1 at 60 FPS
-pyglet.clock.schedule_interval(w1.draw, 1 / 60)
 
 
 w2 = pyglet.window.Window(300, 300, caption='Second window', resizable=True)
@@ -33,8 +31,4 @@ def on_draw():
     s2.draw()
 
 
-# Redraw Window 2 at 60 FPS
-pyglet.clock.schedule_interval(w2.draw, 1 / 60)
-
-# Run the demo
 pyglet.app.run()

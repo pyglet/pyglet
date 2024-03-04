@@ -109,6 +109,10 @@ if __name__ == '__main__':
     rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
     rectangle.anchor_position = 50, 50
 
-    # Call the combined update & redraw function at 60 FPS
-    pyglet.clock.schedule_interval(update, 1/60)
-    pyglet.app.run()
+
+# Call the combined update & redraw function at 60 FPS
+pyglet.clock.schedule_interval(update, 1/60)
+
+
+# Start the example
+pyglet.app.run()

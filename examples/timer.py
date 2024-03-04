@@ -63,5 +63,5 @@ timer = Timer()
 pyglet.clock.schedule_interval(timer.update, 1/30.0)
 
 # Launch the application
-pyglet.app.run()
+pyglet.app.run(None)
 

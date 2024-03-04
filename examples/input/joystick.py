@@ -59,8 +59,4 @@ def on_draw():
     d_pad_rect.position = d_pad_x, d_pad_y
 
 
-# Redraw at 60 FPS
-pyglet.clock.schedule_interval(window.draw, 1 / 60)
-
-# Run the application
 pyglet.app.run()

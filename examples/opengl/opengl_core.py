@@ -95,5 +95,4 @@ def update(dt):
 if __name__ == "__main__":
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
     pyglet.clock.schedule_interval(update, 1/60)
-    pyglet.clock.schedule_interval(window.draw, 1/60)
     pyglet.app.run()

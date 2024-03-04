@@ -41,5 +41,4 @@ def on_draw():
 
 
 pyglet.gl.glClearColor(1, 1, 1, 1)
-pyglet.clock.schedule_interval(window.draw, 1/60)
 pyglet.app.run()

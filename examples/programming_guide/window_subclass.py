@@ -19,9 +19,4 @@ class HelloWorldWindow(pyglet.window.Window):
 
 if __name__ == '__main__':
     window = HelloWorldWindow()
-
-    # Redraw at 60 FPS
-    pyglet.clock.schedule_interval(window.draw, 1 / 60)
-
-    # Run the application
     pyglet.app.run()
