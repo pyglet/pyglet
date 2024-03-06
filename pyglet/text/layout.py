@@ -154,15 +154,21 @@ layout_vertex_source = """#version 330 core
 
     mat4 m_rotation = mat4(1.0);
     vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+    
     void main()
-    {
+    {        
+        m_translate[3][0] = translation.x;
+        m_translate[3][1] = translation.y;
+        m_translate[3][2] = translation.z;
+        
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         text_colors = colors;
@@ -238,15 +244,21 @@ decoration_vertex_source = """#version 330 core
 
     mat4 m_rotation = mat4(1.0);
     vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+    
     void main()
-    {
+    {        
+        m_translate[3][0] = translation.x;
+        m_translate[3][1] = translation.y;
+        m_translate[3][2] = translation.z;
+        
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         vert_colors = colors;
@@ -1127,7 +1139,11 @@ class TextLayout:
 
     def _set_rotation(self, rotation):
         self._rotation = rotation
-        self._update()
+        self._update_rotation()
+
+    def _update_rotation(self):
+        for vlist in self._vertex_lists:
+            vlist.rotation[:] = ((self._rotation,) * vlist.count)
 
     @property
     def position(self):
@@ -1970,12 +1986,13 @@ class TextLayout:
         return line_index
 
     def _create_vertex_lists(self, line_x, line_y, anchor_x, anchor_y, i, boxes, context):
-        x = self._x
+        acc_anchor_x = anchor_x
+        # GlyphBoxes (boxes) are collection of Glyphs. A line can have multiple GlyphBoxes.
         for box in boxes:
-            box.place(self, i, x, self._y, self._z, line_x, line_y, self._rotation, self._visible, anchor_x, anchor_y,
-                      context)
-            x += box.advance
+            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, acc_anchor_x,
+                      anchor_y, context)
             i += box.length
+            acc_anchor_x += box.advance
 
 
 class ScrollableTextLayout(TextLayout):
@@ -2622,13 +2639,21 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.dispatch_event('on_translation_update')
 
     def _update_translation(self):
-         # Vertex lists are stored in the lines.
-        y, z = self._y, self._z
+        # Vertex lists are stored in the lines.
+        for line in self.lines:
+            for vlist in line.vertex_lists:
+                vlist.translation[:] = (self._x, self._y, self._z) * vlist.count
+
+    def _update_anchor(self):
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+
+        anchor_left, anchor_top = (self._anchor_left, self._get_top_anchor())
         for line in self.lines:
             # A line can have no vertex list if it's out of view OR is an empty row.
             if line.vertex_lists:
                 # Accumulate the X accounting for multiple GlyphBoxes.
-                x = self._x
+                anchor_x = self._anchor_left
 
                 # A line can also have more than 1 box. For example, if the text "This is a test" does not fill
                 # the whole line, it will be split to 2 boxes: ("This is a ", "test")
@@ -2636,17 +2661,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 # "This is a test " will be created as one GlyphBox.
                 for box_idx, box in enumerate(line.boxes):
                     vlist = line.vertex_lists[box_idx]
-                    vlist.translation[:] = (x, y, z) * vlist.count
-                    x += box.advance
-
-    def _update_anchor(self):
-        self._anchor_left = self._get_left_anchor()
-        self._anchor_bottom = self._get_bottom_anchor()
-
-        anchor = (self._anchor_left, self._get_top_anchor())
-        for line in self.lines:
-            for vlist in line.vertex_lists:
-                vlist.anchor[:] = anchor * vlist.count
+                    vlist.anchor[:] = (anchor_x, anchor_top) * vlist.count
+                    anchor_x += box.advance
 
     @property
     def rotation(self):
