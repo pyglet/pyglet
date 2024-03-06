@@ -1221,8 +1221,8 @@ class TextLayout:
         """The defined maximum height of the layout in pixels, or None
 
         When `height` is not None, it affects the positioning of the
-        text when :py:attr:`~ppyglet.text.layout.TextLayout.anchor_y` and
-        :py:attr:`~ppyglet.text.layout.TextLayout.content_valign` are
+        text when :py:attr:`~pyglet.text.layout.TextLayout.anchor_y` and
+        :py:attr:`~pyglet.text.layout.TextLayout.content_valign` are
         used.
 
         :type: int
