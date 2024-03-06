@@ -21,7 +21,8 @@ from pyglet.shapes import *
     (BorderedRectangle, (0, 0, 30, 10)),
     (Triangle, (0, 0, 2, 2, 5, 5)),
     (Star, (1, 1, 20, 11, 5)),
-    (Polygon, ((0, 0), (1, 1), (2, 2)))
+    (Polygon, ((0, 0), (1, 1), (2, 2))),
+    (MultiLine, ((0, 0), (1, 1), (2, 2)))
 ])
 def shape_and_positionals(request):
     return request.param

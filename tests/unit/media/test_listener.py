@@ -2,6 +2,7 @@ import pytest
 
 from ...annotations import skip_if_continuous_integration
 
+pytestmark = skip_if_continuous_integration()
 
 try:
     from pyglet.media.drivers import pulse
@@ -50,7 +51,6 @@ def test_openal_listener():
     del listener
 
 
-@skip_if_continuous_integration()   # test user cannot connect to PulseAudio daemon
 @pytest.mark.skipif(not has_pulse, reason="Test requires PulseAudio")
 def test_pulse_listener():
     driver = pulse.create_audio_driver()

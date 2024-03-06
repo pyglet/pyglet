@@ -5,7 +5,7 @@
 # pyglet
 
 *pyglet* is a cross-platform windowing and multimedia library for Python, intended for developing games
-and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
+and other visually rich applications. It supports Windowing, input event handling, Controllers & Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
 > :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
@@ -32,8 +32,8 @@ It's also a great place to ask for help.
 Some features of pyglet are:
 
 * **No external dependencies or installation requirements.** For most application and game requirements, *pyglet*
-  needs nothing else besides Python, simplifying distribution and installation. It's easy to package your project
-  with freezers such as PyInstaller. 
+  needs nothing else besides Python, simplifying distribution and installation. It's easy to package and distribute
+  your project with [Nuitka](https://nuitka.net) or [PyInstaller](https://pyinstaller.org). 
 * **Take advantage of multiple windows and multi-monitor desktops.** *pyglet* allows you to use multiple
   platform-native windows, and is fully aware of multi-monitor setups for use with fullscreen games.
 * **Load images, sound, music and video in almost any format.** *pyglet* can optionally use FFmpeg to play back
@@ -73,9 +73,11 @@ pyglet is installable from PyPI:
 
 If you're reading this `README` from a source distribution, you can install pyglet with:
 
+    pip install --upgrade --user .
+    # or
     python setup.py install --user
 
-You can also install the latest development version direct from Github using:
+You can also install the latest development version directly from Github:
 
     pip install --upgrade --user https://github.com/pyglet/pyglet/archive/master.zip
 
@@ -96,12 +98,14 @@ installing it. You can also copy pyglet directly into your project folder.
 
 **A good way to start contributing to a component of pyglet is by its documentation**. When studying the code you
 are going to work with, also read the associated docs. If you don't understand the code with the help of the docs,
-it is a sign that the docs should be improved.
+it is a sign that the docs should be improved. If you wish to make large changes to any part of pyglet, it's always
+a good idea to reach out for feedback first. This can avoid wasted effort in cases where someone is already working
+on something similar, or if your idea can't be accepted for any reason. 
 
-If you want to contribute to pyglet, we suggest the following:
+A basic outline of how to a contribution is as follows:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
-* Checkout the branch you wish to contribute to (such as *pyglet-1.5-maintenance*).
+* In your fork, checkout the branch you wish to contribute to (such as *pyglet-1.5-maintenance*).
 * Apply your changes to your fork.
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.

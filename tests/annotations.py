@@ -68,5 +68,5 @@ def skip_if_continuous_integration():
     """
     Skip the test if being run under a Continuous Integration service.
     """
-    return pytest.mark.skipif(any(key in os.environ for key in ['CI', 'TRAVIS']),
-                              reason="Test is unreliable under Continuous Integration ")
+    return pytest.mark.skipif(any(key in os.environ for key in ['CI']),
+                              reason="Test is unreliable, or unavailable under Continuous Integration ")
