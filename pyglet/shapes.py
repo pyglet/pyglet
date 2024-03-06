@@ -4,9 +4,10 @@ This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
-Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicable).
-The Python ``in`` operator to check whether a point is inside a shape.
+Convenience methods are provided for positioning, changing color, opacity,
+and rotation.
+The Python ``in`` operator can be used to check whether a point is inside a shape.
+(This is approximated with some shapes, such as Star).
 
 To create more complex shapes than what is provided here, the lower level
 graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
@@ -1177,8 +1178,7 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
@@ -1210,7 +1210,7 @@ class Line(ShapeBase):
         self._y2 = y2
 
         self._width = width
-        self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
+        self._rotation = 0
         self._num_verts = 6
 
         r, g, b, *a = color
@@ -1250,22 +1250,24 @@ class Line(ShapeBase):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
-            x1 = -self._anchor_x
-            y1 = self._anchor_y - self._width / 2
-            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
-            y2 = y1 + self._width
+            x1 = 0
+            y1 = 0
+            x2 = math.hypot(self._y2 - self._y, self._x2 - self._x)
+            y2 = self._width
 
             r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
             sr = math.sin(r)
-            ax = x1 * cr - y1 * sr
-            ay = x1 * sr + y1 * cr
-            bx = x2 * cr - y1 * sr
-            by = x2 * sr + y1 * cr
-            cx = x2 * cr - y2 * sr
-            cy = x2 * sr + y2 * cr
-            dx = x1 * cr - y2 * sr
-            dy = x1 * sr + y2 * cr
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            ax = x1 * cr - y1 * sr - anchor_x
+            ay = x1 * sr + y1 * cr - anchor_y
+            bx = x2 * cr - y1 * sr - anchor_x
+            by = x2 * sr + y1 * cr - anchor_y
+            cx = x2 * cr - y2 * sr - anchor_x
+            cy = x2 * sr + y2 * cr - anchor_y
+            dx = x1 * cr - y2 * sr - anchor_x
+            dy = x1 * sr + y2 * cr - anchor_y
 
             return ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy
 
