@@ -910,7 +910,7 @@ class ShaderProgram:
         """A dictionary of introspected UniformBlocks
 
         This property returns a dictionary of
-        `:py:class:`~pyglet.graphics.shader.UniformBlock` instances.
+        :py:class:`~pyglet.graphics.shader.UniformBlock` instances.
         They can be accessed by name. For example::
 
             block = my_shader_program.uniform_blocks['WindowBlock']
