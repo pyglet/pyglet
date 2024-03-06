@@ -932,8 +932,8 @@ class TextLayout:
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
 
-        self.content_width = 0
-        self.content_height = 0
+        self._content_width = 0
+        self._content_height = 0
 
         self._user_group = group
         self.group_cache = {}
@@ -1179,10 +1179,32 @@ class TextLayout:
                 _vertex_list.visible[:] = (value,) * _vertex_list.count
 
     @property
-    def width(self):
-        """Width of the layout.
+    def content_width(self):
+        """Calculated width of the text in the layout.
 
-        This property has no effect if `multiline` is False or `wrap_lines` is False.
+        This is the actual width of the text in pixels, not the
+        user defined :py:attr:`~ppyglet.text.layout.TextLayout.width`.
+        The content width may overflow the layout width if word-wrapping
+        is not possible.
+        """
+        return self._content_width
+
+    @property
+    def content_height(self):
+        """The calculated height of the text in the layout.
+
+        This is the actual height of the text in pixels, not the
+        user defined :py:attr:`~ppyglet.text.layout.TextLayout.height`.
+        """
+        return self._content_height
+
+    @property
+    def width(self):
+        """The defined maximum width of the layout in pixels, or None
+
+        If `multiline` and `wrap_lines` is True, the `width` defines where the
+        text will be wrapped. If `multiline` is False or `wrap_lines` is False,
+        this property has no effect. 
 
         :type: int
         """
@@ -1196,7 +1218,12 @@ class TextLayout:
 
     @property
     def height(self):
-        """Height of the layout.
+        """The defined maximum height of the layout in pixels, or None
+
+        When `height` is not None, it affects the positioning of the
+        text when :py:attr:`~ppyglet.text.layout.TextLayout.anchor_y` and
+        :py:attr:`~ppyglet.text.layout.TextLayout.content_valign` are
+        used.
 
         :type: int
         """
@@ -1270,7 +1297,7 @@ class TextLayout:
             The Y coordinate gives the position of the bottom edge of the layout.
 
         For the purposes of calculating the position resulting from this
-        alignment, the height of the layout is taken to be the smaller of
+        alignment, the height of the layout is taken to be the smallest of
         `height` and `content_height`.
 
         See also `content_valign`.
@@ -1330,7 +1357,7 @@ class TextLayout:
         :type: int
         """
         if self._width is None:
-            width = self.content_width
+            width = self._content_width
         else:
             width = self._width
 
@@ -1353,7 +1380,7 @@ class TextLayout:
         :type: int
         """
         if self._height is None:
-            height = self.content_height
+            height = self._content_height
         else:
             height = self._height
 
@@ -1409,8 +1436,8 @@ class TextLayout:
         """
         framebuffer = pyglet.image.Framebuffer()
         temp_pos = self.position
-        width = int(round(self.content_width))
-        height = int(round(self.content_height))
+        width = int(round(self._content_width))
+        height = int(round(self._content_height))
         texture = pyglet.image.Texture.create(width, height, min_filter=min_filter, mag_filter=mag_filter)
         depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
         framebuffer.attach_texture(texture)
@@ -1442,7 +1469,7 @@ class TextLayout:
         owner_runs = runlist.RunList(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 0, len_text)]
-        self.content_width = 0
+        self._content_width = 0
         self._line_count = len(lines)
         self._flow_lines(lines, 0, self._line_count)
         return lines
@@ -1497,9 +1524,9 @@ class TextLayout:
     def _get_left_anchor(self):
         """Returns the anchor for the X axis from the left."""
         if self._multiline:
-            width = self._width if self._wrap_lines else self.content_width
+            width = self._width if self._wrap_lines else self._content_width
         else:
-            width = self.content_width
+            width = self._content_width
 
         if self._anchor_x == 'left':
             return 0
@@ -1513,16 +1540,16 @@ class TextLayout:
     def _get_top_anchor(self):
         """Returns the anchor for the Y axis from the top."""
         if self._height is None:
-            height = self.content_height
+            height = self._content_height
             offset = 0
         else:
             height = self._height
             if self._content_valign == 'top':
                 offset = 0
             elif self._content_valign == 'bottom':
-                offset = max(0, self._height - self.content_height)
+                offset = max(0, self._height - self._content_height)
             elif self._content_valign == 'center':
-                offset = max(0, self._height - self.content_height) // 2
+                offset = max(0, self._height - self._content_height) // 2
             else:
                 assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
@@ -1543,7 +1570,7 @@ class TextLayout:
 
     def _get_bottom_anchor(self):
         """Returns the anchor for the Y axis from the bottom."""
-        height = self._height or self.content_height
+        height = self._height or self._content_height
 
         if self._anchor_y == 'top':
             return -height
@@ -1932,7 +1959,7 @@ class TextLayout:
             elif line.align == 'right':
                 line.x = self.width - line.margin_right - line.width
 
-            self.content_width = max(self.content_width, line.width + line.margin_left)
+            self._content_width = max(self._content_width, line.width + line.margin_left)
 
             if line.y == y and line_index >= end:
                 # Early exit: all invalidated lines have been reflowed and the
@@ -1948,7 +1975,7 @@ class TextLayout:
 
             line_index += 1
         else:
-            self.content_height = -y
+            self._content_height = -y
 
         return line_index
 
@@ -2077,7 +2104,7 @@ class ScrollableTextLayout(TextLayout):
 
     @view_x.setter
     def view_x(self, view_x):
-        translation = max(0, min(self.content_width - self._width, view_x))
+        translation = max(0, min(self._content_width - self._width, view_x))
         if translation != self._translate_x:
             self._translate_x = translation
             self._update_view_translation()
@@ -2101,7 +2128,7 @@ class ScrollableTextLayout(TextLayout):
     @view_y.setter
     def view_y(self, view_y):
         # view_y must be negative.
-        translation = min(0, max(self.height - self.content_height, view_y))
+        translation = min(0, max(self.height - self._content_height, view_y))
         if translation != self._translate_y:
             self._translate_y = translation
             self._update_view_translation()
@@ -2348,7 +2375,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 old_line.delete(self)
                 old_line_width = old_line.width + old_line.margin_left
                 new_line_width = line.width + line.margin_left
-                if old_line_width == self.content_width and new_line_width < old_line_width:
+                if old_line_width == self._content_width and new_line_width < old_line_width:
                     content_width_invalid = True
                 self.lines[line_index] = line
                 self.invalid_lines.invalidate(line_index, line_index + 1)
@@ -2372,7 +2399,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             if next_start == len(self._document.text) and line_index > 0:
                 for line in self.lines[line_index:]:
                     old_line_width = old_line.width + old_line.margin_left
-                    if old_line_width == self.content_width:
+                    if old_line_width == self._content_width:
                         content_width_invalid = True
                     line.delete(self)
                 del self.lines[line_index:]
@@ -2382,7 +2409,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             content_width = 0
             for line in self.lines:
                 content_width = max(line.width + line.margin_left, content_width)
-            self.content_width = content_width
+            self._content_width = content_width
 
     def _update_flow_lines(self):
         invalid_start, invalid_end = self.invalid_lines.validate()
@@ -2598,7 +2625,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @view_x.setter
     def view_x(self, view_x):
-        translation = max(0, min(self.content_width - self._width, view_x))
+        translation = max(0, min(self._content_width - self._width, view_x))
         if translation != self._translate_x:
             self._translate_x = translation
             self._update_view_translation()
@@ -2623,7 +2650,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def view_y(self, view_y):
         # Invalidate invisible/visible lines when y scrolls
         # view_y must be negative.
-        translation = min(0, max(self.height - self.content_height, view_y))
+        translation = min(0, max(self.height - self._content_height, view_y))
         if translation != self._translate_y:
             self._translate_y = translation
             self._update_visible_lines()
@@ -2917,11 +2944,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         elif x >= self.view_x + self.width:
             self.view_x = x - self.width
 
-        elif (x >= self.view_x + self.width) and (self.content_width > self.width):
+        elif (x >= self.view_x + self.width) and (self._content_width > self.width):
             self.view_x = x - self.width
 
-        elif self.view_x + self.width > self.content_width:
-            self.view_x = self.content_width
+        elif self.view_x + self.width > self._content_width:
+            self.view_x = self._content_width
 
     if _is_pyglet_doc_run:
         def on_layout_update(self):
