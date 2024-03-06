@@ -780,8 +780,8 @@ class BezierCurve(ShapeBase):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
-            x = -self._anchor_x
-            y = -self._anchor_y
+            x = -self._anchor_x - self._x
+            y = -self._anchor_y - self._y
 
             # Calculate the points of the curve:
             points = [(x + self._make_curve(self._t * t / self._segments)[0],
