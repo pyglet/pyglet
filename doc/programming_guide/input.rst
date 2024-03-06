@@ -112,6 +112,14 @@ following analog controls are available:
           - float
           - -1~1
 
+        * - dpadx
+          - float
+          - -1~1
+
+        * - dpady
+          - float
+          - -1~1
+
         * - lefttrigger
           - float
           - 0~1
@@ -149,14 +157,7 @@ The following digital controls are available:
           - pressing in on the left analog stick
         * - rightstick
           - pressing in on the right analog stick
-        * - dpleft
-          -
-        * - dpright
-          -
-        * - dpup
-          -
-        * - dpdown
-          -
+
 
 These values can be read in two ways. First, you can just query them manually
 in your game loop. All control names listed above are properties on the
@@ -191,27 +192,27 @@ event types:
           - :py:class:`~pyglet.input.Controller`, `str`
 
         * - on_stick_motion
-          - controller, stick_name, x_value, y_value
-          - :py:class:`~pyglet.input.Controller`, `str`, `float`, `float`
+          - controller, stick_name, vector
+          - :py:class:`~pyglet.input.Controller`, `str`, :py:class:`~pyglet.math.Vec2`
 
         * - on_dpad_motion
           - controller, left, right, up, down
-          - :py:class:`~pyglet.input.Controller`, `bool`, `bool`, `bool`, `bool`
+          - :py:class:`~pyglet.input.Controller`, :py:class:`~pyglet.math.Vec2`
 
         * - on_trigger_motion
           - controller, trigger_name, value
           - :py:class:`~pyglet.input.Controller`, `str`, `float`
 
 
-Analog events can be handled like this::
+Analog (and Dpad) events can be handled like this::
 
     @controller.event
-    def on_stick_motion(controller, name, x_value, y_value):
+    def on_stick_motion(controller, name, vector):
 
         if name == "leftstick":
-            # Do something with the x/y_values
+            # Do something with the 2D vector
         elif name == "rightstick":
-            # Do something with the x/y_values
+            # Do something with the 2D vector
 
     @controller.event
     def on_trigger_motion(controller, name, value):
@@ -220,6 +221,10 @@ Analog events can be handled like this::
             # Do something with the value
         elif name == "righttrigger":
             # Do something with the value
+
+    @controller.event
+    def on_dpad_motion(controller, vector):
+        # Do something with the 2D vector
 
 Digital events can be handled like this::
 
@@ -238,18 +243,6 @@ Digital events can be handled like this::
         elif button_name == 'b':
             # do something else
 
-Finally, the directional pad event can be handled like this::
-
-    @controller.event
-    def on_dpad_motion(controller, dpleft, dpright, dpup, dpdown):
-        if dpup:
-            # move up
-        if dpdown:
-            # move down
-        if dpleft:
-            # move left
-        if dpright:
-            # move right
 
 Rumble
 ^^^^^^

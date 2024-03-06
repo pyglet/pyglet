@@ -107,6 +107,9 @@ class Vec2:
         else:
             return self.__add__(_typing.cast(Vec2, other))
 
+    def __lt__(self, other: Vec2) -> bool:
+        return abs(self) < abs(other)
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Vec2) and self.x == other.x and self.y == other.y
 
@@ -298,6 +301,9 @@ class Vec3:
         else:
             return self.__add__(_typing.cast(Vec3, other))
 
+    def __lt__(self, other: Vec3) -> bool:
+        return abs(self) < abs(other)
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
 
@@ -438,6 +444,9 @@ class Vec4:
             return self
         else:
             return self.__add__(_typing.cast(Vec4, other))
+
+    def __lt__(self, other: Vec4) -> bool:
+        return abs(self) < abs(other)
 
     def __eq__(self, other: object) -> bool:
         return (

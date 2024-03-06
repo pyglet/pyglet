@@ -4,6 +4,7 @@ import threading
 
 import pyglet
 
+from pyglet.math import Vec2
 from pyglet.libs.win32 import com
 from pyglet.event import EventDispatcher
 from pyglet.libs.win32.types import *
@@ -573,22 +574,24 @@ class XInputController(Controller):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", self.leftx, self.lefty)
+                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, self.lefty))
 
         elif name in ("rightx", "righty"):
             @control.event
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", self.rightx, self.righty)
+                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, self.righty))
 
     def _add_button(self, control, name):
 
         if name in ("dpleft", "dpright", "dpup", "dpdown"):
             @control.event
             def on_change(value):
-                setattr(self, name, value)
-                self.dispatch_event('on_dpad_motion', self, self.dpleft, self.dpright, self.dpup, self.dpdown)
+                target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
+                                'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[name]
+                setattr(self, target, bias * value)
+                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
         else:
             @control.event
             def on_change(value):

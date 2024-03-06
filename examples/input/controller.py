@@ -1,5 +1,6 @@
 import pyglet
 
+from pyglet.math import Vec2
 from pyglet.shapes import Circle, Rectangle, Arc
 
 
@@ -19,7 +20,7 @@ class ControllerDisplay:
     def __init__(self, batch):
 
         self.label = pyglet.text.Label("No Controller connected.", x=10, y=window.height - 20,
-                                      multiline=True, width=720, batch=batch)
+                                       multiline=True, width=720, batch=batch)
 
         self.left_trigger = Rectangle(70, 310, 40, 10, batch=batch)
         self.right_trigger = Rectangle(610, 310, 40, 10, batch=batch)
@@ -59,25 +60,16 @@ class ControllerDisplay:
         if button := self.buttons.get(button_name, None):
             button.visible = False
 
-    def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
-        position = [280, 185]
-        if dpup:
-            position[1] += 25
-        if dpdown:
-            position[1] -= 25
-        if dpleft:
-            position[0] -= 25
-        if dpright:
-            position[0] += 25
-        self.d_pad.position = position
+    def on_dpad_motion(self, controller, vector):
+        self.d_pad.position = Vec2(280, 185) + vector.normalize() * 25
 
-    def on_stick_motion(self, controller, stick, xvalue, yvalue):
+    def on_stick_motion(self, controller, stick, vector):
         if stick == "leftstick":
-            self.left_stick.position = 180+xvalue*50, 240+yvalue*50
-            self.left_stick_label.text = f"({round(xvalue, 1)}, {round(yvalue, 1)})"
+            self.left_stick.position = Vec2(180, 240) + vector * 50
+            self.left_stick_label.text = f"({round(vector.x, 1)}, {round(vector.y, 1)})"
         elif stick == "rightstick":
-            self.right_stick.position = 540+xvalue*50, 240+yvalue*50
-            self.right_stick_label.text = f"({round(xvalue, 1)}, {round(yvalue, 1)})"
+            self.right_stick.position = Vec2(540, 240) + vector * 50
+            self.right_stick_label.text = f"({round(vector.x, 1)}, {round(vector.y, 1)})"
 
     def on_trigger_motion(self, controller, trigger, value):
         if trigger == "lefttrigger":

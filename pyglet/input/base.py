@@ -6,6 +6,7 @@
 import sys
 import warnings
 
+from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
 
 
@@ -592,16 +593,15 @@ class Controller(EventDispatcher):
         self.rightshoulder = False
         self.leftstick = False          # stick press button
         self.rightstick = False         # stick press button
-        self.lefttrigger = 0
-        self.righttrigger = 0
-        self.leftx = 0
-        self.lefty = 0
-        self.rightx = 0
-        self.righty = 0
-        self.dpup = False
-        self.dpdown = False
-        self.dpleft = False
-        self.dpright = False
+
+        self.lefttrigger = 0.0
+        self.righttrigger = 0.0
+        self.leftx = 0.0
+        self.lefty = 0.0
+        self.rightx = 0.0
+        self.righty = 0.0
+        self.dpadx = 0.0
+        self.dpady = 0.0
 
         self._button_controls = []
         self._axis_controls = []
@@ -628,24 +628,15 @@ class Controller(EventDispatcher):
                 @control.event
                 def on_change(value):
                     normalized_value = value * scale + bias
-                    self.dpup = self.dpdown = False
-                    if normalized_value > 0.1:
-                        self.dpup = True
-                    if normalized_value < -0.1:
-                        self.dpdown = True
-                    self.dispatch_event('on_dpad_motion', self,
-                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+                    self.dpady = round(normalized_value)
+                    self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
             elif axis_name in ("dpleft", "dpright"):
                 @control.event
                 def on_change(value):
                     normalized_value = value * scale + bias
-                    self.dpleft = self.dpright = False
-                    if normalized_value > 0.1:
-                        self.dpright = True
-                    if normalized_value < -0.1:
-                        self.dpleft = True
-                    self.dispatch_event('on_dpad_motion', self, self.dpleft, self.dpright, self.dpup, self.dpdown)
+                    self.dpadx = round(normalized_value)
+                    self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
             elif axis_name in ("lefttrigger", "righttrigger"):
                 @control.event
@@ -659,24 +650,23 @@ class Controller(EventDispatcher):
                 def on_change(value):
                     normalized_value = value * scale + bias
                     setattr(self, axis_name, normalized_value)
-                    self.dispatch_event('on_stick_motion', self,
-                                        "leftstick", self.leftx, -self.lefty)
+                    self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, -self.lefty))
 
             elif axis_name in ("rightx", "righty"):
                 @control.event
                 def on_change(value):
                     normalized_value = value * scale + bias
                     setattr(self, axis_name, normalized_value)
-                    self.dispatch_event('on_stick_motion', self,
-                                        "rightstick", self.rightx, -self.righty)
+                    self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, -self.righty))
 
         def add_button(control, button_name):
             if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
                 @control.event
                 def on_change(value):
-                    setattr(self, button_name, value)
-                    self.dispatch_event('on_dpad_motion', self,
-                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+                    target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
+                                    'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[button_name]
+                    setattr(self, target, bias * value)
+                    self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
             else:
                 @control.event
                 def on_change(value):
@@ -695,25 +685,23 @@ class Controller(EventDispatcher):
             @control.event
             def on_change(value):
                 if value & 0xffff == 0xffff:
-                    self.dpleft = self.dpright = self.dpup = self.dpdown = False
+                    self.dpadx = self.dpady = 0.0
                 else:
                     if control.max > 8:  # DirectInput: scale value
                         value //= 0xfff
-                    if 0 <= value < 8:
-                        self.dpleft, self.dpright, self.dpup, self.dpdown = (
-                            (False, False, True,  False),
-                            (False, True,  True,  False),
-                            (False, True,  False, False),
-                            (False, True,  False, True),
-                            (False, False, False, True),
-                            (True,  False, False, True),
-                            (True,  False, False, False),
-                            (True,  False, True,  False))[value]
-                    else:
-                        # Out of range
-                        self.dpleft = self.dpright = self.dpup = self.dpdown = False
-                self.dispatch_event('on_dpad_motion', self,
-                                    self.dpleft, self.dpright, self.dpup, self.dpdown)
+
+                    self.dpadx, self.dpady = {
+                        0: (0.0, 1.0),          # north
+                        1: (1.0, 1.0),          # north-east
+                        2: (1.0, 0.0),          # east
+                        3: (1.0, -1.0),         # south-east
+                        4: (0.0, -1.0),         # south
+                        5: (-1.0, -1.0),        # south-west
+                        6: (-1.0, 0.0),         # west
+                        7: (-1.0, 1.0)          # north-west
+                    }.get(value, (0.0, 0.0))    # out of range
+
+                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         for control in self.device.get_controls():
             """Categorize the various control types"""
@@ -732,7 +720,7 @@ class Controller(EventDispatcher):
 
         for name, relation in self._mapping.items():
 
-            if relation is None or type(relation) is str:
+            if relation is None or isinstance(relation, str):
                 continue
 
             if relation.control_type == "button":
@@ -747,7 +735,6 @@ class Controller(EventDispatcher):
                     continue
             elif relation.control_type == "hat0":
                 if self._hat_control:
-                    # TODO: test this on Windows/Mac.
                     add_dedicated_hat(self._hat_control)
                 else:
                     if relation.index == 1:       # 1 == UP
@@ -797,7 +784,7 @@ class Controller(EventDispatcher):
 
     # Input Event types:
 
-    def on_stick_motion(self, controller, stick, xvalue, yvalue):
+    def on_stick_motion(self, controller, stick, vector):
         """The value of a controller analogue stick changed.
 
         :Parameters:
@@ -805,26 +792,20 @@ class Controller(EventDispatcher):
                 The controller whose analogue stick changed.
             `stick` : string
                 The name of the stick that changed.
-            `xvalue` : float
-                The current X axis value, normalized to [-1, 1].
-            `yvalue` : float
-                The current Y axis value, normalized to [-1, 1].
+            `vector` : Vec2
+                A 2D vector representing the stick position.
+                Each individual axis will be normalized from [-1, 1],
         """
 
-    def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
+    def on_dpad_motion(self, controller, vector):
         """The direction pad of the controller changed.
 
         :Parameters:
             `controller` : `Controller`
                 The controller whose hat control changed.
-            `dpleft` : boolean
-                True if left is pressed on the directional pad.
-            `dpright` : boolean
-                True if right is pressed on the directional pad.
-            `dpup` : boolean
-                True if up is pressed on the directional pad.
-            `dpdown` : boolean
-                True if down is pressed on the directional pad.
+            `vector` : Vec2
+                A 2D vector, representing the dpad position.
+                Each individual axis will be one of [-1, 0, 1].
         """
 
     def on_trigger_motion(self, controller, trigger, value):
@@ -1138,7 +1119,7 @@ class ControllerManager(EventDispatcher):
             # code to handle disconnected Controller
             print("Disconnect:", controller)
 
-    .. versionadded:: 1.2
+    .. versionadded:: 2.0
     """
 
     def get_controllers(self):
