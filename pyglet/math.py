@@ -58,6 +58,9 @@ class Vec2(tuple):
     def __len__(self) -> int:
         return 2
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __add__(self, other: Vec2) -> Vec2:
         return Vec2(self[0] + other[0], self[1] + other[1])
 
@@ -236,6 +239,12 @@ class Vec3(tuple):
         """
         return self.__abs__()
 
+    def __len__(self) -> int:
+        return 3
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __add__(self, other: Vec3) -> Vec3:
         return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
 
@@ -368,6 +377,9 @@ class Vec4(tuple):
 
     def __len__(self) -> int:
         return 4
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
     def __add__(self, other: Vec4) -> Vec4:
         return Vec4(self[0] + other[0], self[1] + other[1], self[2] + other[2], self[3] + other[3])
@@ -828,10 +840,6 @@ class Mat4(tuple):
                      _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
                      _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
                      _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3)))
-
-    # def __getitem__(self, item):
-    #     row = [slice(0, 4), slice(4, 8), slice(8, 12), slice(12, 16)][item]
-    #     return super().__getitem__(row)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
