@@ -79,6 +79,10 @@ class CocoaAlternateEventLoop(EventLoop):
     working properly after X returns. This event loop differs in that it uses the built-in NSApplication event
     loop. We tie our schedule into it via timer.
     """
+    def __init__(self):
+        super().__init__()
+        self.platform_event_loop = None
+
     def run(self, interval=1/60):
         if not interval:
             self.clock.schedule(self._redraw_windows)
@@ -109,12 +113,14 @@ class CocoaAlternateEventLoop(EventLoop):
         interrupted (see :py:meth:`sleep`).
         """
         self.has_exit = True
-        self.platform_event_loop.notify()
+        if self.platform_event_loop is not None:
+            self.platform_event_loop.notify()
 
         self.is_running = False
         self.dispatch_event('on_exit')
 
-        self.platform_event_loop.nsapp_stop()
+        if self.platform_event_loop is not None:
+            self.platform_event_loop.nsapp_stop()
 
 class CocoaPlatformEventLoop(PlatformEventLoop):
 
