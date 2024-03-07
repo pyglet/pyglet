@@ -244,8 +244,8 @@ class DocumentLabel(layout.TextLayout):
                 you may want to avoid duplicate initializations by changing
                 to False.
         """
-        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program, init_document=init_document)
+        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation,
+                         multiline, dpi, batch, group, program, init_document=init_document)
 
     @property
     def text(self):
@@ -445,8 +445,8 @@ class Label(DocumentLabel):
 
         """
         doc = decode_text(text)
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch,
-                                       group, program, init_document=False)
+        super().__init__(doc, width, height, x, y, z, anchor_x, anchor_y, rotation,
+                         multiline, dpi, batch, group, program, init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
             'font_name': font_name,
@@ -514,8 +514,8 @@ class HTMLLabel(DocumentLabel):
         self._text = text
         self._location = location
         doc = decode_html(text, location)
-        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
-                         program, init_document=False)
+        super().__init__(doc, width, height, x, y, z, anchor_x, anchor_y, rotation,
+                         multiline, dpi, batch, group, program, init_document=False)
 
     @property
     def text(self):
