@@ -2124,6 +2124,33 @@ class ScrollableTextLayout(TextLayout):
         self._update_scissor_area()
         self._update_view_translation()
 
+    def _get_bottom_anchor(self):
+        """Returns the anchor for the Y axis from the bottom."""
+        height = self._height
+        if self._content_valign == 'top':
+            offset = min(0, self._height)
+        elif self._content_valign == 'bottom':
+            offset = 0
+        elif self._content_valign == 'center':
+            offset = min(0, self._height) // 2
+        else:
+            assert False, '`content_valign` must be either "top", "bottom", or "center".'
+
+        if self._anchor_y == 'top':
+            return -height + offset
+        elif self._anchor_y == 'baseline':
+            return -height + self._ascent
+        elif self._anchor_y == 'bottom':
+            return 0
+        elif self._anchor_y == 'center':
+            if self._line_count == 1 and self._height is None:
+                # This "looks" more centered than considering all of the descent.
+                return (self._ascent // 2 - self._descent // 4) - height
+            else:
+                return offset - height // 2
+        else:
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
+
     def _update_view_translation(self):
         # Offset of content within viewport
         for _vertex_list in self._vertex_lists:
@@ -2680,7 +2707,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             # A line can have no vertex list if it's out of view OR is an empty row.
             if line.vertex_lists:
                 # Accumulate the X accounting for multiple GlyphBoxes.
-                anchor_x = self._anchor_left
+                anchor_x = anchor_left
 
                 # A line can also have more than 1 box. For example, if the text "This is a test" does not fill
                 # the whole line, it will be split to 2 boxes: ("This is a ", "test")
@@ -2690,6 +2717,33 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                     vlist = line.vertex_lists[box_idx]
                     vlist.anchor[:] = (anchor_x, anchor_top) * vlist.count
                     anchor_x += box.advance
+
+    def _get_bottom_anchor(self):
+        """Returns the anchor for the Y axis from the bottom."""
+        height = self._height
+        if self._content_valign == 'top':
+            offset = min(0, self._height)
+        elif self._content_valign == 'bottom':
+            offset = 0
+        elif self._content_valign == 'center':
+            offset = min(0, self._height) // 2
+        else:
+            assert False, '`content_valign` must be either "top", "bottom", or "center".'
+
+        if self._anchor_y == 'top':
+            return -height + offset
+        elif self._anchor_y == 'baseline':
+            return -height + self._ascent
+        elif self._anchor_y == 'bottom':
+            return 0
+        elif self._anchor_y == 'center':
+            if self._line_count == 1 and self._height is None:
+                # This "looks" more centered than considering all of the descent.
+                return (self._ascent // 2 - self._descent // 4) - height
+            else:
+                return offset - height // 2
+        else:
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
     @property
     def rotation(self):
