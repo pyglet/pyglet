@@ -196,6 +196,9 @@ class Vec2(tuple):
         """Calculate the dot product of this vector and another 2D vector."""
         return self[0] * other[0] + self[1] * other[1]
 
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
+
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
@@ -338,6 +341,9 @@ class Vec3(tuple):
                     clamp(self[1], min_val, max_val),
                     clamp(self[2], min_val, max_val))
 
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
+
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
@@ -465,6 +471,9 @@ class Vec4(tuple):
 
     def dot(self, other: Vec4) -> float:
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
+
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
