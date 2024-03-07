@@ -122,12 +122,13 @@ import re
 import sys
 
 import pyglet
-
 from pyglet import graphics
-from pyglet.gl import *
 from pyglet.event import EventDispatcher
-from pyglet.text import runlist
 from pyglet.font.base import grapheme_break
+from pyglet.gl import (GL_TRIANGLES, GL_LINES, GL_TEXTURE0, glActiveTexture, glBindTexture, GL_BLEND, glEnable,
+                       glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glDisable, GL_DEPTH_ATTACHMENT,
+                       GL_DEPTH_COMPONENT, GL_NEAREST)
+from pyglet.text import runlist
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -153,15 +154,21 @@ layout_vertex_source = """#version 330 core
 
     mat4 m_rotation = mat4(1.0);
     vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+    
     void main()
-    {
+    {        
+        m_translate[3][0] = translation.x;
+        m_translate[3][1] = translation.y;
+        m_translate[3][2] = translation.z;
+        
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         text_colors = colors;
@@ -237,15 +244,21 @@ decoration_vertex_source = """#version 330 core
 
     mat4 m_rotation = mat4(1.0);
     vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-
+    mat4 m_anchor = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+    
     void main()
-    {
+    {        
+        m_translate[3][0] = translation.x;
+        m_translate[3][1] = translation.y;
+        m_translate[3][2] = translation.z;
+        
         m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_rotation * vec4(position + translation + view_translation + v_anchor, 1.0) * visible;
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         vert_colors = colors;
@@ -1126,7 +1139,11 @@ class TextLayout:
 
     def _set_rotation(self, rotation):
         self._rotation = rotation
-        self._update()
+        self._update_rotation()
+
+    def _update_rotation(self):
+        for vlist in self._vertex_lists:
+            vlist.rotation[:] = ((self._rotation,) * vlist.count)
 
     @property
     def position(self):
@@ -1204,7 +1221,7 @@ class TextLayout:
 
         If `multiline` and `wrap_lines` is True, the `width` defines where the
         text will be wrapped. If `multiline` is False or `wrap_lines` is False,
-        this property has no effect. 
+        this property has no effect.
 
         :type: int
         """
@@ -1570,16 +1587,32 @@ class TextLayout:
 
     def _get_bottom_anchor(self):
         """Returns the anchor for the Y axis from the bottom."""
-        height = self._height or self._content_height
+        if self._height is None:
+            height = self._content_height
+            offset = 0
+        else:
+            height = self._height
+            if self._content_valign == 'top':
+                offset = min(0, self._height - self._content_height)
+            elif self._content_valign == 'bottom':
+                offset = 0
+            elif self._content_valign == 'center':
+                offset = min(0, self._height - self._content_height) // 2
+            else:
+                assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
         if self._anchor_y == 'top':
-            return -height
+            return -height + offset
+        elif self._anchor_y == 'baseline':
+            return -height + self._ascent
         elif self._anchor_y == 'bottom':
             return 0
         elif self._anchor_y == 'center':
-            return -(height // 2)
-        elif self._anchor_y == 'baseline':
-            return -(height + self._ascent)
+            if self._line_count == 1 and self._height is None:
+                # This "looks" more centered than considering all of the descent.
+                return (self._ascent // 2 - self._descent // 4) - height
+            else:
+                return offset - height // 2
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
@@ -1980,12 +2013,13 @@ class TextLayout:
         return line_index
 
     def _create_vertex_lists(self, line_x, line_y, anchor_x, anchor_y, i, boxes, context):
-        x = self._x
+        acc_anchor_x = anchor_x
+        # GlyphBoxes (boxes) are collection of Glyphs. A line can have multiple GlyphBoxes.
         for box in boxes:
-            box.place(self, i, x, self._y, self._z, line_x, line_y, self._rotation, self._visible, anchor_x, anchor_y,
-                      context)
-            x += box.advance
+            box.place(self, i, self._x, self._y, self._z, line_x, line_y, self._rotation, self._visible, acc_anchor_x,
+                      anchor_y, context)
             i += box.length
+            acc_anchor_x += box.advance
 
 
 class ScrollableTextLayout(TextLayout):
@@ -2007,6 +2041,10 @@ class ScrollableTextLayout(TextLayout):
 
     def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
+
+        if width is None or height is None:
+            raise Exception("Invalid size. ScrollableTextLayout width or height cannot be None.")
+
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
@@ -2073,6 +2111,7 @@ class ScrollableTextLayout(TextLayout):
         self._anchor_x = anchor_x
         self._update_anchor()
         self._update_scissor_area()
+        self._update_view_translation()
 
     @property
     def anchor_y(self):
@@ -2083,6 +2122,34 @@ class ScrollableTextLayout(TextLayout):
         self._anchor_y = anchor_y
         self._update_anchor()
         self._update_scissor_area()
+        self._update_view_translation()
+
+    def _get_bottom_anchor(self):
+        """Returns the anchor for the Y axis from the bottom."""
+        height = self._height
+        if self._content_valign == 'top':
+            offset = min(0, self._height)
+        elif self._content_valign == 'bottom':
+            offset = 0
+        elif self._content_valign == 'center':
+            offset = min(0, self._height) // 2
+        else:
+            assert False, '`content_valign` must be either "top", "bottom", or "center".'
+
+        if self._anchor_y == 'top':
+            return -height + offset
+        elif self._anchor_y == 'baseline':
+            return -height + self._ascent
+        elif self._anchor_y == 'bottom':
+            return 0
+        elif self._anchor_y == 'center':
+            if self._line_count == 1 and self._height is None:
+                # This "looks" more centered than considering all of the descent.
+                return (self._ascent // 2 - self._descent // 4) - height
+            else:
+                return offset - height // 2
+        else:
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
     def _update_view_translation(self):
         # Offset of content within viewport
@@ -2168,7 +2235,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
 
+        if width is None or height is None:
+            raise Exception("Invalid size. IncrementalTextLayout width or height cannot be None.")
+
         self.glyphs = []
+
+        # All lines, including hidden.
         self.lines = []
 
         self.invalid_glyphs = _InvalidRange()
@@ -2214,6 +2286,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.glyphs[start:start] = [None] * len_text
 
         self.invalid_glyphs.insert(start, len_text)
+
+        # When inserting text normally with content_valign top, the text only affects the line its on and after it.
+        # With other alignments, such as bottom, by adding text you may be pushing the lines above upwards.
+        # To account for this, we need to invalidate the text above as well.
+        if self._multiline and self._content_valign != "top":
+           visible_line = self.lines[self.visible_lines.start]
+           self.invalid_flow.invalidate(visible_line.start, start+len_text)
+
         self.invalid_flow.insert(start, len_text)
         self.invalid_style.insert(start, len_text)
 
@@ -2227,6 +2307,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     def on_delete_text(self, start, end):
         self.glyphs[start:end] = []
+
+        # Same requirement as on_insert_text
+        if self._multiline and self._content_valign != "top":
+            visible_line = self.lines[self.visible_lines.start]
+            self.invalid_flow.invalidate(visible_line.start, end)
 
         self.invalid_glyphs.delete(start, end)
         self.invalid_flow.delete(start, end)
@@ -2393,16 +2478,16 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                     break
             except IndexError:
                 pass
-        else:
-            # The last line is at line_index - 1, if there are any more lines
-            # after that they are stale and need to be deleted.
-            if next_start == len(self._document.text) and line_index > 0:
-                for line in self.lines[line_index:]:
-                    old_line_width = old_line.width + old_line.margin_left
-                    if old_line_width == self._content_width:
-                        content_width_invalid = True
-                    line.delete(self)
-                del self.lines[line_index:]
+
+        # The last line is at line_index - 1, if there are any more lines
+        # after that they are stale and need to be deleted.
+        if next_start == len(self._document.text) and line_index > 0:
+            for line in self.lines[line_index:]:
+                old_line_width = old_line.width + old_line.margin_left
+                if old_line_width == self._content_width:
+                    content_width_invalid = True
+                line.delete(self)
+            del self.lines[line_index:]
 
         if content_width_invalid or len(self.lines) == 1:
             # Rescan all lines to look for the new maximum content width
@@ -2472,7 +2557,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
 
         lines = self.lines[invalid_start:invalid_end]
-        self._line_count = len(lines)
+        self._line_count = len(self.lines)
         self._ascent = lines[0].ascent
         self._descent = lines[0].descent
 
@@ -2534,11 +2619,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update_view_translation()
         self._update_scissor_area()
 
-    def _update_translation(self):
-        for line in self.lines:
-            for vlist in line.vertex_lists:
-                vlist.translation[:] = (self._x, self._y, self._z) * vlist.count
-
     @property
     def anchor_x(self):
         return self._anchor_x
@@ -2548,6 +2628,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._anchor_x = anchor_x
         self._update_anchor()
         self._update_scissor_area()
+        self._update_view_translation()
 
     @property
     def anchor_y(self):
@@ -2558,6 +2639,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._anchor_y = anchor_y
         self._update_anchor()
         self._update_scissor_area()
+        self._update_view_translation()
 
     @property
     def width(self):
@@ -2570,7 +2652,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             return
         self._width = width
         self.invalid_flow.invalidate(0, len(self.document.text))
-        self._update_scissor_area()
+        self._update()
 
     @property
     def height(self):
@@ -2609,6 +2691,67 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 vlist.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
 
         self.dispatch_event('on_translation_update')
+
+    def _update_translation(self):
+        # Vertex lists are stored in the lines.
+        for line in self.lines:
+            for vlist in line.vertex_lists:
+                vlist.translation[:] = (self._x, self._y, self._z) * vlist.count
+
+    def _update_anchor(self):
+        self._anchor_left = self._get_left_anchor()
+        self._anchor_bottom = self._get_bottom_anchor()
+
+        anchor_left, anchor_top = (self._anchor_left, self._get_top_anchor())
+        for line in self.lines:
+            # A line can have no vertex list if it's out of view OR is an empty row.
+            if line.vertex_lists:
+                # Accumulate the X accounting for multiple GlyphBoxes.
+                anchor_x = anchor_left
+
+                # A line can also have more than 1 box. For example, if the text "This is a test" does not fill
+                # the whole line, it will be split to 2 boxes: ("This is a ", "test")
+                # This is to allow the second GlyphBox to be pushed onto the next line should it wrap in multiline.
+                # "This is a test " will be created as one GlyphBox.
+                for box_idx, box in enumerate(line.boxes):
+                    vlist = line.vertex_lists[box_idx]
+                    vlist.anchor[:] = (anchor_x, anchor_top) * vlist.count
+                    anchor_x += box.advance
+
+    def _get_bottom_anchor(self):
+        """Returns the anchor for the Y axis from the bottom."""
+        height = self._height
+        if self._content_valign == 'top':
+            offset = min(0, self._height)
+        elif self._content_valign == 'bottom':
+            offset = 0
+        elif self._content_valign == 'center':
+            offset = min(0, self._height) // 2
+        else:
+            assert False, '`content_valign` must be either "top", "bottom", or "center".'
+
+        if self._anchor_y == 'top':
+            return -height + offset
+        elif self._anchor_y == 'baseline':
+            return -height + self._ascent
+        elif self._anchor_y == 'bottom':
+            return 0
+        elif self._anchor_y == 'center':
+            if self._line_count == 1 and self._height is None:
+                # This "looks" more centered than considering all of the descent.
+                return (self._ascent // 2 - self._descent // 4) - height
+            else:
+                return offset - height // 2
+        else:
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, angle):
+        raise Exception("Rotating IncrementalTextLayout's is not supported.")
 
     @property
     def view_x(self):
@@ -2821,7 +2964,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         """
 
         x -= self._translate_x
-        y -= self._height + self._y - self._translate_y
+        y -= self._get_content_height() + self.bottom - self._translate_y
 
         line_index = 0
         for line in self.lines:
@@ -2887,7 +3030,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         line = self.lines[line]
 
         x += self._translate_x
-        x -= self._x
+        x -= self.left
 
         if x < line.x:
             return line.start
@@ -2902,6 +3045,37 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             position += box.length
 
         return position
+
+    def _get_content_height(self) -> int:
+        """Returns the height of the layout content factoring in the vertical alignment."""
+        if self._height is None:
+            height = self.content_height
+            offset = 0
+        else:
+            height = self._height
+            if self._content_valign == 'top':
+                offset = 0
+            elif self._content_valign == 'bottom':
+                offset = max(0, self._height - self.content_height)
+            elif self._content_valign == 'center':
+                offset = max(0, self._height - self.content_height) // 2
+            else:
+                assert False, '`content_valign` must be either "top", "bottom", or "center".'
+
+        return height - offset
+
+    def _get_left_anchor(self):
+        """Returns the anchor for the X axis from the left."""
+        width = self.width
+
+        if self._anchor_x == 'left':
+            return 0
+        elif self._anchor_x == 'center':
+            return -(width // 2)
+        elif self._anchor_x == 'right':
+            return -width
+        else:
+            assert False, '`anchor_x` must be either "left", "center", or "right".'
 
     def get_line_count(self):
         """Get the number of lines in the text layout.
@@ -2925,6 +3099,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self.view_y = y1
         elif y2 < self.view_y - self.height:
             self.view_y = y2 + self.height
+        elif abs(self.view_y) > self.content_height - self.height:
+            self.view_y = -self.content_height
 
     def ensure_x_visible(self, x):
         """Adjust `view_x` so that the given X coordinate is visible.
@@ -2936,7 +3112,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 X coordinate
 
         """
-        x -= self._x
+        x -= self.left
 
         if x <= self.view_x:
             self.view_x = x

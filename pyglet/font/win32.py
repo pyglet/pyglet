@@ -1,4 +1,5 @@
 # TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls as well as font.
+from __future__ import annotations
 import ctypes
 
 import math
