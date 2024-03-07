@@ -4,9 +4,10 @@ This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
-Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicable).
-The Python ``in`` operator to check whether a point is inside a shape.
+Convenience methods are provided for positioning, changing color, opacity,
+and rotation.
+The Python ``in`` operator can be used to check whether a point is inside a shape.
+(This is approximated with some shapes, such as Star).
 
 To create more complex shapes than what is provided here, the lower level
 graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
@@ -50,12 +51,10 @@ from abc import ABC, abstractmethod
 
 import pyglet
 
-from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
+from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGLES
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
-
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -128,6 +127,7 @@ def _sat(vertices, point):
             return False
     return True
 
+
 def _get_segment(p0, p1, p2, p3, thickness=1, prev_miter=None, prev_scale=None):
     """Computes a line segment between the points p1 and p2.
 
@@ -155,7 +155,7 @@ def _get_segment(p0, p1, p2, p3, thickness=1, prev_miter=None, prev_scale=None):
     :type: (pyglet.math.Vec2, pyglet.math.Vec2, float, float, float, float, float, float)
     """
     v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
-    v_normal = Vec2(-v_np1p2.y,v_np1p2.x)
+    v_normal = Vec2(-v_np1p2.y, v_np1p2.x)
 
     # Prep the miter vectors to the normal vector in case it is only one segment
     v_miter2 = v_normal
@@ -169,7 +169,7 @@ def _get_segment(p0, p1, p2, p3, thickness=1, prev_miter=None, prev_scale=None):
     elif p0:
         # Compute the miter joint vector for the start of the segment
         v_np0p1 = Vec2(p1[0] - p0[0], p1[1] - p0[1]).normalize()
-        v_normal_p0p1 = Vec2(-v_np0p1.y,v_np0p1.x)
+        v_normal_p0p1 = Vec2(-v_np0p1.y, v_np0p1.x)
         # Add the 2 normal vectors and normalize to get miter vector
         v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
         scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
@@ -177,24 +177,25 @@ def _get_segment(p0, p1, p2, p3, thickness=1, prev_miter=None, prev_scale=None):
     if p3:
         # Compute the miter joint vector for the end of the segment
         v_np2p3 = Vec2(p3[0] - p2[0], p3[1] - p2[1]).normalize()
-        v_normal_p2p3 = Vec2(-v_np2p3.y,v_np2p3.x)
+        v_normal_p2p3 = Vec2(-v_np2p3.y, v_np2p3.x)
         # Add the 2 normal vectors and normalize to get miter vector
         v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
         scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
 
     # Make these tuples instead of Vec2 because accessing
     # members of Vec2 is suprisingly slow
-    miter1ScaledP = (v_miter1.x * scale1, v_miter1.y * scale1)
-    miter2ScaledP = (v_miter2.x * scale2, v_miter2.y * scale2)
+    miter1_scaled_p = (v_miter1.x * scale1, v_miter1.y * scale1)
+    miter2_scaled_p = (v_miter2.x * scale2, v_miter2.y * scale2)
 
-    v1 = (p1[0] + miter1ScaledP[0], p1[1] + miter1ScaledP[1])
-    v2 = (p2[0] + miter2ScaledP[0], p2[1] + miter2ScaledP[1])
-    v3 = (p1[0] - miter1ScaledP[0], p1[1] - miter1ScaledP[1])
-    v4 = (p2[0] + miter2ScaledP[0], p2[1] + miter2ScaledP[1])
-    v5 = (p2[0] - miter2ScaledP[0], p2[1] - miter2ScaledP[1])
-    v6 = (p1[0] - miter1ScaledP[0], p1[1] - miter1ScaledP[1])
+    v1 = (p1[0] + miter1_scaled_p[0], p1[1] + miter1_scaled_p[1])
+    v2 = (p2[0] + miter2_scaled_p[0], p2[1] + miter2_scaled_p[1])
+    v3 = (p1[0] - miter1_scaled_p[0], p1[1] - miter1_scaled_p[1])
+    v4 = (p2[0] + miter2_scaled_p[0], p2[1] + miter2_scaled_p[1])
+    v5 = (p2[0] - miter2_scaled_p[0], p2[1] - miter2_scaled_p[1])
+    v6 = (p1[0] - miter1_scaled_p[0], p1[1] - miter1_scaled_p[1])
 
-    return (v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1])
+    return v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1]
+
 
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
@@ -319,6 +320,7 @@ class ShapeBase(ABC):
         """
         raise NotImplementedError("_update_vertices must be defined"
                                   "for every ShapeBase subclass")
+
     @property
     def rotation(self) -> float:
         """Clockwise rotation of the shape in degrees.
@@ -517,9 +519,9 @@ class ShapeBase(ABC):
         if self._group.parent == group:
             return
         self._group = self.group_class(self._group.blend_src,
-                                  self._group.blend_dest,
-                                  self._group.program,
-                                  group)
+                                       self._group.blend_dest,
+                                       self._group.program,
+                                       group)
         self._batch.migrate(self._vertex_list, self._draw_mode, self._group,
                             self._batch)
 
@@ -597,7 +599,7 @@ class Arc(ShapeBase):
         self._closed = closed if abs(math.tau - self._angle) > 1e-9 else False
         self._rotation = 0
 
-        #Each segment is now 6 vertices long
+        # Each segment is now 6 vertices long
         self._num_verts = self._segments * 6 + (6 if self._closed else 0)
 
         self._batch = batch or Batch()
@@ -632,32 +634,34 @@ class Arc(ShapeBase):
             prev_miter = None
             prev_scale = None
             for i in range(len(points) - 1):
-                prevPoint = None
-                nextPoint = None
+                prev_point = None
+                next_point = None
                 if i > 0:
-                    prevPoint = points[i - 1]
+                    prev_point = points[i - 1]
                 elif self._closed:
-                    prevPoint = points[-1]
+                    prev_point = points[-1]
                 elif abs(self._angle - math.tau) <= 1e-9:
-                    prevPoint = points[-2]
+                    prev_point = points[-2]
 
                 if i + 2 < len(points):
-                    nextPoint = points[i + 2]
+                    next_point = points[i + 2]
                 elif self._closed:
-                    nextPoint = points[0]
+                    next_point = points[0]
                 elif abs(self._angle - math.tau) <= 1e-9:
-                    nextPoint = points[1]
+                    next_point = points[1]
 
-                prev_miter, prev_scale, *segment = _get_segment(prevPoint, points[i], points[i + 1], nextPoint, self._thickness, prev_miter, prev_scale)
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
                 vertices.extend(segment)
 
             if self._closed:
-                prevPoint = None
-                nextPoint = None
+                prev_point = None
+                next_point = None
                 if len(points) > 2:
-                    prevPoint = points[-2]
-                    nextPoint = points[1]
-                prev_miter, prev_scale, *segment = _get_segment(prevPoint, points[-1], points[0], nextPoint, self._thickness, prev_miter, prev_scale)
+                    prev_point = points[-2]
+                    next_point = points[1]
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[-1], points[0], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
                 vertices.extend(segment)
 
             return vertices
@@ -777,8 +781,8 @@ class BezierCurve(ShapeBase):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
-            x = -self._anchor_x
-            y = -self._anchor_y
+            x = -self._anchor_x - self._x
+            y = -self._anchor_y - self._y
 
             # Calculate the points of the curve:
             points = [(x + self._make_curve(self._t * t / self._segments)[0],
@@ -793,15 +797,16 @@ class BezierCurve(ShapeBase):
             prev_miter = None
             prev_scale = None
             for i in range(len(coords) - 1):
-                prevPoint = None
-                nextPoint = None
+                prev_point = None
+                next_point = None
                 if i > 0:
-                    prevPoint = points[i - 1]
+                    prev_point = points[i - 1]
 
                 if i + 2 < len(points):
-                    nextPoint = points[i + 2]
+                    next_point = points[i + 2]
 
-                prev_miter, prev_scale, *segment = _get_segment(prevPoint, points[i], points[i + 1], nextPoint, self._thickness, prev_miter, prev_scale)
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
                 vertices.extend(segment)
 
             return vertices
@@ -884,7 +889,7 @@ class Circle(ShapeBase):
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
-            self._segments*3, self._draw_mode, self._batch, self._group,
+            self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -983,7 +988,7 @@ class Ellipse(ShapeBase):
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
-            self._segments*3, self._draw_mode, self._batch, self._group,
+            self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1094,7 +1099,8 @@ class Sector(ShapeBase):
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         angle = math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x)
-        if angle < 0: angle += 2 * math.pi
+        if angle < 0:
+            angle += 2 * math.pi
         if self._start_angle < angle < self._start_angle + self._angle:
             return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
         return False
@@ -1172,8 +1178,7 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
@@ -1205,7 +1210,7 @@ class Line(ShapeBase):
         self._y2 = y2
 
         self._width = width
-        self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
+        self._rotation = 0
         self._num_verts = 6
 
         r, g, b, *a = color
@@ -1230,7 +1235,7 @@ class Line(ShapeBase):
         x1, y1, x2, y2 = self._x, self._y, self._x2, self._y2
         # The following is the expansion of the determinant of a 3x3 matrix
         # used to calculate the area of a triangle.
-        double_area = abs(a*y1+b*x2+x1*y2-x2*y1-a*y2-b*x1)
+        double_area = abs(a * y1 + b * x2 + x1 * y2 - x2 * y1 - a * y2 - b * x1)
         h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
         return h < self._width / 2
 
@@ -1245,24 +1250,26 @@ class Line(ShapeBase):
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
-            x1 = -self._anchor_x
-            y1 = self._anchor_y - self._width / 2
-            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
-            y2 = y1 + self._width
+            x1 = 0
+            y1 = 0
+            x2 = math.hypot(self._y2 - self._y, self._x2 - self._x)
+            y2 = self._width
 
             r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
             sr = math.sin(r)
-            ax = x1 * cr - y1 * sr
-            ay = x1 * sr + y1 * cr
-            bx = x2 * cr - y1 * sr
-            by = x2 * sr + y1 * cr
-            cx = x2 * cr - y2 * sr
-            cy = x2 * sr + y2 * cr
-            dx = x1 * cr - y2 * sr
-            dy = x1 * sr + y2 * cr
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            ax = x1 * cr - y1 * sr - anchor_x
+            ay = x1 * sr + y1 * cr - anchor_y
+            bx = x2 * cr - y1 * sr - anchor_x
+            by = x2 * sr + y1 * cr - anchor_y
+            cx = x2 * cr - y2 * sr - anchor_x
+            cy = x2 * sr + y2 * cr - anchor_y
+            dx = x1 * cr - y2 * sr - anchor_x
+            dy = x1 * sr + y2 * cr - anchor_y
 
-            return (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+            return ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()
@@ -1360,7 +1367,7 @@ class Rectangle(ShapeBase):
 
     def _get_vertices(self):
         if not self._visible:
-             return (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1504,11 +1511,10 @@ class BorderedRectangle(ShapeBase):
             iy2 = by2 - b
 
             return (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
-                                             bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+                    bx1, by1, bx2, by1, bx2, by2, bx1, by2)
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()
-
 
     @property
     def border(self):
@@ -1697,8 +1703,8 @@ class Box(ShapeBase):
             y2 = bottom + t
             y3 = top - t
             y4 = top
-                    #  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7
-            return  x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+            #     |  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7   |
+            return x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()
@@ -1798,7 +1804,7 @@ class Triangle(ShapeBase):
             y2 = self._y2 + y1 - self._y
             x3 = self._x3 + x1 - self._x
             y3 = self._y3 + y1 - self._y
-            return (x1, y1, x2, y2, x3, y3)
+            return x1, y1, x2, y2, x3, y3
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()
@@ -1935,10 +1941,10 @@ class Star(ShapeBase):
             # calculate alternating points on outer and outer circles
             points = []
             for i in range(self._num_spikes):
-                points.append((x + (r_o * math.cos(2*i * d_theta)),
-                               y + (r_o * math.sin(2*i * d_theta))))
-                points.append((x + (r_i * math.cos((2*i+1) * d_theta)),
-                               y + (r_i * math.sin((2*i+1) * d_theta))))
+                points.append((x + (r_o * math.cos(2 * i * d_theta)),
+                               y + (r_o * math.sin(2 * i * d_theta))))
+                points.append((x + (r_i * math.cos((2 * i + 1) * d_theta)),
+                               y + (r_i * math.sin((2 * i + 1) * d_theta))))
 
             # create a list of doubled-up points from the points
             vertices = []
@@ -2112,15 +2118,15 @@ class MultiLine(ShapeBase):
             prev_miter = None
             prev_scale = None
             for i in range(len(coords) - 1):
-                prevPoint = None
-                nextPoint = None
+                prev_point = None
+                next_point = None
                 if i > 0:
-                    prevPoint = coords[i - 1]
+                    prev_point = coords[i - 1]
 
                 if i + 2 < len(coords):
-                    nextPoint = coords[i + 2]
+                    next_point = coords[i + 2]
 
-                prev_miter, prev_scale, *segment = _get_segment(prevPoint, coords[i], coords[i + 1], nextPoint,
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, coords[i], coords[i + 1], next_point,
                                                                 self._thickness, prev_miter, prev_scale)
                 triangles.extend(segment)
 

@@ -881,15 +881,42 @@ class ShaderProgram:
         return self._id
 
     @property
-    def attributes(self):
+    def attributes(self) -> dict:
+        """Attribute metadata dictionary
+
+        This property returns a dictionary containing metadata of all
+        Attributes that were introspected in this ShaderProgram. Modifying
+        this dictionary has no effect.
+        """
         return self._attributes.copy()
 
     @property
-    def uniforms(self):
+    def uniforms(self) -> dict:
+        """Uniform metadata dictionary
+
+        This property returns a dictionary containing metadata of all
+        Uniforms that were introspected in this ShaderProgram. Modifying
+        this dictionary has no effect. To set or get a uniform, the uniform
+        name is used as a key on the ShaderProgram instance. For example::
+
+            my_shader_program[uniform_name] = 123
+            value = my_shader_program[uniform_name]
+
+        """
         return {n: dict(location=u.location, length=u.length, size=u.size) for n, u in self._uniforms.items()}
 
     @property
-    def uniform_blocks(self):
+    def uniform_blocks(self) -> dict:
+        """A dictionary of introspected UniformBlocks
+
+        This property returns a dictionary of
+        :py:class:`~pyglet.graphics.shader.UniformBlock` instances.
+        They can be accessed by name. For example::
+
+            block = my_shader_program.uniform_blocks['WindowBlock']
+            ubo = block.create_ubo()
+
+        """
         return self._uniform_blocks
 
     def use(self):
@@ -923,8 +950,8 @@ class ShaderProgram:
             uniform = self._uniforms[key]
         except KeyError as err:
             msg = (f"A Uniform with the name `{key}` was not found.\n"
-            f"The spelling may be incorrect, or if not in use it "
-            f"may have been optimized out by the OpenGL driver.")
+                   f"The spelling may be incorrect or, if not in use, it "
+                   f"may have been optimized out by the OpenGL driver.")
             if _debug_gl_shaders:
                 warnings.warn(msg)
                 return
@@ -940,8 +967,8 @@ class ShaderProgram:
             uniform = self._uniforms[item]
         except KeyError as err:
             msg = (f"A Uniform with the name `{item}` was not found.\n"
-            f"The spelling may be incorrect, or if not in use it "
-            f"may have been optimized out by the OpenGL driver.")
+                   f"The spelling may be incorrect or, if not in use, it "
+                   f"may have been optimized out by the OpenGL driver.")
             if _debug_gl_shaders:
                 warnings.warn(msg)
                 return
