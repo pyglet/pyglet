@@ -887,7 +887,7 @@ class TextLayout:
     _multiline = False
     _visible = True
 
-    def __init__(self, document, x=0, y=0, z=0, width=None, height=None,
+    def __init__(self, document, width=None, height=None, x=0, y=0, z=0,
                  anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None, program=None,
                  wrap_lines=True, init_document=True):
@@ -2045,7 +2045,7 @@ class ScrollableTextLayout(TextLayout):
         if width is None or height is None:
             raise Exception("Invalid size. ScrollableTextLayout width or height cannot be None.")
 
-        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
     def _update_scissor_area(self):
@@ -2252,7 +2252,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
     def _update_scissor_area(self):
