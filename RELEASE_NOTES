@@ -3,10 +3,29 @@ pyglet 2.0.13
 Changes and Improvements
 ------------------------
 - shapes: Add new MultiLine shape. (#1057)
+- font: Enhance UserDefinedFonts to allow using custom font mapping functions (#1067)
+- typing: Improve Xaudio2 COM type hints (#1062)
+- text: Raise Exception when attempting to change IncrementalTextLayout.rotation, as it's not supported.
 
 Bugfixes
 --------
 - input.win32: Fix broken xinput get_devices and get_controllers methods (#1060)
+- shapes: Fix incorrect BezierCurve positioning, and Line rotation. (#1084)
+- app: Fix CFSTR.release() bugs in macOS event loop. (#1059)
+- font: Fix missing annotation import causing a crash for GDI.
+- text.caret: Caret now properly works with other Layout content valigns other than top.
+- text.layout: Ensure all TextLayouts have consistent argument ordering.
+- text.layout: Fix left, right, bottom, top Layout parameters not being correct.
+- text.layout: Fix changing anchor not updating the translation.
+- text.layout: Fix for lines getting garbled in an IncrementalTextLayout when using a content-valign other than top.
+- text.layout: Fix IncrementalTextLayout setting visible line count instead of total line count.
+- text.layout: Fix translation sometimes not updating all of the GlyphBoxes.
+- text.layout: Fix _update_anchor not updating vertex lists of IncrementalTextLayout.
+- text.layout: Fix _update_flow_glyphs not updating line count when it breaks it's loop.
+- text.layout: Fix deleting lines at the end of a multilined IncrementalTextLayout not reducing view size.
+- text.layout: Fix shader to conform to new anchors.
+- text.layout: Rotation no longer requires destroying the whole layout, it now just updates attributes.
+- text.layout: Anchor bottom fix for Scrollable/Incremental.
 
 
 pyglet 2.0.12

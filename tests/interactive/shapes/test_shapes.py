@@ -11,6 +11,7 @@ from pyglet.shapes import (
     Ellipse,
     Sector,
     Line,
+    MultiLine,
     Rectangle,
     BorderedRectangle,
     Triangle,
@@ -21,8 +22,8 @@ from pyglet.shapes import (
 )
 from pyglet.text import Label
 
-
 INSTRUCTIONS = """- / = keys to rotate
+Arrow keys to change anchor points
 Left click + drag to adjust positions
 """
 
@@ -40,11 +41,11 @@ colors = itertools.cycle(map(lambda c: c + (255,), [
 # Default values for each shape type: Type, *args, **kwargs
 shape_configs = [
     (Arc, (PX_SIZE,), {}),
-    (BezierCurve, [(0,0), (PX_SIZE,PX_SIZE_2), (PX_SIZE_2 , PX_SIZE)], {}),
+    (BezierCurve, [(0, 0), (PX_SIZE, PX_SIZE_2), (PX_SIZE_2, PX_SIZE)], {}),
     (Circle, (PX_SIZE,), {}),
     (Ellipse, (PX_SIZE, PX_SIZE_2,), {}),
 
-    (Sector, (PX_SIZE, ), {}),
+    (Sector, (PX_SIZE,), {}),
     (Line, (0, 0, PX_SIZE_2, PX_SIZE_2), {}),
     (Rectangle, (PX_SIZE, PX_SIZE_2), {}),
     (BorderedRectangle, (PX_SIZE_2, PX_SIZE), {}),
@@ -52,8 +53,10 @@ shape_configs = [
 
     (Triangle, (-PX_SIZE, 0, 0, PX_SIZE, PX_SIZE, 0), {}),
     (Star, (PX_SIZE_2, PX_SIZE, 5), {}),
-    (Polygon, ((-PX_SIZE,0), (0,PX_SIZE), (PX_SIZE,0)), {})
+    (Polygon, ((-PX_SIZE, 0), (0, PX_SIZE), (PX_SIZE, 0)), {}),
+    (MultiLine, ((-PX_SIZE, 0), (0, PX_SIZE), (PX_SIZE, 0)), {}),
 ]
+
 
 def layout_points(
         width: int, height: int,
@@ -87,6 +90,7 @@ def layout_points(
         for x in range(padding, padding + x_step_range, x_step):
             yield x, y
 
+
 def main():
     padding = 50
     width, height = 600, 600
@@ -109,8 +113,8 @@ def main():
         # Arrange shape args
         if params[:2] == ['x', 'y'] and params[2] != 'x2':
             final_args = position + args
-        elif shape_type in (Polygon, BezierCurve):
-            raw = [(position[0] + p[0],  position[1] + p[1]) for p in args]
+        elif shape_type in (Polygon, BezierCurve, MultiLine):
+            raw = [(position[0] + p[0], position[1] + p[1]) for p in args]
             final_args = raw
             print(shape_type.__name__, final_args)
 
@@ -162,6 +166,18 @@ def main():
         elif symbol == pyglet.window.key.EQUAL:
             for item in shapes.values():
                 item.rotation += 20
+        elif symbol == pyglet.window.key.LEFT:
+            for item in shapes.values():
+                item.anchor_x += 10
+        elif symbol == pyglet.window.key.RIGHT:
+            for item in shapes.values():
+                item.anchor_x -= 10
+        elif symbol == pyglet.window.key.DOWN:
+            for item in shapes.values():
+                item.anchor_y += 10
+        elif symbol == pyglet.window.key.UP:
+            for item in shapes.values():
+                item.anchor_y -= 10
 
     @window.event
     def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
