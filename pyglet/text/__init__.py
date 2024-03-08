@@ -445,7 +445,7 @@ class Label(DocumentLabel):
 
         """
         doc = decode_text(text)
-        super().__init__(doc, width, height, x, y, z, anchor_x, anchor_y, rotation,
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
@@ -514,7 +514,7 @@ class HTMLLabel(DocumentLabel):
         self._text = text
         self._location = location
         doc = decode_html(text, location)
-        super().__init__(doc, width, height, x, y, z, anchor_x, anchor_y, rotation,
+        super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=False)
 
     @property
