@@ -611,7 +611,7 @@ class _InlineElementBox(_AbstractBox):
         self.placed = False
 
     def place(self, layout, i, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y, context):
-        self.element.place(layout, x, y, z)
+        self.element.place(layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y)
         self.placed = True
         context.add_box(self)
 

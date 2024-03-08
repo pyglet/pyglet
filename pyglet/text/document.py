@@ -182,7 +182,7 @@ class InlineElement:
         """
         return self._position
 
-    def place(self, layout, x, y, z):
+    def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         """Construct an instance of the element at the given coordinates.
 
         Called when the element's position within a layout changes, either
@@ -205,6 +205,20 @@ class InlineElement:
             `y` : int
                 Position of the baseline, relative to the top edge of the
                 document, in pixels.  Note that this is typically negative.
+            'z' : int
+                Position of the layout on the Z axis.
+            `line_x` : int
+                Position of the element from the left on the layout line.
+            `line_y` : int
+                Position of the element from the bottom on thhe layout line.
+            `rotation` : int
+                Rotation of the element taken from the layout.
+            `visible` : int
+                Visibility of the element from the layout.
+            `anchor_x` : int
+                Offset position from the left of the layout.
+            `anchor_y` : int
+                Offset position from the bottom of the layout.
 
         """
         raise NotImplementedError('abstract')

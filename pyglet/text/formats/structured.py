@@ -52,17 +52,23 @@ class ImageElement(pyglet.text.document.InlineElement):
         descent = min(0, -anchor_y)
         super().__init__(ascent, descent, self.width)
 
-    def place(self, layout, x, y, z):
+    def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         program = pyglet.text.layout.get_default_image_layout_shader()
         group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
-        x1 = x
-        y1 = y + self.descent
-        x2 = x + self.width
-        y2 = y + self.height + self.descent
+        x1 = line_x
+        y1 = line_y + self.descent
+        x2 = line_x + self.width
+        y2 = line_y + self.height + self.descent
         vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
-                                                  tex_coords=('f', self.image.tex_coords))
+                                                  translation=('f', (x, y, z) * 4),
+                                                  tex_coords=('f', self.image.tex_coords),
+                                                  visible=('f', (visible,) * 4),
+                                                  rotation=('f', (rotation,) * 4),
+                                                  anchor=('f', (anchor_x, anchor_y) * 4)
+                                                  )
+
         self.vertex_lists[layout] = vertex_list
 
     def remove(self, layout):

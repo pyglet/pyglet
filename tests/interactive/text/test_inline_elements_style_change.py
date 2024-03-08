@@ -43,23 +43,30 @@ doctext = doctext.replace('[element here]', '')
 class TestElement(document.InlineElement):
     vertex_list = None
 
-    def place(self, layout, x, y, z):
+    def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         group = layout.foreground_decoration_group
         program = pyglet.text.layout.get_default_layout_shader()
 
-        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
-                                                       [0, 1, 2, 0, 2, 3],
-                                                       colors=('Bn', (200, 200, 200, 255) * 4),
-                                                       group=group, batch=layout.batch)
+        print(line_x, line_y, x, y, z, anchor_x, anchor_y, self.descent, self.ascent)
 
-        y += self.descent
+        _y = line_y
+        _y += self.descent
         w = self.advance
         h = self.ascent - self.descent
-        self.vertex_list.position[:] = (x, y, z,
-                                        x + w, y, z,
-                                        x + w, y + h, z,
-                                        x, y + h, z)
+        vertices = (line_x, _y, z,
+                    line_x + w, _y, z,
+                    line_x + w, _y + h, z,
+                    line_x, _y + h, z)
 
+        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
+                                                       [0, 1, 2, 0, 2, 3], layout.batch, group,
+                                                       position=('f', vertices),
+                                                       translation=('f', (x, y, z) * 4),
+                                                       colors=('Bn', (200, 200, 200, 255) * 4),
+                                                       visible=('f', (1,) * 4),
+                                                       rotation=('f', (rotation,) * 4),
+                                                       anchor=('f', (anchor_x, anchor_y) * 4)
+                                                       )
     def remove(self, layout):
         self.vertex_list.delete()
         del self.vertex_list
@@ -109,7 +116,7 @@ class InlineElementStyleChangeTestCase(InteractiveTestCase):
     """
 
     def test_inline_elements_style_change(self):
-        self.window = TestWindow(visible=False)
+        self.window = TestWindow(1920, 1080, visible=False)
         self.window.set_visible()
         pyglet.app.run()
         self.user_verify('Pass test?', take_screenshot=False)
