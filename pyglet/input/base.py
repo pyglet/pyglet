@@ -516,8 +516,8 @@ class Controller(EventDispatcher):
                  'back', 'start', 'guide', 'leftshoulder', 'rightshoulder',
                  'leftstick', 'rightstick', 'lefttrigger', 'righttrigger',
                  'leftx', 'lefty', 'rightx', 'righty', 'dpup', 'dpdown', 'dpleft',
-                 'dpright', '_button_controls', '_axis_controls', '_hat_control',
-                 '_hat_x_control', '_hat_y_control')
+                 'dpright', 'dpadx', 'dpady', '_button_controls', '_axis_controls',
+                 '_hat_control', '_hat_x_control', '_hat_y_control')
 
     def __init__(self, device, mapping):
         """High-level interface for Game Controllers.
@@ -531,7 +531,8 @@ class Controller(EventDispatcher):
         To use a Controller, you must first call `open`. Controllers will then
         dispatch a variety of events whenever the inputs change. They can also
         be polled at any time to find the current value of any inputs. Analog
-        inputs are normalized to the range [-1.0, 1.0].
+        sticks are normalized to the range [-1.0, 1.0], and triggers are
+        normalized to the range [0.0, 1.0].
 
         :note: A running application event loop is required
 
@@ -572,6 +573,8 @@ class Controller(EventDispatcher):
             `dpdown` : bool
             `dpleft` : bool
             `dpright` : bool
+            `dpadx`: float
+            `dpady`: float
 
         .. versionadded:: 2.0
         """
@@ -582,26 +585,26 @@ class Controller(EventDispatcher):
         self.name = mapping.get('name')
         self.guid = mapping.get('guid')
 
-        self.a = False
-        self.b = False
-        self.x = False
-        self.y = False
-        self.back = False
-        self.start = False
-        self.guide = False
-        self.leftshoulder = False
-        self.rightshoulder = False
-        self.leftstick = False          # stick press button
-        self.rightstick = False         # stick press button
+        self.a: bool = False
+        self.b: bool = False
+        self.x: bool = False
+        self.y: bool = False
+        self.back: bool = False
+        self.start: bool = False
+        self.guide: bool = False
+        self.leftshoulder: bool = False
+        self.rightshoulder: bool = False
+        self.leftstick: bool = False          # stick press button
+        self.rightstick: bool = False         # stick press button
 
-        self.lefttrigger = 0.0
-        self.righttrigger = 0.0
-        self.leftx = 0.0
-        self.lefty = 0.0
-        self.rightx = 0.0
-        self.righty = 0.0
-        self.dpadx = 0.0
-        self.dpady = 0.0
+        self.lefttrigger: float = 0.0
+        self.righttrigger: float = 0.0
+        self.leftx: float = 0.0
+        self.lefty: float = 0.0
+        self.rightx: float = 0.0
+        self.righty: float = 0.0
+        self.dpadx: float = 0.0
+        self.dpady: float = 0.0
 
         self._button_controls = []
         self._axis_controls = []
@@ -817,7 +820,7 @@ class Controller(EventDispatcher):
             `trigger` : string
                 The name of the trigger that changed.
             `value` : float
-                The current value of the trigger, normalized to [-1, 1].
+                The current value of the trigger, normalized to [0, 1].
         """
 
     def on_button_press(self, controller, button):

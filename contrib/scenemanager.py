@@ -22,16 +22,19 @@ class Scene:
 
     # Controller event handlers:
 
-    def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
+    def on_dpad_motion(self, controller, vector):
+        pass
+
+    def on_stick_motion(self, controller, name, vector):
+        pass
+
+    def on_trigger_motion(self, controller, value):
         pass
 
     def on_button_press(self, controller, button):
         pass
 
     def on_button_release(self, controller, button):
-        pass
-
-    def on_stick_motion(self, controller, stick, xvalue, yvalue):
         pass
 
     # Keyboard event handlers:

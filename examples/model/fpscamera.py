@@ -16,7 +16,7 @@ class FPSCamera:
     This Camera class handles events from the mouse & keyboard and
     Controller, and updates these Window matrices.
 
-    Note mouse input will be captured once you click on the Window,
+    Note:  mouse input will be captured once you click on the Window,
     which sets the mouse as exclusive. Pressing ESC once will set
     the mouse as non-exclusive.
     """
@@ -38,7 +38,7 @@ class FPSCamera:
                           pyglet.window.key.A: "left",
                           pyglet.window.key.D: "right"}
 
-        self.inputs = {direction : False for direction in self.input_map.values()}
+        self.inputs = {direction: False for direction in self.input_map.values()}
 
         self.mouse_look = Vec2()
         self.keybord_move = Vec3()
@@ -132,13 +132,12 @@ class FPSCamera:
 
     # Controller input
 
-    def on_stick_motion(self, _controller, stick, xvalue, yvalue):
+    def on_stick_motion(self, _controller, stick, vector):
         if stick == "leftstick":
-            self.controller_move = self.target * yvalue + self.target.cross(self.up).normalize() * xvalue
+            self.controller_move = self.target * vector.y + self.target.cross(self.up).normalize() * vector.x
 
         elif stick == "rightstick":
-            self.controller_look[:] = xvalue, yvalue
-
+            self.controller_look[:] = vector
 
 
 if __name__ == "__main__":
@@ -159,6 +158,7 @@ if __name__ == "__main__":
     # Camera controls the global projection & view matrixes:
     camera = FPSCamera(window, position=Vec3(0, 0, 5))
 
+    # If a controller is connected, use it:
     if controllers := pyglet.input.get_controllers():
         controller = controllers[0]
         controller.open()
