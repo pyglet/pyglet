@@ -490,13 +490,13 @@ class XInputDeviceManager(EventDispatcher):
                 elif result == ERROR_SUCCESS and device.is_open:
 
                     # Stop Rumble effects if a duration is set:
-                    if device.weak_duration:
+                    if device.weak_duration is not None:
                         device.weak_duration -= polling_rate
                         if device.weak_duration <= 0:
                             device.weak_duration = None
                             device.vibration.wRightMotorSpeed = 0
                             device.set_rumble_state()
-                    if device.strong_duration:
+                    if device.strong_duration is not None:
                         device.strong_duration -= polling_rate
                         if device.strong_duration <= 0:
                             device.strong_duration = None
