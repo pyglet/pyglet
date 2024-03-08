@@ -1,4 +1,4 @@
-pyglet 2.0.13
+pyglet 2.0.14
 
 Changes and Improvements
 ------------------------
@@ -6,6 +6,7 @@ Changes and Improvements
 - font: Enhance UserDefinedFonts to allow using custom font mapping functions (#1067)
 - typing: Improve Xaudio2 COM type hints (#1062)
 - text: Raise Exception when attempting to change IncrementalTextLayout.rotation, as it's not supported.
+- tests.integration: Add simple sanity tests for creation of all Label, Document, and Layout objects.
 
 Bugfixes
 --------
@@ -26,6 +27,11 @@ Bugfixes
 - text.layout: Fix shader to conform to new anchors.
 - text.layout: Rotation no longer requires destroying the whole layout, it now just updates attributes.
 - text.layout: Anchor bottom fix for Scrollable/Incremental.
+
+
+pyglet 2.0.13
+
+Withdrawn due to Label creation bug.
 
 
 pyglet 2.0.12
