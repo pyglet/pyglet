@@ -1,5 +1,6 @@
 import pytest
 
+import pyglet.text.layout.incremental
 from pyglet import gl
 from pyglet import graphics
 from pyglet.text import document
@@ -16,7 +17,7 @@ def text_window(request):
 
             self.batch = graphics.Batch()
             self.document = doctype()
-            self.layout = layout.IncrementalTextLayout(
+            self.layout = pyglet.text.layout.incremental.IncrementalTextLayout(
                 self.document, self.width, self.height, batch=self.batch)
 
         def on_draw(self):

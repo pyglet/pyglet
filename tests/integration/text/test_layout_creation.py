@@ -5,6 +5,10 @@ import itertools
 
 import pytest
 
+import pyglet.text.layout
+import pyglet.text.layout.base
+import pyglet.text.layout.incremental
+import pyglet.text.layout.scrolling
 from pyglet.text import document
 from pyglet.text import layout
 
@@ -17,7 +21,8 @@ Z = random.randint(-10, 10)
 
 # Create combination of all Layout and Document types
 document_classes = [document.UnformattedDocument, document.FormattedDocument]
-layout_classes = [layout.TextLayout, layout.ScrollableTextLayout, layout.IncrementalTextLayout]
+layout_classes = [pyglet.text.layout.base.TextLayout, pyglet.text.layout.scrolling.ScrollableTextLayout,
+                  pyglet.text.layout.incremental.IncrementalTextLayout]
 all_combinations = list(itertools.product(document_classes, layout_classes))
 
 

@@ -4,6 +4,8 @@
 import re
 
 import pyglet
+import pyglet.text.layout
+import pyglet.text.layout.base
 
 from pyglet.gl import *
 
@@ -53,7 +55,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         super().__init__(ascent, descent, self.width)
 
     def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
-        program = pyglet.text.layout.get_default_image_layout_shader()
+        program = pyglet.text.layout.base.get_default_image_layout_shader()
         group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
         x1 = line_x
         y1 = line_y + self.descent

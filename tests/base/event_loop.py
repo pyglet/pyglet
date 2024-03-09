@@ -9,7 +9,7 @@ from pyglet import clock
 from pyglet import gl
 from pyglet.graphics import Batch
 from pyglet.text.document import FormattedDocument
-from pyglet.text.layout import TextLayout
+from pyglet.text.layout.base import TextLayout
 from pyglet.window import Window, key
 
 from .interactive import InteractiveFixture

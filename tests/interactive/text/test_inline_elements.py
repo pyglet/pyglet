@@ -1,4 +1,7 @@
 import pytest
+
+import pyglet.text.layout
+import pyglet.text.layout.base
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
@@ -72,7 +75,7 @@ class TestElement(document.InlineElement):
 
     def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         group = layout.foreground_decoration_group
-        program = pyglet.text.layout.get_default_decoration_shader()
+        program = pyglet.text.layout.base.get_default_decoration_shader()
 
         x1 = line_x
         y1 = line_y + self.descent
