@@ -131,6 +131,8 @@ of a ``None`` style is style- and application-dependent.
 
 import re
 import sys
+from abc import ABC, abstractmethod
+from typing import Tuple
 
 from pyglet import event
 from pyglet.text import runlist
@@ -141,7 +143,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 STYLE_INDETERMINATE = 'indeterminate'
 
 
-class InlineElement:
+class InlineElement(ABC):
     """Arbitrary inline element positioned within a formatted document.
 
     Elements behave like a single glyph in the document.  They are
@@ -182,6 +184,7 @@ class InlineElement:
         """
         return self._position
 
+    @abstractmethod
     def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         """Construct an instance of the element at the given coordinates.
 
@@ -223,6 +226,31 @@ class InlineElement:
         """
         raise NotImplementedError('abstract')
 
+    @abstractmethod
+    def update_translation(self, x: float, y: float, z: float):
+        ...
+
+    @abstractmethod
+    def update_color(self, color: Tuple[int, int, int, int]):
+        ...
+
+    @abstractmethod
+    def update_view_translation(self, translate_x: float, translate_y: float):
+        ...
+
+    @abstractmethod
+    def update_rotation(self, rotation: float):
+        ...
+
+    @abstractmethod
+    def update_visibility(self, visible: bool):
+        ...
+
+    @abstractmethod
+    def update_anchor(self, anchor_x: float, anchor_y: float):
+        ...
+
+    @abstractmethod
     def remove(self, layout):
         """Remove this element from a layout.
 

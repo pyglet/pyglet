@@ -2,12 +2,14 @@
 """
 
 import re
+from typing import Tuple
 
 import pyglet
 import pyglet.text.layout
 import pyglet.text.layout.base
 
-from pyglet.gl import *
+from pyglet.gl import GL_TEXTURE0, glActiveTexture, glBindTexture, glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA, \
+    GL_ONE_MINUS_SRC_ALPHA, glDisable
 
 
 class _InlineElementGroup(pyglet.graphics.Group):
@@ -61,6 +63,9 @@ class ImageElement(pyglet.text.document.InlineElement):
         y1 = line_y + self.descent
         x2 = line_x + self.width
         y2 = line_y + self.height + self.descent
+
+        print( x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y)
+
         vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
@@ -72,6 +77,28 @@ class ImageElement(pyglet.text.document.InlineElement):
                                                   )
 
         self.vertex_lists[layout] = vertex_list
+
+    def update_translation(self, x: float, y: float, z: float):
+        translation = (x, y, z)
+        for _vertex_list in self.vertex_lists.values():
+            _vertex_list.translation[:] = translation * _vertex_list.count
+
+    def update_color(self, color: Tuple[int, int, int, int]):
+        ...
+
+    def update_view_translation(self, translate_x: float, translate_y: float):
+        view_translation = (-translate_x, -translate_y, 0)
+        for _vertex_list in self.vertex_lists.values():
+            _vertex_list.view_translation[:] = view_translation * _vertex_list.count
+
+    def update_rotation(self, rotation: float):
+        ...
+
+    def update_visibility(self, visible: bool):
+        ...
+
+    def update_anchor(self, anchor_x: float, anchor_y: float):
+        print("UPDATE")
 
     def remove(self, layout):
         self.vertex_lists[layout].delete()

@@ -9,6 +9,10 @@ from pyglet.text.layout.scrolling import ScrollableTextLayoutGroup, ScrollableTe
 
 
 class _IncrementalLayoutContext(_LayoutContext):
+    # This Context is modified to instead store vertex lists in the Lines themselves. This is due to the fact that
+    # IncrementalLayout only handles lines that are visible. When lines change, the vertex lists are destroyed, but
+    # boxes are kept alive. This also allows the Layout to determine word wraps and line lengths without a vertex list.
+
     line = None
 
     def add_list(self, vertex_list):
@@ -193,11 +197,13 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self.lines[0].paragraph_begin = self.lines[0].paragraph_end = True
             self.invalid_lines.invalidate(0, 1)
 
+
         self._update_glyphs()
         self._update_flow_glyphs()
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
+
 
         self._line_count = len(self.lines)
         self._ascent = self.lines[0].ascent
@@ -207,6 +213,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         # Group cache is only cleared in a regular TextLayout. May need revisiting if that changes.
         if len_groups != len(self.group_cache):
             self._update_scissor_area()
+
+        print("VLIST", self._vertex_lists )
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
