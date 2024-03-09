@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 import sys
-from typing import TYPE_CHECKING, Pattern, Union, Optional, List, Any, Tuple, Literal, Callable
+from typing import TYPE_CHECKING, Pattern, Union, Optional, List, Any, Tuple, Literal, Callable, Iterator, Type
 import pyglet
 from pyglet import graphics
 from pyglet.font.base import Font, Glyph
@@ -225,7 +225,7 @@ class _Line:
     vertex_lists: list[VertexList]
     start: int
 
-    align: str = 'left'
+    align: Alignment = 'left'
 
     margin_left: int = 0
     margin_right: int = 0
@@ -238,10 +238,12 @@ class _Line:
     paragraph_begin: bool = False
     paragraph_end: bool = False
 
-    x: Optional[float] = None
-    y: Optional[float] = None
+    x: int
+    y: int
 
     def __init__(self, start: int) -> None:
+        self.x = 0
+        self.y = 0
         self.vertex_lists = []
         self.start = start
         self.boxes = []
@@ -299,12 +301,14 @@ class _StaticLayoutContext(_LayoutContext):
 class _AbstractBox:
     """A box has two cases, A GlyphBox and an InlineElementBox
     """
+    owner: Optional[Texture]
     ascent: float
     descent: float
     advance: float
     length: int
 
     def __init__(self, ascent: float, descent: float, advance: float, length: int) -> None:
+        self.owner = None
         self.ascent = ascent
         self.descent = descent
         self.advance = advance
@@ -354,7 +358,9 @@ class _GlyphBox(_AbstractBox):
         self.advance = advance
 
     def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
-        # Places the initial attributes and vertex lists of the glyphs.
+        # Creates the initial attributes and vertex lists of the glyphs.
+        # line_x/line_y are calculated when lines shift. To prevent having to destroy and recalculate the layout
+        # everytime we move this layout, we bake those into the vertices. This way the translate can be moved directly.
         assert self.glyphs
 
         try:
@@ -640,7 +646,7 @@ class TextDecorationGroup(graphics.Group):
         glDisable(GL_BLEND)
         self.program.stop()
 
-
+Alignment = Literal["left", "center", "right"]
 AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["left", "center", "top"]
@@ -678,10 +684,10 @@ class TextLayout:
     _vertex_lists = []
     _boxes = []
 
-    _update_enabled = True
-    _own_batch = False
-    group_class = TextLayoutGroup
-    decoration_class = TextDecorationGroup
+    _update_enabled: bool = True
+    _own_batch: bool = False
+    group_class: Type[TextLayoutGroup] = TextLayoutGroup
+    decoration_class: Type[TextDecorationGroup] = TextDecorationGroup
 
     _ascent: float = 0
     _descent: float = 0
@@ -692,15 +698,15 @@ class TextLayout:
     _y: float = 0
     _z: float = 0
     _rotation: float = 0
-    _width: Optional[float] = None
-    _height: Optional[float] = None
+    _width: Optional[int] = None
+    _height: Optional[int] = None
     _anchor_x: AnchorX = 'left'
     _anchor_y: AnchorY = 'bottom'
     _content_valign: ContentVAlign = 'top'
     _multiline: bool = False
     _visible: bool = True
 
-    def __init__(self, document: AbstractDocument, width: Optional[float]=None, height:Optional[float]=None, x: float=0, y: float=0, z: float=0,
+    def __init__(self, document: AbstractDocument, width: Optional[int]=None, height:Optional[int]=None, x: float=0, y: float=0, z: float=0,
                  anchor_x:AnchorX='left', anchor_y: AnchorY='bottom', rotation: float=0,
                  multiline: bool=False, dpi: Optional[float]=None, batch: Batch=None, group: Optional[graphics.Group]=None, program: Optional[ShaderProgram]=None,
                  wrap_lines: bool=True, init_document: bool=True):
@@ -1000,7 +1006,7 @@ class TextLayout:
             _vertex_list.anchor[:] = anchor * _vertex_list.count
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """True if the layout will be visible when drawn.
 
         :type: bool
@@ -1008,7 +1014,7 @@ class TextLayout:
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         if value != self._visible:
             self._visible = value
 
@@ -1016,7 +1022,7 @@ class TextLayout:
                 _vertex_list.visible[:] = (value,) * _vertex_list.count
 
     @property
-    def content_width(self):
+    def content_width(self) -> int:
         """Calculated width of the text in the layout.
 
         This is the actual width of the text in pixels, not the
@@ -1027,7 +1033,7 @@ class TextLayout:
         return self._content_width
 
     @property
-    def content_height(self):
+    def content_height(self) -> int:
         """The calculated height of the text in the layout.
 
         This is the actual height of the text in pixels, not the
@@ -1036,7 +1042,7 @@ class TextLayout:
         return self._content_height
 
     @property
-    def width(self):
+    def width(self) -> int:
         """The defined maximum width of the layout in pixels, or None
 
         If `multiline` and `wrap_lines` is True, the `width` defines where the
@@ -1048,13 +1054,13 @@ class TextLayout:
         return self._width
 
     @width.setter
-    def width(self, width):
+    def width(self, width: int) -> None:
         self._width = width
         self._wrap_lines_invariant()
         self._update()
 
     @property
-    def height(self):
+    def height(self) -> int:
         """The defined maximum height of the layout in pixels, or None
 
         When `height` is not None, it affects the positioning of the
@@ -1067,12 +1073,12 @@ class TextLayout:
         return self._height
 
     @height.setter
-    def height(self, height):
+    def height(self, height: int) -> None:
         self._height = height
         self._update()
 
     @property
-    def multiline(self):
+    def multiline(self) -> bool:
         """Set if multiline layout is enabled.
 
         If multiline is False, newline and paragraph characters are ignored and
@@ -1084,13 +1090,13 @@ class TextLayout:
         return self._multiline
 
     @multiline.setter
-    def multiline(self, multiline):
+    def multiline(self, multiline: bool) -> None:
         self._multiline = multiline
         self._wrap_lines_invariant()
         self._update()
 
     @property
-    def anchor_x(self):
+    def anchor_x(self) -> AnchorX:
         """Horizontal anchor alignment.
 
         This property determines the meaning of the `x` coordinate.
@@ -1112,12 +1118,12 @@ class TextLayout:
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, anchor_x):
+    def anchor_x(self, anchor_x: AnchorX) -> None:
         self._anchor_x = anchor_x
         self._update_anchor()
 
     @property
-    def anchor_y(self):
+    def anchor_y(self) -> AnchorY:
         """Vertical anchor alignment.
 
         This property determines the meaning of the `y` coordinate.
@@ -1144,12 +1150,12 @@ class TextLayout:
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, anchor_y):
+    def anchor_y(self, anchor_y: AnchorY) -> None:
         self._anchor_y = anchor_y
         self._update_anchor()
 
     @property
-    def content_valign(self):
+    def content_valign(self) -> ContentVAlign:
         """Vertical alignment of content within larger layout box.
 
         This property determines how content is positioned within the layout
@@ -1173,12 +1179,12 @@ class TextLayout:
         return self._content_valign
 
     @content_valign.setter
-    def content_valign(self, content_valign):
+    def content_valign(self, content_valign: ContentVAlign) -> None:
         self._content_valign = content_valign
         self._update()
 
     @property
-    def left(self):
+    def left(self) -> float:
         """
         The x-coordinate of the left side of the layout.
 
@@ -1187,7 +1193,7 @@ class TextLayout:
         return self._x + self._anchor_left
 
     @property
-    def right(self):
+    def right(self) -> float:
         """
         The x-coordinate of the right side of the layout.
 
@@ -1201,7 +1207,7 @@ class TextLayout:
         return self.left + width
 
     @property
-    def bottom(self):
+    def bottom(self) -> float:
         """
         The y-coordinate of the bottom side of the layout.
 
@@ -1210,7 +1216,7 @@ class TextLayout:
         return self._y + self._anchor_bottom
 
     @property
-    def top(self):
+    def top(self) -> float:
         """
         The y-coordinate of the top side of the layout.
 
@@ -1223,17 +1229,17 @@ class TextLayout:
 
         return self.bottom + height
 
-    def _wrap_lines_invariant(self):
+    def _wrap_lines_invariant(self) -> None:
         self._wrap_lines = self._multiline and self._wrap_lines_flag
         assert not self._wrap_lines or self._width, \
             "When the parameters 'multiline' and 'wrap_lines' are True, the parameter 'width' must be a number."
 
-    def parse_distance(self, distance):
+    def parse_distance(self, distance: Optional[Union[str, int, float]]) -> Optional[int]:
         if distance is None:
             return None
         return _parse_distance(distance, self._dpi)
 
-    def begin_update(self):
+    def begin_update(self) -> None:
         """Indicate that a number of changes to the layout or document
         are about to occur.
 
@@ -1247,7 +1253,7 @@ class TextLayout:
         """
         self._update_enabled = False
 
-    def end_update(self):
+    def end_update(self) -> None:
         """Perform pending layout changes since `begin_update`.
 
         See `begin_update`.
@@ -1255,7 +1261,7 @@ class TextLayout:
         self._update_enabled = True
         self._update()
 
-    def delete(self):
+    def delete(self) -> None:
         """Remove this layout from its batch.
         """
         for vertex_list in self._vertex_lists:
@@ -1266,7 +1272,7 @@ class TextLayout:
             box.delete(self)
         self._boxes.clear()
 
-    def get_as_texture(self, min_filter=GL_NEAREST, mag_filter=GL_NEAREST) -> pyglet.image.Texture:
+    def get_as_texture(self, min_filter=GL_NEAREST, mag_filter=GL_NEAREST) -> Texture:
         """Returns a Texture with the TextLayout drawn to it. Each call to this function returns a new
         Texture.
         ~Warning: Usage is recommended only if you understand how texture generation affects your application.
@@ -1288,7 +1294,7 @@ class TextLayout:
         self.position = temp_pos
         return texture
 
-    def draw(self):
+    def draw(self) -> None:
         """Draw this text layout.
 
         Note that this method performs very badly if a batch was supplied to
@@ -1300,7 +1306,7 @@ class TextLayout:
         else:
             self._batch.draw_subset(self._vertex_lists)
 
-    def _get_lines(self):
+    def _get_lines(self) -> List[_Line]:
         len_text = len(self._document.text)
         glyphs = self._get_glyphs()
         owner_runs = runlist.RunList(len_text, None)
@@ -1311,7 +1317,7 @@ class TextLayout:
         self._flow_lines(lines, 0, self._line_count)
         return lines
 
-    def _update(self):
+    def _update(self) -> None:
         if not self._update_enabled:
             return
 
@@ -1338,8 +1344,6 @@ class TextLayout:
 
         background_iter = self._document.get_style_runs('background_color')
 
-        print("COLORS?", colors_iter, background_iter)
-
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
         anchor_top = self._get_top_anchor()
@@ -1348,7 +1352,7 @@ class TextLayout:
         for line in lines:
             self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         colors_iter = self._document.get_style_runs('color')
         colors = []
         for start, end, color in colors_iter.ranges(0, colors_iter.end):
@@ -1361,7 +1365,7 @@ class TextLayout:
             _vertex_list.colors = colors[start:start + len(_vertex_list.colors)]
             start += len(_vertex_list.colors)
 
-    def _get_left_anchor(self):
+    def _get_left_anchor(self) -> int:
         """Returns the anchor for the X axis from the left."""
         if self._multiline:
             width = self._width if self._wrap_lines else self._content_width
@@ -1377,7 +1381,7 @@ class TextLayout:
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
-    def _get_top_anchor(self):
+    def _get_top_anchor(self) -> int:
         """Returns the anchor for the Y axis from the top."""
         if self._height is None:
             height = self._content_height
@@ -1408,7 +1412,7 @@ class TextLayout:
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
-    def _get_bottom_anchor(self):
+    def _get_bottom_anchor(self) -> int:
         """Returns the anchor for the Y axis from the bottom."""
         if self._height is None:
             height = self._content_height
@@ -1472,7 +1476,7 @@ class TextLayout:
         else:
             self._init_document()
 
-    def _get_glyphs(self):
+    def _get_glyphs(self) -> List[Union[_InlineElementBox, Glyph]]:
         glyphs = []
         runs = runlist.ZipRunIterator((
             self._document.get_font_runs(dpi=self._dpi),
@@ -1485,19 +1489,19 @@ class TextLayout:
                 glyphs.extend(font.get_glyphs(text[start:end]))
         return glyphs
 
-    def _get_owner_runs(self, owner_runs, glyphs, start, end):
+    def _get_owner_runs(self, owner_runs: runlist.RunList, glyphs: List[Union[_InlineElementBox, Glyph]], start: int, end: int) -> None:
         owner = glyphs[start].owner
         run_start = start
+
         # TODO avoid glyph slice on non-incremental
         for i, glyph in enumerate(glyphs[start:end]):
-            print(glyph)
             if owner != glyph.owner:
                 owner_runs.set_run(run_start, i + start, owner)
                 owner = glyph.owner
                 run_start = i + start
         owner_runs.set_run(run_start, end, owner)
 
-    def _flow_glyphs_wrap(self, glyphs, owner_runs, start, end):
+    def _flow_glyphs_wrap(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int, end: int) -> Iterator[_Line]:
         """Word-wrap styled text into lines of fixed width.
 
         Fits `glyphs` in range `start` to `end` into `_Line` s which are
@@ -1583,7 +1587,6 @@ class TextLayout:
                 if wrap != 'char' and text in u'\u0020\u200b\t':
                     # Whitespace: commit pending runs to this line.
                     for run in run_accum:
-                        print("ADD BOX?", run)
                         line.add_box(run)
                     run_accum = []
                     run_accum_width = 0
@@ -1735,7 +1738,7 @@ class TextLayout:
 
         yield line
 
-    def _flow_glyphs_single_line(self, glyphs, owner_runs, start, end):
+    def _flow_glyphs_single_line(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int, end: int) -> Iterator[_Line]:
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
         kern_iterator = runlist.FilteredRunIterator(self.document.get_style_runs('kerning'),
@@ -1775,7 +1778,7 @@ class TextLayout:
 
         yield line
 
-    def _flow_lines(self, lines, start, end):
+    def _flow_lines(self, lines: List[_Line], start: int, end: int) -> int:
         margin_top_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_top'),
                                                           lambda value: value is not None, 0)
         margin_bottom_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_bottom'),
@@ -1837,7 +1840,7 @@ class TextLayout:
 
         return line_index
 
-    def _create_vertex_lists(self, line_x, line_y, anchor_x, anchor_y, i, boxes, context):
+    def _create_vertex_lists(self, line_x: float, line_y: float, anchor_x: float, anchor_y: float, i: int, boxes: List[_AbstractBox], context: _LayoutContext):
         acc_anchor_x = anchor_x
         # GlyphBoxes (boxes) are collection of Glyphs. A line can have multiple GlyphBoxes.
         for box in boxes:
