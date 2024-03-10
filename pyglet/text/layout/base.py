@@ -1,12 +1,12 @@
 from __future__ import annotations
 import re
 import sys
-import traceback
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Pattern, Union, Optional, List, Any, Tuple, Literal, Callable, Iterator, Type, Dict, \
+from typing import TYPE_CHECKING, Pattern, Union, Optional, List, Any, Tuple, Callable, Iterator, Type, Dict, \
     Protocol
 import pyglet
 from pyglet import graphics
+from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
 from pyglet.font.base import Font, Glyph
 from pyglet.gl import GL_TRIANGLES, GL_LINES, glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, \
     glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glDisable, GL_NEAREST, GL_DEPTH_COMPONENT, GL_DEPTH_ATTACHMENT
@@ -172,6 +172,7 @@ decoration_fragment_source = """#version 330 core
     }
 """
 
+
 class _LayoutVertexList(Protocol):
     """Just a Protocol to add completion for VertexLists."""
     position: List
@@ -237,11 +238,11 @@ def _parse_distance(distance: Union[str, int, float], dpi: int):
 
 
 class _Line:
-    boxes: list[_AbstractBox]
-    vertex_lists: list[VertexList]
+    boxes: List[_AbstractBox]
+    vertex_lists: List[VertexList]
     start: int
 
-    align: Alignment = 'left'
+    align: HorizontalAlign = 'left'
 
     margin_left: int = 0
     margin_right: int = 0
@@ -276,23 +277,21 @@ class _Line:
         self.width += box.advance
 
     def delete(self, layout: TextLayout) -> None:
-        """Does not actually delete any data of the Line, just vertex lists and boxes. In the case
-        of an InlineElement, it's up to that implementation."""
-        # ONLY used by IncrementalTextLayout. Delete vertex list or object.
+        # ONLY used by IncrementalTextLayout.
+        # Does not actually delete any data of the Line, just vertex lists and boxes. In the case
+        # of an InlineElement, it's up to that implementation.
 
         # When lines go out of visibility of the scissor area, they are culled to have no vertex list. This should
         # perform better on extremely long documents. When they go back into visibility, place() is called again.
-        for vertex_list in self.vertex_lists:
-            vertex_list.delete()
-
-        self.vertex_lists = []
-
         for box in self.boxes:
             box.delete(layout)
 
+        self.vertex_lists.clear()
+
 
 class _LayoutContext:
-    def __init__(self, layout: TextLayout, document: AbstractDocument, colors_iter: RunIterator, background_iter: AbstractRunIterator):
+    def __init__(self, layout: TextLayout, document: AbstractDocument, colors_iter: RunIterator,
+                 background_iter: AbstractRunIterator) -> None:
         self.layout = layout
         self.colors_iter = colors_iter
         underline_iter = document.get_style_runs('underline')
@@ -308,9 +307,9 @@ class _LayoutContext:
         raise NotImplementedError('abstract')
 
 
-
 class _StaticLayoutContext(_LayoutContext):
-    def __init__(self, layout: TextLayout, document: AbstractDocument, colors_iter: RunIterator, background_iter: AbstractRunIterator):
+    def __init__(self, layout: TextLayout, document: AbstractDocument, colors_iter: RunIterator,
+                 background_iter: AbstractRunIterator):
         super().__init__(layout, document, colors_iter, background_iter)
         self.vertex_lists = layout._vertex_lists
         self.boxes = layout._boxes
@@ -318,10 +317,6 @@ class _StaticLayoutContext(_LayoutContext):
     def add_list(self, vertex_list: _LayoutVertexList):
         self.vertex_lists.append(vertex_list)
 
-    #def add_box(self, box: _AbstractBox):
-        #traceback.print_stack()
-        #print("ADD BOX?", box)
-    #    pass
 
 class _AbstractBox(ABC):
     """A box has two cases, A GlyphBox and an InlineElementBox
@@ -340,31 +335,32 @@ class _AbstractBox(ABC):
         self.length = length
 
     @abstractmethod
-    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
-        # Usually used to place things in the box.
+    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float,
+              rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
         ...
 
     @abstractmethod
-    def update_translation(self, x: float, y: float, z: float):
+    def update_translation(self, x: float, y: float, z: float) -> None:
         ...
 
     @abstractmethod
-    def update_color(self, color: Tuple[int, int, int, int]):
+    def update_colors(self, colors: List[int]) -> None:
         ...
 
     @abstractmethod
-    def update_view_translation(self, translate_x: float, translate_y: float): ...
-
-    @abstractmethod
-    def update_rotation(self, rotation: float):
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         ...
 
     @abstractmethod
-    def update_visibility(self, visible: bool):
+    def update_rotation(self, rotation: float) -> None:
         ...
 
     @abstractmethod
-    def update_anchor(self, anchor_x: float, anchor_y: float):
+    def update_visibility(self, visible: bool) -> None:
+        ...
+
+    @abstractmethod
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
         ...
 
     @abstractmethod
@@ -378,6 +374,7 @@ class _AbstractBox(ABC):
     @abstractmethod
     def get_point_in_box(self, position: int) -> float:
         ...
+
 
 class _GlyphBox(_AbstractBox):
     owner: Texture
@@ -414,7 +411,8 @@ class _GlyphBox(_AbstractBox):
         self.vertex_lists.append(vertex_list)
         context.add_list(vertex_list)
 
-    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
+    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float,
+              rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
         # Creates the initial attributes and vertex lists of the glyphs.
         # line_x/line_y are calculated when lines shift. To prevent having to destroy and recalculate the layout
         # everytime we move this layout, we bake those into the vertices. This way the translate can be moved directly.
@@ -536,36 +534,42 @@ class _GlyphBox(_AbstractBox):
                                                             anchor=('f', (anchor_x, anchor_y) * ul_count))
             self._add_vertex_list(underline_list, context)
 
-    def update_translation(self, x: float, y: float, z: float):
+    def update_translation(self, x: float, y: float, z: float) -> None:
         translation = (x, y, z)
         for _vertex_list in self.vertex_lists:
             _vertex_list.translation[:] = translation * _vertex_list.count
 
-    def update_color(self, color: Tuple[int, int, int, int]):
-        ...
+    def update_colors(self, colors: List[int]) -> None:
+        # Receives flattened list of colors based on the count. In GlyphBox case, we need to slice by vertex count
+        # as decorations have different counts.
+        for _vertex_list in self.vertex_lists:
+            _vertex_list.colors[:] = colors[:_vertex_list.count] * 4
 
-    def update_view_translation(self, translate_x: float, translate_y: float):
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
         for _vertex_list in self.vertex_lists:
             _vertex_list.view_translation[:] = view_translation * _vertex_list.count
 
-    def update_rotation(self, rotation: float):
+    def update_rotation(self, rotation: float) -> None:
         rot = (rotation,)
         for _vertex_list in self.vertex_lists:
             _vertex_list.rotation[:] = (rot * _vertex_list.count)
 
-    def update_visibility(self, visible: bool):
+    def update_visibility(self, visible: bool) -> None:
         visible_tuple = (visible,)
         for _vertex_list in self.vertex_lists:
             _vertex_list.visible[:] = visible_tuple * _vertex_list.count
 
-    def update_anchor(self, anchor_x: float, anchor_y: float):
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
         anchor = (anchor_x, anchor_y)
         for _vertex_list in self.vertex_lists:
             _vertex_list.anchor[:] = anchor * _vertex_list.count
 
     def delete(self, layout: TextLayout) -> None:
-        ...
+        for _vertex_list in self.vertex_lists:
+            _vertex_list.delete()
+
+        self.vertex_lists.clear()
 
     def get_point_in_box(self, position: int) -> int:
         x = 0
@@ -587,13 +591,11 @@ class _GlyphBox(_AbstractBox):
             last_glyph_x += glyph.advance
         return position
 
-
     def __repr__(self) -> str:
         return f'_GlyphBox({self.glyphs})'
 
 
 class _InlineElementBox(_AbstractBox):
-    # Can exist outside of a line?
     element: InlineElement
     placed: bool
 
@@ -601,29 +603,38 @@ class _InlineElementBox(_AbstractBox):
         """Create a glyph run holding a single element."""
         super().__init__(element.ascent, element.descent, element.advance, 1)
         self.element = element
+
+        # Determines if the box is visible.
         self.placed = False
 
-    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
+    def place(self, layout: TextLayout, i: int, x: float, y: float, z: float, line_x: float, line_y: float,
+              rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
         self.element.place(layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y)
         self.placed = True
 
-    def update_translation(self, x: float, y: float, z: float):
-        self.element.update_translation(x, y, z)
+    def update_translation(self, x: float, y: float, z: float) -> None:
+        if self.placed:
+            self.element.update_translation(x, y, z)
 
-    def update_color(self, color: Tuple[int, int, int, int]):
-        self.element.update_color(color)
+    def update_colors(self, colors: List[int]) -> None:
+        if self.placed:
+            self.element.update_color(colors)
 
-    def update_view_translation(self, translate_x: float, translate_y: float):
-        self.element.update_view_translation(translate_x, translate_y)
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
+        if self.placed:
+            self.element.update_view_translation(translate_x, translate_y)
 
-    def update_rotation(self, rotation: float):
-        self.element.update_rotation(rotation)
+    def update_rotation(self, rotation: float) -> None:
+        if self.placed:
+            self.element.update_rotation(rotation)
 
-    def update_visibility(self, visible: bool):
-        self.element.update_visibility(visible)
+    def update_visibility(self, visible: bool) -> None:
+        if self.placed:
+            self.element.update_visibility(visible)
 
-    def update_anchor(self, anchor_x: float, anchor_y: float):
-        self.element.update_anchor(anchor_x, anchor_y)
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        if self.placed:
+            self.element.update_anchor(anchor_x, anchor_y)
 
     def delete(self, layout: TextLayout) -> None:
         # font == element
@@ -691,7 +702,8 @@ class _InvalidRange:
 
 
 class TextLayoutGroup(graphics.Group):
-    def __init__(self, texture: Texture, program: ShaderProgram, order: int=1, parent: Optional[graphics.Group]=None):
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
+                 parent: Optional[graphics.Group] = None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -731,7 +743,7 @@ class TextLayoutGroup(graphics.Group):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, program: ShaderProgram, order:int =0, parent: Optional[graphics.Group]=None):
+    def __init__(self, program: ShaderProgram, order: int = 0, parent: Optional[graphics.Group] = None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -751,10 +763,6 @@ class TextDecorationGroup(graphics.Group):
         glDisable(GL_BLEND)
         self.program.stop()
 
-Alignment = Literal["left", "center", "right"]
-AnchorX = Literal["left", "center", "right"]
-AnchorY = Literal["top", "bottom", "center", "baseline"]
-ContentVAlign = Literal["left", "center", "top"]
 
 class TextLayout:
     """Lay out and display documents.
@@ -805,19 +813,23 @@ class TextLayout:
     _y: float
     _z: float
     _rotation: float = 0
+
     _width: Optional[int] = None
     _height: Optional[int] = None
+
     _anchor_x: AnchorX = 'left'
     _anchor_y: AnchorY = 'bottom'
     _content_valign: ContentVAlign = 'top'
     _multiline: bool = False
     _visible: bool = True
 
-    def __init__(self, document: AbstractDocument, width: Optional[int]=None, height:Optional[int]=None, x: float=0,
-                 y: float=0, z: float=0, anchor_x:AnchorX='left', anchor_y: AnchorY='bottom', rotation: float=0,
-                 multiline: bool=False, dpi: Optional[float]=None, batch: Batch=None,
-                 group: Optional[graphics.Group]=None, program: Optional[ShaderProgram]=None,
-                 wrap_lines: bool=True, init_document: bool=True) -> None:
+    def __init__(self, document: AbstractDocument, width: Optional[int] = None, height: Optional[int] = None,
+                 x: float = 0,
+                 y: float = 0, z: float = 0, anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom',
+                 rotation: float = 0,
+                 multiline: bool = False, dpi: Optional[float] = None, batch: Batch = None,
+                 group: Optional[graphics.Group] = None, program: Optional[ShaderProgram] = None,
+                 wrap_lines: bool = True, init_document: bool = True) -> None:
         """Create a text layout.
 
         :Parameters:
@@ -1007,7 +1019,7 @@ class TextLayout:
         self._update()
 
     @property
-    def x(self):
+    def x(self) -> float:
         """X coordinate of the layout.
 
         See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`.
@@ -1017,15 +1029,15 @@ class TextLayout:
         return self._x
 
     @x.setter
-    def x(self, x):
+    def x(self, x: float) -> None:
         self._set_x(x)
 
-    def _set_x(self, x):
+    def _set_x(self, x: float) -> None:
         self._x = x
         self._update_translation()
 
     @property
-    def y(self):
+    def y(self) -> float:
         """Y coordinate of the layout.
 
         See also `anchor_y`.
@@ -1035,15 +1047,15 @@ class TextLayout:
         return self._y
 
     @y.setter
-    def y(self, y):
+    def y(self, y: float) -> None:
         self._set_y(y)
 
-    def _set_y(self, y):
+    def _set_y(self, y: float) -> None:
         self._y = y
         self._update_translation()
 
     @property
-    def z(self):
+    def z(self) -> float:
         """Z coordinate of the layout.
 
         :type: int
@@ -1051,15 +1063,15 @@ class TextLayout:
         return self._z
 
     @z.setter
-    def z(self, z):
+    def z(self, z: float) -> None:
         self._set_z(z)
 
-    def _set_z(self, z):
+    def _set_z(self, z: float) -> None:
         self._z = z
         self._update_translation()
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         """Rotation of the layout.
 
         :type: float
@@ -1067,19 +1079,19 @@ class TextLayout:
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation):
+    def rotation(self, rotation: float) -> None:
         self._set_rotation(rotation)
 
-    def _set_rotation(self, rotation):
+    def _set_rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._update_rotation()
 
-    def _update_rotation(self):
+    def _update_rotation(self) -> None:
         for box in self._boxes:
             box.update_rotation(self._rotation)
 
     @property
-    def position(self):
+    def position(self) -> Tuple[float, float, float]:
         """The (X, Y, Z) coordinates of the layout, as a tuple.
 
         See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`,
@@ -1090,21 +1102,18 @@ class TextLayout:
         return self._x, self._y, self._z
 
     @position.setter
-    def position(self, position):
+    def position(self, position: Tuple[float, float, float]) -> None:
         self._set_position(position)
 
-    def _set_position(self, position):
+    def _set_position(self, position: Tuple[float, float, float]) -> None:
         self._x, self._y, self._z = position
-        if self._boxes:
-            self._update()
-        else:
-            self._update_translation()
+        self._update_translation()
 
     def _update_translation(self):
         for box in self._boxes:
             box.update_translation(self._x, self._y, self._z)
 
-    def _update_anchor(self):
+    def _update_anchor(self) -> None:
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
 
@@ -1150,7 +1159,7 @@ class TextLayout:
         return self._content_height
 
     @property
-    def width(self) -> int:
+    def width(self) -> Optional[int]:
         """The defined maximum width of the layout in pixels, or None
 
         If `multiline` and `wrap_lines` is True, the `width` defines where the
@@ -1162,13 +1171,13 @@ class TextLayout:
         return self._width
 
     @width.setter
-    def width(self, width: int) -> None:
+    def width(self, width: Optional[int]) -> None:
         self._width = width
         self._wrap_lines_invariant()
         self._update()
 
     @property
-    def height(self) -> int:
+    def height(self) -> Optional[int]:
         """The defined maximum height of the layout in pixels, or None
 
         When `height` is not None, it affects the positioning of the
@@ -1181,7 +1190,7 @@ class TextLayout:
         return self._height
 
     @height.setter
-    def height(self, height: int) -> None:
+    def height(self, height: Optional[int]) -> None:
         self._height = height
         self._update()
 
@@ -1372,12 +1381,10 @@ class TextLayout:
     def delete(self) -> None:
         """Remove this layout from its batch.
         """
-        for vertex_list in self._vertex_lists:
-            vertex_list.delete()
-        self._vertex_lists.clear()
-
         for box in self._boxes:
             box.delete(self)
+
+        self._vertex_lists.clear()
         self._boxes.clear()
 
     def get_as_texture(self, min_filter=GL_NEAREST, mag_filter=GL_NEAREST) -> Texture:
@@ -1394,7 +1401,7 @@ class TextLayout:
         framebuffer.attach_texture(texture)
         framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
 
-        self.position = (0-self._anchor_left, 0-self._anchor_bottom, 0)
+        self.position = (0 - self._anchor_left, 0 - self._anchor_bottom, 0)
         framebuffer.bind()
         self.draw()
         framebuffer.unbind()
@@ -1409,7 +1416,7 @@ class TextLayout:
         the constructor.  If you add this layout to a batch, you should
         ideally use only the batch's draw method.
 
-        If this is not its own batch, InlineElements are not drawn with it.
+        If this is not its own batch, InlineElements will not be drawn.
         """
         if self._own_batch:
             self._batch.draw()
@@ -1431,14 +1438,11 @@ class TextLayout:
         if not self._update_enabled:
             return
 
-        for vlist in self._vertex_lists:
-            vlist.delete()
-
         for box in self._boxes:
             box.delete(self)
 
-        self._vertex_lists = []
-        self._boxes = []
+        self._vertex_lists.clear()
+        self._boxes.clear()
         self.group_cache.clear()
 
         if not self._document or not self._document.text:
@@ -1467,26 +1471,18 @@ class TextLayout:
             self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
     def _update_color(self) -> None:
+        # This function usually is only called by Labels/HTML when updating just colors.
         colors_iter = self._document.get_style_runs('color')
         colors = []
         for start, end, color in colors_iter.ranges(0, colors_iter.end):
             if color is None:
                 color = (0, 0, 0, 255)
-            colors.extend(color * ((end - start) * 4))
-
-            print("START END", start, end)
-
-        print(len(colors))
-
-        print(len(self._boxes))
+            colors.extend(color * (end - start))
 
         start = 0
-        #TODO: Update color.
-        for _vertex_list in self._vertex_lists:
-            _vertex_list.colors = colors[start:start + len(_vertex_list.colors)]
-            start += len(_vertex_list.colors)
-
-        print(start)
+        for box in self._boxes:
+            box.update_colors(colors[start:start + box.length * 4])
+            start += box.length * 4
 
     def _get_left_anchor(self) -> int:
         """Returns the anchor for the X axis from the left."""
@@ -1504,7 +1500,7 @@ class TextLayout:
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
-    def _get_top_anchor(self) -> int:
+    def _get_top_anchor(self) -> float:
         """Returns the anchor for the Y axis from the top."""
         if self._height is None:
             height = self._content_height
@@ -1535,7 +1531,7 @@ class TextLayout:
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
-    def _get_bottom_anchor(self) -> int:
+    def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""
         if self._height is None:
             height = self._content_height
@@ -1594,6 +1590,7 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
+        # To save performance when lerping colors, only update color values instead of recreating layout.
         if len(attributes) == 1 and 'color' in attributes.keys():
             self._update_color()
         else:
@@ -1612,7 +1609,8 @@ class TextLayout:
                 glyphs.extend(font.get_glyphs(text[start:end]))
         return glyphs
 
-    def _get_owner_runs(self, owner_runs: runlist.RunList, glyphs: List[Union[_InlineElementBox, Glyph]], start: int, end: int) -> None:
+    def _get_owner_runs(self, owner_runs: runlist.RunList, glyphs: List[Union[_InlineElementBox, Glyph]], start: int,
+                        end: int) -> None:
         owner = glyphs[start].owner
         run_start = start
 
@@ -1624,7 +1622,8 @@ class TextLayout:
                 run_start = i + start
         owner_runs.set_run(run_start, end, owner)
 
-    def _flow_glyphs_wrap(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int, end: int) -> Iterator[_Line]:
+    def _flow_glyphs_wrap(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int,
+                          end: int) -> Iterator[_Line]:
         """Word-wrap styled text into lines of fixed width.
 
         Fits `glyphs` in range `start` to `end` into `_Line` s which are
@@ -1861,7 +1860,8 @@ class TextLayout:
 
         yield line
 
-    def _flow_glyphs_single_line(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int, end: int) -> Iterator[_Line]:
+    def _flow_glyphs_single_line(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList,
+                                 start: int, end: int) -> Iterator[_Line]:
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
         kern_iterator = runlist.FilteredRunIterator(self.document.get_style_runs('kerning'),
@@ -1963,7 +1963,8 @@ class TextLayout:
 
         return line_index
 
-    def _create_vertex_lists(self, line_x: float, line_y: float, anchor_x: float, anchor_y: float, i: int, boxes: List[_AbstractBox], context: _LayoutContext):
+    def _create_vertex_lists(self, line_x: float, line_y: float, anchor_x: float, anchor_y: float, i: int,
+                             boxes: List[_AbstractBox], context: _LayoutContext):
         acc_anchor_x = anchor_x
         # GlyphBoxes (boxes) are collection of Glyphs/Inline Elements. A line can have multiple GlyphBoxes.
         for box in boxes:

@@ -128,14 +128,17 @@ of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
-
+from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import List, TYPE_CHECKING, Optional
 
 from pyglet import event
 from pyglet.text import runlist
+
+if TYPE_CHECKING:
+    from pyglet.text.layout import TextLayout
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -170,99 +173,48 @@ class InlineElement(ABC):
 
     """
 
-    def __init__(self, ascent, descent, advance):
+    def __init__(self, ascent: int, descent: int, advance: int) -> None:
         self.ascent = ascent
         self.descent = descent
         self.advance = advance
         self._position = None
 
     @property
-    def position(self):
-        """Position of the element within the document.  Read-only.
-
-        :type: int
-        """
+    def position(self) -> Optional[int]:
         return self._position
 
     @abstractmethod
-    def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
-        """Construct an instance of the element at the given coordinates.
-
-        Called when the element's position within a layout changes, either
-        due to the initial condition, changes in the document or changes in
-        the layout size.
-
-        It is the responsibility of the element to clip itself against
-        the layout boundaries, and position itself appropriately with respect
-        to the layout's position and viewport offset.
-
-        The `TextLayout.top_state` graphics state implements this transform
-        and clipping into window space.
-
-        :Parameters:
-            `layout` : `pyglet.text.layout.TextLayout`
-                The layout the element moved within.
-            `x` : int
-                Position of the left edge of the element, relative
-                to the left edge of the document, in pixels.
-            `y` : int
-                Position of the baseline, relative to the top edge of the
-                document, in pixels.  Note that this is typically negative.
-            'z' : int
-                Position of the layout on the Z axis.
-            `line_x` : int
-                Position of the element from the left on the layout line.
-            `line_y` : int
-                Position of the element from the bottom on thhe layout line.
-            `rotation` : int
-                Rotation of the element taken from the layout.
-            `visible` : int
-                Visibility of the element from the layout.
-            `anchor_x` : int
-                Offset position from the left of the layout.
-            `anchor_y` : int
-                Offset position from the bottom of the layout.
-
-        """
-        raise NotImplementedError('abstract')
-
-    @abstractmethod
-    def update_translation(self, x: float, y: float, z: float):
+    def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
+              visible: bool, anchor_x: float, anchor_y: float) -> None:
         ...
 
     @abstractmethod
-    def update_color(self, color: Tuple[int, int, int, int]):
+    def update_translation(self, x: float, y: float, z: float) -> None:
         ...
 
     @abstractmethod
-    def update_view_translation(self, translate_x: float, translate_y: float):
+    def update_color(self, color: List[int]) -> None:
         ...
 
     @abstractmethod
-    def update_rotation(self, rotation: float):
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         ...
 
     @abstractmethod
-    def update_visibility(self, visible: bool):
+    def update_rotation(self, rotation: float) -> None:
         ...
 
     @abstractmethod
-    def update_anchor(self, anchor_x: float, anchor_y: float):
+    def update_visibility(self, visible: bool) -> None:
         ...
 
     @abstractmethod
-    def remove(self, layout):
-        """Remove this element from a layout.
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        ...
 
-        The counterpart of `place`; called when the element is no longer
-        visible in the given layout.
-
-        :Parameters:
-            `layout` : `pyglet.text.layout.TextLayout`
-                The layout the element was removed from.
-
-        """
-        raise NotImplementedError('abstract')
+    @abstractmethod
+    def remove(self, layout: TextLayout) -> None:
+        ...
 
 
 class AbstractDocument(event.EventDispatcher):

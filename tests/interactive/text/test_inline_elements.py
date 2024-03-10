@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pytest
 
 import pyglet.text.layout
@@ -71,7 +73,10 @@ Aliquam erat volutpat.
 
 
 class TestElement(document.InlineElement):
-    vertex_list = None
+
+    def __init__(self, ascent, descent, advance):
+        self.vertex_list = None
+        super().__init__(ascent, descent, advance)
 
     def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         group = layout.foreground_decoration_group
@@ -91,7 +96,16 @@ class TestElement(document.InlineElement):
                                                   rotation=('f', (rotation,) * 4),
                                                   anchor=('f', (anchor_x, anchor_y) * 4)
                                                   )
-        print( (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z))
+    def update_translation(self, x: float, y: float, z: float):
+        self.vertex_list.translation[:] = (x, y, z) * self.vertex_list.count
+
+    def update_view_translation(self, translate_x: float, translate_y: float):
+        self.vertex_list.view_translation[:] = (-translate_x, -translate_y, 0) * self.vertex_list.count
+
+    def update_rotation(self, rotation: float): ...
+    def update_visibility(self, visible: bool): ...
+    def update_anchor(self, anchor_x: float, anchor_y: float): ...
+    def update_color(self, color: Tuple[int, int, int, int]): ...
 
     def remove(self, layout):
         self.vertex_list.delete()

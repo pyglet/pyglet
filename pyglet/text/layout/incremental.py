@@ -1,11 +1,19 @@
+from __future__ import annotations
 import sys
+from typing import List, Optional, Type, Any, Tuple, TYPE_CHECKING
 
+from pyglet.customtypes import AnchorX, AnchorY
 from pyglet.event import EventDispatcher
 from pyglet.font.base import grapheme_break
 from pyglet.text import runlist
+from pyglet.text.document import AbstractDocument
 from pyglet.text.layout.base import _is_pyglet_doc_run, _Line, _LayoutContext, _InlineElementBox, _InvalidRange, \
     TextLayout
 from pyglet.text.layout.scrolling import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+
+if TYPE_CHECKING:
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.shader import ShaderProgram
 
 
 class _IncrementalLayoutContext(_LayoutContext):
@@ -56,19 +64,36 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     editing text in an incremental text layout.
     """
 
-    _selection_start = 0
-    _selection_end = 0
-    _selection_color = [255, 255, 255, 255]
-    _selection_background_color = [46, 106, 197, 255]
+    glyphs: List[Any]
+    lines: List[_Line]
 
-    group_class = IncrementalTextLayoutGroup
-    decoration_class = IncrementalTextDecorationGroup
+    _selection_start: int = 0
+    _selection_end: int = 0
+    _selection_color: Tuple[int, int, int, int] = (255, 255, 255, 255)
+    _selection_background_color: Tuple[int, int, int, int] = (46, 106, 197, 255)
 
-    _translate_x = 0
-    _translate_y = 0
+    group_class: Type[IncrementalTextLayoutGroup] = IncrementalTextLayoutGroup
+    decoration_class: Type[IncrementalTextDecorationGroup] = IncrementalTextDecorationGroup
 
-    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
+    _translate_x: int = 0
+    _translate_y: int = 0
+
+    invalid_glyphs: _InvalidRange
+    invalid_flow: _InvalidRange
+    invalid_lines: _InvalidRange
+    invalid_style: _InvalidRange
+    invalid_vertex_lines: _InvalidRange
+    visible_lines: _InvalidRange
+
+    owner_runs: runlist.RunList
+
+    _width: int
+    _height: int
+
+    def __init__(self, document: AbstractDocument, width: int, height: int, x: float = 0, y: float = 0, z: float = 0,
+                 anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
+                 dpi: Optional[float] = None, batch: Optional[Batch] = None, group: Optional[Group] = None,
+                 program: Optional[ShaderProgram] = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
             raise Exception("Invalid size. IncrementalTextLayout width or height cannot be None.")
@@ -90,7 +115,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
-    def _update_scissor_area(self):
+    def _update_scissor_area(self) -> None:
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
@@ -98,17 +123,17 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.background_decoration_group.scissor_area = area
         self.foreground_decoration_group.scissor_area = area
 
-    def _init_document(self):
+    def _init_document(self) -> None:
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
         self.on_insert_text(0, self._document.text)
 
-    def _uninit_document(self):
+    def _uninit_document(self) -> None:
         self.on_delete_text(0, len(self._document.text))
 
-    def _get_lines(self):
+    def _get_lines(self) -> List[_Line]:
         return self.lines
 
-    def delete(self):
+    def delete(self) -> None:
         for line in self.lines:
             line.delete(self)
         self._batch = None
@@ -116,7 +141,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self._document.remove_handlers(self)
         self._document = None
 
-    def on_insert_text(self, start, text):
+    def on_insert_text(self, start: int, text: str) -> None:
         len_text = len(text)
         self.glyphs[start:start] = [None] * len_text
 
@@ -126,8 +151,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         # With other alignments, such as bottom, by adding text you may be pushing the lines above upwards.
         # To account for this, we need to invalidate the text above as well.
         if self._multiline and self._content_valign != "top":
-           visible_line = self.lines[self.visible_lines.start]
-           self.invalid_flow.invalidate(visible_line.start, start+len_text)
+            visible_line = self.lines[self.visible_lines.start]
+            self.invalid_flow.invalidate(visible_line.start, start + len_text)
 
         self.invalid_flow.insert(start, len_text)
         self.invalid_style.insert(start, len_text)
@@ -140,7 +165,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self._update()
 
-    def on_delete_text(self, start, end):
+    def on_delete_text(self, start: int, end: int) -> None:
         self.glyphs[start:end] = []
 
         # Same requirement as on_insert_text
@@ -166,7 +191,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self._update()
 
-    def on_style_text(self, start, end, attributes):
+    def on_style_text(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         if 'font_name' in attributes or 'font_size' in attributes or 'bold' in attributes or 'italic' in attributes:
             self.invalid_glyphs.invalidate(start, end)
         elif 'color' in attributes or 'background_color' in attributes:
@@ -176,7 +201,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self._update()
 
-    def _update(self):
+    def _update(self) -> None:
         if not self._update_enabled:
             return
 
@@ -197,13 +222,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self.lines[0].paragraph_begin = self.lines[0].paragraph_end = True
             self.invalid_lines.invalidate(0, 1)
 
-
         self._update_glyphs()
         self._update_flow_glyphs()
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
-
 
         self._line_count = len(self.lines)
         self._ascent = self.lines[0].ascent
@@ -214,12 +237,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if len_groups != len(self.group_cache):
             self._update_scissor_area()
 
-        print("VLIST", self._vertex_lists )
-
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
 
-    def _update_glyphs(self):
+    def _update_glyphs(self) -> None:
         invalid_start, invalid_end = self.invalid_glyphs.validate()
 
         if invalid_end - invalid_start <= 0:
@@ -255,7 +276,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         # Updated glyphs need flowing
         self.invalid_flow.invalidate(invalid_start, invalid_end)
 
-    def _update_flow_glyphs(self):
+    def _update_flow_glyphs(self) -> None:
         invalid_start, invalid_end = self.invalid_flow.validate()
 
         if invalid_end - invalid_start <= 0:
@@ -335,7 +356,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 content_width = max(line.width + line.margin_left, content_width)
             self._content_width = content_width
 
-    def _update_flow_lines(self):
+    def _update_flow_lines(self) -> None:
         invalid_start, invalid_end = self.invalid_lines.validate()
         if invalid_end - invalid_start <= 0:
             return
@@ -345,7 +366,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         # Invalidate lines that need new vertex lists.
         self.invalid_vertex_lines.invalidate(invalid_start, invalid_end)
 
-    def _update_visible_lines(self):
+    def _update_visible_lines(self) -> None:
         start = sys.maxsize
         end = 0
 
@@ -368,7 +389,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.visible_lines.start = start
         self.visible_lines.end = end
 
-    def _update_vertex_lists(self, update_view_translation=True):
+    def _update_vertex_lists(self, update_view_translation=True) -> None:
         # Find lines that have been affected by style changes
         style_invalid_start, style_invalid_end = self.invalid_style.validate()
         self.invalid_vertex_lines.invalidate(
@@ -422,70 +443,70 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self._update_view_translation()
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self._x
 
     @x.setter
-    def x(self, x):
+    def x(self, x: float) -> None:
         super()._set_x(x)
         self._update_scissor_area()
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self._y
 
     @y.setter
-    def y(self, y):
+    def y(self, y: float) -> None:
         super()._set_y(y)
         self._update_scissor_area()
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self._z
 
     @z.setter
-    def z(self, z):
+    def z(self, z: float) -> None:
         super()._set_z(z)
         self._update_scissor_area()
 
     @property
-    def position(self):
+    def position(self) -> Tuple[float, float, float]:
         return self._x, self._y, self._z
 
     @position.setter
-    def position(self, position):
+    def position(self, position: Tuple[float, float, float]) -> None:
         super()._set_position(position)
         self._update_view_translation()
         self._update_scissor_area()
 
     @property
-    def anchor_x(self):
+    def anchor_x(self) -> AnchorX:
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, anchor_x):
+    def anchor_x(self, anchor_x: AnchorX) -> None:
         self._anchor_x = anchor_x
         self._update_anchor()
         self._update_scissor_area()
         self._update_view_translation()
 
     @property
-    def anchor_y(self):
+    def anchor_y(self) -> AnchorY:
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, anchor_y):
+    def anchor_y(self, anchor_y: AnchorY) -> None:
         self._anchor_y = anchor_y
         self._update_anchor()
         self._update_scissor_area()
         self._update_view_translation()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, width):
+    def width(self, width: int) -> None:
         # Invalidate everything when width changes
         if width == self._width:
             return
@@ -494,11 +515,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update()
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._height
 
     @height.setter
-    def height(self, height):
+    def height(self, height: int) -> None:
         # Recalculate visible lines when height changes
         if height == self._height:
             return
@@ -508,56 +529,50 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self._update_vertex_lists()
 
     @property
-    def multiline(self):
+    def multiline(self) -> bool:
         return self._multiline
 
     @multiline.setter
-    def multiline(self, multiline):
+    def multiline(self, multiline: bool) -> None:
         self.invalid_flow.invalidate(0, len(self.document.text))
         self._multiline = multiline
         self._wrap_lines_invariant()
         self._update()
 
-    def _set_rotation(self, rotation):
-        self._rotation = rotation
-        self.invalid_flow.invalidate(0, len(self.document.text))
-        self._update()
-
-    def _update_view_translation(self):
+    def _update_view_translation(self) -> None:
         # Offset of content within viewport
-        for line in self.lines:
-            for vlist in line.vertex_lists:
-                vlist.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * vlist.count
+        for line in self.lines[self.visible_lines.start:self.visible_lines.end]:
+            for box in line.boxes:
+                box.update_view_translation(self._translate_x, self._translate_y)
 
         self.dispatch_event('on_translation_update')
 
-    def _update_translation(self):
+    def _update_translation(self) -> None:
         # Vertex lists are stored in the lines.
-        for line in self.lines:
-            for vlist in line.vertex_lists:
-                vlist.translation[:] = (self._x, self._y, self._z) * vlist.count
+        for line in self.lines[self.visible_lines.start:self.visible_lines.end]:
+            for box in line.boxes:
+                box.update_translation(self._x, self._y, self._z)
 
-    def _update_anchor(self):
+    def _update_anchor(self) -> None:
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
 
         anchor_left, anchor_top = (self._anchor_left, self._get_top_anchor())
-        for line in self.lines:
+
+        # A line can also have more than 1 box. For example, if the text "This is a test" does not fill
+        # the whole line, it will be split to 2 boxes: ("This is a ", "test")
+        # This is to allow the second GlyphBox to be pushed onto the next line should it wrap in multiline.
+        # "This is a test " will be created as one GlyphBox.
+        for line in self.lines[self.visible_lines.start:self.visible_lines.end]:
             # A line can have no vertex list if it's out of view OR is an empty row.
-            if line.vertex_lists:
-                # Accumulate the X accounting for multiple GlyphBoxes.
-                anchor_x = anchor_left
 
-                # A line can also have more than 1 box. For example, if the text "This is a test" does not fill
-                # the whole line, it will be split to 2 boxes: ("This is a ", "test")
-                # This is to allow the second GlyphBox to be pushed onto the next line should it wrap in multiline.
-                # "This is a test " will be created as one GlyphBox.
-                for box_idx, box in enumerate(line.boxes):
-                    vlist = line.vertex_lists[box_idx]
-                    vlist.anchor[:] = (anchor_x, anchor_top) * vlist.count
-                    anchor_x += box.advance
+            # Accumulate the X accounting for multiple GlyphBoxes.
+            anchor_x = anchor_left
+            for box in line.boxes:
+                box.update_anchor(anchor_x, anchor_top)
+                anchor_x += box.advance
 
-    def _get_bottom_anchor(self):
+    def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""
         height = self._height
         if self._content_valign == 'top':
@@ -585,15 +600,20 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         return self._rotation
 
     @rotation.setter
-    def rotation(self, angle):
+    def rotation(self, angle: float) -> None:
         raise Exception("Rotating IncrementalTextLayout's is not supported.")
 
+    # def _set_rotation(self, rotation):
+    #     self._rotation = rotation
+    #     self.invalid_flow.invalidate(0, len(self.document.text))
+    #     self._update()
+
     @property
-    def view_x(self):
+    def view_x(self) -> int:
         """Horizontal scroll offset.
 
         The initial value is 0, and the left edge of the text will touch the left
@@ -606,14 +626,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._translate_x
 
     @view_x.setter
-    def view_x(self, view_x):
+    def view_x(self, view_x: int) -> None:
         translation = max(0, min(self._content_width - self._width, view_x))
         if translation != self._translate_x:
             self._translate_x = translation
             self._update_view_translation()
 
     @property
-    def view_y(self):
+    def view_y(self) -> int:
         """Vertical scroll offset.
 
         The initial value is 0, and the top of the text will touch the top of the
@@ -629,7 +649,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._translate_y
 
     @view_y.setter
-    def view_y(self, view_y):
+    def view_y(self, view_y: int) -> None:
         # Invalidate invisible/visible lines when y scrolls
         # view_y must be negative.
         translation = min(0, max(self.height - self._content_height, view_y))
@@ -641,7 +661,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     # Visible selection
 
-    def set_selection(self, start, end):
+    def set_selection(self, start: int, end: int) -> None:
         """Set the text selection range.
 
         If ``start`` equals ``end`` no selection will be visible.
@@ -673,7 +693,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update()
 
     @property
-    def selection_start(self):
+    def selection_start(self) -> int:
         """Starting position of the active selection.
 
         :see: `set_selection`
@@ -683,11 +703,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._selection_start
 
     @selection_start.setter
-    def selection_start(self, start):
+    def selection_start(self, start: int) -> None:
         self.set_selection(start, self._selection_end)
 
     @property
-    def selection_end(self):
+    def selection_end(self) -> int:
         """End position of the active selection (exclusive).
 
         :see: `set_selection`
@@ -697,11 +717,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._selection_end
 
     @selection_end.setter
-    def selection_end(self, end):
+    def selection_end(self, end: int) -> None:
         self.set_selection(self._selection_start, end)
 
     @property
-    def selection_color(self):
+    def selection_color(self) -> Tuple[int, int, int, int]:
         """Text color of active selection.
 
         The color is an RGBA tuple with components in range [0, 255].
@@ -711,12 +731,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._selection_color
 
     @selection_color.setter
-    def selection_color(self, color):
+    def selection_color(self, color: Tuple[int, int, int, int]) -> None:
         self._selection_color = color
         self.invalid_style.invalidate(self._selection_start, self._selection_end)
 
     @property
-    def selection_background_color(self):
+    def selection_background_color(self) -> Tuple[int, int, int, int]:
         """Background color of active selection.
 
         The color is an RGBA tuple with components in range [0, 255].
@@ -726,13 +746,13 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._selection_background_color
 
     @selection_background_color.setter
-    def selection_background_color(self, background_color):
+    def selection_background_color(self, background_color: Tuple[int, int, int, int]) -> None:
         self._selection_background_color = background_color
         self.invalid_style.invalidate(self._selection_start, self._selection_end)
 
     # Coordinate translation
 
-    def get_position_from_point(self, x, y):
+    def get_position_from_point(self, x: float, y: float) -> int:
         """Get the closest document position to a point.
 
         :Parameters:
@@ -854,7 +874,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         """
         return self.lines[line].start + self._x
 
-    def get_position_on_line(self, line, x):
+    def get_position_on_line(self, line_idx: int, x: float) -> int:
         """Get the closest document position for a given line index and X
         coordinate.
 
@@ -866,7 +886,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :rtype: int
         """
-        line = self.lines[line]
+        line = self.lines[line_idx]
 
         x += self._translate_x
         x -= self.left
@@ -903,7 +923,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         return height - offset
 
-    def _get_left_anchor(self):
+    def _get_left_anchor(self) -> float:
         """Returns the anchor for the X axis from the left."""
         width = self.width
 
@@ -916,14 +936,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         else:
             assert False, '`anchor_x` must be either "left", "center", or "right".'
 
-    def get_line_count(self):
+    def get_line_count(self) -> int:
         """Get the number of lines in the text layout.
 
         :rtype: int
         """
         return self._line_count
 
-    def ensure_line_visible(self, line):
+    def ensure_line_visible(self, line_idx: int) -> None:
         """Adjust `view_y` so that the line with the given index is visible.
 
         :Parameters:
@@ -931,7 +951,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 Line index.
 
         """
-        line = self.lines[line]
+        line = self.lines[line_idx]
         y1 = line.y + line.ascent
         y2 = line.y + line.descent
         if y1 > self.view_y:
@@ -941,7 +961,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         elif abs(self.view_y) > self.content_height - self.height:
             self.view_y = -self.content_height
 
-    def ensure_x_visible(self, x):
+    def ensure_x_visible(self, x: int) -> None:
         """Adjust `view_x` so that the given X coordinate is visible.
 
         The X coordinate is given relative to the current `view_x`.
@@ -978,6 +998,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
             :event:
             """
+
 
 IncrementalTextLayout.register_event_type('on_layout_update')
 IncrementalTextLayout.register_event_type('on_translation_update')
