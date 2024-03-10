@@ -1,13 +1,24 @@
+from __future__ import annotations
+from typing import Type, Optional, TYPE_CHECKING, Tuple
+
 from pyglet import graphics
+from pyglet.customtypes import AnchorY, AnchorX
 from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA, \
     GL_ONE_MINUS_SRC_ALPHA, glDisable
 from pyglet.text.layout.base import TextLayout
+
+if TYPE_CHECKING:
+    from pyglet.graphics import Batch
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.text.document import AbstractDocument
+    from pyglet.image import Texture
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, texture, program, order=1, parent=None):
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
+                 parent: Optional[graphics.Group] = None) -> None:
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
         The group maintains internal state for specifying the viewable
@@ -18,7 +29,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         self.texture = texture
         self.program = program
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
         self.program['scissor'] = True
         self.program['scissor_area'] = self.scissor_area
@@ -29,24 +40,24 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: graphics.Group) -> bool:
         return self is other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
 
 class ScrollableTextDecorationGroup(graphics.Group):
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, program, order=0, parent=None):
+    def __init__(self, program: ShaderProgram, order: int = 0, parent: Optional[graphics.Group] = None) -> None:
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -55,7 +66,7 @@ class ScrollableTextDecorationGroup(graphics.Group):
         super().__init__(order=order, parent=parent)
         self.program = program
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
         self.program['scissor'] = True
         self.program['scissor_area'] = self.scissor_area
@@ -63,17 +74,17 @@ class ScrollableTextDecorationGroup(graphics.Group):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(scissor={self.scissor_area})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: graphics.Group) -> bool:
         return self is other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
 
@@ -88,14 +99,16 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
 
-    group_class = ScrollableTextLayoutGroup
-    decoration_class = ScrollableTextDecorationGroup
+    group_class: Type[ScrollableTextLayoutGroup] = ScrollableTextLayoutGroup
+    decoration_class: Type[ScrollableTextDecorationGroup] = ScrollableTextDecorationGroup
 
-    _translate_x = 0
-    _translate_y = 0
+    _translate_x: int = 0
+    _translate_y: int = 0
 
-    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
+    def __init__(self, document: AbstractDocument, width: int, height: int, x: float = 0, y: float = 0, z: float = 0,
+                 anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
+                 dpi: Optional[float] = None, batch: Optional[Batch] = None, group: Optional[graphics.Group] = None,
+                 program: Optional[ShaderProgram] = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
             raise Exception("Invalid size. ScrollableTextLayout width or height cannot be None.")
@@ -103,7 +116,7 @@ class ScrollableTextLayout(TextLayout):
         super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
-    def _update_scissor_area(self):
+    def _update_scissor_area(self) -> None:
         if not self.document.text:
             return
 
@@ -115,71 +128,71 @@ class ScrollableTextLayout(TextLayout):
         self.background_decoration_group.scissor_area = area
         self.foreground_decoration_group.scissor_area = area
 
-    def _update(self):
+    def _update(self) -> None:
         super()._update()
         self._update_scissor_area()
 
     # Properties
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self._x
 
     @x.setter
-    def x(self, x):
+    def x(self, x: float) -> None:
         super()._set_x(x)
         self._update_scissor_area()
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self._y
 
     @y.setter
-    def y(self, y):
+    def y(self, y: float) -> None:
         super()._set_y(y)
         self._update_scissor_area()
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self._z
 
     @z.setter
-    def z(self, z):
+    def z(self, z: float) -> None:
         super()._set_z(z)
         self._update_scissor_area()
 
     @property
-    def position(self):
+    def position(self) -> Tuple[float, float, float]:
         return self._x, self._y, self._z
 
     @position.setter
-    def position(self, position):
+    def position(self, position: Tuple[float, float, float]) -> None:
         super()._set_position(position)
         self._update_scissor_area()
 
     @property
-    def anchor_x(self):
+    def anchor_x(self) -> AnchorX:
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, anchor_x):
+    def anchor_x(self, anchor_x: AnchorX) -> None:
         self._anchor_x = anchor_x
         self._update_anchor()
         self._update_scissor_area()
         self._update_view_translation()
 
     @property
-    def anchor_y(self):
+    def anchor_y(self) -> AnchorY:
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, anchor_y):
+    def anchor_y(self, anchor_y: AnchorY) -> None:
         self._anchor_y = anchor_y
         self._update_anchor()
         self._update_scissor_area()
         self._update_view_translation()
 
-    def _get_bottom_anchor(self):
+    def _get_bottom_anchor(self) -> float:
         """Returns the anchor for the Y axis from the bottom."""
         height = self._height
         if self._content_valign == 'top':
@@ -206,13 +219,13 @@ class ScrollableTextLayout(TextLayout):
         else:
             assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
-    def _update_view_translation(self):
+    def _update_view_translation(self) -> None:
         # Offset of content within viewport
         for _vertex_list in self._vertex_lists:
             _vertex_list.view_translation[:] = (-self._translate_x, -self._translate_y, 0) * _vertex_list.count
 
     @property
-    def view_x(self):
+    def view_x(self) -> int:
         """Horizontal scroll offset.
 
             The initial value is 0, and the left edge of the text will touch the left
@@ -225,14 +238,14 @@ class ScrollableTextLayout(TextLayout):
         return self._translate_x
 
     @view_x.setter
-    def view_x(self, view_x):
+    def view_x(self, view_x: int) -> None:
         translation = max(0, min(self._content_width - self._width, view_x))
         if translation != self._translate_x:
             self._translate_x = translation
             self._update_view_translation()
 
     @property
-    def view_y(self):
+    def view_y(self) -> int:
         """Vertical scroll offset.
 
             The initial value is 0, and the top of the text will touch the top of the
@@ -248,7 +261,7 @@ class ScrollableTextLayout(TextLayout):
         return self._translate_y
 
     @view_y.setter
-    def view_y(self, view_y):
+    def view_y(self, view_y: int) -> None:
         # view_y must be negative.
         translation = min(0, max(self.height - self._content_height, view_y))
         if translation != self._translate_y:
