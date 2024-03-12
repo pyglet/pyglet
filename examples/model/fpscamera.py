@@ -53,7 +53,7 @@ class FPSCamera:
 
     def on_deactivate(self):
         # Prevent input from getting "stuck"
-        self.keybord_move[:] = 0, 0, 0
+        self.keybord_move = Vec3()
 
     def on_resize(self, width, height):
         self._window.viewport = (0, 0, width, height)
@@ -74,7 +74,7 @@ class FPSCamera:
             # for when the mouse stops moving. It will get "stuck" otherwise.
             self.yaw += self.mouse_look.x * 0.1
             self.pitch = clamp(self.pitch + self.mouse_look.y * 0.1, -89.0, 89.0)
-            self.mouse_look[:] = 0.0, 0.0
+            self.mouse_look = Vec2()
 
         self.target = Vec3(cos(radians(self.yaw)) * cos(radians(self.pitch)),
                            sin(radians(self.pitch)),
@@ -106,7 +106,7 @@ class FPSCamera:
     def on_mouse_motion(self, x, y, dx, dy):
         if not self._exclusive_mouse:
             return
-        self.mouse_look[:] = dx, dy
+        self.mouse_look = Vec2(dx, dy)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if not self._exclusive_mouse:
@@ -137,7 +137,7 @@ class FPSCamera:
             self.controller_move = self.target * vector.y + self.target.cross(self.up).normalize() * vector.x
 
         elif stick == "rightstick":
-            self.controller_look[:] = vector
+            self.controller_look = vector
 
 
 if __name__ == "__main__":

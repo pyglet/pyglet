@@ -99,6 +99,14 @@ that the maximum value stays within range. For example::
 You can also of course directly access the individual `Vec2.x` & `Vec2.y`
 attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
 
+Math module
+-----------
+In the :py:module:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
+:py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
+immutable. Any operations will return a new object, and all vector objects are
+now hashable. This has major performance benefits, and matches how the Matrix
+types are implemented.
+
 Canvas module
 -------------
 The `pyglet.canvas` module has been renamed to `pyglet.display`, as the canvas
