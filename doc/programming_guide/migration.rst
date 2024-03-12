@@ -10,9 +10,47 @@ should hopefully get you up and running again without too much effort. If you
 are having an issue that is not covered here, please open up an issue ticket on
 `Github <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
 
+Window "HiDPI" support
+----------------------
+TBD
+
 Labels & Text Layouts
 ---------------------
-TBD
+The positional argument order for text Labels and Layouts was not consistent
+in previous pyglet releases. This has been refactored to make things more
+consistent, with the goal of making it easier to switch between Layouts or
+create custom subclasses. All layouts now start with the same positional
+argument ordering::
+
+    TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+    ScrollableTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+    IncrementalTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+
+The Label classes also follow a similar default argument ordering, with one
+small exception: Label and HTMLLabel take "text" as the first argument instead
+of "document". Other than that, the rest of the positional arguments line up::
+
+    DocumentLabel(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+    Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+    HTMLLabel(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
+
+The layouts and lables don't share all of the same argument, so the rest of the
+arguments will need to be provided as usual, where they differ. Please see the
+API documents for full details.
+
+Shapes
+------
+For consistency with the rest of the library, it was decided to represent
+all angles in degrees instead of radians. Previously we had a mix of both,
+which lead to some confusion. Using degrees also makes the API consistent
+with Sprites and other rotatable objects.
+
+The arguments for :py:class:`~pyglet.shapes.Line` have changed slightly.
+Instead of "width", we now use "thickness". This matches with other shapes
+that are made up of line segments. For example the :py:class:`~pyglet.shapes.Box`
+shape, which already uses "width" (and height) to mean it's overall size.
+Going forward, any shape that is made up of lines should use `thickness`
+for the width of those lines.
 
 Controllers
 -----------
@@ -51,7 +89,7 @@ calculate dead-zones using `abs`. For example::
         elif name == "rightstick":
             # Do something with the 2D vector
 
-Normalization of vectors can also be useful for analog sticks. When dealing
+Normalization of vectors can also be useful for some analog sticks. When dealing
 with Controllers that have non-circular gates, the The absolute values of their
 combined x and y axis can sometimes exceed 1.0. Vector normalization can ensure
 that the maximum value stays within range. For example::
@@ -60,3 +98,15 @@ that the maximum value stays within range. For example::
 
 You can also of course directly access the individual `Vec2.x` & `Vec2.y`
 attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
+
+Canvas module
+-------------
+The `pyglet.canvas` module has been renamed to `pyglet.display`, as the canvas
+concept was never fully fleshed out. The canvas concept appears to have been
+meant to allow arbitrary renderable areas. This can now be easily accomplished
+with Framebuffers. The name `display` is a more accurate representation of what
+the code in the module actually relates to. The usage is the same::
+
+    pyglet.canvas.get_display()     # old pyglet 2.0
+    pyglet.display.get_display()    # new pyglet 2.1
+
