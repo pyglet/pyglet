@@ -887,10 +887,8 @@ class TextLayout:
     _multiline = False
     _visible = True
 
-    def __init__(self, document, width=None, height=None, x=0, y=0, z=0,
-                 anchor_x='left', anchor_y='bottom', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, program=None,
-                 wrap_lines=True, init_document=True):
+    def __init__(self, document, x=0, y=0, z=0, width=None, height=None, anchor_x='left', anchor_y='bottom', rotation=0,
+                 multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True, init_document=True):
         """Create a text layout.
 
         :Parameters:
@@ -941,9 +939,13 @@ class TextLayout:
         self._x = x
         self._y = y
         self._z = z
-        self._rotation = rotation
+        self._width = width
+        self._height = height
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
+        self._rotation = rotation
+        self._multiline = multiline
+        self._dpi = dpi or 96
 
         self._content_width = 0
         self._content_height = 0
@@ -957,16 +959,11 @@ class TextLayout:
             self._own_batch = True
         self._batch = batch
 
-        self._width = width
-        self._height = height
-        self._multiline = multiline
-
         self._program = program or get_default_layout_shader()
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
-        self._dpi = dpi or 96
         self._set_document(document)
         if init_document:
             self._init_document()
@@ -2054,13 +2051,13 @@ class ScrollableTextLayout(TextLayout):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+    def __init__(self, document, x=0, y=0, z=0, width=None, height=None, anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
 
         if width is None or height is None:
-            raise Exception("Invalid size. ScrollableTextLayout width or height cannot be None.")
+            raise Exception(f"{self.__class__.__name__} invalid size: width and height cannot be None.")
 
-        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
     def _update_scissor_area(self):
@@ -2247,11 +2244,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _translate_x = 0
     _translate_y = 0
 
-    def __init__(self, document, width, height, x=0, y=0, z=0, anchor_x='left', anchor_y='bottom', rotation=0,
+    def __init__(self, document, x=0, y=0, z=0, width=None, height=None, anchor_x='left', anchor_y='bottom', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None, program=None, wrap_lines=True):
 
         if width is None or height is None:
-            raise Exception("Invalid size. IncrementalTextLayout width or height cannot be None.")
+            raise Exception("Invalid size: width and height cannot be None.")
 
         self.glyphs = []
 
@@ -2267,7 +2264,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
     def _update_scissor_area(self):

@@ -198,8 +198,7 @@ class DocumentLabel(layout.TextLayout):
     associated document.
     """
 
-    def __init__(self, document=None,
-                 x=0, y=0, z=0, width=None, height=None,
+    def __init__(self, document=None, x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
                  multiline=False, dpi=None, batch=None, group=None,
                  program=None, init_document=True):
@@ -244,7 +243,7 @@ class DocumentLabel(layout.TextLayout):
                 you may want to avoid duplicate initializations by changing
                 to False.
         """
-        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation,
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=init_document)
 
     @property
@@ -379,34 +378,18 @@ class DocumentLabel(layout.TextLayout):
 
 
 class Label(DocumentLabel):
-    """Plain text label.
-    """
+    """Plain text label."""
 
-    def __init__(self, text='',
-                 font_name=None, font_size=None, bold=False, italic=False, stretch=False,
-                 color=(255, 255, 255, 255),
-                 x=0, y=0, z=0, width=None, height=None,
+    def __init__(self, text='', x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
-                 align='left',
-                 multiline=False, dpi=None, batch=None, group=None, program=None):
+                 multiline=False, dpi=None, font_name=None, font_size=None,
+                 bold=False, italic=False, stretch=False, color=(255, 255, 255, 255),
+                 align='left', batch=None, group=None, program=None):
         """Create a plain text label.
 
         :Parameters:
             `text` : str
                 Text to display.
-            `font_name` : str or list
-                Font family name(s).  If more than one name is given, the
-                first matching name is used.
-            `font_size` : float
-                Font size, in points.
-            `bold` : bool/str
-                Bold font style.
-            `italic` : bool/str
-                Italic font style.
-            `stretch` : bool/str
-                 Stretch font style.
-            `color` : (int, int, int, int)
-                Font colour, as RGBA components in range [0, 255].
             `x` : int
                 X coordinate of the label.
             `y` : int
@@ -427,15 +410,28 @@ class Label(DocumentLabel):
                 The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-            `align` : str
-                Horizontal alignment of text on a line, only applies if
-                a width is supplied. One of ``"left"``, ``"center"``
-                or ``"right"``.
             `multiline` : bool
                 If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
+            `font_name` : str or list
+                Font family name(s).  If more than one name is given, the
+                first matching name is used.
+            `font_size` : float
+                Font size, in points.
+            `bold` : bool/str
+                Bold font style.
+            `italic` : bool/str
+                Italic font style.
+            `stretch` : bool/str
+                 Stretch font style.
+            `color` : (int, int, int, int)
+                Font colour, as RGBA components in range [0, 255].
+            `align` : str
+                Horizontal alignment of text on a line, only applies if
+                a width is supplied. One of ``"left"``, ``"center"``
+                or ``"right"``.
             `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`
@@ -466,18 +462,15 @@ class HTMLLabel(DocumentLabel):
     details.
     """
 
-    def __init__(self, text='', location=None,
-                 x=0, y=0, z=0, width=None, height=None,
+    def __init__(self, text='', x=0, y=0, z=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None, program=None):
+                 multiline=False, dpi=None, location=None,
+                 batch=None, group=None, program=None):
         """Create a label with an HTML string.
 
         :Parameters:
             `text` : str
                 HTML formatted text to display.
-            `location` : `Location`
-                Location object for loading images referred to in the
-                document.  By default, the working directory is used.
             `x` : int
                 X coordinate of the label.
             `y` : int
@@ -503,6 +496,9 @@ class HTMLLabel(DocumentLabel):
                 and line breaks.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
+            `location` : `Location`
+                Location object for loading images referred to in the
+                document.  By default, the working directory is used.
             `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
             `group` : `~pyglet.graphics.Group`

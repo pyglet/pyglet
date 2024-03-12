@@ -24,23 +24,23 @@ all_combinations = list(itertools.product(document_classes, layout_classes))
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
 def test_layout_creation_keyword(doctype, layouttype):
     _doc = doctype("This is a test")
-    _layout = layouttype(document=_doc, width=WIDTH, height=HEIGHT, x=X, y=Y, z=Z)
-    assert _layout.width == WIDTH
-    assert _layout.height == HEIGHT
+    _layout = layouttype(document=_doc, x=X, y=Y, z=Z, width=WIDTH, height=HEIGHT)
     assert _layout.x == X
     assert _layout.y == Y
     assert _layout.z == Z
+    assert _layout.width == WIDTH
+    assert _layout.height == HEIGHT
     assert _layout.position == (X, Y, Z)
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
 def test_layout_creation_positional(doctype, layouttype):
     _doc = doctype("This is a test")
-    _layout = layouttype(_doc, WIDTH, HEIGHT, X, Y, Z)
+    _layout = layouttype(_doc, X, Y, Z, WIDTH, HEIGHT)
     # Make sure the arguments were in order:
-    assert _layout.width == WIDTH
-    assert _layout.height == HEIGHT
     assert _layout.x == X
     assert _layout.y == Y
     assert _layout.z == Z
+    assert _layout.width == WIDTH
+    assert _layout.height == HEIGHT
     assert _layout.position == (X, Y, Z)
