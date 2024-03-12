@@ -21,7 +21,6 @@ import typing as _typing
 import warnings as _warnings
 
 from collections.abc import Iterable as _Iterable
-from collections.abc import Iterator as _Iterator
 
 try:
     from math import sumprod as _sumprod
@@ -41,60 +40,47 @@ def clamp(num: float, min_val: float, max_val: float) -> float:
     return max(min(num, max_val), min_val)
 
 
-class Vec2:
-    __slots__ = 'x', 'y'
-
+class Vec2(tuple):
     """A two-dimensional vector represented as an X Y coordinate pair."""
 
-    def __init__(self, x: float = 0.0, y: float = 0.0) -> None:
-        self.x = x
-        self.y = y
+    def __new__(cls, *args):
+        assert len(args) in (0, 2), "0 or 2 values are required for Vec2 types."
+        return super().__new__(Vec2, args or (0, 0))
 
-    def __iter__(self) -> _Iterator[float]:
-        yield self.x
-        yield self.y
+    @property
+    def x(self) -> float:
+        return self[0]
 
-    @_typing.overload
-    def __getitem__(self, item: int) -> float:
-        ...
-
-    @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
-        ...
-
-    def __getitem__(self, item):
-        return (self.x, self.y)[item]
-
-    def __setitem__(self, key, value):
-        if type(key) is slice:
-            for i, attr in enumerate(['x', 'y'][key]):
-                setattr(self, attr, value[i])
-        else:
-            setattr(self, ['x', 'y'][key], value)
+    @property
+    def y(self) -> float:
+        return self[1]
 
     def __len__(self) -> int:
         return 2
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __add__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x + other.x, self.y + other.y)
+        return Vec2(self[0] + other[0], self[1] + other[1])
 
     def __sub__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x - other.x, self.y - other.y)
+        return Vec2(self[0] - other[0], self[1] - other[1])
 
     def __mul__(self, scalar: float) -> Vec2:
-        return Vec2(self.x * scalar, self.y * scalar)
+        return Vec2(self[0] * scalar, self[1] * scalar)
 
     def __truediv__(self, scalar: float) -> Vec2:
-        return Vec2(self.x / scalar, self.y / scalar)
+        return Vec2(self[0] / scalar, self[1] / scalar)
 
     def __floordiv__(self, scalar: float) -> Vec2:
-        return Vec2(self.x // scalar, self.y // scalar)
+        return Vec2(self[0] // scalar, self[1] // scalar)
 
     def __abs__(self) -> float:
-        return _math.sqrt(self.x ** 2 + self.y ** 2)
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2)
 
     def __neg__(self) -> Vec2:
-        return Vec2(-self.x, -self.y)
+        return Vec2(-self[0], -self[1])
 
     def __round__(self, ndigits: int | None = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
@@ -111,10 +97,10 @@ class Vec2:
         return abs(self) < abs(other)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, Vec2) and self.x == other.x and self.y == other.y
+        return isinstance(other, Vec2) and self[0] == other[0] and self[1] == other[1]
 
     def __ne__(self, other: object) -> bool:
-        return not isinstance(other, Vec2) or self.x != other.x or self.y != other.y
+        return not isinstance(other, Vec2) or self[0] != other[0] or self[1] != other[1]
 
     @staticmethod
     def from_polar(mag: float, angle: float) -> Vec2:
@@ -151,7 +137,7 @@ class Vec2:
     @property
     def heading(self) -> float:
         """The angle of the vector in radians."""
-        return _math.atan2(self.y, self.x)
+        return _math.atan2(self[1], self[0])
 
     @property
     def mag(self) -> float:
@@ -163,7 +149,7 @@ class Vec2:
 
     def limit(self, maximum: float) -> Vec2:
         """Limit the magnitude of the vector to passed maximum value."""
-        if self.x ** 2 + self.y ** 2 > maximum * maximum:
+        if self[0] ** 2 + self[1] ** 2 > maximum * maximum:
             return self.from_magnitude(maximum)
         return self
 
@@ -178,8 +164,8 @@ class Vec2:
                 Some value between 0.0 (this vector) and 1.0 (other vector).
                 0.5 is halfway inbetween.
         """
-        return Vec2(self.x + (alpha * (other.x - self.x)),
-                    self.y + (alpha * (other.y - self.y)))
+        return Vec2(self[0] + (alpha * (other[0] - self[0])),
+                    self[1] + (alpha * (other[1] - self[1])))
 
     def reflect(self, normal: Vec2) -> Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normal."""
@@ -189,76 +175,62 @@ class Vec2:
         """Create a new Vector rotated by the angle. The magnitude remains unchanged."""
         s = _math.sin(angle)
         c = _math.cos(angle)
-        return Vec2(c * self.x - s * self.y, s * self.x + c * self.y)
+        return Vec2(c * self[0] - s * self[1], s * self[0] + c * self[1])
 
     def distance(self, other: Vec2) -> float:
         """Calculate the distance between this vector and another 2D vector."""
-        return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2))
+        return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self) -> Vec2:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         d = self.__abs__()
         if d:
-            return Vec2(self.x / d, self.y / d)
+            return Vec2(self[0] / d, self[1] / d)
         return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec2:
         """Restrict the value of the X and Y components of the vector to be within the given values."""
-        return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
+        return Vec2(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val))
 
     def dot(self, other: Vec2) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
-        return self.x * other.x + self.y * other.y
+        return self[0] * other[0] + self[1] * other[1]
+
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xy'.index(c)] for c in attrs))
-        except Exception:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{attrs}'"
-            ) from None
+        except (ValueError, TypeError):
+            raise AttributeError(f"'{self.__class__.__name__}' invalid attr(s): '{attrs}'. "
+                                 f"Valid attributes are 'x', 'y'. "
+                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
 
     def __repr__(self) -> str:
-        return f"Vec2({self.x}, {self.y})"
+        return f"Vec2({self[0]}, {self[1]})"
 
 
-class Vec3:
-    __slots__ = 'x', 'y', 'z'
-
+class Vec3(tuple):
     """A three-dimensional vector represented as X Y Z coordinates."""
 
-    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
+    def __new__(cls, *args):
+        assert len(args) in (0, 3), "0 or 3 values are required for Vec3 types."
+        return super().__new__(Vec3, args or (0, 0, 0))
 
-    def __iter__(self) -> _Iterator[float]:
-        yield self.x
-        yield self.y
-        yield self.z
+    @property
+    def x(self) -> float:
+        return self[0]
 
-    @_typing.overload
-    def __getitem__(self, item: int) -> float:
-        ...
+    @property
+    def y(self) -> float:
+        return self[1]
 
-    @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
-        ...
-
-    def __getitem__(self, item):
-        return (self.x, self.y, self.z)[item]
-
-    def __setitem__(self, key, value):
-        if type(key) is slice:
-            for i, attr in enumerate(['x', 'y', 'z'][key]):
-                setattr(self, attr, value[i])
-        else:
-            setattr(self, ['x', 'y', 'z'][key], value)
-
-    def __len__(self) -> int:
-        return 3
+    @property
+    def z(self) -> float:
+        return self[2]
 
     @property
     def mag(self) -> float:
@@ -270,26 +242,32 @@ class Vec3:
         """
         return self.__abs__()
 
+    def __len__(self) -> int:
+        return 3
+
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __add__(self, other: Vec3) -> Vec3:
-        return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
+        return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
 
     def __sub__(self, other: Vec3) -> Vec3:
-        return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
+        return Vec3(self[0] - other[0], self[1] - other[1], self[2] - other[2])
 
     def __mul__(self, scalar: float) -> Vec3:
-        return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
+        return Vec3(self[0] * scalar, self[1] * scalar, self[2] * scalar)
 
     def __truediv__(self, scalar: float) -> Vec3:
-        return Vec3(self.x / scalar, self.y / scalar, self.z / scalar)
+        return Vec3(self[0] / scalar, self[1] / scalar, self[2] / scalar)
 
     def __floordiv__(self, scalar: float) -> Vec3:
-        return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
+        return Vec3(self[0] // scalar, self[1] // scalar, self[2] // scalar)
 
     def __abs__(self) -> float:
-        return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
     def __neg__(self) -> Vec3:
-        return Vec3(-self.x, -self.y, -self.z)
+        return Vec3(-self[0], -self[1], -self[2])
 
     def __round__(self, ndigits: int | None = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
@@ -305,10 +283,10 @@ class Vec3:
         return abs(self) < abs(other)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
+        return isinstance(other, Vec3) and self[0] == other[0] and self[1] == other[1] and self[2] == other[2]
 
     def __ne__(self, other: object) -> bool:
-        return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
+        return not isinstance(other, Vec3) or self[0] != other[0] or self[1] != other[1] or self[2] != other[2]
 
     def from_magnitude(self, magnitude: float) -> Vec3:
         """Create a new Vector of the given magnitude by normalizing,
@@ -318,19 +296,19 @@ class Vec3:
 
     def limit(self, maximum: float) -> Vec3:
         """Limit the magnitude of the vector to the passed maximum value."""
-        if self.x ** 2 + self.y ** 2 + self.z ** 2 > maximum * maximum * maximum:
+        if self[0] ** 2 + self[1] ** 2 + self[2] ** 2 > maximum * maximum * maximum:
             return self.from_magnitude(maximum)
         return self
 
     def cross(self, other: Vec3) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector."""
-        return Vec3((self.y * other.z) - (self.z * other.y),
-                    (self.z * other.x) - (self.x * other.z),
-                    (self.x * other.y) - (self.y * other.x))
+        return Vec3((self[1] * other[2]) - (self[2] * other[1]),
+                    (self[2] * other[0]) - (self[0] * other[2]),
+                    (self[0] * other[1]) - (self[1] * other[0]))
 
     def dot(self, other: Vec3) -> float:
         """Calculate the dot product of this vector and another 3D vector."""
-        return self.x * other.x + self.y * other.y + self.z * other.z
+        return self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
 
     def lerp(self, other: Vec3, alpha: float) -> Vec3:
         """Create a new Vec3 linearly interpolated between this vector and another Vec3.
@@ -339,102 +317,96 @@ class Vec3:
         This should be a value between 0.0 (this vector) and 1.0 (other vector).
         For example; 0.5 is the midway point between both vectors.
         """
-        return Vec3(self.x + (alpha * (other.x - self.x)),
-                    self.y + (alpha * (other.y - self.y)),
-                    self.z + (alpha * (other.z - self.z)))
+        return Vec3(self[0] + (alpha * (other[0] - self[0])),
+                    self[1] + (alpha * (other[1] - self[1])),
+                    self[2] + (alpha * (other[2] - self[2])))
 
     def distance(self, other: Vec3) -> float:
         """Get the distance between this vector and another 3D vector."""
-        return _math.sqrt(((other.x - self.x) ** 2) +
-                          ((other.y - self.y) ** 2) +
-                          ((other.z - self.z) ** 2))
+        return _math.sqrt(((other[0] - self[0]) ** 2) +
+                          ((other[1] - self[1]) ** 2) +
+                          ((other[2] - self[2]) ** 2))
 
     def normalize(self) -> Vec3:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         try:
             d = self.__abs__()
-            return Vec3(self.x / d, self.y / d, self.z / d)
+            return Vec3(self[0] / d, self[1] / d, self[2] / d)
         except ZeroDivisionError:
             return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec3:
         """Restrict the value of the X, Y and Z components of the vector to be within the given values."""
-        return Vec3(clamp(self.x, min_val, max_val),
-                    clamp(self.y, min_val, max_val),
-                    clamp(self.z, min_val, max_val))
+        return Vec3(clamp(self[0], min_val, max_val),
+                    clamp(self[1], min_val, max_val),
+                    clamp(self[2], min_val, max_val))
+
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyz'.index(c)] for c in attrs))
-        except Exception:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{attrs}'"
-            ) from None
+        except (ValueError, TypeError):
+            raise AttributeError(f"'{self.__class__.__name__}' invalid attr(s): '{attrs}'. "
+                                 f"Valid attributes are 'x', 'y', 'z'. "
+                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
 
     def __repr__(self) -> str:
-        return f"Vec3({self.x}, {self.y}, {self.z})"
+        return f"Vec3({self[0]}, {self[1]}, {self[2]})"
 
 
-class Vec4:
-    __slots__ = 'x', 'y', 'z', 'w'
-
+class Vec4(tuple):
     """A four-dimensional vector represented as X Y Z W coordinates."""
 
-    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 0.0) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
-        self.w = w
+    def __new__(cls, *args):
+        assert len(args) in (0, 4), "0 or 4 values are required for Vec4 types."
+        return super().__new__(Vec4, args or (0, 0, 0, 0))
 
-    def __iter__(self) -> _Iterator[float]:
-        yield self.x
-        yield self.y
-        yield self.z
-        yield self.w
+    @property
+    def x(self) -> float:
+        return self[0]
 
-    @_typing.overload
-    def __getitem__(self, item: int) -> float:
-        ...
+    @property
+    def y(self) -> float:
+        return self[1]
 
-    @_typing.overload
-    def __getitem__(self, item: slice) -> tuple[float, ...]:
-        ...
+    @property
+    def z(self) -> float:
+        return self[2]
 
-    def __getitem__(self, item):
-        return (self.x, self.y, self.z, self.w)[item]
-
-    def __setitem__(self, key, value):
-        if type(key) is slice:
-            for i, attr in enumerate(['x', 'y', 'z', 'w'][key]):
-                setattr(self, attr, value[i])
-        else:
-            setattr(self, ['x', 'y', 'z', 'w'][key], value)
+    @property
+    def w(self) -> float:
+        return self[3]
 
     def __len__(self) -> int:
         return 4
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
     def __add__(self, other: Vec4) -> Vec4:
-        return Vec4(self.x + other.x, self.y + other.y, self.z + other.z, self.w + other.w)
+        return Vec4(self[0] + other[0], self[1] + other[1], self[2] + other[2], self[3] + other[3])
 
     def __sub__(self, other: Vec4) -> Vec4:
-        return Vec4(self.x - other.x, self.y - other.y, self.z - other.z, self.w - other.w)
+        return Vec4(self[0] - other[0], self[1] - other[1], self[2] - other[2], self[3] - other[3])
 
     def __mul__(self, scalar: float) -> Vec4:
-        return Vec4(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
+        return Vec4(self[0] * scalar, self[1] * scalar, self[2] * scalar, self[3] * scalar)
 
     def __truediv__(self, scalar: float) -> Vec4:
-        return Vec4(self.x / scalar, self.y / scalar, self.z / scalar, self.w / scalar)
+        return Vec4(self[0] / scalar, self[1] / scalar, self[2] / scalar, self[3] / scalar)
 
     def __floordiv__(self, scalar: float) -> Vec4:
-        return Vec4(self.x // scalar, self.y // scalar, self.z // scalar, self.w // scalar)
+        return Vec4(self[0] // scalar, self[1] // scalar, self[2] // scalar, self[3] // scalar)
 
     def __abs__(self) -> float:
-        return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2 + self.w ** 2)
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
 
     def __neg__(self) -> Vec4:
-        return Vec4(-self.x, -self.y, -self.z, -self.w)
+        return Vec4(-self[0], -self[1], -self[2], -self[3])
 
     def __round__(self, ndigits: int | None = None) -> Vec4:
         return Vec4(*(round(v, ndigits) for v in self))
@@ -451,19 +423,19 @@ class Vec4:
     def __eq__(self, other: object) -> bool:
         return (
                 isinstance(other, Vec4)
-                and self.x == other.x
-                and self.y == other.y
-                and self.z == other.z
-                and self.w == other.w
+                and self[0] == other[0]
+                and self[1] == other[1]
+                and self[2] == other[2]
+                and self[3] == other[3]
         )
 
     def __ne__(self, other: object) -> bool:
         return (
                 not isinstance(other, Vec4)
-                or self.x != other.x
-                or self.y != other.y
-                or self.z != other.z
-                or self.w != other.w
+                or self[0] != other[0]
+                or self[1] != other[1]
+                or self[2] != other[2]
+                or self[3] != other[3]
         )
 
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
@@ -473,45 +445,48 @@ class Vec4:
         This should be a value between 0.0 (this vector) and 1.0 (other vector).
         For example; 0.5 is the midway point between both vectors.
         """
-        return Vec4(self.x + (alpha * (other.x - self.x)),
-                    self.y + (alpha * (other.y - self.y)),
-                    self.z + (alpha * (other.z - self.z)),
-                    self.w + (alpha * (other.w - self.w)))
+        return Vec4(self[0] + (alpha * (other[0] - self[0])),
+                    self[1] + (alpha * (other[1] - self[1])),
+                    self[2] + (alpha * (other[2] - self[2])),
+                    self[3] + (alpha * (other[3] - self[3])))
 
     def distance(self, other: Vec4) -> float:
-        return _math.sqrt(((other.x - self.x) ** 2) +
-                          ((other.y - self.y) ** 2) +
-                          ((other.z - self.z) ** 2) +
-                          ((other.w - self.w) ** 2))
+        return _math.sqrt(((other[0] - self[0]) ** 2) +
+                          ((other[1] - self[1]) ** 2) +
+                          ((other[2] - self[2]) ** 2) +
+                          ((other[3] - self[3]) ** 2))
 
     def normalize(self) -> Vec4:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         d = self.__abs__()
         if d:
-            return Vec4(self.x / d, self.y / d, self.z / d, self.w / d)
+            return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec4:
-        return Vec4(clamp(self.x, min_val, max_val),
-                    clamp(self.y, min_val, max_val),
-                    clamp(self.z, min_val, max_val),
-                    clamp(self.w, min_val, max_val))
+        return Vec4(clamp(self[0], min_val, max_val),
+                    clamp(self[1], min_val, max_val),
+                    clamp(self[2], min_val, max_val),
+                    clamp(self[3], min_val, max_val))
 
     def dot(self, other: Vec4) -> float:
-        return self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+        return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
+
+    def index(self, *args):
+        raise NotImplemented("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyzw'.index(c)] for c in attrs))
-        except Exception:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{attrs}'"
-            ) from None
+        except (ValueError, TypeError):
+            raise AttributeError(f"'{self.__class__.__name__}' invalid attr(s): '{attrs}'. "
+                                 f"Valid attributes are 'x', 'y', 'z', 'w'. "
+                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
 
     def __repr__(self) -> str:
-        return f"Vec4({self.x}, {self.y}, {self.z}, {self.w})"
+        return f"Vec4({self[0]}, {self[1]}, {self[2]}, {self[3]})"
 
 
 class Mat3(tuple):
@@ -874,10 +849,6 @@ class Mat4(tuple):
                      _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
                      _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
                      _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3)))
-
-    # def __getitem__(self, item):
-    #     row = [slice(0, 4), slice(4, 8), slice(8, 12), slice(12, 16)][item]
-    #     return super().__getitem__(row)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
