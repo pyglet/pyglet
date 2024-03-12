@@ -45,8 +45,7 @@ from pyglet.gl import *
 from pyglet.graphics import Group
 from pyglet.math import Mat4, Vec3
 
-from . import reader
-
+import reader
 
 pyglet.resource.path.append('res')
 pyglet.resource.reindex()
@@ -64,6 +63,7 @@ def _update_line(line, x, y, x2, y2):
     line._y2 = y2
     line._update_translation()
     line._update_vertices()
+
 
 def _bordered_rect_alpha(rect, inner_alpha, border_alpha):
     rect._rgba = rect._rgba[:3] + (inner_alpha,)
@@ -184,7 +184,7 @@ class OrientationHandle(Handle):
         px, _, py = self.player.position
         x, _, y = self.pos()
 
-        self._line._width = 1.0 / self.win.zoom
+        self._line._thickness = 1.0 / self.win.zoom
         _update_line(self._line, x, y, px, py)
 
         self._disc.position = x, y
@@ -247,7 +247,7 @@ class ConeAngleHandle(Handle):
         angle = orientation_angle(self.player.cone_orientation)
         a = math.radians(self.get_angle())
 
-        self._sector.angle = a
+        self._sector.angle = self.get_angle()
         self._sector.rotation = math.degrees((-angle / 2.0) + (a / 4.0))
         self._sector.position = px, py
 
@@ -311,7 +311,7 @@ class MoreHandle(Handle):
                                                     window.handle_batch,
                                                     Group(0, window.hgrp_label_more_collapsed))
         # The BorderedRectangle vehemently defends itself from having differing alpha values,
-        # but hack them in cause we want them
+        # but hack them in case we want them
         _bordered_rect_alpha(self._box, 201, 255)
 
         self._circ = pyglet.shapes.Circle(0, 0, self.radius,
@@ -354,9 +354,9 @@ class MoreHandle(Handle):
             self._circ.position = x, z
             self._outline.position = x, z
             r = self.radius - 0.1
-            self._line0._width = 1.0 / self.win.zoom
+            self._line0._thickness = 1.0 / self.win.zoom
             _update_line(self._line0, x - r, z, x + r, z)
-            self._line1._width = 1.0 / self.win.zoom
+            self._line1._thickness = 1.0 / self.win.zoom
             _update_line(self._line1, x, z - r, x, z + r)
 
     def delete(self):

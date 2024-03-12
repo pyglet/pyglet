@@ -24,8 +24,8 @@ A simple example of drawing shapes::
     rectangle = shapes.Rectangle(250, 300, 400, 200, color=(255, 22, 20), batch=batch)
     rectangle.opacity = 128
     rectangle.rotation = 33
-    line = shapes.Line(100, 100, 100, 200, width=19, batch=batch)
-    line2 = shapes.Line(150, 150, 444, 111, width=4, color=(200, 20, 20), batch=batch)
+    line = shapes.Line(100, 100, 100, 200, thickness=19, batch=batch)
+    line2 = shapes.Line(150, 150, 444, 111, thickness=4, color=(200, 20, 20), batch=batch)
     star = shapes.Star(800, 400, 60, 40, num_spikes=20, color=(255, 255, 0), batch=batch)
 
     @window.event
@@ -580,7 +580,7 @@ class Arc(ShapeBase):
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
             `thickness` : float
-                The desired thickness or width of the line used for the arc.
+                The desired thickness of the lines used for the arc.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -743,7 +743,7 @@ class BezierCurve(ShapeBase):
                 You can optionally specify how many line segments the
                 curve should be made from.
             `thickness` : float
-                The desired thickness or width of the line used for the curve.
+                The desired thickness of the lines used for the curve.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -1185,11 +1185,11 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, x2, y2, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
-        width on the X axis, and the Y axis.
+        thickness on the X axis, and the Y axis.
 
         :Parameters:
             `x` : float
@@ -1200,8 +1200,8 @@ class Line(ShapeBase):
                 The second X coordinate of the line.
             `y2` : float
                 The second Y coordinate of the line.
-            `width` : float
-                The desired width of the line.
+            `thickness` : float
+                The desired thickness of the line.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the line, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -1216,7 +1216,7 @@ class Line(ShapeBase):
         self._x2 = x2
         self._y2 = y2
 
-        self._width = width
+        self._thickness = thickness
         self._rotation = 0
         self._num_verts = 6
 
@@ -1244,7 +1244,7 @@ class Line(ShapeBase):
         # used to calculate the area of a triangle.
         double_area = abs(a * y1 + b * x2 + x1 * y2 - x2 * y1 - a * y2 - b * x1)
         h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
-        return h < self._width / 2
+        return h < self._thickness / 2
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -1260,7 +1260,7 @@ class Line(ShapeBase):
             x1 = 0
             y1 = 0
             x2 = math.hypot(self._y2 - self._y, self._x2 - self._x)
-            y2 = self._width
+            y2 = self._thickness
 
             r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
@@ -1282,12 +1282,12 @@ class Line(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
-        return self._width
+    def thickness(self):
+        return self._thickness
 
-    @width.setter
-    def width(self, width):
-        self._width = width
+    @thickness.setter
+    def thickness(self, thickness):
+        self._thickness = thickness
         self._update_vertices()
 
     @property
@@ -2076,7 +2076,7 @@ class MultiLine(ShapeBase):
                 If True, the first and last coordinate will be connected with a line.
                 defaults to False.
             `thickness` : float
-                The desired thickness or width used for the line segments.
+                The desired thickness of the line segments.
             `color` : (int, int, int, int)
                 The RGB or RGBA color of the shape, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
