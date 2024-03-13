@@ -41,7 +41,11 @@ def clamp(num: float, min_val: float, max_val: float) -> float:
 
 
 class Vec2(tuple):
-    """A two-dimensional vector represented as an X Y coordinate pair."""
+    """A two-dimensional vector represented as an X Y coordinate pair.
+
+    `Vec2` is an immutable 2D Vector, including most common
+    operators. As an immutable type, all operations return a new object.
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 2), "0 or 2 values are required for Vec2 types."
@@ -56,7 +60,7 @@ class Vec2(tuple):
         return self[1]
 
     def __len__(self) -> int:
-        return 2
+        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -76,6 +80,19 @@ class Vec2(tuple):
     def __floordiv__(self, scalar: float) -> Vec2:
         return Vec2(self[0] // scalar, self[1] // scalar)
 
+    def __radd__(self, other: Vec2 | int) -> Vec2:
+        try:
+            return self.__add__(_typing.cast(Vec2, other))
+        except TypeError as err:
+            if other == 0:      # Required for functionality with sum()
+                return self
+            raise err
+
+    __rsub__ = __sub__
+    __rmul__ = __mul__
+    __rtruediv__ = __truediv__
+    __rfloordiv__ = __floordiv__
+
     def __abs__(self) -> float:
         return _math.sqrt(self[0] ** 2 + self[1] ** 2)
 
@@ -84,14 +101,6 @@ class Vec2(tuple):
 
     def __round__(self, ndigits: int | None = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
-
-    def __radd__(self, other: Vec2 | int) -> Vec2:
-        """Reverse add. Required for functionality with sum()
-        """
-        if other == 0:
-            return self
-        else:
-            return self.__add__(_typing.cast(Vec2, other))
 
     def __lt__(self, other: Vec2) -> bool:
         return abs(self) < abs(other)
@@ -214,7 +223,11 @@ class Vec2(tuple):
 
 
 class Vec3(tuple):
-    """A three-dimensional vector represented as X Y Z coordinates."""
+    """A three-dimensional vector represented as X Y Z coordinates.
+
+    `Vec3` is an immutable 2D Vector, including most common operators.
+    As an immutable type, all operations return a new object.
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 3), "0 or 3 values are required for Vec3 types."
@@ -243,7 +256,7 @@ class Vec3(tuple):
         return self.__abs__()
 
     def __len__(self) -> int:
-        return 3
+        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -263,6 +276,19 @@ class Vec3(tuple):
     def __floordiv__(self, scalar: float) -> Vec3:
         return Vec3(self[0] // scalar, self[1] // scalar, self[2] // scalar)
 
+    def __radd__(self, other: Vec3 | int) -> Vec3:
+        try:
+            return self.__add__(_typing.cast(Vec3, other))
+        except TypeError as err:
+            if other == 0:      # Required for functionality with sum()
+                return self
+            raise err
+
+    __rsub__ = __sub__
+    __rmul__ = __mul__
+    __rtruediv__ = __truediv__
+    __rfloordiv__ = __floordiv__
+
     def __abs__(self) -> float:
         return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
@@ -271,13 +297,6 @@ class Vec3(tuple):
 
     def __round__(self, ndigits: int | None = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
-
-    def __radd__(self, other: Vec3 | int) -> Vec3:
-        """Reverse add. Required for functionality with sum()"""
-        if other == 0:
-            return self
-        else:
-            return self.__add__(_typing.cast(Vec3, other))
 
     def __lt__(self, other: Vec3) -> bool:
         return abs(self) < abs(other)
@@ -359,7 +378,11 @@ class Vec3(tuple):
 
 
 class Vec4(tuple):
-    """A four-dimensional vector represented as X Y Z W coordinates."""
+    """A four-dimensional vector represented as X Y Z W coordinates.
+
+    `Vec3` is an immutable 2D Vector, including most common operators.
+    As an immutable type, all operations return a new object.
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 4), "0 or 4 values are required for Vec4 types."
@@ -382,7 +405,7 @@ class Vec4(tuple):
         return self[3]
 
     def __len__(self) -> int:
-        return 4
+        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -412,10 +435,17 @@ class Vec4(tuple):
         return Vec4(*(round(v, ndigits) for v in self))
 
     def __radd__(self, other: Vec4 | int) -> Vec4:
-        if other == 0:
-            return self
-        else:
+        try:
             return self.__add__(_typing.cast(Vec4, other))
+        except TypeError as err:
+            if other == 0:      # Required for functionality with sum()
+                return self
+            raise err
+
+    __rsub__ = __sub__
+    __rmul__ = __mul__
+    __rtruediv__ = __truediv__
+    __rfloordiv__ = __floordiv__
 
     def __lt__(self, other: Vec4) -> bool:
         return abs(self) < abs(other)
@@ -492,12 +522,11 @@ class Vec4(tuple):
 class Mat3(tuple):
     """A 3x3 Matrix
 
-    `Mat3` is an immutable 3x3 Matrix, including most common
-    operators.
+    `Mat3` is an immutable 3x3 Matrix, wich includes most common operators.
 
     A Matrix can be created with a list or tuple of 12 values.
     If no values are provided, an "identity matrix" will be created
-    (1.0 on the main diagonal). Mat3 objects are immutable, so
+    (1.0 on the main diagonal). Because Mat3 objects are immutable,
     all operations return a new Mat3 object.
 
     .. note:: Matrix multiplication is performed using the "@" operator.
@@ -585,14 +614,13 @@ class Mat3(tuple):
 class Mat4(tuple):
     """A 4x4 Matrix
 
-    `Mat4` is an immutable 4x4 Matrix, which includs most common
-    operators. This includes class methods for creating orthogonal
-    and perspective projection matrixes, to be used by OpenGL.
+    `Mat4` is an immutable 4x4 Matrix, which includs most common operators.
+    This includes class methods for creating orthogonal and perspective
+    projection matrixes, which can be used directly by OpenGL.
 
-    A Matrix can be created with a list or tuple of 16 values.
-    If no values are provided, an "identity matrix" will be created
-    (1.0 on the main diagonal). Mat4 objects are immutable, so
-    all operations return a new Mat4 object.
+    A Matrix can be created with a list or tuple of 16 values. If no values
+    are provided, an "identity matrix" will be created (1.0 on the main diagonal).
+    Mat4 objects are immutable, so all operations return a new Mat4 object.
 
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
