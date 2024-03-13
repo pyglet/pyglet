@@ -1,4 +1,5 @@
 import pytest
+
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
