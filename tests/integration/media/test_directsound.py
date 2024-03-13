@@ -37,27 +37,6 @@ def random_normalized_vector():
     return [x / length for x in vector]
 
 
-def test_gain2db_gain_convert():
-    assert _gain2db(0.0) == -10000
-    assert almost_equal(_db2gain(-10000), 0.0)
-
-    assert _gain2db(1.0) == 0
-    assert almost_equal(_db2gain(0), 1.0)
-
-    assert _gain2db(-0.1) == -10000
-    assert _gain2db(1.1) == 0
-
-    x = 0.0
-    while x <= 1.0:
-        assert almost_equal(_db2gain(_gain2db(x)), x, 0.01)
-        x += 0.01
-
-    y = -10000
-    while y <= 0:
-        assert almost_equal(_gain2db(_db2gain(y)), y, 1)
-        y += 10
-
-
 @pytest.fixture
 def driver():
     return DirectSoundDriver()

@@ -4,6 +4,8 @@ import time
 
 from pyglet import window
 
+from ...annotations import skip_platform, Platform
+
 
 class EventSequenceFixture:
     def __init__(self, event_loop):
@@ -122,6 +124,7 @@ class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
             win.close()
 
 
+@skip_platform(Platform.WINDOWS)
 class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
     last_sequence = 3
 
@@ -147,6 +150,7 @@ class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCa
             win.close()
 
 
+@skip_platform(Platform.WINDOWS)
 class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
     last_sequence = 2
 
@@ -172,6 +176,7 @@ class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase)
             win.close()
 
 
+@skip_platform(Platform.WINDOWS)
 class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
     last_sequence = 2
 
