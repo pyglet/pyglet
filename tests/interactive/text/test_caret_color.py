@@ -1,6 +1,5 @@
 import pytest
 
-import pyglet.text.layout.incremental
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
@@ -33,7 +32,7 @@ class TestWindow(window.Window):
         )
 
         self.margin = 2
-        self.layout = pyglet.text.layout.incremental.IncrementalTextLayout(
+        self.layout = layout.IncrementalTextLayout(
             self.document,
             self.width - self.margin * 2, self.height - self.margin * 2,
             multiline=True,

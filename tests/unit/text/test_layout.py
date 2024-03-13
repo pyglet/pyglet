@@ -1,12 +1,12 @@
 import pyglet
-import pyglet.text.layout.incremental
+import pyglet.text.layout
 
 
 def test_incrementallayout_get_position_on_line_before_start_of_text():
     single_line_text = "This is a single line of text."
     document = pyglet.text.document.UnformattedDocument(single_line_text)
     font = document.get_font()
-    layout = pyglet.text.layout.incremental.IncrementalTextLayout(document,
+    layout = pyglet.text.layout.IncrementalTextLayout(document,
                                                                   height = font.ascent - font.descent,
                                                                   width = 200,
                                                                   multiline=False)

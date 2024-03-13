@@ -3,8 +3,6 @@ from unittest.mock import Mock, NonCallableMock
 
 import pytest
 
-import pyglet.text.layout
-import pyglet.text.layout.base
 from pyglet.graphics.shader import ShaderProgram
 from pyglet.graphics.vertexdomain import IndexedVertexList
 from pyglet.text import layout, caret
@@ -34,7 +32,7 @@ def disable_automatic_caret_blinking(monkeypatch):
 def mock_layout():
 
     # Create layout mock
-    _layout = NonCallableMock(spec=pyglet.text.layout.base.TextLayout)
+    _layout = NonCallableMock(spec=layout.TextLayout)
     _layout.foreground_decoration_group = NonCallableMock()
     _layout.attach_mock(Mock(), 'push_handlers')
 

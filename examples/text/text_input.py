@@ -5,7 +5,7 @@ mouse focus.
 """
 
 import pyglet
-import pyglet.text.layout.incremental
+import pyglet.text.layout
 
 
 class TextWidget:
@@ -15,7 +15,7 @@ class TextWidget:
         font = self.document.get_font()
         height = font.ascent - font.descent
 
-        self.layout = pyglet.text.layout.incremental.IncrementalTextLayout(self.document, width, height, batch=batch)
+        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, width, height, batch=batch)
         self.layout.position = x, y, 0
         self.caret = pyglet.text.caret.Caret(self.layout)
         # Rectangular outline

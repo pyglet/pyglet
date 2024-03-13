@@ -118,9 +118,15 @@ document; they will be ignored by the built-in text classes.
 .. versionadded:: 1.1
 """
 
+from pyglet.text.layout.base import TextLayout, TextLayoutGroup, TextDecorationGroup, get_default_layout_shader, \
+    get_default_image_layout_shader, get_default_decoration_shader, decoration_fragment_source, \
+    layout_fragment_image_source, layout_fragment_source, layout_vertex_source, decoration_vertex_source
+from pyglet.text.layout.incremental import IncrementalTextLayout, IncrementalTextLayoutGroup, \
+    IncrementalTextDecorationGroup
+from pyglet.text.layout.scrolling import ScrollableTextLayout, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
-from pyglet.text.layout.base import TextLayout
-from pyglet.text.layout.incremental import IncrementalTextLayout
-from pyglet.text.layout.scrolling import ScrollableTextLayout
-
-
+__all__ = ['TextLayout', 'IncrementalTextLayout', 'ScrollableTextLayout', 'TextLayoutGroup', 'TextDecorationGroup',
+           'IncrementalTextLayoutGroup', 'IncrementalTextDecorationGroup', 'ScrollableTextLayoutGroup',
+           'ScrollableTextDecorationGroup', 'get_default_layout_shader', 'get_default_image_layout_shader',
+           'get_default_decoration_shader', 'decoration_fragment_source', 'layout_fragment_image_source',
+           'layout_fragment_source', 'layout_vertex_source', 'decoration_vertex_source']

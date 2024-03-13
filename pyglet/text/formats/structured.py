@@ -6,7 +6,6 @@ from typing import List, TYPE_CHECKING, Optional, Any
 
 import pyglet
 import pyglet.text.layout
-import pyglet.text.layout.base
 
 from pyglet.gl import GL_TEXTURE0, glActiveTexture, glBindTexture, glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA, \
     GL_ONE_MINUS_SRC_ALPHA, glDisable
@@ -66,7 +65,7 @@ class ImageElement(pyglet.text.document.InlineElement):
 
     def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
               visible: bool, anchor_x: float, anchor_y: float) -> None:
-        program = pyglet.text.layout.base.get_default_image_layout_shader()
+        program = pyglet.text.layout.get_default_image_layout_shader()
         group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
         x1 = line_x
         y1 = line_y + self.descent

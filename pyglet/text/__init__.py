@@ -42,8 +42,6 @@ from os.path import dirname as _dirname
 from os.path import splitext as _splitext
 
 import pyglet
-import pyglet.text.layout
-import pyglet.text.layout.base
 
 from pyglet.text import layout, document, caret
 
@@ -193,7 +191,7 @@ def decode_text(text):
     return decoder.decode(text)
 
 
-class DocumentLabel(pyglet.text.layout.base.TextLayout):
+class DocumentLabel(layout.TextLayout):
     """Base label class.
 
     A label is a layout that exposes convenience methods for manipulating the

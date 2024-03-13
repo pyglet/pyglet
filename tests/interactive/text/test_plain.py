@@ -1,6 +1,5 @@
 import pytest
 
-import pyglet.text.layout.incremental
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
@@ -33,10 +32,10 @@ class BaseTestWindow(window.Window):
         self.batch = graphics.Batch()
         self.document = text.decode_text(doctext)
         self.margin = 2
-        self.layout = pyglet.text.layout.incremental.IncrementalTextLayout(self.document,
-                                                                           self.width - self.margin * 2, self.height - self.margin * 2,
-                                                                           multiline=True,
-                                                                           batch=self.batch)
+        self.layout = layout.IncrementalTextLayout(self.document,
+                                                   self.width - self.margin * 2, self.height - self.margin * 2,
+                                                   multiline=True,
+                                                   batch=self.batch)
         self.caret = caret.Caret(self.layout)
         self.push_handlers(self.caret)
 
