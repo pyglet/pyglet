@@ -45,6 +45,10 @@ class Vec2(tuple):
 
     `Vec2` is an immutable 2D Vector, including most common
     operators. As an immutable type, all operations return a new object.
+
+    .. note:: The Python `len` operator returns the number of elements
+          in the vector. To get the vector length, use the `abs`
+          operator.
     """
 
     def __new__(cls, *args):
@@ -60,7 +64,7 @@ class Vec2(tuple):
         return self[1]
 
     def __len__(self) -> int:
-        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
+        return 2
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -227,6 +231,10 @@ class Vec3(tuple):
 
     `Vec3` is an immutable 2D Vector, including most common operators.
     As an immutable type, all operations return a new object.
+
+    .. note:: The Python `len` operator returns the number of elements
+              in the vector. To get the vector length, use the `abs`
+              operator.
     """
 
     def __new__(cls, *args):
@@ -256,7 +264,7 @@ class Vec3(tuple):
         return self.__abs__()
 
     def __len__(self) -> int:
-        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
+        return 3
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -382,6 +390,10 @@ class Vec4(tuple):
 
     `Vec3` is an immutable 2D Vector, including most common operators.
     As an immutable type, all operations return a new object.
+
+    .. note:: The Python `len` operator returns the number of elements
+              in the vector. To get the vector length, use the `abs`
+              operator.
     """
 
     def __new__(cls, *args):
@@ -405,7 +417,7 @@ class Vec4(tuple):
         return self[3]
 
     def __len__(self) -> int:
-        raise NotImplemented("`len` does not support floats. Use `abs` to get the vector length.")
+        return 4
 
     def __hash__(self) -> int:
         return super().__hash__()
