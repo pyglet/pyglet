@@ -101,11 +101,11 @@ attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
 
 Math module
 -----------
-In the :py:module:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
+In the :py:mod:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
 :py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
-immutable. Any operations will return a new object, and all vector objects are
-now hashable. This has major performance benefits, and matches how the Matrix
-types are implemented.
+immutable; all operations will return a new object. In addition, all vector
+objects are now hashable. This has major performance benefits, and matches how
+the Matrix types are implemented.
 
 Canvas module
 -------------
@@ -113,8 +113,9 @@ The `pyglet.canvas` module has been renamed to `pyglet.display`, as the canvas
 concept was never fully fleshed out. The canvas concept appears to have been
 meant to allow arbitrary renderable areas. This can now be easily accomplished
 with Framebuffers. The name `display` is a more accurate representation of what
-the code in the module actually relates to. The usage is the same::
+the code in the module actually relates to. The usage is the same, minus the
+name change::
 
-    pyglet.canvas.get_display()     # old pyglet 2.0
-    pyglet.display.get_display()    # new pyglet 2.1
+    my_display = pyglet.canvas.get_display()     # old pyglet 2.0
+    my_display = pyglet.display.get_display()    # new pyglet 2.1
 

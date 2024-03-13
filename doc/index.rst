@@ -74,8 +74,8 @@ If you are migrating from an older version of pyglet, please read through
 
    modules/pyglet
    modules/app
-   modules/canvas
    modules/clock
+   modules/display
    modules/event
    modules/font
    modules/gl
