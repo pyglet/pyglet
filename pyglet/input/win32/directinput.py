@@ -73,15 +73,16 @@ class DirectInputDevice(base.Device):
         self._set_format()
 
         self.id_name = device_instance.tszProductName
-        self.id_product_guid = format(device_instance.guidProduct.Data1, "08x")
+        self.product_guid = device_instance.guidProduct
 
     def __del__(self):
         self._device.Release()
 
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
-        first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
-        second = self.id_product_guid[2:4] + self.id_product_guid[0:2]
+        product_guid = format(self.product_guid.Data1, "08x")
+        first = product_guid[6:8] + product_guid[4:6]
+        second = product_guid[2:4] + product_guid[0:2]
         return f"03000000{first}0000{second}000000000000"
 
     def _init_controls(self):
@@ -181,7 +182,8 @@ class DirectInputDevice(base.Device):
             self.controls[index].value = event.dwData
 
     def matches(self, guid_id, device_instance):
-        if (self.id_product_guid == guid_id and
+        self_guid_id = format(self.product_guid.Data1, "08x")
+        if (self_guid_id == guid_id and
                 self.id_name == device_instance.contents.tszProductName and
                 self._type == device_instance.contents.dwDevType & 0xff and
                 self._subtype == device_instance.contents.dwDevType & 0xff00):
