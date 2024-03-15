@@ -159,4 +159,4 @@ def add_mappings_from_string(string) -> None:
         if line.startswith('#'):
             continue
         line = line.strip()
-        mapping_list.append(line)
+        mapping_list.insert(0, line)
