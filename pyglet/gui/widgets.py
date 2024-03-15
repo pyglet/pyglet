@@ -23,7 +23,8 @@ class WidgetBase(EventDispatcher):
     def _set_enabled(self, enabled: bool) -> None:
         """Internal hook for setting enabled.
 
-        Override this in subclasses.
+        Override this in subclasses to perform effects when a widget is
+        enabled or disabled.
         """
         pass
 
@@ -31,8 +32,14 @@ class WidgetBase(EventDispatcher):
     def enabled(self) -> bool:
         """Get/set whether this widget is enabled.
 
-        Override this property on subclasses to respond to changes in
-        status cleanly.
+        To react to changes in this value, override
+        :py:meth:`._set_enabled` on widgets. For example, you may want
+        to cue the user by:
+
+        * Play an animation
+        * Set a highlight color or effect around
+        * Play a sound
+
         """
         return self._enabled
 
