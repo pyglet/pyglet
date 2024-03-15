@@ -36,9 +36,9 @@ class WidgetBase(EventDispatcher):
         :py:meth:`._set_enabled` on widgets. For example, you may want
         to cue the user by:
 
-        * Play an animation
-        * Set a highlight color or effect around
-        * Play a sound
+        * Playing an animation and/or sound
+        * Setting a highlight color
+        * Displaying a toast or notification
 
         """
         return self._enabled
