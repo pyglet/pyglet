@@ -18,7 +18,37 @@ class WidgetBase(EventDispatcher):
         self._height = height
         self._bg_group = None
         self._fg_group = None
-        self.enabled = True
+        self._enabled = True
+
+    def _set_enabled(self, enabled: bool) -> None:
+        """Internal hook for setting enabled.
+
+        Override this in subclasses to perform effects when a widget is
+        enabled or disabled.
+        """
+        pass
+
+    @property
+    def enabled(self) -> bool:
+        """Get/set whether this widget is enabled.
+
+        To react to changes in this value, override
+        :py:meth:`._set_enabled` on widgets. For example, you may want
+        to cue the user by:
+
+        * Playing an animation and/or sound
+        * Setting a highlight color
+        * Displaying a toast or notification
+
+        """
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, new_enabled: bool) -> None:
+        if self._enabled == new_enabled:
+            return
+        self._enabled = new_enabled
+        self._set_enabled(new_enabled)
 
     def update_groups(self, order):
         pass
