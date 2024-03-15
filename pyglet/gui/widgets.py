@@ -20,6 +20,13 @@ class WidgetBase(EventDispatcher):
         self._fg_group = None
         self._enabled = True
 
+    def _set_enabled(self, enabled: bool) -> None:
+        """Internal hook for setting enabled.
+
+        Override this in subclasses.
+        """
+        pass
+
     @property
     def enabled(self) -> bool:
         """Get/set whether this widget is enabled.
@@ -34,6 +41,7 @@ class WidgetBase(EventDispatcher):
         if self._enabled == new_enabled:
             return
         self._enabled = new_enabled
+        self._set_enabled(new_enabled)
 
     def update_groups(self, order):
         pass
