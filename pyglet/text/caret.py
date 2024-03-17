@@ -470,14 +470,17 @@ class Caret:
                 self._delete_selection()
             elif self._position < len(self._layout.document.text):
                 self._layout.document.delete_text(self._position, self._position + 1)
-        elif self._mark is not None and not select:
-            self._mark = None
-            self._layout.set_selection(0, 0)
 
         if motion == key.MOTION_LEFT:
-            self.position = max(0, self.position - 1)
+            if self.mark is not None and not select:
+                self.position = self._layout._selection_start
+            else:
+                self.position = max(0, self.position - 1)
         elif motion == key.MOTION_RIGHT:
-            self.position = min(len(self._layout.document.text), self.position + 1)
+            if self.mark is not None and not select:
+                self.position = self._layout._selection_end
+            else:
+                self.position = min(len(self._layout.document.text), self.position + 1)
         elif motion == key.MOTION_UP:
             self.line = max(0, self.line - 1)
         elif motion == key.MOTION_DOWN:
@@ -511,6 +514,10 @@ class Caret:
                 self.position = 0
             else:
                 self.position = m.start()
+
+        if self._mark is not None and not select:
+            self._mark = None
+            self._layout.set_selection(0, 0)
 
         self._next_attributes.clear()
         self._nudge()

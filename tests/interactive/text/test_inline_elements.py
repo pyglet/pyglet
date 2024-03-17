@@ -1,4 +1,8 @@
+from typing import Tuple
+
 import pytest
+
+import pyglet.text.layout
 from tests.base.interactive import InteractiveTestCase
 
 import pyglet
@@ -68,24 +72,39 @@ Aliquam erat volutpat.
 
 
 class TestElement(document.InlineElement):
-    vertex_list = None
 
-    def place(self, layout, x, y, z):
+    def __init__(self, ascent, descent, advance):
+        self.vertex_list = None
+        super().__init__(ascent, descent, advance)
+
+    def place(self, layout, x, y, z, line_x, line_y, rotation, visible, anchor_x, anchor_y):
         group = layout.foreground_decoration_group
         program = pyglet.text.layout.get_default_decoration_shader()
 
-        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
-                                                       [0, 1, 2, 0, 2, 3],
-                                                       colors=('Bn', (200, 200, 200, 255) * 4),
-                                                       group=group, batch=layout.batch)
+        x1 = line_x
+        y1 = line_y + self.descent
+        x2 = line_x + self.advance
+        y2 = line_y + self.ascent - self.descent
 
-        y += self.descent
-        w = self.advance
-        h = self.ascent - self.descent
-        self.vertex_list.position[:] = (x, y, z,
-                                        x + w, y, z,
-                                        x + w, y + h, z,
-                                        x, y + h, z)
+        self.vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                                  layout.batch, group,
+                                                  position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
+                                                  colors=('Bn', (200, 200, 200, 255) * 4),
+                                                  translation=('f', (x, y, z) * 4),
+                                                  visible=('f', (visible,) * 4),
+                                                  rotation=('f', (rotation,) * 4),
+                                                  anchor=('f', (anchor_x, anchor_y) * 4)
+                                                  )
+    def update_translation(self, x: float, y: float, z: float):
+        self.vertex_list.translation[:] = (x, y, z) * self.vertex_list.count
+
+    def update_view_translation(self, translate_x: float, translate_y: float):
+        self.vertex_list.view_translation[:] = (-translate_x, -translate_y, 0) * self.vertex_list.count
+
+    def update_rotation(self, rotation: float): ...
+    def update_visibility(self, visible: bool): ...
+    def update_anchor(self, anchor_x: float, anchor_y: float): ...
+    def update_color(self, color: Tuple[int, int, int, int]): ...
 
     def remove(self, layout):
         self.vertex_list.delete()

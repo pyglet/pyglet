@@ -2,11 +2,7 @@
 import ctypes
 import sys
 
-from typing import Union
-
-__all__ = [
-    "Buffer",
-]
+from typing import Union, Literal
 
 
 if sys.version_info >= (3, 12):
@@ -14,3 +10,14 @@ if sys.version_info >= (3, 12):
 else:
     # Best-effort placeholder for older Python versions
     Buffer = Union[bytes, bytearray, memoryview, ctypes.Array]
+
+HorizontalAlign = Literal["left", "center", "right"]
+AnchorX = Literal["left", "center", "right"]
+AnchorY = Literal["top", "bottom", "center", "baseline"]
+ContentVAlign = Literal["left", "center", "top"]
+
+
+
+__all__ = [
+    "Buffer", "HorizontalAlign", "AnchorX", "AnchorY", "ContentVAlign"
+]
