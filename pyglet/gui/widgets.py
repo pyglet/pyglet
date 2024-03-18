@@ -250,6 +250,12 @@ class PushButton(WidgetBase):
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
+    def on_press(self):
+        """Event: Dispatched when the button is clicked."""
+
+    def on_release(self):
+        """Event: Dispatched when the button is released."""
+
 
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
@@ -275,6 +281,9 @@ class ToggleButton(PushButton):
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._get_release_image(x, y)
+
+    def on_toggle(self, value: bool):
+        """Event: returns True or False to indicate the current state."""
 
 
 ToggleButton.register_event_type('on_toggle')
@@ -394,6 +403,9 @@ class Slider(WidgetBase):
         if not self.enabled:
             return
         self._in_update = False
+
+    def on_change(self, value: float):
+        """Event: Returns the current value when the slider is changed."""
 
 
 Slider.register_event_type('on_change')
@@ -552,10 +564,8 @@ class TextEntry(WidgetBase):
         if self._focus:
             self._caret.on_text_motion_select(motion)
 
-    def on_commit(self, text):
-        if not self.enabled:
-            return
-        """Text has been commited via Enter/Return key."""
+    def on_commit(self, text: str):
+        """Event: dispatches the current text when commited via Enter/Return key."""
 
 
 TextEntry.register_event_type('on_commit')
