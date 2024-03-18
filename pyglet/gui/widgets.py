@@ -400,9 +400,10 @@ Slider.register_event_type('on_change')
 
 
 class TextEntry(WidgetBase):
-    """Instance of a text entry widget.
-
-    Allows the user to enter and submit text.
+    """Instance of a text entry widget. Allows the user to enter and submit text.
+    
+    Triggers the event 'on_commit', when the user hits the Enter or Return key.
+    The current text string is passed along with the event.
     """
 
     def __init__(self, text, x, y, width,
