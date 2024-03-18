@@ -840,6 +840,15 @@ class BezierCurve(ShapeBase):
         self._t = value
         self._update_vertices()
 
+    @property
+    def thickness(self):
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness):
+        self._thickness = thickness
+        self._update_vertices()
+
 
 class Circle(ShapeBase):
     def __init__(self, x, y, radius, segments=None, color=(255, 255, 255, 255),

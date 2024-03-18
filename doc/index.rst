@@ -54,7 +54,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/media
    programming_guide/text
    programming_guide/resources
-   programming_guide/graphics
+   programming_guide/rendering
    programming_guide/events
    programming_guide/time
    programming_guide/context
