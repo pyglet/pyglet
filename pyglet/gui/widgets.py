@@ -202,7 +202,6 @@ class PushButton(WidgetBase):
         self._depressed_img = depressed
         self._hover_img = hover or depressed
 
-        # TODO: add `draw` method or make Batch required.
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
