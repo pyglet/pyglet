@@ -749,31 +749,22 @@ This example program is located in
 `examples/programming_guide/animation.py`, along with a sample GIF animation
 file.
 
+Buffer images
+-------------
 
-Framebuffers
-------------
-pyglet provides :py:class:`~pyglet.image.FrameBuffer` and :py:class:`~pyglet.image.RenderBuffer`
-classes to simplify working with framebuffers. These classes work the way you
-would expect::
-
-    framebuffer = pyglet.image.Framebuffer()
-
-    color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
-    depth_buffer = pyglet.image.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
-
-    framebuffer.attach_texture(color_buffer)
-    framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
-
-    # When drawing:
-    framebuffer.bind()
-
-
-pyglet also provides a simple abstraction over the "default" framebuffer,
-as components of the :py:class:`~pyglet.image.AbstractImage` hierarchy.
+pyglet provides a basic representation of the framebuffer as components of the
+:py:class:`~pyglet.image.AbstractImage` hierarchy.  At this stage this
+representation is based off OpenGL 1.1, and there is no support for newer
+features such as framebuffer objects.  Of course, this doesn't prevent you
+using framebuffer objects in your programs -- :py:mod:`pyglet.gl` provides
+this functionality -- just that they are not represented as
+:py:class:`~pyglet.image.AbstractImage` types.
 
 .. figure:: img/buffer_image.png
 
     The :py:class:`~pyglet.image.BufferImage` hierarchy.
+
+A framebuffer consists of
 
 * One or more colour buffers, represented by
   :py:class:`~pyglet.image.ColorBufferImage`
@@ -781,6 +772,8 @@ as components of the :py:class:`~pyglet.image.AbstractImage` hierarchy.
   :py:class:`~pyglet.image.DepthBufferImage`
 * An optional stencil buffer, with each bit represented by
   :py:class:`~pyglet.image.BufferImageMask`
+* Any number of auxiliary buffers, also represented by
+  :py:class:`~pyglet.image.ColorBufferImage`
 
 You cannot create the buffer images directly; instead you must obtain
 instances via the :py:class:`~pyglet.image.BufferManager`.
@@ -794,11 +787,10 @@ inaccessible, and stereo contexts are not supported by the buffer manager)::
     color_buffer = buffers.get_color_buffer()
 
 This buffer can be treated like any other image.  For example, you could copy
-it to a texture, obtain its pixel data, save it to a file, and so on. This can
-be useful if you want to save a "screen shot" of the running application::
-
-    image_data = color_buffer.get_image_data()
-    image_data.save("screenshot.png")
+it to a texture, obtain its pixel data, save it to a file, and so on.  Using
+the :py:attr:`~pyglet.image.AbstractImage.texture` attribute is particularly
+useful, as it allows you to perform multipass rendering effects without
+needing a render-to-texture extension.
 
 The depth buffer can be obtained similarly::
 
