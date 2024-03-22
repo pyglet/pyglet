@@ -752,16 +752,20 @@ file.
 
 Framebuffers
 ------------
-pyglet provides :py:class:`~pyglet.image.FrameBuffer` and :py:class:`~pyglet.image.RenderBuffer`
-classes to simplify working with framebuffers. These classes work the way you
-would expect::
+To simplify working with framebuffers, pyglet provides the
+:py:class:`~pyglet.image.FrameBuffer` and :py:class:`~pyglet.image.RenderBuffer`
+classes. These work as you would expect, and allow a simple way to add texture
+attachments. Attachment and target types can be specified as ::
 
-    framebuffer = pyglet.image.Framebuffer()
+    from pyglet.gl import *
 
+    # Prepare the buffers. One texture (for easy access), and one Renderbuffer:
     color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
     depth_buffer = pyglet.image.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
 
-    framebuffer.attach_texture(color_buffer)
+    # Create a Framebuffer, and attach:
+    framebuffer = pyglet.image.Framebuffer()
+    framebuffer.attach_texture(color_buffer, attachment=GL_COLOR_ATTACHMENT0)
     framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
 
     # When drawing:
