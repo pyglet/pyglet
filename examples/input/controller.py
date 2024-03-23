@@ -19,15 +19,21 @@ class ControllerDisplay:
     def __init__(self, batch):
 
         self.label = pyglet.text.Label("No Controller connected.", x=10, y=window.height - 20,
-                                      multiline=True, width=720, batch=batch)
+                                       multiline=True, width=720, batch=batch)
 
         self.left_trigger = Rectangle(70, 310, 40, 10, batch=batch)
         self.right_trigger = Rectangle(610, 310, 40, 10, batch=batch)
         self.d_pad = Rectangle(280, 185, 10, 10, batch=batch)
+
         self.left_stick = Arc(180, 240, 20, batch=batch)
-        self.left_stick_label = pyglet.text.Label("(0.0, 0.0)", x=180, y=140, anchor_x='center', batch=batch)
+        self.left_stick_label = pyglet.text.Label("(0.00, 0.00)", x=180, y=50, anchor_x='center', batch=batch)
+        self.left_stick_bar_x = Rectangle(180, 30, 0, 10, batch=batch)
+        self.left_stick_bar_y = Rectangle(180, 10, 0, 10, batch=batch)
+
         self.right_stick = Arc(540, 240, 20, batch=batch)
-        self.right_stick_label = pyglet.text.Label("(0.0, 0.0)", x=540, y=140, anchor_x='center', batch=batch)
+        self.right_stick_label = pyglet.text.Label("(0.00, 0.00)", x=540, y=50, anchor_x='center', batch=batch)
+        self.right_stick_bar_x = Rectangle(540, 30, 0, 10, batch=batch)
+        self.right_stick_bar_y = Rectangle(540, 10, 0, 10, batch=batch)
 
         self.l_outline1 = Arc(180, 240, 75, color=(44, 44, 44), batch=batch)
         self.l_outline2 = Arc(285, 190, 35, color=(44, 44, 44), batch=batch)
@@ -74,10 +80,14 @@ class ControllerDisplay:
     def on_stick_motion(self, controller, stick, xvalue, yvalue):
         if stick == "leftstick":
             self.left_stick.position = 180+xvalue*50, 240+yvalue*50
-            self.left_stick_label.text = f"({round(xvalue, 1)}, {round(yvalue, 1)})"
+            self.left_stick_label.text = f"({xvalue:.2f}, {yvalue:.2f})"
+            self.left_stick_bar_x.width = xvalue * 100
+            self.left_stick_bar_y.width = yvalue * 100
         elif stick == "rightstick":
             self.right_stick.position = 540+xvalue*50, 240+yvalue*50
-            self.right_stick_label.text = f"({round(xvalue, 1)}, {round(yvalue, 1)})"
+            self.right_stick_label.text = f"({xvalue:.2f}, {yvalue:.2f})"
+            self.right_stick_bar_x.width = xvalue * 100
+            self.right_stick_bar_y.width = yvalue * 100
 
     def on_trigger_motion(self, controller, trigger, value):
         if trigger == "lefttrigger":
