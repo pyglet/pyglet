@@ -1,3 +1,7 @@
+__all__ = [
+    'Frame',
+    'MovableFrame',
+]
 
 class Frame:
     """The base Frame object, implementing a 2D spatial hash.
