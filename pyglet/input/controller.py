@@ -55,7 +55,7 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
 class Relation:
     __slots__ = 'control_type', 'index', 'sign'
 
-    def __init__(self, control_type, index, sign):
+    def __init__(self, control_type, index, sign=Sign.DEFAULT):
         self.control_type = control_type
         self.index = index
         self.sign = sign
