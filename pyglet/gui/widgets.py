@@ -221,7 +221,6 @@ class PushButton(WidgetBase):
         self._depressed_img = depressed
         self._hover_img = hover or depressed
 
-        # TODO: add `draw` method or make Batch required.
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
@@ -270,6 +269,12 @@ class PushButton(WidgetBase):
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
+    def on_press(self):
+        """Event: Dispatched when the button is clicked."""
+
+    def on_release(self):
+        """Event: Dispatched when the button is released."""
+
 
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
@@ -295,6 +300,9 @@ class ToggleButton(PushButton):
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._get_release_image(x, y)
+
+    def on_toggle(self, value: bool):
+        """Event: returns True or False to indicate the current state."""
 
 
 ToggleButton.register_event_type('on_toggle')
@@ -416,14 +424,18 @@ class Slider(WidgetBase):
             return
         self._in_update = False
 
+    def on_change(self, value: float):
+        """Event: Returns the current value when the slider is changed."""
+
 
 Slider.register_event_type('on_change')
 
 
 class TextEntry(WidgetBase):
-    """Instance of a text entry widget.
-
-    Allows the user to enter and submit text.
+    """Instance of a text entry widget. Allows the user to enter and submit text.
+    
+    Triggers the event 'on_commit', when the user hits the Enter or Return key.
+    The current text string is passed along with the event.
     """
 
     def __init__(self, text, x, y, width,
@@ -573,10 +585,8 @@ class TextEntry(WidgetBase):
         if self._focus:
             self._caret.on_text_motion_select(motion)
 
-    def on_commit(self, text):
-        if not self.enabled:
-            return
-        """Text has been commited via Enter/Return key."""
+    def on_commit(self, text: str):
+        """Event: dispatches the current text when commited via Enter/Return key."""
 
 
 TextEntry.register_event_type('on_commit')

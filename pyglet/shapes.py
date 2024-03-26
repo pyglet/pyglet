@@ -361,8 +361,9 @@ class ShapeBase(ABC):
         as the Python garbage collector will not necessarily call the
         finalizer as soon as the sprite falls out of scope.
         """
-        self._vertex_list.delete()
-        self._vertex_list = None
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
+            self._vertex_list = None
 
     @property
     def x(self):

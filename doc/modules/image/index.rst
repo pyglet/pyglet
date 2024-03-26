@@ -8,6 +8,7 @@ pyglet.image
 
    atlas
    animation
+   buffer
 
 .. rubric:: Details
 
