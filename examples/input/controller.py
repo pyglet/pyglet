@@ -72,12 +72,12 @@ class ControllerDisplay:
     def on_stick_motion(self, controller, stick, vector):
         if stick == "leftstick":
             self.left_stick.position = Vec2(180, 240) + vector * 50
-            self.left_stick_label.text = f"({vector})"
+            self.left_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
             self.left_stick_bar_x.width = vector.x * 100
             self.left_stick_bar_y.width = vector.y * 100
         elif stick == "rightstick":
             self.right_stick.position = Vec2(540, 240) + vector * 50
-            self.right_stick_label.text = f"({vector})"
+            self.right_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
             self.right_stick_bar_x.width = vector.x * 100
             self.right_stick_bar_y.width = vector.y * 100
 

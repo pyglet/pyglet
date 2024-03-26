@@ -571,10 +571,6 @@ class Controller(EventDispatcher):
             `righty` : float
             `lefttrigger` : float
             `righttrigger` : float
-            `dpup` : bool
-            `dpdown` : bool
-            `dpleft` : bool
-            `dpright` : bool
             `dpadx`: float
             `dpady`: float
 
@@ -607,11 +603,6 @@ class Controller(EventDispatcher):
         self.righty: float = 0.0
         self.dpadx: float = 0.0
         self.dpady: float = 0.0
-        # Default signs if bound to axis:
-        self._dpup_sign = Sign.POSITIVE
-        self._dpdown_sign = Sign.NEGATIVE
-        self._dpleft_sign = Sign.NEGATIVE
-        self._dpright_sign = Sign.POSITIVE
 
         self._button_controls = []
         self._axis_controls = []
@@ -629,23 +620,28 @@ class Controller(EventDispatcher):
         tscale = 1.0 / (control.max - control.min)
         scale = 2.0 / (control.max - control.min)
         bias = -1.0 - control.min * scale
+        sign = 1.0
         if control.inverted:
             scale = -scale
             bias = -bias
 
-            if axis_name in ("dpup", "dpdown"):
-                @control.event
-                def on_change(value):
-                    normalized_value = value * scale + bias
-                    self.dpady = round(normalized_value)
-                    self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+        dpad_defaults = {'dpup': Sign.POSITIVE, 'dpdown': Sign.NEGATIVE,
+                         'dpleft': Sign.NEGATIVE, 'dpright': Sign.POSITIVE}
 
-            elif axis_name in ("dpleft", "dpright"):
-                @control.event
-                def on_change(value):
-                    normalized_value = value * scale + bias
-                    self.dpadx = round(normalized_value)
-                    self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+        if relation.sign not in (Sign.DEFAULT, dpad_defaults.get(axis_name)):
+            sign = -1.0
+
+        if axis_name in ("dpup", "dpdown"):
+            @control.event
+            def on_change(value):
+                self.dpady = round(value * scale * sign + bias)     # normalized
+                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+
+        elif axis_name in ("dpleft", "dpright"):
+            @control.event
+            def on_change(value):
+                self.dpadx = round(value * scale * sign + bias)     # normalized
+                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         elif axis_name in ("lefttrigger", "righttrigger"):
             @control.event
@@ -671,10 +667,12 @@ class Controller(EventDispatcher):
     def _bind_button_control(self, relation, control, button_name):
 
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
+            defaults = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
+                        'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}
+
             @control.event
             def on_change(value):
-                target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                                'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[button_name]
+                target, bias = defaults[button_name]
                 setattr(self, target, bias * value)
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
         else:

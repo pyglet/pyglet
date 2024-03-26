@@ -113,7 +113,7 @@ def _parse_mapping(mapping_string):
         elif relation_string.startswith("h0"):  # Hat
             relations[key] = Relation("hat0", int(relation_string.split(".")[1]), sign)
         else:
-            _warnings.warn(f"Skipping unknown relation type: '{relation_string}'")
+            pass
 
     return relations
 
