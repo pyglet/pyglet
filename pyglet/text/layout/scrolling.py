@@ -105,7 +105,9 @@ class ScrollableTextLayout(TextLayout):
     _translate_x: int = 0
     _translate_y: int = 0
 
-    def __init__(self, document: AbstractDocument, width: int, height: int, x: float = 0, y: float = 0, z: float = 0,
+    def __init__(self, document: AbstractDocument,
+                 x: float = 0, y: float = 0, z: float = 0,
+                 width: int = None, height: int = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
                  dpi: Optional[float] = None, batch: Optional[Batch] = None, group: Optional[graphics.Group] = None,
                  program: Optional[ShaderProgram] = None, wrap_lines: bool = True) -> None:
@@ -113,7 +115,7 @@ class ScrollableTextLayout(TextLayout):
         if width is None or height is None:
             raise Exception("Invalid size. ScrollableTextLayout width or height cannot be None.")
 
-        super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
+        super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation, multiline, dpi, batch, group,
                          program, wrap_lines)
 
     def _update_scissor_area(self) -> None:

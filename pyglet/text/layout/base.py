@@ -823,10 +823,10 @@ class TextLayout:
     _multiline: bool = False
     _visible: bool = True
 
-    def __init__(self, document: AbstractDocument, width: Optional[int] = None, height: Optional[int] = None,
-                 x: float = 0,
-                 y: float = 0, z: float = 0, anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom',
-                 rotation: float = 0,
+    def __init__(self, document: AbstractDocument,
+                 x: float = 0, y: float = 0, z: float = 0,
+                 width: Optional[int] = None, height: Optional[int] = None,
+                 anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0,
                  multiline: bool = False, dpi: Optional[float] = None, batch: Batch = None,
                  group: Optional[graphics.Group] = None, program: Optional[ShaderProgram] = None,
                  wrap_lines: bool = True, init_document: bool = True) -> None:
