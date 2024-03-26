@@ -12,7 +12,6 @@ the same format as originated by the `SDL` library, which has become a
 semi-standard and is in common use. Most popular controllers are included in
 the built-in database, and additional mappings can be added at runtime.
 
-
 Some Joysticks, such as Flight Sticks, etc., do not necessarily fit into the
 layout (and limitations) of GameControllers. For those such devices, it is
 recommended to use the Joystick interface instead.
@@ -25,6 +24,7 @@ import os as _os
 import sys as _sys
 import warnings as _warnings
 
+from .base import Sign
 from .controller_db import mapping_list
 
 
@@ -53,15 +53,15 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
 
 
 class Relation:
-    __slots__ = 'control_type', 'index', 'inverted'
+    __slots__ = 'control_type', 'index', 'sign'
 
-    def __init__(self, control_type, index, inverted=False):
+    def __init__(self, control_type, index, sign):
         self.control_type = control_type
         self.index = index
-        self.inverted = inverted
+        self.sign = sign
 
     def __repr__(self):
-        return f"Relation(type={self.control_type}, index={self.index}, inverted={self.inverted})"
+        return f"Relation(type={self.control_type}, index={self.index}, sign={self.sign})"
 
 
 def _parse_mapping(mapping_string):
@@ -92,26 +92,28 @@ def _parse_mapping(mapping_string):
         if key not in valid_keys:
             continue
 
-        # Look for specific flags to signify inverted axis:
+        # Look for specific flags to signify axis sign:
         if "+" in relation_string:
             relation_string = relation_string.strip('+')
-            inverted = False
+            sign = Sign.POSITIVE
         elif "-" in relation_string:
             relation_string = relation_string.strip('-')
-            inverted = True
+            sign = Sign.NEGATIVE
         elif "~" in relation_string:
             relation_string = relation_string.strip('~')
-            inverted = True
+            sign = Sign.INVERTED
         else:
-            inverted = False
+            sign = Sign.DEFAULT
 
         # All relations will be one of (Button, Axis, or Hat).
         if relation_string.startswith("b"):  # Button
-            relations[key] = Relation("button", int(relation_string[1:]), inverted)
+            relations[key] = Relation("button", int(relation_string[1:]), sign)
         elif relation_string.startswith("a"):  # Axis
-            relations[key] = Relation("axis", int(relation_string[1:]), inverted)
+            relations[key] = Relation("axis", int(relation_string[1:]), sign)
         elif relation_string.startswith("h0"):  # Hat
-            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), inverted)
+            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), sign)
+        else:
+            _warnings.warn(f"Skipping unknown relation type: '{relation_string}'")
 
     return relations
 
