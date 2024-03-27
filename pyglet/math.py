@@ -84,7 +84,7 @@ class Vec2(_typing.NamedTuple):
     def __neg__(self) -> Vec2:
         return Vec2(-self.x, -self.y)
 
-    def __round__(self, ndigits: int | None = None) -> Vec2:
+    def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
 
     def __lt__(self, other: Vec2) -> bool:
@@ -261,7 +261,7 @@ class Vec3(_typing.NamedTuple):
     def __neg__(self) -> Vec3:
         return Vec3(-self.x, -self.y, -self.z)
 
-    def __round__(self, ndigits: int | None = None) -> Vec3:
+    def __round__(self, ndigits: _typing.Optional[int]  = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
 
     def __lt__(self, other: Vec3) -> bool:
@@ -376,7 +376,7 @@ class Vec4(_typing.NamedTuple):
     def __neg__(self) -> Vec4:
         return Vec4(-self.x, -self.y, -self.z, -self.w)
 
-    def __round__(self, ndigits: int | None = None) -> Vec4:
+    def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec4:
         return Vec4(*(round(v, ndigits) for v in self))
 
     def __radd__(self, other: Vec4 | int) -> Vec4:
@@ -508,7 +508,7 @@ class Mat3(tuple):
     def __neg__(self) -> Mat3:
         return Mat3(-v for v in self)
 
-    def __round__(self, ndigits: int | None = None) -> Mat3:
+    def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat3:
         return Mat3(round(v, ndigits) for v in self)
 
     def __mul__(self, other: object) -> _typing.NoReturn:
@@ -775,7 +775,7 @@ class Mat4(tuple):
                      ndet * (self[0] * i - self[1] * n + self[2] * q),
                      pdet * (self[0] * l - self[1] * p + self[2] * r)))
 
-    def __round__(self, ndigits: int | None = None) -> Mat4:
+    def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat4:
         return Mat4(round(v, ndigits) for v in self)
 
     def __mul__(self, other: int) -> _typing.NoReturn:
