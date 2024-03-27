@@ -28,8 +28,7 @@ from .base import Sign
 from .controller_db import mapping_list
 
 
-_env_config = _os.environ.get('SDL_GAMECONTROLLERCONFIG')
-if _env_config:
+if _env_config := _os.environ.get('SDL_GAMECONTROLLERCONFIG'):
     # insert at the front of the list
     mapping_list.insert(0, _env_config)
 

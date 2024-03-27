@@ -74,6 +74,7 @@ class DirectInputDevice(base.Device):
 
         self.id_name = device_instance.tszProductName
         self.product_guid = device_instance.guidProduct
+        self.instance_guid = device_instance.guidInstance
 
     def __del__(self):
         self._device.Release()
