@@ -65,7 +65,7 @@ class Vec2(_typing.NamedTuple):
     def __floordiv__(self, scalar: float) -> Vec2:
         return Vec2(self.x // scalar, self.y // scalar)
 
-    def __radd__(self, other: Vec2 | int) -> Vec2:
+    def __radd__(self, other: _typing.Union[Vec2, int]) -> Vec2:
         try:
             return self.__add__(_typing.cast(Vec2, other))
         except TypeError as err:
@@ -242,7 +242,7 @@ class Vec3(_typing.NamedTuple):
     def __floordiv__(self, scalar: float) -> Vec3:
         return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
 
-    def __radd__(self, other: Vec3 | int) -> Vec3:
+    def __radd__(self, other: _typing.Union[Vec3, int]) -> Vec3:
         try:
             return self.__add__(_typing.cast(Vec3, other))
         except TypeError as err:
@@ -379,7 +379,7 @@ class Vec4(_typing.NamedTuple):
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec4:
         return Vec4(*(round(v, ndigits) for v in self))
 
-    def __radd__(self, other: Vec4 | int) -> Vec4:
+    def __radd__(self, other: _typing.Union[Vec4, int]) -> Vec4:
         try:
             return self.__add__(_typing.cast(Vec4, other))
         except TypeError as err:
