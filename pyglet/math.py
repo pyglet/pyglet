@@ -193,7 +193,7 @@ class Vec2(_typing.NamedTuple):
     def index(self, *args):
         raise NotImplemented("Vec types can be indexed directly.")
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
@@ -329,7 +329,7 @@ class Vec3(_typing.NamedTuple):
     def index(self, *args):
         raise NotImplemented("Vec types can be indexed directly.")
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
@@ -450,7 +450,7 @@ class Vec4(_typing.NamedTuple):
     def index(self, *args):
         raise NotImplemented("Vec types can be indexed directly.")
 
-    def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
+    def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
             # Allow swizzled getting of attrs
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
