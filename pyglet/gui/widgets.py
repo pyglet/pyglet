@@ -1,6 +1,8 @@
 """Display different types of interactive widgets.
 """
 
+from __future__ import annotations
+
 import pyglet
 
 from pyglet.event import EventDispatcher
@@ -250,14 +252,14 @@ class PushButton(WidgetBase):
             return
         self._sprite.image = self._pressed_img
         self._pressed = True
-        self.dispatch_event('on_press')
+        self.dispatch_event('on_press', self)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
         self._pressed = False
-        self.dispatch_event('on_release')
+        self.dispatch_event('on_release', self)
 
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.enabled or self._pressed:
@@ -269,10 +271,10 @@ class PushButton(WidgetBase):
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
-    def on_press(self):
+    def on_press(self, widget: PushButton):
         """Event: Dispatched when the button is clicked."""
 
-    def on_release(self):
+    def on_release(self, widget: PushButton):
         """Event: Dispatched when the button is released."""
 
 
@@ -294,14 +296,14 @@ class ToggleButton(PushButton):
             return
         self._pressed = not self._pressed
         self._sprite.image = self._pressed_img if self._pressed else self._get_release_image(x, y)
-        self.dispatch_event('on_toggle', self._pressed)
+        self.dispatch_event('on_toggle', self, self._pressed)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._get_release_image(x, y)
 
-    def on_toggle(self, value: bool):
+    def on_toggle(self, widget: ToggleButton, value: bool):
         """Event: returns True or False to indicate the current state."""
 
 
@@ -398,7 +400,7 @@ class Slider(WidgetBase):
     def _update_knob(self, x):
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
         self._value = abs(((self._knob_spr.x - self._min_knob_x) * 100) / (self._min_knob_x - self._max_knob_x))
-        self.dispatch_event('on_change', self._value)
+        self.dispatch_event('on_change', self, self._value)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled:
@@ -424,7 +426,7 @@ class Slider(WidgetBase):
             return
         self._in_update = False
 
-    def on_change(self, value: float):
+    def on_change(self, widget: Slider, value: float):
         """Event: Returns the current value when the slider is changed."""
 
 
@@ -479,9 +481,7 @@ class TextEntry(WidgetBase):
         self._outline.opacity = color[3]
 
         # Text and Caret:
-        self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
-        self._layout.x = x
-        self._layout.y = y
+        self._layout = IncrementalTextLayout(self._doc, x, y, 0, width, height, batch=batch, group=fg_group)
         self._caret = Caret(self._layout, color=caret_color)
         self._caret.visible = False
 
@@ -568,7 +568,7 @@ class TextEntry(WidgetBase):
         if self._focus:
             # Commit on Enter/Return:
             if text in ('\r', '\n'):
-                self.dispatch_event('on_commit', self._layout.document.text)
+                self.dispatch_event('on_commit', self, self._layout.document.text)
                 self._set_focus(False)
                 return
             self._caret.on_text(text)
@@ -585,7 +585,7 @@ class TextEntry(WidgetBase):
         if self._focus:
             self._caret.on_text_motion_select(motion)
 
-    def on_commit(self, text: str):
+    def on_commit(self, widget: TextEntry, text: str):
         """Event: dispatches the current text when commited via Enter/Return key."""
 
 

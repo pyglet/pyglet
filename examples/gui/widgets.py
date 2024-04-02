@@ -26,23 +26,23 @@ knob = pyglet.resource.image('knob.png')
 # Create some event handler functions:
 ######################################
 
-def slider_handler(value):
+def slider_handler(widget, value):
     slider_label.text = f"Slider Value: {round(value, 1)}"
 
 
-def toggle_button_handler(value):
+def toggle_button_handler(widget, value):
     toggle_label.text = f"Toggle Button: {value}"
 
 
-def push_button_handler():
+def push_button_handler(widget):
     push_label.text = f"Push Button: True"
 
 
-def release_button_handler():
+def release_button_handler(widget):
     push_label.text = f"Push Button: False"
 
 
-def text_entry_handler(text):
+def text_entry_handler(widget, text):
     text_entry_label.text = f"Text: {text}"
 
 
