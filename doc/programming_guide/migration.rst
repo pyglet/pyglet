@@ -99,13 +99,22 @@ that the maximum value stays within range. For example::
 You can also of course directly access the individual `Vec2.x` & `Vec2.y`
 attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
 
+Gui
+---
+
+All widget events now dispatch the widget instance itself as the first argument.
+This is similar to how Controller/Joystick events are implemented. It gives a
+way to determine which widget has dispatched the event, in cases where the same
+handler function is set to multiple widgets.
+
 Math module
 -----------
 In the :py:mod:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
 :py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
 immutable; all operations will return a new object. In addition, all vector
-objects are now hashable. This has major performance benefits, and matches how
-the Matrix types are implemented.
+objects are now hashable. This has performance benefits, and matches how the Matrix
+types are implemented. For all intents and purposes, the Vec types can be treated
+as tuples.
 
 Canvas module
 -------------
