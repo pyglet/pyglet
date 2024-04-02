@@ -288,3 +288,94 @@ class AttributeBufferObject(BufferObject):
         if byte_end > self._dirty_max:
             self._dirty_max = byte_end
         self._dirty = True
+
+
+class PersistentBufferObject(AbstractBuffer):
+
+    def __init__(self, size, attribute, vao):
+        self.size = size
+        self.attribute = attribute
+        self.attribute_stride = attribute.stride
+        self.attribute_count = attribute.count
+        self.attribute_ctype = attribute.c_type
+        self.vao = vao
+
+        self._context = pyglet.gl.current_context
+
+        buffer_id = GLuint()
+        glGenBuffers(1, buffer_id)
+        self.id = buffer_id.value
+        self.bind()
+
+        self.flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
+        data = (GLubyte * size)()
+        glBufferStorage(GL_ARRAY_BUFFER, size, data, self.flags)
+
+        # size is the allocator size * attribute.stride
+        number = size // attribute.element_size
+        ptr_type = attribute.c_type * number
+        self.data = self.map_range(0, size, ctypes.POINTER(ptr_type), self.flags)
+
+    def bind(self, target=GL_ARRAY_BUFFER):
+        glBindBuffer(target, self.id)
+
+    def unbind(self):
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+    def map_range(self, start, size, ptr_type, flags=GL_MAP_WRITE_BIT):
+        glBindBuffer(GL_ARRAY_BUFFER, self.id)
+        ptr = ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, start, size, flags), ptr_type).contents
+        return ptr
+
+    @lru_cache(maxsize=None)
+    def get_region(self, start, count):
+        byte_start = self.attribute_stride * start  # byte offset
+        array_count = self.attribute_count * count  # number of values
+
+        ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
+        return ctypes.cast(ctypes.addressof(self.data) + byte_start, ptr_type).contents
+
+    def set_region(self, start, count, data):
+        array_start = self.attribute_count * start
+        array_end = self.attribute_count * count + array_start
+        self.data[array_start:array_end] = data
+
+    def resize(self, size):
+        # Create temporary copy of current data
+        temp = (GLubyte * size)()
+        ctypes.memmove(temp, self.data, min(size, self.size))
+        glDeleteBuffers(1, GLuint(self.id))
+
+        # Generate new buffer
+        buffer_id = GLuint()
+        glGenBuffers(1, buffer_id)
+        self.id = buffer_id.value
+
+        print("Resizing to:", size)
+
+        # Link attributes to new buffer:
+        self.vao.bind()
+        self.bind()
+        self.attribute.enable()
+        self.attribute.set_pointer(self.ptr)
+
+        # Initialize the new buffer with the old data, and map it:
+        glBufferStorage(GL_ARRAY_BUFFER, size, temp, self.flags)
+
+        ptr_type = self.attribute.c_type * (size // self.attribute.element_size)
+        self.data = self.map_range(0, size, ctypes.POINTER(ptr_type), self.flags)
+
+        self.size = size
+        self.get_region.cache_clear()
+
+    def sub_data(self):
+        # Not necessary with persistent mapping
+        pass
+
+    def invalidate(self):
+        # Not necessary with persistent mapping
+        pass
+
+    def invalidate_region(self, start, count):
+        # Not necessary with persistent mapping
+        pass

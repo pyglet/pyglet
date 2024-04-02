@@ -25,7 +25,7 @@ import ctypes
 
 from pyglet.gl import *
 from pyglet.graphics import allocation, shader, vertexarray
-from pyglet.graphics.vertexbuffer import BufferObject, AttributeBufferObject
+from pyglet.graphics.vertexbuffer import BufferObject, AttributeBufferObject, PersistentBufferObject
 
 
 def _nearest_pow2(v):
@@ -79,7 +79,6 @@ def _make_attribute_property(name):
     return property(_attribute_getter, _attribute_setter)
 
 
-
 class VertexDomain:
     """Management of a set of vertex lists.
 
@@ -92,6 +91,7 @@ class VertexDomain:
         self.program = program          # Needed a reference for migration
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
+        self.vao = vertexarray.VertexArray()
 
         self.attribute_names = {}       # name: attribute
         self.buffer_attributes = []     # list of (buffer, attributes)
@@ -109,6 +109,8 @@ class VertexDomain:
 
             # Create buffer:
             attribute.buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity, attribute)
+            # TODO: use persistent buffer if we have GL support for it:
+            # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
 
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
@@ -118,7 +120,6 @@ class VertexDomain:
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         self._vertexlist_class = type("VertexList", (VertexList,), self._property_dict)
 
-        self.vao = vertexarray.VertexArray()
         self.vao.bind()
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
