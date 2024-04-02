@@ -104,33 +104,4 @@ def on_draw():
     batch.draw()
 
 
-glEnable(GL_DEPTH_TEST)
-bufman = pyglet.image.BufferManager()
-colorbuf = bufman.get_color_buffer()
-depthbuf = bufman.get_depth_buffer()
-
-
-@window.event
-def on_key_press(*args):
-
-    print("SAVED")
-
-    colordat = colorbuf.get_image_data()
-    depthdat = depthbuf.get_image_data()
-
-    colortex = colorbuf.get_texture()
-    depthtex = depthbuf.get_texture()
-
-    print(colordat, depthdat)
-    print(colortex, depthtex)
-
-    # colordat.save("colorbuf.png")
-    # depthdat.save("depthbuf.png")
-    colortex.save("colorbuf.png")
-    depthtex.save("depthbuf.png")
-
-    make_sprite(9)
-    sprites[-1].image = depthtex
-
-
 pyglet.app.run()
