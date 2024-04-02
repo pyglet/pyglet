@@ -64,15 +64,19 @@ vertex_shader = pyglet.graphics.shader.Shader(pyglet.sprite.vertex_source, "vert
 fragment_shader = pyglet.graphics.shader.Shader(fragment_source, "fragment")
 depth_shader = pyglet.graphics.shader.ShaderProgram(vertex_shader, fragment_shader)
 
-sprite_count = 12
-for i in range(sprite_count):
-    sprite = DepthSprite(image, x=0, y=0, z=i, batch=batch, program=depth_shader)
 
+def make_sprite(zvalue):
+    sprite = DepthSprite(image, x=0, y=0, z=zvalue, batch=batch, program=depth_shader)
     # Random color multiplier.
     sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
-    # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
+    # Add sprites to keep in memory, like a list. Otherwise, they will get GC'd when out of scope.
     sprites.append(sprite)
+
+
+sprite_count = 10
+for i in range(sprite_count):
+    make_sprite(i)
+
 
 global elapsed
 elapsed = 0
@@ -89,10 +93,14 @@ def update(dt):
 
 pyglet.clock.schedule_interval(update, 1 / 60.0)
 
+glEnable(GL_STENCIL_TEST)
+glStencilMask(0xFF)
+
 
 @window.event
 def on_draw():
-    window.clear()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
+    # window.clear()
     batch.draw()
 
 

@@ -1,6 +1,7 @@
 import unittest
 
 import pyglet
+import pyglet.text.layout
 from pyglet.text import runlist
 from pyglet.text.formats.attributed import AttributedTextDecoder
 

@@ -214,7 +214,6 @@ class Attribute:
             `count` : int
                 Number of vertices to map
 
-        :rtype: `BufferObjectRegion`
         """
         return buffer.get_region(start, count)
 
@@ -228,7 +227,9 @@ class Attribute:
                 Offset of the first vertex to set.
             `count` : int
                 Number of vertices to set.
-            `data` : A sequence of data components.
+            `data` : seq
+                A sequence of data components.
+
         """
         buffer.set_region(start, count, data)
 

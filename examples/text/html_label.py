@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """A simple demonstration of the HTMLLabel class, as it might be used on a
 help or introductory screen.
 """
@@ -12,8 +11,8 @@ html = '''
 <p align="center"><img src="pyglet.png" /></p>
 
 <p>HTML labels are a simple way to add formatted text to your application.
-Different <font face="Helvetica,Arial" size=+2>fonts</font>, <em>styles</em>
-and <font color=maroon>colours</font> are supported.
+Different <font face="Helvetica,Arial" size=+2>fonts</font>, <em>styles</em>,
+<u>underlines</u>, and <font color=maroon>colours</font> are supported.
 
 <p>This window has been made resizable; text will reflow to fit the new size.
 '''

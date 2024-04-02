@@ -361,8 +361,9 @@ class ShapeBase(ABC):
         as the Python garbage collector will not necessarily call the
         finalizer as soon as the sprite falls out of scope.
         """
-        self._vertex_list.delete()
-        self._vertex_list = None
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
+            self._vertex_list = None
 
     @property
     def x(self):
@@ -1267,9 +1268,9 @@ class Line(ShapeBase):
             return (0, 0) * self._num_verts
         else:
             x1 = 0
-            y1 = 0
-            x2 = math.hypot(self._y2 - self._y, self._x2 - self._x)
-            y2 = self._thickness
+            y1 = -self._thickness / 2
+            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
+            y2 = y1 + self._thickness
 
             r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
