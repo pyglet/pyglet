@@ -351,8 +351,6 @@ class PersistentBufferObject(AbstractBuffer):
         glGenBuffers(1, buffer_id)
         self.id = buffer_id.value
 
-        print("Resizing to:", size)
-
         # Link attributes to new buffer:
         self.vao.bind()
         self.bind()
