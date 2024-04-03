@@ -6,10 +6,10 @@ More information is available at http://www.pyglet.org
 import os
 import sys
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 #: The release version
-version = '2.0.14'
+version = '2.0.15'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -196,16 +196,15 @@ if compat_platform == 'cygwin':
     # DirectSound support.
     import ctypes
 
-    ctypes.windll = ctypes.cdll
-    ctypes.oledll = ctypes.cdll
+    ctypes.windll = ctypes.cdll  # type: ignore
+    ctypes.oledll = ctypes.cdll  # type: ignore
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
-    ctypes.HRESULT = ctypes.c_long
-
+    ctypes.HRESULT = ctypes.c_long  # type: ignore
 
 # Call tracing
 # ------------
 
-_trace_filename_abbreviations = {}
+_trace_filename_abbreviations: Dict[str, str] = {}
 _trace_thread_count = 0
 _trace_args = options['debug_trace_args']
 _trace_depth = options['debug_trace_depth']
@@ -301,7 +300,7 @@ def _install_trace():
 class _ModuleProxy:
     _module = None
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.__dict__['_module_name'] = name
 
     def __getattr__(self, name):
@@ -333,8 +332,7 @@ class _ModuleProxy:
             setattr(module, name, value)
 
 
-# Lazily load all modules, except if performing
-# type checking or code inspection.
+# Lazily load all modules, except if performing type checking or code inspection.
 if TYPE_CHECKING:
     from . import app
     from . import canvas
@@ -357,27 +355,26 @@ if TYPE_CHECKING:
     from . import text
     from . import window
 else:
-    app = _ModuleProxy('app')
-    canvas = _ModuleProxy('canvas')
-    clock = _ModuleProxy('clock')
-    customtypes = _ModuleProxy('customtypes')
-    event = _ModuleProxy('event')
-    font = _ModuleProxy('font')
-    gl = _ModuleProxy('gl')
-    graphics = _ModuleProxy('graphics')
-    gui = _ModuleProxy('gui')
-    image = _ModuleProxy('image')
-    input = _ModuleProxy('input')
-    lib = _ModuleProxy('lib')
-    math = _ModuleProxy('math')
-    media = _ModuleProxy('media')
-    model = _ModuleProxy('model')
-    resource = _ModuleProxy('resource')
-    sprite = _ModuleProxy('sprite')
-    shapes = _ModuleProxy('shapes')
-    text = _ModuleProxy('text')
-    window = _ModuleProxy('window')
-
+    app = _ModuleProxy('app')  # type: ignore
+    canvas = _ModuleProxy('canvas')  # type: ignore
+    clock = _ModuleProxy('clock')  # type: ignore
+    customtypes = _ModuleProxy('customtypes')  # type: ignore
+    event = _ModuleProxy('event')  # type: ignore
+    font = _ModuleProxy('font')  # type: ignore
+    gl = _ModuleProxy('gl')  # type: ignore
+    graphics = _ModuleProxy('graphics')  # type: ignore
+    gui = _ModuleProxy('gui')  # type: ignore
+    image = _ModuleProxy('image')  # type: ignore
+    input = _ModuleProxy('input')  # type: ignore
+    lib = _ModuleProxy('lib')  # type: ignore
+    math = _ModuleProxy('math')  # type: ignore
+    media = _ModuleProxy('media')  # type: ignore
+    model = _ModuleProxy('model')  # type: ignore
+    resource = _ModuleProxy('resource')  # type: ignore
+    sprite = _ModuleProxy('sprite')  # type: ignore
+    shapes = _ModuleProxy('shapes')  # type: ignore
+    text = _ModuleProxy('text')  # type: ignore
+    window = _ModuleProxy('window')  # type: ignore
 
 # Call after creating proxies:
 if options['debug_trace']:

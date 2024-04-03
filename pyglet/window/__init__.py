@@ -361,6 +361,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     #: update.
     #:
     #: :type: bool
+    #:
     #: .. versionadded:: 1.1
     invalid = True
 

@@ -8,6 +8,7 @@ pyglet.image
 
    atlas
    animation
+   buffer
 
 .. rubric:: Details
 
@@ -44,11 +45,6 @@ Images
   :show-inheritance:
 
 .. autoclass:: Texture
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: DepthTexture
   :members:
   :undoc-members:
   :show-inheritance:

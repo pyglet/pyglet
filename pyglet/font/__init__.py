@@ -98,6 +98,7 @@ def have_font(name: str) -> bool:
 def load(name: Optional[Union[str, Iterable[str]]] = None, size: Optional[float] = None, bold: bool = False,
          italic: bool = False, stretch: bool = False, dpi: Optional[float] = None):
     """Load a font for rendering.
+
     :Parameters:
         `name` : str, or list of str
             Font family, for example, "Times New Roman".  If a list of names
