@@ -49,11 +49,6 @@ Images
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: DepthTexture
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
 .. autoclass:: TextureRegion
   :members:
   :undoc-members:

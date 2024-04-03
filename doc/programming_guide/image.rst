@@ -808,9 +808,6 @@ The depth buffer can be obtained similarly::
 
     depth_buffer = buffers.get_depth_buffer()
 
-When a depth buffer is converted to a texture, the class used will be a
-:py:class:`~pyglet.image.DepthTexture`, suitable for use with shadow map
-techniques.
 
 The auxiliary buffers and stencil bits are obtained by requesting one, which
 will then be marked as "in-use".  This permits multiple libraries and your
