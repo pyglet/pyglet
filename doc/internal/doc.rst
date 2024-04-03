@@ -5,9 +5,9 @@ This is the pyglet documentation, generated with `Sphinx`_.
 
 .. _Sphinx: https://sphinx-doc.org
 
-.. _reStructuredText: http://www.sphinx-doc.org/en/stable/rest.html
+.. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 
-.. _autodoc: http://www.sphinx-doc.org/en/stable/ext/autodoc.html
+.. _autodoc: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 
 Details:
 
@@ -21,93 +21,85 @@ Details:
 Writing documentation
 ---------------------
 
-Familiarize yourself with `Sphinx`_ and `reStructuredText`_.
+pyglet documentation is written in `reStructuredText`_, and built with `Sphinx`_.
 
-Literature
-^^^^^^^^^^
+layout
+^^^^^^
 
-The home page is ``pyglet/doc/index.rst``. This file create three toctrees:
+The main documenation index is ``pyglet/doc/index.rst``. This file create three toctrees:
 
 * The programming guide
 * The API docs
 * The development guide, which you are reading now
 
-Source code
------------
 
-The API documentation is generated from the source code docstrings via
-`autodoc`_ and a few custom extensions.
+programming guide
+-----------------
+
+
+
+API documentation
+-----------------
+
+The API documentation is generated from the source code docstrings via `autodoc`_.
+
 
 :Example:
 
    .. code-block:: python
 
-      class Class1():
-      '''Short description.
+    class Class1():
+        """Short description of the class
 
-      Detailed explanation, formatted as reST.
-      Can be as detailed as it is needed.
+        This is a good place for a general high level description
+        of what the class is, and what it is used for.
+        """
 
-      :Ivariables:
-         `arg1`
-             description
+        def __init__(self, name: str, size: float):
+            """Constructor description
 
-      .. versionadded:: 1.2
+            Here is where you can describe how to make an instance of the
+            class. If any of the arguments need further explaination, that
+            detail can be added as necessary.
 
-      '''
+            Args:
+                name: The first argument description.
+                size: The second argument description.
+            """
+            self.name = name
+            self.size = size
 
-      attribute1 = None
-      '''This is an attribute.
+            self.some_attribute: int = None
 
-      More details.
-      '''
+        def class_method(self, value: int) -> None:
+            """Simple method description"""
+            self.some_attribute = value
 
-      #: This is another attribute.
-      attribute2 = None
+        def class_method_two(self, value: int) -> int:
+            """Detailed method description
 
-      def __init__(self):
-          '''Constructor
+            You can add more details here.
 
-          :parameters:
-             `arg1` : type
-                description
-          '''
+            Args:
+                value: The argument description.
 
-          self.instance_attribute = None
-          '''This is an instance attribute.
-          '''
-
-      def method(self):
-          '''Short description.
-
-          :returns: return description
-          :rtype: returned type
-          '''
-
-      def _get_property1(self):
-          '''Getter Method contains docstrings for a property
-
-          :return: property1 value
-          :rtype: property1 type
-          '''
-
-      def _set_property1(self, value):
-          '''Setter Method docstrings are ignored
-          '''
-
-      property1 = property(_get_property1, _set_property1,
-                        doc='''Override docstring here if you want''')
+            Returns:
+                Describe what is being returned, if not already clear.
+            """
+            return self.some_attribute * 2
 
 
-Pyglet has a special role for deprecations, ``:deprecated:``.
+    def function_with_pep484_type_annotations(param1: int, param2: str) -> bool:
+        """Example function with PEP 484 type annotations.
 
-    .. list-table::
-        :header-rows: 1
+        Args:
+            param1: The first parameter.
+            param2: The second parameter.
 
-        * - Source
-          - Output
-        * - ``:deprecated: Do not use``
-          - .. warning:: Deprecated. Do not use
+        Returns:
+           The return value. True for success, False otherwise.
+        """
+        ...
 
 
 Building
@@ -120,8 +112,6 @@ To build the documentation, execute::
 
    ./make.py docs --open
 
-.. note ::
-   Due to a bug in Sphinx, documentation generation currently only works using Python 3.x.
 
 If the build succeeds, the web pages are in ``doc/_build/html``.
 
@@ -136,11 +126,3 @@ Optionally the standalone way to build docs is through
     # make (make.bat for windows)
     cd doc
     make html
-
-HTML Theme
-----------
-
-.. Note:: The custom theme was disabled in 2019 and replaced with
-          the standard Read the Docs theme ``sphinx_rtd_theme``.
-
-The custom sphinx theme is in the ``ext/theme`` folder.
