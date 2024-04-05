@@ -353,6 +353,7 @@ class MoreHandle(Handle):
         else:
             self._circ.position = x, z
             self._outline.position = x, z
+            self._outline.thickness = 1.0 / self.win.zoom
             r = self.radius - 0.1
             self._line0._width = 1.0 / self.win.zoom
             _update_line(self._line0, x - r, z, x + r, z)
