@@ -3,20 +3,69 @@
 # pyglet documentation build configuration file.
 #
 # This file is execfile()d with the current directory set to its containing dir.
-
-
+from __future__ import annotations
 import os
 import sys
 import time
 import datetime
 
-# Prevents instance attributes from having a default value of None
-# See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
-from sphinx.ext.autodoc import ClassLevelDocumenter
+# -- Extensions to the  Napoleon GoogleDocstring class ---------------------
+from sphinx.ext.napoleon.docstring import GoogleDocstring
+import sphinx_autodoc_typehints
+
+def parse_attributes_section(self, section):
+    # Combination of _format_fields and _parse_attributes_section to get type hints loaded properly using
+    # the theme and getting the custom name instead of Specifying just 'Variables'
+    field_type = 'Class Variables'
+    fields = self._consume_fields()
+
+    field_type = ':%s:' % field_type.strip()
+    padding = ' ' * len(field_type)
+    multi = len(fields) > 1
+    lines: list[str] = []
+    for _name, _type, _desc in fields:
+        if not _type:
+            _type = self._lookup_annotation(_name)
+            if _name in self._annotations:
+                _type = sphinx_autodoc_typehints.add_type_css_class(
+                   sphinx_autodoc_typehints.format_annotation(self._annotations[_name], self._app.config))
+
+        field = self._format_field(_name, _type, _desc)
+        if multi:
+            if lines:
+                lines.extend(self._format_block(padding + ' * ', field))
+            else:
+                lines.extend(self._format_block(field_type + ' * ', field))
+        else:
+            lines.extend(self._format_block(field_type + ' ', field))
+    if lines and lines[-1]:
+        lines.append('')
+    return lines
 
 
-def iad_add_directive_header(self, sig):
-    ClassLevelDocumenter.add_directive_header(self, sig)
+GoogleDocstring._parse_attributes_section = parse_attributes_section
+
+
+# Unpatch... the patch.
+def _revert_patch():
+    pass
+
+sphinx_autodoc_typehints.patches._patch_google_docstring_lookup_annotation = _revert_patch
+
+
+#
+# def parse_class_attributes_section(self, section):
+#     return self._format_fields('Class Attributes', self._consume_fields())
+# GoogleDocstring._parse_class_attributes_section = parse_class_attributes_section
+#
+# # we now patch the parse method to guarantee that the the above methods are
+# # assigned to the _section dict
+# def patched_parse(self):
+#     self._sections['keys'] = self._parse_keys_section
+#     self._sections['class attributes'] = self._parse_class_attributes_section
+#     self._unpatched_parse()
+# GoogleDocstring._unpatched_parse = GoogleDocstring._parse
+# GoogleDocstring._parse = patched_parse
 
 
 def write_build(data, filename):
@@ -58,13 +107,13 @@ except ImportError:
 # avoid having to deal with syntax errors.
 # Also, please note that there does not appear to be a good way to use
 # substitutions within link text by default.
-rst_prolog = """
-.. |min_python_version| replace:: {min_python_version}
-.. |min_python_version_package_name| replace:: ``python{min_python_version}``
-.. |min_python_version_fancy_str| replace:: Python {min_python_version}+
-""".format(
-    min_python_version=pyglet.MIN_PYTHON_VERSION_STR
-)
+# rst_prolog = """
+# .. |min_python_version| replace:: {min_python_version}
+# .. |min_python_version_package_name| replace:: ``python{min_python_version}``
+# .. |min_python_version_fancy_str| replace:: Python {min_python_version}+
+# """.format(
+#     min_python_version=pyglet.MIN_PYTHON_VERSION_STR
+# )
 
 implementations = ["cocoa", "win32", "xlib"]
 
@@ -128,12 +177,32 @@ inheritance_graph_attrs = dict(rankdir="LR", size='""')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
               'sphinx.ext.intersphinx',
               'sphinx.ext.inheritance_diagram',
               'sphinx.ext.todo',
-              'sphinx.ext.napoleon']
+              'sphinx_autodoc_typehints'
+              ]
 
+# Autodoc settings.
 autodoc_member_order = 'groupwise'
+
+# Separate init from the class header as RTD theme makes it all the same color, reducing readability.
+autodoc_class_signature = "separated"
+#autoclass_content = "both"
+
+# Add type hints to description and parameters in docs.
+autodoc_typehints = "none"
+autodoc_typehints_format = "short"
+
+# Configuration for sphinx_autodoc_typehints
+typehints_use_signature = True
+typehints_use_signature_return = True
+always_use_bars_union = True
+
+# Convert Literal['one', 'two', 'three'] to 'one' | 'two' | 'three'
+# Broken in Sphinx 7.2.6
+python_display_short_literal_types = True
 
 # Enable links to Python's main doc
 intersphinx_mapping = {
@@ -207,6 +276,12 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
+
+# Force custom css to allow multiline inits.
+html_css_files = [
+    'css/custom.css',
+]
+html_style = 'css/custom.css'
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = ["ext/theme"]
@@ -350,3 +425,8 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+
+nitpicky = True
+
+

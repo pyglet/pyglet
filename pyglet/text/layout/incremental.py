@@ -62,6 +62,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     background color).  The :py:class:`~pyglet.text.caret.Caret` class implements
     a visible text cursor and provides event handlers for scrolling, selecting and
     editing text in an incremental text layout.
+
     """
 
     glyphs: List[Any]
@@ -78,14 +79,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _translate_x: int = 0
     _translate_y: int = 0
 
-    invalid_glyphs: _InvalidRange
-    invalid_flow: _InvalidRange
-    invalid_lines: _InvalidRange
-    invalid_style: _InvalidRange
-    invalid_vertex_lines: _InvalidRange
-    visible_lines: _InvalidRange
+    # invalid_glyphs: _InvalidRange
+    # invalid_flow: _InvalidRange
+    # invalid_lines: _InvalidRange
+    # invalid_style: _InvalidRange
+    # invalid_vertex_lines: _InvalidRange
+    # visible_lines: _InvalidRange
 
-    owner_runs: runlist.RunList
+    #owner_runs: runlist.RunList
 
     _width: int
     _height: int

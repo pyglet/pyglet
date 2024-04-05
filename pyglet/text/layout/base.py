@@ -779,19 +779,8 @@ class TextLayout:
 
     :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.HTMLLabel` provide a convenient interface to this class.
 
-    :Ivariables:
-        `content_width` : int
-            Calculated width of the text in the layout.  This may overflow
-            the desired width if word-wrapping failed.
-        `content_height` : int
-            Calculated height of the text in the layout.
-        `group_class` : `~pyglet.graphics.Group`
-            Top-level rendering group.
-        `background_decoration_group` : `~pyglet.graphics.Group`
-            Rendering group for background color.
-        `foreground_decoration_group` : `~pyglet.graphics.Group`
-            Rendering group for glyph underlines.
-
+    Attributes:
+        breh: This will be a layout group.
     """
     _vertex_lists: List[_LayoutVertexList]
     _boxes: List[_AbstractBox]
@@ -801,8 +790,14 @@ class TextLayout:
 
     _update_enabled: bool = True
     _own_batch: bool = False
-    group_class: Type[TextLayoutGroup] = TextLayoutGroup
-    decoration_class: Type[TextDecorationGroup] = TextDecorationGroup
+
+    broseph: Type[AbstractDocument]
+    breh: Type[TextLayoutGroup] = TextLayoutGroup
+
+    group_class = TextLayoutGroup
+    decoration_class = TextDecorationGroup
+
+    bro_wtf: int = 5
 
     _ascent: float = 0
     _descent: float = 0
@@ -827,53 +822,34 @@ class TextLayout:
                  x: float = 0,
                  y: float = 0, z: float = 0, anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom',
                  rotation: float = 0,
-                 multiline: bool = False, dpi: Optional[float] = None, batch: Batch = None,
+                 multiline: bool = False, dpi: Optional[float] = None, batch: Optional[Batch] = None,
                  group: Optional[graphics.Group] = None, program: Optional[ShaderProgram] = None,
                  wrap_lines: bool = True, init_document: bool = True) -> None:
         """Create a text layout.
 
-        :Parameters:
-            `document` : `AbstractDocument`
-                Document to display.
-            `x` : int
-                X coordinate of the label.
-            `y` : int
-                Y coordinate of the label.
-            `z` : int
-                Z coordinate of the label.
-            `width` : int
-                Width of the layout in pixels, or None
-            `height` : int
-                Height of the layout in pixels, or None
-            `anchor_x` : str
-                Anchor point of the X coordinate: one of ``"left"``,
-                ``"center"`` or ``"right"``.
-            `anchor_y` : str
-                Anchor point of the Y coordinate: one of ``"bottom"``,
-                ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`: float
-                The amount to rotate the label in degrees. A positive amount
+        Args:
+            document: Document to display.
+            x: X coordinate of the label.
+            y: Y coordinate of the label.
+            z: Z coordinate of the label.
+            width: Width of the layout in pixels, or None
+            height: Height of the layout in pixels, or None
+            anchor_x: Anchor point of the X coordinate.
+            anchor_y: Anchor point of the Y coordinate.
+            rotation: The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-            `multiline` : bool
-                If False, newline and paragraph characters are ignored, and
+            multiline: If False, newline and paragraph characters are ignored, and
                 text is not word-wrapped.
                 If True, text is wrapped only if the `wrap_lines` is True.
-            `dpi` : float
-                Font resolution; defaults to 96.
-            `batch` : `~pyglet.graphics.Batch`
-                Optional graphics batch to add this layout to.
-            `group` : `~pyglet.graphics.Group`
-                Optional Group to parent all internal Groups that this text
+            dpi: Font resolution; defaults to 96.
+            batch: Optional graphics batch to add this layout to.
+            group: Optional Group to parent all internal Groups that this text
                 layout uses.  Note that layouts with the same Groups will
                 be rendered simultaneously in a Batch.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional graphics shader to use. Will affect all glyphs.
-            `wrap_lines` : bool
-                If True and `multiline` is True, the text is word-wrapped using
-                the specified width.
-            `init_document` : bool
-                If True the document will be initialized. If subclassing then
+            program: Optional graphics shader to use. Will affect all glyphs.s
+            wrap_lines: If True and `multiline` is True, the text is word-wrapped using the specified width.
+            init_document: If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing
                 to False.
         """
@@ -1143,7 +1119,7 @@ class TextLayout:
         """Calculated width of the text in the layout.
 
         This is the actual width of the text in pixels, not the
-        user defined :py:attr:`~ppyglet.text.layout.TextLayout.width`.
+        user defined :py:attr:`~pyglet.text.layout.TextLayout.width`.
         The content width may overflow the layout width if word-wrapping
         is not possible.
         """
@@ -1154,7 +1130,7 @@ class TextLayout:
         """The calculated height of the text in the layout.
 
         This is the actual height of the text in pixels, not the
-        user defined :py:attr:`~ppyglet.text.layout.TextLayout.height`.
+        user defined :py:attr:`~pyglet.text.layout.TextLayout.height`.
         """
         return self._content_height
 

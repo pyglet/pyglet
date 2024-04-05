@@ -1,0 +1,29 @@
+/* Import RTD theme before our own changes. */
+@import 'theme.css';
+
+/* Force __init__'s to be multiline, since it can get hard to read. */
+.py.method [id$="__init__"] .sig-param:not(.short-sig .sig-param)::before {
+    content: "\a\20\20\20\20";
+    white-space: pre;
+}
+
+.py.method [id$="__init__"] .sig-param:not(.short-sig .sig-param):last-of-type::after {
+    content: "\a";
+    white-space: pre;
+}
+
+/* Prevent multiple properties from being on the same row. */
+dl.py.property {
+    display: block !important;
+}
+
+/* If using mixed docs, re-enable this for multiline class merged. */
+.py.class > .sig.sig-object.py:first-of-type .sig-param:not(.short-sig .sig-param)::before {
+    content: "\a\20\20\20\20";
+    white-space: pre;
+}
+
+.py.class > .sig.sig-object.py:first-of-type .sig-param:not(.short-sig .sig-param):last-of-type::after {
+    content: "\a";
+    white-space: pre;
+}
