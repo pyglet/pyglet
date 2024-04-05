@@ -105,8 +105,8 @@ If you are migrating from an older version of pyglet, please read through
 
    internal/contributing
    internal/virtualenv
-   internal/testing
    internal/doc
+   internal/testing
    internal/dist
    internal/gl
    internal/generated
