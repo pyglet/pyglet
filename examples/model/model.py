@@ -4,7 +4,7 @@ from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Mat4, Vec3
 
 
-window = pyglet.window.Window(width=720, height=480, resizable=True)
+window = pyglet.window.Window(resizable=True)
 batch = pyglet.graphics.Batch()
 time = 0
 
