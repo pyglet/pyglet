@@ -4,8 +4,9 @@ Contributing
 Communication
 -------------
 
-Pyglet communication occurs mostly in our
-`discord server <https://discord.gg/QXyegWe>`_ or
+pyglet communication occurs mostly in our
+`discord server <https://discord.gg/QXyegWe>`_,
+and
 `mailing list <http://groups.google.com/group/pyglet-users>`_.
 
 Issue Tracker

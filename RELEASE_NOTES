@@ -1,3 +1,28 @@
+pyglet 2.0.15
+
+Changes and Improvements
+------------------------
+- font: Clean up win32 legacy font renderer to remove unused or outdated code.
+- font: Boxes are now primary update method for TextLayout instead of relying on the vertex_list of the TextLayout.
+- font: More typing additions.
+- gui.widgets: Add _set_enabled hook (#1073)
+- shapes: Add missing BezierCurve thickness property.
+- graphics: Re-raise error for attributes during shader creation with better error descriptions. (#1076)
+- docs: Start adding GUI section to the programming guide.
+- typing: Add stub file for init package to workaround IDE inspection/completion issues with lazy loading modules. (#1077)
+- examples: Add more visual feedback to the Controller example
+
+Bugfixes
+--------
+- Xaudio2: Fix missing `)` to POINTER which causes XAudio2 to fail to be imported. (#1068)
+- font.caret: Fix caret positioning and moving the cursor during cursor selection. (#932)
+- input.controller: User added mappings should take higher priority over default mappings.
+- input.controller: Properly handle inverted axis as dpad (#1078)
+- shapes: Added a None check to ShapeBase.delete (#1075)
+- shapes: Fix Line being off-centered when setting thickness #1083
+- image: Fix BufferManager.get_depth_buffer() for GL3+.
+
+
 pyglet 2.0.14
 
 Changes and Improvements

@@ -35,6 +35,7 @@ Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
 
 def clamp(num: float, min_val: float, max_val: float) -> float:
+    """Clamp a value between a minimum and maximum limit."""
     return max(min(num, max_val), min_val)
 
 
@@ -100,30 +101,28 @@ class Vec2(_typing.NamedTuple):
     def from_polar(mag: float, angle: float) -> Vec2:
         """Create a new vector from the given polar coordinates.
 
-        :parameters:
-            `mag`   : int or float :
-                The magnitude of the vector.
-            `angle` : int or float :
-                The angle of the vector in radians.
+        Args:
+          mag: The desired magnitude.
+          angle: The angle, in radians.
         """
         return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
 
     def from_magnitude(self, magnitude: float) -> Vec2:
-        """Create a new Vector of the given magnitude by normalizing,
-        then scaling the vector. The heading remains unchanged.
+        """Create a new vector of the given magnitude
 
-        :parameters:
-            `magnitude` : int or float :
-                The magnitude of the new vector.
+        The new vector will be created by first normalizing,
+        then scaling the vector. The heading remains unchanged.
         """
         return self.normalize() * magnitude
 
     def from_heading(self, heading: float) -> Vec2:
-        """Create a new vector of the same magnitude with the given heading. I.e. Rotate the vector to the heading.
+        """Create a new vector of the same magnitude with the given heading.
 
-        :parameters:
-            `heading` : int or float :
-                The angle of the new vector in radians.
+         In effect, the vector rotated to the new heading.
+
+        Args:
+          heading: The desired heading, in radians.
+
         """
         mag = self.__abs__()
         return Vec2(mag * _math.cos(heading), mag * _math.sin(heading))
@@ -135,9 +134,10 @@ class Vec2(_typing.NamedTuple):
 
     @property
     def mag(self) -> float:
-        """The magnitude, or length of the vector. The distance between the coordinates and the origin.
+        """The magnitude, or length of the vector.
 
-        Alias of abs(self).
+        The distance between the coordinates and the origin.
+        Alias of abs(vec2_instance).
         """
         return self.__abs__()
 
@@ -150,23 +150,29 @@ class Vec2(_typing.NamedTuple):
     def lerp(self, other: Vec2, alpha: float) -> Vec2:
         """Create a new Vec2 linearly interpolated between this vector and another Vec2.
 
-        :parameters:
-            `other`  : Vec2 :
-                The vector to linearly interpolate with.
-            `alpha` : float or int :
-                The amount of interpolation.
-                Some value between 0.0 (this vector) and 1.0 (other vector).
-                0.5 is halfway inbetween.
+        Args:
+          other: Another Vec2 instance.
+          alpha: The amount of interpolation between this vector, and the other
+                 vector. This should be a value between 0.0 and 1.0. For example:
+                 0.5 is the midway point between both vectors.
         """
         return Vec2(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)))
 
-    def reflect(self, normal: Vec2) -> Vec2:
-        """Create a new Vec2 reflected (ricochet) from the given normal."""
-        return self - normal * 2 * normal.dot(self)
+    def reflect(self, vector: Vec2) -> Vec2:
+        """Create a new Vec2 reflected (ricochet) from the given normalized vector.
+
+        Args:
+          vector: A normalized vector.
+        """
+        return self - vector * 2 * vector.dot(self)
 
     def rotate(self, angle: float) -> Vec2:
-        """Create a new Vector rotated by the angle. The magnitude remains unchanged."""
+        """Create a new vector rotated by the angle. The magnitude remains unchanged.
+
+        Args:
+          angle: The desired angle, in radians.
+        """
         s = _math.sin(angle)
         c = _math.cos(angle)
         return Vec2(c * self.x - s * self.y, s * self.x + c * self.y)
@@ -219,11 +225,10 @@ class Vec3(_typing.NamedTuple):
 
     @property
     def mag(self) -> float:
-        """The magnitude, or length of the vector. The distance between the coordinates and the origin.
+        """The magnitude, or length of the vector.
 
-        Alias of abs(self).
-
-        :type: float
+        The distance between the coordinates and the origin.
+        Alias of abs(vector_instance).
         """
         return self.__abs__()
 
@@ -274,13 +279,15 @@ class Vec3(_typing.NamedTuple):
         return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
 
     def from_magnitude(self, magnitude: float) -> Vec3:
-        """Create a new Vector of the given magnitude by normalizing,
-        then scaling the vector. The rotation remains unchanged.
+        """Create a new vector of the given magnitude
+
+        The new vector will be created by first normalizing,
+        then scaling the vector. The heading remains unchanged.
         """
         return self.normalize() * magnitude
 
     def limit(self, maximum: float) -> Vec3:
-        """Limit the magnitude of the vector to the passed maximum value."""
+        """Limit the magnitude of the vector to passed maximum value."""
         if self.x ** 2 + self.y ** 2 + self.z ** 2 > maximum * maximum * maximum:
             return self.from_magnitude(maximum)
         return self
@@ -298,9 +305,11 @@ class Vec3(_typing.NamedTuple):
     def lerp(self, other: Vec3, alpha: float) -> Vec3:
         """Create a new Vec3 linearly interpolated between this vector and another Vec3.
 
-        The `alpha` parameter dictates the amount of interpolation.
-        This should be a value between 0.0 (this vector) and 1.0 (other vector).
-        For example; 0.5 is the midway point between both vectors.
+        Args:
+          other: Another Vec3 instance.
+          alpha: The amount of interpolation between this vector, and the other
+                 vector. This should be a value between 0.0 and 1.0. For example:
+                 0.5 is the midway point between both vectors.
         """
         return Vec3(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
@@ -414,11 +423,13 @@ class Vec4(_typing.NamedTuple):
         )
 
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
-        """Create a new Vec4 linearly interpolated between this one and another Vec4.
+        """Create a new Vec4 linearly interpolated between this vector and another Vec4.
 
-        The `alpha` parameter dictates the amount of interpolation.
-        This should be a value between 0.0 (this vector) and 1.0 (other vector).
-        For example; 0.5 is the midway point between both vectors.
+        Args:
+          other: Another Vec4 instance.
+          alpha: The amount of interpolation between this vector, and the other
+                 vector. This should be a value between 0.0 and 1.0. For example:
+                 0.5 is the midway point between both vectors.
         """
         return Vec4(self.x + (alpha * (other.x - self.x)),
                     self.y + (alpha * (other.y - self.y)),
@@ -628,7 +639,12 @@ class Mat4(tuple):
 
     @classmethod
     def from_rotation(cls, angle: float, vector: Vec3) -> Mat4:
-        """Create a rotation matrix from an angle and Vec3."""
+        """Create a rotation matrix from an angle and Vec3.
+
+        Args:
+          angle: The desired angle, in radians.
+          vector: A Vec3 indicating the direction.
+        """
         return cls().rotate(angle, vector)
 
     @classmethod
@@ -649,6 +665,18 @@ class Mat4(tuple):
 
     @classmethod
     def look_at(cls: type[Mat4T], position: Vec3, target: Vec3, up: Vec3):
+        """Create a viewing matrix that points toward a target.
+
+        This method takes three Vec3s, describing the viewer's position,
+        where they are looking, and the upward axis (typically positive
+        on the Y axis). The resulting Mat4 can be used as the projection
+        matrix.
+
+        Args:
+          position: The location of the viewer in the scene.
+          target: The point that the viewer is looking towards.
+          up: A vector pointing "up" in the scene, typically `Vec3(0.0, 1.0, 0.0)`.
+        """
         f = (target - position).normalize()
         u = up.normalize()
         s = f.cross(u).normalize()
@@ -892,6 +920,11 @@ class Quaternion(_typing.NamedTuple):
 
     @property
     def mag(self) -> float:
+        """The magnitude, or length, of the Quaternion.
+
+        The distance between the coordinates and the origin.
+        Alias of abs(quaternion_instance).
+        """
         return self.__abs__()
 
     def conjugate(self) -> Quaternion:
