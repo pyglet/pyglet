@@ -48,13 +48,15 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
+from __future__ import annotations
+
+from typing import Tuple
+
 import pyglet
 
 from pyglet import gl
 from pyglet import graphics
-from pyglet.gl import current_context
-from pyglet.math import Mat4, Vec3
-from pyglet.graphics import shader
+from pyglet.math import Mat4
 
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
@@ -89,6 +91,7 @@ def load(filename, file=None, decoder=None, batch=None, group=None):
 def get_default_shader():
     return pyglet.gl.current_context.create_program((MaterialGroup.default_vert_src, 'vertex'),
                                                     (MaterialGroup.default_frag_src, 'fragment'))
+
 
 def get_default_textured_shader():
     return pyglet.gl.current_context.create_program((TexturedMaterialGroup.default_vert_src, 'vertex'),
@@ -170,7 +173,14 @@ class Model:
 class Material:
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
-    def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
+    def __init__(self, name: str = "default",
+                 diffuse: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
+                 ambient: Tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0),
+                 specular: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
+                 emission: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
+                 shininess: float = 20,
+                 texture_name: str = ""):
+
         self.name = name
         self.diffuse = diffuse
         self.ambient = ambient
@@ -179,14 +189,15 @@ class Material:
         self.shininess = shininess
         self.texture_name = texture_name
 
-    def __eq__(self, other):
-        return (self.name == other.name and
-                self.diffuse == other.diffuse and
-                self.ambient == other.ambient and
-                self.specular == other.specular and
-                self.emission == other.emission and
-                self.shininess == other.shininess and
+    def __eq__(self, other: Material) -> bool:
+        return (self.name == other.name and self.diffuse == other.diffuse and
+                self.ambient == other.ambient and self.specular == other.specular and
+                self.emission == other.emission and self.shininess == other.shininess and
                 self.texture_name == other.texture_name)
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.texture_name, tuple(self.diffuse), tuple(self.specular),
+                     tuple(self.ambient), tuple(self.emission), self.shininess, self.texture_name))
 
 
 class BaseMaterialGroup(graphics.Group):
@@ -316,6 +327,77 @@ class MaterialGroup(BaseMaterialGroup):
     def set_state(self):
         self.program.use()
         self.program['model'] = self.matrix
+
+    def __hash__(self):
+        return hash((self.material, self.program, self.order, self.parent))
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self.material == other.material and
+                self.program == other.program and
+                self.order == other.order and
+                self.parent == other.parent)
+
+
+class Cube(Model):
+
+    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0), material=None,
+                 batch=None, group=None, program=None):
+        self._width = width
+        self._height = height
+        self._depth = depth
+        self._color = color
+        self._scale = 1.0
+
+        self._batch = batch
+        self._program = program if program else get_default_shader()
+
+        # Create a Material and Group for the Model
+        self._material = material if material else pyglet.model.Material(name="cube")
+        self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
+
+        self._vlist = self._create_vertexlist()
+
+        super().__init__([self._vlist], [self._group], self._batch)
+
+    def _create_vertexlist(self):
+        w = self._width / 2
+        h = self._height / 2
+        d = self._depth / 2
+        s = self._scale
+
+        vertices = (-w, -h, -d,   # front, bottom-left    0
+                    w, -h, -d,    # front, bottom-right   1
+                    w, h, -d,     # front, top-right      2
+                    -w, h, -d,    # front, top-left       3
+                    -w, -h, d,    # back, bottom-left     4
+                    w, -h, d,     # back, bottom-right    5
+                    w, h, d,      # back, top-right       6
+                    -w, h, d)     # back, top-left        7
+
+        vertices = tuple(v * s for v in vertices)
+
+        # normals = (-0.5, -0.5, 0.0,     # front, bottom-left
+        #            0.5, -0.5, 0.0,      # front, bottom-right
+        #            0.5, 0.5, 0.0,       # front, top-right
+        #            -0.5,  0.5, 0.0,     # front, top-left
+        #            -0.5, -0.5, -1.0,    # back, bottom-left
+        #            0.5, -0.5, -1.0,     # back, buttom-right
+        #            0.5,  0.5, -1.0,     # back, top-right
+        #            -0.5, 0.5, -1.0)     # back, top-left
+
+        indices = (0, 3, 2, 0, 2, 1,    # front
+                   4, 5, 6, 4, 6, 7,    # back
+                   4, 7, 3, 4, 3, 0,    # left
+                   1, 2, 6, 1, 6, 5,    # right
+                   3, 7, 6, 3, 6, 2,    # top
+                   0, 1, 5, 0, 5, 4)    # bottom
+
+        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
+                                                 batch=self._batch, group=self._group,
+                                                 position=('f', vertices),
+                                                 normals=('f', vertices),
+                                                 colors=('f', self._color * (len(vertices) // 3)))
 
 
 _add_default_codecs()
