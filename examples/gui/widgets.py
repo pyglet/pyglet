@@ -15,8 +15,8 @@ def on_draw():
 # load resources to use for Widgets:
 ####################################
 
-depressed = pyglet.resource.image('button_up.png')
-pressed = pyglet.resource.image('button_down.png')
+unpressed = pyglet.resource.image('button_unpressed.png')
+pressed = pyglet.resource.image('button_pressed.png')
 hover = pyglet.resource.image('button_hover.png')
 bar = pyglet.resource.image('bar.png')
 knob = pyglet.resource.image('knob.png')
@@ -55,13 +55,13 @@ def text_entry_handler(widget, text):
 frame = pyglet.gui.Frame(window, order=4)
 
 
-togglebutton = pyglet.gui.ToggleButton(100, 400, pressed=pressed, depressed=depressed, hover=hover, batch=batch)
+togglebutton = pyglet.gui.ToggleButton(100, 400, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
 togglebutton.set_handler('on_toggle', toggle_button_handler)
 frame.add_widget(togglebutton)
 toggle_label = pyglet.text.Label("Toggle Button: False", x=300, y=400, batch=batch, color=(0, 0, 0, 255))
 
 
-pushbutton = pyglet.gui.PushButton(100, 300, pressed=pressed, depressed=depressed, hover=hover, batch=batch)
+pushbutton = pyglet.gui.PushButton(100, 300, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)
 pushbutton.set_handler('on_press', push_button_handler)
 pushbutton.set_handler('on_release', release_button_handler)
 frame.add_widget(pushbutton)

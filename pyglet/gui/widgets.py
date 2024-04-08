@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Tuple
+
 import pyglet
 
 from pyglet.event import EventDispatcher
@@ -13,7 +15,7 @@ from pyglet.text.layout import IncrementalTextLayout
 
 class WidgetBase(EventDispatcher):
 
-    def __init__(self, x, y, width, height):
+    def __init__(self, x: float, y: float, width: float, height: float) -> None:
         self._x = x
         self._y = y
         self._width = width
@@ -57,29 +59,23 @@ class WidgetBase(EventDispatcher):
         pass
 
     @property
-    def x(self):
-        """X coordinate of the widget.
-
-        :type: int
-        """
+    def x(self) -> float:
+        """X coordinate of the widget."""
         return self._x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: float):
         self._x = value
         self._update_position()
         self.dispatch_event("on_reposition", self)
 
     @property
-    def y(self):
-        """Y coordinate of the widget.
-
-        :type: int
-        """
+    def y(self) -> float:
+        """Y coordinate of the widget."""
         return self._y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: float):
         self._y = value
         self._update_position()
         self.dispatch_event("on_reposition", self)
@@ -97,7 +93,7 @@ class WidgetBase(EventDispatcher):
         self._parent = value
 
     @property
-    def position(self):
+    def position(self) -> Tuple[float, float]:
         """The x, y coordinate of the widget as a tuple.
 
         :type: tuple(int, int)
@@ -105,34 +101,27 @@ class WidgetBase(EventDispatcher):
         return self._x, self._y
 
     @position.setter
-    def position(self, values):
+    def position(self, values: Tuple[float, float]):
         self._x, self._y = values
         self._update_position()
         self.dispatch_event("on_reposition", self)
 
     @property
-    def width(self):
-        """Width of the widget.
-
-        :type: int
-        """
+    def width(self) -> float:
+        """Width of the widget."""
         return self._width
 
     @property
-    def height(self):
-        """Height of the widget.
-
-        :type: int
-        """
+    def height(self) -> float:
+        """Height of the widget."""
         return self._height
 
     @property
-    def aabb(self):
+    def aabb(self) -> Tuple[float, float, float, float]:
         """Bounding box of the widget.
 
-        Expressed as (x, y, x + width, y + height)
-
-        :type: (int, int, int, int)
+        Expressed as (x, y, x + width, y + height),
+        also referred to as (left, bottom, right, top).
         """
         return self._x, self._y, self._x + self._width, self._y + self._height
 
@@ -152,7 +141,7 @@ class WidgetBase(EventDispatcher):
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
 
-    def _check_hit(self, x, y):
+    def _check_hit(self, x: float, y: float) -> bool:
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
     def _update_position(self):
@@ -199,7 +188,7 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+    def __init__(self, x, y, pressed, unpressed, hover=None, batch=None, group=None):
         """Create a push button.
 
         :Parameters:
@@ -209,8 +198,8 @@ class PushButton(WidgetBase):
                 Y coordinate of the push button.
             `pressed` : `~pyglet.image.AbstractImage`
                 Image to display when the button is pressed.
-            `depresseed` : `~pyglet.image.AbstractImage`
-                Image to display when the button isn't pressed.
+            `unpressed` : `~pyglet.image.AbstractImage`
+                Image to display when the button is not pressed.
             `hover` : `~pyglet.image.AbstractImage`
                 Image to display when the button is being hovered over.
             `batch` : `~pyglet.graphics.Batch`
@@ -218,15 +207,15 @@ class PushButton(WidgetBase):
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the push button.
         """
-        super().__init__(x, y, depressed.width, depressed.height)
+        super().__init__(x, y, unpressed.width, unpressed.height)
         self._pressed_img = pressed
-        self._depressed_img = depressed
-        self._hover_img = hover or depressed
+        self._unpressed_img = unpressed
+        self._hover_img = hover or unpressed
 
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
+        self._sprite = pyglet.sprite.Sprite(self._unpressed_img, x, y, batch=batch, group=bg_group)
 
         self._pressed = False
 
@@ -242,7 +231,7 @@ class PushButton(WidgetBase):
     def value(self, value):
         assert type(value) is bool, "This Widget's value must be True or False."
         self._pressed = value
-        self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
+        self._sprite.image = self._pressed_img if self._pressed else self._unpressed_img
 
     def update_groups(self, order):
         self._sprite.group = Group(order=order + 1, parent=self._user_group)
@@ -257,19 +246,19 @@ class PushButton(WidgetBase):
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self.enabled or not self._pressed:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._unpressed_img
         self._pressed = False
         self.dispatch_event('on_release', self)
 
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.enabled or self._pressed:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._unpressed_img
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if not self.enabled or self._pressed:
             return
-        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._unpressed_img
 
     def on_press(self, widget: PushButton):
         """Event: Dispatched when the button is clicked."""
@@ -289,7 +278,7 @@ class ToggleButton(PushButton):
     """
 
     def _get_release_image(self, x, y):
-        return self._hover_img if self._check_hit(x, y) else self._depressed_img
+        return self._hover_img if self._check_hit(x, y) else self._unpressed_img
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self.enabled or not self._check_hit(x, y):
