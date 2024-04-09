@@ -1,3 +1,16 @@
+"""Minimal ShaderProgram example.
+
+This example shows how to use Shaders and ShaderPrograms in pyglet. This is a semi-minimal
+example, in that it also goes over pyglet's `Group` and `Batch` objects for easy batched
+rendering of GPU resources. The result of this example is a single textured quad, but the
+basics shown here will scale easily.
+
+The code shown here illustrates:
+  1. Compiling Shaders and linking a ShaderProgram.
+  2. Creating a custom `graphics.Group` to control GL state setting (for Batched rendering).
+  3. Using the `ShaderProgram.vertex_list_index` helper method to create GPU resources.
+
+"""
 import pyglet
 
 from pyglet.gl import *
@@ -12,7 +25,6 @@ window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()
 
 label = pyglet.text.Label("A minimal shader to display a textured quad.", x=5, y=5, batch=batch)
-
 
 
 @window.event
@@ -121,7 +133,8 @@ def create_quad(x, y, texture):
 tex = pyglet.resource.texture('pyglet.png')
 group = RenderGroup(tex, shader_program)
 indices = (0, 1, 2, 0, 2, 3)
-vertex_positions = create_quad(400, 200, tex)
+
+vertex_positions = create_quad(576, 296, tex)
 
 # count, mode, indices, batch, group, *data
 vertex_list = shader_program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, group,

@@ -1,6 +1,6 @@
 from typing import Any, Tuple, Dict
 
-from . import (app as app, canvas as canvas, clock as clock, customtypes as customtypes, event as event, font as font,
+from . import (app as app, display as display, clock as clock, customtypes as customtypes, event as event, font as font,
                gl as gl, graphics as graphics, gui as gui, image as image, input as input, math as math, media as media,
                model as model, resource as resource, shapes as shapes, sprite as sprite, text as text, window as window)
 

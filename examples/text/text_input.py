@@ -15,8 +15,7 @@ class TextWidget:
         font = self.document.get_font()
         height = font.ascent - font.descent
 
-        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, width, height, batch=batch)
-        self.layout.position = x, y, 0
+        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, x, y, 0, width, height, batch=batch)
         self.caret = pyglet.text.caret.Caret(self.layout)
         # Rectangular outline
         pad = 2

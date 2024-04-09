@@ -2,9 +2,9 @@ import pyglet
 import random
 
 
-WIDTH = 960
-HEIGHT = 540
-FPS = 60
+WIDTH = 1280
+HEIGHT = 720
+TARGET_FPS = 60
 
 window = pyglet.window.Window(WIDTH, HEIGHT, caption="Benchmark", resizable=True, vsync=False)
 label = pyglet.text.Label(" ", x=5, y=5, color=(223, 223, 223, 255), dpi=80)
@@ -31,7 +31,7 @@ def on_resize(width, height):
 def update(dt):
 
     fps = 1 / dt
-    count = int(fps - FPS)
+    count = int(fps - TARGET_FPS)
 
     if count > 0:
         for i in range(count//2):

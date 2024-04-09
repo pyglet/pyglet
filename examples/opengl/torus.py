@@ -27,6 +27,7 @@ except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling if not supported
     window = pyglet.window.Window(width=960, height=540, resizable=True)
 
+
 @window.event
 def on_draw():
     window.clear()
@@ -44,10 +45,11 @@ def update(dt):
     global time
     time += dt
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
-    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
-    rot_z = Mat4.from_rotation(time/4, Vec3(0, 0, 1))
+    rot_y = Mat4.from_rotation(time / 2, Vec3(0, 1, 0))
+    rot_z = Mat4.from_rotation(time / 4, Vec3(0, 0, 1))
     trans = Mat4.from_translation(Vec3(0, 0, -3.0))
     torus_model.matrix = trans @ rot_x @ rot_y @ rot_z
+
 
 def setup():
     # One-time GL setup
@@ -59,8 +61,8 @@ def setup():
     # Uncomment this line for a wireframe view:
     # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
-def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
 
+def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     # Create the vertex and normal arrays.
     vertices = []
     normals = []
@@ -108,7 +110,7 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
     group = pyglet.model.MaterialGroup(material=material, program=shader)
 
-    vertex_list = shader.vertex_list_indexed(len(vertices)//3, GL_TRIANGLES, indices, batch, group,
+    vertex_list = shader.vertex_list_indexed(len(vertices) // 3, GL_TRIANGLES, indices, batch, group,
                                              position=('f', vertices),
                                              normals=('f', normals),
                                              colors=('f', material.diffuse * (len(vertices) // 3)))

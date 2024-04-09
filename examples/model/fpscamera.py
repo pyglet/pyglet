@@ -141,7 +141,7 @@ class FPSCamera:
 
 
 if __name__ == "__main__":
-    window = pyglet.window.Window(width=964, height=540, resizable=True)
+    window = pyglet.window.Window(resizable=True)
     batch = pyglet.graphics.Batch()
 
     @window.event

@@ -408,8 +408,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
     # Class attributes
-    _default_width = 960
-    _default_height = 540
+    _default_width = 1280
+    _default_height = 720
 
     # Create a default ShaderProgram, so the Window instance can
     # update the `WindowBlock` UBO shared by all default shaders.

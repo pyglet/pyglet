@@ -1,3 +1,5 @@
+"""This is a simple example that visually confirms """
+
 import pyglet
 from pyglet.gl import *
 
@@ -13,7 +15,7 @@ program = pyglet.graphics.get_default_shader()
 ##########################################################
 #   TESTS !
 ##########################################################
-label = pyglet.text.Label("This is a test", x=0, y=180, dpi=200, color=(255, 25, 255, 150), batch=batch)
+label = pyglet.text.Label("Scroll the mouse wheel", x=0, y=180, dpi=200, color=(255, 25, 255, 150), batch=batch)
 
 vertex_list = program.vertex_list(3, GL_TRIANGLES,
                                   position=('f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
@@ -72,24 +74,14 @@ def on_mouse_scroll(x, y, mouse, direction):
 @window.event
 def on_draw():
     window.clear()
-
-    # pyglet.graphics.draw(3, GL_TRIANGLES, ('position3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
-    #                                       ('colors3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
-    #
-    # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('position2i', (225, 300,   250, 300,   250, 325,   225, 325)),
-    #                              ('colors3f', (0.5, 1, 0.2,  0.5, 0.2, 1,  0.2, 0.5, 1, 1, 0.5, 0.2)))
-
     vertex_list.draw(GL_TRIANGLES)
-
     batch.draw()
-
     standalone_sprite.draw()
 
 
 def update(dt):
-    for sprite in sprites:
-        sprite.rotation += 100 * dt % 360
+    for spr in sprites:
+        spr.rotation += 100 * dt % 360
 
 
 if __name__ == "__main__":
