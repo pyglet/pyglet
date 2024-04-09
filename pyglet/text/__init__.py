@@ -216,42 +216,27 @@ class DocumentLabel(layout.TextLayout):
             init_document: bool = True):
         """Create a label for a given document.
 
-        :Parameters:
-            `document` :
-                Document to attach to the layout.
-            `x` :
-                X coordinate of the label.
-            `y` :
-                Y coordinate of the label.
-            `z` :
-                Z coordinate of the label.
-            `width` :
-                Width of the label in pixels, or None
-            `height` :
-                Height of the label in pixels, or None
-            `anchor_x` :
-                Anchor point of the X coordinate: one of ``"left"``,
-                ``"center"`` or ``"right"``.
-            `anchor_y` :
-                Anchor point of the Y coordinate: one of ``"bottom"``,
-                ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`:
-                The amount to rotate the label in degrees. A positive amount
-                will be a clockwise rotation, negative values will result in
-                counter-clockwise rotation.
-            `multiline` :
-                If True, the label will be word-wrapped and accept newline
+        Args:
+            document: Document to attach to the layout.
+            x: X coordinate of the label.
+            y: Y coordinate of the label.
+            z: Z coordinate of the label.
+            width: Width of the label in pixels, or None
+            height:  Height of the label in pixels, or None
+            anchor_x: Anchor point of the X coordinate: one of
+                ``"left"``, `"center"`` or ``"right"``.
+            anchor_y:  Anchor point of the Y coordinate: one of
+                ``"bottom"``, ``"baseline"``, ``"center"`` or ``"top"``.
+            rotation: The amount to rotate the label in degrees. A
+                positive amount will be a clockwise rotation, negative
+                values will result in counter-clockwise rotation.
+            multiline: If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
-            `dpi` :
-                Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` :
-                Optional graphics batch to add the label to.
-            `group` :
-                Optional graphics group to use.
-            `program` :
-                Optional graphics shader to use. Will affect all glyphs.
-            `init_document` :
-                If ``True``, the document will be initialized. If you
+            dpi: Resolution of the fonts in this layout.  Defaults to 96.
+            batch: Optional graphics batch to add the label to.
+            group: Optional graphics group to use.
+            program: Optional graphics shader to use. Will affect all glyphs.
+            init_document: If ``True``, the document will be initialized. If you
                 are passing an already-initialized document, then you can
                 avoid duplicating work by setting this to ``False``.
         """
