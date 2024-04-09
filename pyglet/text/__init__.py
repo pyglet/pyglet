@@ -213,7 +213,8 @@ class DocumentLabel(layout.TextLayout):
             multiline: bool = False, dpi: Optional[int] = None,
             batch: Optional["Batch"] = None, group: Optional["Group"] = None,
             program: Optional["ShaderProgram"] = None,
-            init_document: bool = True):
+            init_document: bool = True
+    ):
         """Create a label for a given document.
 
         Args:
