@@ -8,10 +8,14 @@ import os
 import sys
 import time
 import datetime
+import typing
+from typing import TypeVar
 
 # -- Extensions to the  Napoleon GoogleDocstring class ---------------------
 from sphinx.ext.napoleon.docstring import GoogleDocstring
 import sphinx_autodoc_typehints
+from sphinx.parsers import RSTParser
+
 
 def parse_attributes_section(self, section):
     # Combination of _format_fields and _parse_attributes_section to get type hints loaded properly using
@@ -52,6 +56,14 @@ def _revert_patch():
 
 sphinx_autodoc_typehints.patches._patch_google_docstring_lookup_annotation = _revert_patch
 
+# Patch to fix our RST insertion issues.
+class _RstSnippetParser(RSTParser):
+    @staticmethod
+    def decorate(_content) -> None:
+        """Override to skip processing rst_epilog/rst_prolog for typing."""
+
+
+sphinx_autodoc_typehints.parser.RSTParser = _RstSnippetParser
 
 #
 # def parse_class_attributes_section(self, section):
@@ -96,7 +108,10 @@ except ImportError:
     sys.exit(1)
 
 
+
+
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
+
 
 # Set up substitutions that can be referenced later.
 # IMPORTANT:
@@ -107,21 +122,19 @@ except ImportError:
 # avoid having to deal with syntax errors.
 # Also, please note that there does not appear to be a good way to use
 # substitutions within link text by default.
-# rst_prolog = """
-# .. |min_python_version| replace:: {min_python_version}
-# .. |min_python_version_package_name| replace:: ``python{min_python_version}``
-# .. |min_python_version_fancy_str| replace:: Python {min_python_version}+
-# """.format(
-#     min_python_version=pyglet.MIN_PYTHON_VERSION_STR
-# )
+rst_epilog = """
+.. |min_python_version| replace:: {min_python_version}
+.. |min_python_version_package_name| replace:: ``python{min_python_version}``
+.. |min_python_version_fancy_str| replace:: Python {min_python_version}\+
+""".format(
+    min_python_version=pyglet.MIN_PYTHON_VERSION_STR
+)
 
 implementations = ["cocoa", "win32", "xlib"]
 
 # For each module, a list of submodules that should not be imported.
 # If value is None, do not try to import any submodule.
 skip_modules = {"pyglet": {
-                     "pyglet.com": None,
-                     "pyglet.compat": None,
                      "pyglet.lib": None,
                      "pyglet.libs": None,
                      "pyglet.app": implementations,
@@ -129,7 +142,8 @@ skip_modules = {"pyglet": {
                      "pyglet.extlibs": None,
                      "pyglet.font": ["quartz",
                                      "win32",
-                                     "freetype", "freetype_lib",
+                                     "freetype",
+                                     "freetype_lib",
                                      "fontconfig",
                                      "win32query"],
                      "pyglet.input": ["darwin_hid",
@@ -426,7 +440,35 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
+python_maximum_signature_line_length = 85
 
 nitpicky = True
 
+def custom_formatter(annotation, config):
+    # Fixes TypeVar bounds, where the bound reference is forward referenced and class cannot be determined.
+    # Defaults to a class style. Seems good enough for now since most bound things are classes.
+    if isinstance(annotation, TypeVar):
+        try:
+            module = sphinx_autodoc_typehints.get_annotation_module(annotation)
+            class_name = sphinx_autodoc_typehints.get_annotation_class_name(annotation, module)
+            args = sphinx_autodoc_typehints.get_annotation_args(annotation, module, class_name)
+        except ValueError:
+            return str(annotation).strip("'")
+        params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
+        params = {k: v for k, v in params.items() if v}
+        if "bound" in params:
+            bound_param = params["bound"]
+            if isinstance(bound_param, typing.ForwardRef):
+                # May be wrong but
+                params["bound"] = f":py:class:`{bound_param.__forward_arg__}`"
+            else:
+                params["bound"] = f"{sphinx_autodoc_typehints.format_annotation(bound_param, config)}"
+        args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
+        if params:
+            args_format += "".join(f", *{k} =* {v}" for k, v in params.items())
+        args_format += ")"
+        formatted_args = None if args else args_format
+        return f":py:class:`TypeVar` {formatted_args}"
+    return None
 
+typehints_formatter = custom_formatter

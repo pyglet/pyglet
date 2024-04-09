@@ -3,7 +3,7 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Pattern, Union, Optional, List, Any, Tuple, Callable, Iterator, Type, Dict, \
-    Protocol
+    Protocol, ClassVar
 import pyglet
 from pyglet import graphics
 from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
@@ -17,7 +17,7 @@ from pyglet.text.runlist import RunIterator, AbstractRunIterator
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.graphics import Batch
+    from pyglet.graphics import Batch, Group
     from pyglet.text.document import AbstractDocument, InlineElement
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -188,16 +188,19 @@ class _LayoutVertexList(Protocol):
 
 
 def get_default_layout_shader() -> ShaderProgram:
+    """The default shader used for all glyphs in the layout."""
     return pyglet.gl.current_context.create_program((layout_vertex_source, 'vertex'),
                                                     (layout_fragment_source, 'fragment'))
 
 
 def get_default_image_layout_shader() -> ShaderProgram:
+    """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
     return pyglet.gl.current_context.create_program((layout_vertex_source, 'vertex'),
                                                     (layout_fragment_image_source, 'fragment'))
 
 
 def get_default_decoration_shader() -> ShaderProgram:
+    """The default shader for underline and background decoration effects in the layout."""
     return pyglet.gl.current_context.create_program((decoration_vertex_source, 'vertex'),
                                                     (decoration_fragment_source, 'fragment'))
 
@@ -368,7 +371,7 @@ class _AbstractBox(ABC):
         ...
 
     @abstractmethod
-    def get_position_in_box(self, x: int) -> int:
+    def get_position_in_box(self, x: float) -> int:
         ...
 
     @abstractmethod
@@ -431,7 +434,7 @@ class _GlyphBox(_AbstractBox):
         baseline = 0
         x1 = line_x
         for start, end, baseline in context.baseline_iter.ranges(i, i + n_glyphs):
-            baseline = layout.parse_distance(baseline)
+            baseline = layout._parse_distance(baseline)
             assert len(self.glyphs[start - i:end - i]) == end - start
             for kern, glyph in self.glyphs[start - i:end - i]:
                 x1 += kern
@@ -580,7 +583,7 @@ class _GlyphBox(_AbstractBox):
             x += glyph.advance + kern
         return x
 
-    def get_position_in_box(self, x: int) -> int:
+    def get_position_in_box(self, x: float) -> int:
         position = 0
         last_glyph_x = 0
         for kern, glyph in self.glyphs:
@@ -648,7 +651,7 @@ class _InlineElementBox(_AbstractBox):
         else:
             return self.advance
 
-    def get_position_in_box(self, x: int) -> int:
+    def get_position_in_box(self, x: float) -> int:
         if x < self.advance // 2:
             return 0
         else:
@@ -767,20 +770,17 @@ class TextDecorationGroup(graphics.Group):
 class TextLayout:
     """Lay out and display documents.
 
-    This class is intended for displaying documents that do not change
-    regularly -- any change will cost some time to lay out the complete
-    document again and regenerate all vertex lists.
-
-    The benefit of this class is that texture state is shared between
-    all layouts of this class.  The time to draw one :py:func:`~pyglet.text.layout.TextLayout` may be
-    roughly the same as the time to draw one :py:class:`~pyglet.text.layout.IncrementalTextLayout`; but
-    drawing ten :py:func:`~pyglet.text.layout.TextLayout` objects in one batch is much faster than drawing
-    ten incremental or scrollable text layouts.
+    This class is intended for displaying documents.
 
     :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.HTMLLabel` provide a convenient interface to this class.
 
+    Some properties may cause the document to be recreated rather than updated. Refer to property documentation for
+    details.
+
     Attributes:
-        breh: This will be a layout group.
+        group_class: Default group used to set the state for all glyphs.
+        decoration_class: Default group used to set the state for all decorations including background colors and
+            underlines.
     """
     _vertex_lists: List[_LayoutVertexList]
     _boxes: List[_AbstractBox]
@@ -791,13 +791,8 @@ class TextLayout:
     _update_enabled: bool = True
     _own_batch: bool = False
 
-    broseph: Type[AbstractDocument]
-    breh: Type[TextLayoutGroup] = TextLayoutGroup
-
-    group_class = TextLayoutGroup
-    decoration_class = TextDecorationGroup
-
-    bro_wtf: int = 5
+    group_class: ClassVar[Type[Group]] = TextLayoutGroup
+    decoration_class: ClassVar[Type[Group]] = TextDecorationGroup
 
     _ascent: float = 0
     _descent: float = 0
@@ -819,13 +814,11 @@ class TextLayout:
     _visible: bool = True
 
     def __init__(self, document: AbstractDocument, width: Optional[int] = None, height: Optional[int] = None,
-                 x: float = 0,
-                 y: float = 0, z: float = 0, anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom',
-                 rotation: float = 0,
-                 multiline: bool = False, dpi: Optional[float] = None, batch: Optional[Batch] = None,
-                 group: Optional[graphics.Group] = None, program: Optional[ShaderProgram] = None,
-                 wrap_lines: bool = True, init_document: bool = True) -> None:
-        """Create a text layout.
+                 x: float = 0, y: float = 0, z: float = 0, anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom',
+                 rotation: float = 0, multiline: bool = False, dpi: Optional[float] = None,
+                 batch: Optional[Batch] = None, group: Optional[graphics.Group] = None,
+                 program: Optional[ShaderProgram] = None, wrap_lines: bool = True, init_document: bool = True) -> None:
+        """Initialize a text layout.
 
         Args:
             document: Document to display.
@@ -847,11 +840,10 @@ class TextLayout:
             group: Optional Group to parent all internal Groups that this text
                 layout uses.  Note that layouts with the same Groups will
                 be rendered simultaneously in a Batch.
-            program: Optional graphics shader to use. Will affect all glyphs.s
+            program: Optional graphics shader to use. Will affect all glyphs in the layout.
             wrap_lines: If True and `multiline` is True, the text is word-wrapped using the specified width.
             init_document: If True the document will be initialized. If subclassing then
-                you may want to avoid duplicate initializations by changing
-                to False.
+                you may want to avoid duplicate initializations by changing to False.
         """
         self._x = x
         self._y = y
@@ -872,7 +864,9 @@ class TextLayout:
         # Note that this is only relevant to layouts that do not store directly on lines.
         self._boxes = []
 
+        #: :meta private:
         self.group_cache = {}
+
         self._initialize_groups()
 
         if batch is None:
@@ -907,11 +901,15 @@ class TextLayout:
         self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
 
     @property
-    def group(self) -> Optional[graphics.Group]:
+    def group(self) -> Optional[Group]:
+        """Get the Group specified by the user.
+
+        Changing a group will cause the layout to be recreated.
+        """
         return self._user_group
 
     @group.setter
-    def group(self, group: graphics.Group) -> None:
+    def group(self, group: Group) -> None:
         self._user_group = group
         self._initialize_groups()
         self.group_cache.clear()
@@ -919,10 +917,7 @@ class TextLayout:
 
     @property
     def dpi(self) -> float:
-        """Get DPI used by this layout.
-
-        :type: float
-        """
+        """Get DPI used by this layout."""
         return self._dpi
 
     @property
@@ -932,8 +927,6 @@ class TextLayout:
          For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is
          far more efficient to modify a document in-place than to replace
          the document instance on the layout.
-
-         :type: `AbstractDocument`
          """
         return self._document
 
@@ -953,11 +946,7 @@ class TextLayout:
     def batch(self) -> Batch:
         """The Batch that this Layout is assigned to.
 
-        If no Batch is assigned, an internal Batch is
-        created and used.
-
-        :type: :py:class:`~pyglet.graphics.Batch`
-
+        If no Batch is assigned, an internal Batch is created and used.
         """
         return self._batch
 
@@ -979,10 +968,7 @@ class TextLayout:
     def program(self) -> ShaderProgram:
         """The ShaderProgram that is assigned to this Layout.
 
-        If set, this shader will impact all text layouts except InlineElements.
-
-        :type: :py:class:`~pyglet.graphics.shader.ShaderProgram`
-
+        If set, the shader will impact all Glyphs. InlineElements will not be affected.
         """
         return self._program
 
@@ -999,8 +985,6 @@ class TextLayout:
         """X coordinate of the layout.
 
         See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`.
-
-        :type: int
         """
         return self._x
 
@@ -1016,9 +1000,7 @@ class TextLayout:
     def y(self) -> float:
         """Y coordinate of the layout.
 
-        See also `anchor_y`.
-
-        :type: int
+        See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_y`.
         """
         return self._y
 
@@ -1032,10 +1014,7 @@ class TextLayout:
 
     @property
     def z(self) -> float:
-        """Z coordinate of the layout.
-
-        :type: int
-        """
+        """Z coordinate of the layout."""
         return self._z
 
     @z.setter
@@ -1048,9 +1027,11 @@ class TextLayout:
 
     @property
     def rotation(self) -> float:
-        """Rotation of the layout.
+        """Rotation of the layout in degrees. Rotated based on the anchor of the layout.
 
-        :type: float
+        Negative values will rotate in reverse.
+
+        See :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`, and :py:attr:`~pyglet.text.layout.TextLayout.anchor_y`.
         """
         return self._rotation
 
@@ -1072,8 +1053,6 @@ class TextLayout:
 
         See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`,
         and :py:attr:`~pyglet.text.layout.TextLayout.anchor_y`.
-
-        :type: (int, int, int)
         """
         return self._x, self._y, self._z
 
@@ -1101,8 +1080,6 @@ class TextLayout:
     @property
     def visible(self) -> bool:
         """True if the layout will be visible when drawn.
-
-        :type: bool
         """
         return self._visible
 
@@ -1141,8 +1118,6 @@ class TextLayout:
         If `multiline` and `wrap_lines` is True, the `width` defines where the
         text will be wrapped. If `multiline` is False or `wrap_lines` is False,
         this property has no effect.
-
-        :type: int
         """
         return self._width
 
@@ -1160,8 +1135,6 @@ class TextLayout:
         text when :py:attr:`~pyglet.text.layout.TextLayout.anchor_y` and
         :py:attr:`~pyglet.text.layout.TextLayout.content_valign` are
         used.
-
-        :type: int
         """
         return self._height
 
@@ -1174,11 +1147,9 @@ class TextLayout:
     def multiline(self) -> bool:
         """Set if multiline layout is enabled.
 
-        If multiline is False, newline and paragraph characters are ignored and
+        If ``multiline`` is False, newline and paragraph characters are ignored and
         text is not word-wrapped.
-        If True, the text is word-wrapped only if the `wrap_lines` is True.
-
-        :type: bool
+        If True, the text is word-wrapped only if the ``wrap_lines`` is True.
         """
         return self._multiline
 
@@ -1192,8 +1163,9 @@ class TextLayout:
     def anchor_x(self) -> AnchorX:
         """Horizontal anchor alignment.
 
-        This property determines the meaning of the `x` coordinate.
-        It is one of the enumerants:
+        This property determines the meaning of the ``x`` coordinate.
+
+        The following values are supported:
 
         ``"left"`` (default)
             The X coordinate gives the position of the left edge of the layout.
@@ -1203,11 +1175,8 @@ class TextLayout:
             The X coordinate gives the position of the right edge of the layout.
 
         For the purposes of calculating the position resulting from this
-        alignment, the width of the layout is taken to be `width` if `multiline`
-        is True and `wrap_lines` is True, otherwise `content_width`.
-
-        :type: str
-        """
+        alignment, the width of the layout is taken to be ``width`` if ``multiline``
+        is True and ``wrap_lines`` is True, otherwise ``content_width``."""
         return self._anchor_x
 
     @anchor_x.setter
@@ -1219,8 +1188,9 @@ class TextLayout:
     def anchor_y(self) -> AnchorY:
         """Vertical anchor alignment.
 
-        This property determines the meaning of the `y` coordinate.
-        It is one of the enumerants:
+        This property determines the meaning of the ``y`` coordinate.
+
+        The following values are supported:
 
         ``"top"``
             The Y coordinate gives the position of the top edge of the layout.
@@ -1234,11 +1204,9 @@ class TextLayout:
 
         For the purposes of calculating the position resulting from this
         alignment, the height of the layout is taken to be the smallest of
-        `height` and `content_height`.
+        ``height`` and ``content_height``.
 
-        See also `content_valign`.
-
-        :type: str
+        See also :py:attr:`~pyglet.text.layout.TextLayout.content_valign`.
         """
         return self._anchor_y
 
@@ -1252,8 +1220,9 @@ class TextLayout:
         """Vertical alignment of content within larger layout box.
 
         This property determines how content is positioned within the layout
-        box when ``content_height`` is less than ``height``.  It is one
-        of the enumerants:
+        box when ``content_height`` is less than ``height``.
+
+        The following values are supported:
 
         ``top`` (default)
             Content is aligned to the top of the layout box.
@@ -1266,8 +1235,6 @@ class TextLayout:
         than ``height`` (in which case the content is aligned to the top) or when
         ``height`` is ``None`` (in which case there is no vertical layout box
         dimension).
-
-        :type: str
         """
         return self._content_valign
 
@@ -1278,20 +1245,12 @@ class TextLayout:
 
     @property
     def left(self) -> float:
-        """
-        The x-coordinate of the left side of the layout.
-
-        :type: int
-        """
+        """ The x-coordinate of the left side of the layout."""
         return self._x + self._anchor_left
 
     @property
     def right(self) -> float:
-        """
-        The x-coordinate of the right side of the layout.
-
-        :type: int
-        """
+        """The x-coordinate of the right side of the layout"""
         if self._width is None:
             width = self._content_width
         else:
@@ -1301,20 +1260,12 @@ class TextLayout:
 
     @property
     def bottom(self) -> float:
-        """
-        The y-coordinate of the bottom side of the layout.
-
-        :type: int
-        """
+        """The y-coordinate of the bottom side of the layout."""
         return self._y + self._anchor_bottom
 
     @property
     def top(self) -> float:
-        """
-        The y-coordinate of the top side of the layout.
-
-        :type: int
-        """
+        """The y-coordinate of the top side of the layout."""
         if self._height is None:
             height = self._content_height
         else:
@@ -1327,7 +1278,7 @@ class TextLayout:
         assert not self._wrap_lines or self._width, \
             "When the parameters 'multiline' and 'wrap_lines' are True, the parameter 'width' must be a number."
 
-    def parse_distance(self, distance: Optional[Union[str, int, float]]) -> Optional[int]:
+    def _parse_distance(self, distance: Optional[Union[str, int, float]]) -> Optional[int]:
         if distance is None:
             return None
         return _parse_distance(distance, self._dpi)
@@ -1355,8 +1306,7 @@ class TextLayout:
         self._update()
 
     def delete(self) -> None:
-        """Remove this layout from its batch.
-        """
+        """Deletes all vertices and boxes associated with the layout."""
         for box in self._boxes:
             box.delete(self)
 
@@ -1364,9 +1314,17 @@ class TextLayout:
         self._boxes.clear()
 
     def get_as_texture(self, min_filter=GL_NEAREST, mag_filter=GL_NEAREST) -> Texture:
-        """Returns a Texture with the TextLayout drawn to it. Each call to this function returns a new
-        Texture.
-        ~Warning: Usage is recommended only if you understand how texture generation affects your application.
+        """Utilizes a :py:class:`~pyglet.image.framebuffer.Framebuffer` to draw the current layout into a texture.
+
+        .. warning:: Usage is recommended only if you understand how texture generation affects your application.
+            Improper use will cause texture memory leaks and performance degradation.
+
+        .. note:: Does not include InlineElements.
+
+        Returns:
+            Returns a new texture with the layout drawn into it.
+
+        .. versionadded:: 2.0.11
         """
         framebuffer = pyglet.image.Framebuffer()
         temp_pos = self.position
@@ -1388,9 +1346,8 @@ class TextLayout:
     def draw(self) -> None:
         """Draw this text layout.
 
-        Note that this method performs very badly if a batch was supplied to
-        the constructor.  If you add this layout to a batch, you should
-        ideally use only the batch's draw method.
+        .. note:: This method performs very badly if a batch was supplied to the constructor.
+            If you add this layout to a batch, you should ideally use only the batch's draw method.
 
         If this is not its own batch, InlineElements will not be drawn.
         """
@@ -1600,11 +1557,9 @@ class TextLayout:
 
     def _flow_glyphs_wrap(self, glyphs: List[Union[_InlineElementBox, Glyph]], owner_runs: runlist.RunList, start: int,
                           end: int) -> Iterator[_Line]:
-        """Word-wrap styled text into lines of fixed width.
+        # Word-wrap styled text into lines of fixed width.
+        # Fits glyphs in range start to end into Lines which are then yielded.
 
-        Fits `glyphs` in range `start` to `end` into `_Line` s which are
-        then yielded.
-        """
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
@@ -1630,11 +1585,11 @@ class TextLayout:
                                                          lambda value: value is not None, [])
         line = _Line(start)
         line.align = align_iterator[start]
-        line.margin_left = self.parse_distance(margin_left_iterator[start])
-        line.margin_right = self.parse_distance(margin_right_iterator[start])
+        line.margin_left = self._parse_distance(margin_left_iterator[start])
+        line.margin_right = self._parse_distance(margin_right_iterator[start])
         if start == 0 or self.document.text[start - 1] in u'\n\u2029':
             line.paragraph_begin = True
-            line.margin_left += self.parse_distance(indent_iterator[start])
+            line.margin_left += self._parse_distance(indent_iterator[start])
         wrap = wrap_iterator[start]
         if self._wrap_lines:
             width = self._width - line.margin_left - line.margin_right
@@ -1680,7 +1635,7 @@ class TextLayout:
                     kern = 0
                     nokern = False
                 else:
-                    kern = self.parse_distance(kerning_iterator[index])
+                    kern = self._parse_distance(kerning_iterator[index])
 
                 if wrap != 'char' and text in u'\u0020\u200b\t':
                     # Whitespace: commit pending runs to this line.
@@ -1692,7 +1647,7 @@ class TextLayout:
                     if text == '\t':
                         # Fix up kern for this glyph to align to the next tab stop
                         for tab_stop in tab_stops_iterator[index]:
-                            tab_stop = self.parse_distance(tab_stop)
+                            tab_stop = self._parse_distance(tab_stop)
                             if tab_stop > x + line.margin_left:
                                 break
                         else:
@@ -1768,8 +1723,8 @@ class TextLayout:
                             try:
                                 line = _Line(next_start)
                                 line.align = align_iterator[next_start]
-                                line.margin_left = self.parse_distance(margin_left_iterator[next_start])
-                                line.margin_right = self.parse_distance(margin_right_iterator[next_start])
+                                line.margin_left = self._parse_distance(margin_left_iterator[next_start])
+                                line.margin_right = self._parse_distance(margin_right_iterator[next_start])
                             except IndexError:
                                 # XXX This used to throw StopIteration in some cases, causing the
                                 # final part of this method not to be executed. Refactoring
@@ -1802,7 +1757,7 @@ class TextLayout:
                     elif new_paragraph:
                         # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
-                        line.margin_left += self.parse_distance(indent_iterator[next_start])
+                        line.margin_left += self._parse_distance(indent_iterator[next_start])
                         if self._wrap_lines:
                             width = self._width - line.margin_left - line.margin_right
                     elif not new_line:
@@ -1890,21 +1845,21 @@ class TextLayout:
             y = 0
         else:
             line = lines[start - 1]
-            line_spacing = self.parse_distance(line_spacing_iterator[line.start])
-            leading = self.parse_distance(leading_iterator[line.start])
+            line_spacing = self._parse_distance(line_spacing_iterator[line.start])
+            leading = self._parse_distance(leading_iterator[line.start])
 
             y = line.y
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self.parse_distance(margin_bottom_iterator[line.start])
+                y -= self._parse_distance(margin_bottom_iterator[line.start])
 
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= self.parse_distance(margin_top_iterator[line.start])
-                line_spacing = self.parse_distance(line_spacing_iterator[line.start])
-                leading = self.parse_distance(leading_iterator[line.start])
+                y -= self._parse_distance(margin_top_iterator[line.start])
+                line_spacing = self._parse_distance(line_spacing_iterator[line.start])
+                leading = self._parse_distance(leading_iterator[line.start])
             else:
                 y -= leading
 
@@ -1931,7 +1886,7 @@ class TextLayout:
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self.parse_distance(margin_bottom_iterator[line.start])
+                y -= self._parse_distance(margin_bottom_iterator[line.start])
 
             line_index += 1
         else:

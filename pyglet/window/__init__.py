@@ -1908,10 +1908,16 @@ class FPSDisplay:
 
 
 if _is_pyglet_doc_run:
-    # We are building documentation
+    # We are building documentation. Trick docs into thinking BaseWindow is Window.
+    import inspect
+
     Window = BaseWindow
     Window.__name__ = 'Window'
-    del BaseWindow
+    Window.__qualname__ = 'Window'
+
+    # We also need to replace all qualname members so Sphinx and Typing modules pick up the correct class.
+    for name, method_obj in inspect.getmembers(Window, predicate=inspect.isfunction):
+        method_obj.__qualname__ = method_obj.__qualname__.replace("BaseWindow", "Window")
 
 else:
     # Try to determine which platform to use.

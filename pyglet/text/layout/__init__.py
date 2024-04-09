@@ -116,6 +116,7 @@ Other attributes can be used to store additional style information within the
 document; they will be ignored by the built-in text classes.
 
 .. versionadded:: 1.1
+
 """
 
 from pyglet.text.layout.base import TextLayout, TextLayoutGroup, TextDecorationGroup, get_default_layout_shader, \
