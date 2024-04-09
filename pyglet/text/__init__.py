@@ -40,10 +40,10 @@ creating scrollable layouts.
 
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Tuple
 
 import pyglet
-from pyglet.customtypes import AnchorX, AnchorY
+from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign
 
 from pyglet.text import layout, document, caret
 
@@ -376,16 +376,21 @@ class DocumentLabel(layout.TextLayout):
 
 
 class Label(DocumentLabel):
-    """Plain text label.
-    """
+    """Plain text label."""
 
-    def __init__(self, text='',
-                 font_name=None, font_size=None, bold=False, italic=False, stretch=False,
-                 color=(255, 255, 255, 255),
-                 x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline', rotation=0,
-                 align='left',
-                 multiline=False, dpi=None, batch=None, group=None, program=None):
+    def __init__(
+            self, text: str ='',
+            x: float = 0.0, y: float = 0.0, z: float = 0.0,
+            width: Optional[int] = None, height: Optional[int] = None,
+            anchor_x: AnchorX = 'left', anchor_y: AnchorY ='baseline', rotation: float = 0.0,
+            multiline: bool = False, dpi: Optional[int] = None,
+            font_name: Optional[str] = None, font_size: Optional[int] = None,
+            bold: bool = False, italic: bool = False, stretch: bool = False,
+            color: Tuple[int, int, int, int] = (255, 255, 255, 255),
+            align: ContentVAlign ='left',
+            batch: Optional["Batch"] = None, group: Optional["Group"] = None,
+            program: Optional["ShaderProgram"] = None
+    ):
         """Create a plain text label.
 
         :Parameters:
