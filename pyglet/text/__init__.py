@@ -40,10 +40,17 @@ creating scrollable layouts.
 
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
+from typing import Optional, TYPE_CHECKING
 
 import pyglet
+from pyglet.customtypes import AnchorX, AnchorY
 
 from pyglet.text import layout, document, caret
+
+if TYPE_CHECKING:
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.text.layout.base import AbstractDocument
 
 
 class DocumentDecodeException(Exception):
@@ -198,48 +205,52 @@ class DocumentLabel(layout.TextLayout):
     associated document.
     """
 
-    def __init__(self, document=None,
-                 x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None,
-                 program=None, init_document=True):
+    def __init__(
+            self, document: Optional["AbstractDocument"] = None,
+            x: float = 0.0, y: float = 0.0, z: float = 0.0,
+            width: Optional[int] =None, height: Optional[int] =None,
+            anchor_x: AnchorX ='left', anchor_y: AnchorY ='baseline', rotation: float = 0.0,
+            multiline: bool = False, dpi: Optional[int] = None,
+            batch: Optional["Batch"] = None, group: Optional["Group"] = None,
+            program: Optional["ShaderProgram"] = None,
+            init_document: bool = True):
         """Create a label for a given document.
 
         :Parameters:
-            `document` : `AbstractDocument`
+            `document` :
                 Document to attach to the layout.
-            `x` : int
+            `x` :
                 X coordinate of the label.
-            `y` : int
+            `y` :
                 Y coordinate of the label.
-            `z` : int
+            `z` :
                 Z coordinate of the label.
-            `width` : int
+            `width` :
                 Width of the label in pixels, or None
-            `height` : int
+            `height` :
                 Height of the label in pixels, or None
-            `anchor_x` : str
+            `anchor_x` :
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `anchor_y` : str
+            `anchor_y` :
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`: float
+            `rotation`:
                 The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-            `multiline` : bool
+            `multiline` :
                 If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
-            `dpi` : float
+            `dpi` :
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `~pyglet.graphics.Batch`
+            `batch` :
                 Optional graphics batch to add the label to.
-            `group` : `~pyglet.graphics.Group`
+            `group` :
                 Optional graphics group to use.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` :
                 Optional graphics shader to use. Will affect all glyphs.
-            `init_document` : bool
+            `init_document` :
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing
                 to False.
