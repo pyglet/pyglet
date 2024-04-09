@@ -251,9 +251,9 @@ class DocumentLabel(layout.TextLayout):
             `program` :
                 Optional graphics shader to use. Will affect all glyphs.
             `init_document` :
-                If True the document will be initialized. If subclassing then
-                you may want to avoid duplicate initializations by changing
-                to False.
+                If ``True``, the document will be initialized. If you
+                are passing an already-initialized document, then you can
+                avoid duplicating work by setting this to ``False``.
         """
         super().__init__(document, width, height, x, y, z, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=init_document)
