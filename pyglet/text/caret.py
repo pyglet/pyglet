@@ -9,50 +9,47 @@ Example usage::
     my_layout = layout.IncrementalTextLayout(...)
     my_caret = caret.Caret(my_layout)
     my_window.push_handlers(my_caret)
-
-.. versionadded:: 1.1
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Tuple, Any, Optional, Pattern
+
 import re
 import time
+from typing import TYPE_CHECKING, Any, Pattern
 
-from pyglet import clock
-from pyglet import event
+from pyglet import clock, event
 from pyglet.window import key
 
 if TYPE_CHECKING:
-    from pyglet.text.layout import IncrementalTextLayout
     from pyglet.graphics import Batch
+    from pyglet.text.layout import IncrementalTextLayout
 
 
 class Caret:
-    """Visible text insertion marker for
-    `pyglet.text.layout.IncrementalTextLayout`.
+    """Visible text insertion marker for `pyglet.text.layout.IncrementalTextLayout`.
 
     The caret is drawn as a single vertical bar at the document `position` 
-    on a text layout object.  If `mark` is not None, it gives the unmoving
+    on a text layout object.  If ``mark`` is not None, it gives the unmoving
     end of the current text selection.  The visible text selection on the
-    layout is updated along with `mark` and `position`.
-    
-    By default the layout's graphics batch is used, so the caret does not need
+    layout is updated along with ``mark`` and ``position``.
+
+    By default, the layout's graphics batch is used, so the caret does not need
     to be drawn explicitly.  Even if a different graphics batch is supplied,
     the caret will be correctly positioned and clipped within the layout.
 
     Updates to the document (and so the layout) are automatically propagated
-    to the caret.  
+    to the caret.
 
     The caret object can be pushed onto a window event handler stack with
-    `Window.push_handlers`.  The caret will respond correctly to keyboard,
+    ``Window.push_handlers``.  The caret will respond correctly to keyboard,
     text, mouse and activation events, including double- and triple-clicks.
     If the text layout is being used alongside other graphical widgets, a
     GUI toolkit will be needed to delegate keyboard and mouse events to the
-    appropriate widget.  pyglet does not provide such a toolkit at this stage.
+    appropriate widget.  Pyglet does not provide such a toolkit at this stage.
     """
-    _next_word_re: Pattern[str] = re.compile(r'(?<=\W)\w')
-    _previous_word_re: Pattern[str] = re.compile(r'(?<=\W)\w+\W*$')
-    _next_para_re: Pattern[str] = re.compile(r'\n', flags=re.DOTALL)
-    _previous_para_re: Pattern[str] = re.compile(r'\n', flags=re.DOTALL)
+    _next_word_re: Pattern[str] = re.compile(r"(?<=\W)\w")
+    _previous_word_re: Pattern[str] = re.compile(r"(?<=\W)\w+\W*$")
+    _next_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
+    _previous_para_re: Pattern[str] = re.compile(r"\n", flags=re.DOTALL)
 
     _position: int = 0
 
@@ -69,11 +66,11 @@ class Caret:
     #: Defaults to 12pt at 96dpi.
     SCROLL_INCREMENT: int = 12 * 96 // 72
 
-    _mark: Optional[int] = None
+    _mark: int | None = None
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch = None,
-                 color: Tuple[int, int, int, int] = (0, 0, 0, 255)) -> None:
+                 color: tuple[int, int, int, int] = (0, 0, 0, 255)) -> None:
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
@@ -105,8 +102,8 @@ class Caret:
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
         self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
-                                                     colors=('Bn', colors),
-                                                     visible=('f', (1, 1)))
+                                                     colors=("Bn", colors),
+                                                     visible=("f", (1, 1)))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -139,7 +136,7 @@ class Caret:
         self._list.delete()
         self._layout.remove_handlers(self)
 
-    def _blink(self, dt: float) -> None:
+    def _blink(self, dt: float) -> None:  # noqa: ARG002
         if self.PERIOD:
             self._blink_visible = not self._blink_visible
 
@@ -161,8 +158,6 @@ class Caret:
 
         The caret may be hidden despite this property due to the periodic blinking
         or by `on_deactivate` if the event handler is attached to a window.
-
-        :type: bool
         """
         return self._visible
 
@@ -176,8 +171,8 @@ class Caret:
         self._blink(0)
 
     @property
-    def color(self) -> Tuple[int, int, int, int]:
-        """An RGBA tuple of the current caret color
+    def color(self) -> tuple[int, int, int, int]:
+        """An RGBA tuple of the current caret color.
 
         When blinking off, the alpha channel will be set to ``0``.  The
         default caret color when visible is ``(0, 0, 0, 255)`` (opaque black).
@@ -191,13 +186,11 @@ class Caret:
 
         Each color channel must be between 0 and 255, inclusive. If the color
         set to an RGB color, the previous alpha channel value will be used.
-
-        :type: (int, int, int, int)
         """
         return self._list.colors[:4]
 
     @color.setter
-    def color(self, color: Tuple[int, int, int, int] | Tuple[int, int, int]) -> None:
+    def color(self, color: tuple[int, int, int, int] | tuple[int, int, int]) -> None:
         r, g, b, *_a = color
 
         # Preserve alpha when setting an RGB color
@@ -225,8 +218,6 @@ class Caret:
         moves interactively by mouse and keyboard input.
 
         This property is ``None`` when there is no selection.
-
-        :type: int
         """
         return self._mark
 
@@ -241,15 +232,13 @@ class Caret:
     def line(self) -> int:
         """Index of line containing the caret's position.
 
-        When set, `position` is modified to place the caret on requested line
+        When set, ``position`` is modified to place the caret on requested line
         while maintaining the closest possible X offset.
-
-        :rtype: int
         """
         if self._ideal_line is not None:
             return self._ideal_line
-        else:
-            return self._layout.get_line_from_position(self._position)
+
+        return self._layout.get_line_from_position(self._position)
 
     @line.setter
     def line(self, line: int) -> None:
@@ -264,13 +253,11 @@ class Caret:
         If there is a text selection and the style varies over the selection,
         `pyglet.text.document.STYLE_INDETERMINATE` is returned.
 
-        :Parameters:
-            `attribute` : str
+        Args:
+            attribute:
                 Name of style attribute to retrieve.  See
-                `pyglet.text.document` for a list of recognised attribute
+                :py:mod:`~pyglet.text.document` for a list of recognised attribute
                 names.
-
-        :rtype: object
         """
         if self._mark is None or self._mark == self._position:
             try:
@@ -289,14 +276,13 @@ class Caret:
         Otherwise, the next text that is entered before the position is
         modified will take on the given style.
 
-        :Parameters:
-            `attributes` : dict
+        Args:
+            attributes:
                 Dict mapping attribute names to style values.  See
-                `pyglet.text.document` for a list of recognised attribute
+                :py:mod:`~pyglet.text.document` for a list of recognised attribute
                 names.
 
         """
-
         if self._mark is None or self._mark == self._position:
             self._next_attributes.update(attributes)
             return
@@ -317,13 +303,6 @@ class Caret:
         """Move the caret close to the given window coordinate.
 
         The `mark` will be reset to ``None``.
-
-        :Parameters:
-            `x` : int   
-                X coordinate.
-            `y` : int
-                Y coordinate.
-
         """
         line = self._layout.get_line_from_point(x, y)
         self._mark = None
@@ -333,16 +312,7 @@ class Caret:
         self._next_attributes.clear()
 
     def select_to_point(self, x: int, y: int) -> None:
-        """Move the caret close to the given window coordinate while
-        maintaining the `mark`.
-
-        :Parameters:
-            `x` : int   
-                X coordinate.
-            `y` : int
-                Y coordinate.
-
-        """
+        """Move the caret close to the given window coordinate while maintaining the `mark`."""
         line = self._layout.get_line_from_point(x, y)
         self._position = self._layout.get_position_on_line(line, x)
         self._update(line=line)
@@ -356,15 +326,7 @@ class Caret:
         self._next_attributes.clear()
 
     def select_word(self, x: int, y: int) -> None:
-        """Select the word at the given window coordinate.
-
-        :Parameters:
-            `x` : int   
-                X coordinate.
-            `y` : int
-                Y coordinate.
-
-        """
+        """Select the word at the given window coordinate."""
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
         match1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
@@ -385,15 +347,7 @@ class Caret:
         self._next_attributes.clear()
 
     def select_paragraph(self, x: int, y: int) -> None:
-        """Select the paragraph at the given window coordinate.
-
-        :Parameters:
-            `x` : int   
-                X coordinate.
-            `y` : int
-                Y coordinate.
-
-        """
+        """Select the paragraph at the given window coordinate."""
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
         self.mark = self._layout.document.get_paragraph_start(p)
@@ -401,7 +355,7 @@ class Caret:
         self._update(line=line)
         self._next_attributes.clear()
 
-    def _update(self, line: Optional[int] = None, update_ideal_x: bool = True):
+    def _update(self, line: int | None = None, update_ideal_x: bool = True) -> None:
         if line is None:
             line = self._layout.get_line_from_position(self._position)
             self._ideal_line = None
@@ -413,7 +367,7 @@ class Caret:
             self._ideal_x = x
 
         x += self._layout.left
-        y += self._layout.bottom + self._layout._get_content_height()
+        y += self._layout.bottom + self._layout._get_content_height()  # noqa: SLF001
 
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))
@@ -428,8 +382,7 @@ class Caret:
         self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
 
     def on_layout_update(self) -> None:
-        """Handler for the `IncrementalTextLayout.on_layout_update` event.
-        """
+        """Handler for the `IncrementalTextLayout.on_layout_update` event."""
         if self.position > len(self._layout.document.text):
             self.position = len(self._layout.document.text)
         self._update()
@@ -444,7 +397,7 @@ class Caret:
         if self._mark is not None:
             self._delete_selection()
 
-        text = text.replace('\r', '\n')
+        text = text.replace("\r", "\n")
         pos = self._position
         self._position += len(text)
         self._layout.document.insert_text(pos, text, self._next_attributes)
@@ -473,12 +426,12 @@ class Caret:
 
         if motion == key.MOTION_LEFT:
             if self.mark is not None and not select:
-                self.position = self._layout._selection_start
+                self.position = self._layout._selection_start  # noqa: SLF001
             else:
                 self.position = max(0, self.position - 1)
         elif motion == key.MOTION_RIGHT:
             if self.mark is not None and not select:
-                self.position = self._layout._selection_end
+                self.position = self._layout._selection_end  # noqa: SLF001
             else:
                 self.position = min(len(self._layout.document.text), self.position + 1)
         elif motion == key.MOTION_UP:
@@ -535,7 +488,7 @@ class Caret:
         self.on_text_motion(motion, True)
         return event.EVENT_HANDLED
 
-    def on_mouse_scroll(self, x: float, y: float, scroll_x: float, scroll_y: float) -> bool:
+    def on_mouse_scroll(self, x: float, y: float, scroll_x: float, scroll_y: float) -> bool:  # noqa: ARG002
         """Handler for the `pyglet.window.Window.on_mouse_scroll` event.
 
         Mouse handlers do not check the bounds of the coordinates: GUI
@@ -549,7 +502,7 @@ class Caret:
         self._layout.view_y += scroll_y * self.SCROLL_INCREMENT
         return event.EVENT_HANDLED
 
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool:
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool:  # noqa: ARG002
         """Handler for the `pyglet.window.Window.on_mouse_press` event.
 
         Mouse handlers do not check the bounds of the coordinates: GUI
@@ -581,7 +534,7 @@ class Caret:
         self._nudge()
         return event.EVENT_HANDLED
 
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> bool:
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> bool:  # noqa: ARG002
         """Handler for the `pyglet.window.Window.on_mouse_drag` event.
 
         Mouse handlers do not check the bounds of the coordinates: GUI
