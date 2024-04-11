@@ -2,14 +2,21 @@
 
 .. versionadded:: 1.2
 """
+from __future__ import annotations
 
 import sys
 import enum
 import warnings
 import operator
 
+from typing import TYPE_CHECKING, List, Optional, Union
+
+import pyglet.window
 from pyglet.event import EventDispatcher
 
+if TYPE_CHECKING:
+    from pyglet.window import BaseWindow
+    from pyglet.canvas.base import Display
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -34,42 +41,44 @@ class Sign(enum.Enum):
 
 
 class Device:
-    """Input device.
+    """Low level input device."""
 
-    :Ivariables:
-        display : `pyglet.canvas.Display`
-            Display this device is connected to.
-        name : str
-            Name of the device, as described by the device firmware.
-        manufacturer : str
-            Name of the device manufacturer, or ``None`` if the information is
-            not available.
-    """
+    def __init__(self, display: Display, name: str) -> None:
+        """Create a Device to receive input from.
 
-    def __init__(self, display, name):
+        Args:
+            display:
+                The Display this device is connected to.
+            name:
+                The name of the device, as described by the device firmware.
+        """
         self.display = display
         self.name = name
-        self.manufacturer = None
-        self._is_open = False
+
+        #: The manufacturer name, if available
+        self.manufacturer: str | None = None
+        self._is_open: bool = False
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         return self._is_open
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
         """Open the device to begin receiving input from it.
 
-        :Parameters:
-            `window` : Window
+        Args:
+            window:
                 Optional window to associate with the device.  The behaviour
                 of this parameter is device and operating system dependant.
                 It can usually be omitted for most devices.
-            `exclusive` : bool
+            exclusive:
                 If ``True`` the device will be opened exclusively so that no
-                other application can use it.  The method will raise
-                `DeviceExclusiveException` if the device cannot be opened this
-                way (for example, because another application has already
-                opened it).
+                other application can use it.
+
+        Raises:
+            DeviceOpenException:
+                If the device cannot be opened in exclusive mode, usually
+                due to being opened exclusively by another application.
         """
 
         if self._is_open:
@@ -77,18 +86,15 @@ class Device:
 
         self._is_open = True
 
-    def close(self):
-        """Close the device. """
+    def close(self) -> None:
+        """Close the device."""
         self._is_open = False
 
-    def get_controls(self):
-        """Get a list of controls provided by the device.
-
-        :rtype: list of `Control`
-        """
+    def get_controls(self) -> List[Control]:
+        """Get a list of controls provided by the device."""
         raise NotImplementedError('abstract')
 
-    def get_guid(self):
+    def get_guid(self) -> str:
         """Get the device GUID, in SDL2 format.
 
         Return a str containing a unique device identification
@@ -96,12 +102,10 @@ class Device:
         and is in the same format as was popularized by SDL2.
         GUIDs differ between platforms, but are generally 32
         hexidecimal characters.
-
-        :rtype: str containing the device's GUID.
         """
         raise NotImplementedError('abstract')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name})"
 
 
@@ -113,59 +117,52 @@ class Control(EventDispatcher):
 
     The `min` and `max` properties are provided as advertised by the
     device; in some cases the control's value will be outside this range.
-
-    :Ivariables:
-        `name` : str
-            Name of the control, or ``None`` if unknown
-        `raw_name` : str
-            Unmodified name of the control, as presented by the operating
-            system; or ``None`` if unknown.
-        `inverted` : bool
-            If ``True``, the value reported is actually inverted from what the
-            device reported; usually this is to provide consistency across
-            operating systems.
     """
 
-    def __init__(self, name, raw_name=None, inverted=False):
+    def __init__(self, name: Optional[str], raw_name: Optional[str] = None, inverted: bool = False):
+        """Create a Control to receive input.
+
+        Args:
+            name:
+                The name of the control, or ``None`` if unknown.
+            raw_name:
+                Optional unmodified name of the control, as presented by the operating
+                system; or ``None`` if unknown.
+            inverted:
+                If ``True``, the value reported is actually inverted from what the
+                device reported; usually this is to provide consistency across
+                operating systems.
+        """
         self.name = name
         self.raw_name = raw_name
         self.inverted = inverted
         self._value = None
 
     @property
-    def value(self):
+    def value(self) -> float:
         """Current value of the control.
 
         The range of the value is device-dependent; for absolute controls
         the range is given by ``min`` and ``max`` (however the value may exceed
         this range); for relative controls the range is undefined.
-
-        :type: float
         """
         return self._value
 
     @value.setter
-    def value(self, newvalue):
+    def value(self, newvalue: float):
         if newvalue == self._value:
             return
         self._value = newvalue
         self.dispatch_event('on_change', newvalue)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.name:
             return f"{self.__class__.__name__}(name={self.name}, raw_name={self.raw_name})"
         else:
             return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
-    def on_change(self, value):
-        """The value changed.
-
-        :Parameters:
-            `value` : float
-                Current value of the control.
-
-        :event:
-        """
+    def on_change(self, value) -> float:
+        """The value changed."""
 
 
 Control.register_event_type('on_change')
@@ -177,26 +174,26 @@ class RelativeAxis(Control):
     """
 
     #: Name of the horizontal axis control
-    X = 'x'
+    X: str = 'x'
     #: Name of the vertical axis control
-    Y = 'y'
+    Y: str = 'y'
     #: Name of the Z axis control.
-    Z = 'z'
+    Z: str = 'z'
     #: Name of the rotational-X axis control
-    RX = 'rx'
+    RX: str = 'rx'
     #: Name of the rotational-Y axis control
-    RY = 'ry'
+    RY: str = 'ry'
     #: Name of the rotational-Z axis control
-    RZ = 'rz'
+    RZ: str = 'rz'
     #: Name of the scroll wheel control
-    WHEEL = 'wheel'
+    WHEEL: str = 'wheel'
 
     @property
-    def value(self):
+    def value(self) -> float:
         return self._value
 
     @value.setter
-    def value(self, value):
+    def value(self, value: float):
         self._value = value
         self.dispatch_event('on_change', value)
 
@@ -205,37 +202,31 @@ class AbsoluteAxis(Control):
     """An axis whose value represents a physical measurement from the device.
 
     The value is advertised to range over ``minimum`` and ``maximum``.
-
-    :Ivariables:
-        `minimum` : float
-            Minimum advertised value.
-        `maximum` : float
-            Maximum advertised value.
     """
 
     #: Name of the horizontal axis control
-    X = 'x'
+    X: str = 'x'
     #: Name of the vertical axis control
-    Y = 'y'
+    Y: str = 'y'
     #: Name of the Z axis control.
-    Z = 'z'
+    Z: str = 'z'
     #: Name of the rotational-X axis control
-    RX = 'rx'
+    RX: str = 'rx'
     #: Name of the rotational-Y axis control
-    RY = 'ry'
+    RY: str = 'ry'
     #: Name of the rotational-Z axis control
-    RZ = 'rz'
+    RZ: str = 'rz'
     #: Name of the hat (POV) control, when a single control enumerates all of
     #: the hat's positions.
-    HAT = 'hat'
+    HAT: str = 'hat'
     #: Name of the hat's (POV's) horizontal control, when the hat position is
     #: described by two orthogonal controls.
-    HAT_X = 'hat_x'
+    HAT_X: str = 'hat_x'
     #: Name of the hat's (POV's) vertical control, when the hat position is
     #: described by two orthogonal controls.
-    HAT_Y = 'hat_y'
+    HAT_Y: str = 'hat_y'
 
-    def __init__(self, name, minimum, maximum, raw_name=None, inverted=False):
+    def __init__(self, name: str, minimum: float, maximum: float, raw_name: Optional[str] = None, inverted: bool = False):
         super().__init__(name, raw_name, inverted)
         self.min = minimum
         self.max = maximum
@@ -245,11 +236,11 @@ class Button(Control):
     """A control whose value is boolean. """
 
     @property
-    def value(self):
+    def value(self) -> bool:
         return bool(self._value)
 
     @value.setter
-    def value(self, newvalue):
+    def value(self, newvalue: Union[bool, int]):
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -384,7 +375,7 @@ class Joystick(EventDispatcher):
         self.hat_y_control = None
         self.button_controls = []
 
-        def add_axis(control):
+        def add_axis(control: Control):
             if not (control.min or control.max):
                 warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
                 return
@@ -402,7 +393,7 @@ class Joystick(EventDispatcher):
                 setattr(self, name, normalized_value)
                 self.dispatch_event('on_joyaxis_motion', self, name, normalized_value)
 
-        def add_button(control):
+        def add_button(control: Control):
             i = len(self.buttons)
             self.buttons.append(False)
             self.button_controls.append(control)
@@ -419,7 +410,7 @@ class Joystick(EventDispatcher):
             def on_release():
                 self.dispatch_event('on_joybutton_release', self, i)
 
-        def add_hat(control):
+        def add_hat(control: Control):
             # 8-directional hat encoded as a single control (Windows/Mac)
             self.hat_x_control = control
             self.hat_y_control = control
@@ -989,14 +980,12 @@ class Tablet:
     undefined.
     """
 
-    def open(self, window):
+    def open(self, window: BaseWindow) -> TabletCanvas:
         """Open a tablet device for a window.
 
-        :Parameters:
-            `window` : `Window`
+        Args:
+            window:
                 The window on which the tablet will be used.
-
-        :rtype: `TabletCanvas`
         """
         raise NotImplementedError('abstract')
 
@@ -1011,10 +1000,6 @@ class TabletCanvas(EventDispatcher):
     The events each provide the `TabletCursor` that was used to generate the
     event; for example, to distinguish between a stylus and an eraser.  Only
     one cursor can be used at a time, otherwise the results are undefined.
-
-    :Ivariables:
-        `window` : Window
-            The window on which this tablet was opened.
     """
 
     # OS X: Active window receives tablet events only when cursor is in window
@@ -1023,7 +1008,13 @@ class TabletCanvas(EventDispatcher):
     # Note that this means enter/leave pairs are not always consistent (normal
     # usage).
 
-    def __init__(self, window):
+    def __init__(self, window: BaseWindow):
+        """Create a TabletCanvas.
+
+        Args:
+            window:
+                The window on which this tablet was opened.
+        """
         self.window = window
 
     def close(self):
@@ -1032,7 +1023,7 @@ class TabletCanvas(EventDispatcher):
         raise NotImplementedError('abstract')
 
     if _is_pyglet_doc_run:
-        def on_enter(self, cursor):
+        def on_enter(self, cursor: TabletCursor):
             """A cursor entered the proximity of the window.  The cursor may
             be hovering above the tablet surface, but outside of the window
             bounds, or it may have entered the window bounds.
@@ -1041,14 +1032,10 @@ class TabletCanvas(EventDispatcher):
             be generated in pairs; some events may be lost if the cursor was
             out of the window bounds at the time.
 
-            :Parameters:
-                `cursor` : `TabletCursor`
-                    The cursor that entered proximity.
-
             :event:
             """
 
-        def on_leave(self, cursor):
+        def on_leave(self, cursor: TabletCursor):
             """A cursor left the proximity of the window.  The cursor may have
             moved too high above the tablet surface to be detected, or it may
             have left the bounds of the window.
@@ -1057,39 +1044,37 @@ class TabletCanvas(EventDispatcher):
             be generated in pairs; some events may be lost if the cursor was
             out of the window bounds at the time.
 
-            :Parameters:
-                `cursor` : `TabletCursor`
-                    The cursor that left proximity.
-
             :event:
             """
 
-        def on_motion(self, cursor, x, y, pressure, tilt_x, tilt_y, buttons):
+        def on_motion(self, cursor: TabletCursor, x: int, y: int,
+                      pressure: float, tilt_x: float, tilt_y: float, buttons: int):
             """The cursor moved on the tablet surface.
 
             If `pressure` is 0, then the cursor is actually hovering above the
             tablet surface, not in contact.
 
-            :Parameters:
-                `cursor` : `TabletCursor`
+            Args:
+                cursor:
                     The cursor that moved.
-                `x` : int
+                x:
                     The X position of the cursor, in window coordinates.
-                `y` : int
+                y:
                     The Y position of the cursor, in window coordinates.
-                `pressure` : float
-                    The pressure applied to the cursor, in range 0.0 (no
-                    pressure) to 1.0 (full pressure).
-                `tilt_x` : float
+                pressure:
+                    The pressure applied to the cursor, in range 0.0
+                    (no pressure) to 1.0 (full pressure).
+                tilt_x:
                     Currently undefined.
-                `tilt_y` : float
+                tilt_y:
                     Currently undefined.
-                `buttons` : int
+                buttons:
                     Button state may be provided if the platform supports it.
                     Supported on: Windows
 
             :event:
             """
+
 
 
 TabletCanvas.register_event_type('on_enter')
@@ -1102,18 +1087,20 @@ class TabletCursor:
 
     Most tablets support at least a *stylus* and an *erasor* cursor; this
     object is used to distinguish them when tablet events are generated.
-
-    :Ivariables:
-        `name` : str
-            Name of the cursor.
     """
 
     # TODO well-defined names for stylus and eraser.
 
-    def __init__(self, name):
+    def __init__(self, name: str):
+        """Create a cursor object.
+
+        Args:
+            name:
+                The name of the cursor.
+        """
         self.name = name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s(%s)' % (self.__class__.__name__, self.name)
 
 
@@ -1153,32 +1140,21 @@ class ControllerManager(EventDispatcher):
     .. versionadded:: 1.2
     """
 
-    def get_controllers(self):
-        """Get a list of all connected Controllers
-
-        :rtype: list of :py:class:`Controller`
-        """
+    def get_controllers(self) -> List[Controller]:
+        """Get a list of all connected Controllers"""
         raise NotImplementedError
 
-    def on_connect(self, controller):
+    def on_connect(self, controller) -> Controller:
         """A Controller has been connected. If this is
         a previously dissconnected Controller that is
         being re-connected, the same Controller instance
         will be returned.
 
-        :Parameters:
-            `controller` : :py:class:`Controller`
-                An un-opened Controller instance.
-
         :event:
         """
 
-    def on_disconnect(self, controller):
+    def on_disconnect(self, controller) -> Controller:
         """A Controller has been disconnected.
-
-        :Parameters:
-            `controller` : :py:class:`Controller`
-                An un-opened Controller instance.
 
         :event:
         """
