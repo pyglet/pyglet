@@ -16,6 +16,7 @@ from pyglet.event import EventDispatcher
 if TYPE_CHECKING:
     from pyglet.window import BaseWindow
     from pyglet.canvas.base import Display
+    from pyglet.input.controller import Relation
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -515,91 +516,67 @@ Joystick.register_event_type('on_joyhat_motion')
 
 
 class Controller(EventDispatcher):
+    """High-level interface for Game Controllers.
 
-    def __init__(self, device, mapping):
-        """High-level interface for Game Controllers.
+    Unlike Joysticks, Controllers have a strictly defined set of inputs
+    that matches the layout of popular home video game console Controllers.
+    This includes a variety of face and shoulder buttons, analog sticks and
+    triggers, a directional pad, and optional rumble (force feedback) effects.
 
-        Unlike Joysticks, Controllers have a strictly defined set of inputs
-        that matches the layout of popular home video game console Controllers.
-        This includes a variety of face and shoulder buttons, analog sticks and
-        triggers, a directional pad, and optional rumble (force feedback)
-        effects.
+    To use a Controller, you must first call ``open``. Controllers will then
+    dispatch various events whenever the inputs change. They can also be polled
+    manually at any time to find the current value of any inputs. Analog stick
+    inputs are normalized to the range [-1.0, 1.0], and triggers are normalized
+    to the range [0.0, 1.0]. All other inputs are digital.
 
-        To use a Controller, you must first call `open`. Controllers will then
-        dispatch a variety of events whenever the inputs change. They can also
-        be polled at any time to find the current value of any inputs. Analog
-        inputs are normalized to the range [-1.0, 1.0].
+    Note: A running application event loop is required
 
-        :note: A running application event loop is required
+    The following event types are dispatched:
+        `on_button_press`
+        `on_button_release`
+        `on_stick_motion`
+        `on_dpad_motion`
+        `on_trigger_motion`
 
-        The following event types are dispatched:
-            `on_button_press`
-            `on_button_release`
-            `on_stick_motion`
-            `on_dpad_motion`
-            `on_trigger_motion`
+    """
 
-        The device name can be queried to get the name of the joystick.
-
-        :Ivariables:
-            `device` : `Device`
-                The underlying device used by this joystick interface.
-            `name` : str
-                The name of the Controller as reported by the OS.
-            `guid` : str
-                The unique device identification string, in SDL2 format.
-            `a` : bool
-            `b` : bool
-            `x` : bool
-            `x` : bool
-            `back` : bool
-            `start` : bool
-            `guide` : bool
-            `leftshoulder` : bool
-            `rightshoulder` : bool
-            `leftstick` : bool
-            `rightstick` : bool
-            `leftx` : float
-            `lefty` : float
-            `rightx` : float
-            `righty` : float
-            `lefttrigger` : float
-            `righttrigger` : float
-            `dpup` : bool
-            `dpdown` : bool
-            `dpleft` : bool
-            `dpright` : bool
+    def __init__(self, device: Device, mapping: dict):
+        """Create a Controller instace mapped to a Device.
 
         .. versionadded:: 2.0
         """
 
-        self.device = device
+        #: The underlying Device:
+        self.device: Device = device
         self._mapping = mapping
 
-        self.name = mapping.get('name')
-        self.guid = mapping.get('guid')
+        #: The logical device name
+        self.name: str = mapping.get('name')
+        #: The unique guid for this Device
+        self.guid: str = mapping.get('guid')
 
-        self.a = False
-        self.b = False
-        self.x = False
-        self.y = False
-        self.back = False
-        self.start = False
-        self.guide = False
-        self.leftshoulder = False
-        self.rightshoulder = False
-        self.leftstick = False          # stick press button
-        self.rightstick = False         # stick press button
-        self.lefttrigger = 0
-        self.righttrigger = 0
-        self.leftx = 0
-        self.lefty = 0
-        self.rightx = 0
-        self.righty = 0
-        self.dpup = False
-        self.dpdown = False
-        self.dpleft = False
-        self.dpright = False
+        self.a: bool = False
+        self.b: bool = False
+        self.x: bool = False
+        self.y: bool = False
+        self.back: bool = False
+        self.start: bool = False
+        self.guide: bool = False
+        self.leftshoulder: bool = False
+        self.rightshoulder: bool = False
+        self.leftstick: bool = False          # stick press button
+        self.rightstick: bool = False         # stick press button
+        self.lefttrigger: float = 0
+        self.righttrigger: float = 0
+        self.leftx: float = 0
+        self.lefty: float = 0
+        self.rightx: float = 0
+        self.righty: float = 0
+        self.dpup: bool = False
+        self.dpdown: bool = False
+        self.dpleft: bool = False
+        self.dpright: bool = False
+
         # Default signs if bound to axis:
         self._dpup_sign = Sign.POSITIVE
         self._dpdown_sign = Sign.NEGATIVE
@@ -614,7 +591,7 @@ class Controller(EventDispatcher):
 
         self._initialize_controls()
 
-    def _bind_axis_control(self, relation, control, axis_name):
+    def _bind_axis_control(self, relation: Relation, control: AbsoluteAxis, axis_name: str) -> None:
         if not (control.min or control.max):
             warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
             return
@@ -672,7 +649,7 @@ class Controller(EventDispatcher):
                 setattr(self, axis_name, value * scale + bias)  # normalized value
                 self.dispatch_event('on_stick_motion', self, "rightstick", self.rightx, -self.righty)
 
-    def _bind_button_control(self, relation, control, button_name):
+    def _bind_button_control(self, relation: Relation, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
             @control.event
             def on_change(value):
@@ -691,7 +668,7 @@ class Controller(EventDispatcher):
             def on_release():
                 self.dispatch_event('on_button_release', self, button_name)
 
-    def _bind_dedicated_hat(self, relation, control):
+    def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
         @control.event
         def on_change(value):
@@ -716,7 +693,7 @@ class Controller(EventDispatcher):
 
             self.dispatch_event('on_dpad_motion', self, self.dpleft, self.dpright, self.dpup, self.dpdown)
 
-    def _initialize_controls(self):
+    def _initialize_controls(self) -> None:
         """Initialize and bind the Device Controls
 
         This method first categorizes all the Device Controls,
@@ -766,107 +743,117 @@ class Controller(EventDispatcher):
                 warnings.warn(f"Could not find control '{name}' with index '{relation.index}'.")
                 continue
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: None | BaseWindow, exclusive: bool = False) -> None:
         """Open the controller.  See `Device.open`. """
         self.device.open(window, exclusive)
 
-    def close(self):
+    def close(self) -> None:
         """Close the controller.  See `Device.close`. """
         self.device.close()
 
     # Rumble (force feedback) methods:
 
-    def rumble_play_weak(self, strength=1.0, duration=0.5):
+    def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         """Play a rumble effect on the weak motor.
 
-        :Parameters:
-            `strength` : float
+        Args:
+            strength:
                 The strength of the effect, from 0 to 1.
-            `duration` : float
+            duration:
                 The duration of the effect in seconds.
         """
 
-    def rumble_play_strong(self, strength=1.0, duration=0.5):
+    def rumble_play_strong(self, strength: float = 1.0, duration: float = 0.5) -> None:
         """Play a rumble effect on the strong motor.
 
-        :Parameters:
-            `strength` : float
+        Args:
+            strength:
                 The strength of the effect, from 0 to 1.
-            `duration` : float
+            duration:
                 The duration of the effect in seconds.
         """
 
-    def rumble_stop_weak(self):
+    def rumble_stop_weak(self) -> None:
         """Stop playing rumble effects on the weak motor."""
 
-    def rumble_stop_strong(self):
+    def rumble_stop_strong(self) -> None:
         """Stop playing rumble effects on the strong motor."""
 
     # Input Event types:
 
-    def on_stick_motion(self, controller, stick, xvalue, yvalue):
+    def on_stick_motion(self, controller: Controller, stick: str, xvalue: float, yvalue: float):
         """The value of a controller analogue stick changed.
 
-        :Parameters:
-            `controller` : `Controller`
+        Args:
+            controller:
                 The controller whose analogue stick changed.
-            `stick` : string
+            stick:
                 The name of the stick that changed.
-            `xvalue` : float
+            xvalue:
                 The current X axis value, normalized to [-1, 1].
-            `yvalue` : float
+            yvalue:
                 The current Y axis value, normalized to [-1, 1].
+
+        :event:
         """
 
-    def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
+    def on_dpad_motion(self, controller: Controller, dpleft: bool, dpright: bool, dpup: bool, dpdown: bool):
         """The direction pad of the controller changed.
 
-        :Parameters:
-            `controller` : `Controller`
+        Args:
+            controller:
                 The controller whose hat control changed.
-            `dpleft` : boolean
+            dpleft:
                 True if left is pressed on the directional pad.
-            `dpright` : boolean
+            dpright:
                 True if right is pressed on the directional pad.
-            `dpup` : boolean
+            dpup:
                 True if up is pressed on the directional pad.
-            `dpdown` : boolean
+            dpdown:
                 True if down is pressed on the directional pad.
+
+        :event:
         """
 
-    def on_trigger_motion(self, controller, trigger, value):
+    def on_trigger_motion(self, controller: Controller, trigger: str, value: float):
         """The value of a controller analogue stick changed.
 
-        :Parameters:
-            `controller` : `Controller`
+        Args:
+            controller:
                 The controller whose analogue stick changed.
-            `trigger` : string
+            trigger:
                 The name of the trigger that changed.
-            `value` : float
-                The current value of the trigger, normalized to [-1, 1].
+            value:
+                The current value of the trigger, normalized to [0, 1].
+
+        :event:
         """
 
-    def on_button_press(self, controller, button):
+    def on_button_press(self, controller: Controller, button: str):
         """A button on the controller was pressed.
 
-        :Parameters:
-            `controller` :  :py:class:`Controller`
+        Args:
+            controller:
                 The controller whose button was pressed.
-            `button` : string
+            button:
                 The name of the button that was pressed.
+
+        :event:
         """
 
-    def on_button_release(self, controller, button):
+    def on_button_release(self, controller: Controller, button: str):
         """A button on the joystick was released.
 
-        :Parameters:
-            `controller` : `Controller`
+        Args:
+            controller:
                 The controller whose button was released.
-            `button` : string
+            button:
                 The name of the button that was released.
+
+        :event:
         """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Controller(name={self.name})"
 
 
