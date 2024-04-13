@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING, Dict
 
 #: The release version
-version = '2.1.dev1'
+version = '2.1.dev2'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
