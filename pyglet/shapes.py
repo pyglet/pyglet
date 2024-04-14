@@ -261,10 +261,10 @@ class ShapeBase(ABC):
     _rgba = (255, 255, 255, 255)
     _rotation = 0
     _visible = True
-    _x = 0
-    _y = 0
-    _anchor_x = 0
-    _anchor_y = 0
+    _x: float = 0.0
+    _y: float = 0.0
+    _anchor_x: float = 0.0
+    _anchor_y: float = 0.0
     _batch = None
     _group = None
     _num_verts = 0
@@ -367,88 +367,116 @@ class ShapeBase(ABC):
             self._vertex_list = None
 
     @property
-    def x(self):
-        """X coordinate of the shape.
+    def x(self) -> float:
+        """Get/set the X coordinate of the shape's :attr:`.position`.
 
-        :type: int or float
+        #. To update both :attr:`.x` and :attr:`.y`, use
+           :attr:`.position` instead.
+        #. Shapes may vary slightly in how they use :attr:`.position`
+
+        See :attr:`.position` to learn more.
         """
         return self._x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: float) -> None:
         self._x = value
         self._update_translation()
 
     @property
-    def y(self):
-        """Y coordinate of the shape.
+    def y(self) -> float:
+        """Get/set the Y coordinate of the shape's :attr:`.position`.
 
-        :type: int or float
+        This property has the following pitfalls:
+
+        #. To update both :attr:`.x` and :attr:`.y`, use
+           :attr:`.position` instead.
+        #. Shapes may vary slightly in how they use :attr:`.position`
+
+        See :attr:`.position` to learn more.
         """
         return self._y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: float) -> None:
         self._y = value
         self._update_translation()
 
     @property
-    def position(self):
-        """The (x, y) coordinates of the shape, as a tuple.
+    def position(self) -> tuple[float, float]:
+        """Get/set the ``(x, y)`` coordinates of the shape.
 
-        :Parameters:
-            `x` : int or float
-                X coordinate of the sprite.
-            `y` : int or float
-                Y coordinate of the sprite.
+        .. tip:: This is more efficient than setting :attr:`.x` and
+                 :attr:`.y`separately!
+
+        All shapes default to rotating around their position. However,
+        the way they do so varies.
+
+        Shapes with a ``radius`` property will use this as their
+        center:
+
+        * :py:class:`.Circle`
+        * :py:class:`.Ellipse`
+        * :py:class:`.Arc`
+        * :py:class:`.Sector`
+        * :py:class:`.Star`
+
+        Others default to using it as their lower left corner.
         """
         return self._x, self._y
 
     @position.setter
-    def position(self, values):
+    def position(self, values: tuple[float, float]) -> None:
         self._x, self._y = values
         self._update_translation()
 
     @property
-    def anchor_x(self):
-        """The X coordinate of the anchor point
+    def anchor_x(self) -> float:
+        """Get/set the X coordinate of the anchor point.
 
-        :type: int or float
+        If you need to set both this and :attr:`.anchor_x`, use
+        :attr:`.anchor_position` instead.
         """
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, value):
+    def anchor_x(self, value: float) -> None:
         self._anchor_x = value
         self._update_vertices()
 
     @property
-    def anchor_y(self):
-        """The Y coordinate of the anchor point
+    def anchor_y(self) -> float:
+        """Get/set the Y coordinate of the anchor point.
 
-        :type: int or float
+        If you need to set both this and :attr:`.anchor_x`, use
+        :attr:`.anchor_position` instead.
         """
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value):
+    def anchor_y(self, value: float) -> None:
         self._anchor_y = value
         self._update_vertices()
 
     @property
-    def anchor_position(self):
-        """The (x, y) coordinates of the anchor point, as a tuple.
+    def anchor_position(self) -> tuple[float, float]:
+        """Get/set the anchor's ``(x, y)`` offset from :attr:`.position`
 
-        :Parameters:
-            `x` : int or float
-                X coordinate of the anchor point.
-            `y` : int or float
-                Y coordinate of the anchor point.
+        This defines the point a shape rotates around. By default, it is
+        ``(0.0, 0.0)``. However:
+
+        * Its behavior may vary between shape classes.
+        * On many shapes, you can set the anchor or its components
+          (:attr:`.anchor_x` and :attr:`.anchor_y`) to custom values.
+
+        Since all anchor updates recalculate a shape's vertices on the
+        CPU, this property is faster than updating :attr:`.anchor_x` and
+        :attr:`.anchor_y` separately.
         """
         return self._anchor_x, self._anchor_y
 
     @anchor_position.setter
-    def anchor_position(self, values):
+    def anchor_position(self, values: tuple[float, float]) -> None:
         self._anchor_x, self._anchor_y = values
         self._update_vertices()
 
