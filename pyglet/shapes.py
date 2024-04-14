@@ -1162,7 +1162,7 @@ class Sector(ShapeBase):
 
     @property
     def angle(self) -> float:
-        """Get/set the angle of the sector in degrees."""
+        """Get/set the angle of the sector in radians."""
         return self._angle
 
     @angle.setter
@@ -1172,7 +1172,7 @@ class Sector(ShapeBase):
 
     @property
     def start_angle(self) -> float:
-        """Get/set the start angle of the sector in degrees."""
+        """Get/set the start angle of the sector in radians."""
         return self._start_angle
 
     @start_angle.setter
