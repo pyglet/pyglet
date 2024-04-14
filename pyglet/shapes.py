@@ -2318,11 +2318,12 @@ class MultiLine(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def thickness(self):
+    def thickness(self) -> float:
+        """Get/set the line thickness of the multi-line."""
         return self._thickness
 
     @thickness.setter
-    def thickness(self, thickness):
+    def thickness(self, thickness: float) -> None:
         self._thickness = thickness
         self._update_vertices()
 
