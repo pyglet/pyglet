@@ -816,37 +816,32 @@ class BezierCurve(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def points(self):
-        """Control points of the curve.
-
-        :type: List[[int, int]]
-        """
+    def points(self) -> list[tuple[float, float]]:
+        """Get/set the control points of the curve."""
         return self._points
 
     @points.setter
-    def points(self, value):
+    def points(self, value: list[tuple[float, float]]):
         self._points = value
         self._update_vertices()
 
     @property
-    def t(self):
-        """Draw `100*t` percent of the curve.
-
-        :type: float
-        """
+    def t(self) -> float:
+        """Get/set the t in ``100*t`` percent of the curve to draw."""
         return self._t
 
     @t.setter
-    def t(self, value):
+    def t(self, value: float) -> None:
         self._t = value
         self._update_vertices()
 
     @property
-    def thickness(self):
+    def thickness(self) -> float:
+        """Get/set the line thickness for the bezier curve."""
         return self._thickness
 
     @thickness.setter
-    def thickness(self, thickness):
+    def thickness(self, thickness: float) -> None:
         self._thickness = thickness
         self._update_vertices()
 
