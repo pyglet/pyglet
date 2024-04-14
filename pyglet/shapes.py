@@ -261,7 +261,7 @@ class ShapeBase(ABC):
     approximated using multiple vertices.
 
     If you need shapes or functionality not provided in this module,
-    you can write your own custom subclass of `ShapeBase` by using
+    you can write your own custom subclass of ``ShapeBase`` by using
     the provided shapes as reference.
     """
 
