@@ -1232,7 +1232,7 @@ class Line(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
         vec_ba = Vec2(self._x - self._x2, self._y - self._y2)
