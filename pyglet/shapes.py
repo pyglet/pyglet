@@ -1558,7 +1558,7 @@ class BorderedRectangle(ShapeBase):
         return self._width
 
     @width.setter
-    def width(self, value: float):
+    def width(self, value: float) -> None:
         self._width = value
         self._update_vertices()
 
