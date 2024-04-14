@@ -826,7 +826,7 @@ class BezierCurve(ShapeBase):
 
     @property
     def points(self) -> list[tuple[float, float]]:
-        """Get/set the control points of the curve."""
+        """Get/set the control points of the Bézier curve."""
         return self._points
 
     @points.setter
@@ -846,7 +846,7 @@ class BezierCurve(ShapeBase):
 
     @property
     def thickness(self) -> float:
-        """Get/set the line thickness for the bezier curve."""
+        """Get/set the line thickness for the Bézier curve."""
         return self._thickness
 
     @thickness.setter
