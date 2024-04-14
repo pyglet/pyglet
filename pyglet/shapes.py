@@ -1489,7 +1489,7 @@ class BorderedRectangle(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
