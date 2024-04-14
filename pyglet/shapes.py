@@ -258,7 +258,7 @@ class ShapeBase(ABC):
     the provided shapes as reference.
     """
 
-    _rgba = (255, 255, 255, 255)
+    _rgba: tuple[int, int, int, int] = (255, 255, 255, 255)
     _rotation: float = 0.0
     _visible = True
     _x: float = 0.0
