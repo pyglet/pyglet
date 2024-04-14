@@ -386,13 +386,13 @@ class ShapeBase(ABC):
 
     @property
     def x(self) -> float:
-        """Get/set the X coordinate of the shape's :attr:`.position`.
+        """Get/set the X coordinate of the shape's :py:attr:`.position`.
 
-        #. To update both :attr:`.x` and :attr:`.y`, use
+        #. To update both :py:attr:`.x` and :py:attr:`.y`, use
            :attr:`.position` instead.
-        #. Shapes may vary slightly in how they use :attr:`.position`
+        #. Shapes may vary slightly in how they use :py:attr:`.position`
 
-        See :attr:`.position` to learn more.
+        See :py:attr:`.position` to learn more.
         """
         return self._x
 
@@ -403,13 +403,13 @@ class ShapeBase(ABC):
 
     @property
     def y(self) -> float:
-        """Get/set the Y coordinate of the shape's :attr:`.position`.
+        """Get/set the Y coordinate of the shape's :py:attr:`.position`.
 
         This property has the following pitfalls:
 
-        #. To update both :attr:`.x` and :attr:`.y`, use
-           :attr:`.position` instead.
-        #. Shapes may vary slightly in how they use :attr:`.position`
+        #. To update both :py:attr:`.x` and :py:attr:`.y`, use
+           :py:attr:`.position` instead.
+        #. Shapes may vary slightly in how they use :py:attr:`.position`
 
         See :attr:`.position` to learn more.
         """
@@ -452,8 +452,8 @@ class ShapeBase(ABC):
     def anchor_x(self) -> float:
         """Get/set the X coordinate of the anchor point.
 
-        If you need to set both this and :attr:`.anchor_x`, use
-        :attr:`.anchor_position` instead.
+        If you need to set both this and :py:attr:`.anchor_x`, use
+        :py:attr:`.anchor_position` instead.
         """
         return self._anchor_x
 
@@ -466,8 +466,8 @@ class ShapeBase(ABC):
     def anchor_y(self) -> float:
         """Get/set the Y coordinate of the anchor point.
 
-        If you need to set both this and :attr:`.anchor_x`, use
-        :attr:`.anchor_position` instead.
+        If you need to set both this and :py:attr:`.anchor_x`, use
+        :py:attr:`.anchor_position` instead.
         """
         return self._anchor_y
 
@@ -478,18 +478,18 @@ class ShapeBase(ABC):
 
     @property
     def anchor_position(self) -> tuple[float, float]:
-        """Get/set the anchor's ``(x, y)`` offset from :attr:`.position`
+        """Get/set the anchor's ``(x, y)`` offset from :py:attr:`.position`
 
         This defines the point a shape rotates around. By default, it is
         ``(0.0, 0.0)``. However:
 
         * Its behavior may vary between shape classes.
         * On many shapes, you can set the anchor or its components
-          (:attr:`.anchor_x` and :attr:`.anchor_y`) to custom values.
+          (:py:attr:`.anchor_x` and :attr:`.anchor_y`) to custom values.
 
         Since all anchor updates recalculate a shape's vertices on the
-        CPU, this property is faster than updating :attr:`.anchor_x` and
-        :attr:`.anchor_y` separately.
+        CPU, this property is faster than updating :py:attr:`.anchor_x` and
+        :py:attr:`.anchor_y` separately.
         """
         return self._anchor_x, self._anchor_y
 
@@ -600,7 +600,7 @@ class ShapeBase(ABC):
 
     @property
     def batch(self) -> Batch | None:
-        """Get/set the :class:`Batch` for this shape.
+        """Get/set the :py:class:`Batch` for this shape.
 
         .. warning:: Setting this to ``None`` currently breaks things!
 
