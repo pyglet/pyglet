@@ -453,20 +453,25 @@ class ShapeBase(ABC):
         self._update_vertices()
 
     @property
-    def color(self):
-        """The shape color.
+    def color(self) -> tuple[int, int, int, int]:
+        """Get/set the shape's color.
 
-        This property sets the color of the shape.
+        The color may set to:
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
 
-        :type: (int, int, int)
+        If an RGB color is set, the current alpha will be preserved.
+        Otherwise, the new alpha value will be used for the shape. Each
+        color component must be in the range 0 (dark) to 255 (saturated).
         """
         return self._rgba
 
     @color.setter
-    def color(self, values):
+    def color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int]
+    ) -> None:
         r, g, b, *a = values
 
         if a:
