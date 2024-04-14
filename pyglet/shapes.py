@@ -259,7 +259,7 @@ class ShapeBase(ABC):
     """
 
     _rgba = (255, 255, 255, 255)
-    _rotation = 0
+    _rotation: float = 0.0
     _visible = True
     _x: float = 0.0
     _y: float = 0.0
@@ -323,20 +323,29 @@ class ShapeBase(ABC):
 
     @property
     def rotation(self) -> float:
-        """Clockwise rotation of the shape in degrees.
+        """Get/set the shape's clockwise rotation in degrees.
 
-        It will be rotated about its (anchor_x, anchor_y) position,
-        which defaults to the first vertex point of the shape.
+        All shapes rotate around their :attr:`.anchor_position`.
+        For most shapes, this defaults to both:
 
-        For most shapes, this is the lower left corner. The shapes
-        below default to the points their ``radius`` values are
-        measured from:
+        * The shape's first vertex of the shape
+        * The lower left corner
 
-            * :py:class:`.Circle`
-            * :py:class:`.Ellipse`
-            * :py:class:`.Arc`
-            * :py:class:`.Sector`
-            * :py:class:`.Star`
+        Shapes with a ``radius`` property rotate around the
+        point the radius is measured from. This will be either
+        their center or the center of the circle they're cut from:
+
+        These shapes rotate around their center:
+
+        * :py:class:`.Circle`
+        * :py:class:`.Ellipse`
+        * :py:class:`.Star`
+
+        These shapes rotate around the point of their angles:
+
+        * :py:class:`.Arc`
+        * :py:class:`.Sector`
+
         """
         return self._rotation
 
