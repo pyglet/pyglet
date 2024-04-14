@@ -1628,32 +1628,41 @@ class BorderedRectangle(ShapeBase):
 
 
 class Box(ShapeBase):
-    def __init__(self, x, y, width, height, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            width: float, height: float,
+            thickness: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an unfilled rectangular shape, with optional thickness.
 
-        The box's anchor point defaults to the (x, y) coordinates,
-        which are at the bottom left.
+        The box's anchor point defaults to the ``(x, y)`` coordinates,
+        which are placed at the bottom left.
         Changing the thickness of the box will extend the walls inward;
         the outward dimesions will not be affected.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the box.
-            `y` : float
+            y:
                 The Y coordinate of the box.
-            `width` : float
+            width:
                 The width of the box.
-            `height` : float
+            height:
                 The height of the box.
-            `thickness` : float
+            thickness:
                 The thickness of the lines that make up the box.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the box, specified as a tuple
                 of 3 or 4 ints in the range of 0-255. RGB colors will
                 be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the box to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the box.
         """
         self._x = x
