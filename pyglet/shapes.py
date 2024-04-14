@@ -345,11 +345,14 @@ class ShapeBase(ABC):
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
-    def draw(self):
-        """Draw the shape at its current position.
+    def draw(self) -> None:
+        """Debug method to draw a single shape at its current position.
 
-        Using this method is not recommended. Instead, add the
-        shape to a `pyglet.graphics.Batch` for efficient rendering.
+        .. warning:: Avoid this inefficient method for everyday use!
+
+                     Instead, add shapes to a :class:`Batch`and call
+                     the batch's :meth:`~Batch.draw` method instead.
+
         """
         self._group.set_state_recursive()
         self._vertex_list.draw(self._draw_mode)
