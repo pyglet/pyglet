@@ -1673,7 +1673,7 @@ class Box(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
@@ -1720,29 +1720,31 @@ class Box(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
-        """The width of the Box.
+    def width(self) -> float:
+        """Get/set the width of the box.
 
-        :type: float
+        Setting the width will position the left and right sides
+        relative to the box's :py:attr:`.anchor_x` value.
         """
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float) -> None:
         self._width = value
         self._update_vertices()
 
     @property
-    def height(self):
-        """The height of the Box.
+    def height(self) -> float:
+        """Get/set the height of the Box.
 
-        :type: float
+        Setting the height will set the bottom and top relative to the
+        box's :py:attr:`.anchor_y` value.
         """
         return self._height
 
     @height.setter
-    def height(self, value):
-        self._height = value
+    def height(self, value: float) -> None:
+        self._height = float(value)
         self._update_vertices()
 
 
