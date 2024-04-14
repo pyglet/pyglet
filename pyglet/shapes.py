@@ -1527,16 +1527,17 @@ class BorderedRectangle(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def border(self):
-        """The border width of the rectangle.
+    def border(self) -> float:
+        """The border thickness of the bordered rectangle.
 
-        :return: float
+        This extends inward from the edge of the rectangle toward the
+        center.
         """
         return self._border
 
     @border.setter
-    def border(self, width):
-        self._border = width
+    def border(self, thickness: float) -> None:
+        self._border = thickness
         self._update_vertices()
 
     @property
