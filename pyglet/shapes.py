@@ -1188,30 +1188,38 @@ class Sector(ShapeBase):
 
 
 class Line(ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255), batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float, x2: float, y2: float,
+            width: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
         width on the X axis, and the Y axis.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The first X coordinate of the line.
-            `y` : float
+            y:
                 The first Y coordinate of the line.
-            `x2` : float
+            x2:
                 The second X coordinate of the line.
-            `y2` : float
+            y2:
                 The second Y coordinate of the line.
-            `width` : float
+            width:
                 The desired width of the line.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the line, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the line to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the line.
         """
         self._x = x
