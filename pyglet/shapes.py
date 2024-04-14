@@ -1148,41 +1148,36 @@ class Sector(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def angle(self):
-        """The angle of the sector.
-
-        :type: float
-        """
+    def angle(self) -> float:
+        """Get/set the angle of the sector in degrees."""
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
-        """The start angle of the sector.
-
-        :type: float
-        """
+    def start_angle(self) -> float:
+        """Get/set the start angle of the sector in degrees."""
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float) -> None:
         self._start_angle = angle
         self._update_vertices()
 
     @property
-    def radius(self):
-        """The radius of the sector.
+    def radius(self) -> float:
+        """Get/set the radius of the sector.
 
-        :type: float
+        By default, this is in screen pixels. Your drawing / GL settings
+        may alter how this is drawn.
         """
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
