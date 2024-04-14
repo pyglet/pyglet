@@ -1055,8 +1055,17 @@ class Ellipse(ShapeBase):
 
 class Sector(ShapeBase):
 
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            angle: float = math.tau,
+            start_angle: float = 0.0,
+            color: tuple[int, int, int, int] | tuple[int, int, it] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a Sector of a circle.
 
         By default, ``(x, y)`` is used as:
