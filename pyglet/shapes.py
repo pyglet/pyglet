@@ -44,7 +44,7 @@ A simple example of drawing shapes::
 
 .. versionadded:: 1.5.4
 """
-
+from __future__ import annotations
 import math
 
 from abc import ABC, abstractmethod
@@ -1747,32 +1747,39 @@ class Box(ShapeBase):
 
 
 class Triangle(ShapeBase):
-    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(
+            self,
+            x: float, y: float,
+            x2: float, y2: float,
+            x3: float, y3: float,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a triangle.
 
         The triangle's anchor point defaults to the first vertex point.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The first X coordinate of the triangle.
-            `y` : float
+            y:
                 The first Y coordinate of the triangle.
-            `x2` : float
+            x2:
                 The second X coordinate of the triangle.
-            `y2` : float
+            y2:
                 The second Y coordinate of the triangle.
-            `x3` : float
+            x3:
                 The third X coordinate of the triangle.
-            `y3` : float
+            y3:
                 The third Y coordinate of the triangle.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the triangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the triangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the triangle.
         """
         self._x = x
@@ -1793,7 +1800,7 @@ class Triangle(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
 
@@ -1820,54 +1827,42 @@ class Triangle(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def x2(self):
-        """Second X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x2(self) -> float:
+        """Get/set the X coordinate of the triangle's 2nd vertex."""
         return self._x + self._x2
 
     @x2.setter
-    def x2(self, value):
+    def x2(self, value: float) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self):
-        """Second Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y2(self) -> float:
+        """Get/set the Y coordinate of the triangle's 2nd vertex."""
         return self._y + self._y2
 
     @y2.setter
-    def y2(self, value):
+    def y2(self, value: float) -> None:
         self._y2 = value
         self._update_vertices()
 
     @property
-    def x3(self):
-        """Third X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x3(self) -> float:
+        """Get/set the X coordinate of the triangle's 3rd vertex."""
         return self._x + self._x3
 
     @x3.setter
-    def x3(self, value):
+    def x3(self, value: float) -> None:
         self._x3 = value
         self._update_vertices()
 
     @property
-    def y3(self):
-        """Third Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y3(self) -> float:
+        """Get/set the Y value of the triangle's 3rd vertex."""
         return self._y + self._y3
 
     @y3.setter
-    def y3(self, value):
+    def y3(self, value: float) -> None:
         self._y3 = value
         self._update_vertices()
 
