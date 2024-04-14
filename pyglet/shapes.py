@@ -1027,28 +1027,22 @@ class Ellipse(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def a(self):
-        """The semi-major axes of the ellipse.
-
-        :type: float
-        """
+    def a(self) -> float:
+        """Get/set the semi-major axes of the ellipse."""
         return self._a
 
     @a.setter
-    def a(self, value):
+    def a(self, value: float) -> None:
         self._a = value
         self._update_vertices()
 
     @property
-    def b(self):
-        """The semi-minor axes of the ellipse.
-
-        :type: float
-        """
+    def b(self) -> float:
+        """Get/set the semi-minor axes of the ellipse."""
         return self._b
 
     @b.setter
-    def b(self, value):
+    def b(self, value: float) -> None:
         self._b = value
         self._update_vertices()
 
