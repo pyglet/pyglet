@@ -9,8 +9,22 @@ and rotation.
 The Python ``in`` operator can be used to check whether a point is inside a shape.
 (This is approximated with some shapes, such as Star).
 
-To create more complex shapes than what is provided here, the lower level
-graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
+If you the shapes in this module don't suit your needs, you
+have two options:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Your Goals
+     - Best Approach
+
+   * - Simple shapes like those here
+     - Subclass :py:class:`ShapeBase`
+
+   * - Complex & optimized shapes
+     - See :ref:`guide_graphics` to learn about
+       the low-level graphics API.
+
 
 A simple example of drawing shapes::
 
