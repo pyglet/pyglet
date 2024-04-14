@@ -955,24 +955,25 @@ class Ellipse(ShapeBase):
     ):
         """Create an ellipse.
 
-        The ellipse's anchor point (x, y) defaults to the center of the ellipse.
+        The ellipse's anchor point ``(x, y)`` defaults to the center of
+        the ellipse.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the ellipse.
-            `y` : float
+            y:
                 Y coordinate of the ellipse.
-            `a` : float
+            a:
                 Semi-major axes of the ellipse.
-            `b`: float
+            b:
                 Semi-minor axes of the ellipse.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the ellipse, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the circle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the circle.
         """
         self._x = x
