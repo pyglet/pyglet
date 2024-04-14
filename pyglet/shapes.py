@@ -37,10 +37,16 @@ A simple example of drawing shapes::
     pyglet.app.run()
 
 
-.. note:: Some Shapes, such as Lines and Triangles, have multiple coordinates.
-          If you update the x, y coordinate, this will also affect the secondary
-          coordinates. This allows you to move the shape without affecting it's
-          overall dimensions.
+.. note:: Some Shapes, such as :py:class:`.Line` and :py:class:`.Triangle`,
+          have multiple coordinates.
+
+          These shapes treat their :py:attr:`~ShapeBase.position` as their
+          primary coordinate. Changing it or its components (the
+          :py:attr:`~ShapeBase.x` or :py:attr:`~ShapeBase.y` properties)
+          also moves all secondary coordinates by the same offset from
+          the previous :py:attr:`~ShapeBase.position` value. This allows
+          you to move these shapes without distorting them.
+
 
 .. versionadded:: 1.5.4
 """
