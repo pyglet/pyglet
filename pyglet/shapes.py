@@ -671,50 +671,41 @@ class Arc(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def radius(self):
-        """The radius of the arc.
-
-        :type: float
-        """
+    def radius(self) -> float:
+        """Get/set the radius of the arc."""
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
     @property
-    def thickness(self):
+    def thickness(self) -> float:
         return self._thickness
 
     @thickness.setter
-    def thickness(self, thickness):
+    def thickness(self, thickness: float) -> None:
         self._thickness = thickness
         self._update_vertices()
 
     @property
-    def angle(self):
-        """The angle of the arc.
-
-        :type: float
-        """
+    def angle(self) -> float:
+        """Get/set the angle of the arc in radians."""
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
-        """The start angle of the arc.
-
-        :type: float
-        """
+    def start_angle(self) -> float:
+        """Get/set the start angle of the arc in radians."""
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float):
         self._start_angle = angle
         self._update_vertices()
 
