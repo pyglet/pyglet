@@ -655,7 +655,7 @@ class Arc(ShapeBase):
                 You can optionally specify how many distinct line segments
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
-                `max(14, int(radius / 1.25))`.
+                ``max(14, int(radius / 1.25))``.
             angle:
                 The angle of the arc, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
