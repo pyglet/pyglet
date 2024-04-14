@@ -721,7 +721,16 @@ class Arc(ShapeBase):
 
 class BezierCurve(ShapeBase):
 
-    def __init__(self, *points, t=1.0, segments=100, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            *points: tuple[float, float],
+            t: float = 1.0,
+            segments: int = 100,
+            thickness: int =1,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
