@@ -1540,15 +1540,16 @@ class BorderedRectangle(ShapeBase):
         self._update_vertices()
 
     @property
-    def width(self):
-        """The width of the rectangle.
+    def width(self) -> float:
+        """Get/set width of the bordered rectangle.
 
-        :type: float
+        The new left and right of the rectangle will be set relative to
+        its :py:attr:`.anchor_x` value.
         """
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float):
         self._width = value
         self._update_vertices()
 
