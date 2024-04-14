@@ -477,36 +477,50 @@ class ShapeBase(ABC):
         self._update_color()
 
     @property
-    def opacity(self):
-        """Blend opacity.
+    def opacity(self) -> int:
+        """Get/set the blend opacity of the shape.
 
-        This property sets the alpha component of the color of the shape.
-        With the default blend mode (see the constructor), this allows the
-        shape to be drawn with fractional opacity, blending with the
-        background.
+        .. tip:: To toggle visibility on/off, :py:attr:`.visible` may be
+                 more efficient!
 
-        An opacity of 255 (the default) has no effect.  An opacity of 128
-        will make the shape appear translucent.
+        Opacity is implemented as the alpha component of a shape's
+        :py:attr:`.color`. When part of a group with a default blend
+        mode of ``(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)``, opacities
+        below ``255`` draw with fractional opacity over the background:
 
-        :type: int
+        .. list-table:: Example Values & Effects
+           :header-rows: 1
+
+           * - Opacity
+             - Effect
+
+           * - ``255`` (Default)
+             - Shape is fully opaque
+
+           * - ``128``
+             - Shape looks translucent
+
+           * - ``0``
+             - Invisible
+
         """
         return self._rgba[3]
 
     @opacity.setter
-    def opacity(self, value):
+    def opacity(self, value: int) -> None:
         self._rgba = (*self._rgba[:3], value)
         self._update_color()
 
     @property
-    def visible(self):
-        """True if the shape will be drawn.
+    def visible(self) -> bool:
+        """Get/set whether the shape will be drawn at all.
 
-        :type: bool
+        For absolute showing / hiding, this is
         """
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         self._visible = value
         self._update_vertices()
 
