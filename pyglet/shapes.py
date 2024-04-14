@@ -1566,24 +1566,28 @@ class BorderedRectangle(ShapeBase):
         self._update_vertices()
 
     @property
-    def border_color(self):
-        """The rectangle's border color.
+    def border_color(self) -> tuple[int, int, int, int]:
+        """Get/set the bordered rectangle's border color.
 
-        This property sets the color of the border of a bordered rectangle.
+        To set the color of the interior fill, see :py:attr:`.color`.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'
-        or an RGBA tuple of integers '(red, green, blue, alpha)`. Setting the
-        alpha on this property will change the alpha of the entire shape,
-        including both the fill and the border.
+        You can set the border color to either of the following:
+
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
+
+        Setting the alpha on this property will change the alpha of
+        the entire shape, including both the fill and the border.
 
         Each color component must be in the range 0 (dark) to 255 (saturated).
-
-        :type: (int, int, int, int)
         """
         return self._border_rgba
 
     @border_color.setter
-    def border_color(self, values):
+    def border_color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int]
+    ):
         r, g, b, *a = values
 
         if a:
