@@ -943,8 +943,16 @@ class Circle(ShapeBase):
 
 
 class Ellipse(ShapeBase):
-    def __init__(self, x, y, a, b, segments=None, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            a: float, b: float,
+            segments: int | None = None,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an ellipse.
 
         The ellipse's anchor point (x, y) defaults to the center of the ellipse.
