@@ -260,7 +260,7 @@ class ShapeBase(ABC):
 
     _rgba: tuple[int, int, int, int] = (255, 255, 255, 255)
     _rotation: float = 0.0
-    _visible = True
+    _visible: bool = True
     _x: float = 0.0
     _y: float = 0.0
     _anchor_x: float = 0.0
