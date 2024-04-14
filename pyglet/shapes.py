@@ -1321,29 +1321,36 @@ class Line(ShapeBase):
 
 
 class Rectangle(ShapeBase):
-    def __init__(self, x, y, width, height, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            width: float, height: float,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a rectangle or square.
 
-        The rectangle's anchor point defaults to the (x, y) coordinates,
-        which are at the bottom left.
+        The rectangle's anchor point defaults to the ``(x, y)``
+        coordinates, which are at the bottom left.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the rectangle.
-            `y` : float
+            y:
                 The Y coordinate of the rectangle.
-            `width` : float
+            width:
                 The width of the rectangle.
-            `height` : float
+            height:
                 The height of the rectangle.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the rectangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the rectangle.
         """
         self._x = x
