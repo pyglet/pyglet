@@ -564,35 +564,35 @@ class Arc(ShapeBase):
 
         The Arc's anchor point (x, y) defaults to its center.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the circle.
-            `y` : float
+            y:
                 Y coordinate of the circle.
-            `radius` : float
+            radius:
                 The desired radius.
-            `segments` : int
+            segments:
                 You can optionally specify how many distinct line segments
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
-            `angle` : float
+            angle:
                 The angle of the arc, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
-            `start_angle` : float
+            start_angle:
                 The start angle of the arc, in radians. Defaults to 0.
-            `closed` : bool
+            closed:
                 If True, the ends of the arc will be connected with a line.
                 defaults to False.
-            `thickness` : float
+            thickness:
                 The desired thickness or width of the line used for the arc.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the circle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the circle.
         """
         self._x = x
