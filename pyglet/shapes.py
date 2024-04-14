@@ -382,8 +382,8 @@ class ShapeBase(ABC):
 
         .. warning:: Avoid this inefficient method for everyday use!
 
-                     Instead, add shapes to a :py:class:`Batch` and call
-                     the batch's :py:meth:`~Batch.draw` method instead.
+                     Regular drawing should add shapes to a :py:class:`Batch`
+                     and call its :py:meth:`~Batch.draw` method.
 
         """
         self._group.set_state_recursive()
