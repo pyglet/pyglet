@@ -1553,15 +1553,16 @@ class BorderedRectangle(ShapeBase):
         self._update_vertices()
 
     @property
-    def height(self):
-        """The height of the rectangle.
+    def height(self) -> float:
+        """Get/set the height of the bordered rectangle.
 
-        :type: float
+        The bottom and top of the rectangle will be positioned relative
+        to its :py:attr:`.anchor_y` value.
         """
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: float) -> None:
         self._height = value
         self._update_vertices()
 
