@@ -1285,37 +1285,32 @@ class Line(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
+    def width(self) -> float:
+        """Get/set the line's thickness."""
         return self._width
 
     @width.setter
-    def width(self, width):
+    def width(self, width: float) -> None:
         self._width = width
         self._update_vertices()
 
     @property
-    def x2(self):
-        """Second X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x2(self) -> float:
+        """Get/set the 2nd X coordinate of the line."""
         return self._x2
 
     @x2.setter
-    def x2(self, value):
+    def x2(self, value: float) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self):
-        """Second Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y2(self) -> float:
+        """Get/set the 2nd Y coordinate of the line."""
         return self._y2
 
     @y2.setter
-    def y2(self, value):
+    def y2(self, value: float) -> None:
         self._y2 = value
         self._update_vertices()
 
