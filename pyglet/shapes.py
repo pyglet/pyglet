@@ -1427,27 +1427,27 @@ class BorderedRectangle(ShapeBase):
             batch: Batch | None = None,
             group: Group | None = None
     ):
-        """Create a rectangle or square.
+        """Create a bordered rectangle.
 
-        The rectangle's anchor point defaults to the (x, y) coordinates,
+        The rectangle's anchor point defaults to the ``(x, y)`` coordinates,
         which are at the bottom left.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the rectangle.
-            `y` : float
+            y:
                 The Y coordinate of the rectangle.
-            `width` : float
+            width:
                 The width of the rectangle.
-            `height` : float
+            height:
                 The height of the rectangle.
-            `border` : float
+            border:
                 The thickness of the border.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA fill color of the rectangle, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
-            `border_color` : (int, int, int, int)
+            border_color:
                 The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
@@ -1456,9 +1456,9 @@ class BorderedRectangle(ShapeBase):
                 both this argument and `border_color`. If they do not,
                 a `ValueError` will be raised informing you of the
                 ambiguity.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the rectangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the rectangle.
         """
         self._x = x
