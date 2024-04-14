@@ -511,12 +511,19 @@ class ShapeBase(ABC):
         self._update_vertices()
 
     @property
-    def group(self):
-        """User assigned :class:`Group` object."""
+    def group(self) -> Group:
+        """Get/set the shape's :class:`Group`.
+
+        .. warning:: This breaks when :py:attr:`.batch` is ``None``!
+
+        You can migrate a shape from one group to another by setting
+        this property, but it can be an expensive (slow) operation. This
+        will also trigger a batch migration.
+        """
         return self._group.parent
 
     @group.setter
-    def group(self, group):
+    def group(self, group: Group) -> None:
         if self._group.parent == group:
             return
         self._group = self.group_class(self._group.blend_src,
@@ -527,12 +534,20 @@ class ShapeBase(ABC):
                             self._batch)
 
     @property
-    def batch(self):
-        """User assigned :class:`Batch` object."""
+    def batch(self) -> Batch | None:
+        """Get/set the :class:`Batch` for this shape.
+
+        .. warning:: Setting this to ``None`` currently breaks things!
+
+                     Known issues include :py:attr:`.group` breaking.
+
+        You can migrate a shape from one batch to another by setting
+        this property, but it can be an expensive (slow) operation.
+        """
         return self._batch
 
     @batch.setter
-    def batch(self, batch):
+    def batch(self, batch: Batch | None) -> None:
         if self._batch == batch:
             return
 
