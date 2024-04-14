@@ -424,8 +424,8 @@ class ShapeBase(ABC):
     def position(self) -> tuple[float, float]:
         """Get/set the ``(x, y)`` coordinates of the shape.
 
-        .. tip:: This is more efficient than setting :attr:`.x` and
-                 :attr:`.y`separately!
+        .. tip:: This is more efficient than setting :py:attr:`.x`
+                 and :py:attr:`.y` separately!
 
         All shapes default to rotating around their position. However,
         the way they do so varies.
