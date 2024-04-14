@@ -278,7 +278,7 @@ class ShapeBase(ABC):
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         """Test whether a point is inside a shape."""
         raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
