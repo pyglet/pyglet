@@ -1417,8 +1417,16 @@ class Rectangle(ShapeBase):
 
 
 class BorderedRectangle(ShapeBase):
-    def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
-                 border_color=(100, 100, 100), batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float, width: float, height: float,
+            border: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255),
+            border_color: tuple[int, int, int, int] | tuple[int, int, int] = (100, 100, 100),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a rectangle or square.
 
         The rectangle's anchor point defaults to the (x, y) coordinates,
