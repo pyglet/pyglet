@@ -1,26 +1,70 @@
-# -*- coding: utf-8 -*-
 #
 # pyglet documentation build configuration file.
 #
 # This file is execfile()d with the current directory set to its containing dir.
-
-
+import datetime
 import os
 import sys
 import time
-import datetime
+import typing
+from typing import TypeVar
 
-# Prevents instance attributes from having a default value of None
-# See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
-from sphinx.ext.autodoc import ClassLevelDocumenter
+import sphinx_autodoc_typehints
+
+# -- Extensions to the  Napoleon GoogleDocstring class ---------------------
+from sphinx.ext.napoleon.docstring import GoogleDocstring
+from sphinx.parsers import RSTParser
 
 
-def iad_add_directive_header(self, sig):
-    ClassLevelDocumenter.add_directive_header(self, sig)
+def parse_attributes_section(self, section):
+    # Combination of _format_fields and _parse_attributes_section to get type hints loaded properly using
+    # the theme and getting the custom name instead of Specifying just 'Variables'
+    field_type = "Class Variables"
+    fields = self._consume_fields()
 
+    field_type = ":%s:" % field_type.strip()
+    padding = " " * len(field_type)
+    multi = len(fields) > 1
+    lines: list[str] = []
+    for _name, _type, _desc in fields:
+        if not _type:
+            _type = self._lookup_annotation(_name)
+            if _name in self._annotations:
+                _type = sphinx_autodoc_typehints.add_type_css_class(
+                   sphinx_autodoc_typehints.format_annotation(self._annotations[_name], self._app.config))
+
+        field = self._format_field(_name, _type, _desc)
+        if multi:
+            if lines:
+                lines.extend(self._format_block(padding + " * ", field))
+            else:
+                lines.extend(self._format_block(field_type + " * ", field))
+        else:
+            lines.extend(self._format_block(field_type + " ", field))
+    if lines and lines[-1]:
+        lines.append("")
+    return lines
+
+
+GoogleDocstring._parse_attributes_section = parse_attributes_section
+
+# Unpatch... the patch.
+def _revert_patch():
+    pass
+
+sphinx_autodoc_typehints.patches._patch_google_docstring_lookup_annotation = _revert_patch
+
+# Patch to fix our RST insertion issues.
+class _RstSnippetParser(RSTParser):
+    @staticmethod
+    def decorate(_content) -> None:
+        """Override to skip processing rst_epilog/rst_prolog for typing."""
+
+
+sphinx_autodoc_typehints.parser.RSTParser = _RstSnippetParser
 
 def write_build(data, filename):
-    with open(os.path.join('internal', filename), 'w') as f:
+    with open(os.path.join("internal", filename), "w") as f:
         f.write(".. list-table::\n")
         f.write("   :widths: 50 50\n")
         f.write("\n")
@@ -33,10 +77,10 @@ sys.is_pyglet_doc_run = True
 document_modules = ["pyglet"]
 
 # Patched extensions base path.
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath("."))
 
 # import the pyglet package.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 
 try:
@@ -47,7 +91,10 @@ except ImportError:
     sys.exit(1)
 
 
+
+
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
+
 
 # Set up substitutions that can be referenced later.
 # IMPORTANT:
@@ -58,21 +105,17 @@ except ImportError:
 # avoid having to deal with syntax errors.
 # Also, please note that there does not appear to be a good way to use
 # substitutions within link text by default.
-rst_prolog = """
-.. |min_python_version| replace:: {min_python_version}
-.. |min_python_version_package_name| replace:: ``python{min_python_version}``
-.. |min_python_version_fancy_str| replace:: Python {min_python_version}+
-""".format(
-    min_python_version=pyglet.MIN_PYTHON_VERSION_STR
-)
+rst_epilog = rf"""
+.. |min_python_version| replace:: {pyglet.MIN_PYTHON_VERSION_STR}
+.. |min_python_version_package_name| replace:: ``python{pyglet.MIN_PYTHON_VERSION_STR}``
+.. |min_python_version_fancy_str| replace:: Python {pyglet.MIN_PYTHON_VERSION_STR}\+
+"""
 
 implementations = ["cocoa", "win32", "xlib"]
 
 # For each module, a list of submodules that should not be imported.
 # If value is None, do not try to import any submodule.
 skip_modules = {"pyglet": {
-                     "pyglet.com": None,
-                     "pyglet.compat": None,
                      "pyglet.lib": None,
                      "pyglet.libs": None,
                      "pyglet.app": implementations,
@@ -80,7 +123,8 @@ skip_modules = {"pyglet": {
                      "pyglet.extlibs": None,
                      "pyglet.font": ["quartz",
                                      "win32",
-                                     "freetype", "freetype_lib",
+                                     "freetype",
+                                     "freetype_lib",
                                      "fontconfig",
                                      "win32query"],
                      "pyglet.input": ["darwin_hid",
@@ -110,7 +154,7 @@ skip_modules = {"pyglet": {
 now = datetime.datetime.fromtimestamp(time.time())
 build_data = (("Date", now.strftime("%Y/%m/%d %H:%M:%S")),
               ("pyglet version", pyglet.version))
-write_build(build_data, 'build.rst')
+write_build(build_data, "build.rst")
 
 # -- SPHINX STANDARD OPTIONS ---------------------------------------------------
 
@@ -127,38 +171,53 @@ inheritance_graph_attrs = dict(rankdir="LR", size='""')
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.intersphinx',
-              'sphinx.ext.inheritance_diagram',
-              'sphinx.ext.todo',
-              'sphinx.ext.napoleon']
+extensions = ["sphinx.ext.autodoc",
+              "sphinx.ext.napoleon",
+              "sphinx.ext.intersphinx",
+              "sphinx.ext.inheritance_diagram",
+              "sphinx.ext.todo",
+              "sphinx_autodoc_typehints",
+              ]
 
-autodoc_member_order = 'groupwise'
+# Autodoc settings.
+autodoc_member_order = "groupwise"
+
+# Separate init from the class header as RTD theme makes it all the same color, reducing readability.
+autodoc_class_signature = "separated"
+
+# Add type hints to description and parameters in docs.
+autodoc_typehints = "signature"
+autodoc_typehints_format = "short"
+
+# Configuration for sphinx_autodoc_typehints
+typehints_use_signature = True
+typehints_use_signature_return = True
+always_use_bars_union = True
 
 # Enable links to Python's main doc
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None)
+    "python": ("https://docs.python.org/3", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = u'pyglet'
-copyright = u'2006-2008, Alex Holkner. 2008-2023 pyglet contributors'
+project = "pyglet"
+copyright = "2006-2008, Alex Holkner. 2008-2023 pyglet contributors"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '2.0'
+version = "2.0"
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 
@@ -174,7 +233,7 @@ release = pyglet.version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', '_templates', 'api']
+exclude_patterns = ["_build", "_templates", "api"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -191,22 +250,28 @@ add_module_names = False
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
-modindex_common_prefix = ['pyglet.']
+modindex_common_prefix = ["pyglet."]
 
 
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
+
+# Force custom css to allow multiline inits.
+html_css_files = [
+    "css/custom.css",
+]
+html_style = "css/custom.css"
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = ["ext/theme"]
@@ -230,7 +295,7 @@ html_favicon = "_static/favicon.ico"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -274,7 +339,7 @@ html_show_sourcelink = False
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pygletdoc'
+htmlhelp_basename = "pygletdoc"
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -293,8 +358,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'pyglet.tex', u'pyglet Documentation',
-   u'Alex Holkner', 'manual'),
+  ("index", "pyglet.tex", "pyglet Documentation",
+   "Alex Holkner", "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -323,8 +388,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pyglet', u'pyglet Documentation',
-     [u'Alex Holkner'], 1)
+    ("index", "pyglet", "pyglet Documentation",
+     ["Alex Holkner"], 1),
 ]
 
 # If true, show URL addresses after external links.
@@ -337,9 +402,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'pyglet', u'pyglet Documentation',
-   u'Alex Holkner', 'pyglet', 'One line description of project.',
-   'Miscellaneous'),
+  ("index", "pyglet", "pyglet Documentation",
+   "Alex Holkner", "pyglet", "One line description of project.",
+   "Miscellaneous"),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -350,3 +415,36 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+python_maximum_signature_line_length = 85
+
+nitpicky = True
+
+def custom_formatter(annotation, config):
+    # Fixes TypeVar bounds, where the bound reference is forward referenced and class cannot be determined.
+    # Defaults to a class style. Seems good enough for now since most bound things are classes.
+    if isinstance(annotation, TypeVar):
+        try:
+            module = sphinx_autodoc_typehints.get_annotation_module(annotation)
+            class_name = sphinx_autodoc_typehints.get_annotation_class_name(annotation, module)
+            args = sphinx_autodoc_typehints.get_annotation_args(annotation, module, class_name)
+        except ValueError:
+            return str(annotation).strip("'")
+        params = {k: getattr(annotation, f"__{k}__") for k in ("bound", "covariant", "contravariant")}
+        params = {k: v for k, v in params.items() if v}
+        if "bound" in params:
+            bound_param = params["bound"]
+            if isinstance(bound_param, typing.ForwardRef):
+                # May be wrong but
+                params["bound"] = f":py:class:`{bound_param.__forward_arg__}`"
+            else:
+                params["bound"] = f"{sphinx_autodoc_typehints.format_annotation(bound_param, config)}"
+        args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
+        if params:
+            args_format += "".join(f", *{k} =* {v}" for k, v in params.items())
+        args_format += ")"
+        formatted_args = None if args else args_format
+        return f":py:class:`TypeVar` {formatted_args}"
+    return None
+
+typehints_formatter = custom_formatter
