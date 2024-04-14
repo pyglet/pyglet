@@ -365,7 +365,6 @@ class ShapeBase(ABC):
                      Instead, add shapes to a :py:class:`Batch` and call
                      the batch's :py:meth:`~Batch.draw` method instead.
 
-
         """
         self._group.set_state_recursive()
         self._vertex_list.draw(self._draw_mode)
