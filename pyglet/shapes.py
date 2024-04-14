@@ -893,7 +893,7 @@ class Circle(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
 
