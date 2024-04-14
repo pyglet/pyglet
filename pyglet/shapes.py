@@ -48,6 +48,7 @@ from __future__ import annotations
 import math
 
 from abc import ABC, abstractmethod
+from typing import Sequence
 
 import pyglet
 
@@ -2149,21 +2150,29 @@ class Star(ShapeBase):
 
 
 class Polygon(ShapeBase):
-    def __init__(self, *coordinates, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            *coordinates: tuple[float, float] | Sequence[float],
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a convex polygon.
 
         The polygon's anchor point defaults to the first vertex point.
 
-        :Parameters:
-            `coordinates` : List[[int, int]]
-                The coordinates for each point in the polygon.
-            `color` : (int, int, int, int)
+        Args:
+            coordinates:
+                The coordinates for each point in the polygon. Each one
+                must be able to unpack to a pair of float-like X and Y
+                values.
+            color:
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the polygon to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the polygon.
         """
 
