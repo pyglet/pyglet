@@ -258,7 +258,9 @@ class ShapeBase(ABC):
     the provided shapes as reference.
     """
 
-    _rgba: tuple[int, int, int, int] = (255, 255, 255, 255)
+    # _rgba and any class attribute set to None is untyped because
+    # doing so doesn't require None-handling from some type checkers.
+    _rgba = (255, 255, 255, 255)
     _rotation: float = 0.0
     _visible: bool = True
     _x: float = 0.0
@@ -267,9 +269,9 @@ class ShapeBase(ABC):
     _anchor_y: float = 0.0
     _batch = None
     _group = None
-    _num_verts = 0
+    _num_verts: int = 0
     _vertex_list = None
-    _draw_mode = GL_TRIANGLES
+    _draw_mode: int = GL_TRIANGLES
     group_class = _ShapeGroup
 
     def __del__(self):
