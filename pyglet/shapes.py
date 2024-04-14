@@ -2226,24 +2226,37 @@ class Polygon(ShapeBase):
 
 
 class MultiLine(ShapeBase):
-    def __init__(self, *coordinates, closed=False, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
-        """Create multiple connected lines from a sequence of coordinates
+
+    def __init__(
+            self,
+            *coordinates: tuple[float, float] | Sequence[float],
+            closed: bool = False,
+            thickness: float = 1.0,
+            color: tuple[int, int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
+        """Create multiple connected lines from a series of coordinates.
+
         The shape's anchor point defaults to the first vertex point.
-        :Parameters:
-            `coordinates` : List[[int, int]]
-                The coordinates for each point in the shape.
-            `closed` : bool
-                If True, the first and last coordinate will be connected with a line.
-                defaults to False.
-            `thickness` : float
+
+        Args:
+            coordinates:
+                The coordinates for each point in the shape. Each must
+                unpack like a tuple consisting of an X and Y float-like
+                value.
+            closed:
+                Set this to ``True`` to add a line connecting the first
+                and last points. The default is ``False``
+            thickness:
                 The desired thickness or width used for the line segments.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the shape, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the shape to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the shape.
         """
         # len(self._coordinates) = the number of vertices in the shape.
