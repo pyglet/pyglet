@@ -852,8 +852,16 @@ class BezierCurve(ShapeBase):
 
 
 class Circle(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
