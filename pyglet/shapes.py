@@ -2013,34 +2013,44 @@ class Triangle(ShapeBase):
 
 
 class Star(ShapeBase):
-    def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
-                 color=(255, 255, 255, 255), batch=None, group=None) -> None:
+    def __init__(
+            self,
+            x: float, y: float,
+            outer_radius: float,
+            inner_radius: float,
+            num_spikes: int,
+            rotation: float = 0.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group = None
+    ) -> None:
         """Create a star.
 
-        The star's anchor point (x, y) defaults to the center of the star.
+        The star's anchor point ``(x, y)`` defaults to the on-screen
+        center of the star.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the star.
-            `y` : float
+            y:
                 The Y coordinate of the star.
-            `outer_radius` : float
+            outer_radius:
                 The desired outer radius of the star.
-            `inner_radius` : float
+            inner_radius:
                 The desired inner radius of the star.
-            `num_spikes` : float
+            num_spikes:
                 The desired number of spikes of the star.
-            `rotation` : float
+            rotation:
                 The rotation of the star in degrees. A rotation of 0 degrees
                 will result in one spike lining up with the X axis in
                 positive direction.
-            `color` : (int, int, int)
+            color:
                 The RGB or RGBA color of the star, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the star to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the star.
         """
         self._x = x
