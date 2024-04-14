@@ -735,25 +735,25 @@ class BezierCurve(ShapeBase):
 
         The curve's anchor point (x, y) defaults to its first control point.
 
-        :Parameters:
-            `points` : List[[int, int]]
+        Args:
+            points:
                 Control points of the curve. Points can be specified as multiple
                 lists or tuples of point pairs. Ex. (0,0), (2,3), (1,9)
-            `t` : float
+            t:
                 Draw `100*t` percent of the curve. 0.5 means the curve
                 is half drawn and 1.0 means draw the whole curve.
-            `segments` : int
+            segments:
                 You can optionally specify how many line segments the
                 curve should be made from.
-            `thickness` : float
+            thickness:
                 The desired thickness or width of the line used for the curve.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the curve to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the curve.
         """
         self._points = list(points)
