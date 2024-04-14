@@ -929,15 +929,12 @@ class Circle(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def radius(self):
-        """The radius of the circle.
-
-        :type: float
-        """
+    def radius(self) -> float:
+        """Gets/set radius of the circle."""
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
