@@ -1064,30 +1064,30 @@ class Sector(ShapeBase):
         * The sector's anchor point
         * The center of the circle the sector is cut from
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the sector.
-            `y` : float
+            y:
                 Y coordinate of the sector.
-            `radius` : float
+            radius:
                 The desired radius.
-            `segments` : int
+            segments:
                 You can optionally specify how many distinct triangles
                 the sector should be made from. If not specified it will
                 be automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
-            `angle` : float
+            angle:
                 The angle of the sector, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
-            `start_angle` : float
+            start_angle:
                 The start angle of the sector, in radians. Defaults to 0.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the sector to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the sector.
         """
         self._x = x
