@@ -987,7 +987,7 @@ class Ellipse(ShapeBase):
 
         self._create_vertex_list()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         # Since directly testing whether a point is inside an ellipse is more
