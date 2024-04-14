@@ -547,8 +547,19 @@ class ShapeBase(ABC):
 
 class Arc(ShapeBase):
 
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            angle: float = math.tau,
+            start_angle: float = 0.0,
+            closed: bool = False,
+            thickness: float = 1.0,
+            color=(255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
