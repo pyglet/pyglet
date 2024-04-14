@@ -2118,32 +2118,32 @@ class Star(ShapeBase):
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def outer_radius(self):
-        """The outer radius of the star."""
+    def outer_radius(self) -> float:
+        """Get/set outer radius of the star."""
         return self._outer_radius
 
     @outer_radius.setter
-    def outer_radius(self, value):
+    def outer_radius(self, value: float) -> None:
         self._outer_radius = value
         self._update_vertices()
 
     @property
-    def inner_radius(self):
-        """The inner radius of the star."""
+    def inner_radius(self) -> float:
+        """Get/set the inner radius of the star."""
         return self._inner_radius
 
     @inner_radius.setter
-    def inner_radius(self, value):
+    def inner_radius(self, value: float) -> None:
         self._inner_radius = value
         self._update_vertices()
 
     @property
-    def num_spikes(self):
+    def num_spikes(self) -> int:
         """Number of spikes of the star."""
         return self._num_spikes
 
     @num_spikes.setter
-    def num_spikes(self, value):
+    def num_spikes(self, value: int) -> None:
         self._num_spikes = value
         self._update_vertices()
 
