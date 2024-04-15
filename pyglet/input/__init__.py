@@ -55,8 +55,6 @@ import sys
 
 from typing import TYPE_CHECKING
 
-import pyglet
-
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
@@ -68,7 +66,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 def get_apple_remote(display: None | Display = None) -> AppleRemote | None:
-    """Get the Apple remote control device, if it exists..
+    """Get the Apple remote control device, if it exists.
 
     The Apple remote is the small white 6-button remote control that
     accompanies most recent Apple desktops and laptops.  The remote can only

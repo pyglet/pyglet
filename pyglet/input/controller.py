@@ -20,6 +20,8 @@ To query which GameControllers are available, call :py:func:`get_controllers`.
 
 .. versionadded:: 2.0
 """
+from __future__ import annotations
+
 import os as _os
 import sys as _sys
 import warnings as _warnings

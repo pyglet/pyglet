@@ -196,6 +196,7 @@ If the build succeeds, the generated static web pages will be in ``doc/_build/ht
 You can also build the documentation by using Sphinx's ``Makefile``:
 
 .. code:: bash
+
     cd pyglet/doc
     make html       # Posix
     make.bat html   # Windows
