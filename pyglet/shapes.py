@@ -615,8 +615,11 @@ class ShapeBase(ABC):
                                        self._group.blend_dest,
                                        self._group.program,
                                        group)
-        self._batch.migrate(self._vertex_list, self._draw_mode, self._group,
-                            self._batch)
+        if self._batch:
+            self._batch.migrate(self._vertex_list,
+                                self._draw_mode,
+                                self._group,
+                                self._batch)
 
     @property
     def batch(self) -> Batch | None:
