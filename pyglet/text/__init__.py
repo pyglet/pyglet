@@ -412,6 +412,9 @@ class Label(DocumentLabel):
                 Optional graphics shader to use. Will affect all glyphs.
         """
         doc = decode_text(text)
+        r, g, b, *a = color
+        rgba = r, g, b, a[0] if a else 255
+
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=False)
 
@@ -421,7 +424,7 @@ class Label(DocumentLabel):
             "bold": bold,
             "italic": italic,
             "stretch": stretch,
-            "color": color,
+            "color": rgba,
             "align": align,
         })
 
