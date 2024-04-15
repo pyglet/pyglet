@@ -1,0 +1,29 @@
+/* Import RTD theme before our own changes. */
+@import 'theme.css';
+
+/* CSS to fix wrapping: https://github.com/readthedocs/sphinx_rtd_theme/issues/1529#issuecomment-1918561608 */
+/* Take out pointless vertical whitespace in the signatures. */
+.rst-content dl .sig dl,
+.rst-content dl .sig dd {
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+/* Make class boxes full-width, with view-source and header links right-aligned. */
+.py.class > .sig.sig-object.py:first-of-type {
+    width: 100%;
+}
+.py.class > .sig.sig-object.py:first-of-type .viewcode-link {
+  display: inline-flex;
+  float: right;
+  margin-right: 1.5em;
+}
+.py.class > .sig.sig-object.py:first-of-type .headerlink {
+  position: absolute;
+  right: 0.5em;
+}
+
+/* Prevent multiple properties from being on the same row. */
+dl.py.property {
+    display: block !important;
+}
