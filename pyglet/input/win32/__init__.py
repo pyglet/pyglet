@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from __future__ import annotations
 
 import pyglet
 
@@ -48,10 +48,10 @@ class Win32ControllerManager(base.ControllerManager):
     """
 
     def __init__(self):
-        self._di_controllers: Dict[DirectInputDevice, base.Controller] = {}
+        self._di_controllers: dict[DirectInputDevice, base.Controller] = {}
 
         if _xinput_enabled:
-            self._xinput_controllers: Dict[XInputDevice, XInputController] = {}
+            self._xinput_controllers: dict[XInputDevice, XInputController] = {}
 
             for xdev in _xinput_device_manager.all_devices:  # All 4 devices are initialized.
                 meta = {'name': xdev.name, 'guid': "XINPUTCONTROLLER"}
@@ -88,7 +88,7 @@ class Win32ControllerManager(base.ControllerManager):
         for device in _di_device_manager.devices:
             self._add_di_controller(device)
 
-    def _add_di_controller(self, device: DirectInputDevice) -> Optional[base.Controller]:
+    def _add_di_controller(self, device: DirectInputDevice) -> None | base.Controller:
         controller = _create_controller(device)
         if controller:
             self._di_controllers[device] = controller
