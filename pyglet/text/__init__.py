@@ -351,7 +351,7 @@ class Label(DocumentLabel):
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: int | None = None,
             bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
-            color: tuple[int, int, int, int] = (255, 255, 255, 255),
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -373,7 +373,8 @@ class Label(DocumentLabel):
             stretch:
                  Stretch font style.
             color:
-                Font colour, as RGBA components in range [0, 255].
+                Font color as RGBA or RGB components, each within
+                ``0 <= component <= 255``.
             x:
                 X coordinate of the label.
             y:
