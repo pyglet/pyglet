@@ -1176,14 +1176,13 @@ class Sector(ShapeBase):
             segments: int | None = None,
             angle: float = math.tau,
             start_angle: float = 0.0,
-            color: tuple[int, int, int, int] | tuple[int, int, it] = (255, 255, 255, 255),
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             batch: Batch | None = None,
             group: Group | None = None
     ):
         """Create a Sector of a circle.
 
         By default, ``(x, y)`` is used as:
-
         * The sector's anchor point
         * The center of the circle the sector is cut from
 
