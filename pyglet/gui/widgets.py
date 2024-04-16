@@ -9,6 +9,15 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 
+__all__ = [
+    'WidgetBase',
+    'PushButton',
+    'ToggleButton',
+    'Slider',
+    'TextEntry'
+]
+
+
 class WidgetBase(EventDispatcher):
 
     def __init__(self, x, y, width, height):
