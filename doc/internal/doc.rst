@@ -79,10 +79,10 @@ example
         """
 
         #: This is the default thing.
-        some_default_thing = 123
+        some_default_thing: float = 123.0
 
         #: :meta private:
-        dont_show_me = 456
+        dont_show_me: int = 456
 
         def __init__(self, name: str, size: float):
             """Constructor description
@@ -99,7 +99,10 @@ example
             self.name = name
             self.size = size
 
-            self.some_attribute: int = None
+            #: :This will show in the docs
+            self.attribute_one: int = None
+
+            self.attribute_two: str = "hello"
 
         def set_size(self, centimeters: float) -> None:
             """Simple description + type hints are enough."""
@@ -136,6 +139,39 @@ example
         """
         ...
 
+documentation tips
+^^^^^^^^^^^^^^^^^^
+
+Sometimes you may, or may not want certain class attributes to show up in the API
+docs. Depending on how and where you put the annotations and/or comments, you can
+control what gets picked up during the documentation building. Some examples are
+shown below.
+
+The following will show in docs WITHOUT docstring::
+
+    class Test:
+        blah: int
+
+The following will show in docs WITH docstring::
+
+    class Test:
+        #: :My description.
+        blah: int
+
+The following will NOT show in the docs::
+
+    class Test:
+        def __init__(self):
+            self.blah: int = 0
+
+
+The following will show in the docs::
+
+    class Test:
+        def __init__(self):
+            #: :This is documented.
+            self.blah: int = 0
+
 
 Developer reference
 -------------------
@@ -149,28 +185,25 @@ building
 Building the documentation locally requires a few dependencies. See :doc:`virtualenv`
 for more information on how to install them. Once you have Sphinx and it's dependencies
 installed, you can proceed with the build. The first way to build is by using pyglet's
-included `make.py` utility. This is found in the root of the repository. Execute::
+included `make.py` utility. This is found in the root of the repository, and includes
+some helper functions for common build and distribution related tasks. For docs, execute::
 
    ./make.py docs --open
 
 
 If the build succeeds, the generated static web pages will be in ``doc/_build/html``.
 
-You can also build the  standalone way to build docs is through
-``setup.py`` or ``make``.
+You can also build the documentation by using Sphinx's ``Makefile``:
 
 .. code:: bash
 
-    # using setup.py (output dir: _build in project root)
-    python setup.py build_sphinx
-
-    # make (make.bat for windows)
-    cd doc
-    make html
+    cd pyglet/doc
+    make html       # Posix
+    make.bat html   # Windows
 
 
-details
-^^^^^^^
+auto-generated details
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. include:: build.rst
 

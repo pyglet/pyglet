@@ -1,3 +1,4 @@
+import sys
 import warnings
 
 from pyglet.util import CodecRegistry, Decoder, Encoder
@@ -7,6 +8,8 @@ import pyglet
 
 
 _debug = pyglet.options['debug_media']
+
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 registry = CodecRegistry()
 add_decoders = registry.add_decoders
@@ -106,7 +109,7 @@ def have_ffmpeg():
                 found = True
                 break
 
-        if not found:
+        if not found and not _is_pyglet_doc_run:
             warnings.warn(f'FFmpeg release version not found. This may be a new or untested release. Unknown behavior may occur. Versions Loaded: {ffmpeg_lib.compat.versions}')
 
         return True

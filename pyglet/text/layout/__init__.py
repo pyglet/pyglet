@@ -109,24 +109,36 @@ entire paragraph, otherwise results are undefined.
     wrap text to prevent it overflowing a line.  With ``char``, the line
     wraps anywhere in the text; with ``word`` or True, the line wraps at
     appropriate boundaries between words; with False the line does not wrap,
-    and may overflow the layout width.  ``char`` and ``word`` styles are
-    since pyglet 1.2.
+    and may overflow the layout width.
 
 Other attributes can be used to store additional style information within the
 document; they will be ignored by the built-in text classes.
 
-.. versionadded:: 1.1
 """
+from __future__ import annotations
 
-from pyglet.text.layout.base import TextLayout, TextLayoutGroup, TextDecorationGroup, get_default_layout_shader, \
-    get_default_image_layout_shader, get_default_decoration_shader, decoration_fragment_source, \
-    layout_fragment_image_source, layout_fragment_source, layout_vertex_source, decoration_vertex_source
-from pyglet.text.layout.incremental import IncrementalTextLayout, IncrementalTextLayoutGroup, \
-    IncrementalTextDecorationGroup
-from pyglet.text.layout.scrolling import ScrollableTextLayout, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+from pyglet.text.layout.base import (
+    TextDecorationGroup,
+    TextLayout,
+    TextLayoutGroup,
+    decoration_fragment_source,
+    decoration_vertex_source,
+    get_default_decoration_shader,
+    get_default_image_layout_shader,
+    get_default_layout_shader,
+    layout_fragment_image_source,
+    layout_fragment_source,
+    layout_vertex_source,
+)
+from pyglet.text.layout.incremental import (
+    IncrementalTextDecorationGroup,
+    IncrementalTextLayout,
+    IncrementalTextLayoutGroup,
+)
+from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayout, ScrollableTextLayoutGroup
 
-__all__ = ['TextLayout', 'IncrementalTextLayout', 'ScrollableTextLayout', 'TextLayoutGroup', 'TextDecorationGroup',
-           'IncrementalTextLayoutGroup', 'IncrementalTextDecorationGroup', 'ScrollableTextLayoutGroup',
-           'ScrollableTextDecorationGroup', 'get_default_layout_shader', 'get_default_image_layout_shader',
-           'get_default_decoration_shader', 'decoration_fragment_source', 'layout_fragment_image_source',
-           'layout_fragment_source', 'layout_vertex_source', 'decoration_vertex_source']
+__all__ = ["TextLayout", "IncrementalTextLayout", "ScrollableTextLayout", "TextLayoutGroup", "TextDecorationGroup",
+           "IncrementalTextLayoutGroup", "IncrementalTextDecorationGroup", "ScrollableTextLayoutGroup",
+           "ScrollableTextDecorationGroup", "get_default_layout_shader", "get_default_image_layout_shader",
+           "get_default_decoration_shader", "decoration_fragment_source", "layout_fragment_image_source",
+           "layout_fragment_source", "layout_vertex_source", "decoration_vertex_source"]

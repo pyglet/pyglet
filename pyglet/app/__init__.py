@@ -28,12 +28,11 @@ default policy is to wait until all windows are closed)::
 
 .. versionadded:: 1.1
 """
+from __future__ import annotations
 
 import sys
 import weakref
 import platform
-
-from typing import Union
 
 import pyglet
 
@@ -69,8 +68,8 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval: Union[float, None] = 1/60) -> None:
-    """Begin processing events, scheduled functions, and window updates.
+def run(interval: None | float = 1/60) -> None:
+    """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
 
@@ -83,10 +82,9 @@ def run(interval: Union[float, None] = 1/60) -> None:
 def exit() -> None:
     """Exit the application event loop.
 
-    Causes the application event loop to finish if it's currenting
-    running. This call does not specifically exit the application.
-    For example, there may be additional code following the `run`
-    invocation.
+    Causes the application event loop to finish, if an event loop is currently
+    running.  The application may not necessarily exit (for example, there may
+    be additional code following the ``run`` invocation).
 
     This is a convenience function, equivalent to::
 

@@ -1,4 +1,1 @@
-"""Document formats.
-
-.. versionadded:: 1.1
-"""
+"""Document formats."""

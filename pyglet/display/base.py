@@ -1,19 +1,27 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyglet import gl
 from pyglet import app
 from pyglet import window
 from pyglet import display
 
+if TYPE_CHECKING:
+    from pyglet.gl import Config
+    from pyglet.window import BaseWindow
+
 
 class Display:
     """A display device supporting one or more screens."""
 
-    name: str = ""
+    name: str = None
     """Name of this display, if applicable."""
 
     x_screen: int = None
     """The X11 screen number of this display, if applicable."""
 
-    def __init__(self, name: str = "", x_screen: int = None):
+    def __init__(self, name: str = None, x_screen: int = None) -> None:
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the
@@ -29,11 +37,10 @@ class Display:
 
         On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
-
         """
         display._displays.add(self)
 
-    def get_screens(self):
+    def get_screens(self) -> list[Screen]:
         """Get the available screens.
 
         A typical multi-monitor workstation comprises one :class:`Display`
@@ -47,11 +54,9 @@ class Display:
         """
         raise NotImplementedError('abstract')
 
-    def get_default_screen(self):
+    def get_default_screen(self) -> Screen:
         """Get the default (primary) screen as specified by the user's operating system
         preferences.
-
-        :rtype: :class:`Screen`
         """
         screens = self.get_screens()
         for screen in screens:
@@ -61,12 +66,9 @@ class Display:
         # No Primary screen found?
         return screens[0]
 
-    def get_windows(self):
-        """Get the windows currently attached to this display.
-
-        :rtype: sequence of :class:`~pyglet.window.Window`
-        """
-        return [win for win in app.windows if window.display is self]
+    def get_windows(self) -> list[BaseWindow]:
+        """Get the windows currently attached to this display."""
+        return [win for win in app.windows if win.display is self]
 
 
 class Screen:
@@ -87,21 +89,7 @@ class Screen:
     to obtain an instance of this class.
     """
 
-    def __init__(self, display, x, y, width, height):
-        """
-        
-        :parameters:
-            `display` : `~pyglet.display.Display`
-                :attr:`display`
-            `x` : int
-                Left edge :attr:`x`
-            `y` : int
-                Top edge :attr:`y`
-            `width` : int
-                :attr:`width`
-            `height` : int
-                :attr:`height`
-        """
+    def __init__(self, display: Display, x: int, y: int, width: int, height: int):
         self.display = display
         """Display this screen belongs to."""
         self.x = x
@@ -113,25 +101,23 @@ class Screen:
         self.height = height
         """Height of the screen, in pixels."""
 
-    def __repr__(self):
-        return '{}(x={}, y={}, width={}, height={})'.format(self.__class__.__name__, self.x, self.y, self.width, self.height)
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
 
-    def get_best_config(self, template=None):
+    def get_best_config(self, template: Config = None) -> Config:
         """Get the best available GL config.
 
-        Any required attributes can be specified in `template`.  If
+        Any required attributes can be specified in ``template``.  If
         no configuration matches the template,
         :class:`~pyglet.window.NoSuchConfigException` will be raised.
+        A configuration supported by the platform that best fulfils
+        the needs described by the template.
 
         :deprecated: Use :meth:`pyglet.gl.Config.match`.
 
-        :Parameters:
-            `template` : `pyglet.gl.Config`
+        Args:
+            template:
                 A configuration with desired attributes filled in.
-
-        :rtype: :class:`~pyglet.gl.Config`
-        :return: A configuration supported by the platform that best
-            fulfils the needs described by the template.
         """
         configs = None
         if template is None:
@@ -149,7 +135,7 @@ class Screen:
             raise window.NoSuchConfigException()
         return configs[0]
 
-    def get_matching_configs(self, template):
+    def get_matching_configs(self, template: Config) -> list[Config]:
         """Get a list of configs that match a specification.
 
         Any attributes specified in `template` will have values equal
@@ -158,50 +144,35 @@ class Screen:
 
         :deprecated: Use :meth:`pyglet.gl.Config.match`.
 
-        :Parameters:
-            `template` : `pyglet.gl.Config`
+        Args:
+            template:
                 A configuration with desired attributes filled in.
-
-        :rtype: list of :class:`~pyglet.gl.Config`
-        :return: A list of matching configs.
         """
         raise NotImplementedError('abstract')
 
-    def get_modes(self):
+    def get_modes(self) -> list[ScreenMode]:
         """Get a list of screen modes supported by this screen.
 
-        :rtype: list of :class:`ScreenMode`
-
         .. versionadded:: 1.2
         """
         raise NotImplementedError('abstract')
 
-    def get_mode(self):
+    def get_mode(self) -> ScreenMode:
         """Get the current display mode for this screen.
 
-        :rtype: :class:`ScreenMode`
-
         .. versionadded:: 1.2
         """
         raise NotImplementedError('abstract')
 
-    def get_closest_mode(self, width, height):
+    def get_closest_mode(self, width: int, height: int) -> ScreenMode:
         """Get the screen mode that best matches a given size.
 
         If no supported mode exactly equals the requested size, a larger one
         is returned; or ``None`` if no mode is large enough.
 
-        :Parameters:
-            `width` : int
-                Requested screen width.
-            `height` : int
-                Requested screen height.
-
-        :rtype: :class:`ScreenMode`
-
         .. versionadded:: 1.2
         """
-        # Best mode is one with smallest resolution larger than width/height,
+        # Best mode is one with the smallest resolution larger than width/height,
         # with depth and refresh rate equal to current mode.
         current = self.get_mode()
 
@@ -234,20 +205,15 @@ class Screen:
                     best = mode
         return best
 
-    def set_mode(self, mode):
+    def set_mode(self, mode: ScreenMode) -> None:
         """Set the display mode for this screen.
 
         The mode must be one previously returned by :meth:`get_mode` or 
         :meth:`get_modes`.
-
-        :Parameters:
-            `mode` : `ScreenMode`
-                Screen mode to switch this screen to.
-
         """
         raise NotImplementedError('abstract')
 
-    def restore_mode(self):
+    def restore_mode(self) -> None:
         """Restore the screen mode to the user's default.
         """
         raise NotImplementedError('abstract')
@@ -277,39 +243,24 @@ class ScreenMode:
     operating system does not provide relevant data.
 
     .. versionadded:: 1.2
-
     """
 
-    width = None
-    """Width of screen, in pixels.
+    width: int = None
+    """Width of screen, in pixels."""
 
-    :type: int
-    """
-    height = None
-    """Height of screen, in pixels.
+    height: int = None
+    """Height of screen, in pixels."""
 
-    :type: int
-    """
-    depth = None
-    """Pixel color depth, in bits per pixel.
+    depth: int = None
+    """Pixel color depth, in bits per pixel."""
 
-    :type: int
-    """
-    rate = None
-    """Screen refresh rate in Hz.
+    rate: int = None
+    """Screen refresh rate in Hz."""
 
-    :type: int
-    """
-
-    def __init__(self, screen):
-        """
-        
-        :parameters:
-            `screen` : `Screen`
-        """
+    def __init__(self, screen: Screen) -> None:
         self.screen = screen
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
 
 
@@ -322,13 +273,6 @@ class Canvas:
     .. versionadded:: 1.2
     """
 
-    def __init__(self, display):
-        """
-        
-        :parameters:
-            `display` : `Display`
-                :attr:`display`
-                
-        """
+    def __init__(self, display: Display) -> None:
         self.display = display
         """Display this canvas was created on."""

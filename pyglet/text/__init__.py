@@ -3,7 +3,7 @@
 This module provides classes for loading styled documents from text files,
 HTML files and a pyglet-specific markup format.  Documents can be styled with
 multiple fonts, colours, styles, text sizes, margins, paragraph alignments,
-and so on.  
+and so on.
 
 Using the layout classes, documents can be laid out on a single line or
 word-wrapped to fit a rectangle.  A layout can then be efficiently drawn in
@@ -15,8 +15,8 @@ application simply needs to display some text in a window.
 
 A plain text label can be created with::
 
-    label = pyglet.text.Label('Hello, world', 
-                              font_name='Times New Roman', 
+    label = pyglet.text.Label('Hello, world',
+                              font_name='Times New Roman',
                               font_size=36,
                               x=10, y=10)
 
@@ -34,46 +34,53 @@ For details on the subset of HTML supported, see `pyglet.text.formats.html`.
 Refer to the Programming Guide for advanced usage of the document and layout
 classes, including interactive editing, embedding objects within documents and
 creating scrollable layouts.
-
-.. versionadded:: 1.1
 """
+from __future__ import annotations
 
+from abc import abstractmethod
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
+from pyglet.text import layout, document
 
-from pyglet.text import layout, document, caret
+
+if TYPE_CHECKING:
+    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.resource import Location
+    from pyglet.text.document import AbstractDocument, FormattedDocument, UnformattedDocument
 
 
-class DocumentDecodeException(Exception):
+class DocumentDecodeException(Exception):  # noqa: N818
     """An error occurred decoding document text."""
-    pass
 
 
 class DocumentDecoder:
-    """Abstract document decoder.
-    """
+    """Abstract document decoder."""
 
-    def decode(self, text, location=None):
+    @abstractmethod
+    def decode(self, text: str, location: Location | None = None) -> AbstractDocument:
         """Decode document text.
-        
-        :Parameters:
-            `text` : str
+
+        Args:
+            text:
                 Text to decode
-            `location` : `Location`
-                Location to use as base path for additional resources
-                referenced within the document (for example, HTML images).
-
-        :rtype: `AbstractDocument`
+            location:
+                Location to use as base path for additional resources referenced within the document (for example,
+                HTML images).
         """
-        raise NotImplementedError('abstract')
 
 
-def get_decoder(filename, mimetype=None):
+SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attributed"]
+
+
+def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None) -> DocumentDecoder:
     """Get a document decoder for the given filename and MIME type.
 
-    If `mimetype` is omitted it is guessed from the filename extension.
+    If ``mimetype`` is omitted it is guessed from the filename extension.
 
     The following MIME types are supported:
 
@@ -84,53 +91,50 @@ def get_decoder(filename, mimetype=None):
     ``text/vnd.pyglet-attributed``
         Attributed text; see `pyglet.text.formats.attributed`
 
-    `DocumentDecodeException` is raised if another MIME type is given.
+    Args:
+        filename:
+            Filename to guess the MIME type from.  If a MIME type is given, the filename is ignored.
+        mimetype:
+            MIME type to lookup, or ``None`` to guess the type from the filename.
 
-    :Parameters:
-        `filename` : str
-            Filename to guess the MIME type from.  If a MIME type is given,
-            the filename is ignored.
-        `mimetype` : str
-            MIME type to lookup, or ``None`` to guess the type from the
-            filename.
-
-    :rtype: `DocumentDecoder`
+    Raises:
+        DocumentDecodeException: If MIME type is not from the supported types.
     """
     if mimetype is None:
         _, ext = _splitext(filename)
-        if ext.lower() in ('.htm', '.html', '.xhtml'):
-            mimetype = 'text/html'
+        if ext.lower() in (".htm", ".html", ".xhtml"):
+            mimetype = "text/html"
         else:
-            mimetype = 'text/plain'
+            mimetype = "text/plain"
 
-    if mimetype == 'text/plain':
+    if mimetype == "text/plain":
         from pyglet.text.formats import plaintext
         return plaintext.PlainTextDecoder()
-    elif mimetype == 'text/html':
+    if mimetype == "text/html":
         from pyglet.text.formats import html
         return html.HTMLDecoder()
-    elif mimetype == 'text/vnd.pyglet-attributed':
+    if mimetype == "text/vnd.pyglet-attributed":
         from pyglet.text.formats import attributed
         return attributed.AttributedTextDecoder()
-    else:
-        raise DocumentDecodeException(f'Unknown format "{mimetype}"')
+
+    msg = f'Unknown format "{mimetype}"'
+    raise DocumentDecodeException(msg)
 
 
-def load(filename, file=None, mimetype=None):
+def load(filename: str, file: BinaryIO | None = None, mimetype: SupportedMimeTypes | None = None) \
+        -> AbstractDocument:
     """Load a document from a file.
 
-    :Parameters:
-        `filename` : str
+    Args:
+        filename:
             Filename of document to load.
-        `file` : file-like object
-            File object containing encoded data.  If omitted, `filename` is
+        file:
+            File object containing encoded data.  If omitted, ``filename`` is
             loaded from disk.
-        `mimetype` : str
+        mimetype:
             MIME type of the document.  If omitted, the filename extension is
             used to guess a MIME type.  See `get_decoder` for a list of
             supported MIME types.
-
-    :rtype: `AbstractDocument`
     """
     decoder = get_decoder(filename, mimetype)
     if not file:
@@ -147,47 +151,31 @@ def load(filename, file=None, mimetype=None):
     return decoder.decode(file_contents, location)
 
 
-def decode_html(text, location=None):
+def decode_html(text: str, location: str | None = None) -> FormattedDocument:
     """Create a document directly from some HTML formatted text.
 
-    :Parameters:
-        `text` : str
+    Args:
+        text:
             HTML data to decode.
-        `location` : str
-            Location giving the base path for additional resources
-            referenced from the document (e.g., images).
-
-    :rtype: `FormattedDocument`
+        location:
+            Location giving the base path for additional resources referenced from the document (e.g., images).
     """
-    decoder = get_decoder(None, 'text/html')
+    decoder = get_decoder(None, "text/html")
     return decoder.decode(text, location)
 
 
-def decode_attributed(text):
+def decode_attributed(text: str) -> FormattedDocument:
     """Create a document directly from some attributed text.
 
     See `pyglet.text.formats.attributed` for a description of attributed text.
-
-    :Parameters:
-        `text` : str
-            Attributed text to decode.
-
-    :rtype: `FormattedDocument`
     """
-    decoder = get_decoder(None, 'text/vnd.pyglet-attributed')
+    decoder = get_decoder(None, "text/vnd.pyglet-attributed")
     return decoder.decode(text)
 
 
-def decode_text(text):
-    """Create a document directly from some plain text.
-
-    :Parameters:
-        `text` : str
-            Plain text to initialise the document with.
-
-    :rtype: `UnformattedDocument`
-    """
-    decoder = get_decoder(None, 'text/plain')
+def decode_text(text: str) -> UnformattedDocument:
+    """Create a document directly from some plain text."""
+    decoder = get_decoder(None, "text/plain")
     return decoder.decode(text)
 
 
@@ -198,84 +186,76 @@ class DocumentLabel(layout.TextLayout):
     associated document.
     """
 
-    def __init__(self, document=None, x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, batch=None, group=None,
-                 program=None, init_document=True):
+    def __init__(
+            self, document: AbstractDocument | None = None,
+            x: float = 0.0, y: float = 0.0, z: float = 0.0,
+            width: int | None = None, height: int | None = None,
+            anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
+            multiline: bool = False, dpi: int | None = None,
+            batch: Batch | None = None, group: Group | None = None,
+            program: ShaderProgram | None = None,
+            init_document: bool = True,
+    ) -> None:
         """Create a label for a given document.
 
-        :Parameters:
-            `document` : `AbstractDocument`
-                Document to attach to the layout.
-            `x` : int
-                X coordinate of the label.
-            `y` : int
-                Y coordinate of the label.
-            `z` : int
-                Z coordinate of the label.
-            `width` : int
-                Width of the label in pixels, or None
-            `height` : int
-                Height of the label in pixels, or None
-            `anchor_x` : str
-                Anchor point of the X coordinate: one of ``"left"``,
-                ``"center"`` or ``"right"``.
-            `anchor_y` : str
-                Anchor point of the Y coordinate: one of ``"bottom"``,
-                ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`: float
-                The amount to rotate the label in degrees. A positive amount
-                will be a clockwise rotation, negative values will result in
-                counter-clockwise rotation.
-            `multiline` : bool
-                If True, the label will be word-wrapped and accept newline
-                characters.  You must also set the width of the label.
-            `dpi` : float
-                Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `~pyglet.graphics.Batch`
-                Optional graphics batch to add the label to.
-            `group` : `~pyglet.graphics.Group`
-                Optional graphics group to use.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional graphics shader to use. Will affect all glyphs.
-            `init_document` : bool
-                If True the document will be initialized. If subclassing then
-                you may want to avoid duplicate initializations by changing
-                to False.
+        Args:
+            document: Document to attach to the layout.
+            x: X coordinate of the label.
+            y: Y coordinate of the label.
+            z: Z coordinate of the label.
+            width: Width of the label in pixels, or ``None``
+            height:  Height of the label in pixels, or ``None``
+            anchor_x:
+                Anchor point of the X coordinate: one of
+                ``"left"``, `"center"`` or ``"right"``.
+            anchor_y:
+                Anchor point of the Y coordinate: one of
+                ``"bottom"``, ``"baseline"``, ``"center"`` or ``"top"``.
+            rotation:
+                The amount to rotate the label in degrees. A
+                positive amount will be a clockwise rotation, negative
+                values will result in counter-clockwise rotation.
+            multiline:
+                If ``True``, the label will be word-wrapped and
+                accept newline characters. You must also set the width
+                of the label.
+            dpi: Resolution of the fonts in this layout. Defaults to 96.
+            batch: Optional graphics batch to add the label to.
+            group: Optional graphics group to use.
+            program: Optional graphics shader to use. Will affect all glyphs.
+            init_document:
+                If ``True``, the document will be initialized. If you
+                are passing an already-initialized document, then you can
+                avoid duplicating work by setting this to ``False``.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=init_document)
 
     @property
-    def text(self):
-        """The text of the label.
-
-        :type: str
-        """
+    def text(self) -> str:
+        """The text of the label."""
         return self.document.text
 
     @text.setter
-    def text(self, text):
+    def text(self, text: str) -> None:
         self.document.text = text
 
     @property
-    def color(self):
+    def color(self) -> tuple[int, int, int, int]:
         """Text color.
 
         Color is a 4-tuple of RGBA components, each in range [0, 255].
-
-        :type: (int, int, int, int)
         """
-        return self.document.get_style('color')
+        return self.document.get_style("color")
 
     @color.setter
-    def color(self, color):
+    def color(self, color: tuple[int, int, int, int]) -> None:
         r, g, b, *a = color
         color = r, g, b, a[0] if a else 255
-        self.document.set_style(0, len(self.document.text), {'color': color})
+        self.document.set_style(0, len(self.document.text), {"color": color})
 
     @property
-    def opacity(self):
+    def opacity(self) -> int:
         """Blend opacity.
 
         This property sets the alpha component of the colour of the label's
@@ -284,226 +264,223 @@ class DocumentLabel(layout.TextLayout):
 
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
         make the label appear semi-translucent.
-
-        :type: int
         """
         return self.color[3]
 
     @opacity.setter
-    def opacity(self, alpha):
+    def opacity(self, alpha: int) -> None:
         if alpha != self.color[3]:
             self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
-    def font_name(self):
+    def font_name(self) -> str | list[str]:
         """Font family name.
 
         The font name, as passed to :py:func:`pyglet.font.load`.  A list of names can
         optionally be given: the first matching font will be used.
-
-        :type: str or list
         """
-        return self.document.get_style('font_name')
+        return self.document.get_style("font_name")
 
     @font_name.setter
-    def font_name(self, font_name):
-        self.document.set_style(0, len(self.document.text), {'font_name': font_name})
+    def font_name(self, font_name: str | list[str]) -> None:
+        self.document.set_style(0, len(self.document.text), {"font_name": font_name})
 
     @property
-    def font_size(self):
-        """Font size, in points.
-
-        :type: float
-        """
-        return self.document.get_style('font_size')
+    def font_size(self) -> float:
+        """Font size, in points."""
+        return self.document.get_style("font_size")
 
     @font_size.setter
-    def font_size(self, font_size):
-        self.document.set_style(0, len(self.document.text), {'font_size': font_size})
+    def font_size(self, font_size: float) -> None:
+        self.document.set_style(0, len(self.document.text), {"font_size": font_size})
 
     @property
-    def bold(self):
-        """Bold font style.
-
-        :type: bool
-        """
-        return self.document.get_style('bold')
+    def bold(self) -> bool | str:
+        """Bold font style."""
+        return self.document.get_style("bold")
 
     @bold.setter
-    def bold(self, bold):
-        self.document.set_style(0, len(self.document.text), {'bold': bold})
+    def bold(self, bold: bool | str) -> None:
+        self.document.set_style(0, len(self.document.text), {"bold": bold})
 
     @property
-    def italic(self):
-        """Italic font style.
-
-        :type: bool
-        """
-        return self.document.get_style('italic')
+    def italic(self) -> bool | str:
+        """Italic font style."""
+        return self.document.get_style("italic")
 
     @italic.setter
-    def italic(self, italic):
-        self.document.set_style(0, len(self.document.text), {'italic': italic})
+    def italic(self, italic: bool | str) -> None:
+        self.document.set_style(0, len(self.document.text), {"italic": italic})
 
-    def get_style(self, name):
+    def get_style(self, name: str) -> Any:
         """Get a document style value by name.
 
         If the document has more than one value of the named style,
         `pyglet.text.document.STYLE_INDETERMINATE` is returned.
 
-        :Parameters:
-            `name` : str
-                Style name to query.  See documentation for
-                `pyglet.text.layout` for known style names.
-
-        :rtype: object
+        Args:
+            name:
+                Style name to query.  See documentation from `pyglet.text.layout` for known style names.
         """
         return self.document.get_style_range(name, 0, len(self.document.text))
 
-    def set_style(self, name, value):
+    def set_style(self, name: str, value: Any) -> None:
         """Set a document style value by name over the whole document.
 
-        :Parameters:
-            `name` : str
+        Args:
+            name:
                 Name of the style to set.  See documentation for
                 `pyglet.text.layout` for known style names.
-            `value` : object
+            value:
                 Value of the style.
-
         """
         self.document.set_style(0, len(self.document.text), {name: value})
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.delete()
 
 
 class Label(DocumentLabel):
     """Plain text label."""
 
-    def __init__(self, text='', x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, font_name=None, font_size=None,
-                 bold=False, italic=False, stretch=False, color=(255, 255, 255, 255),
-                 align='left', batch=None, group=None, program=None):
+    def __init__(
+            self, text: str = "",
+            x: float = 0.0, y: float = 0.0, z: float = 0.0,
+            width: int | None = None, height: int | None = None,
+            anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
+            multiline: bool = False, dpi: int | None = None,
+            font_name: str | None = None, font_size: int | None = None,
+            bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            align: ContentVAlign = "left",
+            batch: Batch | None = None, group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a plain text label.
 
-        :Parameters:
-            `text` : str
+        Args:
+            text:
                 Text to display.
-            `x` : int
+            x:
                 X coordinate of the label.
-            `y` : int
+            y:
                 Y coordinate of the label.
-            `z` : int
+            z:
                 Z coordinate of the label.
-            `width` : int
+            width:
                 Width of the label in pixels, or None
-            `height` : int
+            height:
                 Height of the label in pixels, or None
-            `anchor_x` : str
+            anchor_x:
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `anchor_y` : str
+            anchor_y:
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`: float
+            rotation:
                 The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-            `multiline` : bool
+            multiline:
                 If True, the label will be word-wrapped and accept newline
                 characters.  You must also set the width of the label.
-            `dpi` : float
+            dpi:
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `font_name` : str or list
+            font_name:
                 Font family name(s).  If more than one name is given, the
                 first matching name is used.
-            `font_size` : float
+            font_size:
                 Font size, in points.
-            `bold` : bool/str
+            bold:
                 Bold font style.
-            `italic` : bool/str
+            italic:
                 Italic font style.
-            `stretch` : bool/str
+            stretch:
                  Stretch font style.
-            `color` : (int, int, int, int)
-                Font colour, as RGBA components in range [0, 255].
-            `align` : str
+            color:
+                Font color as RGBA or RGB components, each within
+                ``0 <= component <= 255``.
+            align:
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
                 or ``"right"``.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional graphics batch to add the label to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional graphics group to use.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            program:
                 Optional graphics shader to use. Will affect all glyphs.
-
         """
         doc = decode_text(text)
+        r, g, b, *a = color
+        rgba = r, g, b, a[0] if a else 255
+
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=False)
 
         self.document.set_style(0, len(self.document.text), {
-            'font_name': font_name,
-            'font_size': font_size,
-            'bold': bold,
-            'italic': italic,
-            'stretch': stretch,
-            'color': color,
-            'align': align,
+            "font_name": font_name,
+            "font_size": font_size,
+            "bold": bold,
+            "italic": italic,
+            "stretch": stretch,
+            "color": rgba,
+            "align": align,
         })
 
 
 class HTMLLabel(DocumentLabel):
     """HTML formatted text label.
-    
+
     A subset of HTML 4.01 is supported.  See `pyglet.text.formats.html` for
     details.
     """
 
-    def __init__(self, text='', x=0, y=0, z=0, width=None, height=None,
-                 anchor_x='left', anchor_y='baseline', rotation=0,
-                 multiline=False, dpi=None, location=None,
-                 batch=None, group=None, program=None):
+    def __init__(self, text: str = "",
+                 x: float = 0.0, y: float = 0.0, z: float = 0.0, width: int | None = None, height: int | None = None,
+                 anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
+                 multiline: bool = False, dpi: float | None = None,
+                 location: Location | None = None,
+                 batch: Batch | None = None, group: Group | None = None,
+                 program: ShaderProgram | None = None) -> None:
         """Create a label with an HTML string.
 
-        :Parameters:
-            `text` : str
-                HTML formatted text to display.
-            `x` : int
+        Args:
+            text:
+                Text to display.
+            x:
                 X coordinate of the label.
-            `y` : int
+            y:
                 Y coordinate of the label.
-            `z` : int
+            z:
                 Z coordinate of the label.
-            `width` : int
+            width:
                 Width of the label in pixels, or None
-            `height` : int
+            height:
                 Height of the label in pixels, or None
-            `anchor_x` : str
+            anchor_x:
                 Anchor point of the X coordinate: one of ``"left"``,
                 ``"center"`` or ``"right"``.
-            `anchor_y` : str
+            anchor_y:
                 Anchor point of the Y coordinate: one of ``"bottom"``,
                 ``"baseline"``, ``"center"`` or ``"top"``.
-            `rotation`: float
+            rotation:
                 The amount to rotate the label in degrees. A positive amount
                 will be a clockwise rotation, negative values will result in
                 counter-clockwise rotation.
-            `multiline` : bool
-                If True, the label will be word-wrapped and render paragraph
-                and line breaks.  You must also set the width of the label.
-            `dpi` : float
+            multiline:
+                If True, the label will be word-wrapped and accept newline
+                characters.  You must also set the width of the label.
+            dpi:
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `location` : `Location`
-                Location object for loading images referred to in the
-                document.  By default, the working directory is used.
-            `batch` : `~pyglet.graphics.Batch`
+            location:
+                Location object for loading images referred to in the document.
+                By default, the working directory is used.
+            batch:
                 Optional graphics batch to add the label to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional graphics group to use.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            program:
                 Optional graphics shader to use. Will affect all glyphs.
 
         """
@@ -514,14 +491,11 @@ class HTMLLabel(DocumentLabel):
                          multiline, dpi, batch, group, program, init_document=False)
 
     @property
-    def text(self):
-        """HTML formatted text of the label.
-
-        :type: str
-        """
+    def text(self) -> str:
+        """HTML formatted text of the label."""
         return self._text
 
     @text.setter
-    def text(self, text):
+    def text(self, text: str) -> None:
         self._text = text
         self.document = decode_html(text, self._location)
