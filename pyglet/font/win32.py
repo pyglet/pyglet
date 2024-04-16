@@ -1,20 +1,20 @@
-# TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls as well as font.
+# Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls as well as font.
 from __future__ import annotations
-import ctypes
 
+import ctypes
 import math
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Sequence
 
 import pyglet
 import pyglet.image
 from pyglet.font import base
-from pyglet.image.codecs.gdiplus import ImageLockModeRead, BitmapData
-from pyglet.image.codecs.gdiplus import PixelFormat32bppARGB, gdiplus, Rect
-from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
-from pyglet.libs.win32.types import BYTE, ABC, TEXTMETRIC, LOGFONTW
-from pyglet.libs.win32.constants import FW_BOLD, FW_NORMAL, ANTIALIASED_QUALITY
+from pyglet.image.codecs.gdiplus import BitmapData, ImageLockModeRead, PixelFormat32bppARGB, Rect, gdiplus
+from pyglet.libs.win32 import _gdi32 as gdi32
+from pyglet.libs.win32 import _user32 as user32
+from pyglet.libs.win32.constants import ANTIALIASED_QUALITY, FW_BOLD, FW_NORMAL
 from pyglet.libs.win32.context_managers import device_context
+from pyglet.libs.win32.types import ABC, BYTE, LOGFONTW, TEXTMETRIC
 
 if TYPE_CHECKING:
     from pyglet.font.base import Glyph
@@ -43,20 +43,20 @@ StringFormatFlagsNoClip = 0x00004000
 FontFamilyNotFound = 14
 
 
-_debug_font = pyglet.options['debug_font']
+_debug_font = pyglet.options["debug_font"]
 
 
 class Rectf(ctypes.Structure):
     _fields_ = [
-        ('x', ctypes.c_float),
-        ('y', ctypes.c_float),
-        ('width', ctypes.c_float),
-        ('height', ctypes.c_float),
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+        ("width", ctypes.c_float),
+        ("height", ctypes.c_float),
     ]
 
 
 class GDIPlusGlyphRenderer(base.GlyphRenderer):
-    def __init__(self, font: 'GDIPlusFont') -> None:
+    def __init__(self, font: GDIPlusFont) -> None:
         self._bitmap = None
         self._dc = None
         self._bitmap_rect = None
@@ -84,7 +84,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
                 gdiplus.GdipDisposeImage(self._bitmap)
             if self._dc:
                 user32.ReleaseDC(0, self._dc)
-        except Exception:
+        except Exception:  # noqa: S110, BLE001
             pass
 
     def _create_bitmap(self, width: int, height: int) -> None:
@@ -177,8 +177,8 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
 
         # GDI functions only work for a single character so we transform
         # grapheme \r\n into \r
-        if text == '\r\n':
-            text = '\r'
+        if text == "\r\n":
+            text = "\r"
 
         # XXX END HACK HACK HACK
 
@@ -247,7 +247,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
 
         image = pyglet.image.ImageData(
             width, height,
-            'BGRA', buffer, -bitmap_data.Stride)
+            "BGRA", buffer, -bitmap_data.Stride)
 
         glyph = self.font.create_glyph(image)
         # Only pass negative LSB info
@@ -263,7 +263,7 @@ class Win32Font(base.Font):
             self,
             name: str, size: float,
             bold: bool = False, italic: bool = False, stretch: bool = False,
-            dpi: Optional[float] = None
+            dpi: float | None = None,
     ) -> None:
         super().__init__()
 
@@ -280,7 +280,7 @@ class Win32Font(base.Font):
             self.max_glyph_width = metrics.tmMaxCharWidth
 
     @staticmethod
-    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: Optional[float] = None) -> LOGFONTW:
+    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: float | None = None) -> LOGFONTW:
         """Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
 
         Args:
@@ -334,7 +334,7 @@ def _get_font_families(font_collection: ctypes.c_void_p) -> Sequence[ctypes.c_vo
 def _font_exists_in_collection(font_collection: ctypes.c_void_p, name: str) -> bool:
     font_name = ctypes.create_unicode_buffer(32)
     for gpfamily in _get_font_families(font_collection):
-        gdiplus.GdipGetFamilyName(gpfamily, font_name, '\0')
+        gdiplus.GdipGetFamilyName(gpfamily, font_name, "\0")
         if font_name.value == name:
             return True
 
@@ -342,23 +342,20 @@ def _font_exists_in_collection(font_collection: ctypes.c_void_p, name: str) -> b
 
 
 class GDIPlusFont(Win32Font):
-    glyph_renderer_class = GDIPlusGlyphRenderer
+    glyph_renderer_class: ClassVar[type[base.GlyphRenderer]] = GDIPlusGlyphRenderer
 
-    _private_collection = None
-    _system_collection = None
+    _private_collection: ctypes.c_void_p | None = None
+    _system_collection: ctypes.c_void_p | None = None
 
-    _default_name = 'Arial'
+    _default_name = "Arial"
 
     def __init__(self, name: str, size: float, bold: bool=False, italic: bool=False, stretch: bool=False,
-                 dpi: Optional[float]=None) -> None:
+                 dpi: float | None=None) -> None:
         if not name:
             name = self._default_name
 
-        # assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
-        # assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
-
         if stretch:
-            warnings.warn("The current font render does not support stretching.")
+            warnings.warn("The current font render does not support stretching.")  # noqa: B028
 
         super().__init__(name, size, bold, italic, stretch, dpi)
 
@@ -380,7 +377,7 @@ class GDIPlusFont(Win32Font):
         # Then in system collection:
         if not family:
             if _debug_font:
-                print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}")
+                print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}")  # noqa: T201
 
             gdiplus.GdipCreateFontFamilyFromName(name, None, ctypes.byref(family))
 
@@ -415,7 +412,7 @@ class GDIPlusFont(Win32Font):
         gdiplus.GdipDeleteFont(self._gdipfont)
 
     @classmethod
-    def add_font_data(cls, data: bytes) -> None:
+    def add_font_data(cls: type[GDIPlusFont], data: bytes) -> None:
         numfonts = ctypes.c_uint32()
         _handle = gdi32.AddFontMemResourceEx(data, len(data), 0, ctypes.byref(numfonts))
 
@@ -430,11 +427,10 @@ class GDIPlusFont(Win32Font):
         gdiplus.GdipPrivateAddMemoryFont(cls._private_collection, data, len(data))
 
     @classmethod
-    def have_font(cls, name: str) -> bool:
+    def have_font(cls: type[GDIPlusFont], name: str) -> bool:
         # Enumerate the private collection fonts first, as those are most likely to be used.
-        if cls._private_collection:
-            if _font_exists_in_collection(cls._private_collection, name):
-                return True
+        if cls._private_collection and _font_exists_in_collection(cls._private_collection, name):
+            return True
 
         # Instead of enumerating all fonts on the system, as there can potentially be thousands, attempt to create
         # the font family with the name. If it does not error (0), then it exists in the system.
