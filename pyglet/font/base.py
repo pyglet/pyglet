@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import abc
 import unicodedata
-from typing import BinaryIO
+from typing import BinaryIO, ClassVar
 
 from pyglet import image
 from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
@@ -258,11 +258,11 @@ class Font:
 
     #: :meta private:
     # The default glyph renderer class. Should not be overridden by users, only other renderer variations.
-    glyph_renderer_class: type[GlyphRenderer] = GlyphRenderer
+    glyph_renderer_class: ClassVar[type[GlyphRenderer]] = GlyphRenderer
 
     #: :meta private:
     # The default type of texture bins. Should not be overridden by users.
-    texture_class: type[GlyphTextureBin] = GlyphTextureBin
+    texture_class: ClassVar[type[GlyphTextureBin]] = GlyphTextureBin
 
     def __init__(self) -> None:
         """Initialize a font that can be used with Pyglet."""
@@ -275,7 +275,6 @@ class Font:
         """Return the Family Name of the font as a string."""
 
     @classmethod
-    @abc.abstractmethod
     def add_font_data(cls: type[Font], data: BinaryIO) -> None:
         """Add font data to the font loader.
 
@@ -289,7 +288,6 @@ class Font:
         """
 
     @classmethod
-    @abc.abstractmethod
     def have_font(cls: type[Font], name: str) -> bool:
         """Determine if a font with the given name is installed.
 
