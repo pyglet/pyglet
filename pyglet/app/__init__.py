@@ -65,7 +65,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval=1 / 60):
+def run(interval: float = 1/60) -> None:
     """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
@@ -76,12 +76,12 @@ def run(interval=1 / 60):
     event_loop.run(interval)
 
 
-def exit():
+def exit() -> None:
     """Exit the application event loop.
 
     Causes the application event loop to finish, if an event loop is currently
     running.  The application may not necessarily exit (for example, there may
-    be additional code following the `run` invocation).
+    be additional code following the ``run`` invocation).
 
     This is a convenience function, equivalent to::
 

@@ -718,7 +718,7 @@ class Controller(EventDispatcher):
                 warnings.warn(f"Could not find control '{name}' with index '{relation.index}'.")
                 continue
 
-    def open(self, window: None | BaseWindow, exclusive: bool = False) -> None:
+    def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
         """Open the controller.  See `Device.open`. """
         self.device.open(window, exclusive)
 
