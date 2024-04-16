@@ -26,6 +26,7 @@ try:
 except ImportError:
     # Workaround for missing os.readv in PyPy
     c = pyglet.lib.load_library('c')
+
     def _os_readv(fd, buffers):
         return c.read(fd, buffers, 3072)
 
@@ -438,6 +439,8 @@ class FFController(Controller):
     _strong_effect = None
     _play_strong_event = None
     _stop_strong_event = None
+
+    device: EvdevDevice
 
     def open(self, window=None, exclusive=False):
         super().open(window, exclusive)

@@ -20,6 +20,8 @@ To query which GameControllers are available, call :py:func:`get_controllers`.
 
 .. versionadded:: 2.0
 """
+from __future__ import annotations
+
 import os as _os
 import sys as _sys
 import warnings as _warnings
@@ -27,14 +29,13 @@ import warnings as _warnings
 from .base import Sign
 from .controller_db import mapping_list
 
-
 _env_config = _os.environ.get('SDL_GAMECONTROLLERCONFIG')
 if _env_config:
     # insert at the front of the list
     mapping_list.insert(0, _env_config)
 
 
-def _swap_le16(value):
+def _swap_le16(value: int) -> int:
     """Ensure 16bit value is in Big Endian format"""
     if _sys.byteorder == "little":
         return ((value << 8) | (value >> 8)) & 0xFFFF
@@ -55,7 +56,7 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
 class Relation:
     __slots__ = 'control_type', 'index', 'sign'
 
-    def __init__(self, control_type, index, sign=Sign.DEFAULT):
+    def __init__(self, control_type: str, index: int, sign: Sign = Sign.DEFAULT):
         self.control_type = control_type
         self.index = index
         self.sign = sign
@@ -64,14 +65,11 @@ class Relation:
         return f"Relation(type={self.control_type}, index={self.index}, sign={self.sign})"
 
 
-def _parse_mapping(mapping_string):
+def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
     """Parse a SDL2 style GameController mapping string.
 
-    :Parameters:
-        `mapping_string` : str
-            A raw string containing an SDL style controller mapping.
-
-    :rtype: A dict containing axis/button mapping relations.
+    Args:
+        mapping_string: A string containing an SDL style controller mapping.
     """
 
     valid_keys = ['guide', 'back', 'start', 'a', 'b', 'x', 'y',
@@ -79,8 +77,11 @@ def _parse_mapping(mapping_string):
                   'dpup', 'dpdown', 'dpleft', 'dpright',
                   'lefttrigger', 'righttrigger', 'leftx', 'lefty', 'rightx', 'righty']
 
-    split_mapping = mapping_string.strip().split(",")
-    relations = dict(guid=split_mapping[0], name=split_mapping[1])
+    try:
+        guid, name, *split_mapping = mapping_string.strip().split(",")
+        relations = dict(guid=guid, name=name)
+    except ValueError:
+        return None
 
     for item in split_mapping[2:]:
         # looking for items like: a:b0, b:b1, etc.
@@ -112,53 +113,47 @@ def _parse_mapping(mapping_string):
             relations[key] = Relation("axis", int(relation_string[1:]), sign)
         elif relation_string.startswith("h0"):  # Hat
             relations[key] = Relation("hat0", int(relation_string.split(".")[1]), sign)
-        else:
-            _warnings.warn(f"Skipping unknown relation type: '{relation_string}'")
 
     return relations
 
 
-def get_mapping(guid):
+def get_mapping(guid: str) -> dict[str, str | Relation] | None:
     """Return a mapping for the passed device GUID.
 
-    :Parameters:
-        `guid` : str
-            A pyglet input device GUID
-
-    :rtype: dict of axis/button mapping relations, or None
-            if no mapping is available for this Controller.
+    Args:
+        guid: A device GUID; see :py:meth:`~pyglet.input.Device.get_guid`
     """
     for mapping in mapping_list:
-        if mapping.startswith(guid):
-            try:
-                return _parse_mapping(mapping)
-            except ValueError:
-                _warnings.warn(f"Unable to parse Controller mapping: {mapping}")
-                continue
+        if not mapping.startswith(guid):
+            continue
+
+        try:
+            return _parse_mapping(mapping)
+        except ValueError:
+            _warnings.warn(f"Unable to parse Controller mapping: {mapping}")
+            continue
 
 
-def add_mappings_from_file(filename) -> None:
-    """Add mappings from a file.
+def add_mappings_from_file(filename: str) -> None:
+    """Add one or more mappings from a file.
 
     Given a file path, open and parse the file for mappings.
 
-    :Parameters:
-        `filename` : str
-            A file path.
+    Args:
+        filename: A file path.
     """
     with open(filename) as f:
         add_mappings_from_string(f.read())
 
 
-def add_mappings_from_string(string) -> None:
-    """Add one or more mappings from a raw string.
+def add_mappings_from_string(string: str) -> None:
+    """Add one or more mappings from a string.
 
-        :Parameters:
-            `string` : str
-                A string containing one or more mappings,
+        Args:
+            string: A string containing one or more mappings,
         """
     for line in string.splitlines():
+        line = line.strip()
         if line.startswith('#'):
             continue
-        line = line.strip()
         mapping_list.insert(0, line)

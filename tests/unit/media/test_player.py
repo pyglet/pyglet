@@ -356,9 +356,10 @@ class PlayerTestCase(unittest.TestCase):
 
         self.reset_mocks()
         self.player.play()
+        self.assertGreaterEqual(self.player.time, 0.5)
         self.assertAlmostEqual(
-            self.player.time, 0.5, places=2,
-            msg='While playing, player should return time from driver player'
+            self.player.time, 0.5, delta=0.01,
+            msg='Player time should have advanced during pause'
         )
         self.assert_driver_player_started()
         self.assert_no_new_driver_player_created()

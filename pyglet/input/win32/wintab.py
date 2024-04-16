@@ -256,34 +256,32 @@ class WintabTabletCanvas(TabletCanvas):
         # can actually grab a cursor id.
         self._current_cursor = None
 
+    # Events
+
     def on_express_key_press(self, control_id: int, location_id: int):
         """An event called when an ExpressKey is pressed down.
 
-        :Parameters:
-            `control_id` : int
+        Args:
+            control_id:
                 Zero-based index number given to the assigned key by the driver.
                 The same control_id may exist in multiple locations, which the location_id is used to differentiate.
-            `location_id: int
+            location_id:
                 Zero-based index indicating side of tablet where control id was found.
                 Some tablets may have clusters of ExpressKey's on various areas of the tablet.
                 (0 = left, 1 = right, 2 = top, 3 = bottom, 4 = transducer).
-
-        :event:
         """
 
     def on_express_key_release(self, control_id: int, location_id: int):
         """An event called when an ExpressKey is released.
 
-        :Parameters:
-            `control_id` : int
+        Args:
+            control_id:
                 Zero-based index number given to the assigned key by the driver.
                 The same control_id may exist in multiple locations, which the location_id is used to differentiate.
-            `location_id: int
+            location_id:
                 Zero-based index indicating side of tablet where control id was found.
                 Some tablets may have clusters of ExpressKey's on various areas of the tablet.
                 (0 = left, 1 = right, 2 = top, 3 = bottom, 4 = transducer).
-
-        :event:
         """
 
 

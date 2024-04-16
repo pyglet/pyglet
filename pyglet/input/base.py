@@ -115,7 +115,7 @@ class Control(EventDispatcher):
     A control's value can be queried when the device is open.  Event handlers
     can be attached to the control to be called when the value changes.
 
-    The `min` and `max` properties are provided as advertised by the
+    The ``min`` and ``max`` properties are provided as advertised by the
     device; in some cases the control's value will be outside this range.
     """
 
@@ -161,6 +161,8 @@ class Control(EventDispatcher):
         else:
             return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
+    # Events
+
     def on_change(self, value) -> float:
         """The value changed."""
 
@@ -169,23 +171,18 @@ Control.register_event_type('on_change')
 
 
 class RelativeAxis(Control):
-    """An axis whose value represents a relative change from the previous
-    value.
-    """
+    """An axis whose value represents a relative change from the previous value.
 
-    #: Name of the horizontal axis control
+    This type of axis is used for controls that can scroll or move
+    continuously, such as a scrolling or pointing input. The value
+    is read as a delta change from the previous value.
+    """
     X: str = 'x'
-    #: Name of the vertical axis control
     Y: str = 'y'
-    #: Name of the Z axis control.
     Z: str = 'z'
-    #: Name of the rotational-X axis control
     RX: str = 'rx'
-    #: Name of the rotational-Y axis control
     RY: str = 'ry'
-    #: Name of the rotational-Z axis control
     RZ: str = 'rz'
-    #: Name of the scroll wheel control
     WHEEL: str = 'wheel'
 
     @property
@@ -199,31 +196,19 @@ class RelativeAxis(Control):
 
 
 class AbsoluteAxis(Control):
-    """An axis whose value represents a physical measurement from the device.
+    """An axis whose value represents the current measurement from the device.
 
-    The value is advertised to range over ``minimum`` and ``maximum``.
+    This type of axis is used for controls that have minimum and maximum
+    positions. The value is a range between the ``min`` and ``max``.
     """
-
-    #: Name of the horizontal axis control
     X: str = 'x'
-    #: Name of the vertical axis control
     Y: str = 'y'
-    #: Name of the Z axis control.
     Z: str = 'z'
-    #: Name of the rotational-X axis control
     RX: str = 'rx'
-    #: Name of the rotational-Y axis control
     RY: str = 'ry'
-    #: Name of the rotational-Z axis control
     RZ: str = 'rz'
-    #: Name of the hat (POV) control, when a single control enumerates all of
-    #: the hat's positions.
     HAT: str = 'hat'
-    #: Name of the hat's (POV's) horizontal control, when the hat position is
-    #: described by two orthogonal controls.
     HAT_X: str = 'hat_x'
-    #: Name of the hat's (POV's) vertical control, when the hat position is
-    #: described by two orthogonal controls.
     HAT_Y: str = 'hat_y'
 
     def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False):
@@ -251,17 +236,13 @@ class Button(Control):
             self.dispatch_event('on_release')
 
     if _is_pyglet_doc_run:
-        def on_press(self):
-            """The button was pressed.
+        # Events
 
-            :event:
-            """
+        def on_press(self):
+            """The button was pressed."""
 
         def on_release(self):
-            """The button was released.
-
-            :event:
-            """
+            """The button was released."""
 
 
 Button.register_event_type('on_press')
@@ -451,6 +432,8 @@ class Joystick(EventDispatcher):
         """Close the joystick device.  See `Device.close`. """
         self.device.close()
 
+    # Events
+
     def on_joyaxis_motion(self, joystick: Joystick, axis: str, value: float):
         """The value of a joystick axis changed.
 
@@ -461,8 +444,6 @@ class Joystick(EventDispatcher):
                 The name of the axis that changed.
             value:
                 The current value of the axis, normalized to [-1, 1].
-
-        :event:
         """
 
     def on_joybutton_press(self, joystick: Joystick, button: int):
@@ -473,8 +454,6 @@ class Joystick(EventDispatcher):
                 The joystick device whose button was pressed.
             button:
                 The index (in `button_controls`) of the button that was pressed.
-
-        :event:
         """
 
     def on_joybutton_release(self, joystick: Joystick, button: int):
@@ -485,8 +464,6 @@ class Joystick(EventDispatcher):
                 The joystick device whose button was released.
             button:
                 The index (in `button_controls`) of the button that was released.
-
-        :event:
         """
 
     def on_joyhat_motion(self, joystick: Joystick, hat_x: float, hat_y: float):
@@ -501,8 +478,6 @@ class Joystick(EventDispatcher):
             hat_y:
                 Current hat (POV) vertical position; one of -1.0 (bottom), 0.0
                 (centered) or 1.0 (top).
-
-        :event:
         """
 
     def __repr__(self) -> str:
@@ -751,8 +726,6 @@ class Controller(EventDispatcher):
         """Close the controller.  See `Device.close`. """
         self.device.close()
 
-    # Rumble (force feedback) methods:
-
     def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         """Play a rumble effect on the weak motor.
 
@@ -779,7 +752,7 @@ class Controller(EventDispatcher):
     def rumble_stop_strong(self) -> None:
         """Stop playing rumble effects on the strong motor."""
 
-    # Input Event types:
+    # Events
 
     def on_stick_motion(self, controller: Controller, stick: str, xvalue: float, yvalue: float):
         """The value of a controller analogue stick changed.
@@ -793,8 +766,6 @@ class Controller(EventDispatcher):
                 The current X axis value, normalized to [-1, 1].
             yvalue:
                 The current Y axis value, normalized to [-1, 1].
-
-        :event:
         """
 
     def on_dpad_motion(self, controller: Controller, dpleft: bool, dpright: bool, dpup: bool, dpdown: bool):
@@ -811,8 +782,6 @@ class Controller(EventDispatcher):
                 True if up is pressed on the directional pad.
             dpdown:
                 True if down is pressed on the directional pad.
-
-        :event:
         """
 
     def on_trigger_motion(self, controller: Controller, trigger: str, value: float):
@@ -825,8 +794,6 @@ class Controller(EventDispatcher):
                 The name of the trigger that changed.
             value:
                 The current value of the trigger, normalized to [0, 1].
-
-        :event:
         """
 
     def on_button_press(self, controller: Controller, button: str):
@@ -837,8 +804,6 @@ class Controller(EventDispatcher):
                 The controller whose button was pressed.
             button:
                 The name of the button that was pressed.
-
-        :event:
         """
 
     def on_button_release(self, controller: Controller, button: str):
@@ -849,12 +814,10 @@ class Controller(EventDispatcher):
                 The controller whose button was released.
             button:
                 The name of the button that was released.
-
-        :event:
         """
 
     def __repr__(self) -> str:
-        return f"Controller(name={self.name})"
+        return f"{self.__class__.__name__}(name={self.name})"
 
 
 Controller.register_event_type('on_button_press')
@@ -870,51 +833,40 @@ class AppleRemote(EventDispatcher):
     This interface provides access to the 6 button controls on the remote.
     Pressing and holding certain buttons on the remote is interpreted as
     a separate control.
-
-    :Ivariables:
-        `device` : `Device`
-            The underlying device used by this interface.
-        `left_control` : `Button`
-            Button control for the left (prev) button.
-        `left_hold_control` : `Button`
-            Button control for holding the left button (rewind).
-        `right_control` : `Button`
-            Button control for the right (next) button.
-        `right_hold_control` : `Button`
-            Button control for holding the right button (fast forward).
-        `up_control` : `Button`
-            Button control for the up (volume increase) button.
-        `down_control` : `Button`
-            Button control for the down (volume decrease) button.
-        `select_control` : `Button`
-            Button control for the select (play/pause) button.
-        `select_hold_control` : `Button`
-            Button control for holding the select button.
-        `menu_control` : `Button`
-            Button control for the menu button.
-        `menu_hold_control` : `Button`
-            Button control for holding the menu button.
     """
 
+    device: Device
+    left_control: Button
+    left_hold_control: Button
+    right_control: Button
+    right_hold_control: Button
+    up_control: Button
+    down_control: Button
+    select_control: Button
+    select_hold_control: Button
+    menu_control: Button
+    menu_hold_control: Button
+
     def __init__(self, device):
-        def add_button(control):
-            setattr(self, control.name + '_control', control)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', control.name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', control.name)
-
         self.device = device
+
+        def _add_button(button: Button):
+            setattr(self, button.name + '_control', button)
+
+            @button.event
+            def on_press():
+                self.dispatch_event('on_button_press', button.name)
+
+            @button.event
+            def on_release():
+                self.dispatch_event('on_button_release', button.name)
+
         for control in device.get_controls():
             if control.name in ('left', 'left_hold', 'right', 'right_hold', 'up', 'down',
                                 'menu', 'select', 'menu_hold', 'select_hold'):
-                add_button(control)
+                _add_button(control)
 
-    def open(self, window=None, exclusive=False):
+    def open(self, window: BaseWindow, exclusive: bool = False):
         """Open the device.  See `Device.open`. """
         self.device.open(window, exclusive)
 
@@ -922,7 +874,9 @@ class AppleRemote(EventDispatcher):
         """Close the device.  See `Device.close`. """
         self.device.close()
 
-    def on_button_press(self, button):
+    # Events
+
+    def on_button_press(self, button: str):
         """A button on the remote was pressed.
 
         Only the 'up' and 'down' buttons will generate an event when the
@@ -930,29 +884,25 @@ class AppleRemote(EventDispatcher):
         until the button is released and then send both the press and release
         events at the same time.
 
-        :Parameters:
-            `button` : unicode
+        Args:
+            button:
                 The name of the button that was pressed. The valid names are
                 'up', 'down', 'left', 'right', 'left_hold', 'right_hold',
                 'menu', 'menu_hold', 'select', and 'select_hold'
-                
-        :event:
         """
 
-    def on_button_release(self, button):
+    def on_button_release(self, button: str):
         """A button on the remote was released.
 
         The 'select_hold' and 'menu_hold' button release events are sent
         immediately after the corresponding press events regardless of
         whether the user has released the button.
 
-        :Parameters:
-            `button` : str
+        Args:
+            button:
                 The name of the button that was released. The valid names are
                 'up', 'down', 'left', 'right', 'left_hold', 'right_hold',
                 'menu', 'menu_hold', 'select', and 'select_hold'
-
-        :event:
         """
 
 
@@ -1009,15 +959,16 @@ class TabletCanvas(EventDispatcher):
         """
         self.window = window
 
-    def close(self):
-        """Close the tablet device for this window.
-        """
+    def close(self) -> None:
+        """Close the tablet device for this window."""
         raise NotImplementedError('abstract')
 
     if _is_pyglet_doc_run:
+        # Events
+
         def on_enter(self, cursor: TabletCursor):
             """A cursor entered the proximity of the window.  The cursor may
-            be hovering above the tablet surface, but outside of the window
+            be hovering above the tablet surface, but outside the window
             bounds, or it may have entered the window bounds.
 
             Note that you cannot rely on `on_enter` and `on_leave` events to
@@ -1035,8 +986,6 @@ class TabletCanvas(EventDispatcher):
             Note that you cannot rely on `on_enter` and `on_leave` events to
             be generated in pairs; some events may be lost if the cursor was
             out of the window bounds at the time.
-
-            :event:
             """
 
         def on_motion(self, cursor: TabletCursor, x: int, y: int,
@@ -1063,10 +1012,7 @@ class TabletCanvas(EventDispatcher):
                 buttons:
                     Button state may be provided if the platform supports it.
                     Supported on: Windows
-
-            :event:
             """
-
 
 
 TabletCanvas.register_event_type('on_enter')
@@ -1075,10 +1021,10 @@ TabletCanvas.register_event_type('on_motion')
 
 
 class TabletCursor:
-    """A distinct cursor used on a tablet.
+    """A distinct cursor used on a Tablet device.
 
-    Most tablets support at least a *stylus* and an *erasor* cursor; this
-    object is used to distinguish them when tablet events are generated.
+    Most tablets support at least a ``stylus`` and an ``erasor`` cursor;
+    this object is used to distinguish them when tablet events are generated.
     """
 
     # TODO well-defined names for stylus and eraser.
@@ -1093,7 +1039,7 @@ class TabletCursor:
         self.name = name
 
     def __repr__(self) -> str:
-        return '%s(%s)' % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}(name={self.name})"
 
 
 class ControllerManager(EventDispatcher):
@@ -1132,24 +1078,21 @@ class ControllerManager(EventDispatcher):
     .. versionadded:: 1.2
     """
 
-    def get_controllers(self) -> List[Controller]:
+    def get_controllers(self) -> list[Controller]:
         """Get a list of all connected Controllers"""
         raise NotImplementedError
+
+    # Events
 
     def on_connect(self, controller) -> Controller:
         """A Controller has been connected. If this is
         a previously dissconnected Controller that is
         being re-connected, the same Controller instance
         will be returned.
-
-        :event:
         """
 
     def on_disconnect(self, controller) -> Controller:
-        """A Controller has been disconnected.
-
-        :event:
-        """
+        """A Controller has been disconnected."""
 
 
 ControllerManager.register_event_type('on_connect')
