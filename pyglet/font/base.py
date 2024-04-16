@@ -159,7 +159,7 @@ class GlyphTextureAtlas(image.atlas.TextureAtlas):
         self.allocator = image.atlas.Allocator(width, height)
 
     def add(self, img: image.AbstractImage, border: int = 0) -> Glyph:
-        return super().add(img, border)  # noqa
+        return super().add(img, border)
 
 
 class GlyphTextureBin(image.atlas.TextureBin):
@@ -239,6 +239,8 @@ class Font:
             The default magnification filter for glyph textures. By default, ``GL_LINEAR``. Can be changed to
             ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
     """
+    #: :meta private:
+    glyphs: dict[str, Glyph]
 
     texture_width: int = 512
     texture_height: int = 512
