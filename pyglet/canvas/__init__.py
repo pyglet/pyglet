@@ -27,6 +27,10 @@ by the application; see the documentation for :class:`Screen`.
 import sys
 import weakref
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.canvas.base import Display
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -40,7 +44,7 @@ are removed from the set when they are no longer referenced.
 """
 
 
-def get_display():
+def get_display() -> Display:
     """Get the default display device.
 
     If there is already a :class:`Display` connection, that display will be
@@ -48,8 +52,6 @@ def get_display():
     If multiple display connections are active, an arbitrary one is returned.
 
     .. versionadded:: 1.2
-
-    :rtype: :class:`Display`
     """
     # If there are existing displays, return one of them arbitrarily.
     for display in _displays:
