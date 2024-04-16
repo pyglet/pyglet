@@ -158,12 +158,15 @@ class GlyphTextureAtlas(image.atlas.TextureAtlas):
         self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter, fmt=fmt)
         self.allocator = image.atlas.Allocator(width, height)
 
+    def add(self, img: image.AbstractImage, border: int = 0) -> Glyph:
+        return super().add(img, border)  # noqa
+
 
 class GlyphTextureBin(image.atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
     def add(self, img: image.AbstractImage, fmt: int = GL_RGBA, min_filter: int = GL_LINEAR,
-            mag_filter: int = GL_LINEAR, border: int = 0) -> image.TextureRegion:
+            mag_filter: int = GL_LINEAR, border: int = 0) -> Glyph:
         for atlas in list(self.atlases):
             try:
                 return atlas.add(img, border)
@@ -294,7 +297,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, img: image.AbstractImage, fmt: int | None = None) -> image.TextureRegion:
+    def create_glyph(self, img: image.AbstractImage, fmt: int | None = None) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -309,7 +312,6 @@ class Font:
             fmt:
                 Override for the format and internalformat of the atlas texture. None will use default.
         """
-        # TODO: For 2.1 Rename this to create_glyph_texture. This doesn't actually return a Glyph.
         if self.texture_bin is None:
             if self.optimize_fit:
                 self.texture_width, self.texture_height = self._get_optimal_atlas_size(img)
