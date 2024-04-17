@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from ctypes import POINTER, c_ubyte, cast, memmove
+from ctypes import POINTER, byref, c_ubyte, cast, memmove
 from typing import NamedTuple
-
-from _ctypes import byref
 
 import pyglet
 from pyglet import image
@@ -117,7 +115,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         #       supported in 3.3+ core, but are present in ES because of pixel transfer
         #       limitations.
         if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
-            GL_ALPHA = 0x1906  # noqa: N806
+            GL_ALPHA = 0x1906
             glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
         else:
             glyph = self.font.create_glyph(img)

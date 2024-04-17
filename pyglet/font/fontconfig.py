@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from ctypes import CDLL, Structure, Union, c_char_p, c_double, c_int, c_uint, c_void_p
+from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p
 from typing import TYPE_CHECKING
-
-from _ctypes import byref
 
 from pyglet.font.base import FontException
 from pyglet.lib import load_library
