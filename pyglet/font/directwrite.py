@@ -1,40 +1,74 @@
+from __future__ import annotations
+
 import copy
+import math
 import os
 import pathlib
 import platform
-from ctypes import *
-from typing import List, Optional, Tuple
+from ctypes import (
+    HRESULT,
+    POINTER,
+    Array,
+    Structure,
+    byref,
+    c_int,
+    c_int16,
+    c_int32,
+    c_ubyte,
+    c_uint8,
+    c_uint16,
+    c_uint32,
+    c_uint64,
+    c_void_p,
+    c_wchar,
+    c_wchar_p,
+    cast,
+    create_unicode_buffer,
+    pointer,
+    sizeof,
+    windll,
+)
+from ctypes.wintypes import BOOL, FLOAT, HDC, UINT, WCHAR
+from typing import TYPE_CHECKING, BinaryIO, NoReturn
 
-import math
 import pyglet
 from pyglet.font import base
-from pyglet.image.codecs.wic import IWICBitmap, WICDecoder, GUID_WICPixelFormat32bppPBGRA
+from pyglet.image import ImageData
+from pyglet.image.codecs.wic import GUID_WICPixelFormat32bppPBGRA, IWICBitmap, WICDecoder
+from pyglet.libs.win32 import LOGFONTW, c_void, com
 from pyglet.libs.win32 import _kernel32 as kernel32
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import (
+    LOCALE_NAME_MAX_LENGTH,
+    WINDOWS_8_1_OR_GREATER,
+    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
+)
 from pyglet.util import debug_print
 
+if TYPE_CHECKING:
+    from pyglet.font.base import Glyph
+
 try:
-    dwrite = 'dwrite'
+    dwrite = "dwrite"
 
     # System32 and SysWOW64 folders are opposite perception in Windows x64.
     # System32 = x64 dll's | SysWOW64 = x86 dlls
     # By default ctypes only seems to look in system32 regardless of Python architecture, which has x64 dlls.
-    if platform.architecture()[0] == '32bit':
-        if platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
-            dwrite = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'dwrite.dll')
+    if platform.architecture()[0] == "32bit":
+        if platform.machine().endswith("64"):  # Machine is 64 bit, Python is 32 bit.
+            dwrite = os.path.join(os.environ["WINDIR"], "SysWOW64", "dwrite.dll")
 
-    dwrite_lib = ctypes.windll.LoadLibrary(dwrite)
-except OSError as err:
+    dwrite_lib = windll.LoadLibrary(dwrite)
+except OSError:
     # Doesn't exist? Should stop import of library.
-    pass
+    msg = "DirectWrite Not Found"
+    raise ImportError(msg)  # noqa: B904
 
-_debug_font = pyglet.options['debug_font']
+_debug_font = pyglet.options["debug_font"]
 
-_debug_print = debug_print('debug_font')
+_debug_print = debug_print("debug_font")
 
 
-def DWRITE_MAKE_OPENTYPE_TAG(a, b, c, d):
+def DWRITE_MAKE_OPENTYPE_TAG(a: str, b: str, c: str, d: str) -> int:
     return ord(d) << 24 | ord(c) << 16 | ord(b) << 8 | ord(a)
 
 
@@ -60,23 +94,24 @@ DWRITE_FONT_WEIGHT_BLACK = 900
 DWRITE_FONT_WEIGHT_HEAVY = 900
 DWRITE_FONT_WEIGHT_EXTRA_BLACK = 950
 
-name_to_weight = {"thin": DWRITE_FONT_WEIGHT_THIN,
-                  "extralight": DWRITE_FONT_WEIGHT_EXTRA_LIGHT,
-                  "ultralight": DWRITE_FONT_WEIGHT_ULTRA_LIGHT,
-                  "light": DWRITE_FONT_WEIGHT_LIGHT,
-                  "semilight": DWRITE_FONT_WEIGHT_SEMI_LIGHT,
-                  "normal": DWRITE_FONT_WEIGHT_NORMAL,
-                  "regular": DWRITE_FONT_WEIGHT_REGULAR,
-                  "medium": DWRITE_FONT_WEIGHT_MEDIUM,
-                  "demibold": DWRITE_FONT_WEIGHT_DEMI_BOLD,
-                  "semibold": DWRITE_FONT_WEIGHT_SEMI_BOLD,
-                  "bold": DWRITE_FONT_WEIGHT_BOLD,
-                  "extrabold": DWRITE_FONT_WEIGHT_EXTRA_BOLD,
-                  "ultrabold": DWRITE_FONT_WEIGHT_ULTRA_BOLD,
-                  "black": DWRITE_FONT_WEIGHT_BLACK,
-                  "heavy": DWRITE_FONT_WEIGHT_HEAVY,
-                  "extrablack": DWRITE_FONT_WEIGHT_EXTRA_BLACK,
-                  }
+name_to_weight = {
+    "thin": DWRITE_FONT_WEIGHT_THIN,
+    "extralight": DWRITE_FONT_WEIGHT_EXTRA_LIGHT,
+    "ultralight": DWRITE_FONT_WEIGHT_ULTRA_LIGHT,
+    "light": DWRITE_FONT_WEIGHT_LIGHT,
+    "semilight": DWRITE_FONT_WEIGHT_SEMI_LIGHT,
+    "normal": DWRITE_FONT_WEIGHT_NORMAL,
+    "regular": DWRITE_FONT_WEIGHT_REGULAR,
+    "medium": DWRITE_FONT_WEIGHT_MEDIUM,
+    "demibold": DWRITE_FONT_WEIGHT_DEMI_BOLD,
+    "semibold": DWRITE_FONT_WEIGHT_SEMI_BOLD,
+    "bold": DWRITE_FONT_WEIGHT_BOLD,
+    "extrabold": DWRITE_FONT_WEIGHT_EXTRA_BOLD,
+    "ultrabold": DWRITE_FONT_WEIGHT_ULTRA_BOLD,
+    "black": DWRITE_FONT_WEIGHT_BLACK,
+    "heavy": DWRITE_FONT_WEIGHT_HEAVY,
+    "extrablack": DWRITE_FONT_WEIGHT_EXTRA_BLACK,
+}
 
 DWRITE_FONT_STRETCH = UINT
 DWRITE_FONT_STRETCH_UNDEFINED = 0
@@ -90,18 +125,19 @@ DWRITE_FONT_STRETCH_SEMI_EXPANDED = 6
 DWRITE_FONT_STRETCH_EXPANDED = 7
 DWRITE_FONT_STRETCH_EXTRA_EXPANDED = 8
 
-name_to_stretch = {"undefined": DWRITE_FONT_STRETCH_UNDEFINED,
-                   "ultracondensed": DWRITE_FONT_STRETCH_ULTRA_CONDENSED,
-                   "extracondensed": DWRITE_FONT_STRETCH_EXTRA_CONDENSED,
-                   "condensed": DWRITE_FONT_STRETCH_CONDENSED,
-                   "semicondensed": DWRITE_FONT_STRETCH_SEMI_CONDENSED,
-                   "normal": DWRITE_FONT_STRETCH_NORMAL,
-                   "medium": DWRITE_FONT_STRETCH_MEDIUM,
-                   "semiexpanded": DWRITE_FONT_STRETCH_SEMI_EXPANDED,
-                   "expanded": DWRITE_FONT_STRETCH_EXPANDED,
-                   "extraexpanded": DWRITE_FONT_STRETCH_EXTRA_EXPANDED,
-                   "narrow": DWRITE_FONT_STRETCH_CONDENSED,
-                   }
+name_to_stretch = {
+    "undefined": DWRITE_FONT_STRETCH_UNDEFINED,
+    "ultracondensed": DWRITE_FONT_STRETCH_ULTRA_CONDENSED,
+    "extracondensed": DWRITE_FONT_STRETCH_EXTRA_CONDENSED,
+    "condensed": DWRITE_FONT_STRETCH_CONDENSED,
+    "semicondensed": DWRITE_FONT_STRETCH_SEMI_CONDENSED,
+    "normal": DWRITE_FONT_STRETCH_NORMAL,
+    "medium": DWRITE_FONT_STRETCH_MEDIUM,
+    "semiexpanded": DWRITE_FONT_STRETCH_SEMI_EXPANDED,
+    "expanded": DWRITE_FONT_STRETCH_EXPANDED,
+    "extraexpanded": DWRITE_FONT_STRETCH_EXTRA_EXPANDED,
+    "narrow": DWRITE_FONT_STRETCH_CONDENSED,
+}
 
 DWRITE_GLYPH_IMAGE_FORMATS = c_int
 
@@ -134,9 +170,11 @@ DWRITE_FONT_STYLE_NORMAL = 0
 DWRITE_FONT_STYLE_OBLIQUE = 1
 DWRITE_FONT_STYLE_ITALIC = 2
 
-name_to_style = {"normal": DWRITE_FONT_STYLE_NORMAL,
-                 "oblique": DWRITE_FONT_STYLE_OBLIQUE,
-                 "italic": DWRITE_FONT_STYLE_ITALIC}
+name_to_style = {
+    "normal": DWRITE_FONT_STYLE_NORMAL,
+    "oblique": DWRITE_FONT_STYLE_OBLIQUE,
+    "italic": DWRITE_FONT_STYLE_ITALIC,
+}
 
 UINT8 = c_uint8
 UINT16 = c_uint16
@@ -176,127 +214,128 @@ DWRITE_INFORMATIONAL_STRING_WWS_FAMILY_NAME = 24
 
 class D2D_POINT_2F(Structure):
     _fields_ = (
-        ('x', FLOAT),
-        ('y', FLOAT),
+        ("x", FLOAT),
+        ("y", FLOAT),
     )
 
 
 class D2D1_RECT_F(Structure):
     _fields_ = (
-        ('left', FLOAT),
-        ('top', FLOAT),
-        ('right', FLOAT),
-        ('bottom', FLOAT),
+        ("left", FLOAT),
+        ("top", FLOAT),
+        ("right", FLOAT),
+        ("bottom", FLOAT),
     )
 
 
 class D2D1_COLOR_F(Structure):
     _fields_ = (
-        ('r', FLOAT),
-        ('g', FLOAT),
-        ('b', FLOAT),
-        ('a', FLOAT),
+        ("r", FLOAT),
+        ("g", FLOAT),
+        ("b", FLOAT),
+        ("a", FLOAT),
     )
 
 
-class DWRITE_TEXT_METRICS(ctypes.Structure):
+class DWRITE_TEXT_METRICS(Structure):
     _fields_ = (
-        ('left', FLOAT),
-        ('top', FLOAT),
-        ('width', FLOAT),
-        ('widthIncludingTrailingWhitespace', FLOAT),
-        ('height', FLOAT),
-        ('layoutWidth', FLOAT),
-        ('layoutHeight', FLOAT),
-        ('maxBidiReorderingDepth', UINT32),
-        ('lineCount', UINT32),
+        ("left", FLOAT),
+        ("top", FLOAT),
+        ("width", FLOAT),
+        ("widthIncludingTrailingWhitespace", FLOAT),
+        ("height", FLOAT),
+        ("layoutWidth", FLOAT),
+        ("layoutHeight", FLOAT),
+        ("maxBidiReorderingDepth", UINT32),
+        ("lineCount", UINT32),
     )
 
 
-class DWRITE_FONT_METRICS(ctypes.Structure):
+class DWRITE_FONT_METRICS(Structure):
     _fields_ = (
-        ('designUnitsPerEm', UINT16),
-        ('ascent', UINT16),
-        ('descent', UINT16),
-        ('lineGap', INT16),
-        ('capHeight', UINT16),
-        ('xHeight', UINT16),
-        ('underlinePosition', INT16),
-        ('underlineThickness', UINT16),
-        ('strikethroughPosition', INT16),
-        ('strikethroughThickness', UINT16),
+        ("designUnitsPerEm", UINT16),
+        ("ascent", UINT16),
+        ("descent", UINT16),
+        ("lineGap", INT16),
+        ("capHeight", UINT16),
+        ("xHeight", UINT16),
+        ("underlinePosition", INT16),
+        ("underlineThickness", UINT16),
+        ("strikethroughPosition", INT16),
+        ("strikethroughThickness", UINT16),
     )
 
 
-class DWRITE_GLYPH_METRICS(ctypes.Structure):
+class DWRITE_GLYPH_METRICS(Structure):
     _fields_ = (
-        ('leftSideBearing', INT32),
-        ('advanceWidth', UINT32),
-        ('rightSideBearing', INT32),
-        ('topSideBearing', INT32),
-        ('advanceHeight', UINT32),
-        ('bottomSideBearing', INT32),
-        ('verticalOriginY', INT32),
+        ("leftSideBearing", INT32),
+        ("advanceWidth", UINT32),
+        ("rightSideBearing", INT32),
+        ("topSideBearing", INT32),
+        ("advanceHeight", UINT32),
+        ("bottomSideBearing", INT32),
+        ("verticalOriginY", INT32),
     )
 
 
-class DWRITE_GLYPH_OFFSET(ctypes.Structure):
+class DWRITE_GLYPH_OFFSET(Structure):
     _fields_ = (
-        ('advanceOffset', FLOAT),
-        ('ascenderOffset', FLOAT),
+        ("advanceOffset", FLOAT),
+        ("ascenderOffset", FLOAT),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"DWRITE_GLYPH_OFFSET({self.advanceOffset}, {self.ascenderOffset})"
 
 
-class DWRITE_CLUSTER_METRICS(ctypes.Structure):
+class DWRITE_CLUSTER_METRICS(Structure):
     _fields_ = (
-        ('width', FLOAT),
-        ('length', UINT16),
-        ('canWrapLineAfter', UINT16, 1),
-        ('isWhitespace', UINT16, 1),
-        ('isNewline', UINT16, 1),
-        ('isSoftHyphen', UINT16, 1),
-        ('isRightToLeft', UINT16, 1),
-        ('padding', UINT16, 11),
+        ("width", FLOAT),
+        ("length", UINT16),
+        ("canWrapLineAfter", UINT16, 1),
+        ("isWhitespace", UINT16, 1),
+        ("isNewline", UINT16, 1),
+        ("isSoftHyphen", UINT16, 1),
+        ("isRightToLeft", UINT16, 1),
+        ("padding", UINT16, 11),
     )
 
 
 class IDWriteFontFileStream(com.IUnknown):
     _methods_ = [
-        ('ReadFileFragment',
+        ("ReadFileFragment",
          com.STDMETHOD(POINTER(c_void_p), UINT64, UINT64, POINTER(c_void_p))),
-        ('ReleaseFileFragment',
+        ("ReleaseFileFragment",
          com.STDMETHOD(c_void_p)),
-        ('GetFileSize',
+        ("GetFileSize",
          com.STDMETHOD(POINTER(UINT64))),
-        ('GetLastWriteTime',
+        ("GetLastWriteTime",
          com.STDMETHOD(POINTER(UINT64))),
     ]
 
 
 class IDWriteFontFileLoader_LI(com.IUnknown):  # Local implementation use only.
     _methods_ = [
-        ('CreateStreamFromKey',
-         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
+        ("CreateStreamFromKey",
+         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream)))),
     ]
 
 
 class IDWriteFontFileLoader(com.pIUnknown):
     _methods_ = [
-        ('CreateStreamFromKey',
-         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream))))
+        ("CreateStreamFromKey",
+         com.STDMETHOD(c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileStream)))),
     ]
+
 
 class IDWriteLocalFontFileLoader(IDWriteFontFileLoader, com.pIUnknown):
     _methods_ = [
-        ('GetFilePathLengthFromKey',
+        ("GetFilePathLengthFromKey",
          com.STDMETHOD(c_void_p, UINT32, POINTER(UINT32))),
-        ('GetFilePathFromKey',
+        ("GetFilePathFromKey",
          com.STDMETHOD(c_void_p, UINT32, c_wchar_p, UINT32)),
-        ('GetLastWriteTimeFromKey',
-         com.STDMETHOD())
+        ("GetLastWriteTimeFromKey",
+         com.STDMETHOD()),
     ]
 
 
@@ -305,46 +344,46 @@ IID_IDWriteLocalFontFileLoader = com.GUID(0xb2d9f3ec, 0xc9fe, 0x4a11, 0xa2, 0xec
 
 class IDWriteFontFile(com.pIUnknown):
     _methods_ = [
-        ('GetReferenceKey',
+        ("GetReferenceKey",
          com.STDMETHOD(POINTER(c_void_p), POINTER(UINT32))),
-        ('GetLoader',
+        ("GetLoader",
          com.STDMETHOD(POINTER(IDWriteFontFileLoader))),
-        ('Analyze',
+        ("Analyze",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFontFace(com.pIUnknown):
     _methods_ = [
-        ('GetType',
+        ("GetType",
          com.STDMETHOD()),
-        ('GetFiles',
+        ("GetFiles",
          com.STDMETHOD(POINTER(UINT32), POINTER(IDWriteFontFile))),
-        ('GetIndex',
+        ("GetIndex",
          com.STDMETHOD()),
-        ('GetSimulations',
+        ("GetSimulations",
          com.STDMETHOD()),
-        ('IsSymbolFont',
+        ("IsSymbolFont",
          com.STDMETHOD()),
-        ('GetMetrics',
+        ("GetMetrics",
          com.METHOD(c_void, POINTER(DWRITE_FONT_METRICS))),
-        ('GetGlyphCount',
+        ("GetGlyphCount",
          com.METHOD(UINT16)),
-        ('GetDesignGlyphMetrics',
+        ("GetDesignGlyphMetrics",
          com.STDMETHOD(POINTER(UINT16), UINT32, POINTER(DWRITE_GLYPH_METRICS), BOOL)),
-        ('GetGlyphIndices',
+        ("GetGlyphIndices",
          com.STDMETHOD(POINTER(UINT32), UINT32, POINTER(UINT16))),
-        ('TryGetFontTable',
+        ("TryGetFontTable",
          com.STDMETHOD(UINT32, c_void_p, POINTER(UINT32), c_void_p, POINTER(BOOL))),
-        ('ReleaseFontTable',
+        ("ReleaseFontTable",
          com.METHOD(c_void)),
-        ('GetGlyphRunOutline',
+        ("GetGlyphRunOutline",
          com.STDMETHOD()),
-        ('GetRecommendedRenderingMode',
+        ("GetRecommendedRenderingMode",
          com.STDMETHOD()),
-        ('GetGdiCompatibleMetrics',
+        ("GetGdiCompatibleMetrics",
          com.STDMETHOD()),
-        ('GetGdiCompatibleGlyphMetrics',
+        ("GetGdiCompatibleGlyphMetrics",
          com.STDMETHOD()),
     ]
 
@@ -354,43 +393,43 @@ IID_IDWriteFontFace1 = com.GUID(0xa71efdb4, 0x9fdb, 0x4838, 0xad, 0x90, 0xcf, 0x
 
 class IDWriteFontFace1(IDWriteFontFace, com.pIUnknown):
     _methods_ = [
-        ('GetMetric1',
+        ("GetMetric1",
          com.STDMETHOD()),
-        ('GetGdiCompatibleMetrics1',
+        ("GetGdiCompatibleMetrics1",
          com.STDMETHOD()),
-        ('GetCaretMetrics',
+        ("GetCaretMetrics",
          com.STDMETHOD()),
-        ('GetUnicodeRanges',
+        ("GetUnicodeRanges",
          com.STDMETHOD()),
-        ('IsMonospacedFont',
+        ("IsMonospacedFont",
          com.STDMETHOD()),
-        ('GetDesignGlyphAdvances',
+        ("GetDesignGlyphAdvances",
          com.METHOD(c_void, POINTER(DWRITE_FONT_METRICS))),
-        ('GetGdiCompatibleGlyphAdvances',
+        ("GetGdiCompatibleGlyphAdvances",
          com.STDMETHOD()),
-        ('GetKerningPairAdjustments',
+        ("GetKerningPairAdjustments",
          com.STDMETHOD(UINT32, POINTER(UINT16), POINTER(INT32))),
-        ('HasKerningPairs',
+        ("HasKerningPairs",
          com.METHOD(BOOL)),
-        ('GetRecommendedRenderingMode1',
+        ("GetRecommendedRenderingMode1",
          com.STDMETHOD()),
-        ('GetVerticalGlyphVariants',
+        ("GetVerticalGlyphVariants",
          com.STDMETHOD()),
-        ('HasVerticalGlyphVariants',
-         com.STDMETHOD())
+        ("HasVerticalGlyphVariants",
+         com.STDMETHOD()),
     ]
 
 
-class DWRITE_GLYPH_RUN(ctypes.Structure):
+class DWRITE_GLYPH_RUN(Structure):
     _fields_ = (
-        ('fontFace', IDWriteFontFace),
-        ('fontEmSize', FLOAT),
-        ('glyphCount', UINT32),
-        ('glyphIndices', POINTER(UINT16)),
-        ('glyphAdvances', POINTER(FLOAT)),
-        ('glyphOffsets', POINTER(DWRITE_GLYPH_OFFSET)),
-        ('isSideways', BOOL),
-        ('bidiLevel', UINT32),
+        ("fontFace", IDWriteFontFace),
+        ("fontEmSize", FLOAT),
+        ("glyphCount", UINT32),
+        ("glyphIndices", POINTER(UINT16)),
+        ("glyphAdvances", POINTER(FLOAT)),
+        ("glyphOffsets", POINTER(DWRITE_GLYPH_OFFSET)),
+        ("isSideways", BOOL),
+        ("bidiLevel", UINT32),
     )
 
 
@@ -398,49 +437,49 @@ DWRITE_SCRIPT_SHAPES = UINT
 DWRITE_SCRIPT_SHAPES_DEFAULT = 0
 
 
-class DWRITE_SCRIPT_ANALYSIS(ctypes.Structure):
+class DWRITE_SCRIPT_ANALYSIS(Structure):
     _fields_ = (
-        ('script', UINT16),
-        ('shapes', DWRITE_SCRIPT_SHAPES),
+        ("script", UINT16),
+        ("shapes", DWRITE_SCRIPT_SHAPES),
     )
 
 
 DWRITE_FONT_FEATURE_TAG = UINT
 
 
-class DWRITE_FONT_FEATURE(ctypes.Structure):
+class DWRITE_FONT_FEATURE(Structure):
     _fields_ = (
-        ('nameTag', DWRITE_FONT_FEATURE_TAG),
-        ('parameter', UINT32),
+        ("nameTag", DWRITE_FONT_FEATURE_TAG),
+        ("parameter", UINT32),
     )
 
 
-class DWRITE_TYPOGRAPHIC_FEATURES(ctypes.Structure):
+class DWRITE_TYPOGRAPHIC_FEATURES(Structure):
     _fields_ = (
-        ('features', POINTER(DWRITE_FONT_FEATURE)),
-        ('featureCount', UINT32),
+        ("features", POINTER(DWRITE_FONT_FEATURE)),
+        ("featureCount", UINT32),
     )
 
 
-class DWRITE_SHAPING_TEXT_PROPERTIES(ctypes.Structure):
+class DWRITE_SHAPING_TEXT_PROPERTIES(Structure):
     _fields_ = (
-        ('isShapedAlone', UINT16, 1),
-        ('reserved1', UINT16, 1),
-        ('canBreakShapingAfter', UINT16, 1),
-        ('reserved', UINT16, 13),
+        ("isShapedAlone", UINT16, 1),
+        ("reserved1", UINT16, 1),
+        ("canBreakShapingAfter", UINT16, 1),
+        ("reserved", UINT16, 13),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"DWRITE_SHAPING_TEXT_PROPERTIES({self.isShapedAlone}, {self.reserved1}, {self.canBreakShapingAfter})"
 
 
-class DWRITE_SHAPING_GLYPH_PROPERTIES(ctypes.Structure):
+class DWRITE_SHAPING_GLYPH_PROPERTIES(Structure):
     _fields_ = (
-        ('justification', UINT16, 4),
-        ('isClusterStart', UINT16, 1),
-        ('isDiacritic', UINT16, 1),
-        ('isZeroWidthSpace', UINT16, 1),
-        ('reserved', UINT16, 9),
+        ("justification", UINT16, 4),
+        ("isClusterStart", UINT16, 1),
+        ("isDiacritic", UINT16, 1),
+        ("isZeroWidthSpace", UINT16, 1),
+        ("reserved", UINT16, 9),
     )
 
 
@@ -450,34 +489,34 @@ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT = 0
 
 class IDWriteTextAnalysisSource(com.IUnknown):
     _methods_ = [
-        ('GetTextAtPosition',
+        ("GetTextAtPosition",
          com.STDMETHOD(UINT32, POINTER(c_wchar_p), POINTER(UINT32))),
-        ('GetTextBeforePosition',
+        ("GetTextBeforePosition",
          com.STDMETHOD(UINT32, POINTER(c_wchar_p), POINTER(UINT32))),
-        ('GetParagraphReadingDirection',
+        ("GetParagraphReadingDirection",
          com.METHOD(DWRITE_READING_DIRECTION)),
-        ('GetLocaleName',
+        ("GetLocaleName",
          com.STDMETHOD(UINT32, POINTER(UINT32), POINTER(c_wchar_p))),
-        ('GetNumberSubstitution',
+        ("GetNumberSubstitution",
          com.STDMETHOD(UINT32, POINTER(UINT32), c_void_p)),
     ]
 
 
 class IDWriteTextAnalysisSink(com.IUnknown):
     _methods_ = [
-        ('SetScriptAnalysis',
+        ("SetScriptAnalysis",
          com.STDMETHOD(UINT32, UINT32, POINTER(DWRITE_SCRIPT_ANALYSIS))),
-        ('SetLineBreakpoints',
+        ("SetLineBreakpoints",
          com.STDMETHOD(UINT32, UINT32, c_void_p)),
-        ('SetBidiLevel',
+        ("SetBidiLevel",
          com.STDMETHOD(UINT32, UINT32, UINT8, UINT8)),
-        ('SetNumberSubstitution',
+        ("SetNumberSubstitution",
          com.STDMETHOD(UINT32, UINT32, c_void_p)),
     ]
 
 
 class Run:
-    def __init__(self):
+    def __init__(self) -> None:
         self.text_start = 0
         self.text_length = 0
         self.glyph_start = 0
@@ -489,14 +528,14 @@ class Run:
 
         self.next_run = None
 
-    def ContainsTextPosition(self, textPosition):
+    def ContainsTextPosition(self, textPosition: int) -> bool:
         return textPosition >= self.text_start and textPosition < self.text_start + self.text_length
 
 
 class TextAnalysis(com.COMObject):
     _interfaces_ = [IDWriteTextAnalysisSource, IDWriteTextAnalysisSink]
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._textstart = 0
         self._textlength = 0
@@ -506,9 +545,9 @@ class TextAnalysis(com.COMObject):
 
         self._script = None
         self._bidi = 0
-        # self._sideways = False
+        # self._sideways = False  # noqa: ERA001
 
-    def GenerateResults(self, analyzer, text, text_length):
+    def GenerateResults(self, analyzer: IDWriteTextAnalyzer, text: c_wchar_p, text_length: int):
         self._text = text
         self._textstart = 0
         self._textlength = text_length
@@ -523,7 +562,8 @@ class TextAnalysis(com.COMObject):
 
         analyzer.AnalyzeScript(self, 0, text_length, self)
 
-    def SetScriptAnalysis(self, textPosition, textLength, scriptAnalysis):
+    def SetScriptAnalysis(self, textPosition: UINT32, textLength: UINT32,
+                          scriptAnalysis: POINTER(DWRITE_SCRIPT_ANALYSIS)) -> int:
         # textPosition - The index of the first character in the string that the result applies to
         # textLength - How many characters of the string from the index that the result applies to
         # scriptAnalysis - The analysis information for all glyphs starting at position for length.
@@ -541,10 +581,12 @@ class TextAnalysis(com.COMObject):
         return 0
         # return 0x80004001
 
-    def GetTextBeforePosition(self, textPosition, textString, textLength):
-        raise Exception("Currently not implemented.")
+    def GetTextBeforePosition(self, textPosition: UINT32, textString: POINTER(POINTER(WCHAR)),
+                              textLength: POINTER(UINT32)) -> NoReturn:
+        msg = "Currently not implemented."
+        raise Exception(msg)
 
-    def GetTextAtPosition(self, textPosition, textString, textLength):
+    def GetTextAtPosition(self, textPosition: UINT32, textString: c_wchar_p, textLength: POINTER(UINT32)) -> int:
         # This method will retrieve a substring of the text in this layout
         #   to be used in an analysis step.
         # Arguments:
@@ -564,23 +606,24 @@ class TextAnalysis(com.COMObject):
 
         return 0
 
-    def GetParagraphReadingDirection(self):
+    def GetParagraphReadingDirection(self) -> int:
         return 0
 
-    def GetLocaleName(self, textPosition, textLength, localeName):
+    def GetLocaleName(self, textPosition: UINT32, textLength: POINTER(UINT32),
+                      localeName: POINTER(POINTER(WCHAR))) -> int:
         self.__local_name = c_wchar_p("")  # TODO: Add more locales.
         localeName[0] = self.__local_name
         textLength[0] = self._textlength - textPosition
         return 0
 
-    def GetNumberSubstitution(self):
+    def GetNumberSubstitution(self) -> int:
         return 0
 
-    def SetCurrentRun(self, textPosition):
+    def SetCurrentRun(self, textPosition: UINT32) -> None:
         if self._current_run and self._current_run.ContainsTextPosition(textPosition):
             return
 
-    def SplitCurrentRun(self, textPosition):
+    def SplitCurrentRun(self, textPosition: UINT32) -> None:
         if not self._current_run:
             return
 
@@ -600,7 +643,7 @@ class TextAnalysis(com.COMObject):
         self._current_run.text_length = splitPoint
         self._current_run = new_run
 
-    def FetchNextRun(self, textLength):
+    def FetchNextRun(self, textLength: UINT32) -> tuple[Run, int]:
         original_run = self._current_run
 
         if (textLength < self._current_run.text_length):
@@ -615,137 +658,137 @@ class TextAnalysis(com.COMObject):
 
 class IDWriteTextAnalyzer(com.pIUnknown):
     _methods_ = [
-        ('AnalyzeScript',
+        ("AnalyzeScript",
          com.STDMETHOD(POINTER(IDWriteTextAnalysisSource), UINT32, UINT32, POINTER(IDWriteTextAnalysisSink))),
-        ('AnalyzeBidi',
+        ("AnalyzeBidi",
          com.STDMETHOD()),
-        ('AnalyzeNumberSubstitution',
+        ("AnalyzeNumberSubstitution",
          com.STDMETHOD()),
-        ('AnalyzeLineBreakpoints',
+        ("AnalyzeLineBreakpoints",
          com.STDMETHOD()),
-        ('GetGlyphs',
+        ("GetGlyphs",
          com.STDMETHOD(c_wchar_p, UINT32, IDWriteFontFace, BOOL, BOOL, POINTER(DWRITE_SCRIPT_ANALYSIS),
                        c_wchar_p, c_void_p, POINTER(POINTER(DWRITE_TYPOGRAPHIC_FEATURES)), POINTER(UINT32),
                        UINT32, UINT32, POINTER(UINT16), POINTER(DWRITE_SHAPING_TEXT_PROPERTIES),
                        POINTER(UINT16), POINTER(DWRITE_SHAPING_GLYPH_PROPERTIES), POINTER(UINT32))),
-        ('GetGlyphPlacements',
+        ("GetGlyphPlacements",
          com.STDMETHOD(c_wchar_p, POINTER(UINT16), POINTER(DWRITE_SHAPING_TEXT_PROPERTIES), UINT32, POINTER(UINT16),
                        POINTER(DWRITE_SHAPING_GLYPH_PROPERTIES), UINT32, IDWriteFontFace, FLOAT, BOOL, BOOL,
                        POINTER(DWRITE_SCRIPT_ANALYSIS), c_wchar_p, POINTER(DWRITE_TYPOGRAPHIC_FEATURES),
                        POINTER(UINT32), UINT32, POINTER(FLOAT), POINTER(DWRITE_GLYPH_OFFSET))),
-        ('GetGdiCompatibleGlyphPlacements',
+        ("GetGdiCompatibleGlyphPlacements",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteLocalizedStrings(com.pIUnknown):
     _methods_ = [
-        ('GetCount',
+        ("GetCount",
          com.METHOD(UINT32)),
-        ('FindLocaleName',
+        ("FindLocaleName",
          com.STDMETHOD(c_wchar_p, POINTER(UINT32), POINTER(BOOL))),
-        ('GetLocaleNameLength',
+        ("GetLocaleNameLength",
          com.STDMETHOD(UINT32, POINTER(UINT32))),
-        ('GetLocaleName',
+        ("GetLocaleName",
          com.STDMETHOD(UINT32, c_wchar_p, UINT32)),
-        ('GetStringLength',
+        ("GetStringLength",
          com.STDMETHOD(UINT32, POINTER(UINT32))),
-        ('GetString',
+        ("GetString",
          com.STDMETHOD(UINT32, c_wchar_p, UINT32)),
     ]
 
 
 class IDWriteFontList(com.pIUnknown):
     _methods_ = [
-        ('GetFontCollection',
+        ("GetFontCollection",
          com.STDMETHOD()),
-        ('GetFontCount',
+        ("GetFontCount",
          com.METHOD(UINT32)),
-        ('GetFont',
+        ("GetFont",
          com.STDMETHOD(UINT32, c_void_p)),  # IDWriteFont, use void because of forward ref.
     ]
 
 
 class IDWriteFontFamily(IDWriteFontList, com.pIUnknown):
     _methods_ = [
-        ('GetFamilyNames',
+        ("GetFamilyNames",
          com.STDMETHOD(POINTER(IDWriteLocalizedStrings))),
-        ('GetFirstMatchingFont',
+        ("GetFirstMatchingFont",
          com.STDMETHOD(DWRITE_FONT_WEIGHT, DWRITE_FONT_STRETCH, DWRITE_FONT_STYLE, c_void_p)),
-        ('GetMatchingFonts',
+        ("GetMatchingFonts",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFontFamily1(IDWriteFontFamily, IDWriteFontList, com.pIUnknown):
     _methods_ = [
-        ('GetFontLocality',
+        ("GetFontLocality",
          com.STDMETHOD()),
-        ('GetFont1',
+        ("GetFont1",
          com.STDMETHOD()),
-        ('GetFontFaceReference',
+        ("GetFontFaceReference",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFont(com.pIUnknown):
     _methods_ = [
-        ('GetFontFamily',
+        ("GetFontFamily",
          com.STDMETHOD(POINTER(IDWriteFontFamily))),
-        ('GetWeight',
+        ("GetWeight",
          com.METHOD(DWRITE_FONT_WEIGHT)),
-        ('GetStretch',
+        ("GetStretch",
          com.METHOD(DWRITE_FONT_STRETCH)),
-        ('GetStyle',
+        ("GetStyle",
          com.METHOD(DWRITE_FONT_STYLE)),
-        ('IsSymbolFont',
+        ("IsSymbolFont",
          com.METHOD(BOOL)),
-        ('GetFaceNames',
+        ("GetFaceNames",
          com.STDMETHOD(POINTER(IDWriteLocalizedStrings))),
-        ('GetInformationalStrings',
+        ("GetInformationalStrings",
          com.STDMETHOD(DWRITE_INFORMATIONAL_STRING_ID, POINTER(IDWriteLocalizedStrings), POINTER(BOOL))),
-        ('GetSimulations',
+        ("GetSimulations",
          com.STDMETHOD()),
-        ('GetMetrics',
+        ("GetMetrics",
          com.STDMETHOD()),
-        ('HasCharacter',
+        ("HasCharacter",
          com.STDMETHOD(UINT32, POINTER(BOOL))),
-        ('CreateFontFace',
+        ("CreateFontFace",
          com.STDMETHOD(POINTER(IDWriteFontFace))),
     ]
 
 
 class IDWriteFont1(IDWriteFont, com.pIUnknown):
     _methods_ = [
-        ('GetMetrics1',
+        ("GetMetrics1",
          com.STDMETHOD()),
-        ('GetPanose',
+        ("GetPanose",
          com.STDMETHOD()),
-        ('GetUnicodeRanges',
+        ("GetUnicodeRanges",
          com.STDMETHOD()),
-        ('IsMonospacedFont',
-         com.STDMETHOD())
+        ("IsMonospacedFont",
+         com.STDMETHOD()),
     ]
 
 
 class IDWriteFontCollection(com.pIUnknown):
     _methods_ = [
-        ('GetFontFamilyCount',
+        ("GetFontFamilyCount",
          com.METHOD(UINT32)),
-        ('GetFontFamily',
+        ("GetFontFamily",
          com.STDMETHOD(UINT32, POINTER(IDWriteFontFamily))),
-        ('FindFamilyName',
+        ("FindFamilyName",
          com.STDMETHOD(c_wchar_p, POINTER(UINT), POINTER(BOOL))),
-        ('GetFontFromFontFace',
+        ("GetFontFromFontFace",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFontCollection1(IDWriteFontCollection, com.pIUnknown):
     _methods_ = [
-        ('GetFontSet',
+        ("GetFontSet",
          com.STDMETHOD()),
-        ('GetFontFamily1',
+        ("GetFontFamily1",
          com.STDMETHOD(POINTER(IDWriteFontFamily1))),
     ]
 
@@ -759,209 +802,209 @@ DWRITE_TEXT_ALIGNMENT_JUSTIFIED = 4
 
 class IDWriteGdiInterop(com.pIUnknown):
     _methods_ = [
-        ('CreateFontFromLOGFONT',
+        ("CreateFontFromLOGFONT",
          com.STDMETHOD(POINTER(LOGFONTW), POINTER(IDWriteFont))),
-        ('ConvertFontToLOGFONT',
+        ("ConvertFontToLOGFONT",
          com.STDMETHOD()),
-        ('ConvertFontFaceToLOGFONT',
+        ("ConvertFontFaceToLOGFONT",
          com.STDMETHOD()),
-        ('CreateFontFaceFromHdc',
+        ("CreateFontFaceFromHdc",
          com.STDMETHOD(HDC, POINTER(IDWriteFontFace))),
-        ('CreateBitmapRenderTarget',
-         com.STDMETHOD())
+        ("CreateBitmapRenderTarget",
+         com.STDMETHOD()),
     ]
 
 
 class IDWriteTextFormat(com.pIUnknown):
     _methods_ = [
-        ('SetTextAlignment',
+        ("SetTextAlignment",
          com.STDMETHOD(DWRITE_TEXT_ALIGNMENT)),
-        ('SetParagraphAlignment',
+        ("SetParagraphAlignment",
          com.STDMETHOD()),
-        ('SetWordWrapping',
+        ("SetWordWrapping",
          com.STDMETHOD()),
-        ('SetReadingDirection',
+        ("SetReadingDirection",
          com.STDMETHOD()),
-        ('SetFlowDirection',
+        ("SetFlowDirection",
          com.STDMETHOD()),
-        ('SetIncrementalTabStop',
+        ("SetIncrementalTabStop",
          com.STDMETHOD()),
-        ('SetTrimming',
+        ("SetTrimming",
          com.STDMETHOD()),
-        ('SetLineSpacing',
+        ("SetLineSpacing",
          com.STDMETHOD()),
-        ('GetTextAlignment',
+        ("GetTextAlignment",
          com.STDMETHOD()),
-        ('GetParagraphAlignment',
+        ("GetParagraphAlignment",
          com.STDMETHOD()),
-        ('GetWordWrapping',
+        ("GetWordWrapping",
          com.STDMETHOD()),
-        ('GetReadingDirection',
+        ("GetReadingDirection",
          com.STDMETHOD()),
-        ('GetFlowDirection',
+        ("GetFlowDirection",
          com.STDMETHOD()),
-        ('GetIncrementalTabStop',
+        ("GetIncrementalTabStop",
          com.STDMETHOD()),
-        ('GetTrimming',
+        ("GetTrimming",
          com.STDMETHOD()),
-        ('GetLineSpacing',
+        ("GetLineSpacing",
          com.STDMETHOD()),
-        ('GetFontCollection',
+        ("GetFontCollection",
          com.STDMETHOD()),
-        ('GetFontFamilyNameLength',
+        ("GetFontFamilyNameLength",
          com.STDMETHOD(UINT32, POINTER(UINT32))),
-        ('GetFontFamilyName',
+        ("GetFontFamilyName",
          com.STDMETHOD(UINT32, c_wchar_p, UINT32)),
-        ('GetFontWeight',
+        ("GetFontWeight",
          com.STDMETHOD()),
-        ('GetFontStyle',
+        ("GetFontStyle",
          com.STDMETHOD()),
-        ('GetFontStretch',
+        ("GetFontStretch",
          com.STDMETHOD()),
-        ('GetFontSize',
+        ("GetFontSize",
          com.STDMETHOD()),
-        ('GetLocaleNameLength',
+        ("GetLocaleNameLength",
          com.STDMETHOD()),
-        ('GetLocaleName',
+        ("GetLocaleName",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteTypography(com.pIUnknown):
     _methods_ = [
-        ('AddFontFeature',
+        ("AddFontFeature",
          com.STDMETHOD(DWRITE_FONT_FEATURE)),
-        ('GetFontFeatureCount',
+        ("GetFontFeatureCount",
          com.METHOD(UINT32)),
-        ('GetFontFeature',
-         com.STDMETHOD())
+        ("GetFontFeature",
+         com.STDMETHOD()),
     ]
 
 
-class DWRITE_TEXT_RANGE(ctypes.Structure):
+class DWRITE_TEXT_RANGE(Structure):
     _fields_ = (
-        ('startPosition', UINT32),
-        ('length', UINT32),
+        ("startPosition", UINT32),
+        ("length", UINT32),
     )
 
 
-class DWRITE_OVERHANG_METRICS(ctypes.Structure):
+class DWRITE_OVERHANG_METRICS(Structure):
     _fields_ = (
-        ('left', FLOAT),
-        ('top', FLOAT),
-        ('right', FLOAT),
-        ('bottom', FLOAT),
+        ("left", FLOAT),
+        ("top", FLOAT),
+        ("right", FLOAT),
+        ("bottom", FLOAT),
     )
 
 
 class IDWriteTextLayout(IDWriteTextFormat, com.pIUnknown):
     _methods_ = [
-        ('SetMaxWidth',
+        ("SetMaxWidth",
          com.STDMETHOD()),
-        ('SetMaxHeight',
+        ("SetMaxHeight",
          com.STDMETHOD()),
-        ('SetFontCollection',
+        ("SetFontCollection",
          com.STDMETHOD()),
-        ('SetFontFamilyName',
+        ("SetFontFamilyName",
          com.STDMETHOD()),
-        ('SetFontWeight',  # 30
+        ("SetFontWeight",  # 30
          com.STDMETHOD()),
-        ('SetFontStyle',
+        ("SetFontStyle",
          com.STDMETHOD()),
-        ('SetFontStretch',
+        ("SetFontStretch",
          com.STDMETHOD()),
-        ('SetFontSize',
+        ("SetFontSize",
          com.STDMETHOD()),
-        ('SetUnderline',
+        ("SetUnderline",
          com.STDMETHOD()),
-        ('SetStrikethrough',
+        ("SetStrikethrough",
          com.STDMETHOD()),
-        ('SetDrawingEffect',
+        ("SetDrawingEffect",
          com.STDMETHOD()),
-        ('SetInlineObject',
+        ("SetInlineObject",
          com.STDMETHOD()),
-        ('SetTypography',
+        ("SetTypography",
          com.STDMETHOD(IDWriteTypography, DWRITE_TEXT_RANGE)),
-        ('SetLocaleName',
+        ("SetLocaleName",
          com.STDMETHOD()),
-        ('GetMaxWidth',  # 40
+        ("GetMaxWidth",  # 40
          com.METHOD(FLOAT)),
-        ('GetMaxHeight',
+        ("GetMaxHeight",
          com.METHOD(FLOAT)),
-        ('GetFontCollection2',
+        ("GetFontCollection2",
          com.STDMETHOD()),
-        ('GetFontFamilyNameLength2',
+        ("GetFontFamilyNameLength2",
          com.STDMETHOD(UINT32, POINTER(UINT32), c_void_p)),
-        ('GetFontFamilyName2',
+        ("GetFontFamilyName2",
          com.STDMETHOD(UINT32, c_wchar_p, UINT32, c_void_p)),
-        ('GetFontWeight2',
+        ("GetFontWeight2",
          com.STDMETHOD(UINT32, POINTER(DWRITE_FONT_WEIGHT), POINTER(DWRITE_TEXT_RANGE))),
-        ('GetFontStyle2',
+        ("GetFontStyle2",
          com.STDMETHOD()),
-        ('GetFontStretch2',
+        ("GetFontStretch2",
          com.STDMETHOD()),
-        ('GetFontSize2',
+        ("GetFontSize2",
          com.STDMETHOD()),
-        ('GetUnderline',
+        ("GetUnderline",
          com.STDMETHOD()),
-        ('GetStrikethrough',
+        ("GetStrikethrough",
          com.STDMETHOD(UINT32, POINTER(BOOL), POINTER(DWRITE_TEXT_RANGE))),
-        ('GetDrawingEffect',
+        ("GetDrawingEffect",
          com.STDMETHOD()),
-        ('GetInlineObject',
+        ("GetInlineObject",
          com.STDMETHOD()),
-        ('GetTypography',  # Always returns NULL without SetTypography being called.
+        ("GetTypography",  # Always returns NULL without SetTypography being called.
          com.STDMETHOD(UINT32, POINTER(IDWriteTypography), POINTER(DWRITE_TEXT_RANGE))),
-        ('GetLocaleNameLength1',
+        ("GetLocaleNameLength1",
          com.STDMETHOD()),
-        ('GetLocaleName1',
+        ("GetLocaleName1",
          com.STDMETHOD()),
-        ('Draw',
+        ("Draw",
          com.STDMETHOD()),
-        ('GetLineMetrics',
+        ("GetLineMetrics",
          com.STDMETHOD()),
-        ('GetMetrics',
+        ("GetMetrics",
          com.STDMETHOD(POINTER(DWRITE_TEXT_METRICS))),
-        ('GetOverhangMetrics',
+        ("GetOverhangMetrics",
          com.STDMETHOD(POINTER(DWRITE_OVERHANG_METRICS))),
-        ('GetClusterMetrics',
+        ("GetClusterMetrics",
          com.STDMETHOD(POINTER(DWRITE_CLUSTER_METRICS), UINT32, POINTER(UINT32))),
-        ('DetermineMinWidth',
+        ("DetermineMinWidth",
          com.STDMETHOD(POINTER(FLOAT))),
-        ('HitTestPoint',
+        ("HitTestPoint",
          com.STDMETHOD()),
-        ('HitTestTextPosition',
+        ("HitTestTextPosition",
          com.STDMETHOD()),
-        ('HitTestTextRange',
+        ("HitTestTextRange",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteTextLayout1(IDWriteTextLayout, IDWriteTextFormat, com.pIUnknown):
     _methods_ = [
-        ('SetPairKerning',
+        ("SetPairKerning",
          com.STDMETHOD()),
-        ('GetPairKerning',
+        ("GetPairKerning",
          com.STDMETHOD()),
-        ('SetCharacterSpacing',
+        ("SetCharacterSpacing",
          com.STDMETHOD()),
-        ('GetCharacterSpacing',
+        ("GetCharacterSpacing",
          com.STDMETHOD(UINT32, POINTER(FLOAT), POINTER(FLOAT), POINTER(FLOAT), POINTER(DWRITE_TEXT_RANGE))),
     ]
 
 
 class IDWriteFontFileEnumerator(com.IUnknown):
     _methods_ = [
-        ('MoveNext',
+        ("MoveNext",
          com.STDMETHOD(POINTER(BOOL))),
-        ('GetCurrentFontFile',
+        ("GetCurrentFontFile",
          com.STDMETHOD(c_void_p)),
     ]
 
 
 class IDWriteFontCollectionLoader(com.IUnknown):
     _methods_ = [
-        ('CreateEnumeratorFromKey',
+        ("CreateEnumeratorFromKey",
          com.STDMETHOD(c_void_p, c_void_p, UINT32, POINTER(POINTER(IDWriteFontFileEnumerator)))),
     ]
 
@@ -969,18 +1012,19 @@ class IDWriteFontCollectionLoader(com.IUnknown):
 class MyFontFileStream(com.COMObject):
     _interfaces_ = [IDWriteFontFileStream]
 
-    def __init__(self, data):
+    def __init__(self, data: bytes) -> None:
         super().__init__()
         self._data = data
         self._size = len(data)
         self._ptrs = []
 
-    def ReadFileFragment(self, fragmentStart, fileOffset, fragmentSize, fragmentContext):
+    def ReadFileFragment(self, fragmentStart: POINTER(c_void_p), fileOffset: UINT64, fragmentSize: UINT64,
+                         fragmentContext: POINTER(c_void_p)) -> int:
         if fileOffset + fragmentSize > self._size:
             return 0x80004005  # E_FAIL
 
         fragment = self._data[fileOffset:]
-        buffer = (ctypes.c_ubyte * len(fragment)).from_buffer(bytearray(fragment))
+        buffer = (c_ubyte * len(fragment)).from_buffer(bytearray(fragment))
         ptr = cast(buffer, c_void_p)
 
         self._ptrs.append(ptr)
@@ -988,40 +1032,41 @@ class MyFontFileStream(com.COMObject):
         fragmentContext[0] = None
         return 0
 
-    def ReleaseFileFragment(self, fragmentContext):
+    def ReleaseFileFragment(self, fragmentContext: c_void_p) -> int:
         return 0
 
-    def GetFileSize(self, fileSize):
+    def GetFileSize(self, fileSize: POINTER(UINT64)) -> int:
         fileSize[0] = self._size
         return 0
 
-    def GetLastWriteTime(self, lastWriteTime):
+    def GetLastWriteTime(self, lastWriteTime: POINTER(UINT64)) -> int:
         return 0x80004001  # E_NOTIMPL
 
 
 class LegacyFontFileLoader(com.COMObject):
     _interfaces_ = [IDWriteFontFileLoader_LI]
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._streams = {}
 
-    def CreateStreamFromKey(self, fontfileReferenceKey, fontFileReferenceKeySize, fontFileStream):
+    def CreateStreamFromKey(self, fontfileReferenceKey: c_void_p, fontFileReferenceKeySize: UINT32,
+                            fontFileStream: POINTER(IDWriteFontFileStream)) -> int:
         convert_index = cast(fontfileReferenceKey, POINTER(c_uint32))
 
-        self._ptr = ctypes.cast(self._streams[convert_index.contents.value].as_interface(IDWriteFontFileStream),
-                                POINTER(IDWriteFontFileStream))
+        self._ptr = cast(self._streams[convert_index.contents.value].as_interface(IDWriteFontFileStream),
+                         POINTER(IDWriteFontFileStream))
         fontFileStream[0] = self._ptr
         return 0
 
-    def SetCurrentFont(self, index, data):
+    def SetCurrentFont(self, index: int, data: bytes) -> int:
         self._streams[index] = MyFontFileStream(data)
 
 
 class MyEnumerator(com.COMObject):
     _interfaces_ = [IDWriteFontFileEnumerator]
 
-    def __init__(self, factory, loader):
+    def __init__(self, factory: c_void_p, loader: LegacyFontFileLoader) -> None:
         super().__init__()
         self.factory = cast(factory, IDWriteFactory)
         self.key = "pyglet_dwrite"
@@ -1038,10 +1083,10 @@ class MyEnumerator(com.COMObject):
 
         self._file_loader = loader
 
-    def AddFontData(self, fonts):
+    def AddFontData(self, fonts: list[str]) -> None:
         self._font_data = fonts
 
-    def MoveNext(self, hasCurrentFile):
+    def MoveNext(self, hasCurrentFile: BOOL) -> None:
 
         self.current_index += 1
         if self.current_index != len(self._font_data):
@@ -1051,7 +1096,7 @@ class MyEnumerator(com.COMObject):
 
             key = self.current_index
 
-            if not self.current_index in self._keys:
+            if self.current_index not in self._keys:
                 buffer = pointer(c_uint32(key))
 
                 ptr = cast(buffer, c_void_p)
@@ -1069,9 +1114,7 @@ class MyEnumerator(com.COMObject):
         else:
             hasCurrentFile[0] = 0
 
-        pass
-
-    def GetCurrentFontFile(self, fontFile):
+    def GetCurrentFontFile(self, fontFile: IDWriteFontFile) -> int:
         fontFile = cast(fontFile, POINTER(IDWriteFontFile))
         fontFile[0] = self._font_files[self.current_index]
         return 0
@@ -1080,16 +1123,17 @@ class MyEnumerator(com.COMObject):
 class LegacyCollectionLoader(com.COMObject):
     _interfaces_ = [IDWriteFontCollectionLoader]
 
-    def __init__(self, factory, loader):
+    def __init__(self, factory: c_void_p, loader: LegacyFontFileLoader) -> None:
         super().__init__()
         self._enumerator = MyEnumerator(factory, loader)
 
-    def AddFontData(self, fonts):
+    def AddFontData(self, fonts) -> None:
         self._enumerator.AddFontData(fonts)
 
-    def CreateEnumeratorFromKey(self, factory, key, key_size, enumerator):
-        self._ptr = ctypes.cast(self._enumerator.as_interface(IDWriteFontFileEnumerator),
-                                POINTER(IDWriteFontFileEnumerator))
+    def CreateEnumeratorFromKey(self, factory: IDWriteFactory, key: c_void_p, key_size: UINT32,
+                                enumerator: MyEnumerator) -> int:
+        self._ptr = cast(self._enumerator.as_interface(IDWriteFontFileEnumerator),
+                         POINTER(IDWriteFontFileEnumerator))
 
         enumerator[0] = self._ptr
         return 0
@@ -1100,63 +1144,63 @@ IID_IDWriteFactory = com.GUID(0xb859ee5a, 0xd838, 0x4b5b, 0xa2, 0xe8, 0x1a, 0xdc
 
 class IDWriteRenderingParams(com.pIUnknown):
     _methods_ = [
-        ('GetGamma',
+        ("GetGamma",
          com.METHOD(FLOAT)),
-        ('GetEnhancedContrast',
+        ("GetEnhancedContrast",
          com.METHOD(FLOAT)),
-        ('GetClearTypeLevel',
+        ("GetClearTypeLevel",
          com.METHOD(FLOAT)),
-        ('GetPixelGeometry',
+        ("GetPixelGeometry",
          com.METHOD(UINT)),
-        ('GetRenderingMode',
+        ("GetRenderingMode",
          com.METHOD(UINT)),
     ]
 
 
 class IDWriteFactory(com.pIUnknown):
     _methods_ = [
-        ('GetSystemFontCollection',
+        ("GetSystemFontCollection",
          com.STDMETHOD(POINTER(IDWriteFontCollection), BOOL)),
-        ('CreateCustomFontCollection',
+        ("CreateCustomFontCollection",
          com.STDMETHOD(POINTER(IDWriteFontCollectionLoader), c_void_p, UINT32, POINTER(IDWriteFontCollection))),
-        ('RegisterFontCollectionLoader',
+        ("RegisterFontCollectionLoader",
          com.STDMETHOD(POINTER(IDWriteFontCollectionLoader))),
-        ('UnregisterFontCollectionLoader',
+        ("UnregisterFontCollectionLoader",
          com.STDMETHOD(POINTER(IDWriteFontCollectionLoader))),
-        ('CreateFontFileReference',
+        ("CreateFontFileReference",
          com.STDMETHOD(c_wchar_p, c_void_p, POINTER(IDWriteFontFile))),
-        ('CreateCustomFontFileReference',
+        ("CreateCustomFontFileReference",
          com.STDMETHOD(c_void_p, UINT32, POINTER(IDWriteFontFileLoader_LI), POINTER(IDWriteFontFile))),
-        ('CreateFontFace',
+        ("CreateFontFace",
          com.STDMETHOD()),
-        ('CreateRenderingParams',
+        ("CreateRenderingParams",
          com.STDMETHOD(POINTER(IDWriteRenderingParams))),
-        ('CreateMonitorRenderingParams',
+        ("CreateMonitorRenderingParams",
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams',
+        ("CreateCustomRenderingParams",
          com.STDMETHOD(FLOAT, FLOAT, FLOAT, UINT, UINT, POINTER(IDWriteRenderingParams))),
-        ('RegisterFontFileLoader',
+        ("RegisterFontFileLoader",
          com.STDMETHOD(c_void_p)),  # Ambigious as newer is a pIUnknown and legacy is IUnknown.
-        ('UnregisterFontFileLoader',
+        ("UnregisterFontFileLoader",
          com.STDMETHOD(POINTER(IDWriteFontFileLoader_LI))),
-        ('CreateTextFormat',
+        ("CreateTextFormat",
          com.STDMETHOD(c_wchar_p, IDWriteFontCollection, DWRITE_FONT_WEIGHT, DWRITE_FONT_STYLE, DWRITE_FONT_STRETCH,
                        FLOAT, c_wchar_p, POINTER(IDWriteTextFormat))),
-        ('CreateTypography',
+        ("CreateTypography",
          com.STDMETHOD(POINTER(IDWriteTypography))),
-        ('GetGdiInterop',
+        ("GetGdiInterop",
          com.STDMETHOD(POINTER(IDWriteGdiInterop))),
-        ('CreateTextLayout',
+        ("CreateTextLayout",
          com.STDMETHOD(c_wchar_p, UINT32, IDWriteTextFormat, FLOAT, FLOAT, POINTER(IDWriteTextLayout))),
-        ('CreateGdiCompatibleTextLayout',
+        ("CreateGdiCompatibleTextLayout",
          com.STDMETHOD()),
-        ('CreateEllipsisTrimmingSign',
+        ("CreateEllipsisTrimmingSign",
          com.STDMETHOD()),
-        ('CreateTextAnalyzer',
+        ("CreateTextAnalyzer",
          com.STDMETHOD(POINTER(IDWriteTextAnalyzer))),
-        ('CreateNumberSubstitution',
+        ("CreateNumberSubstitution",
          com.STDMETHOD()),
-        ('CreateGlyphRunAnalysis',
+        ("CreateGlyphRunAnalysis",
          com.STDMETHOD()),
     ]
 
@@ -1166,16 +1210,16 @@ IID_IDWriteFactory1 = com.GUID(0x30572f99, 0xdac6, 0x41db, 0xa1, 0x6e, 0x04, 0x8
 
 class IDWriteFactory1(IDWriteFactory, com.pIUnknown):
     _methods_ = [
-        ('GetEudcFontCollection',
+        ("GetEudcFontCollection",
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams1',
+        ("CreateCustomRenderingParams1",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFontFallback(com.pIUnknown):
     _methods_ = [
-        ('MapCharacters',
+        ("MapCharacters",
          com.STDMETHOD(POINTER(IDWriteTextAnalysisSource), UINT32, UINT32, IDWriteFontCollection, c_wchar_p,
                        DWRITE_FONT_WEIGHT, DWRITE_FONT_STYLE, DWRITE_FONT_STRETCH, POINTER(UINT32),
                        POINTER(IDWriteFont),
@@ -1185,25 +1229,25 @@ class IDWriteFontFallback(com.pIUnknown):
 
 class IDWriteColorGlyphRunEnumerator(com.pIUnknown):
     _methods_ = [
-        ('MoveNext',
+        ("MoveNext",
          com.STDMETHOD()),
-        ('GetCurrentRun',
+        ("GetCurrentRun",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFactory2(IDWriteFactory1, IDWriteFactory, com.pIUnknown):
     _methods_ = [
-        ('GetSystemFontFallback',
+        ("GetSystemFontFallback",
          com.STDMETHOD(POINTER(IDWriteFontFallback))),
-        ('CreateFontFallbackBuilder',
+        ("CreateFontFallbackBuilder",
          com.STDMETHOD()),
-        ('TranslateColorGlyphRun',
+        ("TranslateColorGlyphRun",
          com.STDMETHOD(FLOAT, FLOAT, POINTER(DWRITE_GLYPH_RUN), c_void_p, DWRITE_MEASURING_MODE, c_void_p, UINT32,
                        POINTER(IDWriteColorGlyphRunEnumerator))),
-        ('CreateCustomRenderingParams2',
+        ("CreateCustomRenderingParams2",
          com.STDMETHOD()),
-        ('CreateGlyphRunAnalysis',
+        ("CreateGlyphRunAnalysis",
          com.STDMETHOD()),
     ]
 
@@ -1213,64 +1257,64 @@ IID_IDWriteFactory2 = com.GUID(0x0439fc60, 0xca44, 0x4994, 0x8d, 0xee, 0x3a, 0x9
 
 class IDWriteFontSet(com.pIUnknown):
     _methods_ = [
-        ('GetFontCount',
+        ("GetFontCount",
          com.STDMETHOD()),
-        ('GetFontFaceReference',
+        ("GetFontFaceReference",
          com.STDMETHOD()),
-        ('FindFontFaceReference',
+        ("FindFontFaceReference",
          com.STDMETHOD()),
-        ('FindFontFace',
+        ("FindFontFace",
          com.STDMETHOD()),
-        ('GetPropertyValues',
+        ("GetPropertyValues",
          com.STDMETHOD()),
-        ('GetPropertyOccurrenceCount',
+        ("GetPropertyOccurrenceCount",
          com.STDMETHOD()),
-        ('GetMatchingFonts',
+        ("GetMatchingFonts",
          com.STDMETHOD()),
-        ('GetMatchingFonts',
+        ("GetMatchingFonts",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteFontSetBuilder(com.pIUnknown):
     _methods_ = [
-        ('AddFontFaceReference',
+        ("AddFontFaceReference",
          com.STDMETHOD()),
-        ('AddFontFaceReference',
+        ("AddFontFaceReference",
          com.STDMETHOD()),
-        ('AddFontSet',
+        ("AddFontSet",
          com.STDMETHOD()),
-        ('CreateFontSet',
+        ("CreateFontSet",
          com.STDMETHOD(POINTER(IDWriteFontSet))),
     ]
 
 
 class IDWriteFontSetBuilder1(IDWriteFontSetBuilder, com.pIUnknown):
     _methods_ = [
-        ('AddFontFile',
+        ("AddFontFile",
          com.STDMETHOD(IDWriteFontFile)),
     ]
 
 
 class IDWriteFactory3(IDWriteFactory2, com.pIUnknown):
     _methods_ = [
-        ('CreateGlyphRunAnalysis',
+        ("CreateGlyphRunAnalysis",
          com.STDMETHOD()),
-        ('CreateCustomRenderingParams3',
+        ("CreateCustomRenderingParams3",
          com.STDMETHOD()),
-        ('CreateFontFaceReference',
+        ("CreateFontFaceReference",
          com.STDMETHOD()),
-        ('CreateFontFaceReference',
+        ("CreateFontFaceReference",
          com.STDMETHOD()),
-        ('GetSystemFontSet',
+        ("GetSystemFontSet",
          com.STDMETHOD()),
-        ('CreateFontSetBuilder',
+        ("CreateFontSetBuilder",
          com.STDMETHOD(POINTER(IDWriteFontSetBuilder))),
-        ('CreateFontCollectionFromFontSet',
+        ("CreateFontCollectionFromFontSet",
          com.STDMETHOD(IDWriteFontSet, POINTER(IDWriteFontCollection1))),
-        ('GetSystemFontCollection3',
+        ("GetSystemFontCollection3",
          com.STDMETHOD()),
-        ('GetFontDownloadQueue',
+        ("GetFontDownloadQueue",
          com.STDMETHOD()),
         # ('GetSystemFontSet',
         # com.STDMETHOD()),
@@ -1279,29 +1323,30 @@ class IDWriteFactory3(IDWriteFactory2, com.pIUnknown):
 
 class IDWriteColorGlyphRunEnumerator1(IDWriteColorGlyphRunEnumerator, com.pIUnknown):
     _methods_ = [
-        ('GetCurrentRun1',
+        ("GetCurrentRun1",
          com.STDMETHOD()),
     ]
 
+
 class IDWriteFactory4(IDWriteFactory3, com.pIUnknown):
     _methods_ = [
-        ('TranslateColorGlyphRun4',  # Renamed to prevent clash from previous factories.
+        ("TranslateColorGlyphRun4",  # Renamed to prevent clash from previous factories.
          com.STDMETHOD(D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), c_void_p, DWRITE_GLYPH_IMAGE_FORMATS,
                        DWRITE_MEASURING_MODE, c_void_p, UINT32, POINTER(IDWriteColorGlyphRunEnumerator1))),
-        ('ComputeGlyphOrigins_',
+        ("ComputeGlyphOrigins_",
          com.STDMETHOD()),
-        ('ComputeGlyphOrigins',
+        ("ComputeGlyphOrigins",
          com.STDMETHOD()),
     ]
 
 
 class IDWriteInMemoryFontFileLoader(com.pIUnknown):
     _methods_ = [
-        ('CreateStreamFromKey',
+        ("CreateStreamFromKey",
          com.STDMETHOD()),
-        ('CreateInMemoryFontFileReference',
+        ("CreateInMemoryFontFileReference",
          com.STDMETHOD(IDWriteFactory, c_void_p, UINT, c_void_p, POINTER(IDWriteFontFile))),
-        ('GetFileCount',
+        ("GetFileCount",
          com.STDMETHOD()),
     ]
 
@@ -1312,14 +1357,14 @@ IID_IDWriteFactory5 = com.GUID(0x958DB99A, 0xBE2A, 0x4F09, 0xAF, 0x7D, 0x65, 0x1
 class IDWriteFactory5(IDWriteFactory4, IDWriteFactory3, IDWriteFactory2, IDWriteFactory1, IDWriteFactory,
                       com.pIUnknown):
     _methods_ = [
-        ('CreateFontSetBuilder1',
+        ("CreateFontSetBuilder1",
          com.STDMETHOD(POINTER(IDWriteFontSetBuilder1))),
-        ('CreateInMemoryFontFileLoader',
+        ("CreateInMemoryFontFileLoader",
          com.STDMETHOD(POINTER(IDWriteInMemoryFontFileLoader))),
-        ('CreateHttpFontFileLoader',
+        ("CreateHttpFontFileLoader",
          com.STDMETHOD()),
-        ('AnalyzeContainerType',
-         com.STDMETHOD())
+        ("AnalyzeContainerType",
+         com.STDMETHOD()),
     ]
 
 
@@ -1330,29 +1375,29 @@ DWriteCreateFactory.argtypes = [DWRITE_FACTORY_TYPE, com.REFIID, POINTER(com.pIU
 
 class ID2D1Resource(com.pIUnknown):
     _methods_ = [
-        ('GetFactory',
+        ("GetFactory",
          com.STDMETHOD()),
     ]
 
 
 class ID2D1Brush(ID2D1Resource, com.pIUnknown):
     _methods_ = [
-        ('SetOpacity',
+        ("SetOpacity",
          com.STDMETHOD()),
-        ('SetTransform',
+        ("SetTransform",
          com.STDMETHOD()),
-        ('GetOpacity',
+        ("GetOpacity",
          com.STDMETHOD()),
-        ('GetTransform',
+        ("GetTransform",
          com.STDMETHOD()),
     ]
 
 
 class ID2D1SolidColorBrush(ID2D1Brush, ID2D1Resource, com.pIUnknown):
     _methods_ = [
-        ('SetColor',
+        ("SetColor",
          com.STDMETHOD()),
-        ('GetColor',
+        ("GetColor",
          com.STDMETHOD()),
     ]
 
@@ -1396,19 +1441,19 @@ D2D1_DRAW_TEXT_OPTIONS_FORCE_DWORD = 0xffffffff
 
 class D2D1_PIXEL_FORMAT(Structure):
     _fields_ = (
-        ('format', DXGI_FORMAT),
-        ('alphaMode', D2D1_ALPHA_MODE),
+        ("format", DXGI_FORMAT),
+        ("alphaMode", D2D1_ALPHA_MODE),
     )
 
 
 class D2D1_RENDER_TARGET_PROPERTIES(Structure):
     _fields_ = (
-        ('type', D2D1_RENDER_TARGET_TYPE),
-        ('pixelFormat', D2D1_PIXEL_FORMAT),
-        ('dpiX', FLOAT),
-        ('dpiY', FLOAT),
-        ('usage', D2D1_RENDER_TARGET_USAGE),
-        ('minLevel', D2D1_FEATURE_LEVEL),
+        ("type", D2D1_RENDER_TARGET_TYPE),
+        ("pixelFormat", D2D1_PIXEL_FORMAT),
+        ("dpiX", FLOAT),
+        ("dpiY", FLOAT),
+        ("usage", D2D1_RENDER_TARGET_USAGE),
+        ("minLevel", D2D1_FEATURE_LEVEL),
     )
 
 
@@ -1429,112 +1474,112 @@ default_target_properties.minLevel = D2D1_FEATURE_LEVEL_DEFAULT
 
 class ID2D1RenderTarget(ID2D1Resource, com.pIUnknown):
     _methods_ = [
-        ('CreateBitmap',
+        ("CreateBitmap",
          com.STDMETHOD()),
-        ('CreateBitmapFromWicBitmap',
+        ("CreateBitmapFromWicBitmap",
          com.STDMETHOD()),
-        ('CreateSharedBitmap',
+        ("CreateSharedBitmap",
          com.STDMETHOD()),
-        ('CreateBitmapBrush',
+        ("CreateBitmapBrush",
          com.STDMETHOD()),
-        ('CreateSolidColorBrush',
+        ("CreateSolidColorBrush",
          com.STDMETHOD(POINTER(D2D1_COLOR_F), c_void_p, POINTER(ID2D1SolidColorBrush))),
-        ('CreateGradientStopCollection',
+        ("CreateGradientStopCollection",
          com.STDMETHOD()),
-        ('CreateLinearGradientBrush',
+        ("CreateLinearGradientBrush",
          com.STDMETHOD()),
-        ('CreateRadialGradientBrush',
+        ("CreateRadialGradientBrush",
          com.STDMETHOD()),
-        ('CreateCompatibleRenderTarget',
+        ("CreateCompatibleRenderTarget",
          com.STDMETHOD()),
-        ('CreateLayer',
+        ("CreateLayer",
          com.STDMETHOD()),
-        ('CreateMesh',
+        ("CreateMesh",
          com.STDMETHOD()),
-        ('DrawLine',
+        ("DrawLine",
          com.STDMETHOD()),
-        ('DrawRectangle',
+        ("DrawRectangle",
          com.STDMETHOD()),
-        ('FillRectangle',
+        ("FillRectangle",
          com.STDMETHOD()),
-        ('DrawRoundedRectangle',
+        ("DrawRoundedRectangle",
          com.STDMETHOD()),
-        ('FillRoundedRectangle',
+        ("FillRoundedRectangle",
          com.STDMETHOD()),
-        ('DrawEllipse',
+        ("DrawEllipse",
          com.STDMETHOD()),
-        ('FillEllipse',
+        ("FillEllipse",
          com.STDMETHOD()),
-        ('DrawGeometry',
+        ("DrawGeometry",
          com.STDMETHOD()),
-        ('FillGeometry',
+        ("FillGeometry",
          com.STDMETHOD()),
-        ('FillMesh',
+        ("FillMesh",
          com.STDMETHOD()),
-        ('FillOpacityMask',
+        ("FillOpacityMask",
          com.STDMETHOD()),
-        ('DrawBitmap',
+        ("DrawBitmap",
          com.STDMETHOD()),
-        ('DrawText',
+        ("DrawText",
          com.STDMETHOD(c_wchar_p, UINT, IDWriteTextFormat, POINTER(D2D1_RECT_F), ID2D1Brush, D2D1_DRAW_TEXT_OPTIONS,
                        DWRITE_MEASURING_MODE)),
-        ('DrawTextLayout',
+        ("DrawTextLayout",
          com.METHOD(c_void, D2D_POINT_2F, IDWriteTextLayout, ID2D1Brush, UINT32)),
-        ('DrawGlyphRun',
+        ("DrawGlyphRun",
          com.METHOD(c_void, D2D_POINT_2F, POINTER(DWRITE_GLYPH_RUN), ID2D1Brush, UINT32)),
-        ('SetTransform',
+        ("SetTransform",
          com.METHOD(c_void)),
-        ('GetTransform',
+        ("GetTransform",
          com.STDMETHOD()),
-        ('SetAntialiasMode',
+        ("SetAntialiasMode",
          com.METHOD(c_void, D2D1_TEXT_ANTIALIAS_MODE)),
-        ('GetAntialiasMode',
+        ("GetAntialiasMode",
          com.STDMETHOD()),
-        ('SetTextAntialiasMode',
+        ("SetTextAntialiasMode",
          com.METHOD(c_void, D2D1_TEXT_ANTIALIAS_MODE)),
-        ('GetTextAntialiasMode',
+        ("GetTextAntialiasMode",
          com.STDMETHOD()),
-        ('SetTextRenderingParams',
+        ("SetTextRenderingParams",
          com.STDMETHOD(IDWriteRenderingParams)),
-        ('GetTextRenderingParams',
+        ("GetTextRenderingParams",
          com.STDMETHOD()),
-        ('SetTags',
+        ("SetTags",
          com.STDMETHOD()),
-        ('GetTags',
+        ("GetTags",
          com.STDMETHOD()),
-        ('PushLayer',
+        ("PushLayer",
          com.STDMETHOD()),
-        ('PopLayer',
+        ("PopLayer",
          com.STDMETHOD()),
-        ('Flush',
+        ("Flush",
          com.STDMETHOD(c_void_p, c_void_p)),
-        ('SaveDrawingState',
+        ("SaveDrawingState",
          com.STDMETHOD()),
-        ('RestoreDrawingState',
+        ("RestoreDrawingState",
          com.STDMETHOD()),
-        ('PushAxisAlignedClip',
+        ("PushAxisAlignedClip",
          com.STDMETHOD()),
-        ('PopAxisAlignedClip',
+        ("PopAxisAlignedClip",
          com.STDMETHOD()),
-        ('Clear',
+        ("Clear",
          com.METHOD(c_void, POINTER(D2D1_COLOR_F))),
-        ('BeginDraw',
+        ("BeginDraw",
          com.METHOD(c_void)),
-        ('EndDraw',
+        ("EndDraw",
          com.STDMETHOD(c_void_p, c_void_p)),
-        ('GetPixelFormat',
+        ("GetPixelFormat",
          com.STDMETHOD()),
-        ('SetDpi',
+        ("SetDpi",
          com.STDMETHOD()),
-        ('GetDpi',
+        ("GetDpi",
          com.STDMETHOD()),
-        ('GetSize',
+        ("GetSize",
          com.STDMETHOD()),
-        ('GetPixelSize',
+        ("GetPixelSize",
          com.STDMETHOD()),
-        ('GetMaximumBitmapSize',
+        ("GetMaximumBitmapSize",
          com.STDMETHOD()),
-        ('IsSupported',
+        ("IsSupported",
          com.STDMETHOD()),
     ]
 
@@ -1544,38 +1589,38 @@ IID_ID2D1Factory = com.GUID(0x06152247, 0x6f50, 0x465a, 0x92, 0x45, 0x11, 0x8b, 
 
 class ID2D1Factory(com.pIUnknown):
     _methods_ = [
-        ('ReloadSystemMetrics',
+        ("ReloadSystemMetrics",
          com.STDMETHOD()),
-        ('GetDesktopDpi',
+        ("GetDesktopDpi",
          com.STDMETHOD()),
-        ('CreateRectangleGeometry',
+        ("CreateRectangleGeometry",
          com.STDMETHOD()),
-        ('CreateRoundedRectangleGeometry',
+        ("CreateRoundedRectangleGeometry",
          com.STDMETHOD()),
-        ('CreateEllipseGeometry',
+        ("CreateEllipseGeometry",
          com.STDMETHOD()),
-        ('CreateGeometryGroup',
+        ("CreateGeometryGroup",
          com.STDMETHOD()),
-        ('CreateTransformedGeometry',
+        ("CreateTransformedGeometry",
          com.STDMETHOD()),
-        ('CreatePathGeometry',
+        ("CreatePathGeometry",
          com.STDMETHOD()),
-        ('CreateStrokeStyle',
+        ("CreateStrokeStyle",
          com.STDMETHOD()),
-        ('CreateDrawingStateBlock',
+        ("CreateDrawingStateBlock",
          com.STDMETHOD()),
-        ('CreateWicBitmapRenderTarget',
+        ("CreateWicBitmapRenderTarget",
          com.STDMETHOD(IWICBitmap, POINTER(D2D1_RENDER_TARGET_PROPERTIES), POINTER(ID2D1RenderTarget))),
-        ('CreateHwndRenderTarget',
+        ("CreateHwndRenderTarget",
          com.STDMETHOD()),
-        ('CreateDxgiSurfaceRenderTarget',
+        ("CreateDxgiSurfaceRenderTarget",
          com.STDMETHOD()),
-        ('CreateDCRenderTarget',
+        ("CreateDCRenderTarget",
          com.STDMETHOD()),
     ]
 
 
-d2d_lib = ctypes.windll.d2d1
+d2d_lib = windll.d2d1
 
 D2D1_FACTORY_TYPE = UINT
 D2D1_FACTORY_TYPE_SINGLE_THREADED = 0
@@ -1603,16 +1648,17 @@ def get_system_locale() -> str:
 
 
 class DirectWriteGlyphRenderer(base.GlyphRenderer):
+    font: Win32DirectWriteFont
     antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
     draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT if WINDOWS_8_1_OR_GREATER else D2D1_DRAW_TEXT_OPTIONS_NONE
     measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 
-    def __init__(self, font):
+    def __init__(self, font: Win32DirectWriteFont) -> None:
         self._render_target = None
         self._bitmap = None
         self._brush = None
         self._bitmap_dimensions = (0, 0)
-        super(DirectWriteGlyphRenderer, self).__init__(font)
+        super().__init__(font)
         self.font = font
 
         self._analyzer = IDWriteTextAnalyzer()
@@ -1620,9 +1666,13 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         self._text_analysis = TextAnalysis()
 
-    def render_to_image(self, text, width, height):
+    def render(self, text: str) -> Glyph:
+        pass
+
+    def render_to_image(self, text: str, width: int, height: int) -> ImageData:
         """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
-        This may allows more accurate fonts (bidi, rtl, etc) in very special circumstances."""
+        This may allows more accurate fonts (bidi, rtl, etc) in very special circumstances.
+        """
         text_buffer = create_unicode_buffer(text)
 
         text_layout = IDWriteTextLayout()
@@ -1632,7 +1682,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             self.font._text_format,
             width,  # Doesn't affect bitmap size.
             height,
-            byref(text_layout)
+            byref(text_layout),
         )
 
         layout_metrics = DWRITE_TEXT_METRICS()
@@ -1646,7 +1696,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             height,
             GUID_WICPixelFormat32bppPBGRA,
             WICBitmapCacheOnDemand,
-            byref(bitmap)
+            byref(bitmap),
         )
 
         rt = ID2D1RenderTarget()
@@ -1673,13 +1723,12 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         rt.Release()
 
-        image_data = wic_decoder.get_image(bitmap)
+        return wic_decoder.get_image(bitmap)
 
-        return image_data
-
-    def get_string_info(self, text, font_face):
+    def get_string_info(self, text: str, font_face: IDWriteFontFace) -> tuple[
+        c_wchar, int, Array[UINT16], Array[FLOAT], Array[DWRITE_GLYPH_OFFSET], Array[UINT16]]:
         """Converts a string of text into a list of indices and advances used for shaping."""
-        text_length = len(text.encode('utf-16-le')) // 2
+        text_length = len(text.encode("utf-16-le")) // 2
 
         # Unicode buffer splits each two byte chars into separate indices.
         text_buffer = create_unicode_buffer(text, text_length)
@@ -1715,7 +1764,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             text_props,  # text props
             indices,  # glyph indices
             glyph_props,  # glyph pops
-            byref(actual_count)  # glyph count
+            byref(actual_count),  # glyph count
         )
 
         advances = (FLOAT * length)()
@@ -1737,14 +1786,15 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             None,
             0,
             advances,
-            offsets
+            offsets,
         )
 
         return text_buffer, actual_count.value, indices, advances, offsets, clusters
 
-    def get_glyph_metrics(self, font_face, indices, count):
+    def get_glyph_metrics(self, font_face: IDWriteFontFace, indices: Array[UINT16], count: int) -> list[
+        tuple[float, float, float, float, float]]:
         """Returns a list of tuples with the following metrics per indice:
-            (glyph width, glyph height, lsb, advanceWidth)
+        .       (glyph width, glyph height, lsb, advanceWidth)
         """
         glyph_metrics = (DWRITE_GLYPH_METRICS * count)()
         font_face.GetDesignGlyphMetrics(indices, count, glyph_metrics, False)
@@ -1769,7 +1819,9 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return metrics_out
 
-    def _get_single_glyph_run(self, font_face, size, indices, advances, offsets, sideways, bidi):
+    def _get_single_glyph_run(self, font_face: IDWriteFontFace, size: float, indices: Array[UINT16],
+                              advances: Array[FLOAT], offsets: Array[DWRITE_GLYPH_OFFSET], sideways: bool,
+                              bidi: int) -> DWRITE_GLYPH_RUN:
         run = DWRITE_GLYPH_RUN(
             font_face,
             size,
@@ -1778,11 +1830,11 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             advances,
             offsets,
             sideways,
-            bidi
+            bidi,
         )
         return run
 
-    def is_color_run(self, run):
+    def is_color_run(self, run: DWRITE_GLYPH_RUN) -> bool:
         """Will return True if the run contains a colored glyph."""
         try:
             if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
@@ -1795,7 +1847,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                     self.measuring_mode,
                     None,
                     0,
-                    byref(enumerator)
+                    byref(enumerator),
                 )
             elif WINDOWS_8_1_OR_GREATER:
                 enumerator = IDWriteColorGlyphRunEnumerator()
@@ -1806,7 +1858,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                     self.measuring_mode,
                     None,
                     0,
-                    byref(enumerator)
+                    byref(enumerator),
                 )
             else:
                 return False
@@ -1819,9 +1871,11 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return False
 
-    def render_single_glyph(self, font_face, indice, advance, offset, metrics):
+    def render_single_glyph(self, font_face: IDWriteFontFace, indice: int, advance: float, offset: DWRITE_GLYPH_OFFSET,
+                            metrics: tuple[float, float, float, float, float]):
         """Renders a single glyph using D2D DrawGlyphRun"""
-        glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics  # We use a shaped advance instead of the fonts.
+        glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics  # We use a shaped advance instead
+        # of the fonts.
 
         # Slicing an array turns it into a python object. Maybe a better way to keep it a ctypes value?
         new_indice = (UINT16 * 1)(indice)
@@ -1834,7 +1888,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             new_advance,  # advance,
             pointer(offset),  # offset,
             False,
-            0
+            0,
         )
 
         # If it's colored, return to render it using layout.
@@ -1889,10 +1943,12 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return glyph
 
-    def render_using_layout(self, text):
-        """This will render text given the built in DirectWrite layout. This process allows us to take
-        advantage of color glyphs and fallback handling that is built into DirectWrite.
-        This can also handle shaping and many other features if you want to render directly to a texture."""
+    def render_using_layout(self, text: str) -> Glyph | None:
+        """This will render text given the built in DirectWrite layout.
+
+        This process allows us to take advantage of color glyphs and fallback handling that is built into DirectWrite.
+        This can also handle shaping and many other features if you want to render directly to a texture.
+        """
         text_layout = self.font.create_text_layout(text)
 
         layout_metrics = DWRITE_TEXT_METRICS()
@@ -1926,9 +1982,11 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(-self.font.descent, 0, int(math.ceil(layout_metrics.width)))
         return glyph
 
-    def create_zero_glyph(self):
-        """Zero glyph is a 1x1 image that has a -1 advance. This is to fill in for ligature substitutions since
-        font system requires 1 glyph per character in a string."""
+    def create_zero_glyph(self) -> Glyph:
+        """Zero glyph is a 1x1 image that has a -1 advance.
+
+        This is to fill in for ligature substitutions since font system requires 1 glyph per character in a string.
+        """
         self._create_bitmap(1, 1)
         image = wic_decoder.get_image(self._bitmap)
 
@@ -1936,7 +1994,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(-self.font.descent, 0, -1)
         return glyph
 
-    def _create_bitmap(self, width, height):
+    def _create_bitmap(self, width: int, height: int) -> None:
         """Creates a bitmap using Direct2D and WIC."""
         # Create a new bitmap, try to re-use the bitmap as much as we can to minimize creations.
         if self._bitmap_dimensions[0] != width or self._bitmap_dimensions[1] != height:
@@ -1978,7 +2036,7 @@ class Win32DirectWriteFont(base.Font):
     _font_cache = []
     _font_loader_key = None
 
-    _default_name = 'Segoe UI'  # Default font for Win7/10.
+    _default_name = "Segoe UI"  # Default font for Win7/10.
 
     _glyph_renderer = None
     _empty_glyph = None
@@ -1987,11 +2045,12 @@ class Win32DirectWriteFont(base.Font):
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
 
-    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None, locale=None):
-        self._filename: Optional[str] = None
+    def __init__(self, name: str, size: float, bold: bool | str = False, italic: bool | str = False,
+                 stretch: bool | str = False, dpi: float | None = None, locale: str | None = None) -> None:
+        self._filename: str | None = None
         self._advance_cache = {}  # Stores glyph's by the indice and advance.
 
-        super(Win32DirectWriteFont, self).__init__()
+        super().__init__()
 
         if not name:
             name = self._default_name
@@ -2016,7 +2075,7 @@ class Win32DirectWriteFont(base.Font):
         self._real_size = (self.size * self.dpi) // 72
 
         if self.bold:
-            if type(self.bold) is str:
+            if isinstance(self.bold, str):
                 self._weight = name_to_weight[self.bold]
             else:
                 self._weight = DWRITE_FONT_WEIGHT_BOLD
@@ -2024,7 +2083,7 @@ class Win32DirectWriteFont(base.Font):
             self._weight = DWRITE_FONT_WEIGHT_NORMAL
 
         if self.italic:
-            if type(self.italic) is str:
+            if isinstance(self.italic, str):
                 self._style = name_to_style[self.italic]
             else:
                 self._style = DWRITE_FONT_STYLE_ITALIC
@@ -2032,7 +2091,7 @@ class Win32DirectWriteFont(base.Font):
             self._style = DWRITE_FONT_STYLE_NORMAL
 
         if self.stretch:
-            if type(self.stretch) is str:
+            if isinstance(self.stretch, str):
                 self._stretch = name_to_stretch[self.stretch]
             else:
                 self._stretch = DWRITE_FONT_STRETCH_EXPANDED
@@ -2057,7 +2116,7 @@ class Win32DirectWriteFont(base.Font):
                 self._weight,
                 self._stretch,
                 self._style,
-                byref(write_font)
+                byref(write_font),
             )
 
         # Create the text format this font will use permanently.
@@ -2071,7 +2130,7 @@ class Win32DirectWriteFont(base.Font):
             self._stretch,
             self._real_size,
             create_unicode_buffer(self.locale),
-            byref(self._text_format)
+            byref(self._text_format),
         )
 
         font_face = IDWriteFontFace()
@@ -2099,9 +2158,11 @@ class Win32DirectWriteFont(base.Font):
             assert _debug_print("Windows 8.1+ is required for font fallback. Colored glyphs cannot be omitted.")
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """Returns a filename associated with the font face.
-        Note: Capable of returning more than 1 file in the future, but will do just one for now."""
+
+        Note: Capable of returning more than 1 file in the future, but will do just one for now.
+        """
         if self._filename is not None:
             return self._filename
 
@@ -2146,40 +2207,34 @@ class Win32DirectWriteFont(base.Font):
         return self._filename
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def render_to_image(self, text, width=10000, height=80):
+    def render_to_image(self, text: str, width: int=10000, height: int=80) -> ImageData:
         """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
         This may allow more accurate fonts (bidi, rtl, etc) in very special circumstances at the cost of
         additional texture space.
-
-        :Parameters:
-            `text` : str
-                String of text to render.
-
-        :rtype: `ImageData`
-        :return: An image of the text.
         """
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
-    def copy_glyph(self, glyph, advance, offset):
+    def copy_glyph(self, glyph: base.Glyph, advance: int, offset: DWRITE_GLYPH_OFFSET) -> base.Glyph:
         """This takes the existing glyph texture and puts it into a new Glyph with a new advance.
-        Texture memory is shared between both glyphs."""
+        Texture memory is shared between both glyphs.
+        """
         new_glyph = base.Glyph(glyph.x, glyph.y, glyph.z, glyph.width, glyph.height, glyph.owner)
         new_glyph.set_bearings(
             glyph.baseline,
             glyph.lsb,
             advance,
             offset.advanceOffset,
-            offset.ascenderOffset
+            offset.ascenderOffset,
         )
         return new_glyph
 
-    def _render_layout_glyph(self, text_buffer, i, clusters, check_color=True):
+    def _render_layout_glyph(self, text_buffer: str, i: int, clusters: list[DWRITE_CLUSTER_METRICS], check_color: bool=True):
         # Some glyphs can be more than 1 char. We use the clusters to determine how many of an index exist.
         text_length = clusters.count(i)
 
@@ -2205,7 +2260,7 @@ class Win32DirectWriteFont(base.Font):
 
         return self.glyphs[actual_text]
 
-    def is_fallback_str_colored(self, font_face, text):
+    def is_fallback_str_colored(self, font_face: IDWriteFontFace, text: str) -> bool:
         indice = UINT16()
         code_points = (UINT32 * len(text))(*[ord(c) for c in text])
 
@@ -2222,12 +2277,12 @@ class Win32DirectWriteFont(base.Font):
             new_advance,  # advance,
             offset,  # offset,
             False,
-            False
+            False,
         )
 
         return self._glyph_renderer.is_color_run(run)
 
-    def _get_fallback_font_face(self, text_index, text_length):
+    def _get_fallback_font_face(self, text_index: int, text_length: int) -> IDWriteFontFace | None:
         if WINDOWS_8_1_OR_GREATER:
             out_length = UINT32()
             fb_font = IDWriteFont()
@@ -2244,7 +2299,7 @@ class Win32DirectWriteFont(base.Font):
                 self._stretch,
                 byref(out_length),
                 byref(fb_font),
-                byref(scale)
+                byref(scale),
             )
 
             if fb_font:
@@ -2255,18 +2310,19 @@ class Win32DirectWriteFont(base.Font):
 
         return None
 
-    def get_glyphs_no_shape(self, text):
+    def get_glyphs_no_shape(self, text: str) -> list[Glyph]:
         """This differs in that it does not attempt to shape the text at all. May be useful in cases where your font
         has no special shaping requirements, spacing is the same, or some other reason where faster performance is
-        wanted and you can get away with this."""
+        wanted and you can get away with this.
+        """
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
             self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
 
         glyphs = []
         for c in text:
-            if c == '\t':
-                c = ' '
+            if c == "\t":
+                c = " "
 
             if c not in self.glyphs:
                 self.glyphs[c] = self._glyph_renderer.render_using_layout(c)
@@ -2277,7 +2333,7 @@ class Win32DirectWriteFont(base.Font):
 
         return glyphs
 
-    def get_glyphs(self, text):
+    def get_glyphs(self, text: str) -> list[Glyph]:
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
             self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
@@ -2346,7 +2402,7 @@ class Win32DirectWriteFont(base.Font):
 
         return glyphs
 
-    def create_text_layout(self, text):
+    def create_text_layout(self, text: str) -> IDWriteTextLayout:
         text_buffer = create_unicode_buffer(text)
 
         text_layout = IDWriteTextLayout()
@@ -2355,17 +2411,17 @@ class Win32DirectWriteFont(base.Font):
                                                   self._text_format,
                                                   10000,  # Doesn't affect bitmap size.
                                                   80,
-                                                  byref(text_layout)
+                                                  byref(text_layout),
                                                   )
 
         return text_layout
 
     @classmethod
-    def _initialize_direct_write(cls):
-        """ All direct write fonts needs factory access as well as the loaders."""
+    def _initialize_direct_write(cls: type[Win32DirectWriteFont]) -> None:
+        """All direct write fonts needs factory access as well as the loaders."""
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
-             cls._write_factory = IDWriteFactory5()
-             guid = IID_IDWriteFactory5
+            cls._write_factory = IDWriteFactory5()
+            guid = IID_IDWriteFactory5
         elif WINDOWS_8_1_OR_GREATER:
             cls._write_factory = IDWriteFactory2()
             guid = IID_IDWriteFactory2
@@ -2376,7 +2432,7 @@ class Win32DirectWriteFont(base.Font):
         DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, guid, byref(cls._write_factory))
 
     @classmethod
-    def _initialize_custom_loaders(cls):
+    def _initialize_custom_loaders(cls: type[Win32DirectWriteFont]) -> None:
         """Initialize the loaders needed to load custom fonts."""
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             # Windows 10 finally has a built in loader that can take data and make a font out of it w/ COMs.
@@ -2400,7 +2456,7 @@ class Win32DirectWriteFont(base.Font):
             cls._font_loader_key = cast(create_unicode_buffer("legacy_font_loader"), c_void_p)
 
     @classmethod
-    def add_font_data(cls, data):
+    def add_font_data(cls: type[Win32DirectWriteFont], data: BinaryIO) -> None:
         if not cls._write_factory:
             cls._initialize_direct_write()
 
@@ -2458,9 +2514,10 @@ class Win32DirectWriteFont(base.Font):
                                                           byref(cls._custom_collection))
 
     @classmethod
-    def get_collection(cls, font_name) -> Tuple[Optional[int], Optional[IDWriteFontCollection1]]:
+    def get_collection(cls: type[Win32DirectWriteFont], font_name: str) -> tuple[int | None, IDWriteFontCollection1 | None]:
         """Returns which collection this font belongs to (system or custom collection), as well as its index in the
-        collection."""
+        collection.
+        """
         if not cls._write_factory:
             cls._initialize_direct_write()
 
@@ -2492,8 +2549,8 @@ class Win32DirectWriteFont(base.Font):
         return None, None
 
     @classmethod
-    def find_font_face(cls, font_name, bold, italic, stretch) -> Tuple[
-        Optional[IDWriteFont], Optional[IDWriteFontCollection]]:
+    def find_font_face(cls, font_name: str, bold: bool | str, italic: bool | str, stretch: bool | str) -> tuple[
+        IDWriteFont | None, IDWriteFontCollection | None]:
         """This will search font collections for legacy RBIZ names. However, matching to bold, italic, stretch is
         problematic in that there are many values. We parse the font name looking for matches to the name database,
         and attempt to pick the closest match.
@@ -2517,18 +2574,17 @@ class Win32DirectWriteFont(base.Font):
         return None, None
 
     @classmethod
-    def have_font(cls, name: str):
+    def have_font(cls: type[Win32DirectWriteFont], name: str) -> bool:
         if cls.get_collection(name)[0] is not None:
             return True
 
         return False
 
     @staticmethod
-    def parse_name(font_name: str, weight: int, style: int, stretch: int):
+    def parse_name(font_name: str, weight: int, style: int, stretch: int) -> tuple[int, int, int]:
         """Attempt at parsing any special names in a font for legacy checks. Takes the first found."""
-
         font_name = font_name.lower()
-        split_name = font_name.split(' ')
+        split_name = font_name.split(" ")
 
         found_weight = weight
         found_style = style
@@ -2554,8 +2610,7 @@ class Win32DirectWriteFont(base.Font):
         return found_weight, found_style, found_stretch
 
     @staticmethod
-    def find_legacy_font(collection: IDWriteFontCollection, font_name: str, bold, italic, stretch, full_debug=False) -> \
-            Optional[IDWriteFont]:
+    def find_legacy_font(collection: IDWriteFontCollection, font_name: str, bold: bool | str, italic: bool | str, stretch: bool | str, full_debug: bool=False) -> IDWriteFont | None:
         coll_count = collection.GetFontFamilyCount()
 
         assert _debug_print(f"directwrite: Found {coll_count} fonts in collection.")
@@ -2610,7 +2665,8 @@ class Win32DirectWriteFont(base.Font):
                     for compat_name in Win32DirectWriteFont.unpack_localized_string(compat_names, locale):
                         if compat_name == font_name:
                             assert _debug_print(
-                                f"Found legacy name '{font_name}' as '{family_name}' in font face '{j}' (collection id #{i}).")
+                                f"Found legacy name '{font_name}' as '{family_name}' in font face '{j}' (collection "
+                                f"id #{i}).")
 
                             match_found = True
                             matches.append((temp_ft.GetWeight(), temp_ft.GetStyle(), temp_ft.GetStretch(), temp_ft))
@@ -2636,11 +2692,12 @@ class Win32DirectWriteFont(base.Font):
         return None
 
     @staticmethod
-    def match_closest_font(font_list: List[Tuple[int, int, int, IDWriteFont]], bold: int, italic: int, stretch: int) -> \
-            Optional[IDWriteFont]:
-        """Match the closest font to the parameters specified. If a full match is not found, a secondary match will be
-        found based on similar features. This can probably be improved, but it is possible you could get a different
-        font style than expected."""
+    def match_closest_font(font_list: list[tuple[int, int, int, IDWriteFont]], bold: int, italic: int, stretch: int) -> IDWriteFont | None:
+        """Match the closest font to the parameters specified.
+
+        If a full match is not found, a secondary match will be found based on similar features. This can probably
+        be improved, but it is possible you could get a different font style than expected.
+        """
         closest = []
         for match in font_list:
             (f_weight, f_style, f_stretch, writefont) = match
@@ -2685,7 +2742,7 @@ class Win32DirectWriteFont(base.Font):
         return None
 
     @staticmethod
-    def unpack_localized_string(local_string: IDWriteLocalizedStrings, locale: str) -> List[str]:
+    def unpack_localized_string(local_string: IDWriteLocalizedStrings, locale: str) -> list[str]:
         """Takes IDWriteLocalizedStrings and unpacks the strings inside of it into a list."""
         str_array_len = local_string.GetCount()
 
@@ -2710,7 +2767,7 @@ class Win32DirectWriteFont(base.Font):
         return strings
 
     @staticmethod
-    def get_localized_index(strings: IDWriteLocalizedStrings, locale: str):
+    def get_localized_index(strings: IDWriteLocalizedStrings, locale: str) -> int:
         idx = UINT32()
         exists = BOOL()
 
@@ -2719,7 +2776,7 @@ class Win32DirectWriteFont(base.Font):
 
             if not exists.value:
                 # fallback to english.
-                strings.FindLocaleName('en-us', byref(idx), byref(exists))
+                strings.FindLocaleName("en-us", byref(idx), byref(exists))
 
                 if not exists:
                     return 0
