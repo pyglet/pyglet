@@ -1,17 +1,22 @@
-"""Display different types of interactive widgets.
-"""
+"""Display different types of interactive widgets."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pyglet
-
 from pyglet.event import EventDispatcher
 from pyglet.graphics import Group
 from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
+if TYPE_CHECKING:
+    from pyglet.graphics import Batch, Group
+    from pyglet.image import AbstractImage
+
 
 class WidgetBase(EventDispatcher):
-
-    def __init__(self, x, y, width, height):
+    def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self._x = x
         self._y = y
         self._width = width
@@ -26,7 +31,6 @@ class WidgetBase(EventDispatcher):
         Override this in subclasses to perform effects when a widget is
         enabled or disabled.
         """
-        pass
 
     @property
     def enabled(self) -> bool:
@@ -36,10 +40,9 @@ class WidgetBase(EventDispatcher):
         :py:meth:`._set_enabled` on widgets. For example, you may want
         to cue the user by:
 
-        * Playing an animation and/or sound
-        * Setting a highlight color
-        * Displaying a toast or notification
-
+        - Playing an animation and/or sound
+        - Setting a highlight color
+        - Displaying a toast or notification
         """
         return self._enabled
 
@@ -50,124 +53,110 @@ class WidgetBase(EventDispatcher):
         self._enabled = new_enabled
         self._set_enabled(new_enabled)
 
-    def update_groups(self, order):
+    def update_groups(self, order: float) -> None:
         pass
 
     @property
-    def x(self):
-        """X coordinate of the widget.
-
-        :type: int
-        """
+    def x(self) -> int:
+        """X coordinate of the widget."""
         return self._x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: int) -> None:
         self._x = value
         self._update_position()
 
     @property
-    def y(self):
-        """Y coordinate of the widget.
-
-        :type: int
-        """
+    def y(self) -> int:
+        """Y coordinate of the widget."""
         return self._y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: int) -> None:
         self._y = value
         self._update_position()
 
     @property
-    def position(self):
-        """The x, y coordinate of the widget as a tuple.
-
-        :type: tuple(int, int)
-        """
+    def position(self) -> tuple[int, int]:
+        """The x, y coordinate of the widget as a tuple."""
         return self._x, self._y
 
     @position.setter
-    def position(self, values):
+    def position(self, values: tuple[int, int]) -> None:
         self._x, self._y = values
         self._update_position()
 
     @property
-    def width(self):
-        """Width of the widget.
-
-        :type: int
-        """
+    def width(self) -> int:
+        """Width of the widget."""
         return self._width
 
     @property
-    def height(self):
-        """Height of the widget.
-
-        :type: int
-        """
+    def height(self) -> int:
+        """Height of the widget."""
         return self._height
 
     @property
-    def aabb(self):
+    def aabb(self) -> tuple[int, int, int, int]:
         """Bounding box of the widget.
 
-        Expressed as (x, y, x + width, y + height)
-
-        :type: (int, int, int, int)
+        The "left", "bottom", "right", and "top" coordinates of the
+        widget. This is expressed as (x, y, x + width, y + height).
         """
         return self._x, self._y, self._x + self._width, self._y + self._height
 
     @property
-    def value(self):
+    def value(self) -> int | float | bool:
         """Query or set the Widget's value.
-        
+
         This property allows you to set the value of a Widget directly, without any
         user input.  This could be used, for example, to restore Widgets to a
         previous state, or if some event in your program is meant to naturally
         change the same value that the Widget controls.  Note that events are not
-        dispatched when changing this property.
+        dispatched when changing this property directly.
         """
         raise NotImplementedError("Value depends on control type!")
-    
+
     @value.setter
-    def value(self, value):
+    def value(self, value: int | float | bool):
         raise NotImplementedError("Value depends on control type!")
 
-    def _check_hit(self, x, y):
+    def _check_hit(self, x: int, y: int) -> bool:
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
-    def _update_position(self):
+    def _update_position(self) -> None:
         raise NotImplementedError("Unable to reposition this Widget")
 
-    def on_key_press(self, symbol, modifiers):
+    # Handlers
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
         pass
 
-    def on_key_release(self, symbol, modifiers):
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
         pass
 
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         pass
 
-    def on_text(self, text):
+    def on_text(self, text: str) -> None:
         pass
 
-    def on_text_motion(self, motion):
+    def on_text_motion(self, motion: int) -> None:
         pass
 
-    def on_text_motion_select(self, motion):
+    def on_text_motion_select(self, motion: int) -> None:
         pass
 
 
@@ -178,23 +167,28 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+    def __init__(self, x: int, y: int,
+                 pressed: AbstractImage,
+                 depressed: AbstractImage,
+                 hover: AbstractImage | None = None,
+                 batch: Batch | None = None,
+                 group: Group | None = None) -> None:
         """Create a push button.
 
-        :Parameters:
-            `x` : int
+        Args:
+            x
                 X coordinate of the push button.
-            `y` : int
+            y:
                 Y coordinate of the push button.
-            `pressed` : `~pyglet.image.AbstractImage`
+            pressed:
                 Image to display when the button is pressed.
-            `depresseed` : `~pyglet.image.AbstractImage`
+            depressed:
                 Image to display when the button isn't pressed.
-            `hover` : `~pyglet.image.AbstractImage`
+            hover:
                 Image to display when the button is being hovered over.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the push button to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the push button.
         """
         super().__init__(x, y, depressed.width, depressed.height)
@@ -209,50 +203,50 @@ class PushButton(WidgetBase):
 
         self._pressed = False
 
-    def _update_position(self):
+    def _update_position(self) -> None:
         self._sprite.position = self._x, self._y, 0
 
     @property
     def value(self):
         return self._pressed
-    
+
     @value.setter
-    def value(self, value):
+    def value(self, value: bool) -> None:
         assert type(value) is bool, "This Widget's value must be True or False."
         self._pressed = value
         self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
-    def update_groups(self, order):
+    def update_groups(self, order: float) -> None:
         self._sprite.group = Group(order=order + 1, parent=self._user_group)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._check_hit(x, y):
             return
         self._sprite.image = self._pressed_img
         self._pressed = True
-        self.dispatch_event('on_press')
+        self.dispatch_event("on_press")
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
         self._pressed = False
-        self.dispatch_event('on_release')
+        self.dispatch_event("on_release")
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
-    def on_press(self):
+    def on_press(self) -> None:
         """Event: Dispatched when the button is clicked."""
 
-    def on_release(self):
+    def on_release(self) -> None:
         """Event: Dispatched when the button is released."""
 
 
@@ -266,22 +260,22 @@ class ToggleButton(PushButton):
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
-    def _get_release_image(self, x, y):
+    def _get_release_image(self, x: int, y: int):
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._check_hit(x, y):
             return
         self._pressed = not self._pressed
         self._sprite.image = self._pressed_img if self._pressed else self._get_release_image(x, y)
         self.dispatch_event('on_toggle', self._pressed)
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._get_release_image(x, y)
 
-    def on_toggle(self, value: bool):
+    def on_toggle(self, value: bool) -> None:
         """Event: returns True or False to indicate the current state."""
 
 
@@ -296,24 +290,28 @@ class Slider(WidgetBase):
     scrolling the mouse wheel.
     """
 
-    def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
+    def __init__(self, x: int, y: int,
+                 base: AbstractImage, knob: AbstractImage,
+                 edge: int = 0,
+                 batch: Batch | None = None,
+                 group: Group | None = None) -> None:
         """Create a slider.
 
-        :Parameters:
-            `x` : int
+        Args:
+            x:
                 X coordinate of the slider.
-            `y` : int
+            y:
                 Y coordinate of the slider.
-            `base` : `~pyglet.image.AbstractImage`
+            base:
                 Image to display as the background to the slider.
-            `knob` : `~pyglet.image.AbstractImage`
+            knob:
                 Knob that moves to show the position of the slider.
-            `edge` : int
+            edge:
                 Pixels from the maximum and minimum position of the slider,
                 to the edge of the base image.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the slider to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the slider.
         """
         super().__init__(x, y, base.width, knob.height)
@@ -336,111 +334,114 @@ class Slider(WidgetBase):
         self._value = 0
         self._in_update = False
 
-    def _update_position(self):
+    def _update_position(self) -> None:
         self._base_spr.position = self._x, self._y, 0
         self._knob_spr.position = self._x + self._edge, self._y + self._base_img.height / 2, 0
 
     @property
-    def value(self):
+    def value(self) -> float:
         return self._value
 
     @value.setter
-    def value(self, value):
+    def value(self, value: float) -> None:
         assert type(value) in (int, float), "This Widget's value must be an int or float."
         self._value = value
         x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
 
-    def update_groups(self, order):
+    def update_groups(self, order: float) -> None:
         self._base_spr.group = Group(order=order + 1, parent=self._user_group)
         self._knob_spr.group = Group(order=order + 2, parent=self._user_group)
 
     @property
-    def _min_x(self):
+    def _min_x(self) -> int:
         return self._x + self._edge
 
     @property
-    def _max_x(self):
+    def _max_x(self) -> int:
         return self._x + self._width - self._edge
 
     @property
-    def _min_y(self):
+    def _min_y(self) -> int:
         return self._y - self._half_knob_height
 
     @property
-    def _max_y(self):
+    def _max_y(self) -> int:
         return self._y + self._half_knob_height + self._base_img.height / 2
 
-    def _check_hit(self, x, y):
+    def _check_hit(self, x: int, y: int) -> bool:
         return self._min_x < x < self._max_x and self._min_y < y < self._max_y
 
-    def _update_knob(self, x):
+    def _update_knob(self, x: int) -> None:
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
         self._value = abs(((self._knob_spr.x - self._min_knob_x) * 100) / (self._min_knob_x - self._max_knob_x))
         self.dispatch_event('on_change', self._value)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
             return
         if self._check_hit(x, y):
             self._in_update = True
             self._update_knob(x)
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
             return
         if self._in_update:
             self._update_knob(x)
 
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
         if not self.enabled:
             return
         if self._check_hit(x, y):
             self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
             return
         self._in_update = False
 
-    def on_change(self, value: float):
+    def on_change(self, value: float) -> None:
         """Event: Returns the current value when the slider is changed."""
 
 
-Slider.register_event_type('on_change')
+Slider.register_event_type("on_change")
 
 
 class TextEntry(WidgetBase):
     """Instance of a text entry widget. Allows the user to enter and submit text.
-    
+
     Triggers the event 'on_commit', when the user hits the Enter or Return key.
     The current text string is passed along with the event.
     """
 
-    def __init__(self, text, x, y, width,
-                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0, 255),
-                 batch=None, group=None):
+    def __init__(self, text: str,
+                 x: int, y: int, width: int,
+                 color: tuple[int, int, int, int] = (255, 255, 255, 255),
+                 text_color: tuple[int, int, int, int] = (0, 0, 0, 255),
+                 caret_color: tuple[int, int, int, int] = (0, 0, 0, 255),
+                 batch: Batch | None = None,
+                 group: Group | None = None) -> None:
         """Create a text entry widget.
 
-        :Parameters:
-            `text` : str
+        Args:
+            text:
                 Initial text to display.
-            `x` : int
+            x:
                 X coordinate of the text entry widget.
-            `y` : int
+            y:
                 Y coordinate of the text entry widget.
-            `width` : int
+            width:
                 The width of the text entry widget.
-            `color` : (int, int, int, int)
+            color:
                 The color of the outline box in RGBA format.
-            `text_color` : (int, int, int, int)
+            text_color:
                 The color of the text in RGBA format.
-            `caret_color` : (int, int, int, int)
-                The color of the caret when it is visible in RGBA or RGB
-                format.
-            `batch` : `~pyglet.graphics.Batch`
+            caret_color:
+                The color of the caret (when it is visible) in RGBA or RGB format.
+            batch:
                 Optional batch to add the text entry widget to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of text entry widget.
         """
         self._doc = pyglet.text.document.UnformattedDocument(text)
@@ -454,8 +455,7 @@ class TextEntry(WidgetBase):
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
-        self._outline.opacity = color[3]
+        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch, bg_group)
 
         # Text and Caret:
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
@@ -468,39 +468,39 @@ class TextEntry(WidgetBase):
 
         super().__init__(x, y, width, height)
 
-    def _update_position(self):
+    def _update_position(self) -> None:
         self._layout.position = self._x, self._y, 0
         self._outline.position = self._x - self._pad, self._y - self._pad
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self._doc.text
 
     @value.setter
-    def value(self, value):
+    def value(self, value: str) -> None:
         assert type(value) is str, "This Widget's value must be a string."
         self._doc.text = value
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         self._width = value
         self._layout.width = value
         self._outline.width = value
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: int) -> None:
         self._height = value
         self._layout.height = value
         self._outline.height = value
-    
+
     @property
     def focus(self) -> bool:
         return self._focus
@@ -509,29 +509,29 @@ class TextEntry(WidgetBase):
     def focus(self, value: bool) -> None:
         self._set_focus(value)
 
-    def _check_hit(self, x, y):
+    def _check_hit(self, x: int, y: int) -> bool:
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
-    def _set_focus(self, value):
+    def _set_focus(self, value: bool) -> None:
         self._focus = value
         self._caret.visible = value
         self._caret.layout = self._layout
 
-    def update_groups(self, order):
+    def update_groups(self, order: float) -> None:
         self._outline.group = Group(order=order + 1, parent=self._user_group)
         self._layout.group = Group(order=order + 2, parent=self._user_group)
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled:
             return
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
             return
         if self._focus:
             self._caret.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
             return
         if self._check_hit(x, y):
@@ -540,7 +540,7 @@ class TextEntry(WidgetBase):
         else:
             self._set_focus(False)
 
-    def on_text(self, text):
+    def on_text(self, text: str) -> None:
         if not self.enabled:
             return
         if self._focus:
@@ -551,19 +551,19 @@ class TextEntry(WidgetBase):
                 return
             self._caret.on_text(text)
 
-    def on_text_motion(self, motion):
+    def on_text_motion(self, motion: int) -> None:
         if not self.enabled:
             return
         if self._focus:
             self._caret.on_text_motion(motion)
 
-    def on_text_motion_select(self, motion):
+    def on_text_motion_select(self, motion: int) -> None:
         if not self.enabled:
             return
         if self._focus:
             self._caret.on_text_motion_select(motion)
 
-    def on_commit(self, text: str):
+    def on_commit(self, text: str) -> None:
         """Event: dispatches the current text when commited via Enter/Return key."""
 
 

@@ -149,7 +149,7 @@ def _sat(vertices, point):
     return True
 
 
-def _get_segment(p0, p1, p2, p3, thickness=1, prev_miter=None, prev_scale=None):
+def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None):
     """Computes a line segment between the points p1 and p2.
 
     If points p0 or p3 are supplied then the segment p1->p2 will have the correct "miter" angle
@@ -831,7 +831,7 @@ class BezierCurve(ShapeBase):
             *points: tuple[float, float],
             t: float = 1.0,
             segments: int = 100,
-            thickness: int =1,
+            thickness: int = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             batch: Batch | None = None,
             group: Group | None = None
