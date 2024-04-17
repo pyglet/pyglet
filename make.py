@@ -18,17 +18,25 @@ def clean():
             op.join(THIS_DIR, '_build'),
             op.join(THIS_DIR, 'pyglet.egg-info'),
             op.join(THIS_DIR, '.pytest_cache'),
-            op.join(THIS_DIR, '.mypy_cache')]
+            op.join(THIS_DIR, '.mypy_cache'),
+            op.join(THIS_DIR, '.ruff_cache')]
+
     files = [op.join(DOC_DIR, 'internal', 'build.rst')]
+
     for d in dirs:
-        print('   Removing:', d)
+        if not op.exists(d):
+            continue
         shutil.rmtree(d, ignore_errors=True)
+        print(f"   Removed: {d}")
+
     for f in files:
-        print('   Removing:', f)
+        if not op.exists(f):
+            continue
         try:
             os.remove(f)
+            print(f"   Removed: {f}")
         except OSError:
-            pass
+            print(f"   Failed to remove: {f}")
 
 
 def docs():

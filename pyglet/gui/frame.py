@@ -1,3 +1,12 @@
+"""WIP."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.gui.widgets import WidgetBase
+    from pyglet.window import BaseWindow
+
 
 class Frame:
     """The base Frame object, implementing a 2D spatial hash.
@@ -10,19 +19,19 @@ class Frame:
     of Widgets are in use.
     """
 
-    def __init__(self, window, enable=True, cell_size=64, order=0):
+    def __init__(self, window: BaseWindow, enable: bool = True, cell_size: int = 64, order: int = 0) -> None:
         """Create an instance of a Frame.
 
-        :Parameters:
-            `window` : `~pyglet.window.Window`
+        Args:
+            window:
                 The SpatialHash will recieve events from this Window.
                 Appropriate events will be passed on to all added Widgets.
-            `enable`: bool
+            enable:
                 Whether to enable frame.
-            `cell_size` : int
+            cell_size:
                 The cell ("bucket") size for each cell in the hash.
                 Widgets may span multiple cells.
-            `order` : int
+            order:
                 Widgets use internal OrderedGroups for draw sorting.
                 This is the base value for these Groups.
         """
@@ -36,8 +45,8 @@ class Frame:
         if self._enable:
             self._window.push_handlers(self)
 
-    def _hash(self, x, y):
-        """Normalize position to cell"""
+    def _hash(self, x: float, y: float) -> tuple[int, int]:
+        """Normalize position to cell."""
         return int(x / self._cell_size), int(y / self._cell_size)
 
     def _on_reposition_handler(self, widget):
@@ -60,7 +69,7 @@ class Frame:
         else:
             self._window.remove_handlers(self)
 
-    def add_widget(self, widget):
+    def add_widget(self, widget: WidgetBase) -> None:
         """Add a Widget to the spatial hash."""
         min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
         for i in range(min_vec[0], max_vec[0] + 1):
@@ -69,64 +78,67 @@ class Frame:
         widget.update_groups(self._order)
         widget.set_handler("on_reposition", self._on_reposition_handler)
 
-    def remove_widget(self, widget):
-        """Remove a Widget."""
-        for widgets in self._cells.values():
-            if widget in widgets:
-                widgets.remove(widget)
+    def remove_widget(self, widget: WidgetBase) -> None:
+        """Remove a Widget from the spatial hash."""
+        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
+        for i in range(min_vec[0], max_vec[0] + 1):
+            for j in range(min_vec[1], max_vec[1] + 1):
+                self._cells.get((i, j)).remove(widget)
 
-    def on_key_press(self, symbol, modifiers):
-        """Pass the event to any widgets within range of the mouse"""
+    # Handlers
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_key_press(symbol, modifiers)
 
-    def on_key_release(self, symbol, modifiers):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_key_release(symbol, modifiers)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        """Pass the event to any widgets that are currently active"""
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+        """Pass the event to any widgets that are currently active."""
         for widget in self._active_widgets:
             widget.on_mouse_release(x, y, buttons, modifiers)
         self._active_widgets.clear()
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        """Pass the event to any widgets that are currently active"""
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
+        """Pass the event to any widgets that are currently active."""
         for widget in self._active_widgets:
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self._mouse_pos = x, y
 
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.on_mouse_scroll(x, y, scroll_x, scroll_y)
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         """Pass the event to any widgets within range of the mouse"""
         for cell in self._cells.values():
             for widget in cell:
                 widget.on_mouse_motion(x, y, dx, dy)
         self._mouse_pos = x, y
 
-    def on_text(self, text):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_text(self, text: str) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text(text)
 
-    def on_text_motion(self, motion):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_text_motion(self, motion: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion(motion)
 
-    def on_text_motion_select(self, motion):
-        """Pass the event to any widgets within range of the mouse"""
+    def on_text_motion_select(self, motion: int) -> None:
+        """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion_select(motion)
 
@@ -147,28 +159,46 @@ class MovableFrame(Frame):
     API documentation.
     """
 
-    def __init__(self, window, enable, order=0, modifier=0):
+    def __init__(self, window: BaseWindow, enable: bool = True, order: int = 0, modifier: int = 0) -> None:
+        """Create an instance of a MovableFrame.
+
+        This is a similar to the standard Frame class, except that
+        you can specify a modifer key. When this key is held down,
+        Widgets can be re-positioned by drag-and-dropping.
+
+        Args:
+            window:
+                The SpatialHash will recieve events from this Window.
+                Appropriate events will be passed on to all added Widgets.
+            enable:
+                Whether to enable frame.
+            order:
+                Widgets use internal OrderedGroups for draw sorting.
+                This is the base value for these Groups.
+            modifier:
+                A key modifier, such as `pyglet.window.key.MOD_CTRL`
+        """
         super().__init__(window, enable=enable, order=order)
         self._modifier = modifier
         self._moving_widgets = set()
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if self._modifier & modifiers > 0:
             for widget in self._cells.get(self._hash(x, y), set()):
-                if widget._check_hit(x, y):
+                if widget._check_hit(x, y):     # noqa: SLF001
                     self._moving_widgets.add(widget)
             for widget in self._moving_widgets:
                 self.remove_widget(widget)
         else:
             super().on_mouse_press(x, y, buttons, modifiers)
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         for widget in self._moving_widgets:
             self.add_widget(widget)
         self._moving_widgets.clear()
         super().on_mouse_release(x, y, buttons, modifiers)
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         for widget in self._moving_widgets:
             wx, wy = widget.position
             widget.position = wx + dx, wy + dy

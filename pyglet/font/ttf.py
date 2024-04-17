@@ -8,11 +8,13 @@ References:
  * http://developer.apple.com/fonts/TTRefMan/RM06
  * http://www.microsoft.com/typography/otspec
 """
+from __future__ import annotations
 
-import os
-import mmap
-import struct
 import codecs
+import mmap
+import os
+import struct
+from typing import Any
 
 
 class TruetypeInfo:
@@ -28,63 +30,64 @@ class TruetypeInfo:
     """
 
     _name_id_lookup = {
-        'copyright': 0,
-        'family': 1,
-        'subfamily': 2,
-        'identifier': 3,
-        'name': 4,
-        'version': 5,
-        'postscript': 6,
-        'trademark': 7,
-        'manufacturer': 8,
-        'designer': 9,
-        'description': 10,
-        'vendor-url': 11,
-        'designer-url': 12,
-        'license': 13,
-        'license-url': 14,
-        'preferred-family': 16,
-        'preferred-subfamily': 17,
-        'compatible-name': 18,
-        'sample': 19,
+        "copyright": 0,
+        "family": 1,
+        "subfamily": 2,
+        "identifier": 3,
+        "name": 4,
+        "version": 5,
+        "postscript": 6,
+        "trademark": 7,
+        "manufacturer": 8,
+        "designer": 9,
+        "description": 10,
+        "vendor-url": 11,
+        "designer-url": 12,
+        "license": 13,
+        "license-url": 14,
+        "preferred-family": 16,
+        "preferred-subfamily": 17,
+        "compatible-name": 18,
+        "sample": 19,
     }
 
     _platform_id_lookup = {
-        'unicode': 0,
-        'macintosh': 1,
-        'iso': 2,
-        'microsoft': 3,
-        'custom': 4
+        "unicode": 0,
+        "macintosh": 1,
+        "iso": 2,
+        "microsoft": 3,
+        "custom": 4,
     }
 
     _microsoft_encoding_lookup = {
-        1: 'utf_16_be',
-        2: 'shift_jis',
-        4: 'big5',
-        6: 'johab',
-        10: 'utf_16_be'
+        1: "utf_16_be",
+        2: "shift_jis",
+        4: "big5",
+        6: "johab",
+        10: "utf_16_be",
     }
 
     _macintosh_encoding_lookup = {
-        0: 'mac_roman'
+        0: "mac_roman",
     }
 
-    def __init__(self, filename):
+    _character_advances: dict[str, float] | None
+
+    def __init__(self, filename: str) -> None:
         """Read the given TrueType file.
 
-        :Parameters:
-            `filename`
+        Args:
+            filename:
                 The name of any Windows, OS2 or Macintosh Truetype file.
 
         The object must be closed (see `close`) after use.
 
-        An exception will be raised if the file does not exist or cannot
-        be read.
+        An exception will be raised if the file does not exist or cannot be read.
         """
         assert filename, "must provide a font file name"
         length = os.stat(filename).st_size
         self._fileno = os.open(filename, os.O_RDONLY)
-        if hasattr(mmap, 'MAP_SHARED'):
+        if hasattr(mmap, "MAP_SHARED"):
             self._data = mmap.mmap(self._fileno, length, mmap.MAP_SHARED, mmap.PROT_READ)
         else:
             self._data = mmap.mmap(self._fileno, length, None, mmap.ACCESS_READ)
@@ -105,40 +108,40 @@ class TruetypeInfo:
         self._glyph_map = None
         self._font_selection_flags = None
 
-        self.header = _read_head_table(self._data, self._tables['head'].offset)
-        self.horizontal_header = _read_horizontal_header(self._data, self._tables['hhea'].offset)
+        self.header = _read_head_table(self._data, self._tables["head"].offset)
+        self.horizontal_header = _read_horizontal_header(self._data, self._tables["hhea"].offset)
 
-    def get_font_selection_flags(self):
+    def get_font_selection_flags(self) -> int:
         """Return the font selection flags, as defined in OS/2 table"""
         if not self._font_selection_flags:
-            OS2_table = _read_OS2_table(self._data, self._tables['OS/2'].offset)
+            OS2_table = _read_OS2_table(self._data, self._tables["OS/2"].offset)
             self._font_selection_flags = OS2_table.fs_selection
         return self._font_selection_flags
 
-    def is_bold(self):
+    def is_bold(self) -> bool:
         """Returns True iff the font describes itself as bold."""
         return bool(self.get_font_selection_flags() & 0x20)
 
-    def is_italic(self):
+    def is_italic(self) -> bool:
         """Returns True iff the font describes itself as italic."""
         return bool(self.get_font_selection_flags() & 0x1)
 
-    def get_names(self):
+    def get_names(self) -> dict[tuple[int, int], tuple[int, int, str]]:
         """Returns a dictionary of names defined in the file.
 
         The key of each item is a tuple of ``platform_id``, ``name_id``,
         where each ID is the number as described in the Truetype format.
 
-        The value of each item is a tuple of 
+        The value of each item is a tuple of
         ``encoding_id``, ``language_id``, ``value``, where ``value`` is
         an encoded string.
         """
         if self._names:
             return self._names
-        naming_table = _read_naming_table(self._data, self._tables['name'].offset)
+        naming_table = _read_naming_table(self._data, self._tables["name"].offset)
         name_records = _read_name_record.array(
-            self._data, self._tables['name'].offset + naming_table.size, naming_table.count)
-        storage = naming_table.string_offset + self._tables['name'].offset
+            self._data, self._tables["name"].offset + naming_table.size, naming_table.count)
+        storage = naming_table.string_offset + self._tables["name"].offset
         self._names = {}
         for record in name_records:
             value = self._data[record.offset + storage: record.offset + storage + record.length]
@@ -149,13 +152,14 @@ class TruetypeInfo:
             self._names[key].append(value)
         return self._names
 
-    def get_name(self, name, platform=None, languages=None):
+    def get_name(self, name: int | str, platform: int | str | None = None,
+                 languages: int | str | None = None) -> str | None:
         """Returns the value of the given name in this font.
 
-        :Parameters:
+        Args:
             `name`
                 Either an integer, representing the name_id desired (see
-                font format); or a string describing it, see below for 
+                font format); or a string describing it, see below for
                 valid names.
             `platform`
                 Platform for the requested name.  Can be the integer ID,
@@ -202,16 +206,16 @@ class TruetypeInfo:
         """
 
         names = self.get_names()
-        if type(name) == str:
+        if isinstance(name, str):
             name = self._name_id_lookup[name]
         if not platform:
-            for platform in ('microsoft', 'macintosh'):
+            for platform in ("microsoft", "macintosh"):
                 value = self.get_name(name, platform, languages)
                 if value:
                     return value
-        if type(platform) == str:
+        if isinstance(platform, str):
             platform = self._platform_id_lookup[platform]
-        if not (platform, name) in names:
+        if (platform, name) not in names:
             return None
 
         if platform == 3:  # setup for microsoft
@@ -231,16 +235,16 @@ class TruetypeInfo:
                 return decoder(record[2])[0]
         return None
 
-    def get_horizontal_metrics(self):
+    def get_horizontal_metrics(self) -> list:
         """Return all horizontal metric entries in table format."""
         if not self._horizontal_metrics:
             ar = _read_long_hor_metric.array(self._data,
-                                             self._tables['hmtx'].offset,
+                                             self._tables["hmtx"].offset,
                                              self.horizontal_header.number_of_h_metrics)
             self._horizontal_metrics = ar
         return self._horizontal_metrics
 
-    def get_character_advances(self):
+    def get_character_advances(self) -> dict[str, float] | None:
         """Return a dictionary of character->advance.
 
         They key of the dictionary is a unit-length unicode string,
@@ -253,20 +257,16 @@ class TruetypeInfo:
         gmap = self.get_glyph_map()
         self._character_advances = {}
         for i in range(len(ga)):
-            if i in gmap and not gmap[i] in self._character_advances:
+            if i in gmap and gmap[i] not in self._character_advances:
                 self._character_advances[gmap[i]] = ga[i]
         return self._character_advances
 
-    def get_glyph_advances(self):
-        """Return a dictionary of glyph->advance.
-
-        They key of the dictionary is the glyph index and the value is a float
-        giving the horizontal advance in em.
-        """
+    def get_glyph_advances(self) -> list[float]:
+        """Return a list of advances."""
         hm = self.get_horizontal_metrics()
         return [float(m.advance_width) / self.header.units_per_em for m in hm]
 
-    def get_character_kernings(self):
+    def get_character_kernings(self) -> dict[tuple[str, str], int]:
         """Return a dictionary of (left,right)->kerning
 
         The key of the dictionary is a tuple of ``(left, right)``
@@ -286,7 +286,7 @@ class TruetypeInfo:
                     self._character_kernings[(lchar, rchar)] = value
         return self._character_kernings
 
-    def get_glyph_kernings(self):
+    def get_glyph_kernings(self) -> dict[tuple[str, str], int]:
         """Return a dictionary of (left,right)->kerning
 
         The key of the dictionary is a tuple of ``(left, right)``
@@ -296,8 +296,8 @@ class TruetypeInfo:
         if self._glyph_kernings:
             return self._glyph_kernings
         header = \
-            _read_kern_header_table(self._data, self._tables['kern'].offset)
-        offset = self._tables['kern'].offset + header.size
+            _read_kern_header_table(self._data, self._tables["kern"].offset)
+        offset = self._tables["kern"].offset + header.size
         kernings = {}
         for i in range(header.n_tables):
             header = _read_kern_subtable_header(self._data, offset)
@@ -322,7 +322,7 @@ class TruetypeInfo:
                 kernings[(pair.left, pair.right)] = pair.value \
                                                     / float(self.header.units_per_em)
 
-    def get_glyph_map(self):
+    def get_glyph_map(self) -> dict[int, str]:
         """Calculate and return a reverse character map.
 
         Returns a dictionary where the key is a glyph index and the
@@ -333,27 +333,26 @@ class TruetypeInfo:
         cmap = self.get_character_map()
         self._glyph_map = {}
         for ch, glyph in cmap.items():
-            if not glyph in self._glyph_map:
+            if glyph not in self._glyph_map:
                 self._glyph_map[glyph] = ch
         return self._glyph_map
 
-    def get_character_map(self):
+    def get_character_map(self) -> dict[str, int]:
         """Return the character map.
 
-        Returns a dictionary where the key is a unit-length unicode
-        string and the value is a glyph index.  Currently only 
-        format 4 character maps are read.
+        Returns a dictionary where the key is a unit-length unicode string and the value is a glyph index.  Currently
+        only format 4 character maps are read.
         """
         if self._character_map:
             return self._character_map
-        cmap = _read_cmap_header(self._data, self._tables['cmap'].offset)
+        cmap = _read_cmap_header(self._data, self._tables["cmap"].offset)
         records = _read_cmap_encoding_record.array(self._data,
-                                                   self._tables['cmap'].offset + cmap.size, cmap.num_tables)
+                                                   self._tables["cmap"].offset + cmap.size, cmap.num_tables)
         self._character_map = {}
         for record in records:
             if record.platform_id == 3 and record.encoding_id == 1:
                 # Look at Windows Unicode charmaps only
-                offset = self._tables['cmap'].offset + record.offset
+                offset = self._tables["cmap"].offset + record.offset
                 format_header = _read_cmap_format_header(self._data, offset)
                 if format_header.format == 4:
                     self._character_map = \
@@ -361,32 +360,32 @@ class TruetypeInfo:
                     break
         return self._character_map
 
-    def _get_character_map_format4(self, offset):
+    def _get_character_map_format4(self, offset: int) -> dict[str, int]:
         # This is absolutely, without question, the *worst* file
         # format ever.  Whoever the fuckwit is that thought this up is
-        # a fuckwit. 
+        # a fuckwit.
         header = _read_cmap_format4Header(self._data, offset)
         seg_count = header.seg_count_x2 // 2
-        array_size = struct.calcsize(f'>{seg_count}H')
-        end_count = self._read_array(f'>{seg_count}H',
+        array_size = struct.calcsize(f">{seg_count}H")
+        end_count = self._read_array(f">{seg_count}H",
                                      offset + header.size)
-        start_count = self._read_array(f'>{seg_count}H',
+        start_count = self._read_array(f">{seg_count}H",
                                        offset + header.size + array_size + 2)
-        id_delta = self._read_array(f'>{seg_count}H',
+        id_delta = self._read_array(f">{seg_count}H",
                                     offset + header.size + array_size + 2 + array_size)
         id_range_offset_address = \
             offset + header.size + array_size + 2 + array_size + array_size
-        id_range_offset = self._read_array(f'>{seg_count}H',
+        id_range_offset = self._read_array(f">{seg_count}H",
                                            id_range_offset_address)
         character_map = {}
-        for i in range(0, seg_count):
+        for i in range(seg_count):
             if id_range_offset[i] != 0:
                 if id_range_offset[i] == 65535:
                     continue  # Hack around a dodgy font (babelfish.ttf)
                 for c in range(start_count[i], end_count[i] + 1):
                     addr = id_range_offset[i] + 2 * (c - start_count[i]) + \
                            id_range_offset_address + 2 * i
-                    g = struct.unpack('>H', self._data[addr:addr + 2])[0]
+                    g = struct.unpack(">H", self._data[addr:addr + 2])[0]
                     if g != 0:
                         character_map[chr(c)] = (g + id_delta[i]) % 65536
             else:
@@ -396,11 +395,11 @@ class TruetypeInfo:
                         character_map[chr(c)] = g
         return character_map
 
-    def _read_array(self, format, offset):
-        size = struct.calcsize(format)
-        return struct.unpack(format, self._data[offset:offset + size])
+    def _read_array(self, fmt: str, offset: int) -> tuple[Any, ...]:
+        size = struct.calcsize(fmt)
+        return struct.unpack(fmt, self._data[offset:offset + size])
 
-    def close(self):
+    def close(self) -> None:
         """Close the font file.
 
         This is a good idea, since the entire file is memory mapped in
@@ -412,38 +411,38 @@ class TruetypeInfo:
         os.close(self._fileno)
         self._closed = True
 
-    def __del__(self):
+    def __del__(self) -> None:
         if not self._closed:
             self.close()
 
 
-def _read_table(*entries):
+def _read_table(*entries: str):
     """ Generic table constructor used for table formats listed at
      end of file."""
 
-    fmt = '>'
+    fmt = ">"
     names = []
     for entry in entries:
-        name, entry_type = entry.split(':')
+        name, entry_type = entry.split(":")
         names.append(name)
         fmt += entry_type
 
     class TableClass:
         size = struct.calcsize(fmt)
 
-        def __init__(self, data, offset):
+        def __init__(self, data: mmap.mmap, offset: int) -> None:
             items = struct.unpack(fmt, data[offset:offset + self.size])
             self.pairs = list(zip(names, items))
             for pname, pvalue in self.pairs:
                 if isinstance(pvalue, bytes):
-                    pvalue = pvalue.decode('utf-8')
+                    pvalue = pvalue.decode("utf-8")
                 setattr(self, pname, pvalue)
 
-        def __repr__(self):
-            return '{'+', '.join([f'{pname} = {pvalue}' for pname, pvalue in self.pairs])+'}'
+        def __repr__(self) -> str:
+            return "{" + ", ".join([f"{pname} = {pvalue}" for pname, pvalue in self.pairs]) + "}"
 
         @staticmethod
-        def array(data, offset, count):
+        def array(data: mmap.mmap, offset: int, count: int) -> list[TableClass]:
             tables = []
             for i in range(count):
                 tables.append(TableClass(data, offset))
@@ -455,88 +454,88 @@ def _read_table(*entries):
 
 # Table formats (see references)
 
-_read_offset_table = _read_table('scalertype:I',
-                                 'num_tables:H',
-                                 'search_range:H',
-                                 'entry_selector:H',
-                                 'range_shift:H')
+_read_offset_table = _read_table("scalertype:I",
+                                 "num_tables:H",
+                                 "search_range:H",
+                                 "entry_selector:H",
+                                 "range_shift:H")
 
-_read_table_directory_entry = _read_table('tag:4s',
-                                          'check_sum:I',
-                                          'offset:I',
-                                          'length:I')
+_read_table_directory_entry = _read_table("tag:4s",
+                                          "check_sum:I",
+                                          "offset:I",
+                                          "length:I")
 
-_read_head_table = _read_table('version:i',
-                               'font_revision:i',
-                               'check_sum_adjustment:L',
-                               'magic_number:L',
-                               'flags:H',
-                               'units_per_em:H',
-                               'created:Q',
-                               'modified:Q',
-                               'x_min:h',
-                               'y_min:h',
-                               'x_max:h',
-                               'y_max:h',
-                               'mac_style:H',
-                               'lowest_rec_p_pEM:H',
-                               'font_direction_hint:h',
-                               'index_to_loc_format:h',
-                               'glyph_data_format:h')
+_read_head_table = _read_table("version:i",
+                               "font_revision:i",
+                               "check_sum_adjustment:L",
+                               "magic_number:L",
+                               "flags:H",
+                               "units_per_em:H",
+                               "created:Q",
+                               "modified:Q",
+                               "x_min:h",
+                               "y_min:h",
+                               "x_max:h",
+                               "y_max:h",
+                               "mac_style:H",
+                               "lowest_rec_p_pEM:H",
+                               "font_direction_hint:h",
+                               "index_to_loc_format:h",
+                               "glyph_data_format:h")
 
-_read_OS2_table = _read_table('version:H',
-                              'x_avg_char_width:h',
-                              'us_weight_class:H',
-                              'us_width_class:H',
-                              'fs_type:H',
-                              'y_subscript_x_size:h',
-                              'y_subscript_y_size:h',
-                              'y_subscript_x_offset:h',
-                              'y_subscript_y_offset:h',
-                              'y_superscript_x_size:h',
-                              'y_superscript_y_size:h',
-                              'y_superscript_x_offset:h',
-                              'y_superscript_y_offset:h',
-                              'y_strikeout_size:h',
-                              'y_strikeout_position:h',
-                              's_family_class:h',
-                              'panose1:B',
-                              'panose2:B',
-                              'panose3:B',
-                              'panose4:B',
-                              'panose5:B',
-                              'panose6:B',
-                              'panose7:B',
-                              'panose8:B',
-                              'panose9:B',
-                              'panose10:B',
-                              'ul_unicode_range1:L',
-                              'ul_unicode_range2:L',
-                              'ul_unicode_range3:L',
-                              'ul_unicode_range4:L',
-                              'ach_vend_id:I',
-                              'fs_selection:H',
-                              'us_first_char_index:H',
-                              'us_last_char_index:H',
-                              's_typo_ascender:h',
-                              's_typo_descender:h',
-                              's_typo_line_gap:h',
-                              'us_win_ascent:H',
-                              'us_win_descent:H',
-                              'ul_code_page_range1:L',
-                              'ul_code_page_range2:L',
-                              'sx_height:h',
-                              's_cap_height:h',
-                              'us_default_char:H',
-                              'us_break_char:H',
-                              'us_max_context:H')
+_read_OS2_table = _read_table("version:H",
+                              "x_avg_char_width:h",
+                              "us_weight_class:H",
+                              "us_width_class:H",
+                              "fs_type:H",
+                              "y_subscript_x_size:h",
+                              "y_subscript_y_size:h",
+                              "y_subscript_x_offset:h",
+                              "y_subscript_y_offset:h",
+                              "y_superscript_x_size:h",
+                              "y_superscript_y_size:h",
+                              "y_superscript_x_offset:h",
+                              "y_superscript_y_offset:h",
+                              "y_strikeout_size:h",
+                              "y_strikeout_position:h",
+                              "s_family_class:h",
+                              "panose1:B",
+                              "panose2:B",
+                              "panose3:B",
+                              "panose4:B",
+                              "panose5:B",
+                              "panose6:B",
+                              "panose7:B",
+                              "panose8:B",
+                              "panose9:B",
+                              "panose10:B",
+                              "ul_unicode_range1:L",
+                              "ul_unicode_range2:L",
+                              "ul_unicode_range3:L",
+                              "ul_unicode_range4:L",
+                              "ach_vend_id:I",
+                              "fs_selection:H",
+                              "us_first_char_index:H",
+                              "us_last_char_index:H",
+                              "s_typo_ascender:h",
+                              "s_typo_descender:h",
+                              "s_typo_line_gap:h",
+                              "us_win_ascent:H",
+                              "us_win_descent:H",
+                              "ul_code_page_range1:L",
+                              "ul_code_page_range2:L",
+                              "sx_height:h",
+                              "s_cap_height:h",
+                              "us_default_char:H",
+                              "us_break_char:H",
+                              "us_max_context:H")
 
-_read_kern_header_table = _read_table('version_num:H',
-                                      'n_tables:H')
+_read_kern_header_table = _read_table("version_num:H",
+                                      "n_tables:H")
 
-_read_kern_subtable_header = _read_table('version:H',
-                                         'length:H',
-                                         'coverage:H')
+_read_kern_subtable_header = _read_table("version:H",
+                                         "length:H",
+                                         "coverage:H")
 
 _read_kern_subtable_header.horizontal_mask = 0x1
 _read_kern_subtable_header.minimum_mask = 0x2
@@ -544,59 +543,59 @@ _read_kern_subtable_header.perpendicular_mask = 0x4
 _read_kern_subtable_header.override_mask = 0x5
 _read_kern_subtable_header.format_mask = 0xf0
 
-_read_kern_subtable_format0 = _read_table('n_pairs:H',
-                                          'search_range:H',
-                                          'entry_selector:H',
-                                          'range_shift:H')
-_read_kern_subtable_format0Pair = _read_table('left:H',
-                                              'right:H',
-                                              'value:h')
+_read_kern_subtable_format0 = _read_table("n_pairs:H",
+                                          "search_range:H",
+                                          "entry_selector:H",
+                                          "range_shift:H")
+_read_kern_subtable_format0Pair = _read_table("left:H",
+                                              "right:H",
+                                              "value:h")
 
-_read_cmap_header = _read_table('version:H',
-                                'num_tables:H')
+_read_cmap_header = _read_table("version:H",
+                                "num_tables:H")
 
-_read_cmap_encoding_record = _read_table('platform_id:H',
-                                         'encoding_id:H',
-                                         'offset:L')
+_read_cmap_encoding_record = _read_table("platform_id:H",
+                                         "encoding_id:H",
+                                         "offset:L")
 
-_read_cmap_format_header = _read_table('format:H',
-                                       'length:H')
-_read_cmap_format4Header = _read_table('format:H',
-                                       'length:H',
-                                       'language:H',
-                                       'seg_count_x2:H',
-                                       'search_range:H',
-                                       'entry_selector:H',
-                                       'range_shift:H')
+_read_cmap_format_header = _read_table("format:H",
+                                       "length:H")
+_read_cmap_format4Header = _read_table("format:H",
+                                       "length:H",
+                                       "language:H",
+                                       "seg_count_x2:H",
+                                       "search_range:H",
+                                       "entry_selector:H",
+                                       "range_shift:H")
 
-_read_horizontal_header = _read_table('version:i',
-                                      'Advance:h',
-                                      'Descender:h',
-                                      'LineGap:h',
-                                      'advance_width_max:H',
-                                      'min_left_side_bearing:h',
-                                      'min_right_side_bearing:h',
-                                      'x_max_extent:h',
-                                      'caret_slope_rise:h',
-                                      'caret_slope_run:h',
-                                      'caret_offset:h',
-                                      'reserved1:h',
-                                      'reserved2:h',
-                                      'reserved3:h',
-                                      'reserved4:h',
-                                      'metric_data_format:h',
-                                      'number_of_h_metrics:H')
+_read_horizontal_header = _read_table("version:i",
+                                      "Advance:h",
+                                      "Descender:h",
+                                      "LineGap:h",
+                                      "advance_width_max:H",
+                                      "min_left_side_bearing:h",
+                                      "min_right_side_bearing:h",
+                                      "x_max_extent:h",
+                                      "caret_slope_rise:h",
+                                      "caret_slope_run:h",
+                                      "caret_offset:h",
+                                      "reserved1:h",
+                                      "reserved2:h",
+                                      "reserved3:h",
+                                      "reserved4:h",
+                                      "metric_data_format:h",
+                                      "number_of_h_metrics:H")
 
-_read_long_hor_metric = _read_table('advance_width:H',
-                                    'lsb:h')
+_read_long_hor_metric = _read_table("advance_width:H",
+                                    "lsb:h")
 
-_read_naming_table = _read_table('format:H',
-                                 'count:H',
-                                 'string_offset:H')
+_read_naming_table = _read_table("format:H",
+                                 "count:H",
+                                 "string_offset:H")
 
-_read_name_record = _read_table('platform_id:H',
-                                'encoding_id:H',
-                                'language_id:H',
-                                'name_id:H',
-                                'length:H',
-                                'offset:H')
+_read_name_record = _read_table("platform_id:H",
+                                "encoding_id:H",
+                                "language_id:H",
+                                "name_id:H",
+                                "length:H",
+                                "offset:H")
