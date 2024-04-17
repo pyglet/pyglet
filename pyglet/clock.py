@@ -78,7 +78,7 @@ from collections import deque as _deque
 class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
-    def __init__(self, func: Callable, args: Any, kwargs: Any):
+    def __init__(self, func: Callable, args: Any, kwargs: Any) -> None:
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -87,7 +87,7 @@ class _ScheduledItem:
 class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
-    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args: Any, kwargs: Any):
+    def __init__(self, func: Callable, interval: float, last_ts: float, next_ts: float, args: Any, kwargs: Any) -> None:
         self.func = func
         self.interval = interval
         self.last_ts = last_ts
@@ -110,7 +110,7 @@ class Clock:
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep: bool = False
 
-    def __init__(self, time_function: Callable = _time.perf_counter):
+    def __init__(self, time_function: Callable = _time.perf_counter) -> None:
         """Initialise a Clock, with optional custom time function.
 
         You can provide a custom time function to return the elapsed
@@ -324,7 +324,7 @@ class Clock:
 
     def _get_soft_next_ts(self, last_ts: float, interval: float) -> float:
 
-        def taken(ts, e):
+        def taken(ts: float, e: float) -> bool:
             """Check if `ts` has already got an item scheduled nearby."""
             # TODO this function is slow and called very often.
             # Optimise it, maybe?
@@ -366,7 +366,7 @@ class Clock:
         divs = 1
         while True:
             next_ts = last_ts
-            for i in range(divs - 1):
+            for _ in range(divs - 1):
                 next_ts += dt
                 if not taken(next_ts, dt / 4):
                     return next_ts
@@ -489,11 +489,10 @@ class Clock:
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
         # 2. set interval to 0               -- item will be removed from heap eventually
-        valid_items = set(item for item in self._schedule_interval_items if item.func == func)
+        valid_items = {item for item in self._schedule_interval_items if item.func == func}
 
-        if self._current_interval_item:
-            if self._current_interval_item.func == func:
-                valid_items.add(self._current_interval_item)
+        if self._current_interval_item and self._current_interval_item.func == func:
+            valid_items.add(self._current_interval_item)
 
         for item in valid_items:
             item.interval = 0
@@ -525,45 +524,45 @@ def get_default() -> Clock:
 
 
 def tick(poll: bool = False) -> float:
-    """:see: :py:meth:`~pyglet.clock.Clock.tick`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.tick`."""
     return _default.tick(poll)
 
 
 def get_sleep_time(sleep_idle: bool) -> float | None:
-    """:see: :py:meth:`~pyglet.clock.Clock.get_sleep_time`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.get_sleep_time`."""
     return _default.get_sleep_time(sleep_idle)
 
 
 def get_frequency() -> float:
-    """:see: :py:meth:`~pyglet.clock.Clock.get_frequency`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.get_frequency`."""
     return _default.get_frequency()
 
 
 def schedule(func: Callable, *args: Any, **kwargs: Any) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.schedule`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule`."""
     _default.schedule(func, *args, **kwargs)
 
 
 def schedule_interval(func: Callable, interval: float, *args: Any, **kwargs: Any) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval`."""
     _default.schedule_interval(func, interval, *args, **kwargs)
 
 
 def schedule_interval_for_duration(func: Callable, interval: float, duration: float, *args, **kwargs) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_for_duration`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_for_duration`."""
     _default.schedule_interval_for_duration(func, interval, duration, *args, **kwargs)
 
 
 def schedule_interval_soft(func: Callable, interval: float, *args, **kwargs) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_soft`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_interval_soft`."""
     _default.schedule_interval_soft(func, interval, *args, **kwargs)
 
 
 def schedule_once(func: Callable, delay: float, *args, **kwargs) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.schedule_once`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.schedule_once`."""
     _default.schedule_once(func, delay, *args, **kwargs)
 
 
 def unschedule(func: Callable) -> None:
-    """:see: :py:meth:`~pyglet.clock.Clock.unschedule`"""
+    """:see: :py:meth:`~pyglet.clock.Clock.unschedule`."""
     _default.unschedule(func)
