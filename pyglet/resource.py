@@ -54,8 +54,8 @@ import sys
 import zipfile
 import weakref
 
-from typing import TYPE_CHECKING, IO
 from io import BytesIO, StringIO
+from typing import TYPE_CHECKING, IO
 
 import pyglet
 
@@ -261,7 +261,7 @@ class ZIPLocation(Location):
             mode:
                 Valid modes are 'r' and 'rb'.
         """
-        _path = self.dir + '/' + filename if self.dir else filename
+        _path = f"{self.dir}/{filename}" if self.dir else filename
         _forward_slash_path = _path.replace(os.sep, '/')  # zip can only handle forward slashes
         _bytes = self.zip.read(_forward_slash_path)
         if mode == 'r':
@@ -292,7 +292,7 @@ class URLLocation(Location):
         import urllib.parse
         import urllib.request
         url = urllib.parse.urljoin(self.base, filename)
-        return urllib.request.urlopen(url)
+        return BytesIO(urllib.request.urlopen(url).read())
 
 
 class Loader:
@@ -333,31 +333,32 @@ class Loader:
         self._cached_images = weakref.WeakValueDictionary()
         self._cached_animations = weakref.WeakValueDictionary()
 
-    def _require_index(self):
+    def _ensure_index(self):
         if self._index is None:
             self.reindex()
+
+    def _index_file(self, name: str, locationobj: Location) -> None:
+        if name not in self._index:
+            self._index[name] = locationobj
 
     def reindex(self):
         """Refresh the file index.
 
-        You must call this method if `path` is changed or the filesystem
-        layout changes.
+        You must call this method if ``resource.path`` is changed,
+        or the filesystem layout changes.
         """
         self._index = {}
         for _path_name in self.path:
 
+            # A Python module:
             if _path_name.startswith('@'):
-                # Module
                 module_name = _path_name[1:]
-
                 try:
                     module = __import__(module_name)
                 except (ImportError, ValueError):
                     continue
-
                 for component in module_name.split('.')[1:]:
                     module = getattr(module, component)
-
                 if hasattr(module, '__file__'):
                     _path_name = os.path.dirname(module.__file__)
                 else:
@@ -368,8 +369,8 @@ class Loader:
                 assert r'\\' not in _path_name, "Backslashes are not permitted in relative paths"
                 _path_name = os.path.join(self._script_home, _path_name)
 
+            # A filesystem directory:
             if os.path.isdir(_path_name):
-                # Filesystem directory
                 _path_name = _path_name.rstrip(os.path.sep)
                 file_location = FileLocation(_path_name)
                 for dirpath, dirnames, filenames in os.walk(_path_name):
@@ -385,63 +386,17 @@ class Loader:
                             index_name = filename
                         self._index_file(index_name, file_location)
 
-            else:
-                # Find path component that looks like the ZIP file.
-                zip_directory = ''
-                old_path = None
-                while _path_name and not (os.path.isfile(_path_name) or os.path.isfile(_path_name + '.001')):
-                    old_path = _path_name
-                    _path_name, tail_dir = os.path.split(_path_name)
-                    if _path_name == old_path:
-                        break
-                    zip_directory = '/'.join((tail_dir, zip_directory))
-                if _path_name == old_path:
-                    continue
-                zip_directory = zip_directory.rstrip('/')
+            # A ZIP file:
+            elif zipfile.is_zipfile(_path_name):
+                zipfileobj = zipfile.ZipFile(_path_name, 'r')
 
-                # path looks like a ZIP file, zip_directory resides within ZIP
-                if not _path_name:
-                    continue
-
-                if zip_stream := self._get_stream(_path_name):
-                    zipfileobj = zipfile.ZipFile(zip_stream, 'r')
-                    file_location = ZIPLocation(zipfileobj, zip_directory)
-                    for zip_name in zipfileobj.namelist():
-                        # TODO: properly index inside of zip files.
-                        # zip_name_dir, zip_name = os.path.split(zip_name)
-                        # assert '\\' not in name_dir
-                        # assert not name_dir.endswith('/')
-                        if zip_name.startswith(zip_directory):
-                            if zip_directory:
-                                zip_name = zip_name[len(zip_directory) + 1:]
-                            self._index_file(zip_name, file_location)
-
-    @staticmethod
-    def _get_stream(pathname: str) -> IO | str | None:
-        if zipfile.is_zipfile(pathname):
-            return pathname
-        elif not os.path.exists(pathname + '.001'):
-            return None
-        else:
-            with open(pathname + '.001', 'rb') as volume:
-                bytes_ = bytes(volume.read())
-
-            volume_index = 2
-            while os.path.exists(pathname + '.{0:0>3}'.format(volume_index)):
-                with open(pathname + '.{0:0>3}'.format(volume_index), 'rb') as volume:
-                    bytes_ += bytes(volume.read())
-
-                volume_index += 1
-
-            zip_stream = BytesIO(bytes_)
-            if zipfile.is_zipfile(zip_stream):
-                return zip_stream
-            else:
-                return None
-
-    def _index_file(self, name: str, locationobj: Location) -> None:
-        if name not in self._index:
-            self._index[name] = locationobj
+                # Returns zipfile.ZipInfo objects:
+                for fileinfo in zipfileobj.infolist():
+                    if fileinfo.is_dir():
+                        continue
+                    directory, filename = os.path.split(fileinfo.filename)
+                    zip_location = ZIPLocation(zipfileobj, directory)
+                    self._index_file(filename, zip_location)
 
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
@@ -453,7 +408,7 @@ class Loader:
                 Combination of ``r``, ``w``, ``a``, ``b`` and ``t`` characters
                 with the meaning as for the builtin ``open`` function.
         """
-        self._require_index()
+        self._ensure_index()
         try:
             file_location = self._index[name]
             return file_location.open(name, mode)
@@ -468,7 +423,7 @@ class Loader:
         images.  These images should be located relative to the HTML file, not
         looked up individually in the loader's path.
         """
-        self._require_index()
+        self._ensure_index()
         try:
             return self._index[filename]
         except KeyError:
@@ -486,7 +441,7 @@ class Loader:
             action_man = font.load('Action Man')
 
         """
-        self._require_index()
+        self._ensure_index()
         from pyglet import font
         fileobj = self.file(filename)
         font.add_file(fileobj)
@@ -563,7 +518,7 @@ class Loader:
                   data is not modified. Instead, the texture coordinates
                   are manipulated to produce the desired result.
         """
-        self._require_index()
+        self._ensure_index()
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
@@ -595,7 +550,7 @@ class Loader:
                 Leaves specified pixels of blank space around each image in
                 an atlas, which may help reduce texture bleeding.
         """
-        self._require_index()
+        self._ensure_index()
         try:
             identity = self._cached_animations[name]
         except KeyError:
@@ -618,7 +573,7 @@ class Loader:
 
         This is useful for debugging and profiling only.
         """
-        self._require_index()
+        self._ensure_index()
         return list(self._cached_animations.keys())
 
     def get_cached_image_names(self) -> list[str]:
@@ -626,7 +581,7 @@ class Loader:
 
         This is useful for debugging and profiling only.
         """
-        self._require_index()
+        self._ensure_index()
         return list(self._cached_images.keys())
 
     def get_cached_texture_names(self) -> list[str]:
@@ -634,7 +589,7 @@ class Loader:
 
         This is useful for debugging and profiling only.
         """
-        self._require_index()
+        self._ensure_index()
         return list(self._cached_textures.keys())
 
     def get_texture_bins(self) -> list[TextureBin]:
@@ -642,7 +597,7 @@ class Loader:
 
         This is useful for debugging and profiling only.
         """
-        self._require_index()
+        self._ensure_index()
         return list(self._texture_atlas_bins.values())
 
     def media(self, name: str, streaming: bool = True) -> Source:
@@ -659,7 +614,7 @@ class Loader:
                 True if the source should be streamed from disk, False if
                 it should be entirely decoded into memory immediately.
         """
-        self._require_index()
+        self._ensure_index()
         from pyglet import media
         try:
             file_location = self._index[name]
@@ -676,7 +631,7 @@ class Loader:
 
     def texture(self, name: str) -> Texture:
         """Load an image as a single OpenGL texture."""
-        self._require_index()
+        self._ensure_index()
         if name in self._cached_textures:
             return self._cached_textures[name]
 
@@ -694,13 +649,13 @@ class Loader:
             batch:
                 An optional Batch instance to add this model to.
         """
-        self._require_index()
+        self._ensure_index()
         abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
         return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
 
     def html(self, name: str) -> AbstractDocument:
         """Load an HTML document."""
-        self._require_index()
+        self._ensure_index()
         fileobj = self.file(name)
         return pyglet.text.load(name, fileobj, 'text/html')
 
@@ -709,13 +664,13 @@ class Loader:
 
         See `pyglet.text.formats.attributed` for details on this format.
         """
-        self._require_index()
+        self._ensure_index()
         fileobj = self.file(name)
         return pyglet.text.load(name, fileobj, 'text/vnd.pyglet-attributed')
 
     def text(self, name: str) -> AbstractDocument:
         """Load a plain text document."""
-        self._require_index()
+        self._ensure_index()
         fileobj = self.file(name)
         return pyglet.text.load(name, fileobj, 'text/plain')
 
@@ -730,6 +685,7 @@ class Loader:
                 Not required if your shader has a standard file extension, such
                 as ``.vert``, ``.frag``, etc..
         """
+        self._ensure_index()
         # https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
         shader_extensions = {'comp': "compute",
                              'frag': "fragment",
