@@ -57,20 +57,29 @@ class Vec2(_typing.NamedTuple):
     def __sub__(self, other: Vec2) -> Vec2:
         return Vec2(self.x - other.x, self.y - other.y)
 
-    def __mul__(self, scalar: float) -> Vec2:
-        return Vec2(self.x * scalar, self.y * scalar)
+    def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x * scalar, self.y * scalar)
+        except TypeError:
+            return Vec2(self.x * scalar[0], self.y * scalar[1])
 
-    def __truediv__(self, scalar: float) -> Vec2:
-        return Vec2(self.x / scalar, self.y / scalar)
+    def __truediv__(self, scalar: float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x / scalar, self.y / scalar)
+        except TypeError:
+            return Vec2(self.x / scalar[0], self.y / scalar[1])
 
-    def __floordiv__(self, scalar: float) -> Vec2:
-        return Vec2(self.x // scalar, self.y // scalar)
+    def __floordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x // scalar, self.y // scalar)
+        except TypeError:
+            return Vec2(self.x // scalar[0], self.y // scalar[1])
 
     def __radd__(self, other: _typing.Union[Vec2, int]) -> Vec2:
         try:
             return self.__add__(_typing.cast(Vec2, other))
         except TypeError as err:
-            if other == 0:      # Required for functionality with sum()
+            if other == 0:  # Required for functionality with sum()
                 return self
             raise err
 
@@ -238,20 +247,29 @@ class Vec3(_typing.NamedTuple):
     def __sub__(self, other: Vec3) -> Vec3:
         return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def __mul__(self, scalar: float) -> Vec3:
-        return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
+    def __mul__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+        try:
+            return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
+        except TypeError:
+            return Vec3(self.x * scalar[0], self.y * scalar[1], self.z * scalar[2])
 
-    def __truediv__(self, scalar: float) -> Vec3:
-        return Vec3(self.x / scalar, self.y / scalar, self.z / scalar)
+    def __truediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+        try:
+            return Vec3(self.x / scalar, self.y / scalar, self.z / scalar)
+        except TypeError:
+            return Vec3(self.x / scalar[0], self.y / scalar[1], self.z / scalar[2])
 
-    def __floordiv__(self, scalar: float) -> Vec3:
-        return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
+    def __floordiv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+        try:
+            return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
+        except TypeError:
+            return Vec3(self.x // scalar[0], self.y // scalar[1], self.z // scalar[2])
 
     def __radd__(self, other: _typing.Union[Vec3, int]) -> Vec3:
         try:
             return self.__add__(_typing.cast(Vec3, other))
         except TypeError as err:
-            if other == 0:      # Required for functionality with sum()
+            if other == 0:  # Required for functionality with sum()
                 return self
             raise err
 
@@ -266,7 +284,7 @@ class Vec3(_typing.NamedTuple):
     def __neg__(self) -> Vec3:
         return Vec3(-self.x, -self.y, -self.z)
 
-    def __round__(self, ndigits: _typing.Optional[int]  = None) -> Vec3:
+    def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
 
     def __lt__(self, other: Vec3) -> bool:
@@ -370,14 +388,23 @@ class Vec4(_typing.NamedTuple):
     def __sub__(self, other: Vec4) -> Vec4:
         return Vec4(self.x - other.x, self.y - other.y, self.z - other.z, self.w - other.w)
 
-    def __mul__(self, scalar: float) -> Vec4:
-        return Vec4(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
+    def __mul__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
+        try:
+            return Vec4(self.x * scalar, self.y * scalar, self.z * scalar, self.w * scalar)
+        except TypeError:
+            return Vec4(self.x * scalar[0], self.y * scalar[1], self.z * scalar[2], self.w * scalar[3])
 
-    def __truediv__(self, scalar: float) -> Vec4:
-        return Vec4(self.x / scalar, self.y / scalar, self.z / scalar, self.w / scalar)
+    def __truediv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
+        try:
+            return Vec4(self.x / scalar, self.y / scalar, self.z / scalar, self.w / scalar)
+        except TypeError:
+            return Vec4(self.x / scalar[0], self.y / scalar[1], self.z / scalar[2], self.w / scalar[3])
 
-    def __floordiv__(self, scalar: float) -> Vec4:
-        return Vec4(self.x // scalar, self.y // scalar, self.z // scalar, self.w // scalar)
+    def __floordiv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
+        try:
+            return Vec4(self.x // scalar, self.y // scalar, self.z // scalar, self.w // scalar)
+        except TypeError:
+            return Vec4(self.x // scalar[0], self.y // scalar[1], self.z // scalar[2], self.w // scalar[3])
 
     def __abs__(self) -> float:
         return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2 + self.w ** 2)
@@ -392,7 +419,7 @@ class Vec4(_typing.NamedTuple):
         try:
             return self.__add__(_typing.cast(Vec4, other))
         except TypeError as err:
-            if other == 0:      # Required for functionality with sum()
+            if other == 0:  # Required for functionality with sum()
                 return self
             raise err
 
@@ -484,6 +511,7 @@ class Mat3(tuple):
 
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
+
     def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
         new = super().__new__(cls, values)
         assert len(new) == 9, "A 3x3 Matrix requires 9 values"
@@ -577,6 +605,7 @@ class Mat4(tuple):
 
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
+
     def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
                                                               0.0, 1.0, 0.0, 0.0,
                                                               0.0, 0.0, 1.0, 0.0,
