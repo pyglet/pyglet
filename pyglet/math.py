@@ -34,9 +34,9 @@ Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
 
-def clamp(num: float, min_val: float, max_val: float) -> float:
+def clamp(num: float, minimum: float, maximum: float) -> float:
     """Clamp a value between a minimum and maximum limit."""
-    return max(min(num, max_val), min_val)
+    return max(min(num, maximum), minimum)
 
 
 class Vec2(_typing.NamedTuple):
@@ -75,7 +75,7 @@ class Vec2(_typing.NamedTuple):
         except TypeError:
             return Vec2(self.x // scalar[0], self.y // scalar[1])
 
-    def __radd__(self, other: _typing.Union[Vec2, int]) -> Vec2:
+    def __radd__(self, other: Vec2 | int) -> Vec2:
         try:
             return self.__add__(_typing.cast(Vec2, other))
         except TypeError as err:
@@ -99,12 +99,6 @@ class Vec2(_typing.NamedTuple):
 
     def __lt__(self, other: Vec2) -> bool:
         return abs(self) < abs(other)
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Vec2) and self.x == other.x and self.y == other.y
-
-    def __ne__(self, other: object) -> bool:
-        return not isinstance(other, Vec2) or self.x != other.x or self.y != other.y
 
     @staticmethod
     def from_polar(mag: float, angle: float) -> Vec2:
@@ -290,12 +284,6 @@ class Vec3(_typing.NamedTuple):
     def __lt__(self, other: Vec3) -> bool:
         return abs(self) < abs(other)
 
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Vec3) and self.x == other.x and self.y == other.y and self.z == other.z
-
-    def __ne__(self, other: object) -> bool:
-        return not isinstance(other, Vec3) or self.x != other.x or self.y != other.y or self.z != other.z
-
     def from_magnitude(self, magnitude: float) -> Vec3:
         """Create a new vector of the given magnitude
 
@@ -430,24 +418,6 @@ class Vec4(_typing.NamedTuple):
 
     def __lt__(self, other: Vec4) -> bool:
         return abs(self) < abs(other)
-
-    def __eq__(self, other: object) -> bool:
-        return (
-                isinstance(other, Vec4)
-                and self.x == other.x
-                and self.y == other.y
-                and self.z == other.z
-                and self.w == other.w
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return (
-                not isinstance(other, Vec4)
-                or self.x != other.x
-                or self.y != other.y
-                or self.z != other.z
-                or self.w != other.w
-        )
 
     def lerp(self, other: Vec4, alpha: float) -> Vec4:
         """Create a new Vec4 linearly interpolated between this vector and another Vec4.
