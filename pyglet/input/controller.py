@@ -83,7 +83,7 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
     except ValueError:
         return None
 
-    for item in split_mapping[2:]:
+    for item in split_mapping:
         # looking for items like: a:b0, b:b1, etc.
         if ':' not in item:
             continue
