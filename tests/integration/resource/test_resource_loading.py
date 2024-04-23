@@ -73,8 +73,13 @@ def test_zipfile(loader):
     assert loader.file('f7.txt').read().strip() == asbytes('F7')
 
 
+def test_zipfile_trailing_slash(loader):
+    loader.path = ['dir1/res.zip/']
+    assert loader.file('f7.txt').read().strip() == asbytes('F7')
+
+
 def test_zipfile_subdirs(loader):
-    loader.path = ['dir1/res.zip']
+    loader.path = ['dir1/res.zip/dir1', 'dir1/res.zip/dir1/dir1/']
     assert loader.file('f8.txt').read().strip() == asbytes('F8')
     assert loader.file('f9.txt').read().strip() == asbytes('F9')
 
