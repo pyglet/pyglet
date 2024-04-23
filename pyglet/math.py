@@ -31,7 +31,6 @@ except ImportError:
 
 
 Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
-Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
 
 def clamp(num: float, minimum: float, maximum: float) -> float:
@@ -562,7 +561,7 @@ class Mat3(tuple):
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
 
 
-class Mat4(tuple):
+class Mat4(_typing.NamedTuple):
     """A 4x4 Matrix
 
     `Mat4` is an immutable 4x4 Matrix, which includs most common operators.
@@ -576,16 +575,28 @@ class Mat4(tuple):
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
 
-    def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
-                                                              0.0, 1.0, 0.0, 0.0,
-                                                              0.0, 0.0, 1.0, 0.0,
-                                                              0.0, 0.0, 0.0, 1.0,)) -> Mat4T:
-        new = super().__new__(cls, values)
-        assert len(new) == 16, "A 4x4 Matrix requires 16 values"
-        return new
+    a: float = 1.0
+    b: float = 0.0
+    c: float = 0.0
+    d: float = 0.0
+
+    e: float = 0.0
+    f: float = 1.0
+    g: float = 0.0
+    h: float = 0.0
+
+    i: float = 0.0
+    j: float = 0.0
+    k: float = 1.0
+    l: float = 0.0
+
+    m: float = 0.0
+    n: float = 0.0
+    o: float = 0.0
+    p: float = 1.0
 
     @classmethod
-    def orthogonal_projection(cls: type[Mat4T], left: float, right: float, bottom: float, top: float, z_near: float, z_far: float) -> Mat4T:
+    def orthogonal_projection(cls: Mat4, left: float, right: float, bottom: float, top: float, z_near: float, z_far: float) -> Mat4:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
 
         Given left, right, bottom, top values, and near/far z planes,
@@ -596,21 +607,21 @@ class Mat4(tuple):
         height = top - bottom
         depth = z_far - z_near
 
-        sx = 2.0 / width
-        sy = 2.0 / height
-        sz = 2.0 / -depth
+        s_x = 2.0 / width
+        s_y = 2.0 / height
+        s_z = 2.0 / -depth
 
-        tx = -(right + left) / width
-        ty = -(top + bottom) / height
-        tz = -(z_far + z_near) / depth
+        t_x = -(right + left) / width
+        t_y = -(top + bottom) / height
+        t_z = -(z_far + z_near) / depth
 
-        return cls((sx, 0.0, 0.0, 0.0,
-                    0.0, sy, 0.0, 0.0,
-                    0.0, 0.0, sz, 0.0,
-                    tx, ty, tz, 1.0))
+        return cls(s_x, 0.0, 0.0, 0.0,
+                   0.0, s_y, 0.0, 0.0,
+                   0.0, 0.0, s_z, 0.0,
+                   t_x, t_y, t_z, 1.0)
 
     @classmethod
-    def perspective_projection(cls: type[Mat4T], aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4T:
+    def perspective_projection(cls:  Mat4, aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
         """Create a Mat4 perspective projection matrix for use with OpenGL.
 
         Given a desired aspect ratio, near/far planes, and fov (field of view),
@@ -631,10 +642,10 @@ class Mat4(tuple):
         w = w / aspect
         h = 2 * z_near / height
 
-        return cls((w, 0, 0, 0,
-                    0, h, 0, 0,
-                    0, 0, q, -1,
-                    0, 0, qn, 0))
+        return cls(w, 0, 0, 0,
+                   0, h, 0, 0,
+                   0, 0, q, -1,
+                   0, 0, qn, 0)
 
     @classmethod
     def from_rotation(cls, angle: float, vector: Vec3) -> Mat4:
@@ -647,23 +658,23 @@ class Mat4(tuple):
         return cls().rotate(angle, vector)
 
     @classmethod
-    def from_scale(cls: type[Mat4T], vector: Vec3) -> Mat4T:
+    def from_scale(cls: Mat4, vector: Vec3) -> Mat4:
         """Create a scale matrix from a Vec3."""
-        return cls((vector[0], 0.0, 0.0, 0.0,
-                    0.0, vector[1], 0.0, 0.0,
-                    0.0, 0.0, vector[2], 0.0,
-                    0.0, 0.0, 0.0, 1.0))
+        return cls(vector.x, 0.0, 0.0, 0.0,
+                   0.0, vector.y, 0.0, 0.0,
+                   0.0, 0.0, vector.z, 0.0,
+                   0.0, 0.0, 0.0, 1.0)
 
     @classmethod
-    def from_translation(cls: type[Mat4T], vector: Vec3) -> Mat4T:
+    def from_translation(cls: Mat4, vector: Vec3) -> Mat4:
         """Create a translation matrix from a Vec3."""
-        return cls((1.0, 0.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0, 0.0,
-                    0.0, 0.0, 1.0, 0.0,
-                    vector[0], vector[1], vector[2], 1.0))
+        return cls(1.0, 0.0, 0.0, 0.0,
+                   0.0, 1.0, 0.0, 0.0,
+                   0.0, 0.0, 1.0, 0.0,
+                   vector.x, vector.y, vector.z, 1.0)
 
     @classmethod
-    def look_at(cls: type[Mat4T], position: Vec3, target: Vec3, up: Vec3):
+    def look_at(cls: Mat4, position: Vec3, target: Vec3, up: Vec3):
         """Create a viewing matrix that points toward a target.
 
         This method takes three Vec3s, describing the viewer's position,
@@ -681,10 +692,10 @@ class Mat4(tuple):
         s = f.cross(u).normalize()
         u = s.cross(f)
 
-        return cls([s.x, u.x, -f.x, 0.0,
-                    s.y, u.y, -f.y, 0.0,
-                    s.z, u.z, -f.z, 0.0,
-                    -s.dot(position), -u.dot(position), f.dot(position), 1.0])
+        return cls(s.x, u.x, -f.x, 0.0,
+                   s.y, u.y, -f.y, 0.0,
+                   s.z, u.z, -f.z, 0.0,
+                   -s.dot(position), -u.dot(position), f.dot(position), 1.0)
 
     def row(self, index: int) -> tuple:
         """Get a specific row as a tuple."""
@@ -719,7 +730,7 @@ class Mat4(tuple):
         # ri, rj, rk, --
         # --, --, --, --
 
-        return Mat4(self) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
+        return self @ Mat4(ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1)
 
     def scale(self, vector: Vec3) -> Mat4:
         """Get a scale Matrix on x, y, or z axis."""
@@ -727,31 +738,31 @@ class Mat4(tuple):
         temp[0] *= vector[0]
         temp[5] *= vector[1]
         temp[10] *= vector[2]
-        return Mat4(temp)
+        return Mat4(*temp)
 
     def translate(self, vector: Vec3) -> Mat4:
         """Get a translation Matrix along x, y, and z axis."""
-        return self @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
+        return self @ Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1)
 
     def transpose(self) -> Mat4:
         """Get a transpose of this Matrix."""
-        return Mat4(self[0::4] + self[1::4] + self[2::4] + self[3::4])
+        return Mat4(*self[0::4], *self[1::4], *self[2::4], *self[3::4])
 
     def __add__(self, other: Mat4) -> Mat4:
         if not isinstance(other, Mat4):
             raise TypeError("Can only add to other Mat4 types")
-        return Mat4(s + o for s, o in zip(self, other))
+        return Mat4(*(s + o for s, o in zip(self, other)))
 
     def __sub__(self, other: Mat4) -> Mat4:
         if not isinstance(other, Mat4):
             raise TypeError("Can only subtract from other Mat4 types")
-        return Mat4(s - o for s, o in zip(self, other))
+        return Mat4(*(s - o for s, o in zip(self, other)))
 
     def __pos__(self) -> Mat4:
         return self
 
     def __neg__(self) -> Mat4:
-        return Mat4(-v for v in self)
+        return Mat4(*(-v for v in self))
 
     def __invert__(self) -> Mat4:
         a = self[10] * self[15] - self[11] * self[14]
@@ -785,25 +796,25 @@ class Mat4(tuple):
         pdet = 1 / det
         ndet = -pdet
 
-        return Mat4((pdet * (self[5] * a - self[6] * b + self[7] * c),
-                     ndet * (self[1] * a - self[2] * b + self[3] * c),
-                     pdet * (self[1] * g - self[2] * h + self[3] * i),
-                     ndet * (self[1] * j - self[2] * k + self[3] * l),
-                     ndet * (self[4] * a - self[6] * d + self[7] * e),
-                     pdet * (self[0] * a - self[2] * d + self[3] * e),
-                     ndet * (self[0] * g - self[2] * m + self[3] * n),
-                     pdet * (self[0] * j - self[2] * o + self[3] * p),
-                     pdet * (self[4] * b - self[5] * d + self[7] * f),
-                     ndet * (self[0] * b - self[1] * d + self[3] * f),
-                     pdet * (self[0] * h - self[1] * m + self[3] * q),
-                     ndet * (self[0] * k - self[1] * o + self[3] * r),
-                     ndet * (self[4] * c - self[5] * e + self[6] * f),
-                     pdet * (self[0] * c - self[1] * e + self[2] * f),
-                     ndet * (self[0] * i - self[1] * n + self[2] * q),
-                     pdet * (self[0] * l - self[1] * p + self[2] * r)))
+        return Mat4(pdet * (self[5] * a - self[6] * b + self[7] * c),
+                    ndet * (self[1] * a - self[2] * b + self[3] * c),
+                    pdet * (self[1] * g - self[2] * h + self[3] * i),
+                    ndet * (self[1] * j - self[2] * k + self[3] * l),
+                    ndet * (self[4] * a - self[6] * d + self[7] * e),
+                    pdet * (self[0] * a - self[2] * d + self[3] * e),
+                    ndet * (self[0] * g - self[2] * m + self[3] * n),
+                    pdet * (self[0] * j - self[2] * o + self[3] * p),
+                    pdet * (self[4] * b - self[5] * d + self[7] * f),
+                    ndet * (self[0] * b - self[1] * d + self[3] * f),
+                    pdet * (self[0] * h - self[1] * m + self[3] * q),
+                    ndet * (self[0] * k - self[1] * o + self[3] * r),
+                    ndet * (self[4] * c - self[5] * e + self[6] * f),
+                    pdet * (self[0] * c - self[1] * e + self[2] * f),
+                    ndet * (self[0] * i - self[1] * n + self[2] * q),
+                    pdet * (self[0] * l - self[1] * p + self[2] * r))
 
-    def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat4:
-        return Mat4(round(v, ndigits) for v in self)
+    def __round__(self, ndigits: int | None) -> Mat4:
+        return Mat4(*(round(v, ndigits) for v in self))
 
     def __mul__(self, other: int) -> _typing.NoReturn:
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
@@ -817,19 +828,6 @@ class Mat4(tuple):
         ...
 
     def __matmul__(self, other):
-        if isinstance(other, Vec4):
-            # Rows:
-            r0 = self[0::4]
-            r1 = self[1::4]
-            r2 = self[2::4]
-            r3 = self[3::4]
-            return Vec4(_sumprod(r0, other),
-                        _sumprod(r1, other),
-                        _sumprod(r2, other),
-                        _sumprod(r3, other))
-
-        if not isinstance(other, Mat4):
-            raise TypeError("Can only multiply with Mat4 or Vec4 types")
         # Rows:
         r0 = self[0::4]
         r1 = self[1::4]
@@ -841,11 +839,20 @@ class Mat4(tuple):
         c2 = other[8:12]
         c3 = other[12:16]
 
+        if isinstance(other, Vec4):
+            return Vec4(_sumprod(r0, other),
+                        _sumprod(r1, other),
+                        _sumprod(r2, other),
+                        _sumprod(r3, other))
+
+        if not isinstance(other, Mat4):
+            raise TypeError("Can only multiply with Mat4 or Vec4 types")
+
         # Multiply and sum rows * columns:
-        return Mat4((_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2), _sumprod(c0, r3),
-                     _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
-                     _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
-                     _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3)))
+        return Mat4(_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2), _sumprod(c0, r3),
+                    _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
+                    _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
+                    _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
@@ -890,7 +897,7 @@ class Quaternion(_typing.NamedTuple):
         # i, j, k, -
         # -, -, -, -
 
-        return Mat4((a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0))
+        return Mat4(a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0)
 
     def to_mat3(self) -> Mat3:
         w = self.w
