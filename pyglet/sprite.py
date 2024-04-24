@@ -68,7 +68,7 @@ from __future__ import annotations
 
 import sys
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 import pyglet
 
@@ -241,7 +241,7 @@ class Sprite(event.EventDispatcher):
     _frame_index = 0
     _paused = False
     _rotation = 0
-    _rgba = (255, 255, 255, 255)
+    _rgba: tuple[int, int, int, int] = (255, 255, 255, 255)
     _scale = 1.0
     _scale_x = 1.0
     _scale_y = 1.0
@@ -662,7 +662,8 @@ class Sprite(event.EventDispatcher):
 
     @opacity.setter
     def opacity(self, opacity: int):
-        self._rgba = (*self._rgba[:3], opacity)
+        r, g, b, _ = self._rgba
+        self._rgba = r, g, b, opacity
         self._vertex_list.colors[:] = self._rgba * 4
 
     @property
@@ -805,7 +806,3 @@ class AdvancedSprite(pyglet.sprite.Sprite):
                                        self._group)
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
         self._program = program
-
-
-
-
