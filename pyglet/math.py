@@ -208,9 +208,7 @@ class Vec2(_typing.NamedTuple):
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xy'.index(c)] for c in attrs))
         except (ValueError, TypeError):
-            raise AttributeError(f"'Vec2' invalid attr(s): '{attrs}'. "
-                                 f"Valid attributes are 'x', 'y'. "
-                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
+            raise AttributeError(f"'Vec2' has no attribute: '{attrs}'.")
 
 
 class Vec3(_typing.NamedTuple):
@@ -350,9 +348,7 @@ class Vec3(_typing.NamedTuple):
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyz'.index(c)] for c in attrs))
         except (ValueError, TypeError):
-            raise AttributeError(f"'Vec3' invalid attr(s): '{attrs}'. "
-                                 f"Valid attributes are 'x', 'y', 'z'. "
-                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
+            raise AttributeError(f"'Vec3' has no attribute: '{attrs}'.")
 
 
 class Vec4(_typing.NamedTuple):
@@ -464,9 +460,7 @@ class Vec4(_typing.NamedTuple):
             vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
             return vec_class(*(self['xyzw'.index(c)] for c in attrs))
         except (ValueError, TypeError):
-            raise AttributeError(f"'Vec4' invalid attr(s): '{attrs}'. "
-                                 f"Valid attributes are 'x', 'y', 'z', 'w'. "
-                                 f"Swizzling can be done for Vec2, Vec3, and Vec4.")
+            raise AttributeError(f"'Vec4' has no attribute: '{attrs}'.")
 
 
 class Mat3(tuple):
