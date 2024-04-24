@@ -1,3 +1,14 @@
+pyglet 2.0.16
+
+Changes and Improvements
+------------------------
+- library-wide overhaul of docstrings, and addition of type hints (#1084)
+
+Bugfixes
+--------
+- resource: Fix indexing of directories inside of Zip files. Remove broken code for multi-part archives.
+
+
 pyglet 2.0.15
 
 Changes and Improvements
