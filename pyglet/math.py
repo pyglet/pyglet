@@ -354,7 +354,7 @@ class Vec3(_typing.NamedTuple):
 class Vec4(_typing.NamedTuple):
     """A four-dimensional vector represented as X Y Z W coordinates.
 
-    `Vec3` is an immutable 2D Vector, including most common operators.
+    `Vec4` is an immutable 2D Vector, including most common operators.
     As an immutable type, all operations return a new object.
 
     .. note:: The Python `len` operator returns the number of elements in
