@@ -37,6 +37,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
+from ctypes import _CData  # noqa  # There's no good way to type this
 from typing import Any, Type
 
 from .cocoatypes import *
@@ -528,11 +529,39 @@ def get_superclass_of_object(obj):
     return c_void_p(objc.class_getSuperclass(cls))
 
 
-# http://www.sealiesoftware.com/blog/archive/2008/10/30/objc_explain_objc_msgSend_stret.html
-# http://www.x86-64.org/documentation/abi-0.99.pdf  (pp.17-23)
 # executive summary: on x86-64, who knows?
-def x86_should_use_stret(restype):
-    """Try to figure out when a return type will be passed on stack."""
+def x86_should_use_stret(restype: Type[_CData]) -> bool:
+    """``True`` if a message should be sent via struct-specific function.
+
+    .. _sealiesoftware_objc_msgSend_stret: http://www.sealiesoftware.com/blog/archive/2008/10/30/objc_explain_objc_msgSend_stret.html
+    .. _objc_msgSend_stret: https://developer.apple.com/documentation/objectivec/1456730-objc_msgsend_stret
+    .. _x86_64_abi_pdf: https://cs61.seas.harvard.edu/site/pdf/x86-64-abi-20210928.pdf
+
+    Usually, messages which return a data structure should be sent with
+    `objc_msgSend_stret`. On some platforms, a data structure below a
+    platform-specific size can instead be returned via the stack as a
+    simple return value.
+
+    This function returns ``True`` if the passed message result type
+    seems big enough to use `obj_msgSend_stret` instead of other message
+    sending functions.
+
+    Note that this is a best guess based on available information. See
+    the following to learn more:
+
+    * `Sealie Software's overview of objc_msgSend_stret `<sealiesoftware_wobjc_msgSend_stret>`_
+    * Apple's developer documentation for `objc_msgSend_stret`_
+    * The Stack Frame heading of the `System V ABI <x86_64_abi_pdf>`_
+      (pp. 20-27)
+
+    Args:
+        restype:
+            A :py:mod:`ctypes` representation of an ObjectiveC message
+            result's type.
+    Returns:
+         ``True`` if it seems `objc_msgSend_stret` should be used;
+         ``False`` if it shouldn't.
+    """
     if type(restype) != type(Structure):
         return False
     if not __LP64__ and sizeof(restype) <= 8:
