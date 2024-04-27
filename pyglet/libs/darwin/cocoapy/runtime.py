@@ -628,7 +628,11 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
 # the arguments of the message only.
 # Note: kwarg 'argtypes' required if using args, or will fail on ARM64.
 
-def send_message(receiver, selName, *args, **kwargs):
+def send_message(
+        receiver: str | _CData,
+        selName: str | bytes,
+        *args, **kwargs
+) -> _CData:
     if isinstance(receiver, str):
         receiver = get_class(receiver)
     selector = get_selector(selName)
