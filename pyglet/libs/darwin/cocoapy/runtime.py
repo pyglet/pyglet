@@ -38,7 +38,7 @@ from contextlib import contextmanager
 from ctypes import *
 from ctypes import util
 from ctypes import _CData  # noqa  # There's no good way to type this
-from typing import Any, Type
+from typing import Any, Type, TypeVar, List
 
 from .cocoatypes import *
 
@@ -620,6 +620,8 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
     return False
 
 
+_T_CData = TypeVar('_T_CData', bound=_CData)
+
 # By default, assumes that restype is c_void_p
 # and that all arguments are wrapped inside c_void_p.
 # Use the restype and argtypes keyword arguments to
@@ -627,18 +629,24 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
 # and argtypes should be a list of ctypes types for
 # the arguments of the message only.
 # Note: kwarg 'argtypes' required if using args, or will fail on ARM64.
-
 def send_message(
         receiver: str | _CData,
         selector_name: str | bytes,
-        *args, **kwargs
-) -> _CData:
+        *args,
+        restype: Type[_T_CData] = c_void_p,
+        argtypes: List[Type[_CData]] | None = None,
+        **kwargs  # Backward-compatibility with old function signature
+) -> _T_CData:
+
+    # print('send_message', receiver, selector_name, args, restype, argtypes, kwargs)
+
+    # Pad defaults & preprocess
     if isinstance(receiver, str):
         receiver = get_class(receiver)
+    if argtypes is None:
+        argtypes = []
     selector = get_selector(selector_name)
-    restype = kwargs.get('restype', c_void_p)
-    # print('send_message', receiver, selName, args, kwargs)
-    argtypes = kwargs.get('argtypes', [])
+
     # Choose the correct version of objc_msgSend based on return type.
     if should_use_fpret(restype):
         objc.objc_msgSend_fpret.restype = restype
