@@ -28,6 +28,7 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+from __future__ import annotations
 
 import sys
 import platform
@@ -36,6 +37,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
+from typing import Any
 
 from .cocoatypes import *
 
@@ -432,7 +434,21 @@ OBJC_ASSOCIATION_RETAIN = 0x0301  # Strong reference to the associated object. T
 OBJC_ASSOCIATION_COPY = 0x0303  # Specifies that the associated object is copied. The association is made atomically.
 
 
-def ensure_bytes(x):
+def ensure_bytes(x: bytes | str) -> bytes:
+    """Attempt to encode an object as :py:class:`bytes`.
+
+    If it is already :py:class:`bytes`, it will be returned as-is.
+    Otherwise, this function attempt to convert ``x`` by assuming it
+    has a string-like :py:meth:`~str.encode` method supporting
+    ``'ascii'`` as an argument.
+
+    Args:
+        x: A :py:class:`bytes` or object with a string-like
+         :py:meth:`~str.encode` method.
+
+    Returns:
+        :py:class:`bytes`
+    """
     if isinstance(x, bytes):
         return x
     return x.encode('ascii')
