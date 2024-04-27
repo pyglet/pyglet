@@ -1,13 +1,40 @@
+"""Macintosh key scancode constants.
+
+.. _SDL_Quartzkeys.h: https://github.com/libsdl-org/SDL-1.2/blob/main/src/video/quartz/SDL_QuartzKeys.h
+.. _Inside_Macintosh_diagram: http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
+.. _Event.h_Mac_10_6: https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.6.sdk/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h
+
+
+Aside from a few changes, this module is based on SDL 1.X's
+`src/video/quartz/SDL_QuartzKeys.h <SDL_Quartzkeys.h` circa 2006.
+See the following to learn more:
+
+* `Inside Macintosh's keycode diagram <Inside_Macintosh_diagram>`_
+* The key code values (but not names) in `Mac OS X 10.6's Events.h <Event.h_Mac_10_6>_
+
+Changes include renaming the following:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pyglet name
+     - Old name
+
+   * - ``QZ_ROPTION``
+     - ``QZ_RALT``
+
+   * - ``QZ_LOPTION``
+     - ``QZ_LALT``
+
+   * - ``QZ_RCOMMAND``
+     - ``QZ_RMETA``
+
+   * - ``QZ_LCOMMAND``
+     - ``QZ_LMETA``
+
+"""
 from pyglet.window import key
 
-# From SDL: src/video/quartz/SDL_QuartzKeys.h
-# These are the Macintosh key scancode constants -- from Inside Macintosh
-# http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
-# Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
-# and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
-#
-# See also:
-# /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Headers/Events.h
 
 QZ_ESCAPE = 0x35
 QZ_F1 = 0x7A
