@@ -480,7 +480,9 @@ def get_class(name: bytes | str) -> c_void_p:
     See Apple's developer documentation for `objc_getClass`_.
 
      Args:
-        name: A name as :py:class:`bytes` or a :py:class:`str`.
+        name:
+            A name of an ObjectiveC class as :py:class:`bytes` or a
+            :py:class:`str`.
 
     Returns:
         A void pointer for the selector.
