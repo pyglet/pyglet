@@ -637,6 +637,63 @@ def send_message(
         argtypes: List[Type[_CData]] | None = None,
         **kwargs  # Backward-compatibility with old function signature
 ) -> _T_CData:
+    """Send a message to a class name or instance and return the result.
+
+    .. warning:: On ARM64 systems, ``argtypes`` is mandatory!
+
+                 Omitting it will cause this function to fail. It is
+                 strongly encouraged to provide this as all Macs new
+                 will be ARM64-based for the foreseeable future.
+
+    By default, all arguments and return values are assumed to be
+    :py:class:`~ctypes.c_void_p`. This includes:
+
+    #. All ``args``
+    #. The ``restype`` keyword argument
+    #. All ``argtypes``
+
+    You can specify a different expected message result type by passing
+    a :py:mod:`ctypes` type via the ``restype`` keyword argument. This
+    function will select the best known message sending approach based
+    on ``restype``'s :py:func:`ctypes.sizeof` value, floating point
+    attributes, and the current platform.
+
+    ``args`` must be a list of values to pass to ObjectiveC code. All
+    must match any provided ``argtypes``. If specifiec, ``argtypes``
+    must be a list of :py:mod:`ctypes` types. ``argtypes`` is mandatory
+    on recent ARM64 Macs.
+
+    .. _objc_msgSend: https://developer.apple.com/documentation/objectivec/1456712-objc_msgsend
+
+    To learn more about ObjectiveC's message sending functions, see the
+    following:
+
+    * :py:func:`.x86_should_use_stret`
+    * :py:func:`.should_use_fpret`
+    * Apple's developer documentation on `objc_msgSend`_
+
+    Args:
+        receiver:
+            A string or :py:class:`~ctypes.c_void_p` pointer to an
+            ObjectiveC class.
+        selector_name:
+            A selector name as a string or :py:attr:`bytes`.
+        *args:
+            Arguments matching ``argtypes``.
+        restype:
+            A :py:mod:`ctypes` representation of the message result's
+            expected return type.
+        argtypes:
+            A :py:class:`list` of :py:mod:`ctypes` types for each of
+            the arguments in ``args``.
+        **kwargs:
+            Unused backward compatibility argument kept to avoid
+            breaking with older versions of the function.
+
+    Returns:
+       The result of the message, if any.
+
+    """
 
     # print('send_message', receiver, selector_name, args, restype, argtypes, kwargs)
 
