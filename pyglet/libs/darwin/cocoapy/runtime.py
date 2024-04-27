@@ -472,7 +472,19 @@ def get_selector(name: str | bytes) -> c_void_p:
     return c_void_p(objc.sel_registerName(ensure_bytes(name)))
 
 
-def get_class(name):
+def get_class(name: bytes | str) -> c_void_p:
+    """Get a void pointer to an ObjectiveC class of a given name.
+
+    .. objc_getClass: https://developer.apple.com/documentation/objectivec/1418952-objc_getclass
+
+    See Apple's developer documentation for `objc_getClass`_.
+
+     Args:
+        name: A name as :py:class:`bytes` or a :py:class:`str`.
+
+    Returns:
+        A void pointer for the selector.
+    """
     return c_void_p(objc.objc_getClass(ensure_bytes(name)))
 
 
