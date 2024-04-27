@@ -508,18 +508,23 @@ def get_object_class(obj: c_void_p) -> c_void_p:
 
 
 def get_metaclass(name: str | bytes) -> c_void_p:
-    """Get a pointer to the metaclass for a given class name.
+    """Get a pointer to the metaclass for a given ObjectiveC class name.
 
     .. _objc_getMetaClass: https://developer.apple.com/documentation/objectivec/1418721-objc_getmetaclass/
+    .. sealiesoftware_objc_metaclass: https://www.sealiesoftware.com/blog/archive/2009/04/14/objc_explain_Classes_and_metaclasses.html
 
-    See Apple's developer documentation for `objc_getMetaClass`_.
+    See the following to learn more:
+
+    * Apple's developer documentation for `objc_getMetaClass`_.
+    * `Sealie Software's explanation of ObjectiveC metaclasses <sealiesoftware_objc_metaclass>`_
 
     Args:
         name:
             The name of an ObjectiveC class as a :py:class:`bytes`
             or a :py:class:`str`.
     Returns:
-         A void pointer to the ObjectiveC metaclass.
+         A void pointer to the ObjectiveC metaclass for the given
+         class name.
     """
     return c_void_p(objc.objc_getMetaClass(ensure_bytes(name)))
 
