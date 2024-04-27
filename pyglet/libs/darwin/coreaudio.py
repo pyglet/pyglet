@@ -1,3 +1,12 @@
+"""Bindings, constants, and helpers for Mac's `CoreAudio <https://developer.apple.com/documentation/coreaudio>`_.
+
+This includes:
+
+* Python access to structs as :py:mod:`ctypes`-based bindings
+* four-character constants used in CoreAudio
+* Error checking
+
+"""
 from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
     CFUNCTYPE
 
