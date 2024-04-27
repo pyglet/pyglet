@@ -524,7 +524,18 @@ def get_metaclass(name: str | bytes) -> c_void_p:
     return c_void_p(objc.objc_getMetaClass(ensure_bytes(name)))
 
 
-def get_superclass_of_object(obj):
+def get_superclass_of_object(obj: c_void_p) -> c_void_p:
+    """Get a pointer to the ObjectiveC superclass of an object.
+
+    Args:
+        obj:
+            A pointer to an ObjectiveC object.
+
+    Returns:
+        A void pointer to the ObjectiveC superclass of the passed
+        object.
+
+    """
     cls = c_void_p(objc.object_getClass(obj))
     return c_void_p(objc.class_getSuperclass(cls))
 
