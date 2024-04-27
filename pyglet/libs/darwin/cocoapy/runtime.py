@@ -630,12 +630,12 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
 
 def send_message(
         receiver: str | _CData,
-        selName: str | bytes,
+        selector_name: str | bytes,
         *args, **kwargs
 ) -> _CData:
     if isinstance(receiver, str):
         receiver = get_class(receiver)
-    selector = get_selector(selName)
+    selector = get_selector(selector_name)
     restype = kwargs.get('restype', c_void_p)
     # print('send_message', receiver, selName, args, kwargs)
     argtypes = kwargs.get('argtypes', [])
