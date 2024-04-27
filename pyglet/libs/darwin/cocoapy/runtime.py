@@ -488,7 +488,19 @@ def get_class(name: bytes | str) -> c_void_p:
     return c_void_p(objc.objc_getClass(ensure_bytes(name)))
 
 
-def get_object_class(obj):
+def get_object_class(obj: c_void_p) -> c_void_p:
+    """Get the ObjectiveC class for an object.
+
+    .. _object_GetClass: https://developer.apple.com/documentation/objectivec/1418629-object_getclass/
+
+    See Apple's developer documentation for `object_GetClass`.
+
+    Args:
+        obj:
+            A pointer to the object.
+    Returns:
+         A void pointer to the ObjectiveC class object.
+    """
     return c_void_p(objc.object_getClass(obj))
 
 
