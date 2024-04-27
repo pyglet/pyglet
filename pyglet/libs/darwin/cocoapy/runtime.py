@@ -497,7 +497,7 @@ def get_object_class(obj: c_void_p) -> c_void_p:
 
     Args:
         obj:
-            A pointer to the object.
+            A void pointer to an ObjectiveC object.
     Returns:
          A void pointer to the ObjectiveC class object.
     """
