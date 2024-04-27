@@ -571,7 +571,7 @@ def x86_should_use_stret(restype: Type[_CData]) -> bool:
     return True
 
 
-def should_use_fpret(restype: Type) -> bool:
+def should_use_fpret(restype: Type[_CData]) -> bool:
     """``True`` when a message type seems to need a float-specific function.
 
     .. _objc_msgSend_fpret: https://developer.apple.com/documentation/objectivec/1456697-objc_msgsend_fpret
