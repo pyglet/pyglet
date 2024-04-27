@@ -456,7 +456,19 @@ def ensure_bytes(x: bytes | str) -> bytes:
 
 ######################################################################
 
-def get_selector(name):
+def get_selector(name: str | bytes) -> c_void_p:
+    """Return a void pointer for a named ObjectiveC selector.
+
+    .. _sel_registerName:  https://developer.apple.com/documentation/objectivec/1418557-sel_registername
+
+    See Apple's developer documentation on `sel_registerName`_.
+
+    Args:
+        name: A name as :py:class:`bytes` or a :py:class:`str`.
+
+    Returns:
+        A void pointer for the selector.
+    """
     return c_void_p(objc.sel_registerName(ensure_bytes(name)))
 
 
