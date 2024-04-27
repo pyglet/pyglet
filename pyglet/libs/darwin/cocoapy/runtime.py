@@ -37,7 +37,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from typing import Any
+from typing import Any, Type
 
 from .cocoatypes import *
 
@@ -542,9 +542,28 @@ def x86_should_use_stret(restype):
     return True
 
 
-# http://www.sealiesoftware.com/blog/archive/2008/11/16/objc_explain_objc_msgSend_fpret.html
-def should_use_fpret(restype):
-    """Determine if objc_msgSend_fpret is required to return a floating point type."""
+def should_use_fpret(restype: Type) -> bool:
+    """``True`` when a message type seems to need a float-specific function.
+
+    .. _objc_msgSend_fpret: https://developer.apple.com/documentation/objectivec/1456697-objc_msgsend_fpret
+
+    On Macs running on x86 or amd64 processors, ObjectiveC messages
+    returning non-integer data types may need to be sent using
+    `objc_msgSend_fpret`_. This function returns ``True`` if the
+    current processor and platform features indicate this is the case.
+
+    To learn more, see:
+
+    * Apple's developer documentation on `objc_msgSend_fpret`_
+    * `Sealie Software's explanation of the above <http://www.sealiesoftware.com/blog/archive/2008/11/16/objc_explain_objc_msgSend_fpret.html>`_
+
+    Args:
+        restype: A :py:mod:`ctypes` type.
+
+    Returns:
+        ``True`` if `objc_msgSend_fpret`_ should be used, ``False``
+        otherwise.
+    """
     if not __i386__:
         # Unneeded on non-intel processors
         return False
