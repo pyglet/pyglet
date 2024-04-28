@@ -19,79 +19,11 @@ from concurrent.futures import ThreadPoolExecutor
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
+from pyglet.ioctl import _IOR, _IOR_str, _IOWR_len
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.linux.evdev_constants import *
 from pyglet.input.controller import get_mapping, Relation, create_guid
-
-_IOC_NRBITS = 8
-_IOC_TYPEBITS = 8
-_IOC_SIZEBITS = 14
-_IOC_DIRBITS = 2
-
-_IOC_NRSHIFT = 0
-_IOC_TYPESHIFT = (_IOC_NRSHIFT + _IOC_NRBITS)
-_IOC_SIZESHIFT = (_IOC_TYPESHIFT + _IOC_TYPEBITS)
-_IOC_DIRSHIFT = (_IOC_SIZESHIFT + _IOC_SIZEBITS)
-
-_IOC_NONE = 0
-_IOC_WRITE = 1
-_IOC_READ = 2
-
-
-def _IOC(dir, type, nr, size):
-    return ((dir << _IOC_DIRSHIFT) |
-            (type << _IOC_TYPESHIFT) |
-            (nr << _IOC_NRSHIFT) |
-            (size << _IOC_SIZESHIFT))
-
-
-def _IOR(type, nr, struct):
-
-    request = _IOC(_IOC_READ, ord(type), nr, ctypes.sizeof(struct))
-
-    def f(fileno, buffer=None):
-        buffer = buffer or struct()
-        fcntl.ioctl(fileno, request, buffer)
-        return buffer
-
-    return f
-
-
-def _IOR_len(type, nr):
-    def f(fileno, buffer):
-        request = _IOC(_IOC_READ, ord(type), nr, ctypes.sizeof(buffer))
-        fcntl.ioctl(fileno, request, buffer)
-        return buffer
-
-    return f
-
-
-def _IOR_str(type, nr):
-    g = _IOR_len(type, nr)
-
-    def f(fileno, length=256):
-        return g(fileno, ctypes.create_string_buffer(length)).value
-
-    return f
-
-
-def _IOW(type, nr):
-
-    def f(fileno, buffer):
-        request = _IOC(_IOC_WRITE, ord(type), nr, ctypes.sizeof(buffer))
-        fcntl.ioctl(fileno, request, buffer)
-
-    return f
-
-
-def _IORW(type, nr):
-    def f(fileno, buffer):
-        request = _IOC(_IOC_READ | _IOC_WRITE, ord(type), nr, ctypes.sizeof(buffer))
-        fcntl.ioctl(fileno, request, buffer)
-        return buffer
-
-    return f
 
 
 # From /linux/blob/master/include/uapi/linux/hidraw.h
@@ -120,9 +52,17 @@ HIDIOCGRDESC = _IOR('H', 0x02, HIDRawReportDescriptor)
 HIDIOCGRAWINFO = _IOR('H', 0x03, HIDRawDevInfo)
 HIDIOCGRAWNAME = _IOR_str('H', 0x04)
 HIDIOCGRAWPHYS = _IOR_str('H', 0x05)
-HIDIOCSFEATURE = _IORW('H', 0x06)
-HIDIOCGFEATURE = _IORW('H', 0x07)
 HIDIOCGRAWUNIQ = _IOR_str('H', 0x08)
+
+
+def HIDIOCSFEATURE(fileno, buffer):
+    return _IOWR_len('H', 0x06)(fileno, buffer)
+
+
+def HIDIOCGFEATURE(fileno, buffer):
+    return _IOWR_len('H', 0x07)(fileno, buffer)
+
+
 # HIDRAW_FIRST_MINOR = 0
 # HIDRAW_MAX_DEVICES = 64
 # HIDRAW_BUFFER_SIZE = 64
