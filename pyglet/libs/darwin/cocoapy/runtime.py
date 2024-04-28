@@ -697,28 +697,43 @@ def send_message(
 
     # print('send_message', receiver, selector_name, args, restype, argtypes, kwargs)
 
-    # Pad defaults & preprocess
+    # Shared preprocessing & default filling
     if isinstance(receiver, str):
         receiver = get_class(receiver)
     if argtypes is None:
         argtypes = []
     selector = get_selector(selector_name)
 
-    # Choose the correct version of objc_msgSend based on return type.
+    # Use restype to select the correct version of objc_msgSend
+
+    # Floating point, double, and double-long use float message handling
+    # https://developer.apple.com/documentation/objectivec/1456697-objc_msgsend_fpret
     if should_use_fpret(restype):
         objc.objc_msgSend_fpret.restype = restype
+        # Args will be: pointer to ObjC self, ptr to ObjC msg handler method, *argtypes
         objc.objc_msgSend_fpret.argtypes = [c_void_p, c_void_p] + argtypes
         result = objc.objc_msgSend_fpret(receiver, selector, *args)
+
+    # Use struct-specific func unless they're tiny structs on x86/AMD64
+    # https://developer.apple.com/documentation/objectivec/1456730-objc_msgsend_stret
     elif x86_should_use_stret(restype):
+        # Final args:: struct instance pointer, msg receiver pointer,  method selector pointer, *args
         objc.objc_msgSend_stret.argtypes = [POINTER(restype), c_void_p, c_void_p] + argtypes
+        # Allocate the struct & pass it to struct handler by reference
         result = restype()
         objc.objc_msgSend_stret(byref(result), receiver, selector, *args)
+
+    # Default to objc_msgSend for "simple values"
+    # https://developer.apple.com/documentation/objectivec/1456712-objc_msgsend
     else:
         objc.objc_msgSend.restype = restype
+        # Final args: ObjC self pointer, handler method pointer, *args
         objc.objc_msgSend.argtypes = [c_void_p, c_void_p] + argtypes
         result = objc.objc_msgSend(receiver, selector, *args)
+
         if restype == c_void_p:
             result = c_void_p(result)
+
     return result
 
 
