@@ -116,7 +116,6 @@ implementations = ["cocoa", "win32", "xlib"]
 # For each module, a list of submodules that should not be imported.
 # If value is None, do not try to import any submodule.
 skip_modules = {"pyglet": {
-                     "pyglet.ioctl": None,
                      "pyglet.lib": None,
                      "pyglet.libs": None,
                      "pyglet.app": implementations,

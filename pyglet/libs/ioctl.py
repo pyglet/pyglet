@@ -1,6 +1,3 @@
-"""An ioctl wrapper for pyglet.
-"""
-
 from pyglet import compat_platform
 
 if "linux" not in compat_platform:

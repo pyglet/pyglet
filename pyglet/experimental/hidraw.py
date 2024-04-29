@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
-from pyglet.ioctl import _IOR, _IOR_str, _IOWR_len
+from pyglet.libs.ioctl import _IOR, _IOR_str, _IOWR_len
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.linux.evdev_constants import *
@@ -97,7 +97,7 @@ class HIDRawDevice(XlibSelectDevice, Device):
         # Query the descriptor size:
         desc_size = HIDIOCGRDESCSIZE(fileno).value
         # Query the descriptor, and save the raw bytes:
-        _report_descriptor = HIDIOCGRDESC(fileno, HIDRawReportDescriptor(size=desc_size))
+        _report_descriptor = HIDIOCGRDESC(fileno)
         self.report_descriptor = bytes(_report_descriptor.values[:desc_size])
 
         self.controls = []
