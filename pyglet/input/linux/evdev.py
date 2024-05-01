@@ -1,6 +1,5 @@
 import os
 import time
-import fcntl
 import ctypes
 import warnings
 
@@ -23,12 +22,12 @@ from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
 
 try:
-    from os import readv as _os_readv
+    from os import readv as _readv
 except ImportError:
     # Workaround for missing os.readv in PyPy
     c = pyglet.lib.load_library('c')
 
-    def _os_readv(fd, buffers):
+    def _readv(fd, buffers):
         return c.read(fd, buffers, 3072)
 
 
@@ -358,7 +357,7 @@ class EvdevDevice(XlibSelectDevice, Device):
             return
 
         try:
-            bytes_read = _os_readv(self._fileno, self._event_buffer)
+            bytes_read = _readv(self._fileno, self._event_buffer)
         except OSError:
             self.close()
             return
@@ -400,6 +399,7 @@ class FFController(Controller):
         self._stop_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 0)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
+        assert self._fileno, "Controller must be opened first."
         effect = self._weak_effect
         effect.u.ff_rumble_effect.weak_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
         effect.ff_replay.length = int(duration * 1000)
@@ -407,6 +407,7 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._play_weak_event)
 
     def rumble_play_strong(self, strength=1.0, duration=0.5):
+        assert self._fileno, "Controller must be opened first."
         effect = self._strong_effect
         effect.u.ff_rumble_effect.strong_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
         effect.ff_replay.length = int(duration * 1000)
@@ -414,9 +415,11 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._play_strong_event)
 
     def rumble_stop_weak(self):
+        assert self._fileno, "Controller must be opened first."
         self.device.ff_upload_effect(self._stop_weak_event)
 
     def rumble_stop_strong(self):
+        assert self._fileno, "Controller must be opened first."
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
