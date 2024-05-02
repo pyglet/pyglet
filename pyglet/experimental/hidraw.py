@@ -6,6 +6,7 @@ import ctypes
 import warnings
 
 from ctypes import c_int as _int
+from ctypes import c_uint as _uint
 from ctypes import c_uint8 as _u8
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
@@ -30,29 +31,31 @@ from pyglet.input.controller import get_mapping, Relation, create_guid
 
 
 class HIDRawDevInfo(ctypes.Structure):
-    _fields_ = (
-        ('bustype', _u32),
-        ('vendor', _s16),
-        ('product', _s16),
-    )
+    _fields_ = (('bustype', _u32),
+                ('vendor', _s16),
+                ('product', _s16))
 
     def __repr__(self):
         return f"Info(bustype={self.bustype}, vendor={hex(self.vendor)}, product={hex(self.product)})"
 
 
 class HIDRawReportDescriptor(ctypes.Structure):
-    _fields_ = (
-        ('size', _u32),
-        ('values', _u8 * 4096)
-    )
+    _fields_ = (('size', _u32),
+                ('values', _u8 * 4096))
+
+    def __bytes__(self):
+        return bytes(self.values)[:self.size]
 
 
-HIDIOCGRDESCSIZE = _IOR('H', 0x01, _int)
-HIDIOCGRDESC = _IOR('H', 0x02, HIDRawReportDescriptor)
+HIDIOCGRDESCSIZE = _IOR('H', 0x01, _uint)
 HIDIOCGRAWINFO = _IOR('H', 0x03, HIDRawDevInfo)
 HIDIOCGRAWNAME = _IOR_str('H', 0x04)
 HIDIOCGRAWPHYS = _IOR_str('H', 0x05)
 HIDIOCGRAWUNIQ = _IOR_str('H', 0x08)
+
+
+def HIDIOCGRDESC(fileno, size):
+    return _IOR('H', 0x02, HIDRawReportDescriptor)(fileno, size)
 
 
 def HIDIOCSFEATURE(fileno, buffer):
@@ -94,11 +97,9 @@ class HIDRawDevice(XlibSelectDevice, Device):
         self.uniq = HIDIOCGRAWUNIQ(fileno).decode('utf-8')
         name = HIDIOCGRAWNAME(fileno).decode('utf-8')
 
-        # Query the descriptor size:
-        desc_size = HIDIOCGRDESCSIZE(fileno).value
-        # Query the descriptor, and save the raw bytes:
-        _report_descriptor = HIDIOCGRDESC(fileno)
-        self.report_descriptor = bytes(_report_descriptor.values[:desc_size])
+        # Query the descriptor size, and pass it as an argument.
+        desc_size = HIDIOCGRDESCSIZE(fileno)
+        self.report_descriptor = HIDIOCGRDESC(fileno, desc_size)
 
         self.controls = []
         self.control_map = {}
