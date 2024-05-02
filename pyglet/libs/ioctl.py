@@ -1,28 +1,37 @@
-"""Factory functions to provide similar functionality to the Linux ioctl macros.
+"""Factory functions to provide equivalent functionality as the Linux ioctl macros.
 
-These are factory functions, and are not used directly. Instead, they are used
-to create custom helper functions that perform specific tasks. For example::
+Ioctl macros are commonly used on Linux for interacting with character (char)
+files. This module provides factory functions that create custom helper functions
+to perform these same types of operations.
 
-    HIDIOCGRDESCSIZE = _IOR(code='H', nr=0x01, struct=ctypes.int)
-    # or
+In pyglet, the input/evdev backend uses these functions for interacting with input
+devices. For example, the helper functions are first defined::
+
+    # Create a function for reading a HID descriptor size:
+    HIDIOCGRDESCSIZE = _IOR(code='H', nr=0x01, struct=ctypes.c_uint)
+
+    # Create a function for writing Force Feedback data:
     EVIOCSFF = _IOW(code='E', nr=0x80, struct=FFEventStruct)
 
-These generated functions are then called to perform the operations::
+    # Create a function to read a device name as a str:
+    EVIOCGNAME = _IOR_str('E', 0x06)
 
+These functions are then called to perform the operations::
+
+    # Query the HID descriptor size (as uint):
     desc_size = HIDIOCGRDESCSIZE(fileno).value
-    # or
-    EVIOCSFF(fileno, ff_effect_struct_instance)
+
+    # Write a force feedback event (defined in a Structure):
+    EVIOCSFF(fileno, ff_event_struct_instance)
+
+    # Query the device name:
+    name = EVIOCGNAME(fileno)
 
 
 https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/ioctl.h
 
 """
 from __future__ import annotations
-
-from pyglet import compat_platform
-
-if compat_platform != 'linux':
-    raise ImportError("pyglet.libs.ioctl is only support unix-like platforms.")
 
 from fcntl import ioctl as _ioctl
 from ctypes import sizeof as _sizeof
