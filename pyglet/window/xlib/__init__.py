@@ -1551,14 +1551,16 @@ class XlibWindow(BaseWindow):
         self._active = True
         self._update_exclusivity()
         self.dispatch_event('on_activate')
-        xlib.XSetICFocus(self._x_ic)
+        if _have_utf8:
+            xlib.XSetICFocus(self._x_ic)
 
     @XlibEventHandler(xlib.FocusOut)
     def _event_focusout(self, ev):
         self._active = False
         self._update_exclusivity()
         self.dispatch_event('on_deactivate')
-        xlib.XUnsetICFocus(self._x_ic)
+        if _have_utf8:
+            xlib.XUnsetICFocus(self._x_ic)
 
     @XlibEventHandler(xlib.MapNotify)
     def _event_mapnotify(self, ev):
