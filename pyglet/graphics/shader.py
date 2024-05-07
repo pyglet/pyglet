@@ -322,12 +322,13 @@ class _UniformArray:
 
 
 class _Uniform:
-    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set'
+    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program'
 
     def __init__(self, program, uniform_type, size, location, dsa):
         self.type = uniform_type
         self.size = size
         self.location = location
+        self.program = program
 
         gl_type, gl_setter_legacy, gl_setter_dsa, length = _uniform_setters[uniform_type]
         gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
