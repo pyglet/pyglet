@@ -30,7 +30,6 @@ preferred to calling their ``draw`` methods individually.  To do this,
 simply pass in a reference to the :py:class:`~pyglet.graphics.Batch`
 instance when loading the Model::
 
-
     import pyglet
 
     window = pyglet.window.Window()
@@ -45,40 +44,47 @@ instance when loading the Model::
     pyglet.app.run()
 
 
-.. versionadded:: 1.4
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pyglet
 
 from pyglet import gl
 from pyglet import graphics
-from pyglet.gl import current_context
-from pyglet.math import Mat4, Vec3
-from pyglet.graphics import shader
+from pyglet.math import Mat4
 
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 
+if TYPE_CHECKING:
+    from typing import BinaryIO, Iterable
+    from pyglet.image import Texture
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics.vertexdomain import VertexList
+    from pyglet.model.codecs import ModelDecoder
 
-def load(filename, file=None, decoder=None, batch=None, group=None):
+
+def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None,
+         batch: Batch | None = None, group: Group | None = None) -> Model:
     """Load a 3D model from a file.
 
-    :Parameters:
-        `filename` : str
-            Used to guess the model format, and to load the file if `file` is
+    Args:
+        filename:
+            Used to guess the model format, and to load the file if ``file`` is
             unspecified.
-        `file` : file-like object or None
-            Source of model data in any supported format.        
-        `decoder` : ModelDecoder or None
+        file:
+            An open file containing the source of model data in any supported format.
+        decoder:
             If unspecified, all decoders that are registered for the filename
             extension are tried. An exception is raised if no codecs are
             registered for the file extension, or if decoding fails.
-        `batch` : Batch or None
+        batch:
             An optional Batch instance to add this model to.
-        `group` : Group or None
+        group:
             An optional top level Group.
-
-    :rtype: :py:mod:`~pyglet.model.Model`
     """
     if decoder:
         return decoder.decode(filename, file, batch=batch, group=group)
@@ -86,11 +92,12 @@ def load(filename, file=None, decoder=None, batch=None, group=None):
         return _codec_registry.decode(filename, file, batch=batch, group=group)
 
 
-def get_default_shader():
+def get_default_shader() -> ShaderProgram:
     return pyglet.gl.current_context.create_program((MaterialGroup.default_vert_src, 'vertex'),
                                                     (MaterialGroup.default_frag_src, 'fragment'))
 
-def get_default_textured_shader():
+
+def get_default_textured_shader() -> ShaderProgram:
     return pyglet.gl.current_context.create_program((TexturedMaterialGroup.default_vert_src, 'vertex'),
                                                     (TexturedMaterialGroup.default_frag_src, 'fragment'))
 
@@ -101,41 +108,39 @@ class Model:
     See the module documentation for usage.
     """
 
-    def __init__(self, vertex_lists, groups, batch):
-        """Create a model.
+    def __init__(self, vertex_lists: list[VertexList], groups: list[Group], batch: Batch | None = None) -> None:
+        """Create a model instance.
 
-        :Parameters:
-            `vertex_lists` : list
-                A list of `~pyglet.graphics.VertexList` or
-                `~pyglet.graphics.IndexedVertexList`.
-            `groups` : list
-                A list of `~pyglet.model.TexturedMaterialGroup`, or
-                 `~pyglet.model.MaterialGroup`. Each group corresponds to
-                 a vertex list in `vertex_lists` of the same index.
-            `batch` : `~pyglet.graphics.Batch`
-                Optional batch to add the model to. If no batch is provided,
+        Args:
+            vertex_lists:
+                A list of :py:class:`~pyglet.graphics.VertexList` or
+                :py:class:`~pyglet.graphics.IndexedVertexList`.
+            groups:
+                A list of :py:class:`~pyglet.model.TexturedMaterialGroup`, or
+                 :py:class:`~pyglet.model.MaterialGroup`. Each group corresponds
+                 to a vertex list in ``vertex_lists`` at the same index.
+            batch:
+                The batch to add the model to. If no batch is provided,
                 the model will maintain its own internal batch.
         """
         self.vertex_lists = vertex_lists
         self.groups = groups
-        self._batch = batch
+        self._batch = batch or graphics.Batch()
         self._modelview_matrix = Mat4()
 
     @property
-    def batch(self):
+    def batch(self) -> Batch:
         """The graphics Batch that the Model belongs to.
 
         The Model can be migrated from one batch to another, or removed from
         a batch (for individual drawing). If not part of any batch, the Model
         will keep its own internal batch. Note that batch migration can be
         an expensive operation.
-
-        :type: :py:class:`pyglet.graphics.Batch`
         """
         return self._batch
 
     @batch.setter
-    def batch(self, batch):
+    def batch(self, batch: Batch | None):
         if self._batch == batch:
             return
 
@@ -148,16 +153,16 @@ class Model:
         self._batch = batch
 
     @property
-    def matrix(self):
+    def matrix(self) -> Mat4:
         return self._modelview_matrix
 
     @matrix.setter
-    def matrix(self, matrix):
+    def matrix(self, matrix: Mat4):
         self._modelview_matrix = matrix
         for group in self.groups:
             group.matrix = matrix
 
-    def draw(self):
+    def draw(self) -> None:
         """Draw the model.
 
         This is not recommended. See the module documentation
@@ -170,7 +175,8 @@ class Model:
 class Material:
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
-    def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
+    def __init__(self, name: str, diffuse: Iterable, ambient: Iterable, specular: Iterable,
+                 emission: Iterable, shininess: float, texture_name: str | None = None) -> None:
         self.name = name
         self.diffuse = diffuse
         self.ambient = ambient
@@ -179,7 +185,7 @@ class Material:
         self.shininess = shininess
         self.texture_name = texture_name
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (self.name == other.name and
                 self.diffuse == other.diffuse and
                 self.ambient == other.ambient and
@@ -190,11 +196,11 @@ class Material:
 
 
 class BaseMaterialGroup(graphics.Group):
-    default_vert_src = None
-    default_frag_src = None
-    matrix = Mat4()
+    default_vert_src: str
+    default_frag_src: str
+    matrix: Mat4 = Mat4()
 
-    def __init__(self, material, program, order=0, parent=None):
+    def __init__(self, material: Material, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.material = material
         self.program = program
@@ -248,20 +254,21 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def __init__(self, material, program, texture, order=0, parent=None):
+    def __init__(self, material: Material, program: ShaderProgram,
+                 texture: Texture, order: int = 0, parent: Group | None = None):
         super().__init__(material, program, order, parent)
         self.texture = texture
 
-    def set_state(self):
+    def set_state(self) -> None:
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
         self.program['model'] = self.matrix
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (self.__class__ is other.__class__ and
                 self.material == other.material and
                 self.texture.target == other.texture.target and
@@ -313,7 +320,7 @@ class MaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
         self.program['model'] = self.matrix
 
