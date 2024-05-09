@@ -93,7 +93,7 @@ class NinePatch(Sprite):
         self._vertex_list = self.program.vertex_list_indexed(
             16, GL_TRIANGLES, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
-            colors=('Bn', (*self._rgb, int(self._opacity)) * 16),
+            colors=('Bn', self._rgba * 16),
             translate=('f', (self._x, self._y, self._z) * 16),
             scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 16),
             rotation=('f', (self._rotation,) * 16),
@@ -223,34 +223,47 @@ class NinePatch(Sprite):
     def opacity(self) -> int:
         """Blend opacity.
 
-        This property sets the alpha component of the colour of the NinePatch's
+        This property sets the alpha component of the colour of the sprite's
         vertices.  With the default blend mode (see the constructor), this
-        allows the NinePatch to be drawn with fractional opacity, blending with
-        the background.
+        allows the sprite to be drawn with fractional opacity, blending with the
+        background.
 
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
-        make the NinePatch appear translucent.
+        make the sprite appear translucent.
         """
-        return self._opacity
+        return self._rgba[3]
 
     @opacity.setter
     def opacity(self, opacity: int):
-        self._opacity = opacity
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 16
+        r, g, b, _ = self._rgba
+        self._rgba = r, g, b, opacity
+        self._vertex_list.colors[:] = self._rgba * 16
 
     @property
-    def color(self) -> tuple[int, int, int]:
+    def color(self) -> tuple[int, int, int, int]:
         """Blend color.
 
-        This property sets the color of the NinePatch's vertices. This allows the
-        NinePatch to be drawn with a color tint.
+        This property sets the color of the sprite's vertices. This allows the
+        sprite to be drawn with a color tint.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        The color is specified as either an RGBA tuple of integers
+        '(red, green, blue, opacity)' or an RGB tuple of integers
+        `(red, blue, green)`.
+
+        If there are fewer than three components, a :py:func`ValueError`
+        will be raised. Each color component must be an int in the range
+        0 (dark) to 255 (saturated). If any component is not an int, a
+        :py:class:`TypeError` will be raised.
         """
-        return self._rgb
+        return self._rgba
 
     @color.setter
-    def color(self, rgb: tuple[int, int, int]):
-        self._rgb = int(rgb[0]), int(rgb[1]), int(rgb[2])
-        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 16
+    def color(self, rgba: tuple[int, int, int, int] | tuple[int, int, int]):
+        # ValueError raised by unpacking if len(rgba) < 3
+        r, g, b, *a = rgba
+        new_color = r, g, b, a[0] if a else 255
+
+        # Only update if we actually have to
+        if new_color != self._rgba:
+            self._rgba = new_color
+            self._vertex_list.colors[:] = new_color * 16
