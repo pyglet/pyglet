@@ -395,12 +395,14 @@ class ShapeBase(ABC):
     def delete(self) -> None:
         """Force immediate removal of the shape from video memory.
 
-        You should usually call this whenever you delete a shape. Unless
-        you are using manual garbage collection, Python might not call
-        the finalizer as soon as the sprite falls out of scope.
+        You should usually call this whenever you no longer need the shape.
+        Otherwise, Python may call the finalizer of the shape instance only
+        some time after the shape has fallen out of scope, and the shape's video
+        memory will not be freed until the finalizer is eventually called by
+        garbage collection.
 
-        Manual garbage collection is a very advanced technique. See
-        Python's :py:mod:`gc` module documentation to learn more.
+        Implementing manual garbage collection may satisfy the same concern
+        without using the current method, but is a very advanced technique.
         """
         if self._vertex_list is not None:
             self._vertex_list.delete()
