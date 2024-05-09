@@ -81,8 +81,7 @@ from pyglet import image
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage, Texture
-    from pyglet.image.animation import Animation
+    from pyglet.image import AbstractImage, Texture, Animation
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
 

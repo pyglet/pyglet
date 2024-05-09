@@ -39,8 +39,9 @@ from ctypes import create_string_buffer as _create_string_buffer
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable
-    from ctypes import Structure
+    from ctypes import Structure, c_int, c_uint
+    from typing import Callable, Union
+    c_data = Union[type[Structure], c_int, c_uint]
 
 
 _IOC_NRBITS = 8
@@ -67,7 +68,7 @@ def _IOC(io_dir: _IOC_NONE | _IOC_READ | _IOC_WRITE, code: int, nr: int, size: i
     return (io_dir << _IOC_DIRSHIFT) | (code << _IOC_TYPESHIFT) | (nr << _IOC_NRSHIFT) | (size << _IOC_SIZESHIFT)
 
 
-def _IOR(code: str, nr: int, struct: type[Structure]) -> Callable:
+def _IOR(code: str, nr: int, struct: c_data) -> Callable:
     request = _IOC(_IOC_READ, ord(code), nr, _sizeof(struct))
 
     def f(fileno, *args):
@@ -97,7 +98,7 @@ def _IOR_str(code: str, nr: int) -> Callable:
     return f
 
 
-def _IOW(code: str, nr: int, struct: type[Structure]) -> Callable:
+def _IOW(code: str, nr: int, struct: c_data) -> Callable:
     request = _IOC(_IOC_WRITE, ord(code), nr, _sizeof(struct))
 
     def f(fileno, buffer):
@@ -108,7 +109,7 @@ def _IOW(code: str, nr: int, struct: type[Structure]) -> Callable:
     return f
 
 
-def _IOWR(code: str, nr: int, struct: type[Structure]) -> Callable:
+def _IOWR(code: str, nr: int, struct: c_data) -> Callable:
     request = _IOC(_IOC_READ | _IOC_WRITE, ord(code), nr, _sizeof(struct))
 
     def f(fileno, buffer):

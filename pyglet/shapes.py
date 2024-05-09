@@ -68,7 +68,7 @@ from __future__ import annotations
 import math
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING
 
 import pyglet
 
@@ -76,6 +76,10 @@ from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGL
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
+
+if TYPE_CHECKING:
+    from pyglet.graphics.shader import ShaderProgram
+
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -120,7 +124,7 @@ fragment_source = """#version 150 core
 """
 
 
-def get_default_shader():
+def get_default_shader() -> ShaderProgram:
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                     (fragment_source, 'fragment'))
 
@@ -225,22 +229,20 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src, blend_dest, program, parent=None):
+    def __init__(self, blend_src: int, blend_dest: int, program: ShaderProgram, parent: Group | None = None):
         """Create a Shape group.
 
         The group is created internally. Usually you do not
         need to explicitly create it.
 
-        :Parameters:
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+        Args:
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            program:
                 The ShaderProgram to use.
-            `parent` : `~pyglet.graphics.Group`
+            parent:
                 Optional parent group.
         """
         super().__init__(parent=parent)
