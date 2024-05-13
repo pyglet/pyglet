@@ -37,7 +37,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Sequence
 
 from .cocoatypes import *
 
@@ -645,7 +645,7 @@ def send_message(
         selector_name: str | bytes,
         *args,
         restype: Type[_CTypesResType] = c_void_p,
-        argtypes: list[Type] | None = None,
+        argtypes: Sequence[Type] | None = None,
         **_ # For compatibility with the pre-annotation signature
 ) -> _CTypesResType | None:
     """Send an ObjectiveC message and return the result's value.
@@ -671,6 +671,7 @@ def send_message(
 
     To learn more about ObjectiveC's message sending, see:
 
+    * https://docs.python.org/3.8/library/ctypes.html#calling-variadic-functions
     * The x86_should_use_stret function in this file
     * The should_use_fpret function in this file
     * Apple's developer documentation on objc_msgSend:
@@ -683,8 +684,8 @@ def send_message(
         selector_name:
             A selector name as Python string or bytes object
         *args:
-            ctypes objects to send as the messsage arguments. These
-            must match the types in ``argtypes``.
+            ctypes objects to send as the message arguments. These must
+            match the types in ``argtypes`` if they're specified.
         restype:
             A ctypes representation of the message result's expected
             return type.
@@ -705,7 +706,7 @@ def send_message(
     # Shared preprocessing & default filling
     if isinstance(receiver, str):
         receiver = get_class(receiver)
-    if argtypes is None:
+    if not argtypes:  # Skips casting for empty tuples
         argtypes = []
     selector = get_selector(selector_name)
 
