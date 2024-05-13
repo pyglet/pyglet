@@ -633,13 +633,6 @@ def should_use_fpret(restype: Type) -> bool:
 _CTypesResType = TypeVar('_CTypesResType')
 
 
-# By default, assumes that restype is c_void_p
-# and that all arguments are wrapped inside c_void_p.
-# Use the restype and argtypes keyword arguments to
-# change these values.  restype should be a ctypes type
-# and argtypes should be a list of ctypes types for
-# the arguments of the message only.
-# Note: kwarg 'argtypes' required if using args, or will fail on ARM64.
 def send_message(
         receiver: str | c_void_p,
         selector_name: str | bytes,
