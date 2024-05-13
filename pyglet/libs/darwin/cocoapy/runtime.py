@@ -37,8 +37,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from ctypes import _CData  # noqa  # There's no good way to type this
-from typing import Any, Type, TypeVar, List
+from typing import Type, TypeVar
 
 from .cocoatypes import *
 
@@ -50,6 +49,8 @@ if sizeof(c_void_p) == 4:
     c_ptrdiff_t = c_int32
 elif sizeof(c_void_p) == 8:
     c_ptrdiff_t = c_int64
+
+
 
 ######################################################################
 
@@ -104,7 +105,7 @@ objc.class_copyMethodList.argtypes = [c_void_p, POINTER(c_uint)]
 objc.class_copyPropertyList.restype = POINTER(c_void_p)
 objc.class_copyPropertyList.argtypes = [c_void_p, POINTER(c_uint)]
 
-# Protocol ** class_copyProtocolList(Class cls, unsigned int *outCount)
+# Protocol ** class_copyProtocoltist(Class cls, unsigned int *outCount)
 # Returns an array of pointers of type Protocol* describing protocols.
 # The array has *outCount pointers followed by a NULL terminator.
 # You must free() the returned array.
@@ -460,85 +461,93 @@ def ensure_bytes(x: bytes | str) -> bytes:
 def get_selector(name: str | bytes) -> c_void_p:
     """Return a void pointer for a named ObjectiveC selector.
 
-    .. _sel_registerName:  https://developer.apple.com/documentation/objectivec/1418557-sel_registername
-
-    See Apple's developer documentation on `sel_registerName`_.
+    See Apple's developer documentation on ``sel_registerName``:
+    https://developer.apple.com/documentation/objectivec/1418557-sel_registername
 
     Args:
-        name: A name as :py:class:`bytes` or a :py:class:`str`.
+        name:
+            An ObjectiveC selector name as bytes or a str
 
     Returns:
-        A void pointer for the selector.
+        A void pointer for the ObjectiveC selector.
     """
     return c_void_p(objc.sel_registerName(ensure_bytes(name)))
 
 
-def get_class(name: bytes | str) -> c_void_p:
-    """Get a void pointer to an ObjectiveC class of a given name.
+def get_class(name: bytes | str) -> c_void_p | None:
+    """Try to get a ctypes void pointer for the named ObjectiveC class.
 
-    .. objc_getClass: https://developer.apple.com/documentation/objectivec/1418952-objc_getclass
+    If no class with the name exists, this function returns None
+    instead.
 
-    See Apple's developer documentation for `objc_getClass`_.
+    See Apple's developer documentation for ``objc_getClass``:
+    https://developer.apple.com/documentation/objectivec/1418952-objc_getclass
 
      Args:
         name:
-            A name of an ObjectiveC class as :py:class:`bytes` or a
-            :py:class:`str`.
+            A name of an ObjectiveC class as a Python bytes or string
+            object.
 
     Returns:
-        A void pointer for the selector.
+        A void pointer to the class or None if it wasn't found.
     """
     return c_void_p(objc.objc_getClass(ensure_bytes(name)))
 
 
-def get_object_class(obj: c_void_p) -> c_void_p:
-    """Get the ObjectiveC class for an object.
-
-    .. _object_GetClass: https://developer.apple.com/documentation/objectivec/1418629-object_getclass/
+def get_object_class(obj: c_void_p) -> c_void_p | None:
+    """Get the ObjectiveC class for an object or None if it's nil.
 
     See Apple's developer documentation for `object_GetClass`.
+    https://developer.apple.com/documentation/objectivec/1418629-object_getclass/
 
     Args:
         obj:
             A void pointer to an ObjectiveC object.
+
     Returns:
          A void pointer to the ObjectiveC class object.
     """
     return c_void_p(objc.object_getClass(obj))
 
 
-def get_metaclass(name: str | bytes) -> c_void_p:
-    """Get a pointer to the metaclass for a given ObjectiveC class name.
+def get_metaclass(name: str | bytes) -> c_void_p | None:
+    """Try to get a pointer to the metaclass for an ObjectiveC class name.
 
-    .. _objc_getMetaClass: https://developer.apple.com/documentation/objectivec/1418721-objc_getmetaclass/
-    .. sealiesoftware_objc_metaclass: https://www.sealiesoftware.com/blog/archive/2009/04/14/objc_explain_Classes_and_metaclasses.html
+    If the class isn't registered with the ObjectiveC runtime, returns
+    None.
 
     See the following to learn more:
 
-    * Apple's developer documentation for `objc_getMetaClass`_.
-    * `Sealie Software's explanation of ObjectiveC metaclasses <sealiesoftware_objc_metaclass>`_
+    * Sealie Software's explanation of ObjectiveC metaclasses:
+      https://www.sealiesoftware.com/blog/archive/2009/04/14/objc_explain_Classes_and_metaclasses.html
+    * Apple's developer documentation for ``objc_getMetaClass``:
+      https://developer.apple.com/documentation/objectivec/1418721-objc_getmetaclass/
 
     Args:
         name:
-            The name of an ObjectiveC class as a :py:class:`bytes`
-            or a :py:class:`str`.
+            The name of an ObjectiveC class as a Python string or
+            bytes object.
     Returns:
-         A void pointer to the ObjectiveC metaclass for the given
-         class name.
+         A void pointer if an ObjectiveC metaclass was found for the
+         class name, or None if it wasn't.
     """
     return c_void_p(objc.objc_getMetaClass(ensure_bytes(name)))
 
 
-def get_superclass_of_object(obj: c_void_p) -> c_void_p:
-    """Get a pointer to the ObjectiveC superclass of an object.
+def get_superclass_of_object(obj: c_void_p) -> c_void_p | None:
+    """Try to get a pointer to the ObjectiveC superclass of an object.
+
+    See the following to learn more:
+    * https://developer.apple.com/documentation/objectivec/1418629-object_getclass/
+    * https://developer.apple.com/documentation/objectivec/1418498-class_getsuperclass
 
     Args:
         obj:
             A pointer to an ObjectiveC object.
 
     Returns:
-        A void pointer to the ObjectiveC superclass of the passed
-        object.
+        * None if the object is Nil or an instance of a root class
+        * Otherwise, a ctypes void pointer to ``obj``'s ObjectiveC superclass
 
     """
     cls = c_void_p(objc.object_getClass(obj))
@@ -546,15 +555,11 @@ def get_superclass_of_object(obj: c_void_p) -> c_void_p:
 
 
 # executive summary: on x86-64, who knows?
-def x86_should_use_stret(restype: Type[_CData]) -> bool:
-    """``True`` if a message should be sent via struct-specific function.
+def x86_should_use_stret(restype: Type) -> bool:
+    """True when a message should be sent via struct-specific function.
 
-    .. _sealiesoftware_objc_msgSend_stret: http://www.sealiesoftware.com/blog/archive/2008/10/30/objc_explain_objc_msgSend_stret.html
-    .. _objc_msgSend_stret: https://developer.apple.com/documentation/objectivec/1456730-objc_msgsend_stret
-    .. _x86_64_abi_pdf: https://cs61.seas.harvard.edu/site/pdf/x86-64-abi-20210928.pdf
-
-    Usually, messages which return a data structure should be sent with
-    `objc_msgSend_stret`. On some platforms, a data structure below a
+    Usually, a message which returns a data structure should be sent via
+    ``objc_msgSend_stret``. On some platforms, a data structure below a
     platform-specific size can instead be returned via the stack as a
     simple return value.
 
@@ -565,10 +570,12 @@ def x86_should_use_stret(restype: Type[_CData]) -> bool:
     Note that this is a best guess based on available information. See
     the following to learn more:
 
-    * `Sealie Software's overview of objc_msgSend_stret `<sealiesoftware_wobjc_msgSend_stret>`_
-    * Apple's developer documentation for `objc_msgSend_stret`_
-    * The Stack Frame heading of the `System V ABI <x86_64_abi_pdf>`_
-      (pp. 20-27)
+    * Sealie Software's overview of objc_msgSend_stret
+      http://www.sealiesoftware.com/blog/archive/2008/10/30/objc_explain_objc_msgSend_stret.html
+    * Apple's developer documentation for objc_msgSend_stret
+      http://www.sealiesoftware.com/blog/archive/2008/10/30/objc_explain_objc_msgSend_stret.html
+    * Pages 20-27 of The System V ABI (The Stack Frame)
+      https://cs61.seas.harvard.edu/site/pdf/x86-64-abi-20210928.pdf
 
     Args:
         restype:
@@ -580,17 +587,16 @@ def x86_should_use_stret(restype: Type[_CData]) -> bool:
     """
     if type(restype) != type(Structure):
         return False
-    if not __LP64__ and sizeof(restype) <= 8:
+    if not __LP64__ and sizeof(restype) <= 8:  # type: ignore
         return False
-    if __LP64__ and sizeof(restype) <= 16:  # maybe? I don't know?
+    # maybe? I don't know?
+    if __LP64__ and sizeof(restype) <= 16:  # type: ignore
         return False
     return True
 
 
-def should_use_fpret(restype: Type[_CData]) -> bool:
-    """``True`` when a message type seems to need a float-specific function.
-
-    .. _objc_msgSend_fpret: https://developer.apple.com/documentation/objectivec/1456697-objc_msgsend_fpret
+def should_use_fpret(restype: Type) -> bool:
+    """True if the result type is known to need a non-integer call
 
     On Macs running on x86 or amd64 processors, ObjectiveC messages
     returning non-integer data types may need to be sent using
@@ -599,8 +605,10 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
 
     To learn more, see:
 
-    * Apple's developer documentation on `objc_msgSend_fpret`_
-    * `Sealie Software's explanation of the above <http://www.sealiesoftware.com/blog/archive/2008/11/16/objc_explain_objc_msgSend_fpret.html>`_
+    * Sealie Software'e overview of objc_msgSend_fpret:
+      http://www.sealiesoftware.com/blog/archive/2008/11/16/objc_explain_objc_msgSend_fpret.html
+    * Apple's developer documentation on objc_msgSend_fpret:
+      https://developer.apple.com/documentation/objectivec/1456697-objc_msgsend_fpret
 
     Args:
         restype: A :py:mod:`ctypes` type.
@@ -620,7 +628,10 @@ def should_use_fpret(restype: Type[_CData]) -> bool:
     return False
 
 
-_T_CData = TypeVar('_T_CData', bound=_CData)
+# There's no way to cleanly annotate a ctypes object right now.
+# For the moment, we'll use this to define message result types.
+_CTypesResType = TypeVar('_CTypesResType')
+
 
 # By default, assumes that restype is c_void_p
 # and that all arguments are wrapped inside c_void_p.
@@ -630,65 +641,59 @@ _T_CData = TypeVar('_T_CData', bound=_CData)
 # the arguments of the message only.
 # Note: kwarg 'argtypes' required if using args, or will fail on ARM64.
 def send_message(
-        receiver: str | _CData,
+        receiver: str | c_void_p,
         selector_name: str | bytes,
         *args,
-        restype: Type[_T_CData] = c_void_p,
-        argtypes: List[Type[_CData]] | None = None,
-        **kwargs  # Backward-compatibility with old function signature
-) -> _T_CData:
-    """Send a message to a class name or instance and return the result.
+        restype: Type[_CTypesResType] = c_void_p,
+        argtypes: list[Type] | None = None,
+        **_ # For compatibility with the pre-annotation signature
+) -> _CTypesResType | None:
+    """Send an ObjectiveC message and return the result's value.
 
-    .. warning:: On ARM64 systems, ``argtypes`` is mandatory!
+    **WARNING: On ARM64, ``argtypes`` is mandatory**!
 
-                 Omitting it will cause this function to fail. It is
-                 strongly encouraged to provide this as all Macs new
-                 will be ARM64-based for the foreseeable future.
+    This function chooses the best known approach for sending the
+    message based on:
 
-    By default, all arguments and return values are assumed to be
-    :py:class:`~ctypes.c_void_p`. This includes:
+    * Whether ``restype`` is a float or double type
+    * ``sizeof(restype)``
+    * Platform-specific stack behavior
 
-    #. All ``args``
-    #. The ``restype`` keyword argument
-    #. All ``argtypes``
+    The ctypes objects passed to ``args`` must match the ctypes types in
+    ``argytypes``. Unspecified ``argtypes`` are handled differently by
+    different system architectures:
 
-    You can specify a different expected message result type by passing
-    a :py:mod:`ctypes` type via the ``restype`` keyword argument. This
-    function will select the best known message sending approach based
-    on ``restype``'s :py:func:`ctypes.sizeof` value, floating point
-    attributes, and the current platform.
+    * On ARM64, the function fails
+    * On x86 / AMD64, all ``args`` assumed to be wrapped in c_void_p
 
-    ``args`` must be a list of values to pass to ObjectiveC code. All
-    must match any provided ``argtypes``. If specifiec, ``argtypes``
-    must be a list of :py:mod:`ctypes` types. ``argtypes`` is mandatory
-    on recent ARM64 Macs.
+    New code should specify the ``argtypes`` since all new Macs will be
+    ARM64 for the foreseeable future.
 
-    .. _objc_msgSend: https://developer.apple.com/documentation/objectivec/1456712-objc_msgsend
+    To learn more about ObjectiveC's message sending, see:
 
-    To learn more about ObjectiveC's message sending functions, see the
-    following:
-
-    * :py:func:`.x86_should_use_stret`
-    * :py:func:`.should_use_fpret`
-    * Apple's developer documentation on `objc_msgSend`_
+    * The x86_should_use_stret function in this file
+    * The should_use_fpret function in this file
+    * Apple's developer documentation on objc_msgSend:
+      https://developer.apple.com/documentation/objectivec/1456712-objc_msgsend
 
     Args:
         receiver:
-            A string or :py:class:`~ctypes.c_void_p` pointer to an
+            A Python string for a class name or a c_void_p to an
             ObjectiveC class.
         selector_name:
-            A selector name as a string or :py:attr:`bytes`.
+            A selector name as Python string or bytes object
         *args:
-            Arguments matching ``argtypes``.
+            ctypes objects to send as the messsage arguments. These
+            must match the types in ``argtypes``.
         restype:
-            A :py:mod:`ctypes` representation of the message result's
-            expected return type.
+            A ctypes representation of the message result's expected
+            return type.
         argtypes:
-            A :py:class:`list` of :py:mod:`ctypes` types for each of
-            the arguments in ``args``.
-        **kwargs:
-            Unused backward compatibility argument kept to avoid
-            breaking with older versions of the function.
+            A list of ctypes types each of the arguments in *args must
+            match. ARM64 fails if this is unspecified. Otherwise, they
+            are all assumed to be c_void_p.
+        **_:
+            Backward compatibility with the original function signature.
 
     Returns:
        The result of the message, if any.
