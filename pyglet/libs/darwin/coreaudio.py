@@ -108,12 +108,32 @@ ca.AudioFileClose.argtypes = [AudioFileID]
 kCFAllocatorDefault = None
 
 
-def c_literal(literal):
-    """Example 'xyz' -> 7895418.
-    Used for some CoreAudio constants."""
+def c_literal(mnemonic: str) -> int:
+    """Pack a tiny ASCII string into a 32-bit int.
+
+    Example: 'xyz' -> 0x78797a (Base 10: 7895418)
+
+    Although many CoreAudio constants use this function, the only
+    consistent rule seems to be a max of 4 ASCII characters to fit
+    into a 32-bit int.
+
+    Otherwise, error code constants may follow a loose convention:
+
+    * '?' at the start error codes for unsupported actions
+      Example: c_literal('?wht') # as in "what?"
+
+    * '!' at the end of error codes for unintelligible data
+      Example: c_literal('?siz') # "this data is the wrong size!"
+
+    Args:
+        mnemonic:
+            Up to 4 ASCII characters to shift left
+    Returns:
+        A 32-bit int equivalent of the string.
+    """
     num = 0
-    for idx, char in enumerate(literal):
-        num |= ord(char) << (len(literal) - idx - 1) * 8
+    for idx, char in enumerate(mnemonic):
+        num |= ord(char) << (len(mnemonic) - idx - 1) * 8
     return num
 
 
