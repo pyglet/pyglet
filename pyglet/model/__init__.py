@@ -48,7 +48,7 @@ instance when loading the Model::
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
+from math import pi, sin, cos
 import pyglet
 
 from pyglet import gl
@@ -59,7 +59,7 @@ from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 
 if TYPE_CHECKING:
-    from typing import BinaryIO, Iterable
+    from typing import BinaryIO
     from pyglet.image import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
@@ -176,10 +176,10 @@ class Material:
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
     def __init__(self, name: str = "default",
-                 diffuse: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
-                 ambient: Tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0),
-                 specular: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
-                 emission: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
+                 diffuse: tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
+                 ambient: tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0),
+                 specular: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
+                 emission: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
                  shininess: float = 20,
                  texture_name: str = ""):
 
@@ -344,8 +344,8 @@ class MaterialGroup(BaseMaterialGroup):
 
 class Cube(Model):
 
-    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0), material=None,
-                 batch=None, group=None, program=None):
+    def __init__(self, width=1.0, height=1.0, depth=1.0, color=(1.0, 1.0, 1.0, 1.0),
+                 material=None, batch=None, group=None, program=None):
         self._width = width
         self._height = height
         self._depth = depth
@@ -395,6 +395,56 @@ class Cube(Model):
                    1, 2, 6, 1, 6, 5,    # right
                    3, 7, 6, 3, 6, 2,    # top
                    0, 1, 5, 0, 5, 4)    # bottom
+
+        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
+                                                 batch=self._batch, group=self._group,
+                                                 position=('f', vertices),
+                                                 normals=('f', normals),
+                                                 colors=('f', self._color * (len(vertices) // 3)))
+
+
+class Sphere(Model):
+
+    def __init__(self, radius=1.0, segments=30, color=(1.0, 1.0, 1.0, 1.0),
+                 material=None, batch=None, group=None, program=None):
+        self._radius = radius
+        self._segments = segments
+        self._color = color
+        self._scale = 1.0
+
+        self._batch = batch
+        self._program = program if program else get_default_shader()
+
+        # Create a Material and Group for the Model
+        self._material = material if material else pyglet.model.Material(name="cube")
+        self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
+
+        self._vlist = self._create_vertexlist()
+
+        super().__init__([self._vlist], [self._group], self._batch)
+
+    def _create_vertexlist(self):
+        radius = self._radius
+        segments = self._segments
+
+        vertices = []
+        indices = []
+
+        for i in range(segments):
+            u = i * pi / segments
+            for j in range(segments):
+                v = j * 2 * pi / segments
+                x = radius * sin(u) * cos(v)
+                y = radius * sin(u) * sin(v)
+                z = radius * cos(u)
+                vertices.extend((x, y, z))
+
+        for i in range(segments):
+            for j in range(segments):
+                indices.extend((i * segments + j, (i - 1) * segments + j, i * segments + (j - 1)))
+                indices.extend((i * segments + j, (i + 1) * segments + j, i * segments + (j + 1)))
+
+        normals = vertices
 
         return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
