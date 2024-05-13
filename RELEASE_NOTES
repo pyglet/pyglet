@@ -1,3 +1,11 @@
+pyglet 1.5.29
+
+Bugfixes
+--------
+- image: Fix name error on Windows when using WIC decoder (#1106)
+- media: Backport thread join exception catch from 2.0 (9db3971) (#1105)
+
+
 pyglet 1.5.28
 
 Features
