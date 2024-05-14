@@ -105,7 +105,7 @@ objc.class_copyMethodList.argtypes = [c_void_p, POINTER(c_uint)]
 objc.class_copyPropertyList.restype = POINTER(c_void_p)
 objc.class_copyPropertyList.argtypes = [c_void_p, POINTER(c_uint)]
 
-# Protocol ** class_copyProtocoltist(Class cls, unsigned int *outCount)
+# Protocol ** class_copyProtocolList(Class cls, unsigned int *outCount)
 # Returns an array of pointers of type Protocol* describing protocols.
 # The array has *outCount pointers followed by a NULL terminator.
 # You must free() the returned array.
