@@ -212,6 +212,23 @@ err_str_db: Final[dict[int, str]] = {
 }
 
 
-def err_check(err):
+class CoreAudioException(Exception):
+    """A stub to mark a problem as a CoreAudio issue.
+
+    Ideally, there would be appropriate subclasses of typical
+    Python exceptions for specific issues, For example:
+
+    * kAudio_FileNotFoundError -> OSError (The typical Python file read error
+    * kAudioFileInvalidChunkError -> ValueError (Invalid data)
+    """
+    ...
+
+
+def err_check(err: int) -> None:
+    """Raise an exception of somethings wrong, otherwise return None.
+
+    Raises:
+         CoreAudioException
+    """
     if err != 0:
-        raise Exception(err, err_str_db.get(err, "Unknown Error"))
+        raise CoreAudioException(err, err_str_db.get(err, "Unknown Error"))
