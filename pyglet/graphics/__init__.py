@@ -193,13 +193,13 @@ def get_default_batch():
 
 def get_default_shader():
     try:
-        return current_context.object_space.pyglet_graphics_default_shader
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_shader
     except AttributeError:
         _vertex_shader = shader.Shader(_vertex_source, 'vertex')
         _fragment_shader = shader.Shader(_fragment_source, 'fragment')
         _shader_program = shader.ShaderProgram(_vertex_shader, _fragment_shader)
-        current_context.object_space.pyglet_graphics_default_shader = _shader_program
-        return current_context.object_space.pyglet_graphics_default_shader
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_shader = _shader_program
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_shader
 
 
 class Batch:
