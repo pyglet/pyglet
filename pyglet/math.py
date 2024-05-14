@@ -38,6 +38,7 @@ class Vec2:
     """A two-dimensional vector represented as an X Y coordinate pair."""
 
     __slots__ = 'x', 'y'
+    __match_args__ = 'x', 'y'
 
     def __init__(self, x: float = 0.0, y: float = 0.0) -> None:
         self.x = x
@@ -222,6 +223,7 @@ class Vec3:
     """A three-dimensional vector represented as X Y Z coordinates."""
 
     __slots__ = 'x', 'y', 'z'
+    __match_args__ = 'x', 'y', 'z'
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         self.x = x
@@ -375,6 +377,7 @@ class Vec4:
     """A four-dimensional vector represented as X Y Z W coordinates."""
 
     __slots__ = 'x', 'y', 'z', 'w'
+    __match_args__ = 'x', 'y', 'z', 'w'
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 0.0) -> None:
         self.x = x
