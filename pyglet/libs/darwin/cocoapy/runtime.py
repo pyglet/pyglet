@@ -497,7 +497,7 @@ def get_class(name: bytes | str) -> c_void_p | None:
 def get_object_class(obj: c_void_p) -> c_void_p | None:
     """Get the ObjectiveC class for an object or None if it's nil.
 
-    See Apple's developer documentation for `object_GetClass`.
+    See Apple's developer documentation for ``object_GetClass``.
     https://developer.apple.com/documentation/objectivec/1418629-object_getclass/
 
     Args:
