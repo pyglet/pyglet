@@ -350,7 +350,6 @@ class Cube(Model):
         self._height = height
         self._depth = depth
         self._color = color
-        self._scale = 1.0
 
         self._batch = batch
         self._program = program if program else get_default_shader()
@@ -367,7 +366,6 @@ class Cube(Model):
         w = self._width / 2
         h = self._height / 2
         d = self._depth / 2
-        s = self._scale
 
         vertices = (-w, -h, -d,   # front, bottom-left    0
                     w, -h, -d,    # front, bottom-right   1
@@ -377,8 +375,6 @@ class Cube(Model):
                     w, -h, d,     # back, bottom-right    5
                     w, h, d,      # back, top-right       6
                     -w, h, d)     # back, top-left        7
-
-        vertices = tuple(v * s for v in vertices)
 
         normals = (-0.5, -0.5, -1.0,    # back, bottom-left
                    0.5, -0.5, -1.0,     # back, buttom-right
@@ -410,13 +406,12 @@ class Sphere(Model):
         self._radius = radius
         self._segments = segments
         self._color = color
-        self._scale = 1.0
 
         self._batch = batch
         self._program = program if program else get_default_shader()
 
         # Create a Material and Group for the Model
-        self._material = material if material else pyglet.model.Material(name="cube")
+        self._material = material if material else pyglet.model.Material(name="sphere")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._vlist = self._create_vertexlist()
