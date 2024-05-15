@@ -65,11 +65,15 @@ is simplistic Vertex and Fragment source::
         in vec4 colors;
         out vec4 vertex_colors;
 
-        uniform mat4 projection;
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
 
         void main()
         {
-            gl_Position = projection * vec4(position, 0.0, 1.0);
+            gl_Position = window.projection * window.view * vec4(position, 0.0, 1.0);
             vertex_colors = colors;
         }
     """
@@ -83,6 +87,10 @@ is simplistic Vertex and Fragment source::
             final_color = vertex_colors;
         }
     """
+
+
+.. note:: By default, pyglet includes and sets the ``WindowBlock`` uniform when the window is created. If you do not use
+    the ``window.projection`` or ``window.view`` in your vertex shader, your graphics may not display properly.
 
 The source strings are then used to create :py:class:`~pyglet.graphics.shader.Shader` objects, which are
 then linked together in a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Shader objects are automatically
