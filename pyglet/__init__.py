@@ -72,7 +72,7 @@ class Options:
     """If ``True``, in addition to printing the names of OpenGL calls, it will also print the arguments passed
     into those calls. For example, ``glBlendFunc(770, 771)``
 
-    ..note:: Requires ``debug_gl_trace`` to be enabled."""
+    .. note:: Requires ``debug_gl_trace`` to be enabled."""
 
     debug_gl_shaders: bool = False
     """If ``True``, prints shader compilation information such as creation and deletion of shader's. Also includes
@@ -202,9 +202,9 @@ class Options:
 
     com_mta: bool = False
     """If ``True``, this will enforce COM Multithreaded Apartment Mode for Windows applications. By default, pyglet
-     has opted to go for Single-Threaded Apartment (STA) for compatibility reasons. Many other third party libraries
-     used with Python explicitly set STA. However, Windows recommends MTA with a lot of their API's such as Windows
-     Media Foundation (WMF).
+    has opted to go for Single-Threaded Apartment (STA) for compatibility reasons. Many other third party libraries
+    used with Python explicitly set STA. However, Windows recommends MTA with a lot of their API's such as Windows
+    Media Foundation (WMF).
 
     :see: https://learn.microsoft.com/en-us/windows/win32/cossdk/com--threading-models
 
