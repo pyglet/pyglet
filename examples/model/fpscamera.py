@@ -86,8 +86,6 @@ class FPSCamera:
                            sin(radians(self.pitch)),
                            sin(radians(self.yaw)) * cos(radians(self.pitch))).normalize()
 
-        print(round(self.target, 3))
-
         # Movement
 
         if abs(self.controller_move) > self.deadzone:
