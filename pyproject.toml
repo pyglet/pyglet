@@ -65,3 +65,5 @@ indent-style = "space"
 "pyglet/font/quartz.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/ttf.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/win32.py" = ["RUF012", "D", "N", "ARG"]
+
+"examples/*" = ["I"]
