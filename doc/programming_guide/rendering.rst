@@ -150,8 +150,8 @@ Uniform Buffer Objects (Uniform Blocks)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Pyglet also offers access to Uniform Buffer Objects or Uniform Blocks. These are special objects that can be used to
-share uniforms between different programs. For example, by default, Pyglet's `projection` and `view` matrix
-are both contained in the `WindowBlock` uniform block. Which looks like this in the vertex shader::
+share uniforms between different programs. For example, by default, Pyglet's ``projection`` and ``view`` matrix
+are both contained in the ``WindowBlock`` uniform block. Which looks like this in the vertex shader::
 
     uniform WindowBlock
     {
@@ -161,7 +161,7 @@ are both contained in the `WindowBlock` uniform block. Which looks like this in 
 
 You can view what uniform blocks exist in a :py:class:`~pyglet.graphics.shader.ShaderProgram` using the `uniform_blocks`
 property. This is a dictionary containing a Uniform Block name key to a :py:class:`~pyglet.graphics.shader.UniformBlock`
-object value. In the above example, the name would be `WindowBlock` while the `window` identifier is used in the GLSL
+object value. In the above example, the name would be ``WindowBlock`` while the ``window`` identifier is used in the GLSL
 shader itself.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
@@ -518,7 +518,7 @@ Drawing order
 to keep vertex lists in any particular order. So, any vertex lists sharing
 the same primitive mode, attribute formats and group will be drawn in an
 arbitrary order.  However, :py:class:`~pyglet.graphics.Group` objects do
-have an `order` parameter that allows :py:class:`~pyglet.graphics.Batch`
+have an ``order`` parameter that allows :py:class:`~pyglet.graphics.Batch`
 to sort objects sharing the same parent. In summary, inside of a Batch:
 
 1. Groups are sorted by their parent (if any). (Parent Groups may also be ordered).
@@ -540,8 +540,8 @@ which then renders it as efficiently as possible.
 Visibility
 ^^^^^^^^^^
 
-Groups have a boolean `visible` property. By setting this to `False`, any
-objects in that Group will no longer be rendered. A common use case is to
+Groups have a boolean ``visible`` property. By setting this to ``False``, any
+objects in that :py:class:`~pyglet.graphics.Group` will no longer be rendered. A common use case is to
 create a parent Group specifically for this purpose, often when combined
 with custom ordering (as described above). For example, you might create
 a "HUD" Group, which is ordered to draw in front of everything else. The
