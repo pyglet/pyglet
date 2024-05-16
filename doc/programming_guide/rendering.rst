@@ -90,7 +90,8 @@ is simplistic Vertex and Fragment source::
 
 
 .. note:: By default, pyglet includes and sets the ``WindowBlock`` uniform when the window is created. If you do not use
-    the ``window.projection`` or ``window.view`` in your vertex shader, your graphics may not display properly.
+          the ``window.projection`` or ``window.view`` in your vertex shader, you will have to manage the projection
+          yourself or your graphics may not display properly.
 
 The source strings are then used to create :py:class:`~pyglet.graphics.shader.Shader` objects, which are
 then linked together in a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Shader objects are automatically

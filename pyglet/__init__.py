@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import sys
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -22,7 +23,6 @@ if sys.version_info < MIN_PYTHON_VERSION:
 
 if "sphinx" in sys.modules:
     sys.is_pyglet_doc_run = True
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -141,6 +141,9 @@ class Options:
      .. versionadded:: 1.1"""
 
     xlib_fullscreen_override_redirect: bool = False
+    """If ``True``, pass the xlib.CWOverrideRedirect flag when creating a fullscreen window.
+    This option is generally not necessary anymore and is considered deprecated.
+    """
 
     search_local_libs: bool = True
     """If ``False``, pyglet won't try to search for libraries in the script
@@ -158,7 +161,15 @@ class Options:
     """
 
     headless: bool = False
+    """If ``True``, visible Windows are not created and a running desktop environment is not required. This option
+    is useful when running pyglet on a headless server, or compute cluster. OpenGL drivers with ``EGL`` support are
+    required for this mode.
+    """
+
     headless_device: int = 0
+    """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
+    GPU to use. This is only useful on multi-GPU systems. 
+    """
 
     win32_disable_shaping: bool = False
     """If ``True``, will disable the shaping process for the default Windows font renderer to offer a performance
@@ -221,36 +232,30 @@ class Options:
     .. versionadded:: 2.0.5"""
 
     def get(self, item: Any, default: Any = None) -> Any:
-        try:
-            return self.__dict__[item]
-        except KeyError:
-            return default
+        return self.__dict__.get(item, default)
 
     def __getitem__(self, item: Any) -> Any:
         return self.__dict__[item]
 
     def __setitem__(self, key: Any, value: Any) -> None:
-        assert key in self.__annotations__, "Invalid option"
-        # Breaks audio tests.
-        #annotated_type = self.__annotations__[key]
-        #assert type(value) is annotated_type, f"Invalid type: {type(value)}"
+        assert key in self.__annotations__, f"Invalid option name: '{key}'"
+        assert type(value).__name__ == self.__annotations__[key], f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
+
 
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
 options = Options()
 
-# TODO: Fix this.
-# for _key in options:
-#     """Check Environment Variables for pyglet options"""
-#     assert _key in _option_types, f"Option '{_key}' must have a type set in _option_types."
-#
-#     if _value := os.environ.get(f"PYGLET_{_key.upper()}"):
-#         if _option_types[_key] is tuple:
-#             options[_key] = _value.split(",")
-#         elif _option_types[_key] is bool:
-#             options[_key] = _value in ("true", "TRUE", "True", "1")
-#         elif _option_types[_key] is int:
-#             options[_key] = int(_value)
+
+for _key, _type in options.__annotations__.items():
+    """Check Environment Variables for pyglet options"""
+    if _value := os.environ.get(f"PYGLET_{_key.upper()}"):
+        if _type == 'tuple':
+            options[_key] = _value.split(",")
+        elif _type == 'bool':
+            options[_key] = _value in ("true", "TRUE", "True", "1")
+        elif _type == 'int':
+            options[_key] = int(_value)
 
 
 if compat_platform == "cygwin":
