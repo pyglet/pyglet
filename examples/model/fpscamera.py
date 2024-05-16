@@ -25,7 +25,8 @@ class FPSCamera:
         self.target = target
         self.up = up
 
-        self.speed = 6
+        self.walk_speed = 10.0
+        self.look_speed = 10.0
         self.deadzone = 0.1
 
         # TODO: calculate these values from the passed Vectors
@@ -38,12 +39,12 @@ class FPSCamera:
                           pyglet.window.key.A: "left",
                           pyglet.window.key.D: "right"}
 
-        self.inputs = {direction : False for direction in self.input_map.values()}
+        self.inputs = {direction: False for direction in self.input_map.values()}
 
         self.mouse_look = Vec2()
-        self.keybord_move = Vec3()
+        self.keybord_move = Vec2()
         self.controller_look = Vec2()
-        self.controller_move = Vec3()
+        self.controller_move = Vec2()
 
         self._window = weakref.proxy(window)
         self._window.view = Mat4.look_at(position, target, up)
@@ -53,51 +54,49 @@ class FPSCamera:
 
     def on_deactivate(self):
         # Prevent input from getting "stuck"
-        self.keybord_move[:] = 0, 0, 0
+        self.keybord_move = Vec2()
 
     def on_resize(self, width, height):
         self._window.viewport = (0, 0, width, height)
-        self._window.projection = Mat4.perspective_projection(self._window.aspect_ratio, z_near=0.1, z_far=100, fov=45)
+        self._window.projection = Mat4.perspective_projection(self._window.aspect_ratio, z_near=0.1, z_far=1000, fov=45)
         return pyglet.event.EVENT_HANDLED
 
     def on_refresh(self, dt):
+        walk_speed = self.walk_speed * dt
+        norm_target = self.target.normalize()
+
         # Look
 
         if abs(self.controller_look) > self.deadzone:
             # Don't reset the vector to 0,0 because new events don't come
             # in when the analoge stick is held in a steady position.
-            self.yaw = self.yaw + self.controller_look.x
-            self.pitch = clamp(self.pitch + self.controller_look.y, -89.0, 89.0)
+            look_speed = self.look_speed ** 2 * dt
+            self.yaw += self.controller_look.x * look_speed
+            self.pitch = clamp(self.pitch + self.controller_look.y * look_speed, -89.0, 89.0)
 
         if abs(self.mouse_look) > 0.0:
             # Reset the vector back to 0 each time, because there is no event
             # for when the mouse stops moving. It will get "stuck" otherwise.
-            self.yaw += self.mouse_look.x * 0.1
-            self.pitch = clamp(self.pitch + self.mouse_look.y * 0.1, -89.0, 89.0)
+            look_speed = self.look_speed * dt
+            self.yaw += self.mouse_look.x * look_speed
+            self.pitch = clamp(self.pitch + self.mouse_look.y * look_speed, -89.0, 89.0)
             self.mouse_look[:] = 0.0, 0.0
 
         self.target = Vec3(cos(radians(self.yaw)) * cos(radians(self.pitch)),
                            sin(radians(self.pitch)),
                            sin(radians(self.yaw)) * cos(radians(self.pitch))).normalize()
 
+        print(round(self.target, 3))
+
         # Movement
 
-        speed = self.speed * dt
-
         if abs(self.controller_move) > self.deadzone:
-            self.position += self.controller_move * speed
-
-        if self.inputs["forward"]:
-            self.position += (self.target * speed)
-        if self.inputs["backward"]:
-            self.position -= (self.target * speed)
-        if self.inputs["left"]:
-            self.position -= (self.target.cross(self.up).normalize() * speed)
-        if self.inputs["right"]:
-            self.position += (self.target.cross(self.up).normalize() * speed)
+            self.position += (norm_target * self.controller_move.y +
+                              norm_target.cross(self.up).normalize() * self.controller_move.x) * walk_speed
 
         if abs(self.keybord_move) > 0:
-            self.position += self.keybord_move * speed
+            self.position += (norm_target * self.keybord_move.y +
+                              norm_target.cross(self.up).normalize() * self.keybord_move.x) * walk_speed
 
         self._window.view = Mat4.look_at(self.position, self.position + self.target, self.up)
 
@@ -117,28 +116,31 @@ class FPSCamera:
 
     def on_key_press(self, symbol, mod):
         if symbol == pyglet.window.key.ESCAPE:
+            if not self._exclusive_mouse:
+                pyglet.app.exit()
             self._exclusive_mouse = False
             self._window.set_exclusive_mouse(False)
             return pyglet.event.EVENT_HANDLED
 
-        if symbol in self.input_map:
-            direction = self.input_map[symbol]
+        if direction := self.input_map.get(symbol):
             self.inputs[direction] = True
+            f, b, l, r = self.inputs.values()
+            self.keybord_move = Vec2(-float(l) + float(r), float(f) + -float(b)).normalize()
 
     def on_key_release(self, symbol, mod):
-        if symbol in self.input_map:
-            direction = self.input_map[symbol]
+        if direction := self.input_map.get(symbol):
             self.inputs[direction] = False
+            f, b, l, r = self.inputs.values()
+            self.keybord_move = Vec2(-float(l) + float(r), float(f) + -float(b)).normalize()
 
     # Controller input
 
     def on_stick_motion(self, _controller, stick, xvalue, yvalue):
         if stick == "leftstick":
-            self.controller_move = self.target * yvalue + self.target.cross(self.up).normalize() * xvalue
+            self.controller_move = Vec2(xvalue, yvalue)
 
         elif stick == "rightstick":
-            self.controller_look[:] = xvalue, yvalue
-
+            self.controller_look = Vec2(xvalue, yvalue)
 
 
 if __name__ == "__main__":
