@@ -8,7 +8,7 @@ import os
 import sys
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ItemsView
 
 #: The release version
 version = "2.0.15"
@@ -231,13 +231,16 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    def get(self, item: Any, default: Any = None) -> Any:
+    def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
 
-    def __getitem__(self, item: Any) -> Any:
+    def items(self) -> ItemsView[str, Any]:
+        return self.__dict__.items()
+
+    def __getitem__(self, item: str) -> Any:
         return self.__dict__[item]
 
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
         assert key in self.__annotations__, f"Invalid option name: '{key}'"
         assert type(value).__name__ == self.__annotations__[key], f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
