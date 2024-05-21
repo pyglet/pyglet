@@ -51,6 +51,8 @@ class Vec2(_typing.NamedTuple):
     x: float = 0.0
     y: float = 0.0
 
+    __match_args__ = 'x', 'y'
+
     def __add__(self, other: Vec2) -> Vec2:
         return Vec2(self.x + other.x, self.y + other.y)
 
@@ -224,6 +226,8 @@ class Vec3(_typing.NamedTuple):
     y: float = 0.0
     z: float = 0.0
 
+    __match_args__ = 'x', 'y', 'z'
+
     @property
     def mag(self) -> float:
         """The magnitude, or length of the vector.
@@ -365,6 +369,8 @@ class Vec4(_typing.NamedTuple):
     y: float = 0.0
     z: float = 0.0
     w: float = 0.0
+
+    __match_args__ = 'x', 'y', 'z', 'w'
 
     def __add__(self, other: Vec4) -> Vec4:
         return Vec4(self.x + other.x, self.y + other.y, self.z + other.z, self.w + other.w)

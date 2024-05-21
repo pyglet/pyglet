@@ -1,8 +1,29 @@
 Runtime Options
 ===============
 
-.. autodata:: pyglet.options
+Pyglet offers a way to change runtime behavior through options. These options provide ways to modify specific modules, behavior for specific operating systems, or adding more debugging information. Options can be specified as a key, or as an attribute with the ``pyglet.options`` dataclass instance.
 
+To change an option from its default, you must import ``pyglet`` before any sub-packages.
+
+For example::
+
+  import pyglet
+  pyglet.options['debug_gl'] = False
+  pyglet.options.debug_media = True
+
+The default options can be overridden from the OS environment as well.  The
+corresponding environment variable for each option key is prefaced by
+``PYGLET_``.  For example, in Bash you can set the ``debug_gl`` option with::
+
+  PYGLET_DEBUG_GL=True; export PYGLET_DEBUG_GL
+
+For options requiring a tuple of values, separate each value with a comma.
+
+.. autoclass:: pyglet.Options
+  :members:
+  :exclude-members: __init__, __new__
+
+.. autodata:: pyglet.options
 
 .. _guide_environment-settings:
 
