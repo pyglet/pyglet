@@ -12,7 +12,7 @@ from pyglet import gl
 from pyglet.gl import gl_info
 
 if TYPE_CHECKING:
-    from pyglet.canvas import Canvas
+    from pyglet.display import Canvas
     from pyglet.gl.gl_info import GLInfo
     from pyglet.graphics.shader import ShaderProgram
 
@@ -126,7 +126,7 @@ class Config:
         """
         return [(name, getattr(self, name)) for name in self._attribute_names]
 
-    def match(self, canvas: Canvas) -> list[CanvasConfig]:
+    def match(self, canvas: Canvas) -> list[DisplayConfig]:
         """Return a list of matching complete configs for the given canvas."""
         raise NotImplementedError('abstract')
 

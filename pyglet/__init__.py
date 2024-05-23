@@ -38,7 +38,7 @@ if getattr(sys, "frozen", None):
 class Options:
     """Dataclass for global pyglet options."""
 
-    audio: tuple = ("xaudio2", "directsound", "openal", "pulse", "silent")
+    audio: tuple[str] = ("xaudio2", "directsound", "openal", "pulse", "silent")
     """A :py:class:`~typing.Sequence` of valid audio modules names. They will
      be tried from first to last until either a driver loads or no entries
      remain. See :ref:`guide-audio-driver-order` for more information.
@@ -124,21 +124,23 @@ class Options:
 
      .. versionadded:: 1.1"""
 
-    vsync: bool = None
-    """If set, the `pyglet.window.Window.vsync` property is ignored, and
-     this option overrides it (to either force vsync on or off).  If unset,
-     or set to None, the `pyglet.window.Window.vsync` property behaves
-     as documented."""
+    vsync: bool | None = None
+    """If set to ``True`` or ``False``, this option takes overrides the
+     ``vsync`` argument passed to :py:class:`~pyglet.window.Window`. This
+     allows forcing vsync on or off.  If set to None (the default), the
+     as documented.
+     """
 
     xsync: bool = True
-    """If set (the default), pyglet will attempt to synchronise the drawing of
-     double-buffered windows to the border updates of the X11 window
-     manager.  This improves the appearance of the window during resize
-     operations.  This option only affects double-buffered windows on
-     X11 servers supporting the Xsync extension with a window manager
-     that implements the _NET_WM_SYNC_REQUEST protocol.
+    """If ``True`` (the default), pyglet will attempt to synchronise the
+    drawing of double-buffered windows to the border updates of the X11
+    window manager. This improves the appearance of the window during
+    resize operations.  This option only affects double-buffered windows on
+    X11 servers supporting the Xsync extension with a window manager that
+    implements the _NET_WM_SYNC_REQUEST protocol.
 
-     .. versionadded:: 1.1"""
+     .. versionadded:: 1.1
+     """
 
     xlib_fullscreen_override_redirect: bool = False
     """If ``True``, pass the xlib.CWOverrideRedirect flag when creating a fullscreen window.
@@ -209,7 +211,8 @@ class Options:
     be useful for debugging or special uses cases. A controller can only be controlled by either ``XInput`` or
     ``DirectInput``, not both.
 
-    .. versionadded:: 2.0"""
+    .. versionadded:: 2.0
+    """
 
     com_mta: bool = False
     """If ``True``, this will enforce COM Multithreaded Apartment Mode for Windows applications. By default, pyglet
@@ -230,6 +233,18 @@ class Options:
     other odd behavior can be seen with the standard event loop such as randomly crashing from events.
 
     .. versionadded:: 2.0.5"""
+
+    scale_with_dpi: bool = False
+    """For 'HiDPI' ('Retina') displays, scale Window creation size with desktop scaling. Defaults to ``False``. 
+        
+    For high pixel density displays, it is common for the desktop to have some form of application window scaling.
+    Setting this option to ``True`` will make pyglet aware of these settings when Windows are created. For instance,
+    if the desktop scaling factor is set to 150%, a Window created with a resolution of 1000x1000 will have an actual
+    framebuffer size of 1500x1500. Keep in mind that pyglet objects may not be scaled proportionately, so this is left
+    up to the developer. The :py:attr:`~pyglet.window.Window.scale` & :py:attr:`~pyglet.window.Window.dpi` attributes
+    can be queried as a reference when determining object creation. By default, windows are created with the actual
+    number of pixels requested.
+    """
 
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
