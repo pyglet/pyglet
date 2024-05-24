@@ -1,5 +1,20 @@
+"""Bindings, constants, and helpers for Mac's CoreAudio
+
+Relevant Apple documentation is located at:
+
+* https://developer.apple.com/documentation/audiotoolbox/
+* https://developer.apple.com/documentation/coreaudio
+
+This module includes:
+
+* ctypes structs and function bindings
+* Constants for audio file read and decoding
+* Error checking helpers
+
+"""
 from ctypes import c_void_p, c_int, c_bool, Structure, c_uint32, util, cdll, c_uint, c_double, POINTER, c_int64, \
     CFUNCTYPE
+from typing import Final
 
 from pyglet.libs.darwin import CFURLRef
 
@@ -99,15 +114,36 @@ ca.AudioFileClose.argtypes = [AudioFileID]
 kCFAllocatorDefault = None
 
 
-def c_literal(literal):
-    """Example 'xyz' -> 7895418.
-    Used for some CoreAudio constants."""
+def c_literal(mnemonic: str) -> int:
+    """Pack a tiny ASCII string into a 32-bit int.
+
+    Example: 'xyz' -> 0x78797a (Base 10: 7895418)
+
+    Although many CoreAudio constants use this function, the only
+    consistent rule seems to be a max of 4 ASCII characters to fit
+    into a 32-bit int.
+
+    Otherwise, error code constants may follow a loose convention:
+
+    * '?' at the start error codes for unsupported actions
+      Example: c_literal('?wht') # as in "what?"
+
+    * '!' at the end of error codes for unintelligible data
+      Example: c_literal('?siz') # "this data is the wrong size!"
+
+    Args:
+        mnemonic:
+            Up to 4 ASCII characters to shift left
+    Returns:
+        A 32-bit int equivalent of the string.
+    """
     num = 0
-    for idx, char in enumerate(literal):
-        num |= ord(char) << (len(literal) - idx - 1) * 8
+    for idx, char in enumerate(mnemonic):
+        num |= ord(char) << (len(mnemonic) - idx - 1) * 8
     return num
 
 
+# Non-error file & format constants
 kAudioFilePropertyMagicCookieData = c_literal('mgic')
 kExtAudioFileProperty_FileDataFormat = c_literal('ffmt')
 kExtAudioFileProperty_ClientDataFormat = c_literal('cfmt')
@@ -122,12 +158,28 @@ kAudioFormatFlagsNativeEndian = 0
 kAudioFormatFlagsCanonical = kAudioFormatFlagIsFloat | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked
 kAudioQueueProperty_MagicCookie = c_literal('aqmc')
 
+
 # ERRORS:
+
+# General System errors
 kAudio_UnimplementedError = -4
 kAudio_FileNotFoundError = -43
 kAudio_ParamError = -50
 kAudio_MemFullError = -108
 
+
+# All error constants below correspond to identically named errors in
+# Apple's audiotoolbox. The doc for each is at URLs ending with the same
+# names. For example, kAudioFileUnspecifiedError's documentation is at:
+# https://developer.apple.com/documentation/audiotoolbox/
+
+# General file read errors
+kAudioFileNotOpenError = -38
+kAudioFileEndOfFileError = -39
+kAudioFilePositionError = -40
+kAudioFileFileNotFoundError = -43
+
+# File access mnemonic codes                    # Hex       , Base 10
 kAudioFileUnspecifiedError = c_literal('wht?')  # 0x7768743F, 2003334207
 kAudioFileUnsupportedFileTypeError = c_literal('typ?')  # 0x7479703F, 1954115647
 kAudioFileUnsupportedDataFormatError = c_literal('fmt?')  # 0x666D743F, 1718449215
@@ -135,19 +187,21 @@ kAudioFileUnsupportedPropertyError = c_literal('pty?')  # 0x7074793F, 1886681407
 kAudioFileBadPropertySizeError = c_literal('!siz')  # 0x2173697A,  561211770
 kAudioFilePermissionsError = c_literal('prm?')  # 0x70726D3F, 1886547263
 kAudioFileNotOptimizedError = c_literal('optm')  # 0x6F70746D, 1869640813
-# file format specific error codes
+
+# Format-specific error codes                    # Hex       , Base 10
 kAudioFileInvalidChunkError = c_literal('chk?')  # 0x63686B3F, 1667787583
 kAudioFileDoesNotAllow64BitDataSizeError = c_literal('off?')  # 0x6F66663F, 1868981823
 kAudioFileInvalidPacketOffsetError = c_literal('pck?')  # 0x70636B3F, 1885563711
 kAudioFileInvalidFileError = c_literal('dta?')  # 0x6474613F, 1685348671
-kAudioFileOperationNotSupportedError = c_literal('op?')  # 0x6F703F3F
-# general file error codes
-kAudioFileNotOpenError = -38
-kAudioFileEndOfFileError = -39
-kAudioFilePositionError = -40
-kAudioFileFileNotFoundError = -43
+kAudioFileOperationNotSupportedError = c_literal('op?')  # 0x6F703F3F, 1869627199
 
-err_str_db = {
+
+# Maps kAudio errors -> error text
+err_str_db: Final[dict[int, str]] = {
+    kAudioFileNotOpenError: "The file is closed.",
+    kAudioFileEndOfFileError: "End of file.",
+    kAudioFilePositionError: "Invalid file position.",
+    kAudioFileFileNotFoundError: "File not found.",
     kAudioFileUnspecifiedError: "An unspecified error has occurred.",
     kAudioFileUnsupportedFileTypeError: "The file type is not supported.",
     kAudioFileUnsupportedDataFormatError: "The data format is not supported by this file type.",
@@ -160,13 +214,26 @@ err_str_db = {
     kAudioFileInvalidPacketOffsetError: "A packet offset was past the end of the file, or not at the end of the file when a VBR format was written, or a corrupt packet size was read when the packet table was built.",
     kAudioFileInvalidFileError: "The file is malformed, or otherwise not a valid instance of an audio file of its type.",
     kAudioFileOperationNotSupportedError: "The operation cannot be performed.",
-    kAudioFileNotOpenError: "The file is closed.",
-    kAudioFileEndOfFileError: "End of file.",
-    kAudioFilePositionError: "Invalid file position.",
-    kAudioFileFileNotFoundError: "File not found.",
 }
 
 
-def err_check(err):
+class CoreAudioException(Exception):
+    """A stub to mark a problem as a CoreAudio issue.
+
+    Ideally, there would be appropriate subclasses of typical
+    Python exceptions for specific issues, For example:
+
+    * kAudio_FileNotFoundError -> OSError (The typical Python file read error
+    * kAudioFileInvalidChunkError -> ValueError (Invalid data)
+    """
+    ...
+
+
+def err_check(err: int) -> None:
+    """Raise an exception of somethings wrong, otherwise return None.
+
+    Raises:
+         CoreAudioException
+    """
     if err != 0:
-        raise Exception(err, err_str_db.get(err, "Unknown Error"))
+        raise CoreAudioException(err, err_str_db.get(err, "Unknown Error"))

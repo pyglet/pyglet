@@ -428,6 +428,16 @@ class EventDispatcher:
 
         raise exception
 
+    def _dump_handlers(self):
+
+        for level, handlers in enumerate(self._event_stack):
+            print(f"level: {level}")
+
+            for event_type, handler in handlers.items():
+                print(f" - '{event_type}': {handler}")
+
+    # Decorator
+
     def event(self, *args: Any) -> Callable:
         """Function decorator for an event handler.
 

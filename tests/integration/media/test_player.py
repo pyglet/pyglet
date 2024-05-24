@@ -6,7 +6,6 @@ import time
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug
-pyglet.options['debug_media_buffers'] = _debug
 
 from pyglet.media import Player
 from pyglet.media.synthesis import Silence

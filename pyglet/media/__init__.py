@@ -40,6 +40,10 @@ the application performance can be delayed.
 The player provides a :py:meth:`Player.delete` method that can be used to
 release resources immediately.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, BinaryIO
+
 from .drivers import get_audio_driver
 from .player import Player, PlayerGroup
 from .codecs import registry as _codec_registry
@@ -48,36 +52,37 @@ from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffm
 
 from . import synthesis
 
+if TYPE_CHECKING:
+    from .codecs import MediaDecoder
 
 __all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
-def load(filename, file=None, streaming=True, decoder=None):
-    """Load a Source from a file.
+def load(filename: str, file: BinaryIO | None = None,
+         streaming: bool = True, decoder: MediaDecoder | None = None) -> Source | StreamingSource:
+    """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
     If none succeed, the exception from the first decoder is raised.
-    You can also specifically pass a decoder to use.
+    You can also specifically pass a decoder instance to use.
 
-    :Parameters:
-        `filename` : str
-            Used to guess the media format, and to load the file if `file` is
-            unspecified.
-        `file` : file-like object or None
-            Source of media data in any supported format.
-        `streaming` : bool
-            If `False`, a :class:`StaticSource` will be returned; otherwise
+    Args:
+        filename:
+            Used to guess the media format, and to load the file if ``file``
+            is unspecified.
+        file:
+            An optional file-like object containing the source data.
+        streaming:
+            If ``False``, a :class:`StaticSource` will be returned; otherwise
             (default) a :class:`~pyglet.media.StreamingSource` is created.
-        `decoder` : MediaDecoder or None
+        decoder:
             A specific decoder you wish to use, rather than relying on
             automatic detection. If specified, no other decoders are tried.
-
-    :rtype: StreamingSource or Source
     """
     if decoder:
         return decoder.decode(filename, file, streaming=streaming)
-    else:
-        return _codec_registry.decode(filename, file, streaming=streaming)
+
+    return _codec_registry.decode(filename, file, streaming=streaming)
 
 
 _add_default_codecs()

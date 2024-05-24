@@ -39,6 +39,7 @@ ignore = [
     "PTH",  # don't require pathlib. Add eventually?
     "TRY",  # no triceratops.
     "NPY",  # remove numpy
+    "Q000",  # double quotes
 ]
 
 isort = { known-first-party = [
@@ -56,6 +57,9 @@ convention = "google"
 quote-style = "preserve"
 indent-style = "space"
 
+[tool.ruff.flake8-quotes]
+inline-quotes = 'single'
+
 [tool.ruff.lint.per-file-ignores]
 # Ignore doc requirements, naming, arguments in platform and lib files.
 "pyglet/font/directwrite.py" = ["RUF012", "D", "N", "ARG"]
@@ -65,3 +69,5 @@ indent-style = "space"
 "pyglet/font/quartz.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/ttf.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/win32.py" = ["RUF012", "D", "N", "ARG"]
+
+"examples/*" = ["I"]

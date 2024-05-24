@@ -1,16 +1,22 @@
 """High-level sound and video player."""
+from __future__ import annotations
 
-from collections import deque
 import time
-from typing import Iterable, Optional, Union
+from collections import deque
+
+from typing import TYPE_CHECKING, Iterable, Generator
 
 import pyglet
+
 from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import PreciseStreamingSource, Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
+
+if TYPE_CHECKING:
+    from pyglet.image import Texture
 
 
 class PlaybackTimer:
@@ -131,15 +137,11 @@ class Player(pyglet.event.EventDispatcher):
         """Release the Player resources."""
         self.delete()
 
-    def queue(self, source: Union[Source, Iterable[Source]]) -> None:
-        """
-        Queue the source on this player.
+    def queue(self, source: Source | Iterable[Source]) -> None:
+        """Queue the source on this player.
 
         If the player has no source, the player will start to play immediately
         or pause depending on its :attr:`.playing` attribute.
-
-        Args:
-            source (Source or Iterable[Source]): The source to queue.
         """
         if isinstance(source, (Source, SourceGroup)):
             source = _one_item_playlist(source)
@@ -156,7 +158,7 @@ class Player(pyglet.event.EventDispatcher):
 
         self._set_playing(self._playing)
 
-    def _set_source(self, new_source: Optional[Source]) -> None:
+    def _set_source(self, new_source: Source | None) -> None:
         if new_source is None:
             self._source = None
         else:
@@ -212,8 +214,7 @@ class Player(pyglet.event.EventDispatcher):
 
     @property
     def playing(self) -> bool:
-        """
-        bool: Read-only. Determine if the player state is playing.
+        """The current playing state.
 
         The *playing* property is irrespective of whether or not there is
         actually a source to play. If *playing* is ``True`` and a source is
@@ -307,14 +308,10 @@ class Player(pyglet.event.EventDispatcher):
             self.dispatch_event('on_player_next_source')
 
     def seek(self, timestamp: float) -> None:
-        """
-        Seek for playback to the indicated timestamp on the current source.
+        """Seek for playback to the indicated timestamp on the current source.
 
         Timestamp is expressed in seconds. If the timestamp is outside the
         duration of the source, it will be clamped to the end.
-
-        Args:
-            timestamp (float): The time where to seek in the source.
         """
         playing = self._playing
         if playing:
@@ -365,14 +362,13 @@ class Player(pyglet.event.EventDispatcher):
             setattr(self, attr, value)
 
     @property
-    def source(self) -> Optional[Source]:
-        """Source: Read-only. The current :class:`Source`, or ``None``."""
+    def source(self) -> Source | None:
+        """Read-only. The current :class:`Source`, or ``None``."""
         return self._source
 
     @property
     def time(self) -> float:
-        """
-        float: Read-only. Current playback time of the current source.
+        """Read-only. Current playback time of the current source.
 
         The playback time is a float expressed in seconds, with 0.0 being the
         beginning of the media. The playback time returned represents the
@@ -391,31 +387,14 @@ class Player(pyglet.event.EventDispatcher):
         return self._texture
 
     @property
-    def texture(self) -> pyglet.image.Texture:
-        """
-        :class:`pyglet.image.Texture`: Get the texture for the current video frame.
+    def texture(self) -> Texture | None:
+        """Get the texture for the current video frame, if any.
 
-        You should call this method every time you display a frame of video,
-        as multiple textures might be used. The return value will be None if
-        there is no video in the current source.
+        You should query this property every time you display a frame of video,
+        as multiple textures might be used. This property will be ``None`` if
+        the current Source does not contain video.
         """
         return self._texture
-
-    def get_texture(self) -> pyglet.image.Texture:
-        """
-        Get the texture for the current video frame.
-
-        You should call this method every time you display a frame of video,
-        as multiple textures might be used. The return value will be None if
-        there is no video in the current source.
-
-        Returns:
-            :class:`pyglet.image.Texture`
-
-        .. deprecated:: 1.4
-                Use :attr:`~texture` instead
-        """
-        return self.texture
 
     def seek_next_frame(self) -> None:
         """Step forwards one video frame in the current source."""
@@ -424,14 +403,14 @@ class Player(pyglet.event.EventDispatcher):
             return
         self.seek(time)
 
-    def update_texture(self, dt: float = None) -> None:
+    def update_texture(self, dt: float | None = None) -> None:
         """Manually update the texture from the current source.
 
         This happens automatically, so you shouldn't need to call this method.
 
         Args:
-            dt (float): The time elapsed since the last call to
-                ``update_texture``.
+            dt:
+                The time elapsed since the last call to ``update_texture``.
         """
         # self.pr.disable()
         # if dt > 0.05:
@@ -495,7 +474,7 @@ class Player(pyglet.event.EventDispatcher):
         pyglet.clock.schedule_once(self.update_texture, delay)
         # self.pr.enable()
 
-    def _video_finished(self, _dt) -> None:
+    def _video_finished(self, _dt: float) -> None:
         if self._audio_player is None:
             self.dispatch_event("on_eos")
 
@@ -573,10 +552,7 @@ class Player(pyglet.event.EventDispatcher):
     # Events
 
     def on_player_eos(self):
-        """The player ran out of sources. The playlist is empty.
-
-        :event:
-        """
+        """The player ran out of sources. The playlist is empty."""
         if _debug:
             print('Player.on_player_eos')
 
@@ -588,8 +564,6 @@ class Player(pyglet.event.EventDispatcher):
         If :attr:`.loop` attribute is set to ``True``, the current source
         will start to play again until :meth:`next_source` is called or
         :attr:`.loop` is set to ``False``.
-
-        :event:
         """
         if _debug:
             print('Player.on_eos')
@@ -615,17 +589,15 @@ class Player(pyglet.event.EventDispatcher):
 
         This is a useful event for adjusting the window size to the new
         source :class:`VideoFormat` for example.
-
-        :event:
         """
-        pass
 
     def on_driver_reset(self):
-        """The audio driver has been reset, by default this will kill the current audio player and create a new one,
-        and requeue the buffers. Any buffers that may have been queued in a player will be resubmitted.  It will
-        continue from the last buffers submitted, not played and may cause sync issues if using video.
+        """The audio driver has been reset.
 
-        :event:
+        By default this will kill the current audio player, create a new one,
+        and requeue the buffers. Any buffers that may have been queued in a
+        player will be resubmitted. It will continue from the last buffers
+        submitted, not played, and may cause sync issues if using video.
         """
         if self._audio_player is None:
             return
@@ -633,9 +605,8 @@ class Player(pyglet.event.EventDispatcher):
         self._audio_player.on_driver_reset()
 
         # Voice has been changed, will need to reset all options on the voice.
-        for attr in ('volume', 'min_distance', 'max_distance', 'position',
-                        'pitch', 'cone_orientation', 'cone_inner_angle',
-                        'cone_outer_angle', 'cone_outer_gain'):
+        for attr in ('volume', 'min_distance', 'max_distance', 'position', 'pitch',
+                     'cone_orientation', 'cone_inner_angle', 'cone_outer_angle', 'cone_outer_gain'):
             value = getattr(self, attr)
             setattr(self, attr, value)
 
@@ -649,7 +620,7 @@ Player.register_event_type('on_player_next_source')
 Player.register_event_type('on_driver_reset')
 
 
-def _one_item_playlist(source):
+def _one_item_playlist(source: Source) -> Generator:
     yield source
 
 
@@ -659,10 +630,6 @@ class PlayerGroup:
     Create a player group for the given list of players.
 
     All players in the group must currently not belong to any other group.
-
-    Args:
-        players (Iterable[Player]): Iterable of :class:`.Player` s in this
-            group.
     """
 
     def __init__(self, players: Iterable[Player]) -> None:
