@@ -40,7 +40,9 @@ class PlatformEventLoop:
         If the method is called from the :py:meth:`run` method's thread (for
         example, from within an event handler), the event may be dispatched
         within the same runloop iteration or the next one; the choice is
-        nondeterministic.
+        nondeterministic. However unlike `EventDispatcher.dispatch_event`,
+        the event will always be queued and never will control be passed
+        directly to callbacks registered for the event.
         """
         self._event_queue.put((dispatcher, event, args))
         self.notify()

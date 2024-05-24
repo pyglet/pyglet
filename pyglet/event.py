@@ -333,6 +333,10 @@ class EventDispatcher:
         ``EVENT_UNHANDLED``. If there were no events registered to
         receive this event, ``False`` is returned.
 
+        Note that this method may queue the event, or it may immediately
+        pass control to the callbacks registered for it, before this
+        method returns to the caller.
+
         Returns:
             ``EVENT_HANDLED`` if any event handler returned ``EVENT_HANDLED``;
             ``EVENT_UNHANDLED`` if one or more event handlers were invoked
