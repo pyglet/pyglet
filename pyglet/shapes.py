@@ -800,6 +800,7 @@ class Arc(ShapeBase):
 
     @property
     def thickness(self) -> float:
+        """Get/set the thickness of the Arc"""
         return self._thickness
 
     @thickness.setter
@@ -1915,6 +1916,16 @@ class Box(ShapeBase):
     @height.setter
     def height(self, value: float) -> None:
         self._height = float(value)
+        self._update_vertices()
+
+    @property
+    def thickness(self) -> float:
+        """Get/set the line thickness of the Box."""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
         self._update_vertices()
 
 
