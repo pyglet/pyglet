@@ -72,6 +72,7 @@ from typing import Sequence, TYPE_CHECKING
 
 import pyglet
 
+from pyglet.extlibs import earcut
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGLES
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
@@ -136,21 +137,28 @@ def _rotate_point(center, point, angle):
     return center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle)
 
 
-def _sat(vertices, point):
-    # Separating Axis Theorem
-    # return True if point is in the shape
-    poly = vertices + [vertices[0]]
-    for i in range(len(poly) - 1):
-        a, b = poly[i], poly[i + 1]
-        base = Vec2(a[1] - b[1], b[0] - a[0])
-        projections = []
-        for x, y in poly:
-            vec = Vec2(x, y)
-            projections.append(base.dot(vec) / abs(base))
-        point_proj = base.dot(Vec2(*point)) / abs(base)
-        if point_proj < min(projections) or point_proj > max(projections):
-            return False
-    return True
+def _point_in_polygon(polygon, point) -> bool:
+    """Use raycasting to determine if a point is inside a polygon.
+
+    This function is an example implementation available under MIT License at:
+    https://www.algorithms-and-technologies.com/point_in_polygon/python
+    """
+    odd = False
+    i = 0
+    j = len(polygon) - 1
+    while i < len(polygon) - 1:
+        i = i + 1
+        if ((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (
+            point[0]
+            < (
+                (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1])
+                / (polygon[j][1] - polygon[i][1])
+            )
+            + polygon[i][0]
+        ):
+            odd = not odd
+        j = i
+    return odd
 
 
 def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None):
@@ -1985,7 +1993,9 @@ class Triangle(ShapeBase):
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
-        return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
+        return _point_in_polygon(
+            [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3), (self._x, self._y)],
+            point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -2194,7 +2204,7 @@ class Polygon(ShapeBase):
             batch: Batch | None = None,
             group: Group | None = None
     ):
-        """Create a convex polygon.
+        """Create a polygon.
 
         The polygon's anchor point defaults to the first vertex point.
 
@@ -2217,7 +2227,7 @@ class Polygon(ShapeBase):
         self._rotation = 0
         self._coordinates = list(coordinates)
         self._x, self._y = self._coordinates[0]
-        self._num_verts = (len(self._coordinates) - 2) * 3
+        self._num_verts = len(self._coordinates)
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -2231,12 +2241,15 @@ class Polygon(ShapeBase):
     def __contains__(self, point):
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        return _sat(self._coordinates, point)
+        return _point_in_polygon(self._coordinates + [self._coordinates[0]], point)
 
     def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
-            self._num_verts, self._draw_mode, self._batch, self._group,
-            position=('f', self._get_vertices()),
+        vertices = self._get_vertices()
+        self._vertex_list = self._group.program.vertex_list_indexed(
+            self._num_verts, self._draw_mode,
+            earcut.earcut(vertices),
+            self._batch, self._group,
+            position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
@@ -2250,13 +2263,8 @@ class Polygon(ShapeBase):
             trans_y += self._anchor_y
             coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-            # Triangulate the convex polygon.
-            triangles = []
-            for n in range(len(coords) - 2):
-                triangles += [coords[0], coords[n + 1], coords[n + 2]]
-
-            # Flattening the list before setting vertices to it.
-            return tuple(value for coordinate in triangles for value in coordinate)
+            # Return the flattened coords.
+            return earcut.flatten([coords])["vertices"]
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()
