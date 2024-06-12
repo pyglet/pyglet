@@ -386,7 +386,7 @@ def indexCurve(start, minX, minY, size):
     while do or p != start:
         do = False
 
-        if p.z == None:
+        if p.z is None:
             p.z = zOrder(p.x, p.y, minX, minY, size)
 
         p.prevZ = p.prev
