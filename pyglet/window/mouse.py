@@ -21,8 +21,8 @@ class MouseStateHandler:
         True
         >>> mouse_state[mouse.RIGHT]
         False
-        
-        
+
+
     Mouse coordinates can be retrieved by using the ``'x'`` and ``'y'`` strings.
 
     For example::
