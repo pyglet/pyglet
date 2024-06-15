@@ -89,7 +89,7 @@ class Frame:
             widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self._mouse_pos = x, y
 
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         """Pass the event to any widgets within range of the mouse."""
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.on_mouse_scroll(x, y, scroll_x, scroll_y)

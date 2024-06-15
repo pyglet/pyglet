@@ -115,17 +115,17 @@ class WidgetBase(EventDispatcher):
         change the same value that the Widget controls.  Note that events are not
         dispatched when changing this property directly.
         """
-        raise NotImplementedError("Value depends on control type!")
+        raise NotImplementedError('Value depends on control type!')
 
     @value.setter
     def value(self, value: int | float | bool):
-        raise NotImplementedError("Value depends on control type!")
+        raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
     def _update_position(self) -> None:
-        raise NotImplementedError("Unable to reposition this Widget")
+        raise NotImplementedError('Unable to reposition this Widget')
 
     # Handlers
 
@@ -144,7 +144,7 @@ class WidgetBase(EventDispatcher):
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         pass
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
@@ -224,14 +224,14 @@ class PushButton(WidgetBase):
             return
         self._sprite.image = self._pressed_img
         self._pressed = True
-        self.dispatch_event("on_press")
+        self.dispatch_event('on_press')
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
         self._pressed = False
-        self.dispatch_event("on_release")
+        self.dispatch_event('on_release')
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         if not self.enabled or self._pressed:
@@ -390,7 +390,7 @@ class Slider(WidgetBase):
         if self._in_update:
             self._update_knob(x)
 
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         if not self.enabled:
             return
         if self._check_hit(x, y):
@@ -405,7 +405,7 @@ class Slider(WidgetBase):
         """Event: Returns the current value when the slider is changed."""
 
 
-Slider.register_event_type("on_change")
+Slider.register_event_type('on_change')
 
 
 class TextEntry(WidgetBase):
