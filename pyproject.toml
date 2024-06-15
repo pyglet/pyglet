@@ -72,3 +72,4 @@ indent-style = "space"
 "pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
