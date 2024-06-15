@@ -52,6 +52,9 @@ exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
 [tool.ruff.format]
 quote-style = "preserve"
 indent-style = "space"
@@ -65,3 +68,7 @@ indent-style = "space"
 "pyglet/font/quartz.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/ttf.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/win32.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/cocoa/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
