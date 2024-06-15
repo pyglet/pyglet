@@ -379,8 +379,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _windowed_size: tuple[int, int] | None = None
     _windowed_location: tuple[int, int] | None = None
 
-    _minimum_size: tuple[int, int] | None
-    _maximum_size: tuple[int, int] | None
+    _minimum_size: tuple[int, int] | None = None
+    _maximum_size: tuple[int, int] | None = None
 
     _keyboard_exclusive: bool = False
 
