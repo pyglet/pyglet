@@ -93,14 +93,10 @@ def update(dt):
 
 pyglet.clock.schedule_interval(update, 1 / 60.0)
 
-glEnable(GL_STENCIL_TEST)
-glStencilMask(0xFF)
-
 
 @window.event
 def on_draw():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
-    # window.clear()
+    window.clear()
     batch.draw()
 
 
