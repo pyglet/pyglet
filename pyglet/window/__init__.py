@@ -104,7 +104,7 @@ from pyglet.window import event, key
 
 if TYPE_CHECKING:
     from pyglet.canvas import Display, Screen, ScreenMode
-    from pyglet.gl import Config, Context
+    from pyglet.gl import CanvasConfig, Config, Context
     from pyglet.text import Label
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
@@ -369,7 +369,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: Config | None = None
+    _config: CanvasConfig | None = None
     _context: Context | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
@@ -385,7 +385,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _keyboard_exclusive: bool = False
 
     # Subclasses should update these after relevant events
-    _mouse_cursor: MouseCursor = DefaultMouseCursor()
+    _mouse_cursor: MouseCursor | ImageMouseCursor = DefaultMouseCursor()
     _mouse_x: int = 0
     _mouse_y: int = 0
     _mouse_visible: bool = True
@@ -1165,7 +1165,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._screen
 
     @property
-    def config(self) -> Config:
+    def config(self) -> CanvasConfig:
         """A GL config describing the context of this window.  Read-only."""
         return self._config
 

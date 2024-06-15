@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Sequence
+
 from pyglet.canvas.headless import HeadlessCanvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.egl import egl
@@ -24,7 +26,7 @@ class HeadlessWindow(BaseWindow):
     _egl_display_connection = None
     _egl_surface = None
 
-    def _recreate(self, changes: str) -> None:
+    def _recreate(self, changes: Sequence[str]) -> None:
         pass
 
     def flip(self) -> None:

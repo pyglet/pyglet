@@ -4,7 +4,7 @@ import sys
 import unicodedata
 from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, UINT
 from functools import lru_cache
-from typing import Any, Callable
+from typing import Callable, Sequence
 
 from pyglet import compat_platform
 from pyglet.libs.win32 import constants
@@ -149,7 +149,7 @@ class Win32Window(BaseWindow):
 
         super().__init__(*args, **kwargs)
 
-    def _recreate(self, changes: dict[str, Any]) -> None:
+    def _recreate(self, changes: Sequence[str]) -> None:
         if 'context' in changes:
             self._wgl_context = None
 
