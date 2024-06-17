@@ -25,14 +25,16 @@ Usage::
         if modifiers & key.MOD_CTRL:
 
 """
+from __future__ import annotations
 
 from pyglet import compat_platform
 
 
 class KeyStateHandler:
-    """Simple handler that tracks the state of keys on the keyboard. If a
-    key is pressed then this handler holds a True value for it.
-    If the window loses focus, all keys will be reset to False to avoid a
+    """Simple handler that tracks the state of keys on the keyboard.
+
+    If a key is pressed then this handler holds a ``True`` value for it.
+    If the window loses focus, all keys will be reset to ``False`` to avoid a
     "sticky" key state.
 
     For example::
@@ -49,23 +51,23 @@ class KeyStateHandler:
         False
 
     """
-    def __init__(self):
+    def __init__(self) -> None:  # noqa: D107
         self.data = {}
 
-    def on_key_press(self, symbol, modifiers):
+    def on_key_press(self, symbol: int, modifiers: int) -> None:  # noqa: ARG002
         self.data[symbol] = True
 
-    def on_key_release(self, symbol, modifiers):
+    def on_key_release(self, symbol: int, modifiers: int) -> None:  # noqa: ARG002
         self.data[symbol] = False
 
-    def on_deactivate(self):
+    def on_deactivate(self) -> None:
         self.data.clear()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> bool:
         return self.data.get(key, False)
 
 
-def modifiers_string(modifiers):
+def modifiers_string(modifiers: int) -> str:
     """Return a string describing a set of modifiers.
 
     Example::
@@ -73,11 +75,9 @@ def modifiers_string(modifiers):
         >>> modifiers_string(MOD_SHIFT | MOD_CTRL)
         'MOD_SHIFT|MOD_CTRL'
 
-    :Parameters:
-        `modifiers` : int
+    Args:
+        modifiers:
             Bitwise combination of modifier constants.
-
-    :rtype: str
     """
     mod_names = []
     if modifiers & MOD_SHIFT:
@@ -101,44 +101,32 @@ def modifiers_string(modifiers):
     return '|'.join(mod_names)
 
 
-def symbol_string(symbol):
-    """Return a string describing a key symbol.
+def symbol_string(symbol: int) -> str:
+    """Return a string describing a key symbol from a key constant.
 
     Example::
 
         >>> symbol_string(BACKSPACE)
         'BACKSPACE'
-
-    :Parameters:
-        `symbol` : int
-            Symbolic key constant.
-
-    :rtype: str
     """
     if symbol < 1 << 32:
         return _key_names.get(symbol, str(symbol))
-    else:
-        return 'user_key(%x)' % (symbol >> 32)
+
+    return 'user_key(%x)' % (symbol >> 32)
 
 
-def motion_string(motion):
-    """Return a string describing a text motion.
+def motion_string(motion: int) -> str:
+    """Return a string describing a text motion from a motion constant.
 
     Example::
 
         >>> motion_string(MOTION_NEXT_WORD)
         'MOTION_NEXT_WORD'
-
-    :Parameters:
-        `motion` : int
-            Text motion constant.
-
-    :rtype: str
     """
     return _motion_names.get(motion, str(motion))
 
 
-def user_key(scancode):
+def user_key(scancode: int) -> int:
     """Return a key symbol for a key not supported by pyglet.
 
     This can be used to map virtual keys or scancodes from unsupported
@@ -183,7 +171,6 @@ PAUSE         = 0xff13
 SCROLLLOCK    = 0xff14
 SYSREQ        = 0xff15
 ESCAPE        = 0xff1b
-SPACE         = 0xff20
 
 # Cursor control and motion
 HOME          = 0xff50

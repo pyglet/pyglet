@@ -1,56 +1,72 @@
-"""Mouse constants and utilities for pyglet.window.
-"""
+"""Mouse constants and utilities for pyglet.window."""
+from __future__ import annotations
 
 
 class MouseStateHandler:
-    """Simple handler that tracks the state of buttons from the mouse. If a
-    button is pressed then this handler holds a True value for it.
-    If the window loses focus, all buttons will be reset to False in order
-    to avoid a "sticky" button state.
+    """Simple handler that tracks the state of buttons and coordinates from the mouse.
+
+    If a button is pressed then this handler holds a ``True`` value for it.
+    If the window loses focus, all values will be reset to ``False`` in order
+    to avoid a "sticky" state.
 
     For example::
 
         >>> win = window.Window()
-        >>> mousebuttons = mouse.MouseStateHandler()
-        >>> win.push_handlers(mousebuttons)
+        >>> mouse_state = mouse.MouseStateHandler()
+        >>> win.push_handlers(mouse_state)
 
         # Hold down the "left" button...
 
-        >>> mousebuttons[mouse.LEFT]
+        >>> mouse_state[mouse.LEFT]
         True
-        >>> mousebuttons[mouse.RIGHT]
+        >>> mouse_state[mouse.RIGHT]
         False
 
+
+    Mouse coordinates can be retrieved by using the ``'x'`` and ``'y'`` strings.
+
+    For example::
+
+        >>> win = window.Window()
+        >>> mouse_state = mouse.MouseStateHandler()
+        >>> win.push_handlers(mouse_state)
+
+        # Move the mouse around...
+
+        >>> mouse_state['x']
+        20
+        >>> mouse_state['y']
+        50
     """
 
-    def __init__(self):
+    def __init__(self) -> None:  # noqa: D107
         self.data = {
-            "x": 0,
-            "y": 0,
+            'x': 0,
+            'y': 0,
         }
 
-    def on_mouse_press(self, x, y, button, modifiers):
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:  # noqa: ARG002
         self.data[button] = True
 
-    def on_mouse_release(self, x, y, button, modifiers):
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> None:  # noqa: ARG002
         self.data[button] = False
 
-    def on_deactivate(self):
+    def on_deactivate(self) -> None:
         self.data.clear()
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        self.data["x"] = x
-        self.data["y"] = y
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:  # noqa: ARG002
+        self.data['x'] = x
+        self.data['y'] = y
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        self.data["x"] = x
-        self.data["y"] = y
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:  # noqa: ARG002
+        self.data['x'] = x
+        self.data['y'] = y
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> int | bool:
         return self.data.get(key, False)
 
 
-def buttons_string(buttons):
+def buttons_string(buttons: int) -> str:
     """Return a string describing a set of active mouse buttons.
 
     Example::
@@ -58,24 +74,22 @@ def buttons_string(buttons):
         >>> buttons_string(LEFT | RIGHT)
         'LEFT|RIGHT'
 
-    :Parameters:
-        `buttons` : int
+    Args:
+        buttons:
             Bitwise combination of mouse button constants.
-
-    :rtype: str
     """
     button_names = []
     if buttons & LEFT:
-        button_names.append("LEFT")
+        button_names.append('LEFT')
     if buttons & MIDDLE:
-        button_names.append("MIDDLE")
+        button_names.append('MIDDLE')
     if buttons & RIGHT:
-        button_names.append("RIGHT")
+        button_names.append('RIGHT')
     if buttons & MOUSE4:
-        button_names.append("MOUSE4")
+        button_names.append('MOUSE4')
     if buttons & MOUSE5:
-        button_names.append("MOUSE5")
-    return "|".join(button_names)
+        button_names.append('MOUSE5')
+    return '|'.join(button_names)
 
 
 #: Constant for the left mouse button.
