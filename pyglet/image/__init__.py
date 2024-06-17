@@ -97,21 +97,21 @@ import re
 import weakref
 
 from ctypes import *
-from io import open, BytesIO
 
 import pyglet
 
 from pyglet.gl import *
-from pyglet.gl import gl_info
 from pyglet.util import asbytes
+from pyglet.graphics.shader import Attribute
+from pyglet.graphics.vertexbuffer import BufferObject
 
+from . import atlas
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 
 from .animation import Animation, AnimationFrame
-from .buffer import *
-from . import atlas
+from .buffer import Framebuffer, Renderbuffer, get_max_color_attachments
 
 
 class ImageException(Exception):
@@ -1357,17 +1357,55 @@ class Texture(AbstractImage):
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
         y2 = y1 + (height is None and self.height or height)
-        vertices = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
+        position = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
+        indices = [0, 1, 2, 0, 2, 3]
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
 
-        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     position=('f', vertices),
-                                     tex_coords=('f', self.tex_coords),
-                                     colors=('Bn', self.colors))
+        # Create and bind a throwaway VAO
+        vao_id = GLuint()
+        glGenVertexArrays(1, vao_id)
+        glBindVertexArray(vao_id)
 
-        glBindTexture(self.target, 0)
+        # Activate shader program:
+        program = pyglet.graphics.get_default_shader()
+        program.use()
+        pos_attrs = program.attributes['position']
+        tex_attrs = program.attributes['tex_coords']
+
+        # vertex position data:
+        position_attribute = Attribute('position', pos_attrs['location'], pos_attrs['count'], GL_FLOAT, False)
+        position_buffer = BufferObject(4 * position_attribute.stride)
+        data = (position_attribute.c_type * len(position))(*position)
+        position_buffer.set_data(data)
+        position_attribute.enable()
+        position_attribute.set_pointer(position_buffer.ptr)
+
+        # texture coordinate data:
+        texcoord_attribute = Attribute('tex_coords', tex_attrs['location'], tex_attrs['count'], GL_FLOAT, False)
+        texcoord_buffer = BufferObject(4 * texcoord_attribute.stride)
+        data = (texcoord_attribute.c_type * len(self.tex_coords))(*self.tex_coords)
+        texcoord_buffer.set_data(data)
+        texcoord_attribute.enable()
+        texcoord_attribute.set_pointer(texcoord_buffer.ptr)
+
+        # index data:
+        index_array = (c_ubyte * len(indices))(*indices)
+        index_buffer = BufferObject(sizeof(index_array))
+        index_buffer.set_data(index_array)
+        index_buffer.bind_to_index_buffer()
+
+        glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_BYTE, 0)
+        glFlush()
+
+        # Deactivate shader program:
+        program.stop()
+        # Discard everything after blitting:
+        position_buffer.delete()
+        texcoord_buffer.delete()
+        glBindVertexArray(0)
+        glDeleteVertexArrays(1, vao_id)
 
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
