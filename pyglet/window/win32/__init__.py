@@ -1165,13 +1165,6 @@ class Win32Window(BaseWindow):
         if wParam == constants.SC_KEYMENU and lParam & (1 >> 16) <= 0:
             return 0
 
-        if wParam & 0xfff0 in (constants.SC_MOVE, constants.SC_SIZE):
-            # Should be in WM_ENTERSIZEMOVE, but we never get that message.
-            from pyglet import app
-
-            if app.event_loop is not None:
-                app.event_loop.enter_blocking()
-
         return None
 
     @Win32EventHandler(constants.WM_MOVE)
@@ -1198,7 +1191,7 @@ class Win32Window(BaseWindow):
         self._moving = True
         from pyglet import app
         if app.event_loop is not None:
-            app.event_loop.exit_blocking()
+            app.event_loop.enter_blocking()
 
     @Win32EventHandler(constants.WM_EXITSIZEMOVE)
     def _event_exitsizemove(self, msg: int, wParam: int, lParam: int) -> None:

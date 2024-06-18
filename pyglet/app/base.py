@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import sys
 import queue
+import sys
 import threading
-
 from typing import TYPE_CHECKING, Any, Callable
 
-from pyglet import app
-from pyglet import clock
-from pyglet import event
+from pyglet import app, clock, event
 
 if TYPE_CHECKING:
     from pyglet.event import EventDispatcher
@@ -18,17 +15,18 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class PlatformEventLoop:
-    """ Abstract class, implementation depends on platform.
+    """Abstract class, implementation depends on platform.
 
     .. versionadded:: 1.2
     """
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa: D107
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
 
     def is_running(self) -> bool:
-        """Return True if the event loop is currently processing, or False
-        if it is blocked or not activated.
+        """If the event loop is currently processing.
+
+        ``True`` if running, or ``False`` if it is blocked or not activated.
         """
         return self._is_running.is_set()
 
@@ -74,7 +72,7 @@ class PlatformEventLoop:
     def start(self) -> None:
         pass
 
-    def step(self, timeout: None | float = None):
+    def step(self, timeout: None | float = None) -> None:
         raise NotImplementedError('abstract')
 
     def set_timer(self, func: Callable, interval: float) -> None:
@@ -102,18 +100,19 @@ class EventLoop(event.EventDispatcher):
     _has_exit_condition = None
     _has_exit = False
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa: D107
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
         self.is_running = False
+        self._interval = None
 
     @staticmethod
-    def _redraw_windows(dt):
+    def _redraw_windows(dt: float) -> None:
         # Redraw all windows
         for window in app.windows:
             window.draw(dt)
 
-    def run(self, interval: None | float = 1/60):
+    def run(self, interval: None | float = 1/60) -> None:
         """Begin processing events, scheduled functions and window updates.
 
         This method enters into the main event loop and, if the ``interval``
@@ -137,6 +136,7 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding the ``run`` method, as the
         implementation is platform-specific.
         """
+        self._interval = interval
         if interval is None:
             # User must call Window.draw() themselves.
             pass
@@ -169,9 +169,9 @@ class EventLoop(event.EventDispatcher):
         platform_event_loop.stop()
 
     def enter_blocking(self) -> None:
-        """Called by pyglet internal processes when the operating system
-        is about to block due to a user interaction.  For example, this
-        is common when the user begins resizing or moving a window.
+        """Called by pyglet internal processes when the operating system is about to block due to a user interaction.
+
+        For example, this is common when the user begins resizing or moving a window.
 
         This method provides the event loop with an opportunity to set up
         an OS timer on the platform event loop, which will continue to
@@ -187,13 +187,20 @@ class EventLoop(event.EventDispatcher):
 
     @staticmethod
     def exit_blocking() -> None:
-        """Called by pyglet internal processes when the blocking operation
-        completes.  See :py:meth:`enter_blocking`.
+        """Called by pyglet internal processes when the blocking operation completes.
+
+        :see: :py:meth:`enter_blocking`.
         """
         app.platform_event_loop.set_timer(None, None)
 
-    def _blocking_timer(self):
-        timeout = self.idle()
+    def _blocking_timer(self) -> None:
+        dt = self.clock.update_time()
+        self.clock.call_scheduled_functions(dt)
+        if self._interval is None:
+            self._redraw_windows(dt)
+
+        # Update timout
+        timeout = self.clock.get_sleep_time(True)
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
     def idle(self) -> None | float:
@@ -229,10 +236,12 @@ class EventLoop(event.EventDispatcher):
 
     @property
     def has_exit(self) -> bool:
-        """Flag indicating if the event loop will exit in
-        the next iteration.  When set, all waiting threads are interrupted (see
-        :py:meth:`sleep`).
-        
+        """Flag indicating if the event loop will exit in the next iteration.
+
+        When set, all waiting threads are interrupted.
+
+        :see :py:meth:`sleep`:
+
         Thread-safe since pyglet 1.2.
         """
         self._has_exit_condition.acquire()
@@ -258,8 +267,9 @@ class EventLoop(event.EventDispatcher):
         app.platform_event_loop.notify()
 
     def sleep(self, timeout: float) -> bool:
-        """Wait for some amount of time, or until the :py:attr:`has_exit` flag
-        is set or :py:meth:`exit` is called.
+        """Wait for some amount of time.
+
+        Waits until the :py:attr:`has_exit` flag is set or :py:meth:`exit` is called.
 
         This method is thread-safe.
 
@@ -274,7 +284,7 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition.release()
         return result
 
-    def on_window_close(self, window: BaseWindow):
+    def on_window_close(self, window: BaseWindow) -> None:
         """Default window close handler."""
         if len(app.windows) == 0:
             self.exit()
@@ -282,7 +292,7 @@ class EventLoop(event.EventDispatcher):
     if _is_pyglet_doc_run:
         # Events
 
-        def on_window_close(self, window: BaseWindow):
+        def on_window_close(self, window: BaseWindow) -> None:
             """A window was closed.
 
             This event is dispatched when a window is closed.  It is not
@@ -294,7 +304,7 @@ class EventLoop(event.EventDispatcher):
             on some other policy.
             """
 
-        def on_enter(self):
+        def on_enter(self) -> None:
             """The event loop is about to begin.
 
             This is dispatched when the event loop is prepared to enter
@@ -302,7 +312,7 @@ class EventLoop(event.EventDispatcher):
             application to initialise itself.
             """
 
-        def on_exit(self):
+        def on_exit(self) -> None:
             """The event loop is about to exit.
 
             After dispatching this event, the :py:meth:`run` method returns (the
