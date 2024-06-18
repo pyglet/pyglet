@@ -1,10 +1,10 @@
-from typing import Dict, Optional
+from __future__ import annotations
 
 import pyglet
 
 from pyglet.input import base
-from pyglet.input.win32.directinput import DirectInputDevice, _create_controller
 from pyglet.input.win32.directinput import _di_manager as _di_device_manager
+from pyglet.input.win32.directinput import DirectInputDevice, _create_controller
 
 from pyglet.input.win32.directinput import get_devices as dinput_get_devices
 from pyglet.input.win32.directinput import get_controllers as dinput_get_controllers
@@ -33,6 +33,14 @@ if not pyglet.options["win32_disable_xinput"]:
         pass
 
 
+if not _xinput_enabled:
+    def xinput_get_devices():
+        return []
+
+    def xinput_get_controllers():
+        return []
+
+
 class Win32ControllerManager(base.ControllerManager):
     """This class manages XInput and DirectInput as a combined manager.
        XInput will override any XInput compatible DirectInput devices.
@@ -40,14 +48,14 @@ class Win32ControllerManager(base.ControllerManager):
     """
 
     def __init__(self):
-        self._di_controllers: Dict[DirectInputDevice, base.Controller] = {}
+        self._di_controllers: dict[DirectInputDevice, base.Controller] = {}
 
         if _xinput_enabled:
-            self._xinput_controllers: Dict[XInputDevice, XInputController] = {}
+            self._xinput_controllers: dict[XInputDevice, XInputController] = {}
 
-            for xdevice in _xinput_device_manager.all_devices:  # All 4 devices are initialized.
-                meta = {'name': xdevice.name, 'guid': "XINPUTCONTROLLER"}
-                self._xinput_controllers[xdevice] = XInputController(xdevice, meta)
+            for xdev in _xinput_device_manager.all_devices:  # All 4 devices are initialized.
+                meta = {'name': xdev.name, 'guid': "XINPUTCONTROLLER"}
+                self._xinput_controllers[xdev] = XInputController(xdev, meta)
 
             @_xinput_device_manager.event
             def on_connect(xdevice):
@@ -80,7 +88,7 @@ class Win32ControllerManager(base.ControllerManager):
         for device in _di_device_manager.devices:
             self._add_di_controller(device)
 
-    def _add_di_controller(self, device: DirectInputDevice) -> Optional[base.Controller]:
+    def _add_di_controller(self, device: DirectInputDevice) -> None | base.Controller:
         controller = _create_controller(device)
         if controller:
             self._di_controllers[device] = controller
@@ -98,14 +106,6 @@ class Win32ControllerManager(base.ControllerManager):
 
     def get_controllers(self):
         return self._get_xinput_controllers() + self._get_di_controllers()
-
-
-def xinput_get_devices():
-    return []
-
-
-def xinput_get_controllers():
-    return []
 
 
 def get_devices(display=None):

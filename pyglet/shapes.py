@@ -4,12 +4,27 @@ This module provides classes for a variety of simplistic 2D shapes,
 such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
-Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicable).
-The Python ``in`` operator to check whether a point is inside a shape.
+Convenience methods are provided for positioning, changing color, opacity,
+and rotation.
+The Python ``in`` operator can be used to check whether a point is inside a shape.
+(This is approximated with some shapes, such as Star).
 
-To create more complex shapes than what is provided here, the lower level
-graphics API is more appropriate. See the :ref:`guide_graphics` for more details.
+If the shapes in this module don't suit your needs, you have two
+options:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Your Goals
+     - Best Approach
+
+   * - Simple shapes like those here
+     - Subclass :py:class:`ShapeBase`
+
+   * - Complex & optimized shapes
+     - See :ref:`guide_graphics` to learn about
+       the low-level graphics API.
+
 
 A simple example of drawing shapes::
 
@@ -36,25 +51,35 @@ A simple example of drawing shapes::
     pyglet.app.run()
 
 
-.. note:: Some Shapes, such as Lines and Triangles, have multiple coordinates.
-          If you update the x, y coordinate, this will also affect the secondary
-          coordinates. This allows you to move the shape without affecting it's
-          overall dimensions.
+.. note:: Some Shapes, such as :py:class:`.Line` and :py:class:`.Triangle`,
+          have multiple coordinates.
+
+          These shapes treat their :py:attr:`~ShapeBase.position` as their
+          primary coordinate. Changing it or its components (the
+          :py:attr:`~ShapeBase.x` or :py:attr:`~ShapeBase.y` properties)
+          also moves all secondary coordinates by the same offset from
+          the previous :py:attr:`~ShapeBase.position` value. This allows
+          you to move these shapes without distorting them.
+
 
 .. versionadded:: 1.5.4
 """
-
+from __future__ import annotations
 import math
 
 from abc import ABC, abstractmethod
+from typing import Sequence, TYPE_CHECKING
 
 import pyglet
 
-from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
+from pyglet.extlibs import earcut
+from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGLES
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
+
+if TYPE_CHECKING:
+    from pyglet.graphics.shader import ShaderProgram
 
 
 vertex_source = """#version 150 core
@@ -100,7 +125,7 @@ fragment_source = """#version 150 core
 """
 
 
-def get_default_shader():
+def get_default_shader() -> ShaderProgram:
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                     (fragment_source, 'fragment'))
 
@@ -112,21 +137,97 @@ def _rotate_point(center, point, angle):
     return center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle)
 
 
-def _sat(vertices, point):
-    # Separating Axis Theorem
-    # return True if point is in the shape
-    poly = vertices + [vertices[0]]
-    for i in range(len(poly) - 1):
-        a, b = poly[i], poly[i + 1]
-        base = Vec2(a[1] - b[1], b[0] - a[0])
-        projections = []
-        for x, y in poly:
-            vec = Vec2(x, y)
-            projections.append(base.dot(vec) / abs(base))
-        point_proj = base.dot(Vec2(*point)) / abs(base)
-        if point_proj < min(projections) or point_proj > max(projections):
-            return False
-    return True
+def _point_in_polygon(polygon, point) -> bool:
+    """Use raycasting to determine if a point is inside a polygon.
+
+    This function is an example implementation available under MIT License at:
+    https://www.algorithms-and-technologies.com/point_in_polygon/python
+    """
+    odd = False
+    i = 0
+    j = len(polygon) - 1
+    while i < len(polygon) - 1:
+        i = i + 1
+        if ((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (
+            point[0]
+            < (
+                (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1])
+                / (polygon[j][1] - polygon[i][1])
+            )
+            + polygon[i][0]
+        ):
+            odd = not odd
+        j = i
+    return odd
+
+
+def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None):
+    """Computes a line segment between the points p1 and p2.
+
+    If points p0 or p3 are supplied then the segment p1->p2 will have the correct "miter" angle
+    for each end respectively.  This returns computed miter and scale values which can be supplied
+    to the next call of the method for a minor performance improvement.  If they are not supplied
+    then they will be computed.
+
+    :Parameters:
+        `p0` : (float, float)
+            The "previous" point for the segment p1->p2 which is used to compute the "miter"
+            angle of the start of the segment.  If None is supplied then the start of the line
+            is 90 degrees to the segment p1->p2.
+        `p1` : (float, float)
+            The origin of the segment p1->p2.
+        `p2` : (float, float)
+            The end of the segment p1->p2
+        `p3` : (float, float)
+            The "following" point for the segment p1->p2 which is used to compute the "miter"
+            angle to the end of the segment.  If None is supplied then the end of the line is
+            90 degrees to the segment p1->p2.
+        `prev_miter`: pyglet.math.Vec2
+            The miter value to be used.
+
+    :type: (pyglet.math.Vec2, pyglet.math.Vec2, float, float, float, float, float, float)
+    """
+    v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
+    v_normal = Vec2(-v_np1p2.y, v_np1p2.x)
+
+    # Prep the miter vectors to the normal vector in case it is only one segment
+    v_miter2 = v_normal
+    scale1 = scale2 = thickness / 2.0
+
+    # miter1 is either already computed or the normal
+    v_miter1 = v_normal
+    if prev_miter and prev_scale:
+        v_miter1 = prev_miter
+        scale1 = prev_scale
+    elif p0:
+        # Compute the miter joint vector for the start of the segment
+        v_np0p1 = Vec2(p1[0] - p0[0], p1[1] - p0[1]).normalize()
+        v_normal_p0p1 = Vec2(-v_np0p1.y, v_np0p1.x)
+        # Add the 2 normal vectors and normalize to get miter vector
+        v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
+        scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
+
+    if p3:
+        # Compute the miter joint vector for the end of the segment
+        v_np2p3 = Vec2(p3[0] - p2[0], p3[1] - p2[1]).normalize()
+        v_normal_p2p3 = Vec2(-v_np2p3.y, v_np2p3.x)
+        # Add the 2 normal vectors and normalize to get miter vector
+        v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
+        scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
+
+    # Make these tuples instead of Vec2 because accessing
+    # members of Vec2 is suprisingly slow
+    miter1_scaled_p = (v_miter1.x * scale1, v_miter1.y * scale1)
+    miter2_scaled_p = (v_miter2.x * scale2, v_miter2.y * scale2)
+
+    v1 = (p1[0] + miter1_scaled_p[0], p1[1] + miter1_scaled_p[1])
+    v2 = (p2[0] + miter2_scaled_p[0], p2[1] + miter2_scaled_p[1])
+    v3 = (p1[0] - miter1_scaled_p[0], p1[1] - miter1_scaled_p[1])
+    v4 = (p2[0] + miter2_scaled_p[0], p2[1] + miter2_scaled_p[1])
+    v5 = (p2[0] - miter2_scaled_p[0], p2[1] - miter2_scaled_p[1])
+    v6 = (p1[0] - miter1_scaled_p[0], p1[1] - miter1_scaled_p[1])
+
+    return v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1]
 
 
 class _ShapeGroup(Group):
@@ -136,22 +237,20 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src, blend_dest, program, parent=None):
+    def __init__(self, blend_src: int, blend_dest: int, program: ShaderProgram, parent: Group | None = None):
         """Create a Shape group.
 
         The group is created internally. Usually you do not
         need to explicitly create it.
 
-        :Parameters:
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+        Args:
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            program:
                 The ShaderProgram to use.
-            `parent` : `~pyglet.graphics.Group`
+            parent:
                 Optional parent group.
         """
         super().__init__(parent=parent)
@@ -186,29 +285,31 @@ class ShapeBase(ABC):
     approximated using multiple vertices.
 
     If you need shapes or functionality not provided in this module,
-    you can write your own custom subclass of `ShapeBase` by using
+    you can write your own custom subclass of ``ShapeBase`` by using
     the provided shapes as reference.
     """
 
+    # _rgba and any class attribute set to None is untyped because
+    # doing so doesn't require None-handling from some type checkers.
     _rgba = (255, 255, 255, 255)
-    _rotation = 0
-    _visible = True
-    _x = 0
-    _y = 0
-    _anchor_x = 0
-    _anchor_y = 0
+    _rotation: float = 0.0
+    _visible: bool = True
+    _x: float = 0.0
+    _y: float = 0.0
+    _anchor_x: float = 0.0
+    _anchor_y: float = 0.0
     _batch = None
     _group = None
-    _num_verts = 0
+    _num_verts: int = 0
     _vertex_list = None
-    _draw_mode = GL_TRIANGLES
+    _draw_mode: int = GL_TRIANGLES
     group_class = _ShapeGroup
 
     def __del__(self):
         if self._vertex_list is not None:
             self._vertex_list.delete()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         """Test whether a point is inside a shape."""
         raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
@@ -252,22 +353,32 @@ class ShapeBase(ABC):
         """
         raise NotImplementedError("_update_vertices must be defined"
                                   "for every ShapeBase subclass")
+
     @property
     def rotation(self) -> float:
-        """Clockwise rotation of the shape in degrees.
+        """Get/set the shape's clockwise rotation in degrees.
 
-        It will be rotated about its (anchor_x, anchor_y) position,
-        which defaults to the first vertex point of the shape.
+        All shapes rotate around their :attr:`.anchor_position`.
+        For most shapes, this defaults to both:
 
-        For most shapes, this is the lower left corner. The shapes
-        below default to the points their ``radius`` values are
-        measured from:
+        * The shape's first vertex of the shape
+        * The lower left corner
 
-            * :py:class:`.Circle`
-            * :py:class:`.Ellipse`
-            * :py:class:`.Arc`
-            * :py:class:`.Sector`
-            * :py:class:`.Star`
+        Shapes with a ``radius`` property rotate around the
+        point the radius is measured from. This will be either
+        their center or the center of the circle they're cut from:
+
+        These shapes rotate around their center:
+
+        * :py:class:`.Circle`
+        * :py:class:`.Ellipse`
+        * :py:class:`.Star`
+
+        These shapes rotate around the point of their angles:
+
+        * :py:class:`.Arc`
+        * :py:class:`.Sector`
+
         """
         return self._rotation
 
@@ -276,127 +387,169 @@ class ShapeBase(ABC):
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
 
-    def draw(self):
-        """Draw the shape at its current position.
+    def draw(self) -> None:
+        """Debug method to draw a single shape at its current position.
 
-        Using this method is not recommended. Instead, add the
-        shape to a `pyglet.graphics.Batch` for efficient rendering.
+        .. warning:: Avoid this inefficient method for everyday use!
+
+                     Regular drawing should add shapes to a :py:class:`Batch`
+                     and call its :py:meth:`~Batch.draw` method.
+
         """
         self._group.set_state_recursive()
         self._vertex_list.draw(self._draw_mode)
         self._group.unset_state_recursive()
 
-    def delete(self):
+    def delete(self) -> None:
         """Force immediate removal of the shape from video memory.
 
-        It is recommended to call this whenever you delete a shape,
-        as the Python garbage collector will not necessarily call the
-        finalizer as soon as the sprite falls out of scope.
+        You should usually call this whenever you no longer need the shape.
+        Otherwise, Python may call the finalizer of the shape instance only
+        some time after the shape has fallen out of scope, and the shape's video
+        memory will not be freed until the finalizer is eventually called by
+        garbage collection.
+
+        Implementing manual garbage collection may satisfy the same concern
+        without using the current method, but is a very advanced technique.
         """
-        self._vertex_list.delete()
-        self._vertex_list = None
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
+            self._vertex_list = None
 
     @property
-    def x(self):
-        """X coordinate of the shape.
+    def x(self) -> float:
+        """Get/set the X coordinate of the shape's :py:attr:`.position`.
 
-        :type: int or float
+        #. To update both :py:attr:`.x` and :py:attr:`.y`, use
+           :attr:`.position` instead.
+        #. Shapes may vary slightly in how they use :py:attr:`.position`
+
+        See :py:attr:`.position` to learn more.
         """
         return self._x
 
     @x.setter
-    def x(self, value):
+    def x(self, value: float) -> None:
         self._x = value
         self._update_translation()
 
     @property
-    def y(self):
-        """Y coordinate of the shape.
+    def y(self) -> float:
+        """Get/set the Y coordinate of the shape's :py:attr:`.position`.
 
-        :type: int or float
+        This property has the following pitfalls:
+
+        #. To update both :py:attr:`.x` and :py:attr:`.y`, use
+           :py:attr:`.position` instead.
+        #. Shapes may vary slightly in how they use :py:attr:`.position`
+
+        See :attr:`.position` to learn more.
         """
         return self._y
 
     @y.setter
-    def y(self, value):
+    def y(self, value: float) -> None:
         self._y = value
         self._update_translation()
 
     @property
-    def position(self):
-        """The (x, y) coordinates of the shape, as a tuple.
+    def position(self) -> tuple[float, float]:
+        """Get/set the ``(x, y)`` coordinates of the shape.
 
-        :Parameters:
-            `x` : int or float
-                X coordinate of the sprite.
-            `y` : int or float
-                Y coordinate of the sprite.
+        .. tip:: This is more efficient than setting :py:attr:`.x`
+                 and :py:attr:`.y` separately!
+
+        All shapes default to rotating around their position. However,
+        the way they do so varies.
+
+        Shapes with a ``radius`` property will use this as their
+        center:
+
+        * :py:class:`.Circle`
+        * :py:class:`.Ellipse`
+        * :py:class:`.Arc`
+        * :py:class:`.Sector`
+        * :py:class:`.Star`
+
+        Others default to using it as their lower left corner.
         """
         return self._x, self._y
 
     @position.setter
-    def position(self, values):
+    def position(self, values: tuple[float, float]) -> None:
         self._x, self._y = values
         self._update_translation()
 
     @property
-    def anchor_x(self):
-        """The X coordinate of the anchor point
+    def anchor_x(self) -> float:
+        """Get/set the X coordinate of the anchor point.
 
-        :type: int or float
+        If you need to set both this and :py:attr:`.anchor_x`, use
+        :py:attr:`.anchor_position` instead.
         """
         return self._anchor_x
 
     @anchor_x.setter
-    def anchor_x(self, value):
+    def anchor_x(self, value: float) -> None:
         self._anchor_x = value
         self._update_vertices()
 
     @property
-    def anchor_y(self):
-        """The Y coordinate of the anchor point
+    def anchor_y(self) -> float:
+        """Get/set the Y coordinate of the anchor point.
 
-        :type: int or float
+        If you need to set both this and :py:attr:`.anchor_x`, use
+        :py:attr:`.anchor_position` instead.
         """
         return self._anchor_y
 
     @anchor_y.setter
-    def anchor_y(self, value):
+    def anchor_y(self, value: float) -> None:
         self._anchor_y = value
         self._update_vertices()
 
     @property
-    def anchor_position(self):
-        """The (x, y) coordinates of the anchor point, as a tuple.
+    def anchor_position(self) -> tuple[float, float]:
+        """Get/set the anchor's ``(x, y)`` offset from :py:attr:`.position`
 
-        :Parameters:
-            `x` : int or float
-                X coordinate of the anchor point.
-            `y` : int or float
-                Y coordinate of the anchor point.
+        This defines the point a shape rotates around. By default, it is
+        ``(0.0, 0.0)``. However:
+
+        * Its behavior may vary between shape classes.
+        * On many shapes, you can set the anchor or its components
+          (:py:attr:`.anchor_x` and :attr:`.anchor_y`) to custom values.
+
+        Since all anchor updates recalculate a shape's vertices on the
+        CPU, this property is faster than updating :py:attr:`.anchor_x` and
+        :py:attr:`.anchor_y` separately.
         """
         return self._anchor_x, self._anchor_y
 
     @anchor_position.setter
-    def anchor_position(self, values):
+    def anchor_position(self, values: tuple[float, float]) -> None:
         self._anchor_x, self._anchor_y = values
         self._update_vertices()
 
     @property
-    def color(self):
-        """The shape color.
+    def color(self) -> tuple[int, int, int, int]:
+        """Get/set the shape's color.
 
-        This property sets the color of the shape.
+        The color may set to:
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'.
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
 
-        :type: (int, int, int)
+        If an RGB color is set, the current alpha will be preserved.
+        Otherwise, the new alpha value will be used for the shape. Each
+        color component must be in the range 0 (dark) to 255 (saturated).
         """
         return self._rgba
 
     @color.setter
-    def color(self, values):
+    def color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int]
+    ) -> None:
         r, g, b, *a = values
 
         if a:
@@ -407,62 +560,94 @@ class ShapeBase(ABC):
         self._update_color()
 
     @property
-    def opacity(self):
-        """Blend opacity.
+    def opacity(self) -> int:
+        """Get/set the blend opacity of the shape.
 
-        This property sets the alpha component of the color of the shape.
-        With the default blend mode (see the constructor), this allows the
-        shape to be drawn with fractional opacity, blending with the
-        background.
+        .. tip:: To toggle visibility on/off, :py:attr:`.visible` may be
+                 more efficient!
 
-        An opacity of 255 (the default) has no effect.  An opacity of 128
-        will make the shape appear translucent.
+        Opacity is implemented as the alpha component of a shape's
+        :py:attr:`.color`. When part of a group with a default blend
+        mode of ``(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)``, opacities
+        below ``255`` draw with fractional opacity over the background:
 
-        :type: int
+        .. list-table:: Example Values & Effects
+           :header-rows: 1
+
+           * - Opacity
+             - Effect
+
+           * - ``255`` (Default)
+             - Shape is fully opaque
+
+           * - ``128``
+             - Shape looks translucent
+
+           * - ``0``
+             - Invisible
+
         """
         return self._rgba[3]
 
     @opacity.setter
-    def opacity(self, value):
+    def opacity(self, value: int) -> None:
         self._rgba = (*self._rgba[:3], value)
         self._update_color()
 
     @property
-    def visible(self):
-        """True if the shape will be drawn.
+    def visible(self) -> bool:
+        """Get/set whether the shape will be drawn at all.
 
-        :type: bool
+        For absolute showing / hiding, this is
         """
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         self._visible = value
         self._update_vertices()
 
     @property
-    def group(self):
-        """User assigned :class:`Group` object."""
+    def group(self) -> Group:
+        """Get/set the shape's :class:`Group`.
+
+        You can migrate a shape from one group to another by setting
+        this property. Note that it can be an expensive (slow) operation.
+
+        If :py:attr:`.batch` isn't ``None``, setting this property will
+        also trigger a batch migration.
+        """
         return self._group.parent
 
     @group.setter
-    def group(self, group):
+    def group(self, group: Group) -> None:
         if self._group.parent == group:
             return
         self._group = self.group_class(self._group.blend_src,
-                                  self._group.blend_dest,
-                                  self._group.program,
-                                  group)
-        self._batch.migrate(self._vertex_list, self._draw_mode, self._group,
-                            self._batch)
+                                       self._group.blend_dest,
+                                       self._group.program,
+                                       group)
+        if self._batch:
+            self._batch.migrate(self._vertex_list,
+                                self._draw_mode,
+                                self._group,
+                                self._batch)
 
     @property
-    def batch(self):
-        """User assigned :class:`Batch` object."""
+    def batch(self) -> Batch | None:
+        """Get/set the :py:class:`Batch` for this shape.
+
+        .. warning:: Setting this to ``None`` currently breaks things!
+
+                     Known issues include :py:attr:`.group` breaking.
+
+        You can migrate a shape from one batch to another by setting
+        this property, but it can be an expensive (slow) operation.
+        """
         return self._batch
 
     @batch.setter
-    def batch(self, batch):
+    def batch(self, batch: Batch | None) -> None:
         if self._batch == batch:
             return
 
@@ -473,78 +658,93 @@ class ShapeBase(ABC):
             self._vertex_list.delete()
             self._batch = batch
             self._create_vertex_list()
-            self._update_vertices()
 
 
 class Arc(ShapeBase):
-    _draw_mode = GL_LINES
 
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 closed=False, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            angle: float = math.tau,
+            start_angle: float = 0.0,
+            closed: bool = False,
+            thickness: float = 1.0,
+            color=(255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the circle.
-            `y` : float
+            y:
                 Y coordinate of the circle.
-            `radius` : float
+            radius:
                 The desired radius.
-            `segments` : int
+            segments:
                 You can optionally specify how many distinct line segments
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
-                `max(14, int(radius / 1.25))`.
-            `angle` : float
+                ``max(14, int(radius / 1.25))``.
+            angle:
                 The angle of the arc, in radians. Defaults to tau (pi * 2),
                 which is a full circle.
-            `start_angle` : float
+            start_angle:
                 The start angle of the arc, in radians. Defaults to 0.
-            `closed` : bool
-                If True, the ends of the arc will be connected with a line.
-                defaults to False.
-            `color` : (int, int, int, int)
+            closed:
+                If ``True``, the ends of the arc will be connected with a line.
+                defaults to ``False``.
+            thickness:
+                The desired thickness or width of the line used for the arc.
+            color:
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the circle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the circle.
         """
         self._x = x
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
-        self._num_verts = self._segments * 2 + (2 if closed else 0)
 
         # handle both 3 and 4 byte colors
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
+        self._thickness = thickness
         self._angle = angle
         self._start_angle = start_angle
-        self._closed = closed
+        # Only set closed if the angle isn't tau
+        self._closed = closed if abs(math.tau - self._angle) > 1e-9 else False
         self._rotation = 0
+
+        # Each segment is now 6 vertices long
+        self._num_verts = self._segments * 6 + (6 if self._closed else 0)
 
         self._batch = batch or Batch()
         program = get_default_shader()
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -556,84 +756,130 @@ class Arc(ShapeBase):
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
                        y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
-            # Create a list of doubled-up points from the points:
+            # Create a list of quads from the points
             vertices = []
+            prev_miter = None
+            prev_scale = None
             for i in range(len(points) - 1):
-                line_points = *points[i], *points[i + 1]
-                vertices.extend(line_points)
+                prev_point = None
+                next_point = None
+                if i > 0:
+                    prev_point = points[i - 1]
+                elif self._closed:
+                    prev_point = points[-1]
+                elif abs(self._angle - math.tau) <= 1e-9:
+                    prev_point = points[-2]
+
+                if i + 2 < len(points):
+                    next_point = points[i + 2]
+                elif self._closed:
+                    next_point = points[0]
+                elif abs(self._angle - math.tau) <= 1e-9:
+                    next_point = points[1]
+
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
+                vertices.extend(segment)
 
             if self._closed:
-                chord_points = *points[-1], *points[0]
-                vertices.extend(chord_points)
+                prev_point = None
+                next_point = None
+                if len(points) > 2:
+                    prev_point = points[-2]
+                    next_point = points[1]
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[-1], points[0], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
+                vertices.extend(segment)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def angle(self):
-        """The angle of the arc.
+    def radius(self) -> float:
+        """Get/set the radius of the arc."""
+        return self._radius
 
-        :type: float
-        """
+    @radius.setter
+    def radius(self, value: float) -> None:
+        self._radius = value
+        self._update_vertices()
+
+    @property
+    def thickness(self) -> float:
+        """Get/set the thickness of the Arc"""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
+        self._update_vertices()
+
+    @property
+    def angle(self) -> float:
+        """Get/set the angle of the arc in radians."""
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
-        """The start angle of the arc.
-
-        :type: float
-        """
+    def start_angle(self) -> float:
+        """Get/set the start angle of the arc in radians."""
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float):
         self._start_angle = angle
         self._update_vertices()
 
-    def draw(self):
-        """Draw the shape at its current position.
-
-        Using this method is not recommended. Instead, add the
-        shape to a `pyglet.graphics.Batch` for efficient rendering.
-        """
-        self._vertex_list.draw(self._draw_mode)
-
 
 class BezierCurve(ShapeBase):
-    _draw_mode = GL_LINES
 
-    def __init__(self, *points, t=1.0, segments=100, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(
+            self,
+            *points: tuple[float, float],
+            t: float = 1.0,
+            segments: int = 100,
+            thickness: int = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
 
-        :Parameters:
-            `points` : List[[int, int]]
-                Control points of the curve.
-            `t` : float
+        Args:
+            points:
+                Control points of the curve. Points can be specified as multiple
+                lists or tuples of point pairs. Ex. (0,0), (2,3), (1,9)
+            t:
                 Draw `100*t` percent of the curve. 0.5 means the curve
                 is half drawn and 1.0 means draw the whole curve.
-            `segments` : int
+            segments:
                 You can optionally specify how many line segments the
                 curve should be made from.
-            `color` : (int, int, int, int)
+            thickness:
+                The desired thickness or width of the line used for the curve.
+            color:
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the curve to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the curve.
         """
         self._points = list(points)
         self._x, self._y = self._points[0]
         self._t = t
         self._segments = segments
-        self._num_verts = self._segments * 2
+        self._thickness = thickness
+        self._num_verts = self._segments * 6
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
@@ -642,7 +888,6 @@ class BezierCurve(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def _make_curve(self, t):
         n = len(self._points) - 1
@@ -656,15 +901,16 @@ class BezierCurve(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
-            x = -self._anchor_x
-            y = -self._anchor_y
+            x = -self._anchor_x - self._x
+            y = -self._anchor_y - self._y
 
             # Calculate the points of the curve:
             points = [(x + self._make_curve(self._t * t / self._segments)[0],
@@ -676,65 +922,91 @@ class BezierCurve(ShapeBase):
 
             # Create a list of doubled-up points from the points:
             vertices = []
+            prev_miter = None
+            prev_scale = None
             for i in range(len(coords) - 1):
-                line_points = *coords[i], *coords[i + 1]
-                vertices.extend(line_points)
+                prev_point = None
+                next_point = None
+                if i > 0:
+                    prev_point = points[i - 1]
 
-        self._vertex_list.position[:] = vertices
+                if i + 2 < len(points):
+                    next_point = points[i + 2]
+
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
+                vertices.extend(segment)
+
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def points(self):
-        """Control points of the curve.
-
-        :type: List[[int, int]]
-        """
+    def points(self) -> list[tuple[float, float]]:
+        """Get/set the control points of the Bézier curve."""
         return self._points
 
     @points.setter
-    def points(self, value):
+    def points(self, value: list[tuple[float, float]]):
         self._points = value
         self._update_vertices()
 
     @property
-    def t(self):
-        """Draw `100*t` percent of the curve.
-
-        :type: float
-        """
+    def t(self) -> float:
+        """Get/set the t in ``100*t`` percent of the curve to draw."""
         return self._t
 
     @t.setter
-    def t(self, value):
+    def t(self, value: float) -> None:
         self._t = value
+        self._update_vertices()
+
+    @property
+    def thickness(self) -> float:
+        """Get/set the line thickness for the Bézier curve."""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
         self._update_vertices()
 
 
 class Circle(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the circle.
-            `y` : float
+            y:
                 Y coordinate of the circle.
-            `radius` : float
+            radius:
                 The desired radius.
-            `segments` : int
+            segments:
                 You can optionally specify how many distinct triangles
                 the circle should be made from. If not specified it will
                 be automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the circle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the circle.
         """
         self._x = x
@@ -750,21 +1022,21 @@ class Circle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
-            self._segments*3, self._draw_mode, self._batch, self._group,
+            self._segments * 3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -781,45 +1053,54 @@ class Circle(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def radius(self):
-        """The radius of the circle.
-
-        :type: float
-        """
+    def radius(self) -> float:
+        """Gets/set radius of the circle."""
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
 
 class Ellipse(ShapeBase):
-    def __init__(self, x, y, a, b, segments=None, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            a: float, b: float,
+            segments: int | None = None,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an ellipse.
 
-        The ellipse's anchor point (x, y) defaults to the center of the ellipse.
+        The ellipse's anchor point ``(x, y)`` defaults to the center of
+        the ellipse.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 X coordinate of the ellipse.
-            `y` : float
+            y:
                 Y coordinate of the ellipse.
-            `a` : float
+            a:
                 Semi-major axes of the ellipse.
-            `b`: float
+            b:
                 Semi-minor axes of the ellipse.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the ellipse, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the circle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the circle.
         """
         self._x = x
@@ -841,9 +1122,8 @@ class Ellipse(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         # Since directly testing whether a point is inside an ellipse is more
@@ -854,13 +1134,14 @@ class Ellipse(ShapeBase):
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
-            self._segments*3, self._draw_mode, self._batch, self._group,
+            self._segments * 3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -876,68 +1157,77 @@ class Ellipse(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def a(self):
-        """The semi-major axes of the ellipse.
-
-        :type: float
-        """
+    def a(self) -> float:
+        """Get/set the semi-major axes of the ellipse."""
         return self._a
 
     @a.setter
-    def a(self, value):
+    def a(self, value: float) -> None:
         self._a = value
         self._update_vertices()
 
     @property
-    def b(self):
-        """The semi-minor axes of the ellipse.
-
-        :type: float
-        """
+    def b(self) -> float:
+        """Get/set the semi-minor axes of the ellipse."""
         return self._b
 
     @b.setter
-    def b(self, value):
+    def b(self, value: float) -> None:
         self._b = value
         self._update_vertices()
 
 
 class Sector(ShapeBase):
-    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255, 255, 255, 255), batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            radius: float,
+            segments: int | None = None,
+            angle: float = math.tau,
+            start_angle: float = 0.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a Sector of a circle.
 
-                The sector's anchor point (x, y) defaults to the center of the circle.
+        By default, ``(x, y)`` is used as:
+        * The sector's anchor point
+        * The center of the circle the sector is cut from
 
-                :Parameters:
-                    `x` : float
-                        X coordinate of the sector.
-                    `y` : float
-                        Y coordinate of the sector.
-                    `radius` : float
-                        The desired radius.
-                    `segments` : int
-                        You can optionally specify how many distinct triangles
-                        the sector should be made from. If not specified it will
-                        be automatically calculated using the formula:
-                        `max(14, int(radius / 1.25))`.
-                    `angle` : float
-                        The angle of the sector, in radians. Defaults to tau (pi * 2),
-                        which is a full circle.
-                    `start_angle` : float
-                        The start angle of the sector, in radians. Defaults to 0.
-                    `color` : (int, int, int, int)
-                        The RGB or RGBA color of the circle, specified as a
-                        tuple of 3 or 4 ints in the range of 0-255. RGB colors
-                        will be treated as having an opacity of 255.
-                    `batch` : `~pyglet.graphics.Batch`
-                        Optional batch to add the sector to.
-                    `group` : `~pyglet.graphics.Group`
-                        Optional parent group of the sector.
-                """
+        Args:
+            x:
+                X coordinate of the sector.
+            y:
+                Y coordinate of the sector.
+            radius:
+                The desired radius.
+            segments:
+                You can optionally specify how many distinct triangles
+                the sector should be made from. If not specified it will
+                be automatically calculated using the formula:
+                `max(14, int(radius / 1.25))`.
+            angle:
+                The angle of the sector, in radians. Defaults to tau (pi * 2),
+                which is a full circle.
+            start_angle:
+                The start angle of the sector, in radians. Defaults to 0.
+            color:
+                The RGB or RGBA color of the circle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch:
+                Optional batch to add the sector to.
+            group:
+                Optional parent group of the sector.
+        """
         self._x = x
         self._y = y
         self._radius = radius
@@ -956,13 +1246,13 @@ class Sector(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         angle = math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x)
-        if angle < 0: angle += 2 * math.pi
+        if angle < 0:
+            angle += 2 * math.pi
         if self._start_angle < angle < self._start_angle + self._angle:
             return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
         return False
@@ -970,12 +1260,13 @@ class Sector(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -993,74 +1284,79 @@ class Sector(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def angle(self):
-        """The angle of the sector.
-
-        :type: float
-        """
+    def angle(self) -> float:
+        """Get/set the angle of the sector in radians."""
         return self._angle
 
     @angle.setter
-    def angle(self, value):
+    def angle(self, value: float) -> None:
         self._angle = value
         self._update_vertices()
 
     @property
-    def start_angle(self):
-        """The start angle of the sector.
-
-        :type: float
-        """
+    def start_angle(self) -> float:
+        """Get/set the start angle of the sector in radians."""
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle):
+    def start_angle(self, angle: float) -> None:
         self._start_angle = angle
         self._update_vertices()
 
     @property
-    def radius(self):
-        """The radius of the sector.
+    def radius(self) -> float:
+        """Get/set the radius of the sector.
 
-        :type: float
+        By default, this is in screen pixels. Your drawing / GL settings
+        may alter how this is drawn.
         """
         return self._radius
 
     @radius.setter
-    def radius(self, value):
+    def radius(self, value: float) -> None:
         self._radius = value
         self._update_vertices()
 
 
 class Line(ShapeBase):
-    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float, x2: float, y2: float,
+            width: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a line.
 
         The line's anchor point defaults to the center of the line's
         width on the X axis, and the Y axis.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The first X coordinate of the line.
-            `y` : float
+            y:
                 The first Y coordinate of the line.
-            `x2` : float
+            x2:
                 The second X coordinate of the line.
-            `y2` : float
+            y2:
                 The second Y coordinate of the line.
-            `width` : float
+            width:
                 The desired width of the line.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the line, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the line to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the line.
         """
         self._x = x
@@ -1069,7 +1365,7 @@ class Line(ShapeBase):
         self._y2 = y2
 
         self._width = width
-        self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
+        self._rotation = 0
         self._num_verts = 6
 
         r, g, b, *a = color
@@ -1080,9 +1376,8 @@ class Line(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         vec_ab = Vec2(self._x2 - self._x, self._y2 - self._y)
         vec_ba = Vec2(self._x - self._x2, self._y - self._y2)
@@ -1095,99 +1390,107 @@ class Line(ShapeBase):
         x1, y1, x2, y2 = self._x, self._y, self._x2, self._y2
         # The following is the expansion of the determinant of a 3x3 matrix
         # used to calculate the area of a triangle.
-        double_area = abs(a*y1+b*x2+x1*y2-x2*y1-a*y2-b*x1)
+        double_area = abs(a * y1 + b * x2 + x1 * y2 - x2 * y1 - a * y2 - b * x1)
         h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
         return h < self._width / 2
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
-            x1 = -self._anchor_x
-            y1 = self._anchor_y - self._width / 2
+            x1 = 0
+            y1 = -self._width / 2
             x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
             y2 = y1 + self._width
 
             r = math.atan2(self._y2 - self._y, self._x2 - self._x)
             cr = math.cos(r)
             sr = math.sin(r)
-            ax = x1 * cr - y1 * sr
-            ay = x1 * sr + y1 * cr
-            bx = x2 * cr - y1 * sr
-            by = x2 * sr + y1 * cr
-            cx = x2 * cr - y2 * sr
-            cy = x2 * sr + y2 * cr
-            dx = x1 * cr - y2 * sr
-            dy = x1 * sr + y2 * cr
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            ax = x1 * cr - y1 * sr - anchor_x
+            ay = x1 * sr + y1 * cr - anchor_y
+            bx = x2 * cr - y1 * sr - anchor_x
+            by = x2 * sr + y1 * cr - anchor_y
+            cx = x2 * cr - y2 * sr - anchor_x
+            cy = x2 * sr + y2 * cr - anchor_y
+            dx = x1 * cr - y2 * sr - anchor_x
+            dy = x1 * sr + y2 * cr - anchor_y
 
-            self._vertex_list.position[:] = (ax, ay,  bx, by,  cx, cy, ax, ay,  cx, cy,  dx, dy)
+            return ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
+    def width(self) -> float:
+        """Get/set the line's thickness."""
         return self._width
 
     @width.setter
-    def width(self, width):
+    def width(self, width: float) -> None:
         self._width = width
         self._update_vertices()
 
     @property
-    def x2(self):
-        """Second X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x2(self) -> float:
+        """Get/set the 2nd X coordinate of the line."""
         return self._x2
 
     @x2.setter
-    def x2(self, value):
+    def x2(self, value: float) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self):
-        """Second Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y2(self) -> float:
+        """Get/set the 2nd Y coordinate of the line."""
         return self._y2
 
     @y2.setter
-    def y2(self, value):
+    def y2(self, value: float) -> None:
         self._y2 = value
         self._update_vertices()
 
 
 class Rectangle(ShapeBase):
-    def __init__(self, x, y, width, height, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            width: float, height: float,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a rectangle or square.
 
-        The rectangle's anchor point defaults to the (x, y) coordinates,
-        which are at the bottom left.
+        The rectangle's anchor point defaults to the ``(x, y)``
+        coordinates, which are at the bottom left.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the rectangle.
-            `y` : float
+            y:
                 The Y coordinate of the rectangle.
-            `width` : float
+            width:
                 The width of the rectangle.
-            `height` : float
+            height:
                 The height of the rectangle.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the rectangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the rectangle.
         """
         self._x = x
@@ -1205,9 +1508,8 @@ class Rectangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
@@ -1216,71 +1518,85 @@ class Rectangle(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
             x2 = x1 + self._width
             y2 = y1 + self._height
 
-            self._vertex_list.position[:] = x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+            return x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
-        """The width of the rectangle.
+    def width(self) -> float:
+        """Get/set width of the rectangle.
 
-        :type: float
+        The new left and right of the rectangle will be set relative to
+        its :py:attr:`.anchor_x` value.
         """
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float) -> None:
         self._width = value
         self._update_vertices()
 
     @property
-    def height(self):
-        """The height of the rectangle.
+    def height(self) -> float:
+        """Get/set the height of the rectangle.
 
-        :type: float
+        The bottom and top of the rectangle will be positioned relative
+        to its :py:attr:`.anchor_y` value.
         """
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: float) -> None:
         self._height = value
         self._update_vertices()
 
 
 class BorderedRectangle(ShapeBase):
-    def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
-                 border_color=(100, 100, 100), batch=None, group=None):
-        """Create a rectangle or square.
 
-        The rectangle's anchor point defaults to the (x, y) coordinates,
+    def __init__(
+            self,
+            x: float, y: float, width: float, height: float,
+            border: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255),
+            border_color: tuple[int, int, int, int] | tuple[int, int, int] = (100, 100, 100),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
+        """Create a bordered rectangle.
+
+        The rectangle's anchor point defaults to the ``(x, y)`` coordinates,
         which are at the bottom left.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the rectangle.
-            `y` : float
+            y:
                 The Y coordinate of the rectangle.
-            `width` : float
+            width:
                 The width of the rectangle.
-            `height` : float
+            height:
                 The height of the rectangle.
-            `border` : float
+            border:
                 The thickness of the border.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA fill color of the rectangle, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
-            `border_color` : (int, int, int, int)
+            border_color:
                 The RGB or RGBA fill color of the border, specified
                 as a tuple of 3 or 4 ints in the range of 0-255. RGB
                 colors will be treated as having an opacity of 255.
@@ -1289,9 +1605,9 @@ class BorderedRectangle(ShapeBase):
                 both this argument and `border_color`. If they do not,
                 a `ValueError` will be raised informing you of the
                 ambiguity.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the rectangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the rectangle.
         """
         self._x = x
@@ -1329,9 +1645,8 @@ class BorderedRectangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
@@ -1341,15 +1656,16 @@ class BorderedRectangle(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
         self._vertex_list = self._group.program.vertex_list_indexed(
             8, self._draw_mode, indices, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
             translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             bx1 = -self._anchor_x
             by1 = -self._anchor_y
@@ -1361,67 +1677,77 @@ class BorderedRectangle(ShapeBase):
             ix2 = bx2 - b
             iy2 = by2 - b
 
-            self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
-                                             bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+            return (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+                    bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def border(self):
-        """The border width of the rectangle.
+    def border(self) -> float:
+        """The border thickness of the bordered rectangle.
 
-        :return: float
+        This extends inward from the edge of the rectangle toward the
+        center.
         """
         return self._border
 
     @border.setter
-    def border(self, width):
-        self._border = width
+    def border(self, thickness: float) -> None:
+        self._border = thickness
         self._update_vertices()
 
     @property
-    def width(self):
-        """The width of the rectangle.
+    def width(self) -> float:
+        """Get/set width of the bordered rectangle.
 
-        :type: float
+        The new left and right of the rectangle will be set relative to
+        its :py:attr:`.anchor_x` value.
         """
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float) -> None:
         self._width = value
         self._update_vertices()
 
     @property
-    def height(self):
-        """The height of the rectangle.
+    def height(self) -> float:
+        """Get/set the height of the bordered rectangle.
 
-        :type: float
+        The bottom and top of the rectangle will be positioned relative
+        to its :py:attr:`.anchor_y` value.
         """
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: float) -> None:
         self._height = value
         self._update_vertices()
 
     @property
-    def border_color(self):
-        """The rectangle's border color.
+    def border_color(self) -> tuple[int, int, int, int]:
+        """Get/set the bordered rectangle's border color.
 
-        This property sets the color of the border of a bordered rectangle.
+        To set the color of the interior fill, see :py:attr:`.color`.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'
-        or an RGBA tuple of integers '(red, green, blue, alpha)`. Setting the
-        alpha on this property will change the alpha of the entire shape,
-        including both the fill and the border.
+        You can set the border color to either of the following:
+
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
+
+        Setting the alpha on this property will change the alpha of
+        the entire shape, including both the fill and the border.
 
         Each color component must be in the range 0 (dark) to 255 (saturated).
-
-        :type: (int, int, int, int)
         """
         return self._border_rgba
 
     @border_color.setter
-    def border_color(self, values):
+    def border_color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int]
+    ):
         r, g, b, *a = values
 
         if a:
@@ -1436,23 +1762,29 @@ class BorderedRectangle(ShapeBase):
 
     @property
     def color(self):
-        """The rectangle's fill color.
+        """Get/set the bordered rectangle's interior fill color
 
-        This property sets the color of the inside of a bordered rectangle.
+        To set the color of the border outline, see
+        :py:attr:`.border_color`.
 
-        The color is specified as an RGB tuple of integers '(red, green, blue)'
-        or an RGBA tuple of integers '(red, green, blue, alpha)`. Setting the
-        alpha on this property will change the alpha of the entire shape,
-        including both the fill and the border.
+        The color may be specified as either of the following:
 
-        Each color component must be in the range 0 (dark) to 255 (saturated).
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
 
-        :type: (int, int, int, int)
+        Setting the alpha through this property will change the alpha
+        of the entire shape, including both the fill and the border.
+
+        Each color component must be in the range 0 (dark) to 255
+        (saturated).
         """
         return self._rgba
 
     @color.setter
-    def color(self, values):
+    def color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int]
+    ) -> None:
         r, g, b, *a = values
 
         if a:
@@ -1466,32 +1798,41 @@ class BorderedRectangle(ShapeBase):
 
 
 class Box(ShapeBase):
-    def __init__(self, x, y, width, height, thickness=1, color=(255, 255, 255, 255), batch=None, group=None):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            width: float, height: float,
+            thickness: float = 1.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create an unfilled rectangular shape, with optional thickness.
 
-        The box's anchor point defaults to the (x, y) coordinates,
-        which are at the bottom left.
+        The box's anchor point defaults to the ``(x, y)`` coordinates,
+        which are placed at the bottom left.
         Changing the thickness of the box will extend the walls inward;
         the outward dimesions will not be affected.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the box.
-            `y` : float
+            y:
                 The Y coordinate of the box.
-            `width` : float
+            width:
                 The width of the box.
-            `height` : float
+            height:
                 The height of the box.
-            `thickness` : float
+            thickness:
                 The thickness of the lines that make up the box.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the box, specified as a tuple
                 of 3 or 4 ints in the range of 0-255. RGB colors will
                 be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the box to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the box.
         """
         self._x = x
@@ -1510,9 +1851,8 @@ class Box(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
@@ -1526,15 +1866,16 @@ class Box(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
         self._vertex_list = self._group.program.vertex_list_indexed(
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
 
             t = self._thickness
@@ -1551,63 +1892,85 @@ class Box(ShapeBase):
             y2 = bottom + t
             y3 = top - t
             y4 = top
-                                             #  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7
-            self._vertex_list.position[:] =  x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+            #     |  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7   |
+            return x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def width(self):
-        """The width of the Box.
+    def width(self) -> float:
+        """Get/set the width of the box.
 
-        :type: float
+        Setting the width will position the left and right sides
+        relative to the box's :py:attr:`.anchor_x` value.
         """
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float) -> None:
         self._width = value
         self._update_vertices()
 
     @property
-    def height(self):
-        """The height of the Box.
+    def height(self) -> float:
+        """Get/set the height of the Box.
 
-        :type: float
+        Setting the height will set the bottom and top relative to the
+        box's :py:attr:`.anchor_y` value.
         """
         return self._height
 
     @height.setter
-    def height(self, value):
-        self._height = value
+    def height(self, value: float) -> None:
+        self._height = float(value)
+        self._update_vertices()
+
+    @property
+    def thickness(self) -> float:
+        """Get/set the line thickness of the Box."""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
         self._update_vertices()
 
 
 class Triangle(ShapeBase):
-    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255, 255),
-                 batch=None, group=None):
+    def __init__(
+            self,
+            x: float, y: float,
+            x2: float, y2: float,
+            x3: float, y3: float,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
         """Create a triangle.
 
         The triangle's anchor point defaults to the first vertex point.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The first X coordinate of the triangle.
-            `y` : float
+            y:
                 The first Y coordinate of the triangle.
-            `x2` : float
+            x2:
                 The second X coordinate of the triangle.
-            `y2` : float
+            y2:
                 The second Y coordinate of the triangle.
-            `x3` : float
+            x3:
                 The third X coordinate of the triangle.
-            `y3` : float
+            y3:
                 The third Y coordinate of the triangle.
-            `color` : (int, int, int, int)
+            color:
                 The RGB or RGBA color of the triangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the triangle to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the triangle.
         """
         self._x = x
@@ -1627,21 +1990,23 @@ class Triangle(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
-        return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
+        return _point_in_polygon(
+            [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3), (self._x, self._y)],
+            point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -1649,90 +2014,91 @@ class Triangle(ShapeBase):
             y2 = self._y2 + y1 - self._y
             x3 = self._x3 + x1 - self._x
             y3 = self._y3 + y1 - self._y
-            self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
+            return x1, y1, x2, y2, x3, y3
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def x2(self):
-        """Second X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x2(self) -> float:
+        """Get/set the X coordinate of the triangle's 2nd vertex."""
         return self._x + self._x2
 
     @x2.setter
-    def x2(self, value):
+    def x2(self, value: float) -> None:
         self._x2 = value
         self._update_vertices()
 
     @property
-    def y2(self):
-        """Second Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y2(self) -> float:
+        """Get/set the Y coordinate of the triangle's 2nd vertex."""
         return self._y + self._y2
 
     @y2.setter
-    def y2(self, value):
+    def y2(self, value: float) -> None:
         self._y2 = value
         self._update_vertices()
 
     @property
-    def x3(self):
-        """Third X coordinate of the shape.
-
-        :type: int or float
-        """
+    def x3(self) -> float:
+        """Get/set the X coordinate of the triangle's 3rd vertex."""
         return self._x + self._x3
 
     @x3.setter
-    def x3(self, value):
+    def x3(self, value: float) -> None:
         self._x3 = value
         self._update_vertices()
 
     @property
-    def y3(self):
-        """Third Y coordinate of the shape.
-
-        :type: int or float
-        """
+    def y3(self) -> float:
+        """Get/set the Y value of the triangle's 3rd vertex."""
         return self._y + self._y3
 
     @y3.setter
-    def y3(self, value):
+    def y3(self, value: float) -> None:
         self._y3 = value
         self._update_vertices()
 
 
 class Star(ShapeBase):
-    def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
-                 color=(255, 255, 255, 255), batch=None, group=None) -> None:
+    def __init__(
+            self,
+            x: float, y: float,
+            outer_radius: float,
+            inner_radius: float,
+            num_spikes: int,
+            rotation: float = 0.0,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group = None
+    ) -> None:
         """Create a star.
 
-        The star's anchor point (x, y) defaults to the center of the star.
+        The star's anchor point ``(x, y)`` defaults to the on-screen
+        center of the star.
 
-        :Parameters:
-            `x` : float
+        Args:
+            x:
                 The X coordinate of the star.
-            `y` : float
+            y:
                 The Y coordinate of the star.
-            `outer_radius` : float
+            outer_radius:
                 The desired outer radius of the star.
-            `inner_radius` : float
+            inner_radius:
                 The desired inner radius of the star.
-            `num_spikes` : float
+            num_spikes:
                 The desired number of spikes of the star.
-            `rotation` : float
+            rotation:
                 The rotation of the star in degrees. A rotation of 0 degrees
                 will result in one spike lining up with the X axis in
                 positive direction.
-            `color` : (int, int, int)
+            color:
                 The RGB or RGBA color of the star, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the star to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the star.
         """
         self._x = x
@@ -1763,13 +2129,14 @@ class Star(ShapeBase):
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             rotation=('f', (self._rotation,) * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            vertices = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             x = -self._anchor_x
             y = -self._anchor_y
@@ -1782,10 +2149,10 @@ class Star(ShapeBase):
             # calculate alternating points on outer and outer circles
             points = []
             for i in range(self._num_spikes):
-                points.append((x + (r_o * math.cos(2*i * d_theta)),
-                               y + (r_o * math.sin(2*i * d_theta))))
-                points.append((x + (r_i * math.cos((2*i+1) * d_theta)),
-                               y + (r_i * math.sin((2*i+1) * d_theta))))
+                points.append((x + (r_o * math.cos(2 * i * d_theta)),
+                               y + (r_o * math.sin(2 * i * d_theta))))
+                points.append((x + (r_i * math.cos((2 * i + 1) * d_theta)),
+                               y + (r_i * math.sin((2 * i + 1) * d_theta))))
 
             # create a list of doubled-up points from the points
             vertices = []
@@ -1793,55 +2160,66 @@ class Star(ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.position[:] = vertices
+        return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
 
     @property
-    def outer_radius(self):
-        """The outer radius of the star."""
+    def outer_radius(self) -> float:
+        """Get/set outer radius of the star."""
         return self._outer_radius
 
     @outer_radius.setter
-    def outer_radius(self, value):
+    def outer_radius(self, value: float) -> None:
         self._outer_radius = value
         self._update_vertices()
 
     @property
-    def inner_radius(self):
-        """The inner radius of the star."""
+    def inner_radius(self) -> float:
+        """Get/set the inner radius of the star."""
         return self._inner_radius
 
     @inner_radius.setter
-    def inner_radius(self, value):
+    def inner_radius(self, value: float) -> None:
         self._inner_radius = value
         self._update_vertices()
 
     @property
-    def num_spikes(self):
+    def num_spikes(self) -> int:
         """Number of spikes of the star."""
         return self._num_spikes
 
     @num_spikes.setter
-    def num_spikes(self, value):
+    def num_spikes(self, value: int) -> None:
         self._num_spikes = value
         self._update_vertices()
 
 
 class Polygon(ShapeBase):
-    def __init__(self, *coordinates, color=(255, 255, 255, 255), batch=None, group=None):
-        """Create a convex polygon.
+    def __init__(
+            self,
+            *coordinates: tuple[float, float] | Sequence[float],
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
+        """Create a polygon.
 
         The polygon's anchor point defaults to the first vertex point.
 
-        :Parameters:
-            `coordinates` : List[[int, int]]
-                The coordinates for each point in the polygon.
-            `color` : (int, int, int, int)
+        Args:
+            coordinates:
+                The coordinates for each point in the polygon. Each one
+                must be able to unpack to a pair of float-like X and Y
+                values.
+            color:
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 Optional batch to add the polygon to.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 Optional parent group of the polygon.
         """
 
@@ -1849,7 +2227,7 @@ class Polygon(ShapeBase):
         self._rotation = 0
         self._coordinates = list(coordinates)
         self._x, self._y = self._coordinates[0]
-        self._num_verts = (len(self._coordinates) - 2) * 3
+        self._num_verts = len(self._coordinates)
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -1859,22 +2237,25 @@ class Polygon(ShapeBase):
         self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
         self._create_vertex_list()
-        self._update_vertices()
 
     def __contains__(self, point):
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        return _sat(self._coordinates, point)
+        return _point_in_polygon(self._coordinates + [self._coordinates[0]], point)
 
     def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
-            self._num_verts, self._draw_mode, self._batch, self._group,
+        vertices = self._get_vertices()
+        self._vertex_list = self._group.program.vertex_list_indexed(
+            self._num_verts, self._draw_mode,
+            earcut.earcut(vertices),
+            self._batch, self._group,
+            position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_vertices(self):
+    def _get_vertices(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0) * self._num_verts
+            return (0, 0) * self._num_verts
         else:
             # Adjust all coordinates by the anchor.
             trans_x, trans_y = self._coordinates[0]
@@ -1882,14 +2263,115 @@ class Polygon(ShapeBase):
             trans_y += self._anchor_y
             coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-            # Triangulate the convex polygon.
+            # Return the flattened coords.
+            return earcut.flatten([coords])["vertices"]
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
+
+
+class MultiLine(ShapeBase):
+
+    def __init__(
+            self,
+            *coordinates: tuple[float, float] | Sequence[float],
+            closed: bool = False,
+            thickness: float = 1.0,
+            color: tuple[int, int, int, int] = (255, 255, 255, 255),
+            batch: Batch | None = None,
+            group: Group | None = None
+    ):
+        """Create multiple connected lines from a series of coordinates.
+
+        The shape's anchor point defaults to the first vertex point.
+
+        Args:
+            coordinates:
+                The coordinates for each point in the shape. Each must
+                unpack like a tuple consisting of an X and Y float-like
+                value.
+            closed:
+                Set this to ``True`` to add a line connecting the first
+                and last points. The default is ``False``
+            thickness:
+                The desired thickness or width used for the line segments.
+            color:
+                The RGB or RGBA color of the shape, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch:
+                Optional batch to add the shape to.
+            group:
+                Optional parent group of the shape.
+        """
+        # len(self._coordinates) = the number of vertices in the shape.
+        self._thickness = thickness
+        self._closed = closed
+        self._rotation = 0
+        self._coordinates = list(coordinates)
+        if closed:
+            # connect final point with first
+            self._coordinates.append(self._coordinates[0])
+        self._x, self._y = self._coordinates[0]
+        self._num_verts = (len(self._coordinates) - 1) * 6
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
+        program = get_default_shader()
+        self._batch = batch or Batch()
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._create_vertex_list()
+
+    def _create_vertex_list(self):
+        self._vertex_list = self._group.program.vertex_list(
+            self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', self._rgba * self._num_verts),
+            translation=('f', (self._x, self._y) * self._num_verts))
+
+    def _get_vertices(self):
+        if not self._visible:
+            return (0, 0) * self._num_verts
+        else:
+            trans_x, trans_y = self._coordinates[0]
+            trans_x += self._anchor_x
+            trans_y += self._anchor_y
+            coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
+
+            # Create a list of triangles from segments between 2 points:
             triangles = []
-            for n in range(len(coords) - 2):
-                triangles += [coords[0], coords[n + 1], coords[n + 2]]
+            prev_miter = None
+            prev_scale = None
+            for i in range(len(coords) - 1):
+                prev_point = None
+                next_point = None
+                if i > 0:
+                    prev_point = coords[i - 1]
 
-            # Flattening the list before setting vertices to it.
-            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
+                if i + 2 < len(coords):
+                    next_point = coords[i + 2]
+
+                prev_miter, prev_scale, *segment = _get_segment(prev_point, coords[i], coords[i + 1], next_point,
+                                                                self._thickness, prev_miter, prev_scale)
+                triangles.extend(segment)
+
+            return triangles
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
+
+    @property
+    def thickness(self) -> float:
+        """Get/set the line thickness of the multi-line."""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
+        self._update_vertices()
 
 
-__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'Rectangle',
+__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'MultiLine', 'Rectangle',
            'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector', 'ShapeBase')

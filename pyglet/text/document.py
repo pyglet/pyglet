@@ -44,7 +44,7 @@ paragraph break (U+2029) can also be used.
 Line breaks (U+2028) can be used to force a line break within a paragraph.
 
 See Unicode recommendation UTR #13 for more information:
-http://unicode.org/reports/tr13/tr13-5.html.
+https://www.unicode.org/standard/reports/tr13/tr13-5.html.
 
 Document classes
 ================
@@ -125,23 +125,28 @@ document; it will be ignored by the built-in text classes.
 All style attributes (including those not present in a document) default to
 ``None`` (including the so-called "boolean" styles listed above).  The meaning
 of a ``None`` style is style- and application-dependent.
-
-.. versionadded:: 1.1
 """
+from __future__ import annotations
 
 import re
 import sys
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Generator
 
 from pyglet import event
 from pyglet.text import runlist
 
+if TYPE_CHECKING:
+    from pyglet.font.base import Font
+    from pyglet.text.layout import TextLayout
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 #: The style attribute takes on multiple values in the document.
-STYLE_INDETERMINATE = 'indeterminate'
+STYLE_INDETERMINATE = "indeterminate"
 
 
-class InlineElement:
+class InlineElement(ABC):
     """Arbitrary inline element positioned within a formatted document.
 
     Elements behave like a single glyph in the document.  They are
@@ -152,75 +157,72 @@ class InlineElement:
     call the element's methods to ensure they are rendered at the
     appropriate position.
 
-    If the size of a element (any of the `advance`, `ascent`, or `descent`
-    instance variables) is modified it is the application's responsibility to
+    If the size of an element (any of the ``advance``, ``ascent``, or ``descent``
+    variables) is modified it is the application's responsibility to
     trigger a reflow of the appropriate area in the affected layouts.  This
     can be done by forcing a style change over the element's position.
-
-    :Ivariables:
-        `ascent` : int
-            Ascent of the element above the baseline, in pixels.
-        `descent` : int
-            Descent of the element below the baseline, in pixels.
-            Typically negative.
-        `advance` : int
-            Width of the element, in pixels.
-
     """
+    advance: int
+    descent: int
+    ascent: int
+    _position: int | None
 
-    def __init__(self, ascent, descent, advance):
+    def __init__(self, ascent: int, descent: int, advance: int) -> None:
+        """Initialize the element.
+
+        Args:
+            ascent:
+                Ascent of the element above the baseline, in pixels.
+            descent:
+                Descent of the element below the baseline, in pixels. Typically negative.
+            advance:
+                Width of the element, in pixels.
+        """
         self.ascent = ascent
         self.descent = descent
         self.advance = advance
         self._position = None
 
     @property
-    def position(self):
-        """Position of the element within the document.  Read-only.
+    def position(self) -> int | None:
+        """Character position within the document.
 
-        :type: int
+        Determined by the layout it is in. Will return ``None`` if it has not been placed.
         """
         return self._position
 
-    def place(self, layout, x, y, z):
-        """Construct an instance of the element at the given coordinates.
+    @abstractmethod
+    def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
+              visible: bool, anchor_x: float, anchor_y: float) -> None:
+        ...
 
-        Called when the element's position within a layout changes, either
-        due to the initial condition, changes in the document or changes in
-        the layout size.
+    @abstractmethod
+    def update_translation(self, x: float, y: float, z: float) -> None:
+        ...
 
-        It is the responsibility of the element to clip itself against
-        the layout boundaries, and position itself appropriately with respect
-        to the layout's position and viewport offset.
+    @abstractmethod
+    def update_color(self, color: list[int]) -> None:
+        ...
 
-        The `TextLayout.top_state` graphics state implements this transform
-        and clipping into window space.
+    @abstractmethod
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
+        ...
 
-        :Parameters:
-            `layout` : `pyglet.text.layout.TextLayout`
-                The layout the element moved within.
-            `x` : int
-                Position of the left edge of the element, relative
-                to the left edge of the document, in pixels.
-            `y` : int
-                Position of the baseline, relative to the top edge of the
-                document, in pixels.  Note that this is typically negative.
+    @abstractmethod
+    def update_rotation(self, rotation: float) -> None:
+        ...
 
-        """
-        raise NotImplementedError('abstract')
+    @abstractmethod
+    def update_visibility(self, visible: bool) -> None:
+        ...
 
-    def remove(self, layout):
-        """Remove this element from a layout.
+    @abstractmethod
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        ...
 
-        The counterpart of `place`; called when the element is no longer
-        visible in the given layout.
-
-        :Parameters:
-            `layout` : `pyglet.text.layout.TextLayout`
-                The layout the element was removed from.
-
-        """
-        raise NotImplementedError('abstract')
+    @abstractmethod
+    def remove(self, layout: TextLayout) -> None:
+        ...
 
 
 class AbstractDocument(event.EventDispatcher):
@@ -231,311 +233,304 @@ class AbstractDocument(event.EventDispatcher):
     terms of one of the supplied concrete classes :py:class:`~pyglet.text.document.FormattedDocument` or
     :py:class:`~pyglet.text.document.UnformattedDocument`.
     """
-    _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
-    _next_paragraph_re = re.compile(u'[\n\u2029]')
+    _previous_paragraph_re: re.Pattern[str] = re.compile("\n[^\n\u2029]*$")
+    _next_paragraph_re: re.Pattern[str] = re.compile("[\n\u2029]")
 
-    def __init__(self, text=''):
+    def __init__(self, text: str = "") -> None:
+        """Initialize a document with text.
+
+        Args:
+            text: Initial text string.
+        """
         super().__init__()
-        self._text = u''
-        self._elements = []
+
+        self._text = ""
+        self._elements: list[InlineElement] = []
         if text:
             self.insert_text(0, text)
 
     @property
-    def text(self):
+    def text(self) -> str:
         """Document text.
 
         For efficient incremental updates, use the :py:func:`~pyglet.text.document.AbstractDocument.insert_text` and
         :py:func:`~pyglet.text.document.AbstractDocument.delete_text` methods instead of replacing this property.
 
-        :type: str
         """
         return self._text
 
     @text.setter
-    def text(self, text):
+    def text(self, text: str) -> None:
         if text == self._text:
             return
         self.delete_text(0, len(self._text))
         self.insert_text(0, text)
 
-    def get_paragraph_start(self, pos):
-        """Get the starting position of a paragraph.
-
-        :Parameters:
-            `pos` : int
-                Character position within paragraph.
-
-        :rtype: int
-        """
+    def get_paragraph_start(self, pos: int) -> int:
+        """Get the starting position of a paragraph from the character position."""
         # Tricky special case where the $ in pattern matches before the
         # \n at the end of the string instead of the end of the string.
-        if self._text[:pos + 1].endswith('\n') or self._text[:pos + 1].endswith(u'\u2029'):
+        if self._text[:pos + 1].endswith("\n") or self._text[:pos + 1].endswith("\u2029"):
             return pos
 
-        m = self._previous_paragraph_re.search(self._text, 0, pos + 1)
+        m: re.Match[str] | None = self._previous_paragraph_re.search(self._text, 0, pos + 1)
         if not m:
             return 0
         return m.start() + 1
 
-    def get_paragraph_end(self, pos):
-        """Get the end position of a paragraph.
-
-        :Parameters:
-            `pos` : int
-                Character position within paragraph.
-
-        :rtype: int
-        """
-        m = self._next_paragraph_re.search(self._text, pos)
+    def get_paragraph_end(self, pos: int) -> int:
+        """Get the end position of a paragraph from the character position."""
+        m: re.Match[str] | None = self._next_paragraph_re.search(self._text, pos)
         if not m:
             return len(self._text)
         return m.start() + 1
 
-    def get_style_runs(self, attribute):
+    @abstractmethod
+    def get_style_runs(self, attribute: str) -> runlist.AbstractRunIterator:
         """Get a style iterator over the given style attribute.
 
-        :Parameters:
-            `attribute` : str
+        Args:
+            attribute:
                 Name of style attribute to query.
-
-        :rtype: `AbstractRunIterator`
         """
-        raise NotImplementedError('abstract')
 
-    def get_style(self, attribute, position=0):
+    @abstractmethod
+    def get_style(self, attribute: str, position: int = 0) -> Any:
         """Get an attribute style at the given position.
 
-        :Parameters:
-            `attribute` : str
+        Args:
+            attribute:
                 Name of style attribute to query.
-            `position` : int
+            position:
                 Character position of document to query.
 
-        :return: The style set for the attribute at the given position.
+        Returns:
+            The style set for the attribute at the given position.
         """
-        raise NotImplementedError('abstract')
 
-    def get_style_range(self, attribute, start, end):
+    def get_style_range(self, attribute: str, start: int, end: int) -> Any:
         """Get an attribute style over the given range.
 
         If the style varies over the range, `STYLE_INDETERMINATE` is returned.
 
-        :Parameters:
-            `attribute` : str
+        Args:
+            attribute:
                 Name of style attribute to query.
-            `start` : int
+            start:
                 Starting character position.
-            `end` : int
+            end:
                 Ending character position (exclusive).
 
-        :return: The style set for the attribute over the given range, or
-            `STYLE_INDETERMINATE` if more than one value is set.
+        Returns:
+            The style set for the attribute over the given range, or `STYLE_INDETERMINATE` if more than one value is
+            set.
         """
-        iterable = self.get_style_runs(attribute)
+        iterable: runlist.AbstractRunIterator = self.get_style_runs(attribute)
         _, value_end, value = next(iterable.ranges(start, end))
         if value_end < end:
             return STYLE_INDETERMINATE
-        else:
-            return value
 
-    def get_font_runs(self, dpi=None):
-        """Get a style iterator over the `pyglet.font.Font` instances used in
-        the document.
+        return value
+
+    @abstractmethod
+    def get_font_runs(self, dpi: float | None = None) -> runlist.AbstractRunIterator:
+        """Get a style iterator over the `pyglet.font.Font` instances used in the document.
 
         The font instances are created on-demand by inspection of the
         ``font_name``, ``font_size``, ``bold`` and ``italic`` style
         attributes.
 
-        :Parameters:
-            `dpi` : float
-                Optional resolution to construct fonts at.  See
-                :py:func:`pyglet.font.load`.
-
-        :rtype: `AbstractRunIterator`
+        Args:
+            dpi:
+                Optional resolution to construct fonts at.
+                :see: :py:func:`~pyglet.font.load`.
         """
-        raise NotImplementedError('abstract')
 
-    def get_font(self, position, dpi=None):
+    @abstractmethod
+    def get_font(self, position: int, dpi: float | None = None) -> Font:
         """Get the font instance used at the given position.
 
         :see: `get_font_runs`
 
-        :Parameters:
-            `position` : int
+        Args:
+            position:
                 Character position of document to query.
-            `dpi` : float
-                Optional resolution to construct fonts at.  See
-                :py:func:`pyglet.font.load`.
-
-        :rtype: `pyglet.font.Font`
-        :return: The font at the given position.
+            dpi:
+                Optional resolution to construct fonts at.
+                :see: :py:func:`~pyglet.font.load`.
         """
-        raise NotImplementedError('abstract')
 
-    def insert_text(self, start, text, attributes=None):
+    def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:
         """Insert text into the document.
 
-        :Parameters:
-            `start` : int
-                Character insertion point within document.
-            `text` : str
-                Text to insert.
-            `attributes` : dict
-                Optional dictionary giving named style attributes of the
-                inserted text.
+        Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_insert_text` event.
 
+        Args:
+            start:
+                Character insertion point within document.
+            text:
+                Text to insert.
+            attributes:
+                Optional dictionary giving named style attributes of the inserted text.
         """
         self._insert_text(start, text, attributes)
-        self.dispatch_event('on_insert_text', start, text)
+        self.dispatch_event("on_insert_text", start, text)
 
-    def _insert_text(self, start, text, attributes):
-        self._text = u''.join((self._text[:start], text, self._text[start:]))
+    def _insert_text(self, start: int, text: str, attributes: dict[str, Any] | None) -> None:  # noqa: ARG002
+        self._text = "".join((self._text[:start], text, self._text[start:]))
         len_text = len(text)
         for element in self._elements:
-            if element._position >= start:
-                element._position += len_text
+            assert element._position is not None  # noqa: SLF001
+            if element._position >= start:  # noqa: SLF001
+                element._position += len_text  # noqa: SLF001
 
-    def delete_text(self, start, end):
+    def delete_text(self, start: int, end: int) -> None:
         """Delete text from the document.
 
-        :Parameters:
-            `start` : int
+        Dispatches an :py:meth:`on_delete_text` event.
+
+        Args:
+            start:
                 Starting character position to delete from.
-            `end` : int
+            end:
                 Ending character position to delete to (exclusive).
 
         """
         self._delete_text(start, end)
-        self.dispatch_event('on_delete_text', start, end)
+        self.dispatch_event("on_delete_text", start, end)
 
-    def _delete_text(self, start, end):
+    def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
-            if start <= element._position < end:
+            assert element.position is not None
+            if start <= element._position < end:  # noqa: SLF001
                 self._elements.remove(element)
-            elif element._position >= end:  # fix bug 538
-                element._position -= (end - start)
+            elif element._position >= end:  # fixes #538  # noqa: SLF001
+                element._position -= (end - start)  # noqa: SLF001
 
         self._text = self._text[:start] + self._text[end:]
 
-    def insert_element(self, position, element, attributes=None):
+    def insert_element(self, position: int, element: InlineElement,
+                       attributes: dict[str, Any] | None = None) -> None:
         """Insert a element into the document.
 
-        See the :py:class:`~pyglet.text.document.InlineElement` class
-        documentation for details of usage.
+        See the :py:class:`~pyglet.text.document.InlineElement` class documentation for details of usage.
 
-        :Parameters:
-            `position` : int
+        Args:
+            position:
                 Character insertion point within document.
-            `element` : `~pyglet.text.document.InlineElement`
+            element:
                 Element to insert.
-            `attributes` : dict
-                Optional dictionary giving named style attributes of the
-                inserted text.
+            attributes: dict
+                Optional dictionary giving named style attributes of the inserted text.
 
         """
-        assert element._position is None, 'Element is already in a document.'
-        self.insert_text(position, '\0', attributes)
-        element._position = position
+        assert element.position is None, "Element is already in a document."
+        self.insert_text(position, "\0", attributes)
+        element._position = position  # noqa: SLF001
         self._elements.append(element)
-        self._elements.sort(key=lambda d: d.position)
 
-    def get_element(self, position):
+        # All _elements should have a valid position assigned.
+        self._elements.sort(key=lambda d: d.position)  # type: ignore[arg-type, return-value]
+
+    def get_element(self, position: int) -> InlineElement:
         """Get the element at a specified position.
 
-        :Parameters:
-            `position` : int
+        Args:
+            position:
                 Position in the document of the element.
 
-        :rtype: :py:class:`~pyglet.text.document.InlineElement`
         """
         for element in self._elements:
-            if element._position == position:
+            if element._position == position:  # noqa: SLF001
                 return element
-        raise RuntimeError(f'No element at position {position}')
+        msg = f"No element at position {position}"
+        raise RuntimeError(msg)
 
-    def set_style(self, start, end, attributes):
-        """Set text style of some or all of the document.
+    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+        """Set text style of a range between start and end of the document.
 
-        :Parameters:
-            `start` : int
+        Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_style_text` event.
+
+        Args:
+            start:
                 Starting character position.
-            `end` : int
+            end:
                 Ending character position (exclusive).
-            `attributes` : dict
+            attributes:
                 Dictionary giving named style attributes of the text.
 
         """
         self._set_style(start, end, attributes)
-        self.dispatch_event('on_style_text', start, end, attributes)
+        self.dispatch_event("on_style_text", start, end, attributes)
 
-    def _set_style(self, start, end, attributes):
-        raise NotImplementedError('abstract')
+    @abstractmethod
+    def _set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+        ...
 
-    def set_paragraph_style(self, start, end, attributes):
+    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         """Set the style for a range of paragraphs.
 
-        This is a convenience method for `set_style` that aligns the
-        character range to the enclosing paragraph(s).
+        This is a convenience method for `set_style` that aligns the character range to the enclosing paragraph(s).
 
-        :Parameters:
-            `start` : int
+        Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_style_text` event.
+
+        Args:
+            start:
                 Starting character position.
-            `end` : int
+            end:
                 Ending character position (exclusive).
-            `attributes` : dict
+            attributes:
                 Dictionary giving named style attributes of the paragraphs.
 
         """
         start = self.get_paragraph_start(start)
         end = self.get_paragraph_end(end)
         self._set_style(start, end, attributes)
-        self.dispatch_event('on_style_text', start, end, attributes)
+        self.dispatch_event("on_style_text", start, end, attributes)
 
     if _is_pyglet_doc_run:
-        def on_insert_text(self, start, text):
+        def on_insert_text(self, start: int, text: str) -> None:
             """Text was inserted into the document.
 
-            :Parameters:
-                `start` : int
+            Args:
+                start:
                     Character insertion point within document.
-                `text` : str
+                text:
                     The text that was inserted.
 
             :event:
             """
 
-        def on_delete_text(self, start, end):
+        def on_delete_text(self, start: int, end: int) -> None:
             """Text was deleted from the document.
 
-            :Parameters:
-                `start` : int
+            Args:
+                start:
                     Starting character position of deleted text.
-                `end` : int
+                end:
                     Ending character position of deleted text (exclusive).
 
             :event:
             """
 
-        def on_style_text(self, start, end, attributes):
+        def on_style_text(self, start: int, end: int, attributes: dict[str, Any] | None) -> None:
             """Text character style was modified.
 
-            :Parameters:
-                `start` : int
+            Args:
+                start:
                     Starting character position of modified text.
-                `end` : int
+                end:
                     Ending character position of modified text (exclusive).
-                `attributes` : dict
-                    Dictionary giving updated named style attributes of the
-                    text.
+                attributes:
+                    Dictionary giving updated named style attributes of the text.
 
             :event:
             """
 
 
-AbstractDocument.register_event_type('on_insert_text')
-AbstractDocument.register_event_type('on_delete_text')
-AbstractDocument.register_event_type('on_style_text')
+AbstractDocument.register_event_type("on_insert_text")
+AbstractDocument.register_event_type("on_delete_text")
+AbstractDocument.register_event_type("on_style_text")
 
 
 class UnformattedDocument(AbstractDocument):
@@ -546,40 +541,41 @@ class UnformattedDocument(AbstractDocument):
     methods may therefore be omitted.
     """
 
-    def __init__(self, text=''):
+    def __init__(self, text: str = "") -> None:
+        """Create unformatted document with a string."""
         super().__init__(text)
-        self.styles = {}
+        self.styles: dict[str, Any] = {}
 
-    def get_style_runs(self, attribute):
+    def get_style_runs(self, attribute: str) -> runlist.ConstRunIterator:
         value = self.styles.get(attribute)
         return runlist.ConstRunIterator(len(self.text), value)
 
-    def get_style(self, attribute, position=None):
+    def get_style(self, attribute: str, position: int | None = None) -> Any:  # noqa: ARG002
         return self.styles.get(attribute)
 
-    def set_style(self, start, end, attributes):
+    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
         return super().set_style(0, len(self.text), attributes)
 
-    def _set_style(self, start, end, attributes):
+    def _set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
         self.styles.update(attributes)
 
-    def set_paragraph_style(self, start, end, attributes):
+    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
         return super().set_paragraph_style(0, len(self.text), attributes)
 
-    def get_font_runs(self, dpi=None):
-        ft = self.get_font(dpi=dpi)
+    def get_font_runs(self, dpi: float | None = None) -> runlist.ConstRunIterator:
+        ft: Font = self.get_font(dpi=dpi)
         return runlist.ConstRunIterator(len(self.text), ft)
 
-    def get_font(self, position=None, dpi=None):
+    def get_font(self, position: int | None = None, dpi: float | None = None) -> Font:  # noqa: ARG002
         from pyglet import font
-        font_name = self.styles.get('font_name')
-        font_size = self.styles.get('font_size')
-        bold = self.styles.get('bold', False)
-        italic = self.styles.get('italic', False)
-        stretch = self.styles.get('stretch', False)
+        font_name = self.styles.get("font_name")
+        font_size = self.styles.get("font_size")
+        bold = self.styles.get("bold", False)
+        italic = self.styles.get("italic", False)
+        stretch = self.styles.get("stretch", False)
         return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
-    def get_element_runs(self):
+    def get_element_runs(self) -> runlist.ConstRunIterator:
         return runlist.ConstRunIterator(len(self._text), None)
 
 
@@ -590,23 +586,23 @@ class FormattedDocument(AbstractDocument):
     :py:class:`~pyglet.text.document.AbstractDocument`.  All styles default to ``None``.
     """
 
-    def __init__(self, text=''):
-        self._style_runs = {}
+    def __init__(self, text: str = "") -> None:  # noqa: D107
+        self._style_runs: dict[str, runlist.RunList] = {}
         super().__init__(text)
 
-    def get_style_runs(self, attribute):
+    def get_style_runs(self, attribute: str) -> runlist.RunIterator | _NoStyleRangeIterator:
         try:
             return self._style_runs[attribute].get_run_iterator()
         except KeyError:
             return _no_style_range_iterator
 
-    def get_style(self, attribute, position=0):
+    def get_style(self, attribute: str, position: int = 0) -> Any | None:
         try:
             return self._style_runs[attribute][position]
         except KeyError:
             return None
 
-    def _set_style(self, start, end, attributes):
+    def _set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         for attribute, value in attributes.items():
             try:
                 runs = self._style_runs[attribute]
@@ -615,23 +611,23 @@ class FormattedDocument(AbstractDocument):
                 runs.insert(0, len(self._text))
             runs.set_run(start, end, value)
 
-    def get_font_runs(self, dpi=None):
+    def get_font_runs(self, dpi: float | None = None) -> _FontStyleRunsRangeIterator:
         return _FontStyleRunsRangeIterator(
-            self.get_style_runs('font_name'),
-            self.get_style_runs('font_size'),
-            self.get_style_runs('bold'),
-            self.get_style_runs('italic'),
-            self.get_style_runs('stretch'),
+            self.get_style_runs("font_name"),
+            self.get_style_runs("font_size"),
+            self.get_style_runs("bold"),
+            self.get_style_runs("italic"),
+            self.get_style_runs("stretch"),
             dpi)
 
-    def get_font(self, position, dpi=None):
+    def get_font(self, position: int, dpi: float | None = None) -> Font:
         runs_iter = self.get_font_runs(dpi)
         return runs_iter[position]
 
-    def get_element_runs(self):
+    def get_element_runs(self) -> _ElementIterator:
         return _ElementIterator(self._elements, len(self._text))
 
-    def _insert_text(self, start, text, attributes):
+    def _insert_text(self, start: int, text: str, attributes: dict[str, Any]) -> None:
         super()._insert_text(start, text, attributes)
 
         len_text = len(text)
@@ -647,16 +643,18 @@ class FormattedDocument(AbstractDocument):
                     runs.insert(0, len(self.text))
                 runs.set_run(start, start + len_text, value)
 
-    def _delete_text(self, start, end):
+    def _delete_text(self, start: int, end: int) -> None:
         super()._delete_text(start, end)
         for runs in self._style_runs.values():
             runs.delete(start, end)
 
 
-def _iter_elements(elements, length):
+def _iter_elements(elements: list[InlineElement], length: int) -> Generator[
+    tuple[int, int, InlineElement | None], None, None]:
     last = 0
     for element in elements:
         p = element.position
+        assert p is not None
         yield last, p, None
         yield p, p + 1, element
         last = p + 1
@@ -664,37 +662,39 @@ def _iter_elements(elements, length):
 
 
 class _ElementIterator(runlist.RunIterator):
-    def __init__(self, elements, length):
+    def __init__(self, elements: list[InlineElement], length: int) -> None:
         self._run_list_iter = _iter_elements(elements, length)
         self.start, self.end, self.value = next(self)
 
 
-class _FontStyleRunsRangeIterator:
+class _FontStyleRunsRangeIterator(runlist.RunIterator):
     # XXX subclass runlist
-    def __init__(self, font_names, font_sizes, bolds, italics, stretch, dpi):
+    def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, bolds: runlist.RunIterator,
+                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: float | None) -> None:
         self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Font], None, None]:
         from pyglet import font
-        for start, end, styles in self.zip_iter.ranges(start, end):
+        for start_, end_, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic, stretch = styles
             ft = font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
-            yield start, end, ft
+            yield start_, end_, ft
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Font:
         from pyglet import font
         font_name, font_size, bold, italic, stretch = self.zip_iter[index]
         return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
 
 
-class _NoStyleRangeIterator:
-    # XXX subclass runlist
-    @staticmethod
-    def ranges(start, end):
+class _NoStyleRangeIterator(runlist.RunIterator):
+    def __init__(self) -> None:
+        pass
+
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, None], None, None]:
         yield start, end, None
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> None:
         return None
 
 

@@ -4,7 +4,7 @@ This module provides a unified interface to almost any input device, besides
 the regular mouse and keyboard support provided by
 :py:class:`~pyglet.window.Window`.  At the lowest
 level, :py:func:`get_devices` can be used to retrieve a list of all supported
-devices, including joysticks, tablets, space controllers, wheels, pedals, remote
+devices, including joysticks, tablets, game controllers, wheels, pedals, remote
 controls, keyboards and mice.  The set of returned devices varies greatly
 depending on the operating system (and, of course, what's plugged in).  
 
@@ -49,75 +49,67 @@ provides a convenient way to handle hot-plugging of controllers.
 .. versionadded:: 1.2
 
 """
+from __future__ import annotations
 
 import sys
 
-import pyglet
+from typing import TYPE_CHECKING
+
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
+if TYPE_CHECKING:
+    from pyglet.canvas import Display
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-def get_apple_remote(display=None):
-    """Get the Apple remote control device.
+def get_apple_remote(display: None | Display = None) -> AppleRemote | None:
+    """Get the Apple remote control device, if it exists.
 
     The Apple remote is the small white 6-button remote control that
     accompanies most recent Apple desktops and laptops.  The remote can only
     be used with Mac OS X.
 
-    :Parameters:
-        display : `~pyglet.canvas.Display`
+    Args:
+        display:
             Currently ignored.
-
-    :rtype: AppleRemote
-    :return: The remote device, or `None` if the computer does not support it.
     """
     return None
 
 
 if _is_pyglet_doc_run:
-    def get_devices(display=None):
+    def get_devices(display: None | Display = None) -> list[Device]:
         """Get a list of all attached input devices.
 
-        :Parameters:
-            display : `~pyglet.canvas.Display`
+        Args:
+            display:
                 The display device to query for input devices.  Ignored on Mac
-                OS X and Windows.  On Linux, defaults to the default display
-                device.
-
-        :rtype: list of :py:class:`Device`
+                OS X and Windows.  On Linux, defaults to the default display device.
         """
 
 
-    def get_joysticks(display=None):
+    def get_joysticks(display: None | Display = None) -> list[Joystick]:
         """Get a list of attached joysticks.
 
-        :Parameters:
-            display : `~pyglet.canvas.Display`
+        Args:
+            display:
                 The display device to query for input devices.  Ignored on Mac
-                OS X and Windows.  On Linux, defaults to the default display
-                device.
-
-        :rtype: list of :py:class:`Joystick`
+                OS X and Windows.  On Linux, defaults to the default display device.
         """
 
 
-    def get_controllers(display=None):
+    def get_controllers(display: None | Display = None) -> list[Controller]:
         """Get a list of attached controllers.
 
-        :Parameters:
-            display : `~pyglet.canvas.Display`
+        Args:
+            display:
                 The display device to query for input devices.  Ignored on Mac
-                OS X and Windows.  On Linux, defaults to the default display
-                device.
-
-        :rtype: list of :py:class:`Controller`
+                OS X and Windows.  On Linux, defaults to the default display device.
         """
 
-
-    def get_tablets(display=None):
+    def get_tablets(display: None | Display = None) -> list[Tablet]:
         """Get a list of tablets.
 
         This function may return a valid tablet device even if one is not
@@ -126,13 +118,10 @@ if _is_pyglet_doc_run:
         pyglet does not currently support multiple tablets, and the behaviour
         is undefined if more than one is attached.
 
-        :Parameters:
-            display : `~pyglet.canvas.Display`
+        Args:
+            display:
                 The display device to query for input devices.  Ignored on Mac
-                OS X and Windows.  On Linux, defaults to the default display
-                device.
-
-        :rtype: list of :py:class:`Tablet`
+                OS X and Windows.  On Linux, defaults to the default display device.
         """
 
 else:

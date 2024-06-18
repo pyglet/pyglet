@@ -128,13 +128,13 @@ This makes :py:func:`~pyglet.text.layout.TextLayout` suitable
 for relatively short or unchanging documents.
 
 :py:class:`~pyglet.text.layout.ScrollableTextLayout` is a small extension to
-:py:func:`~pyglet.text.layout.TextLayout` that clips the
-text to a specified view rectangle, and allows text to be scrolled within that
+:py:func:`~pyglet.text.layout.TextLayout` that culls the
+text outside of a specified view rectangle, and allows text to be scrolled within that
 rectangle without performing the layout calculuation again.  Because of this
 clipping rectangle the graphics group cannot be shared with other text
 layouts, so for ideal performance
 :py:class:`~pyglet.text.layout.ScrollableTextLayout` should be used only
-if this behaviour is required.
+if scrolling is required.
 
 :py:class:`~pyglet.text.layout.IncrementalTextLayout` uses a more sophisticated
 layout algorithm that performs less work for small changes to documents.
@@ -162,7 +162,8 @@ optional `multiline` and `wrap_lines` flags.
 `wrap_lines`
   If you expect that your document lines will be wider than the display width
   then pyglet can automatically wrap them to fit the width by setting this
-  option to ``True``.
+  option to ``True``. Note that wrapping only works if there are spaces in the
+  text, so it may not be suitable for languages without spaces.
 
 Like labels, layouts are positioned through their `x`, `y`,
 `anchor_x` and `anchor_y` properties.

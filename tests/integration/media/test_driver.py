@@ -1,19 +1,22 @@
 """Test a specific audio driver for platform. Only checks the use of the
 interface. Any playback is silent."""
+import time
 
 import pytest
-import time
+
+from ...annotations import skip_if_continuous_integration, require_platform, Platform
 
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug
-pyglet.options['debug_media_buffers'] = _debug
 
-import pyglet.app
 from pyglet.media.player import PlaybackTimer
 from pyglet.media.synthesis import Silence
 
 from .mock_player import MockPlayer
+
+
+pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
 
 
 class _FakeDispatchEvent:
@@ -22,6 +25,18 @@ class _FakeDispatchEvent:
 
 
 class MockPlayerWithMockTime(MockPlayer, _FakeDispatchEvent):
+    volume = 1.0
+    min_distance = 1.0
+    max_distance = 100000000.
+
+    position = (0, 0, 0)
+    pitch = 1.0
+
+    cone_orientation = (0, 0, 1)
+    cone_inner_angle = 360.
+    cone_outer_angle = 360.
+    cone_outer_gain = 1.
+
     def __init__(self, event_loop):
         super().__init__(event_loop)
         self.last_seek_time = 0.0
@@ -60,35 +75,35 @@ def get_drivers():
         from pyglet.media.drivers import silent
         drivers.append(silent)
         ids.append('Silent')
-    except:
+    except ImportError:
         pass
 
     try:
         from pyglet.media.drivers import pulse
         drivers.append(pulse)
         ids.append('PulseAudio')
-    except:
+    except ImportError:
         pass
 
     try:
         from pyglet.media.drivers import openal
         drivers.append(openal)
         ids.append('OpenAL')
-    except:
+    except ImportError:
         pass
 
     try:
         from pyglet.media.drivers import directsound
         drivers.append(directsound)
         ids.append('DirectSound')
-    except:
+    except ImportError:
         pass
 
     try:
         from pyglet.media.drivers import xaudio2
         drivers.append(xaudio2)
         ids.append('XAudio2')
-    except:
+    except ImportError:
         pass
 
 

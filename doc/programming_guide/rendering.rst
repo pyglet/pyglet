@@ -65,11 +65,15 @@ is simplistic Vertex and Fragment source::
         in vec4 colors;
         out vec4 vertex_colors;
 
-        uniform mat4 projection;
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
 
         void main()
         {
-            gl_Position = projection * vec4(position, 0.0, 1.0);
+            gl_Position = window.projection * window.view * vec4(position, 0.0, 1.0);
             vertex_colors = colors;
         }
     """
@@ -84,6 +88,11 @@ is simplistic Vertex and Fragment source::
         }
     """
 
+
+.. note:: By default, pyglet includes and sets the ``WindowBlock`` uniform when the window is created. If you do not use
+          the ``window.projection`` or ``window.view`` in your vertex shader, you will have to manage the projection
+          yourself or your graphics may not display properly.
+
 The source strings are then used to create :py:class:`~pyglet.graphics.shader.Shader` objects, which are
 then linked together in a :py:class:`~pyglet.graphics.shader.ShaderProgram`. Shader objects are automatically
 detached after linking the :py:class:`~pyglet.graphics.shader.ShaderProgram`, so they can be discarded
@@ -95,9 +104,10 @@ afterwards (or used again in other :py:class:`~pyglet.graphics.shader.ShaderProg
     frag_shader = Shader(fragment_source, 'fragment')
     program = ShaderProgram(vert_shader, frag_shader)
 
-:py:class:`~pyglet.graphics.shader.ShaderProgram` internally introspect on creation. There are several properties
-that can be queried to inspect the various vertex attributes, uniforms, and uniform
-blocks that are available::
+:py:class:`~pyglet.graphics.shader.ShaderProgram` internally introspects on creation. There are
+several properties that can be queried to inspect the various vertex attributes, uniforms,
+and uniform blocks that are available. For example, the `uniforms` and `attributes` properties
+will return dictionaries showing the metadata for these objects::
 
     >>> for attribute in program.attributes.items():
     ...     print(attribute)
@@ -108,7 +118,7 @@ blocks that are available::
     >>> for uniform in program.uniforms.items():
     ...     print(uniform)
     ...
-    ('projection', Uniform('projection', location=0, length=16, count=1))
+    ('time', {'location': 2, 'length': 1, 'size': 1})
 
 
 .. note::
@@ -127,23 +137,22 @@ to change functionality during run time.
     When setting uniforms, the program must be binded at the time of setting. This restriction does not exist in
     OpenGL 4.1+, but if you plan to support older contexts (such as 3.3), this must be accounted for.
 
-Uniform's can be accessed either as a key or as a property on the :py:class:`~pyglet.graphics.shader.ShaderProgram`
-itself.
-
-For example if your uniform in your shader is::
+Uniforms can be accessed as a key on the :py:class:`~pyglet.graphics.shader.ShaderProgram`
+itself. For example if your uniform in your shader is::
 
     uniform float time;
 
-Then you can set (or get) the value using the property: `program.time = 1.5` or as a key using a string
-`program['time'] = 1.5`.
+Then you can set (or get) the value using the uniform name as a key::
+
+    program['time'] = delta_time
 
 
 Uniform Buffer Objects (Uniform Blocks)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Pyglet also offers access to Uniform Buffer Objects or Uniform Blocks. These are special objects that can be used to
-share uniforms between different programs. For example, by default, Pyglet's `projection` and `view` matrix
-are both contained in the `WindowBlock` uniform block. Which looks like this in the vertex shader::
+share uniforms between different programs. For example, by default, Pyglet's ``projection`` and ``view`` matrix
+are both contained in the ``WindowBlock`` uniform block. Which looks like this in the vertex shader::
 
     uniform WindowBlock
     {
@@ -153,7 +162,7 @@ are both contained in the `WindowBlock` uniform block. Which looks like this in 
 
 You can view what uniform blocks exist in a :py:class:`~pyglet.graphics.shader.ShaderProgram` using the `uniform_blocks`
 property. This is a dictionary containing a Uniform Block name key to a :py:class:`~pyglet.graphics.shader.UniformBlock`
-object value. In the above example, the name would be `WindowBlock` while the `window` identifier is used in the GLSL
+object value. In the above example, the name would be ``WindowBlock`` while the ``window`` identifier is used in the GLSL
 shader itself.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
@@ -510,7 +519,7 @@ Drawing order
 to keep vertex lists in any particular order. So, any vertex lists sharing
 the same primitive mode, attribute formats and group will be drawn in an
 arbitrary order.  However, :py:class:`~pyglet.graphics.Group` objects do
-have an `order` parameter that allows :py:class:`~pyglet.graphics.Batch`
+have an ``order`` parameter that allows :py:class:`~pyglet.graphics.Batch`
 to sort objects sharing the same parent. In summary, inside of a Batch:
 
 1. Groups are sorted by their parent (if any). (Parent Groups may also be ordered).
@@ -532,8 +541,8 @@ which then renders it as efficiently as possible.
 Visibility
 ^^^^^^^^^^
 
-Groups have a boolean `visible` property. By setting this to `False`, any
-objects in that Group will no longer be rendered. A common use case is to
+Groups have a boolean ``visible`` property. By setting this to ``False``, any
+objects in that :py:class:`~pyglet.graphics.Group` will no longer be rendered. A common use case is to
 create a parent Group specifically for this purpose, often when combined
 with custom ordering (as described above). For example, you might create
 a "HUD" Group, which is ordered to draw in front of everything else. The

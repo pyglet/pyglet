@@ -1,4 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
+
+if TYPE_CHECKING:
+    from typing import BinaryIO
+    from pyglet.model import Model
+    from pyglet.graphics import Batch, Group
 
 
 registry = CodecRegistry()
@@ -17,7 +26,7 @@ class ModelEncodeException(EncodeException):
 
 
 class ModelDecoder(Decoder):
-    def decode(self, filename, file, batch, group):
+    def decode(self, filename: str, file: BinaryIO | None, batch: Batch | None, group: Group | None) -> Model:
         """Decode the given file object and return an instance of `Model`.
         Throws ModelDecodeException if there is an error.  filename
         can be a file type hint.
@@ -27,7 +36,7 @@ class ModelDecoder(Decoder):
 
 class ModelEncoder(Encoder):
 
-    def encode(self, model, filename, file):
+    def encode(self, model: Model, filename: str, file: BinaryIO | None) -> None:
         """Encode the given model to the given file.  filename
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
@@ -36,7 +45,7 @@ class ModelEncoder(Encoder):
         raise NotImplementedError()
 
 
-def add_default_codecs():
+def add_default_codecs() -> None:
     # Add all bundled codecs. These should be listed in order of
     # preference. This is called automatically by pyglet.model.
 

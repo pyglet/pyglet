@@ -54,8 +54,9 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/media
    programming_guide/text
    programming_guide/resources
-   programming_guide/graphics
+   programming_guide/rendering
    programming_guide/events
+   programming_guide/gui
    programming_guide/time
    programming_guide/context
    programming_guide/gl
@@ -75,6 +76,7 @@ If you are migrating from an older version of pyglet, please read through
    modules/app
    modules/canvas
    modules/clock
+   modules/customtypes
    modules/event
    modules/font
    modules/gl
@@ -103,8 +105,8 @@ If you are migrating from an older version of pyglet, please read through
 
    internal/contributing
    internal/virtualenv
-   internal/testing
    internal/doc
+   internal/testing
    internal/dist
    internal/gl
    internal/generated

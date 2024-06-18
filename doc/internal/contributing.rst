@@ -1,16 +1,12 @@
 Contributing
 ============
 
-Roadmap
--------
-
-Planned work for future versions can be found in the
-`roadmap <https://github.com/pyglet/pyglet/wiki/Roadmap>`_.
-
 Communication
 -------------
 
-Pyglet communication occurs mostly in our
+pyglet communication occurs mostly in our
+`discord server <https://discord.gg/QXyegWe>`_,
+and
 `mailing list <http://groups.google.com/group/pyglet-users>`_.
 
 Issue Tracker

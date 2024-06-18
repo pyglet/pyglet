@@ -173,7 +173,17 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._pyglet_source_exhausted = False
         self.driver._xa2_driver.return_voice(self._xa2_source_voice, self._audio_data_in_use)
         self._audio_data_in_use = deque()
+
         self._xa2_source_voice = self.driver._xa2_driver.get_source_voice(self.source.audio_format, self)
+        self._xa2_source_voice.volume = self.player.volume
+        self._xa2_source_voice.frequency = self.player.pitch
+        if self._xa2_source_voice.is_emitter:
+            self._xa2_source_voice.position = _convert_coordinates(self.player.position)
+            self._xa2_source_voice.distance_scaler = self.player.min_distance
+            self._xa2_source_voice.cone_orientation = _convert_coordinates(self.player.cone_orientation)
+            self._xa2_source_voice.cone_outside_volume = self.player.cone_outer_gain
+            self._set_cone_angles()
+            self.driver._xa2_driver.apply3d(self._xa2_source_voice)
 
     def on_buffer_end(self, buffer_context_ptr: int) -> None:
         # Called from the XAudio2 thread.

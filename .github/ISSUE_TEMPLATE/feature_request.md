@@ -12,7 +12,7 @@ A clear and concise description of what the problem is. Ex. I'm always frustrate
 
 
 **Describe the solution you'd like**
-A description of what you would like **pyglet** to do, or to do differently. 
+A description of what you would like **pyglet** to do (or to do differently). 
 
 
 **Additional context**

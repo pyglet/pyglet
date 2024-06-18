@@ -1,16 +1,16 @@
-"""Run list encoding utilities.
+"""Run list encoding utilities."""
+from __future__ import annotations
 
-.. versionadded:: 1.1
-"""
+from typing import Any, Callable, Generator, Iterable, Iterator
 
 
 class _Run:
-    def __init__(self, value, count):
+    def __init__(self, value: Any, count: int) -> None:
         self.value = value
         self.count = count
 
-    def __repr__(self):
-        return f'Run({self.value}, {self.count})'
+    def __repr__(self) -> str:
+        return f"Run({self.value}, {self.count})"
 
 
 class RunList:
@@ -32,47 +32,47 @@ class RunList:
     positions in the decoded list.  For example, in the above sequence,
     ``set_run(2, 5, 'x')`` would change the sequence to ``aaxxxbccccc``.
     """
+    runs: list[_Run]
 
-    def __init__(self, size, initial):
+    def __init__(self, size: int, initial: Any) -> None:
         """Create a run list of the given size and a default value.
 
-        :Parameters:
-            `size` : int
+        Args:
+            size:
                 Number of characters to represent initially.
-            `initial` : object
+            initial:
                 The value of all characters in the run list.
 
         """
         self.runs = [_Run(initial, size)]
 
-    def insert(self, pos, length):
+    def insert(self, pos: int, length: int) -> None:
         """Insert characters into the run list.
 
         The inserted characters will take on the value immediately preceding
         the insertion point (or the value of the first character, if `pos` is
         0).
 
-        :Parameters:
-            `pos` : int
+        Args:
+            pos:
                 Insertion index
-            `length` : int
+            length:
                 Number of characters to insert.
 
         """
-
         i = 0
         for run in self.runs:
             if i <= pos <= i + run.count:
                 run.count += length
             i += run.count
 
-    def delete(self, start, end):
+    def delete(self, start: int, end: int) -> None:
         """Remove characters from the run list.
 
-        :Parameters:
-            `start` : int
+        Args:
+            start:
                 Starting index to remove from.
-            `end` : int
+            end:
                 End index, exclusive.
 
         """
@@ -92,15 +92,15 @@ class RunList:
         if not self.runs:
             self.runs = [_Run(run.value, 0)]
 
-    def set_run(self, start, end, value):
+    def set_run(self, start: int, end: int, value: Any) -> None:
         """Set the value of a range of characters.
 
-        :Parameters:
-            `start` : int
+        Args:
+            start:
                 Start index of range.
-            `end` : int
+            end:
                 End of range, exclusive.
-            `value` : object
+            value:
                 Value to set over the range.
 
         """
@@ -155,27 +155,23 @@ class RunList:
         # Delete collapsed runs
         self.runs = [r for r in self.runs if r.count > 0]
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[tuple[int, int, Any], Any, None]:
         i = 0
         for run in self.runs:
             yield i, i + run.count, run.value
             i += run.count
 
-    def get_run_iterator(self):
-        """Get an extended iterator over the run list.
-
-        :rtype: `RunIterator`
-        """
+    def get_run_iterator(self) -> RunIterator:
+        """Get an extended iterator over the run list."""
         return RunIterator(self)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         """Get the value at a character position.
 
-        :Parameters:
-            `index` : int
+        Args:
+            index:
                 Index of character.  Must be within range and non-negative.
 
-        :rtype: object
         """
         i = 0
         for run in self.runs:
@@ -189,7 +185,7 @@ class RunList:
 
         raise IndexError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(list(self))
 
 
@@ -213,7 +209,7 @@ class AbstractRunIterator:
 
     You can also iterate over monotonically non-decreasing ranges over the
     iteration.  For example::
-        
+
         run_iter = iter(run_list)
         for start, end, value in run_iter.ranges(0, 20):
             pass
@@ -225,43 +221,45 @@ class AbstractRunIterator:
     Both start and end indices of the slice are required and must be positive.
     """
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         """Get the value at a given index.
 
         See the class documentation for examples of valid usage.
 
-        :Parameters:
-            `index` : int   
+        Args:
+            index:
                 Document position to query.
-
-        :rtype: object
         """
+        raise NotImplementedError("abstract")
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         """Iterate over a subrange of the run list.
 
         See the class documentation for examples of valid usage.
 
-        :Parameters:
-            `start` : int
+        Args:
+            start:
                 Start index to iterate from.
-            `end` : int
+            end:
                 End index, exclusive.
 
-        :rtype: iterator
-        :return: Iterator over (start, end, value) tuples.
+        Returns:
+            Iterator over (start, end, value) tuples.
         """
+        raise NotImplementedError("abstract")
 
 
 class RunIterator(AbstractRunIterator):
-    def __init__(self, run_list):
+    _run_list_iter: Iterator[AbstractRunIterator]
+
+    def __init__(self, run_list: Iterable[AbstractRunIterator] | RunList) -> None:
         self._run_list_iter = iter(run_list)
         self.start, self.end, self.value = next(self)
 
-    def __next__(self):
+    def __next__(self) -> AbstractRunIterator:
         return next(self._run_list_iter)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         try:
             while index >= self.end and index > self.start:
                 # condition has special case for 0-length run (fixes issue 471)
@@ -270,7 +268,7 @@ class RunIterator(AbstractRunIterator):
         except StopIteration:
             raise IndexError
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         try:
             while start >= self.end:
                 self.start, self.end, self.value = next(self)
@@ -283,19 +281,19 @@ class RunIterator(AbstractRunIterator):
 
 
 class OverriddenRunIterator(AbstractRunIterator):
-    """Iterator over a `RunIterator`, with a value temporarily replacing
-    a given range.
-    """
+    """Iterator over a `RunIterator`, with a value temporarily replacing a given range."""
 
-    def __init__(self, base_iterator, start, end, value):
+    def __init__(self, base_iterator: AbstractRunIterator, start: int, end: int, value: Any) -> None:
         """Create a derived iterator.
 
-        :Parameters:
-            `start` : int
+        Args:
+            base_iterator:
+                Source of runs.
+            start:
                 Start of range to override
-            `end` : int
+            end:
                 End of range to override, exclusive
-            `value` : object
+            value:
                 Value to replace over the range
 
         """
@@ -304,7 +302,7 @@ class OverriddenRunIterator(AbstractRunIterator):
         self.override_end = end
         self.override_value = value
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         if end <= self.override_start or start >= self.override_end:
             # No overlap
             for r in self.iter.ranges(start, end):
@@ -321,44 +319,42 @@ class OverriddenRunIterator(AbstractRunIterator):
                 for r in self.iter.ranges(self.override_end, end):
                     yield r
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         if self.override_start <= index < self.override_end:
             return self.override_value
-        else:
-            return self.iter[index]
+
+        return self.iter[index]
 
 
 class FilteredRunIterator(AbstractRunIterator):
-    """Iterate over an `AbstractRunIterator` with filtered values replaced
-    by a default value.
-    """
+    """Iterate over an `AbstractRunIterator` with filtered values replaced by a default value."""
 
-    def __init__(self, base_iterator, filter, default):
+    def __init__(self, base_iterator: AbstractRunIterator, filter_func: Callable[[Any], bool], default: Any) -> None:
         """Create a filtered run iterator.
 
-        :Parameters:
-            `base_iterator` : `AbstractRunIterator`
+        Args:
+            base_iterator:
                 Source of runs.
-            `filter` : ``lambda object: bool``
+            filter_func:
                 Function taking a value as parameter, and returning ``True``
                 if the value is acceptable, and ``False`` if the default value
                 should be substituted.
-            `default` : object
+            default:
                 Default value to replace filtered values.
 
         """
         self.iter = base_iterator
-        self.filter = filter
+        self.filter = filter_func
         self.default = default
 
-    def ranges(self, start, end):
-        for start, end, value in self.iter.ranges(start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
+        for start_, end_, value in self.iter.ranges(start, end):
             if self.filter(value):
-                yield start, end, value
+                yield start_, end_, value
             else:
-                yield start, end, self.default
+                yield start_, end_, self.default
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         value = self.iter[index]
         if self.filter(value):
             return value
@@ -367,11 +363,19 @@ class FilteredRunIterator(AbstractRunIterator):
 
 class ZipRunIterator(AbstractRunIterator):
     """Iterate over multiple run iterators concurrently."""
+    range_iterators: tuple[RunIterator, ...]
 
-    def __init__(self, range_iterators):
+    def __init__(self, range_iterators: tuple[RunIterator, ...]) -> None:
+        """Create a zipped run iterator.
+
+        Args:
+            range_iterators:
+                A tuple of ranged iterators.
+
+        """
         self.range_iterators = range_iterators
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         try:
             iterators = [i.ranges(start, end) for i in self.range_iterators]
             starts, ends, values = zip(*[next(i) for i in iterators])
@@ -388,23 +392,26 @@ class ZipRunIterator(AbstractRunIterator):
         except StopIteration:
             return
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         return [i[index] for i in self.range_iterators]
 
 
 class ConstRunIterator(AbstractRunIterator):
     """Iterate over a constant value without creating a RunList."""
+    length: int
+    end: int
+    value: Any
 
-    def __init__(self, length, value):
+    def __init__(self, length: int, value: Any) -> None:
         self.length = length
         self.end = length
         self.value = value
 
-    def __next__(self):
+    def __next__(self) -> Generator[tuple[int, int, Any], Any, None]:
         yield 0, self.length, self.value
 
-    def ranges(self, start, end):
+    def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Any], None, None]:
         yield start, end, self.value
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Any:
         return self.value

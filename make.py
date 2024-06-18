@@ -5,8 +5,6 @@ import sys
 import shutil
 import webbrowser
 
-from subprocess import call
-
 THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
 DIST_DIR = op.join(THIS_DIR, 'dist')
@@ -20,34 +18,56 @@ def clean():
             op.join(THIS_DIR, '_build'),
             op.join(THIS_DIR, 'pyglet.egg-info'),
             op.join(THIS_DIR, '.pytest_cache'),
-            op.join(THIS_DIR, '.mypy_cache')]
+            op.join(THIS_DIR, '.mypy_cache'),
+            op.join(THIS_DIR, '.ruff_cache')]
+
     files = [op.join(DOC_DIR, 'internal', 'build.rst')]
+
     for d in dirs:
-        print('   Removing:', d)
+        if not op.exists(d):
+            continue
         shutil.rmtree(d, ignore_errors=True)
+        print(f"   Removed: {d}")
+
     for f in files:
-        print('   Removing:', f)
+        if not op.exists(f):
+            continue
         try:
             os.remove(f)
+            print(f"   Removed: {f}")
         except OSError:
-            pass
+            print(f"   Failed to remove: {f}")
 
 
 def docs():
     """Generate documentation"""
-    make_bin = 'make.exe' if sys.platform == 'win32' else 'make'
+    try:
+        import sphinx.cmd.build
+    except ImportError:
+        print("The 'sphinx' package, and several dependencies are required for building documentation. "
+              "See 'doc/requirements.txt' for dependencies, and 'doc/README.md' for more information.")
+        exit(1)
 
+    # Ensure the build director exists:
     html_dir = op.join(DOC_DIR, '_build', 'html')
-    if not op.exists(html_dir):
-        os.makedirs(op.join(DOC_DIR, '_build', 'html'))
-    call([make_bin, 'html'], cwd=DOC_DIR)
+    os.makedirs(op.join(DOC_DIR, '_build', 'html'), exist_ok=True)
+
+    # Should be similar to `sphinx-build` on the CLI:
+    sphinx.cmd.build.build_main([DOC_DIR, html_dir])
+
     if '--open' in sys.argv:
         webbrowser.open('file://' + op.abspath(DOC_DIR) + '/_build/html/index.html')
 
 
 def dist():
     """Create files to distribute pyglet"""
-    call(['python', '-m', 'build'])
+    try:
+        import flit
+    except ImportError:
+        print("The 'flit' package is required for building pyglet.")
+        exit(1)
+
+    flit.main(['build'])
 
 
 def _print_usage():

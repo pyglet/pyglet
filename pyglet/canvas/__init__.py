@@ -27,36 +27,7 @@ by the application; see the documentation for :class:`Screen`.
 import sys
 import weakref
 
-
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-
-_displays = weakref.WeakSet()
-"""Set of all open displays.  Instances of :class:`Display` are automatically
-added to this set upon construction.  The set uses weak references, so displays
-are removed from the set when they are no longer referenced.
-
-:type: :class:`WeakSet`
-"""
-
-
-def get_display():
-    """Get the default display device.
-
-    If there is already a :class:`Display` connection, that display will be
-    returned. Otherwise, a default :class:`Display` is created and returned.
-    If multiple display connections are active, an arbitrary one is returned.
-
-    .. versionadded:: 1.2
-
-    :rtype: :class:`Display`
-    """
-    # If there are existing displays, return one of them arbitrarily.
-    for display in _displays:
-        return display
-
-    # Otherwise, create a new display and return it.
-    return Display()
 
 
 if _is_pyglet_doc_run:
@@ -79,3 +50,27 @@ else:
         from pyglet.canvas.xlib import XlibDisplay as Display
         from pyglet.canvas.xlib import XlibScreen as Screen
         from pyglet.canvas.xlib import XlibCanvas as Canvas
+
+
+_displays: weakref.WeakSet = weakref.WeakSet()
+"""Set of all open displays.  Instances of :class:`Display` are automatically
+added to this set upon construction.  The set uses weak references, so displays
+are removed from the set when they are no longer referenced.
+"""
+
+
+def get_display() -> Display:
+    """Get the default display device.
+
+    If there is already a :class:`Display` connection, that display will be
+    returned. Otherwise, a default :class:`Display` is created and returned.
+    If multiple display connections are active, an arbitrary one is returned.
+
+    .. versionadded:: 1.2
+    """
+    # If there are existing displays, return one of them arbitrarily.
+    for display in _displays:
+        return display
+
+    # Otherwise, create a new display and return it.
+    return Display()

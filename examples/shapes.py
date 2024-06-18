@@ -45,6 +45,9 @@ class ShapesDemo(pyglet.window.Window):
 
         self.box = shapes.Box(60, 40, 200, 100, thickness=2, color=(244, 55, 55), batch=self.batch)
 
+        coordinates = [[450, 400], [475, 450], [525, 450], [550, 400]]
+        self.multiLine = shapes.MultiLine(*coordinates, closed=True, batch=self.batch)
+
     def on_draw(self):
         """Clear the screen and draw shapes"""
         self.clear()
@@ -70,6 +73,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.ellipse.b = abs(math.sin(self.time) * 100)
         self.sector.angle = self.time % math.tau
+
+        self.multiLine.rotation = self.time * -15
 
 
 if __name__ == "__main__":

@@ -191,16 +191,10 @@ command. Consult your distro's documentation for more information.
 PulseAudio
 ^^^^^^^^^^
 
-The backend for this driver is nearly universally supported.
+This backend is almost always supported, but it has limited features.
 
-Even distros using PipeWire often come with a PulseAudio compatibility
-layer preinstalled. If this driver fails to initialize, consult your
-distro's documentation to learn which audio back-ends you can install.
-
-This driver has the following downsides:
-
-#. Limited features compared to other drivers
-#. A bug which can crash your program under certain conditions.
+If it fails to initialize, consult your distro's documentation to learn
+which supported audio back-ends you can install.
 
 Missing features
 """"""""""""""""
@@ -214,39 +208,6 @@ work properly:
 #. Integration with surround sound
 
 Switching to :ref:`guide-audio-driver-openal` should automatically enable them.
-
-The bug
-"""""""
-
-.. _pulse-bug: https://github.com/pyglet/pyglet/issues/952
-
-The driver will initialize correctly, but pyglet will crash
-during execution.
-
-The traceback will contain a message like the one below:
-
-.. code-block:: console
-
-   Assertion 'q->front' failed at pulsecore/queue.c:81, function pa_queue_push(). Aborting.
-
-The following conditions can trigger the crash:
-
-#. A debugger paused or resumed the program while audio is playing
-#. Unpredictably when 2 or more sounds are playing
-
-The easiest fix is to :ref:`install OpenAL <guide-audio-driver-openal>`
-and restart the program.
-
-See `the GitHub issue <pulse-bug_>`_ for more information. The following
-are currently unclear:
-
-#. How different PulseAudio implementations affect the bug (PipeWire vs original)
-#. How often the bug occurs for users on less common distros
-#. Its full details; it is believed to be an unpredictable
-   `concurrency issue involving locks <https://github.com/pyglet/pyglet/issues/952#issuecomment-1716821550>`_.
-#. Whether it is worth fixing; the workarounds are easy and PulseAudio
-   is being replaced by PipeWire.
-
 
 .. _guide-supportedmedia:
 

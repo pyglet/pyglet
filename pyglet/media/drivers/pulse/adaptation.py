@@ -162,8 +162,16 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         self._pyglet_source_exhausted = False
         self._pending_bytes = 0
-        self._audio_data_buffer = _AudioDataBuffer(self._buffered_data_ideal_size,
-                                                   self._buffered_data_comfortable_limit)
+
+        # PA has a playback buffer it makes requests for via callbacks, but those callbacks
+        # can not decode data. The decoding happens in a PlayerWorkerThread as usual, and the
+        # result is kept in an _AudioDataBuffer, splitting up the ideal size between
+        # them. The data is copied when the PulseAudio buffer runs low, at which point the
+        # thread will ensure refilling of the _AudioDataBuffer.
+        ideal_size = audio_format.align_ceil(self._buffered_data_ideal_size // 2)
+        comf_limit = audio_format.align_ceil(self._buffered_data_comfortable_limit // 2)
+
+        self._audio_data_buffer = _AudioDataBuffer(ideal_size, comf_limit)
 
         # A lock that should be held whenever the audio data buffer is accessed, or
         # any variables really, if they are shared between PA callbacks and the rest of
@@ -173,14 +181,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         # if a callback runs at an unfortunate time.
         self._audio_data_lock = threading.Lock()
 
-        self._clear_write = False
         self._has_underrun = False
 
         with driver.mainloop.lock:
             self.stream = driver.context.create_stream(audio_format)
             self.stream.set_write_callback(self._write_callback)
             self.stream.set_underflow_callback(self._underflow_callback)
-            self.stream.connect_playback()
+            self.stream.connect_playback(ideal_size, comf_limit)
             assert self.stream.is_ready
 
         assert _debug('PulseAudioPlayer: __init__ finished')
@@ -241,15 +248,12 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def _write_to_stream(self, nbytes: int) -> int:
         data_ptr, bytes_accepted = self.stream.begin_write(nbytes)
 
-        seek_mode = pa.PA_SEEK_RELATIVE_ON_READ if self._clear_write else pa.PA_SEEK_RELATIVE
-
         bytes_written = self._audio_data_buffer.memmove(data_ptr.value, bytes_accepted)
 
         if bytes_written == 0:
             self.stream.cancel_write()
         else: # elif bytes_written <= bytes_accepted:
-            self.stream.write(data_ptr, bytes_written, seek_mode)
-            self._clear_write = False
+            self.stream.write(data_ptr, bytes_written, pa.PA_SEEK_RELATIVE)
 
         assert _debug(f'PulseAudioPlayer: Wrote {bytes_written}/{nbytes}')
         return bytes_written
@@ -260,14 +264,20 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def _maybe_write_pending(self) -> None:
         with self._audio_data_lock:
-            if self._pending_bytes > 0 and self._audio_data_buffer.available > 0:
-                written = self._write_to_stream(self._pending_bytes)
-                self._pending_bytes -= written
-                # If the stream underran before, trigger it for immediate playback.
-                # Unsure whether this call is really needed, but it shouldn't break anything.
-                if self._has_underrun:
-                    self.stream.trigger().wait().delete()
-                    self._has_underrun = False
+            if self._pending_bytes == 0 or self._audio_data_buffer.available == 0:
+                return
+
+            written = self._write_to_stream(self._pending_bytes)
+            self._pending_bytes -= written
+            if not self._has_underrun:
+                return
+
+            self._has_underrun = False
+
+        # If the stream has underrun, trigger it again for immediate playback.
+        # Unsure whether this is really needed, but better be safe.
+        # Make sure to not hold the audio data lock, as `wait` reenters the PA loop.
+        self.stream.trigger().wait().delete()
 
     def work(self) -> None:
         with self.driver.mainloop.lock:
@@ -297,14 +307,10 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert _debug('PulseAudioPlayer.clear')
         super().clear()
 
-        self._clear_write = True
+        # Do not reset pending_bytes as PA doesn't always seem to issue new write
+        # requests despite being flushed. Should still end up fine since PA replies with
+        # how many bytes it actually accepts in `_write_to_stream`.
         # self._pending_bytes = 0
-        # Do not reset pending_bytes. This indicates how much PA would like to
-        # have in this stream.
-        # After playing again, no write requests will be issued, with PA expecting data to be
-        # placed in the buffer as usual, so keep pending_bytes around.
-        # _clear_write will cause the data to be written at the read index, making it play
-        # asap.
         self._pyglet_source_exhausted = False
         self._audio_data_buffer.clear()
         self._has_underrun = False
@@ -314,6 +320,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             ti = self._update_and_get_timing_info()
             assert not ti.read_index_corrupt
             self._last_clear_read_index = ti.read_index
+            self.stream.flush().wait().delete()
             self.stream.prebuf().wait().delete()
 
     def play(self) -> None:

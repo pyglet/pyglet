@@ -1,14 +1,16 @@
-"""
-Wrapper around the Linux FontConfig library. Used to find available fonts.
-"""
+"""Wrapper around the Linux FontConfig library. Used to find available fonts."""
+from __future__ import annotations
 
 from collections import OrderedDict
-from ctypes import *
+from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p
+from typing import TYPE_CHECKING
 
-import pyglet.lib
-from pyglet.util import asbytes, asstr
 from pyglet.font.base import FontException
+from pyglet.lib import load_library
+from pyglet.util import asbytes, asstr
 
+if TYPE_CHECKING:
+    from pyglet.font.freetype_lib import FT_Face
 
 # fontconfig library definitions
 
@@ -17,14 +19,15 @@ from pyglet.font.base import FontException
  FcResultTypeMismatch,
  FcResultNoId,
  FcResultOutOfMemory) = range(5)
+
 FcResult = c_int
 
-FC_FAMILY = asbytes('family')
-FC_SIZE = asbytes('size')
-FC_SLANT = asbytes('slant')
-FC_WEIGHT = asbytes('weight')
-FC_FT_FACE = asbytes('ftface')
-FC_FILE = asbytes('file')
+FC_FAMILY = asbytes("family")
+FC_SIZE = asbytes("size")
+FC_SLANT = asbytes("slant")
+FC_WEIGHT = asbytes("weight")
+FC_FT_FACE = asbytes("ftface")
+FC_FILE = asbytes("file")
 
 FC_WEIGHT_REGULAR = 80
 FC_WEIGHT_BOLD = 200
@@ -50,44 +53,51 @@ FcMatchKind = c_int
 
 class _FcValueUnion(Union):
     _fields_ = [
-        ('s', c_char_p),
-        ('i', c_int),
-        ('b', c_int),
-        ('d', c_double),
-        ('m', c_void_p),
-        ('c', c_void_p),
-        ('f', c_void_p),
-        ('p', c_void_p),
-        ('l', c_void_p),
+        ("s", c_char_p),
+        ("i", c_int),
+        ("b", c_int),
+        ("d", c_double),
+        ("m", c_void_p),
+        ("c", c_void_p),
+        ("f", c_void_p),
+        ("p", c_void_p),
+        ("l", c_void_p),
     ]
 
 
 class FcValue(Structure):
     _fields_ = [
-        ('type', FcType),
-        ('u', _FcValueUnion)
+        ("type", FcType),
+        ("u", _FcValueUnion),
     ]
+
 
 # End of library definitions
 
 
 class FontConfig:
-    def __init__(self):
+    _search_cache: OrderedDict[tuple[str, float, bool, bool], FontConfigSearchResult]
+    _fontconfig: CDLL | None
+
+    def __init__(self) -> None:
         self._fontconfig = self._load_fontconfig_library()
+        assert self._fontconfig is not None
         self._search_cache = OrderedDict()
         self._cache_size = 20
 
-    def dispose(self):
+    def dispose(self) -> None:
         while len(self._search_cache) > 0:
-            self._search_cache.popitem().dispose()
+            k, v = self._search_cache.popitem()
+            v.dispose()
 
         self._fontconfig.FcFini()
         self._fontconfig = None
 
-    def create_search_pattern(self):
+    def create_search_pattern(self) -> FontConfigSearchPattern:
         return FontConfigSearchPattern(self._fontconfig)
 
-    def find_font(self, name, size=12, bold=False, italic=False):
+    def find_font(self, name: str, size: float = 12, bold: bool = False,
+                  italic: bool = False) -> FontConfigSearchResult:
         result = self._get_from_search_cache(name, size, bold, italic)
         if result:
             return result
@@ -103,20 +113,21 @@ class FontConfig:
         search_pattern.dispose()
         return result
 
-    def have_font(self, name):
+    def have_font(self, name: str) -> bool:
         result = self.find_font(name)
         if result:
             # Check the name matches, fontconfig can return a default
             if name and result.name and result.name.lower() != name.lower():
                 return False
             return True
-        else:
-            return False
 
-    def char_index(self, ft_face, character):
+        return False
+
+    def char_index(self, ft_face: FT_Face, character: str) -> int:
         return self._fontconfig.FcFreeTypeCharIndex(ft_face, ord(character))
 
-    def _add_to_search_cache(self, search_pattern, result_pattern):
+    def _add_to_search_cache(self, search_pattern: FontConfigSearchPattern,
+                             result_pattern: FontConfigSearchResult) -> None:
         self._search_cache[(search_pattern.name,
                             search_pattern.size,
                             search_pattern.bold,
@@ -124,17 +135,17 @@ class FontConfig:
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 
-    def _get_from_search_cache(self,  name, size, bold, italic):
+    def _get_from_search_cache(self, name: str, size: float, bold: bool, italic: bool) -> FontConfigSearchResult | None:
         result = self._search_cache.get((name, size, bold, italic), None)
 
         if result and result.is_valid:
             return result
-        else:
-            return None
+
+        return None
 
     @staticmethod
-    def _load_fontconfig_library():
-        fontconfig = pyglet.lib.load_library('fontconfig')
+    def _load_fontconfig_library() -> CDLL:
+        fontconfig = load_library("fontconfig")
         fontconfig.FcInit()
 
         fontconfig.FcPatternBuild.restype = c_void_p
@@ -157,34 +168,34 @@ class FontConfig:
 
 
 class FontConfigPattern:
-    def __init__(self, fontconfig, pattern=None):
+    def __init__(self, fontconfig: CDLL, pattern: c_void_p | None = None) -> None:
         self._fontconfig = fontconfig
         self._pattern = pattern
 
     @property
-    def is_valid(self):
-        return self._fontconfig and self._pattern
+    def is_valid(self) -> bool:
+        return bool(self._fontconfig and self._pattern)
 
-    def _create(self):
+    def _create(self) -> None:
         assert not self._pattern
         assert self._fontconfig
         self._pattern = self._fontconfig.FcPatternCreate()
 
-    def _destroy(self):
+    def _destroy(self) -> None:
         assert self._pattern
         assert self._fontconfig
         self._fontconfig.FcPatternDestroy(self._pattern)
         self._pattern = None
 
     @staticmethod
-    def _bold_to_weight(bold):
+    def _bold_to_weight(bold: bool) -> int:
         return FC_WEIGHT_BOLD if bold else FC_WEIGHT_REGULAR
 
     @staticmethod
-    def _italic_to_slant(italic):
+    def _italic_to_slant(italic: bool) -> int:
         return FC_SLANT_ITALIC if italic else FC_SLANT_ROMAN
 
-    def _set_string(self, name, value):
+    def _set_string(self, name: bytes, value: str) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -192,11 +203,11 @@ class FontConfigPattern:
         if not value:
             return
 
-        value = value.encode('utf8')
+        value = value.encode("utf8")
 
         self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
 
-    def _set_double(self, name, value):
+    def _set_double(self, name: bytes, value: int) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -206,7 +217,7 @@ class FontConfigPattern:
 
         self._fontconfig.FcPatternAddDouble(self._pattern, name, c_double(value))
 
-    def _set_integer(self, name, value):
+    def _set_integer(self, name: bytes, value: int) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -216,70 +227,75 @@ class FontConfigPattern:
 
         self._fontconfig.FcPatternAddInteger(self._pattern, name, c_int(value))
 
-    def _get_value(self, name):
+    def _get_value(self, name: bytes) -> FcValue | None:
         assert self._pattern
         assert name
         assert self._fontconfig
 
         value = FcValue()
-        result = self._fontconfig.FcPatternGet(self._pattern, name, 0, byref(value))
+        result: FcResult = self._fontconfig.FcPatternGet(self._pattern, name, 0, byref(value))
         if _handle_fcresult(result):
             return value
-        else:
-            return None
 
-    def _get_string(self, name):
+        return None
+
+    def _get_string(self, name: bytes) -> str | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeString:
             return asstr(value.u.s)
-        else:
-            return None
 
-    def _get_face(self, name):
+        return None
+
+    def _get_face(self, name: bytes) -> FT_Face | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeFTFace:
             return value.u.f
-        else:
-            return None
 
-    def _get_integer(self, name):
+        return None
+
+    def _get_integer(self, name: bytes) -> int | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeInteger:
             return value.u.i
-        else:
-            return None
 
-    def _get_double(self, name):
+        return None
+
+    def _get_double(self, name: bytes) -> int | None:
         value = self._get_value(name)
 
         if value and value.type == FcTypeDouble:
             return value.u.d
-        else:
-            return None
+
+        return None
 
 
 class FontConfigSearchPattern(FontConfigPattern):
-    def __init__(self, fontconfig):
-        super(FontConfigSearchPattern, self).__init__(fontconfig)
+    size: int | None
+    italic: bool
+    bold: bool
+    name: str | None
+
+    def __init__(self, fontconfig: CDLL) -> None:
+        super().__init__(fontconfig)
 
         self.name = None
         self.bold = False
         self.italic = False
         self.size = None
 
-    def match(self):
+    def match(self) -> FontConfigSearchResult | None:
         self._prepare_search_pattern()
         result_pattern = self._get_match()
 
         if result_pattern:
             return FontConfigSearchResult(self._fontconfig, result_pattern)
-        else:
-            return None
 
-    def _prepare_search_pattern(self):
+        return None
+
+    def _prepare_search_pattern(self) -> None:
         self._create()
         self._set_string(FC_FAMILY, self.name)
         self._set_double(FC_SIZE, self.size)
@@ -288,14 +304,14 @@ class FontConfigSearchPattern(FontConfigPattern):
 
         self._substitute_defaults()
 
-    def _substitute_defaults(self):
+    def _substitute_defaults(self) -> None:
         assert self._pattern
         assert self._fontconfig
 
         self._fontconfig.FcConfigSubstitute(None, self._pattern, FcMatchPattern)
         self._fontconfig.FcDefaultSubstitute(self._pattern)
 
-    def _get_match(self):
+    def _get_match(self) -> c_void_p | None:
         assert self._pattern
         assert self._fontconfig
 
@@ -304,59 +320,61 @@ class FontConfigSearchPattern(FontConfigPattern):
 
         if _handle_fcresult(match_result.value):
             return match_pattern
-        else:
-            return None
 
-    def dispose(self):
+        return None
+
+    def dispose(self) -> None:
         self._destroy()
 
 
 class FontConfigSearchResult(FontConfigPattern):
-    def __init__(self, fontconfig, result_pattern):
-        super(FontConfigSearchResult, self).__init__(fontconfig, result_pattern)
+    def __init__(self, fontconfig: CDLL, result_pattern: c_void_p | None) -> None:
+        super().__init__(fontconfig, result_pattern)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._get_string(FC_FAMILY)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self._get_double(FC_SIZE)
 
     @property
-    def bold(self):
+    def bold(self) -> bool:
         return self._get_integer(FC_WEIGHT) == FC_WEIGHT_BOLD
 
     @property
-    def italic(self):
+    def italic(self) -> bool:
         return self._get_integer(FC_SLANT) == FC_SLANT_ITALIC
 
     @property
-    def face(self):
+    def face(self) -> FT_Face:
         return self._get_face(FC_FT_FACE)
 
     @property
-    def file(self):
+    def file(self) -> str:
         return self._get_string(FC_FILE)
 
-    def dispose(self):
+    def dispose(self) -> None:
         self._destroy()
 
 
-def _handle_fcresult(result):
+def _handle_fcresult(result: int) -> bool | None:
     if result == FcResultMatch:
         return True
-    elif result in (FcResultNoMatch, FcResultTypeMismatch, FcResultNoId):
+    if result in (FcResultNoMatch, FcResultTypeMismatch, FcResultNoId):
         return False
-    elif result == FcResultOutOfMemory:
-        raise FontException('FontConfig ran out of memory.')
+    if result == FcResultOutOfMemory:
+        msg = "FontConfig ran out of memory."
+        raise FontException(msg)
+    return None
 
 
 _fontconfig_instance = None
 
 
-def get_fontconfig():
-    global _fontconfig_instance
+def get_fontconfig() -> FontConfig:
+    global _fontconfig_instance  # noqa: PLW0603
     if not _fontconfig_instance:
         _fontconfig_instance = FontConfig()
     return _fontconfig_instance

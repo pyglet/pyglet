@@ -31,6 +31,7 @@ pyglet.shapes
 
   .. autoattribute:: angle
   .. autoattribute:: start_angle
+  .. autoattribute:: thickness
 
 
 .. autoclass:: BezierCurve
@@ -38,6 +39,7 @@ pyglet.shapes
 
   .. autoattribute:: points
   .. autoattribute:: t
+  .. autoattribute:: thickness
 
 
 .. autoclass:: Circle
@@ -109,3 +111,9 @@ pyglet.shapes
 
 .. autoclass:: Polygon
   :show-inheritance:
+
+
+.. autoclass:: MultiLine
+  :show-inheritance:
+
+  .. autoattribute:: thickness

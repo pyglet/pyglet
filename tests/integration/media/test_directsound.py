@@ -6,56 +6,35 @@ import math
 import random
 import time
 
-from pyglet.media.codecs import AudioFormat
-import pyglet
-_debug = False
-pyglet.options['debug_media'] = _debug
+import pytest
+from ...annotations import skip_if_continuous_integration, require_platform, Platform
 
 try:
-    from pyglet.media.drivers import directsound
-    from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer
-    from pyglet.media.drivers.directsound.adaptation import _gain2db, _db2gain
+    from pyglet.media.codecs import AudioFormat
+    from pyglet.media.drivers.directsound.adaptation import _db2gain, _gain2db
+    from pyglet.media.drivers.directsound.interface import DirectSoundDriver
 except ImportError:
-    directsound = None
+    AudioFormat = DirectSoundDriver = _db2gain = _gain2db = None
 
-import pytest
-pytestmark = pytest.mark.skipif(directsound is None, reason='No DirectSound available.')
+pytestmark = [skip_if_continuous_integration(), require_platform(Platform.WINDOWS)]
+
 
 def almost_equal(a, b, e=0.0001):
-    assert abs(a-b) <= e
+    assert abs(a - b) <= e
     return True
 
 
 def iter_almost_equal(a, b, e=0.0001):
     for x, y in zip(a, b):
-        assert abs(x-y) <= e
+        assert abs(x - y) <= e
     return True
+
 
 def random_normalized_vector():
     vector = [random.uniform(-1.0, 1.0) for _ in range(3)]
 
-    length = math.sqrt(sum(x**2 for x in vector))
-    return [x/length for x in vector]
-
-def test_gain2db_gain_convert():
-    assert _gain2db(0.0) == -10000
-    assert almost_equal(_db2gain(-10000), 0.0)
-
-    assert _gain2db(1.0) == 0
-    assert almost_equal(_db2gain(0), 1.0)
-
-    assert _gain2db(-0.1) == -10000
-    assert _gain2db(1.1) == 0
-
-    x = 0.0
-    while (x <= 1.0):
-        assert almost_equal(_db2gain(_gain2db(x)), x, 0.01)
-        x += 0.01
-
-    y = -10000
-    while (y <= 0):
-        assert almost_equal(_gain2db(_db2gain(y)), y, 1)
-        y += 10
+    length = math.sqrt(sum(x ** 2 for x in vector))
+    return [x / length for x in vector]
 
 
 @pytest.fixture
@@ -132,8 +111,6 @@ def test_buffer_volume(buffer_):
         listener.volume = _gain2db(vol)
         assert almost_equal(listener.volume, _gain2db(vol), 0.05)
         vol += 0.05
-
-
 
 
 def test_buffer_current_position_empty_buffer(buffer_):
@@ -271,4 +248,3 @@ def test_listener_orientation(listener):
         listener.orientation = orientation
         # Only testing first 3, as random values might be adjusted by DS to be correct angles
         assert iter_almost_equal(listener.orientation[:3], orientation[:3])
-

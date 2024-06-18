@@ -10,15 +10,16 @@ from pyglet import image
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-
 vertex_source = """#version 150
     in vec3 position;
     in vec4 size;
+    in vec2 scale;
     in vec4 color;
     in vec4 texture_uv;
     in float rotation;
 
     out vec4 geo_size;
+    out vec2 geo_scale;
     out vec4 geo_color;
     out vec4 geo_tex_coords;
     out float geo_rotation;
@@ -26,6 +27,7 @@ vertex_source = """#version 150
     void main() {
         gl_Position = vec4(position, 1);
         geo_size = size;
+        geo_scale = scale;
         geo_color = color;
         geo_tex_coords = texture_uv;
         geo_rotation = rotation;
@@ -34,7 +36,7 @@ vertex_source = """#version 150
 
 geometry_source = """#version 150
     // We are taking single points from the vertex shader
-    // and emitting 4 new vertices creating a quad/sprites
+    // and emitting 4 new vertices to create a quad/sprite.
     layout (points) in;
     layout (triangle_strip, max_vertices = 4) out;
 
@@ -47,8 +49,9 @@ geometry_source = """#version 150
 
     // Since geometry shader can take multiple values from a vertex
     // shader we need to define the inputs from it as arrays.
-    // In our instance we just take single values (points)
+    // For our purposes, we just take single values (points).
     in vec4 geo_size[];
+    in vec2 geo_scale[];
     in vec4 geo_color[];
     in vec4 geo_tex_coords[];
     in float geo_rotation[];
@@ -58,60 +61,58 @@ geometry_source = """#version 150
 
     void main() {
 
-        // We grab the position value from the vertex shader
-        vec2 center = gl_in[0].gl_Position.xy;
+        // Unpack the image size and anchor
+        vec2 size = geo_size[0].xy;
+        vec2 anchor = geo_size[0].zw;
 
-        // Calculate the half size of the sprites for easier calculations
-        vec2 hsize = geo_size[0].xy / 2.0;
+        // Grab the position value from the vertex shader
+        vec3 center = gl_in[0].gl_Position.xyz;
 
-        // Alias the Z value to save space
-        float z = gl_in[0].gl_Position.z;
+        // This matrix controls the actual position of the sprite
+        mat4 m_translate = mat4(1.0);
+        m_translate[3][0] = center.x;
+        m_translate[3][1] = center.y;
+        m_translate[3][2] = center.z;
 
-        // Convert the rotation to radians
-        float angle = radians(-geo_rotation[0]);
+        mat4 m_rotation = mat4(1.0);
+        m_rotation[0][0] =  cos(radians(-geo_rotation[0])); 
+        m_rotation[0][1] =  sin(radians(-geo_rotation[0]));
+        m_rotation[1][0] = -sin(radians(-geo_rotation[0]));
+        m_rotation[1][1] =  cos(radians(-geo_rotation[0]));
 
-        // Create a scale vector
-        vec2 scale = vec2(geo_size[0][2], geo_size[0][3]);
+        mat4 m_scale = mat4(1.0);
+        m_scale[0][0] = geo_scale[0].x;
+        m_scale[1][1] = geo_scale[0].y;
 
-        // Create a 2d rotation matrix
-        mat2 rot = mat2(cos(angle), sin(angle),
-                       -sin(angle), cos(angle));
+        // Final UV coords (left, bottom, right, top):
+        float uv_l = geo_tex_coords[0].s;
+        float uv_b = geo_tex_coords[0].t;
+        float uv_r = geo_tex_coords[0].p;
+        float uv_t = geo_tex_coords[0].q;
 
-        // Calculate the left, bottom, right, top:
-        float tl = geo_tex_coords[0].s;
-        float tb = geo_tex_coords[0].t;
-        float tr = geo_tex_coords[0].s + geo_tex_coords[0].p;
-        float tt = geo_tex_coords[0].t + geo_tex_coords[0].q;
-
-        // Emit a triangle strip creating a quad (4 vertices).
-        // Here we need to make sure the rotation is applied before we position the sprite.
-        // We just use hardcoded texture coordinates here. If an atlas is used we
-        // can pass an additional vec4 for specific texture coordinates.
-        // Each EmitVertex() emits values down the shader pipeline just like a single
-        // run of a vertex shader, but in geomtry shaders we can do it multiple times!
+        // Emit a triangle strip to create a quad (4 vertices).
+        // Prepare and reuse the transformation matrix and fragment color:
+        mat4 m_pv = window.projection * window.view * m_translate * m_rotation * m_scale;
+        frag_color = geo_color[0];
 
         // Upper left
-        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, hsize.y) * scale + center, z, 1.0);
-        uv = vec2(tl, tt);
-        frag_color = geo_color[0];
+        gl_Position = m_pv * vec4(vec2(0.0, size.y) - anchor, 0.0, 1.0);
+        uv = vec2(uv_l, uv_t);
         EmitVertex();
 
         // lower left
-        gl_Position = window.projection * window.view * vec4(rot * vec2(-hsize.x, -hsize.y) * scale + center, z, 1.0);
-        uv = vec2(tl, tb);
-        frag_color = geo_color[0];
+        gl_Position = m_pv * vec4(vec2(0.0, 0.0) - anchor, 0.0, 1.0);
+        uv = vec2(uv_l, uv_b);
         EmitVertex();
 
         // upper right
-        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, hsize.y) * scale + center, z, 1.0);
-        uv = vec2(tr, tt);
-        frag_color = geo_color[0];
+        gl_Position = m_pv * vec4(vec2(size.x, size.y) - anchor, 0.0, 1.0);
+        uv = vec2(uv_r, uv_t);
         EmitVertex();
 
         // lower right
-        gl_Position = window.projection * window.view * vec4(rot * vec2(hsize.x, -hsize.y) * scale + center, z, 1.0);
-        uv = vec2(tr, tb);
-        frag_color = geo_color[0];
+        gl_Position = m_pv * vec4(vec2(size.x, 0.0) - anchor, 0.0, 1.0);
+        uv = vec2(uv_r, uv_b);
         EmitVertex();
 
         // We are done with this triangle strip now
@@ -226,13 +227,11 @@ class SpriteGroup(graphics.Group):
 
 
 class Sprite(event.EventDispatcher):
-
     _batch = None
     _animation = None
     _frame_index = 0
     _paused = False
     _rotation = 0
-    _rgba = [255, 255, 255, 255]
     _scale = 1.0
     _scale_x = 1.0
     _scale_y = 1.0
@@ -279,6 +278,8 @@ class Sprite(event.EventDispatcher):
         self._z = z
         self._img = img
 
+        self._rgba = [255, 255, 255, 255]
+
         if isinstance(img, image.Animation):
             self._animation = img
             self._texture = img.frames[0].image.get_texture()
@@ -308,7 +309,8 @@ class Sprite(event.EventDispatcher):
         self._vertex_list = self.program.vertex_list(
             1, GL_POINTS, self._batch, self._group,
             position=('f', (self._x, self._y, self._z)),
-            size=('f', (texture.width, texture.height, 1, 1)),
+            size=('f', (texture.width, texture.height, texture.anchor_x, texture.anchor_y)),
+            scale=('f', (self._scale_x, self._scale_y)),
             color=('Bn', self._rgba),
             texture_uv=('f', texture.uv),
             rotation=('f', (self._rotation,)))
@@ -646,7 +648,6 @@ class Sprite(event.EventDispatcher):
     def width(self, width):
         self.scale_x = width / (self._texture.width * abs(self._scale))
 
-
     @property
     def height(self):
         """Scaled height of the sprite.
@@ -758,7 +759,7 @@ class Sprite(event.EventDispatcher):
         # Bound to available number of frames
         if self._animation is None:
             return
-        self._frame_index = max(0, min(index, len(self._animation.frames)-1))
+        self._frame_index = max(0, min(index, len(self._animation.frames) - 1))
 
     def draw(self):
         """Draw the sprite at its current position.

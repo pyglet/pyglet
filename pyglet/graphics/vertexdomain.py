@@ -20,12 +20,13 @@ The entire domain can be efficiently drawn in one step with the
 :py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
 primitives of the same OpenGL primitive mode.
 """
+from __future__ import annotations
 
 import ctypes
 
 from pyglet.gl import *
 from pyglet.graphics import allocation, shader, vertexarray
-from pyglet.graphics.vertexbuffer import BufferObject, AttributeBufferObject
+from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
 
 
 def _nearest_pow2(v):
@@ -69,8 +70,8 @@ def _make_attribute_property(name):
     def _attribute_getter(self):
         attribute = self.domain.attribute_names[name]
         region = attribute.buffer.get_region(self.start, self.count)
-        region.invalidate()
-        return region.array
+        attribute.buffer.invalidate_region(self.start, self.count)
+        return region
 
     def _attribute_setter(self, data):
         attribute = self.domain.attribute_names[name]
@@ -573,9 +574,6 @@ class InstancedVertexDomain(VertexDomain):
     @property
     def is_empty(self):
         return not self.allocator.starts
-
-    def __repr__(self):
-        return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
 class IndexedVertexDomain(VertexDomain):

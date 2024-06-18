@@ -12,3 +12,70 @@ requires-python = ">=3.8"
 
 [project.urls]
 Home = "https://pyglet.org"
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["ALL"]
+extend-safe-fixes = ["UP007", "UP006"]
+
+ignore = [
+    "C90",  # mccabe
+    "FBT", # allow boolean args.
+    "CPY",  # copyright
+    "S101", # allow asserts.
+    "E731",  # Allow lambda
+    "E741",  # Allow short variable names.
+    "D102",  # Do not check public method docstrings (Cannot determine overridden docstrings)
+             # @typing.override not available until python 3.12 (PEP 698)
+    "PLR",  # Too many of too many checks.
+    "ANN101",  # Ignore self type annotation.
+    "ANN401", # Allow Any as type annotation
+    "D105",  # Allow no docstring magic method.
+    "SIM108", # Simplify if/else is not always best.
+    "PTH",  # don't require pathlib. Add eventually?
+    "TRY",  # no triceratops.
+    "NPY",  # remove numpy
+    "Q000",  # double quotes
+]
+
+isort = { known-first-party = [
+  "pyglet"
+], required-imports = [
+  "from __future__ import annotations",
+] }
+
+exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.format]
+quote-style = "preserve"
+indent-style = "space"
+
+[tool.ruff.flake8-quotes]
+inline-quotes = 'single'
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore doc requirements, naming, arguments in platform and lib files.
+"pyglet/font/directwrite.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/fontconfig.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/freetype.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/freetype_lib.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/quartz.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/ttf.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/font/win32.py" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/cocoa/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
+"examples/*" = ["I"]
+

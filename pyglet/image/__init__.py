@@ -97,21 +97,21 @@ import re
 import weakref
 
 from ctypes import *
-from io import open, BytesIO
 
 import pyglet
 
 from pyglet.gl import *
-from pyglet.gl import gl_info
 from pyglet.util import asbytes
+from pyglet.graphics.shader import Attribute
+from pyglet.graphics.vertexbuffer import BufferObject
 
+from . import atlas
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 
 from .animation import Animation, AnimationFrame
-from .buffer import *
-from . import atlas
+from .buffer import Framebuffer, Renderbuffer, get_max_color_attachments
 
 
 class ImageException(Exception):
@@ -689,7 +689,7 @@ class ImageData(AbstractImage):
         :rtype: cls or cls.region_class
         """
         internalformat = self._get_internalformat(self._desired_format)
-        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, False, blank_data=False)
+        texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, blank_data=False)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -1224,7 +1224,7 @@ class Texture(AbstractImage):
         """Delete this texture and the memory it occupies.
         After this, it may not be used anymore.
         """
-        glDeleteTextures(1, self.id)
+        glDeleteTextures(1, GLuint(self.id))
         self.id = None
 
     def __del__(self):
@@ -1357,17 +1357,55 @@ class Texture(AbstractImage):
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
         y2 = y1 + (height is None and self.height or height)
-        vertices = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
+        position = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
+        indices = [0, 1, 2, 0, 2, 3]
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
 
-        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     position=('f', vertices),
-                                     tex_coords=('f', self.tex_coords),
-                                     colors=('Bn', self.colors))
+        # Create and bind a throwaway VAO
+        vao_id = GLuint()
+        glGenVertexArrays(1, vao_id)
+        glBindVertexArray(vao_id)
 
-        glBindTexture(self.target, 0)
+        # Activate shader program:
+        program = pyglet.graphics.get_default_shader()
+        program.use()
+        pos_attrs = program.attributes['position']
+        tex_attrs = program.attributes['tex_coords']
+
+        # vertex position data:
+        position_attribute = Attribute('position', pos_attrs['location'], pos_attrs['count'], GL_FLOAT, False)
+        position_buffer = BufferObject(4 * position_attribute.stride)
+        data = (position_attribute.c_type * len(position))(*position)
+        position_buffer.set_data(data)
+        position_attribute.enable()
+        position_attribute.set_pointer(position_buffer.ptr)
+
+        # texture coordinate data:
+        texcoord_attribute = Attribute('tex_coords', tex_attrs['location'], tex_attrs['count'], GL_FLOAT, False)
+        texcoord_buffer = BufferObject(4 * texcoord_attribute.stride)
+        data = (texcoord_attribute.c_type * len(self.tex_coords))(*self.tex_coords)
+        texcoord_buffer.set_data(data)
+        texcoord_attribute.enable()
+        texcoord_attribute.set_pointer(texcoord_buffer.ptr)
+
+        # index data:
+        index_array = (c_ubyte * len(indices))(*indices)
+        index_buffer = BufferObject(sizeof(index_array))
+        index_buffer.set_data(index_array)
+        index_buffer.bind_to_index_buffer()
+
+        glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_BYTE, 0)
+        glFlush()
+
+        # Deactivate shader program:
+        program.stop()
+        # Discard everything after blitting:
+        position_buffer.delete()
+        texcoord_buffer.delete()
+        glBindVertexArray(0)
+        glDeleteVertexArrays(1, vao_id)
 
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
@@ -1561,10 +1599,12 @@ class Texture3D(Texture, UniformTextureSequence):
 
     def __setitem__(self, index, value):
         if type(index) is slice:
+            glBindTexture(self.target, self.id)
+
             for item, image in zip(self[index], value):
                 image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, item.z)
         else:
-            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, self[index].z)
+            self.blit_into(value, value.anchor_x, value.anchor_y, self[index].z)
 
     def __iter__(self):
         return iter(self.items)
@@ -1647,7 +1687,8 @@ class TextureArray(Texture, UniformTextureSequence):
         self._verify_size(image)
         start_length = len(self.items)
         item = self.region_class(0, 0, start_length, image.width, image.height, self)
-        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length)
+
+        self.blit_into(image, image.anchor_x, image.anchor_y, start_length)
         self.items.append(item)
         return item
 
@@ -1655,6 +1696,8 @@ class TextureArray(Texture, UniformTextureSequence):
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
+
+        glBindTexture(self.target, self.id)
 
         start_length = len(self.items)
         for i, image in enumerate(images):
@@ -1679,6 +1722,8 @@ class TextureArray(Texture, UniformTextureSequence):
 
     def __setitem__(self, index, value):
         if type(index) is slice:
+            glBindTexture(self.target, self.id)
+
             for old_item, image in zip(self[index], value):
                 self._verify_size(image)
                 item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
@@ -1687,7 +1732,7 @@ class TextureArray(Texture, UniformTextureSequence):
         else:
             self._verify_size(value)
             item = self.region_class(0, 0, index, value.width, value.height, self)
-            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, index)
+            self.blit_into(value, value.anchor_x, value.anchor_y, index)
             self.items[index] = item
 
     def __iter__(self):
@@ -1741,14 +1786,6 @@ class TileableTexture(Texture):
     def create_for_image(cls, image):
         image = image.get_image_data()
         return image.create_texture(cls)
-
-
-class DepthTexture(Texture):
-    """A texture with depth samples (typically 24-bit)."""
-
-    def blit_into(self, source, x, y, z):
-        glBindTexture(self.target, self.id)
-        source.blit_to_texture(self.level, x, y, z)
 
 
 class ImageGrid(AbstractImage, AbstractImageSequence):
@@ -1982,10 +2019,10 @@ class BufferManager:
     """
 
     def __init__(self):
-        self.color_buffer = None
-        self.depth_buffer = None
+        self._color_buffer = None
+        self._depth_buffer = None
         self.free_stencil_bits = None
-        self.refs = []
+        self._refs = []
 
     @staticmethod
     def get_viewport():
@@ -2006,11 +2043,11 @@ class BufferManager:
         viewport = self.get_viewport()
         viewport_width = viewport[2]
         viewport_height = viewport[3]
-        if (not self.color_buffer or
-                viewport_width != self.color_buffer.width or
-                viewport_height != self.color_buffer.height):
-            self.color_buffer = ColorBufferImage(*viewport)
-        return self.color_buffer
+        if (not self._color_buffer or
+                viewport_width != self._color_buffer.width or
+                viewport_height != self._color_buffer.height):
+            self._color_buffer = ColorBufferImage(*viewport)
+        return self._color_buffer
 
     def get_depth_buffer(self):
         """Get the depth buffer.
@@ -2020,11 +2057,11 @@ class BufferManager:
         viewport = self.get_viewport()
         viewport_width = viewport[2]
         viewport_height = viewport[3]
-        if (not self.depth_buffer or
-                viewport_width != self.depth_buffer.width or
-                viewport_height != self.depth_buffer.height):
-            self.depth_buffer = DepthBufferImage(*viewport)
-        return self.depth_buffer
+        if (not self._depth_buffer or
+                viewport_width != self._depth_buffer.width or
+                viewport_height != self._depth_buffer.height):
+            self._depth_buffer = DepthBufferImage(*viewport)
+        return self._depth_buffer
 
     def get_buffer_mask(self):
         """Get a free bitmask buffer.
@@ -2057,7 +2094,7 @@ class BufferManager:
         def release_buffer(ref, owner=self):
             owner.free_stencil_bits.insert(0, stencil_bit)
 
-        self.refs.append(weakref.ref(bufimg, release_buffer))
+        self._refs.append(weakref.ref(bufimg, release_buffer))
 
         return bufimg
 
@@ -2143,22 +2180,11 @@ class DepthBufferImage(BufferImage):
     """The depth buffer.
     """
     gl_format = GL_DEPTH_COMPONENT
-    format = 'L'
+    format = 'R'
 
     def get_texture(self, rectangle=False):
-        assert rectangle is False, 'Depth textures cannot be rectangular'
-
-        texture = DepthTexture.create(self.width, self.height, GL_TEXTURE_2D, None)
-        if self.anchor_x or self.anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
-
-        glReadBuffer(self.gl_buffer)
-        glCopyTexImage2D(texture.target, 0,
-                         GL_DEPTH_COMPONENT,
-                         self.x, self.y, self.width, self.height,
-                         0)
-        return texture
+        image_data = self.get_image_data()
+        return image_data.get_texture(rectangle)
 
     def blit_to_texture(self, target, level, x, y, z):
         glReadBuffer(self.gl_buffer)
@@ -2169,6 +2195,6 @@ class BufferImageMask(BufferImage):
     """A single bit of the stencil buffer.
     """
     gl_format = GL_STENCIL_INDEX
-    format = 'L'
+    format = 'R'
 
     # TODO mask methods

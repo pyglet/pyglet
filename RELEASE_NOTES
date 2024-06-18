@@ -1,8 +1,112 @@
-pyglet 2.0.11
+pyglet 2.0.16
+
+Changes and Improvements
+------------------------
+- library-wide overhaul of docstrings, and addition of type hints (#1084)
 
 Bugfixes
 --------
-- macOS: prevent crash when scanning for Controllers if device.transport is None #995
+- resource: Fix indexing of directories inside of Zip files. Remove broken code for multi-part archives.
+- shapes: Add missing `thickness` property to Box.
+- shapes: Add missing docstrings to `Arc` `thickness` property.
+
+
+pyglet 2.0.15
+
+Changes and Improvements
+------------------------
+- font: Clean up win32 legacy font renderer to remove unused or outdated code.
+- font: Boxes are now primary update method for TextLayout instead of relying on the vertex_list of the TextLayout.
+- font: More typing additions.
+- gui.widgets: Add _set_enabled hook (#1073)
+- shapes: Add missing BezierCurve thickness property.
+- graphics: Re-raise error for attributes during shader creation with better error descriptions. (#1076)
+- docs: Start adding GUI section to the programming guide.
+- typing: Add stub file for init package to workaround IDE inspection/completion issues with lazy loading modules. (#1077)
+- examples: Add more visual feedback to the Controller example
+
+Bugfixes
+--------
+- Xaudio2: Fix missing `)` to POINTER which causes XAudio2 to fail to be imported. (#1068)
+- font.caret: Fix caret positioning and moving the cursor during cursor selection. (#932)
+- input.controller: User added mappings should take higher priority over default mappings.
+- input.controller: Properly handle inverted axis as dpad (#1078)
+- shapes: Added a None check to ShapeBase.delete (#1075)
+- shapes: Fix Line being off-centered when setting thickness #1083
+- image: Fix BufferManager.get_depth_buffer() for GL3+.
+
+
+pyglet 2.0.14
+
+Changes and Improvements
+------------------------
+- shapes: Add new MultiLine shape. (#1057)
+- font: Enhance UserDefinedFonts to allow using custom font mapping functions (#1067)
+- typing: Improve Xaudio2 COM type hints (#1062)
+- text: Raise Exception when attempting to change IncrementalTextLayout.rotation, as it's not supported.
+- tests.integration: Add simple sanity tests for creation of all Label, Document, and Layout objects.
+
+Bugfixes
+--------
+- input.win32: Fix broken xinput get_devices and get_controllers methods (#1060)
+- shapes: Fix incorrect BezierCurve positioning, and Line rotation. (#1084)
+- app: Fix CFSTR.release() bugs in macOS event loop. (#1059)
+- font: Fix missing annotation import causing a crash for GDI.
+- text.caret: Caret now properly works with other Layout content valigns other than top.
+- text.layout: Ensure all TextLayouts have consistent argument ordering.
+- text.layout: Fix left, right, bottom, top Layout parameters not being correct.
+- text.layout: Fix changing anchor not updating the translation.
+- text.layout: Fix for lines getting garbled in an IncrementalTextLayout when using a content-valign other than top.
+- text.layout: Fix IncrementalTextLayout setting visible line count instead of total line count.
+- text.layout: Fix translation sometimes not updating all of the GlyphBoxes.
+- text.layout: Fix _update_anchor not updating vertex lists of IncrementalTextLayout.
+- text.layout: Fix _update_flow_glyphs not updating line count when it breaks it's loop.
+- text.layout: Fix deleting lines at the end of a multilined IncrementalTextLayout not reducing view size.
+- text.layout: Fix shader to conform to new anchors.
+- text.layout: Rotation no longer requires destroying the whole layout, it now just updates attributes.
+- text.layout: Anchor bottom fix for Scrollable/Incremental.
+
+
+pyglet 2.0.13
+
+Withdrawn due to Label creation bug.
+
+
+pyglet 2.0.12
+
+Bugfixes
+--------
+- graphics: fix Batch/Group migration.
+
+
+pyglet 2.0.11
+
+Changes and Improvements
+------------------------
+- media: major internal audio cleanup, bugfixes, and improvements on all platforms.
+- various typing and documentation improvements.
+- math: add Quaternion class with common methods.
+- shader: add support for setting and getting arrays in a Uniform via wrapper. (#1005)
+- shapes: add radius property get and set to Arc class. (#1013)
+- sprite, shapes: Avoid extra step of updating vertex list after creation. (#1016)
+- shapes: allow setting the line thickness of Arc and BezierCurve shapes. (#1028, #1030)
+- text: add Caret.select_all method.
+- text: performance improvements on instantiation, visibility, anchors, positions. (#1004)
+- text: add left, right, bottom, top attributes. (#1004)
+- text: add program argument for custom shaders. (#1037)
+- text: add get_as_texture function to render text to a new texture. (#1037)
+- font: skip pre-parsing all system fonts to improve speed. Check only when needed.
+
+Bugfixes
+--------
+- macOS: prevent crash when scanning for Controllers if device.transport is None. (#995)
+- input: avoid crash when encountering controls with invalid min/max values. (#986)
+- xlib: fix missed argument in window drag.
+- media: fix bad behavior when clearing XAudio2AudioPlayer. (#1011)
+- pyglet.__init__: don't install debug_trace until after module proxies #1046
+- media: numerous fixes to race conditions and deadlocks across all backends.
+- experimental: Fix incorrect texture UVs and final positioning for GeometryShader Sprite.
+- image: add missing binding calls for blit_to/texture methods.
 
 
 pyglet 2.0.10
@@ -820,7 +924,7 @@ New features
 Improvements
 ------------
 - Improved font rendering for fonts with negative bearing (#99)
-- Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The 
+- Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The
   existing `scale` attribute sets the overall scaling, and functions as before.
 - Sprites have a new `update` method which allows simultaneous changing of position, scale, and
   rotation. This reduces some overhead when changing multiple attributes at once.
@@ -850,16 +954,16 @@ Bugfixes
 
 
 pyglet 1.2.3
-============                                                                                        
-Minor bugfix release.                                                                               
-                                                                                                    
-Bugfixes:                                                                                           
-- Windows: Fix issue where ALT key causes app to hang.                                              
-- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).                         
-- OSX: Fix stealing the menu when already present in cocoa.                                         
-- Fix multi texturing support (#28).                                                                
-- OSX: Prevent segfault with multiple runs (#37/GC728)                                              
-- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25) 
+============
+Minor bugfix release.
+
+Bugfixes:
+- Windows: Fix issue where ALT key causes app to hang.
+- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).
+- OSX: Fix stealing the menu when already present in cocoa.
+- Fix multi texturing support (#28).
+- OSX: Prevent segfault with multiple runs (#37/GC728)
+- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25)
 
 
 pyglet 1.2.2

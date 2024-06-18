@@ -1,19 +1,22 @@
-from ctypes import *
+from __future__ import annotations
+
+from ctypes import c_void_p
+from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.window import BaseWindow
-from pyglet.window import MouseCursor, DefaultMouseCursor
-from pyglet.window import WindowException
-from pyglet.event import EventDispatcher
-
 from pyglet.canvas.cocoa import CocoaCanvas
+from pyglet.event import EventDispatcher
+from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
+from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
 
-from pyglet.libs.darwin import cocoapy, CGPoint, AutoReleasePool
-
-from .systemcursor import SystemCursor
+from ...libs import darwin
 from .pyglet_delegate import PygletDelegate
-from .pyglet_window import PygletWindow, PygletToolWindow
 from .pyglet_view import PygletView
+from .pyglet_window import PygletToolWindow, PygletWindow
+from .systemcursor import SystemCursor
+
+if TYPE_CHECKING:
+    from pyglet.gl.cocoa import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSCursor = cocoapy.ObjCClass('NSCursor')
@@ -30,40 +33,33 @@ cf = cocoapy.cf
 class CocoaMouseCursor(MouseCursor):
     gl_drawable = False
 
-    def __init__(self, cursorName):
+    def __init__(self, cursorName: str) -> None:
         # cursorName is a string identifying one of the named default NSCursors
         # e.g. 'pointingHandCursor', and can be sent as message to NSCursor class.
         self.cursorName = cursorName
 
-    def set(self):
+    def set(self) -> None:
         cursor = getattr(NSCursor, self.cursorName)()
         cursor.set()
 
 
 class CocoaWindow(BaseWindow):
-
-    def __init__(self, width=None, height=None, caption=None, resizable=False, style=BaseWindow.WINDOW_STYLE_DEFAULT,
-                 fullscreen=False, visible=True, vsync=True, file_drops=False, display=None, screen=None, config=None,
-                 context=None, mode=None):
-        with AutoReleasePool():
-            super().__init__(width, height, caption, resizable, style, fullscreen, visible, vsync, file_drops, display,
-                             screen, config, context, mode)
-
+    context: CocoaContext
     # NSWindow instance.
-    _nswindow = None
+    _nswindow: darwin.ObjCInstance | None = None
 
     # Delegate object.
-    _delegate = None
+    _delegate: darwin.ObjCInstance | None = None
 
     # Window properties
-    _mouse_platform_visible = True
-    _mouse_ignore_motion = False
+    _mouse_platform_visible: bool = True
+    _mouse_ignore_motion: bool = False
 
     # Flag set during close() method.
-    _was_closed = False
+    _was_closed: bool = False
 
     # NSWindow style masks.
-    _style_masks = {
+    _style_masks: dict[str, int] = {
         BaseWindow.WINDOW_STYLE_DEFAULT: cocoapy.NSTitledWindowMask |
                                          cocoapy.NSClosableWindowMask |
                                          cocoapy.NSMiniaturizableWindowMask,
@@ -75,17 +71,20 @@ class CocoaWindow(BaseWindow):
         BaseWindow.WINDOW_STYLE_BORDERLESS: cocoapy.NSBorderlessWindowMask,
     }
 
-    def _recreate(self, changes):
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        with AutoReleasePool():
+            super().__init__(*args, **kwargs)
+
+    def _recreate(self, changes: Sequence[str]) -> None:
         if 'context' in changes:
             self.context.set_current()
 
-        if 'fullscreen' in changes:
-            if not self._fullscreen:  # leaving fullscreen
-                self.screen.release_display()
+        if 'fullscreen' in changes and not self._fullscreen:  # leaving fullscreen
+            self.screen.release_display()
 
         self._create()
 
-    def _create(self):
+    def _create(self) -> None:
         with AutoReleasePool():
             if self._nswindow:
                 # The window is about the be recreated so destroy everything
@@ -185,28 +184,28 @@ class CocoaWindow(BaseWindow):
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
 
-    def _set_nice_window_location(self):
+    def _set_nice_window_location(self) -> None:
         # Construct a list of all visible windows that aren't us.
         visible_windows = [win for win in pyglet.app.windows if
                            win is not self and
-                           win._nswindow and
-                           win._nswindow.isVisible()]
+                           win._nswindow and  # noqa: SLF001
+                           win._nswindow.isVisible()]  # noqa: SLF001
         # If there aren't any visible windows, then center this window.
         if not visible_windows:
             self._center_window()
         # Otherwise, cascade from last window in list.
         else:
-            point = visible_windows[-1]._nswindow.cascadeTopLeftFromPoint_(cocoapy.NSZeroPoint)
+            point = visible_windows[-1]._nswindow.cascadeTopLeftFromPoint_(cocoapy.NSZeroPoint)  # noqa: SLF001
             self._nswindow.cascadeTopLeftFromPoint_(point)
 
-    def _center_window(self):
+    def _center_window(self) -> None:
         # [NSWindow center] does not move the window to a true center position
         # and also always moves the window to the main display.
         x = self.screen.x + int((self.screen.width - self._width) // 2)
         y = self.screen.y + int((self.screen.height - self._height) // 2)
         self._nswindow.setFrameOrigin_(cocoapy.NSPoint(x, y))
 
-    def close(self):
+    def close(self) -> None:
         # If we've already gone through this once, don't do it again.
         if self._was_closed:
             return
@@ -241,20 +240,20 @@ class CocoaWindow(BaseWindow):
 
             # Do this last, so that we don't see white flash
             # when exiting application from fullscreen mode.
-            super(CocoaWindow, self).close()
+            super().close()
 
             self._was_closed = True
 
-    def switch_to(self):
+    def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
 
-    def flip(self):
+    def flip(self) -> None:
         self.draw_mouse_cursor()
         if self.context:
             self.context.flip()
 
-    def dispatch_events(self):
+    def dispatch_events(self) -> None:
         self._allow_dispatch_event = True
         # Process all pyglet events.
         self.dispatch_pending_events()
@@ -282,17 +281,17 @@ class CocoaWindow(BaseWindow):
 
         self._allow_dispatch_event = False
 
-    def dispatch_pending_events(self):
+    def dispatch_pending_events(self) -> None:
         while self._event_queue:
             event = self._event_queue.pop(0)
             EventDispatcher.dispatch_event(self, *event)
 
-    def set_caption(self, caption):
+    def set_caption(self, caption: str) -> None:
         self._caption = caption
         if self._nswindow is not None:
             self._nswindow.setTitle_(cocoapy.get_NSString(caption))
 
-    def set_icon(self, *images):
+    def set_icon(self, *images: pyglet.image.ImageData) -> None:
         # Only use the biggest image from the list.
         max_image = images[0]
         for img in images:
@@ -301,14 +300,15 @@ class CocoaWindow(BaseWindow):
 
         # Grab image data from pyglet image.
         image = max_image.get_image_data()
-        format = 'ARGB'
-        bytesPerRow = len(format) * image.width
-        data = image.get_data(format, -bytesPerRow)
+        fmt = 'ARGB'
+        bytesPerRow = len(fmt) * image.width
+        data = image.get_data(fmt, -bytesPerRow)
 
         # Use image data to create a data provider.
         # Using CGDataProviderCreateWithData crashes PyObjC 2.2b3, so we create
         # a CFDataRef object first and use it to create the data provider.
         cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
+
         provider = c_void_p(quartz.CGDataProviderCreateWithCFData(cfdata))
 
         colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
@@ -341,25 +341,25 @@ class CocoaWindow(BaseWindow):
         NSApp.setApplicationIconImage_(nsimage)
         nsimage.release()
 
-    def get_location(self):
+    def get_location(self) -> tuple[int, int]:
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         screen_frame = self._nswindow.screen().frame()
-        screen_width = int(screen_frame.size.width)
+        screen_width = int(screen_frame.size.width)  # noqa: F841
         screen_height = int(screen_frame.size.height)
         return int(rect.origin.x), int(screen_height - rect.origin.y - rect.size.height)
 
-    def set_location(self, x, y):
+    def set_location(self, x: int, y: int) -> None:
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         screen_frame = self._nswindow.screen().frame()
-        screen_width = int(screen_frame.size.width)
+        screen_width = int(screen_frame.size.width)  # noqa: F841
         screen_height = int(screen_frame.size.height)
         origin = cocoapy.NSPoint(x, screen_height - y - rect.size.height)
         self._nswindow.setFrameOrigin_(origin)
 
-    def get_framebuffer_size(self):
-        view = self.context._nscontext.view()
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        view = self.context._nscontext.view()  # noqa: SLF001
         bounds = view.convertRectToBacking_(view.bounds()).size
         return int(bounds.width), int(bounds.height)
 
@@ -392,7 +392,7 @@ class CocoaWindow(BaseWindow):
             ns_maximum_size = cocoapy.NSSize(*self._maximum_size)
             self._nswindow.setContentMaxSize_(ns_maximum_size)
 
-    def activate(self):
+    def activate(self) -> None:
         if self._nswindow is not None:
             NSApp = NSApplication.sharedApplication()
             NSApp.activateIgnoringOtherApps_(True)
@@ -410,12 +410,12 @@ class CocoaWindow(BaseWindow):
             else:
                 self._nswindow.orderOut_(None)
 
-    def minimize(self):
+    def minimize(self) -> None:
         self._mouse_in_window = False
         if self._nswindow is not None:
             self._nswindow.miniaturize_(None)
 
-    def maximize(self):
+    def maximize(self) -> None:
         if self._nswindow is not None:
             self._nswindow.zoom_(None)
 
@@ -426,7 +426,7 @@ class CocoaWindow(BaseWindow):
         super().set_vsync(vsync)
         self.context.set_vsync(vsync)
 
-    def _mouse_in_content_rect(self):
+    def _mouse_in_content_rect(self) -> bool:
         # Returns true if mouse is inside the window's content rectangle.
         # Better to use this method to check manually rather than relying
         # on instance variables that may not be set correctly.
@@ -435,7 +435,7 @@ class CocoaWindow(BaseWindow):
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return cocoapy.foundation.NSMouseInRect(point, rect, False)
 
-    def set_mouse_platform_visible(self, platform_visible=None):
+    def set_mouse_platform_visible(self, platform_visible: int | None = None) -> None:
         # When the platform_visible argument is supplied with a boolean, then this
         # method simply sets whether or not the platform mouse cursor is visible.
         if platform_visible is not None:
@@ -477,7 +477,7 @@ class CocoaWindow(BaseWindow):
                 NSCursor.arrowCursor().set()
                 SystemCursor.unhide()
 
-    def get_system_mouse_cursor(self, name):
+    def get_system_mouse_cursor(self, name: str) -> DefaultMouseCursor | CocoaMouseCursor:
         # It would make a lot more sense for most of this code to be
         # inside the CocoaMouseCursor class, but all of the CURSOR_xxx
         # constants are defined as properties of BaseWindow.
@@ -504,10 +504,11 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_WAIT_ARROW: 'arrowCursor',  # No wristwatch cursor in Cocoa
         }
         if name not in cursors:
-            raise RuntimeError('Unknown cursor name "%s"' % name)
+            msg = f'Unknown cursor name "{name}"'
+            raise RuntimeError(msg)
         return CocoaMouseCursor(cursors[name])
 
-    def set_mouse_position(self, x, y, absolute=False):
+    def set_mouse_position(self, x: int, y: int, absolute: bool = False) -> None:
         if absolute:
             # If absolute, then x, y is given in global display coordinates
             # which sets (0,0) at top left corner of main display.  It is possible
@@ -528,7 +529,7 @@ class CocoaWindow(BaseWindow):
             y = displayBounds.size.height - windowOrigin.y - y
             quartz.CGDisplayMoveCursorToPoint(displayID, cocoapy.NSPoint(x, y))
 
-    def set_exclusive_mouse(self, exclusive=True):
+    def set_exclusive_mouse(self, exclusive: bool = True) -> None:
         super().set_exclusive_mouse(exclusive)
         if exclusive:
             # Skip the next motion event, which would return a large delta.
@@ -544,7 +545,7 @@ class CocoaWindow(BaseWindow):
         # Update visibility of mouse cursor.
         self.set_mouse_platform_visible()
 
-    def set_exclusive_keyboard(self, exclusive=True):
+    def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         # http://developer.apple.com/mac/library/technotes/tn2002/tn2062.html
         # http://developer.apple.com/library/mac/#technotes/KioskMode/
 
@@ -568,7 +569,7 @@ class CocoaWindow(BaseWindow):
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
 
-    def set_clipboard_text(self, text: str):
+    def set_clipboard_text(self, text: str) -> None:
         with AutoReleasePool():
             pasteboard = NSPasteboard.generalPasteboard()
 
@@ -594,6 +595,4 @@ class CocoaWindow(BaseWindow):
         return text
 
 
-
-
-__all__ = ["CocoaWindow"]
+__all__ = ['CocoaWindow']

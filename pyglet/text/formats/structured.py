@@ -1,20 +1,40 @@
-"""Base class for structured (hierarchical) document formats.
-"""
+"""Base class for structured (hierarchical) document formats."""
+from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import pyglet
+import pyglet.text.layout
+from pyglet.gl import (
+    GL_BLEND,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    GL_TEXTURE0,
+    glActiveTexture,
+    glBindTexture,
+    glBlendFunc,
+    glDisable,
+    glEnable,
+)
 
-from pyglet.gl import *
+if TYPE_CHECKING:
+    from pyglet.graphics import Group
+    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.image import AbstractImage, Texture
+    from pyglet.resource import Location
+    from pyglet.text.document import InlineElement
+    from pyglet.text.layout import TextLayout
 
 
 class _InlineElementGroup(pyglet.graphics.Group):
-    def __init__(self, texture, program, order=0, parent=None):
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
+                 parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.texture = texture
         self.program = program
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
 
         glActiveTexture(GL_TEXTURE0)
@@ -23,11 +43,11 @@ class _InlineElementGroup(pyglet.graphics.Group):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (self.__class__ is other.__class__ and
                 self._order == other.order and
                 self.program == other.program and
@@ -35,13 +55,17 @@ class _InlineElementGroup(pyglet.graphics.Group):
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self._order, self.program, self.parent,
                      self.texture.target, self.texture.id))
 
 
 class ImageElement(pyglet.text.document.InlineElement):
-    def __init__(self, image, width=None, height=None):
+    """Adds an image into the layout."""
+    height: int
+    width: int
+
+    def __init__(self, image: AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
         self.image = image.get_texture()
         self.width = width is None and image.width or width
         self.height = height is None and image.height or height
@@ -52,30 +76,68 @@ class ImageElement(pyglet.text.document.InlineElement):
         descent = min(0, -anchor_y)
         super().__init__(ascent, descent, self.width)
 
-    def place(self, layout, x, y, z):
+    def place(self, layout: TextLayout, x: float, y: float, z: float, line_x: float, line_y: float, rotation: float,
+              visible: bool, anchor_x: float, anchor_y: float) -> None:
         program = pyglet.text.layout.get_default_image_layout_shader()
         group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
-        x1 = x
-        y1 = y + self.descent
-        x2 = x + self.width
-        y2 = y + self.height + self.descent
+        x1 = line_x
+        y1 = line_y + self.descent
+        x2 = line_x + self.width
+        y2 = line_y + self.height + self.descent
+
         vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
-                                                  position=('f', (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
-                                                  tex_coords=('f', self.image.tex_coords))
+                                                  position=("f", (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
+                                                  translation=("f", (x, y, z) * 4),
+                                                  tex_coords=("f", self.image.tex_coords),
+                                                  visible=("f", (visible,) * 4),
+                                                  rotation=("f", (rotation,) * 4),
+                                                  anchor=("f", (anchor_x, anchor_y) * 4),
+                                                  )
+
         self.vertex_lists[layout] = vertex_list
 
-    def remove(self, layout):
+    def update_translation(self, x: float, y: float, z: float) -> None:
+        translation = (x, y, z)
+        for _vertex_list in self.vertex_lists.values():
+            _vertex_list.translation[:] = translation * _vertex_list.count
+
+    def update_color(self, color: list[int]) -> None:
+        # No color blending in shader. Optional.
+        ...
+
+    def update_view_translation(self, translate_x: float, translate_y: float) -> None:
+        view_translation = (-translate_x, -translate_y, 0)
+        for _vertex_list in self.vertex_lists.values():
+            _vertex_list.view_translation[:] = view_translation * _vertex_list.count
+
+    def update_rotation(self, rotation: float) -> None:
+        rot_tuple = (rotation,)
+        for _vertex_list in self.vertex_lists.values():
+           _vertex_list.rotation[:] = rot_tuple * _vertex_list.count
+
+    def update_visibility(self, visible: bool) -> None:
+        visible_tuple = (visible,)
+        for _vertex_list in self.vertex_lists.values():
+           _vertex_list.visible[:] = visible_tuple * _vertex_list.count
+
+    def update_anchor(self, anchor_x: float, anchor_y: float) -> None:
+        anchor = (anchor_x, anchor_y)
+        for _vertex_list in self.vertex_lists.values():
+            _vertex_list.anchor[:] = anchor * _vertex_list.count
+
+    def remove(self, layout: TextLayout) -> None:
         self.vertex_lists[layout].delete()
         del self.vertex_lists[layout]
 
 
-def _int_to_roman(number):
+def _int_to_roman(number: int) -> str:
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < number < 4000:
-        raise ValueError("Argument must be between 1 and 3999")
+        msg = "Argument must be between 1 and 3999"
+        raise ValueError(msg)
     integers = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
-    numerals = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+    numerals = ("M",  "CM", "D", "CD","C", "XC","L","XL","X","IX","V","IV","I")
     result = ""
     for i in range(len(integers)):
         count = int(number // integers[i])
@@ -84,80 +146,77 @@ def _int_to_roman(number):
     return result
 
 
-class ListBuilder:
+class ListBuilder:  # noqa: D101
 
-    def begin(self, decoder, style):
+    def begin(self, decoder: StructuredTextDecoder, style: dict[str, Any]) -> None:
         """Begin a list.
 
-        :Parameters:
-            `decoder` : `StructuredTextDecoder`
+        Args:
+            decoder:
                 Decoder.
-            `style` : dict
+            style:
                 Style dictionary that applies over the entire list.
-
         """
-        left_margin = decoder.current_style.get('margin_left') or 0
-        tab_stops = decoder.current_style.get('tab_stops')
+        left_margin = decoder.current_style.get("margin_left") or 0
+        tab_stops = decoder.current_style.get("tab_stops")
         if tab_stops:
             tab_stops = list(tab_stops)
         else:
             tab_stops = []
         tab_stops.append(left_margin + 50)
-        style['margin_left'] = left_margin + 50
-        style['indent'] = -30
-        style['tab_stops'] = tab_stops
+        style["margin_left"] = left_margin + 50
+        style["indent"] = -30
+        style["tab_stops"] = tab_stops
 
-    def item(self, decoder, style, value=None):
+    def item(self, decoder: StructuredTextDecoder, style: dict[str, Any], value: str | None=None) -> None:  # noqa: ARG002
         """Begin a list item.
 
-        :Parameters:
-            `decoder` : `StructuredTextDecoder`
-                Decoder.
-            `style` : dict
+        Args:
+            decoder:
+                `StructuredTextDecoder` Decoder.
+            style:
                 Style dictionary that applies over the list item.
-            `value` : str
-                Optional value of the list item.  The meaning is list-type
-                dependent.
+            value:
+                Optional value of the list item.  The meaning is list-type dependent.
 
         """
         mark = self.get_mark(value)
         if mark:
             decoder.add_text(mark)
-        decoder.add_text('\t')
+        decoder.add_text("\t")
 
-    def get_mark(self, value=None):
+    def get_mark(self, value: str | None=None) -> str:  # noqa: ARG002
         """Get the mark text for the next list item.
 
-        :Parameters:
-            `value` : str
-                Optional value of the list item.  The meaning is list-type
-                dependent.
-
-        :rtype: str
+        Args:
+            value:
+                Optional value of the list item.  The meaning is list-type dependent.
         """
-        return ''
+        return ""
 
 
-class UnorderedListBuilder(ListBuilder):
+class UnorderedListBuilder(ListBuilder):  # noqa: D101
 
-    def __init__(self, mark):
+    mark: str
+
+    def __init__(self, mark: str) -> None:
         """Create an unordered list with constant mark text.
 
-        :Parameters:
-            `mark` : str
+        Args:
+            mark:
                 Mark to prepend to each list item.
 
         """
         self.mark = mark
 
-    def get_mark(self, value):
+    def get_mark(self, value: str | None=None) -> str:  # noqa: ARG002
         return self.mark
 
 
-class OrderedListBuilder(ListBuilder):
-    format_re = re.compile('(.*?)([1aAiI])(.*)')
+class OrderedListBuilder(ListBuilder):  # noqa: D101
+    format_re = re.compile("(.*?)([1aAiI])(.*)")
 
-    def __init__(self, start, fmt):
+    def __init__(self, start: int, fmt: str) -> None:
         """Create an ordered list with sequentially numbered mark text.
 
         The format is composed of an optional prefix text, a numbering
@@ -178,44 +237,45 @@ class OrderedListBuilder(ListBuilder):
         Prefix text may typically be ``(`` or ``[`` and suffix text is
         typically ``.``, ``)`` or empty, but either can be any string.
 
-        :Parameters:
-            `start` : int
+        Args:
+            start:
                 First list item number.
-            `fmt` : str
+            fmt:
                 Format style, for example ``"1."``.
 
         """
         self.next_value = start
 
         self.prefix, self.numbering, self.suffix = self.format_re.match(fmt).groups()
-        assert self.numbering in '1aAiI'
+        assert self.numbering in "1aAiI"
 
-    def get_mark(self, value):
+    def get_mark(self, value: str | None=None) -> str:
         if value is None:
             value = self.next_value
         self.next_value = value + 1
-        if self.numbering in 'aA':
+        if self.numbering in "aA":
             try:
-                mark = 'abcdefghijklmnopqrstuvwxyz'[value - 1]
+                mark = "abcdefghijklmnopqrstuvwxyz"[value - 1]
             except ValueError:
-                mark = '?'
-            if self.numbering == 'A':
+                mark = "?"
+            if self.numbering == "A":
                 mark = mark.upper()
-            return f'{self.prefix}{mark}{self.suffix}'
-        elif self.numbering in 'iI':
+            return f"{self.prefix}{mark}{self.suffix}"
+
+        if self.numbering in "iI":
             try:
                 mark = _int_to_roman(value)
             except ValueError:
-                mark = '?'
-            if self.numbering == 'i':
+                mark = "?"
+            if self.numbering == "i":
                 mark = mark.lower()
-            return f'{self.prefix}{mark}{self.suffix}'
-        else:
-            return f'{self.prefix}{value}{self.suffix}'
+            return f"{self.prefix}{mark}{self.suffix}"
+
+        return f"{self.prefix}{value}{self.suffix}"
 
 
-class StructuredTextDecoder(pyglet.text.DocumentDecoder):
-    def decode(self, text, location=None):
+class StructuredTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
+    def decode(self, text: str, location: Location | None=None) -> pyglet.text.document.FormattedDocument:
         self.len_text = 0
         self.current_style = {}
         self.next_style = {}
@@ -223,22 +283,22 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         self.list_stack = []
         self.document = pyglet.text.document.FormattedDocument()
         if location is None:
-            location = pyglet.resource.FileLocation('')
+            location = pyglet.resource.FileLocation("")
         self.decode_structured(text, location)
         return self.document
 
-    def decode_structured(self, text, location):
-        raise NotImplementedError('abstract')
+    def decode_structured(self, text: str, location: Location | None) -> NoReturn:
+        raise NotImplementedError
 
-    def push_style(self, key, styles):
+    def push_style(self, key: str, styles: dict[str, Any]) -> None:
         old_styles = {}
-        for name in styles.keys():
+        for name in styles:
             old_styles[name] = self.current_style.get(name)
         self.stack.append((key, old_styles))
         self.current_style.update(styles)
         self.next_style.update(styles)
 
-    def pop_style(self, key):
+    def pop_style(self, key: str) -> None:
         # Don't do anything if key is not in stack
         for match, _ in self.stack:
             if key == match:
@@ -254,12 +314,12 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
             if match == key:
                 break
 
-    def add_text(self, text):
+    def add_text(self, text: str) -> None:
         self.document.insert_text(self.len_text, text, self.next_style)
         self.next_style.clear()
         self.len_text += len(text)
 
-    def add_element(self, element):
+    def add_element(self, element: InlineElement) -> None:
         self.document.insert_element(self.len_text, element, self.next_style)
         self.next_style.clear()
         self.len_text += 1
