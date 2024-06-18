@@ -104,6 +104,7 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
         self.is_running = False
+        self.interval = None
 
     @staticmethod
     def _redraw_windows(dt: float) -> None:
@@ -135,6 +136,7 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding the ``run`` method, as the
         implementation is platform-specific.
         """
+        self.interval = interval
         if interval is None:
             # User must call Window.draw() themselves.
             pass
@@ -194,7 +196,8 @@ class EventLoop(event.EventDispatcher):
     def _blocking_timer(self) -> None:
         dt = self.clock.update_time()
         self.clock.call_scheduled_functions(dt)
-        self._redraw_windows(dt)
+        if self.interval is None:
+            self._redraw_windows(dt)
 
         # Update timout
         timeout = self.clock.get_sleep_time(True)
