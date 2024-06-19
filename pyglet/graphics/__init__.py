@@ -6,15 +6,19 @@ rendering and grouping.
 
 See the :ref:`guide_graphics` for details on how to use this graphics API.
 """
+from __future__ import annotations
 
 import ctypes
 import weakref
+from typing import Any
 
 import pyglet
 from pyglet.gl import *
 from pyglet.graphics import shader, vertexdomain
+from pyglet.graphics.shader import ShaderProgram
 from pyglet.graphics.vertexarray import VertexArray
 from pyglet.graphics.vertexbuffer import BufferObject
+from pyglet.graphics.vertexdomain import VertexList
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
@@ -60,7 +64,7 @@ def draw(size, mode, **data):
 
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-        buffers.append(buffer)      # Don't garbage collect it.
+        buffers.append(buffer)  # Don't garbage collect it.
 
     glDrawArrays(mode, 0, size)
 
@@ -114,7 +118,7 @@ def draw_indexed(size, mode, indices, **data):
 
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-        buffers.append(buffer)      # Don't garbage collect it.
+        buffers.append(buffer)  # Don't garbage collect it.
 
     if size <= 0xff:
         index_type = GL_UNSIGNED_BYTE
@@ -204,15 +208,16 @@ def get_default_shader():
 
 _domain_class_map = {
     # Indexed, Instanced : Domain
-    (False, False) : vertexdomain.VertexDomain,
-    (True, False) : vertexdomain.IndexedVertexDomain,
-    (False, True) : vertexdomain.InstancedVertexDomain,
-    (True, True) : vertexdomain.InstancedIndexedVertexDomain
+    (False, False): vertexdomain.VertexDomain,
+    (True, False): vertexdomain.IndexedVertexDomain,
+    (False, True): vertexdomain.InstancedVertexDomain,
+    (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
 # To do for migrating?
 _vertex_class_map = {
 }
+
 
 class Batch:
     """Manage a collection of drawables for batched rendering.
@@ -242,9 +247,9 @@ class Batch:
     setting them up yourself.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create a graphics batch."""
-        # Mapping to find domain.  
+        # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
 
@@ -259,7 +264,9 @@ class Batch:
 
         self._context = pyglet.gl.current_context
 
-    def invalidate(self):
+        self._instance_count = 0
+
+    def invalidate(self) -> None:
         """Force the batch to update the draw list.
 
         This method can be used to force the batch to re-compute the draw list
@@ -269,26 +276,26 @@ class Batch:
         """
         self._draw_list_dirty = True
 
-    def migrate(self, vertex_list, mode, group, batch):
+    def migrate(self, vertex_list: VertexList, mode: int, group: Group, batch: Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
-        `group` and `batch` are new owners of the vertex list after migration.  
+        `group` and `batch` are new owners of the vertex list after migration.
 
         The results are undefined if `mode` is not correct or if `vertex_list`
         does not belong to this batch (they are not checked and will not
         necessarily throw an exception immediately).
 
         `batch` can remain unchanged if only a group change is desired.
-        
-        :Parameters:
-            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
+
+        Args:
+            vertex_list:
                 A vertex list currently belonging to this batch.
-            `mode` : int
+            mode:
                 The current GL drawing mode of the vertex list.
-            `group` : `~pyglet.graphics.Group`
+            group:
                 The new group to migrate to.
-            `batch` : `~pyglet.graphics.Batch`
+            batch:
                 The batch to migrate to (or the current batch).
 
         """
@@ -300,8 +307,31 @@ class Batch:
             domain = batch.get_domain(False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
-    def get_domain(self, indexed, instanced, mode, group, program, attributes):
-        """Get, or create, the vertex domain corresponding to the given arguments."""
+    def convert_to_instanced(self, domain, instance_attributes):
+        """Takes a domain from inside the Batch and creates a new instanced version."""
+        # Search for the existing domain.
+        for group, domain_map in self.group_map.items():
+            for key, mapped_domain in domain_map.items():
+                if domain == mapped_domain:
+                    # Set instance attributes.
+                    new_attributes = mapped_domain.attribute_meta.copy()
+                    for name, attribute_dict in new_attributes.items():
+                        if name in instance_attributes:
+                            attribute_dict['instance'] = True
+                    dindexed, dinstanced, dmode, dprogram, _ = key
+
+                    assert dinstanced == 0, "Cannot convert an instanced domain."
+                    return self.get_domain(dindexed, True, dmode, group, dprogram, new_attributes)
+
+        msg = "Domain was not found and could not be converted."
+        raise Exception(msg)
+
+    def get_domain(self, indexed: bool, instanced: bool, mode: int, group: Group, program: ShaderProgram,
+                   attributes: dict[str, Any]):
+        """Get, or create, the vertex domain corresponding to the given arguments.
+
+        mode is the render mode such as GL_LINES or GL_TRIANGLES
+        """
         if group is None:
             group = ShaderGroup(program=program)
 
@@ -309,9 +339,16 @@ class Batch:
         if group not in self.group_map:
             self._add_group(group)
 
-        # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (indexed, instanced, mode, program, str(attributes))
+
+        # If instanced, ensure a separate domain, as multiple instance sources can match the key.
+        if instanced:
+            self._instance_count += 1
+            key = (indexed, self._instance_count, mode, program, str(attributes))
+        else:
+            # Find domain given formats, indices and mode
+            key = (indexed, 0, mode, program, str(attributes))
+
         try:
             domain = domain_map[key]
         except KeyError:
@@ -322,7 +359,7 @@ class Batch:
 
         return domain
 
-    def _add_group(self, group):
+    def _add_group(self, group: Group) -> None:
         self.group_map[group] = {}
         if group.parent is None:
             self.top_groups.append(group)
@@ -333,15 +370,13 @@ class Batch:
                 self.group_children[group.parent] = []
             self.group_children[group.parent].append(group)
 
-        group._assigned_batches.add(self)
+        group._assigned_batches.add(self)  # noqa: SLF001
         self._draw_list_dirty = True
 
-    def _update_draw_list(self):
-        """Visit group tree in preorder and create a list of bound methods
-        to call.
-        """
+    def _update_draw_list(self) -> None:
+        """Visit group tree in preorder and create a list of bound methods to call."""
 
-        def visit(group):
+        def visit(group: Group) -> list:
             draw_list = []
 
             # Draw domains using this group
@@ -394,8 +429,8 @@ class Batch:
         if _debug_graphics_batch:
             self._dump_draw_list()
 
-    def _dump_draw_list(self):
-        def dump(group, indent=''):
+    def _dump_draw_list(self) -> None:
+        def dump(group: Group, indent: str='') -> None:
             print(indent, 'Begin group', group)
             domain_map = self.group_map[group]
             for _, domain in domain_map.items():
@@ -417,9 +452,8 @@ class Batch:
         for group in self.top_groups:
             dump(group)
 
-    def draw(self):
+    def draw(self) -> None:
         """Draw the batch."""
-
         if self._draw_list_dirty:
             self._update_draw_list()
 
@@ -507,6 +541,7 @@ class Group:
         `batches` : list
             Read Only. A list of which Batches this Group is a part of.
     """
+
     def __init__(self, order=0, parent=None):
 
         self._order = order
@@ -545,19 +580,19 @@ class Group:
         return hash((self._order, self.parent))
 
     def __repr__(self):
-        return "{}(order={})".format(self.__class__.__name__, self._order)
+        return f"{self.__class__.__name__}(order={self._order})"
 
     def set_state(self):
         """Apply the OpenGL state change.
         
-        The default implementation does nothing."""
-        pass
+        The default implementation does nothing.
+        """
 
     def unset_state(self):
         """Repeal the OpenGL state change.
         
-        The default implementation does nothing."""
-        pass
+        The default implementation does nothing.
+        """
 
     def set_state_recursive(self):
         """Set this group and its ancestry.

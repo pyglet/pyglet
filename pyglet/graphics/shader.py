@@ -1,10 +1,10 @@
-import warnings
+from __future__ import annotations
 
+import warnings
 from ctypes import *
 from weakref import proxy
 
 import pyglet
-
 from pyglet.gl import *
 from pyglet.graphics.vertexbuffer import BufferObject
 
@@ -247,7 +247,8 @@ class _UniformArray:
     """Wrapper of the GLSL array data inside a Uniform.
     Allows access to get and set items for a more Pythonic implementation.
     Types with a length longer than 1 will be returned as tuples as an inner list would not support individual value
-    reassignment. Array data must either be set in full, or by indexing."""
+    reassignment. Array data must either be set in full, or by indexing.
+    """
 
     __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr')
     def __init__(self, uniform, gl_getter, gl_setter, gl_type, is_matrix, dsa):
@@ -362,7 +363,6 @@ class _Uniform:
     @staticmethod
     def _create_getter_func(program, location, gl_getter, c_array, length):
         """Factory function for creating simplified Uniform getters"""
-
         if length == 1:
             def getter_func():
                 gl_getter(program, location, c_array)
@@ -435,8 +435,7 @@ class UniformBlock:
         self.view_cls = None
 
     def create_ubo(self, index=0):
-        """
-        Create a new UniformBufferObject from this uniform block.
+        """Create a new UniformBufferObject from this uniform block.
 
         :Parameters:
             `index` : int
@@ -543,7 +542,7 @@ class UniformBufferObject:
         self.buffer.set_data(self._view_ptr)
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
+        return f"{self.__class__.__name__}(id={self.buffer.id})"
 
 
 # Utility functions:
@@ -576,7 +575,8 @@ def _introspect_attributes(program_id: int) -> dict:
         a_name, a_type, a_size = _query_attribute(program_id, index)
         loc = glGetAttribLocation(program_id, create_string_buffer(a_name.encode('utf-8')))
         count, fmt = _attribute_types[a_type]
-        attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt)
+        attributes[a_name] = {'type': a_type, 'size': a_size, 'location': loc, 'count': count, 'format': fmt,
+                              'instance': False}
 
     if _debug_gl_shaders:
         for attribute in attributes.values():
@@ -600,7 +600,7 @@ def _link_program(*shaders) -> int:
         glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, length)
         log = c_buffer(length.value)
         glGetProgramInfoLog(program_id, len(log), None, log)
-        raise ShaderException("Error linking shader program:\n{}".format(log.value.decode()))
+        raise ShaderException(f"Error linking shader program:\n{log.value.decode()}")
 
     # Shader objects no longer needed
     for shader in shaders:
@@ -767,10 +767,10 @@ class ShaderSource:
 
         source = "\n".join(f"{str(i+1).zfill(3)}: {line} " for i, line in enumerate(self._lines))
 
-        raise ShaderException(("Cannot find #version flag in shader source. "
+        raise ShaderException("Cannot find #version flag in shader source. "
                                "A #version statement is required on the first line.\n"
                                "------------------------------------\n"
-                               f"{source}"))
+                               f"{source}")
 
 
 class Shader:
@@ -860,7 +860,7 @@ class Shader:
                 pass  # Interpreter is shutting down
 
     def __repr__(self):
-        return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
+        return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
 
 
 class ShaderProgram:
@@ -979,13 +979,52 @@ class ShaderProgram:
                    f"may have been optimized out by the OpenGL driver.")
             if _debug_gl_shaders:
                 warnings.warn(msg)
-                return
+                return None
             else:
-                raise ShaderException() from err
+                raise ShaderException from err
         try:
             return uniform.get()
         except GLException as err:
             raise ShaderException from err
+
+    def _vertex_list_create(self, count, mode, indices=None, instances=None, batch=None, group=None, **data):
+        attributes = self._attributes.copy()
+        initial_arrays = []
+
+        instanced = instances is not None
+        indexed = indices is not None
+
+        for name, fmt in data.items():
+            try:
+                if isinstance(fmt, tuple):
+                    fmt, array = fmt
+                    initial_arrays.append((name, array))
+                attributes[name] = {**attributes[name], 'format': fmt,
+                                    'instance': name in instances if instances else False}
+            except KeyError:  # noqa: PERF203
+                msg = (
+                    f"An attribute with the name `{name}` was not found. Please "
+                                      f"check the spelling.\nIf the attribute is not in use in the "
+                                      f"program, it may have been optimized out by the OpenGL driver.\n"
+                                      f"Valid names: \n{list(attributes)}"
+                )
+                raise ShaderException(msg)  # noqa: B904
+
+        batch = batch or pyglet.graphics.get_default_batch()
+        domain = batch.get_domain(indexed, instanced, mode, group, self, attributes)
+
+        # Create vertex list and initialize
+        if indexed:
+            vlist = domain.create(count, len(indices))
+            start = vlist.start
+            vlist.indices = [i + start for i in indices]
+        else:
+            vlist = domain.create(count)
+
+        for name, array in initial_arrays:
+            vlist.set_attribute_data(name, array)
+
+        return vlist
 
     def vertex_list(self, count, mode, batch=None, group=None, **data):
         """Create a VertexList.
@@ -1007,98 +1046,11 @@ class ShaderProgram:
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
-        attributes = self._attributes.copy()
-        initial_arrays = []
-
-        for name, fmt in data.items():
-            try:
-                if isinstance(fmt, tuple):
-                    fmt, array = fmt
-                    initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': False}}
-            except KeyError:
-                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
-                                      f"check the spelling.\nIf the attribute is not in use in the "
-                                      f"program, it may have been optimized out by the OpenGL driver.\n"
-                                      f"Valid names: \n{list(attributes)}")
-
-        batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(False, False, mode, group, self, attributes)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count)
-
-        for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
-
-        return vlist
+        return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
 
     def vertex_list_instanced(self, count, mode, instance_attributes, batch=None, group=None, **data):
-        attributes = self._attributes.copy()
-        initial_arrays = []
-
-        for name, fmt in data.items():
-            try:
-                if isinstance(fmt, tuple):
-                    fmt, array = fmt
-                    initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': name in instance_attributes}}
-            except KeyError:
-                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
-                                      f"check the spelling.\nIf the attribute is not in use in the "
-                                      f"program, it may have been optimized out by the OpenGL driver.\n"
-                                      f"Valid names: \n{list(attributes)}")
-
-        batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(False, True, mode, group, self, attributes)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count)
-
-        for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
-
-        return vlist
-
-    def vertex_list_instanced_indexed(self, count, mode, indices, instance_attributes, batch=None, group=None, **data):
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
-
-        attributes = self._attributes.copy()
-        initial_arrays = []
-
-        for name, fmt in data.items():
-            try:
-                if isinstance(fmt, tuple):
-                    fmt, array = fmt
-                    initial_arrays.append((name, array))
-
-                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': name in instance_attributes}}
-            except KeyError:
-                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
-                                      f"check the spelling.\nIf the attribute is not in use in the "
-                                      f"program, it may have been optimized out by the OpenGL driver.\n"
-                                      f"Valid names: \n{list(attributes)}")
-
-        for attribute_name in instance_attributes:
-            if attribute_name not in attributes:
-                raise ShaderException(f"An attribute with the name `{attribute_name}` was not found. Please "
-                                      f"check the spelling.\nIf the attribute is not in use in the "
-                                      f"program, it may have been optimized out by the OpenGL driver.\n"
-                                      f"Valid names: \n{list(attributes)}")
-
-        batch = batch or pyglet.graphics.get_default_batch()
-
-        domain = batch.get_domain(True, True, mode, group, self, attributes)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count, len(indices))
-        start = vlist.start
-        vlist.indices = [i + start for i in indices]
-
-        for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
-
-        return vlist
+        return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
 
     def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **data):
         """Create a IndexedVertexList.
@@ -1122,37 +1074,14 @@ class ShaderProgram:
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
         """
-        attributes = self._attributes.copy()
-        initial_arrays = []
+        return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
 
-        for name, fmt in data.items():
-            try:
-                if isinstance(fmt, tuple):
-                    fmt, array = fmt
-                    initial_arrays.append((name, array))
-                attributes[name] = {**attributes[name], **{'format': fmt, 'instance': False}}
-            except KeyError:
-                raise ShaderException(f"An attribute with the name `{name}` was not found. Please "
-                                      f"check the spelling.\nIf the attribute is not in use in the "
-                                      f"program, it may have been optimized out by the OpenGL driver.\n"
-                                      f"Valid names: \n{list(attributes)}")
-
-        batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(True, False, mode, group, self, attributes)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count, len(indices))
-        start = vlist.start
-        vlist.indices = [i + start for i in indices]
-
-        for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
-
-        return vlist
+    def vertex_list_instanced_indexed(self, count, mode, indices, instance_attributes, batch=None, group=None, **data):
+        assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
+        return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.__class__.__name__, self.id)
-
+        return f"{self.__class__.__name__}(id={self.id})"
 
 class ComputeShaderProgram:
     """OpenGL Compute Shader Program"""
@@ -1256,7 +1185,7 @@ class ComputeShaderProgram:
                 warnings.warn(msg)
                 return
             else:
-                raise ShaderException() from err
+                raise ShaderException from err
         try:
             uniform.set(value)
         except GLException as err:
@@ -1271,7 +1200,7 @@ class ComputeShaderProgram:
             f"may have been optimized out by the OpenGL driver.")
             if _debug_gl_shaders:
                 warnings.warn(msg)
-                return
+                return None
             else:
                 raise ShaderException(msg) from err
         try:

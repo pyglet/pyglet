@@ -23,9 +23,11 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
+from typing import Any
 
 from pyglet.gl import *
 from pyglet.graphics import allocation, shader, vertexarray
+from pyglet.graphics.shader import ShaderProgram
 from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
 
 
@@ -84,6 +86,9 @@ class VertexList:
     """A list of vertices within a :py:class:`VertexDomain`.  Use
     :py:meth:`VertexDomain.create` to construct this list.
     """
+    indexed = False
+    instanced = False
+
     def __init__(self, domain, start, count):
         self.domain = domain
         self.start = start
@@ -124,6 +129,27 @@ class VertexList:
         """Delete this group."""
         self.domain.allocator.dealloc(self.start, self.count)
 
+    def set_instance_source(self, domain, instance_attributes):
+        assert self.instanced is False, "Vertex list is already an instance."
+        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()),\
+            'Domain attributes must match.'
+
+        new_start = domain.safe_alloc(self.count)
+        for key, old_attribute in self.domain.attribute_names.items():
+            new_attribute = domain.attribute_names[key]
+            old_data = old_attribute.buffer.get_region(self.start, self.count)
+            if key in instance_attributes:
+                count = 1
+                old_data = old_data[:new_attribute.count]
+            else:
+                count = self.count
+            new_attribute.buffer.set_region(new_start, count, old_data)
+
+        self.domain.allocator.dealloc(self.start, self.count)
+        self.domain = domain
+        self.start = new_start
+        self.instanced = True
+
     def migrate(self, domain):
         """Move this group from its current domain and add to the specified
         one.  Attributes on domains must match.  (In practice, used to change
@@ -139,11 +165,9 @@ class VertexList:
 
         new_start = domain.safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
-            old = old_attribute.get_region(old_attribute.buffer, self.start, self.count)
             new_attribute = domain.attribute_names[key]
-            new = new_attribute.get_region(new_attribute.buffer, new_start, self.count)
-            new.array[:] = old.array[:]
-            new.invalidate()
+            old_data = old_attribute.buffer.get_region(self.start, self.count)
+            new_attribute.buffer.set_region(new_start, self.count, old_data)
 
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
@@ -151,16 +175,62 @@ class VertexList:
 
     def set_attribute_data(self, name, data):
         attribute = self.domain.attribute_names[name]
-        attribute.set_region(attribute.buffer, self.start, self.count, data)
+        array_start = attribute.count * self.start
+        array_end = attribute.count * self.count + array_start
+        try:
+            attribute.buffer.data[array_start:array_end] = data
+            attribute.buffer.invalidate_region(self.start, self.count)
+        except ValueError:
+            msg = f"Invalid data size for '{name}'. Expected {array_end-array_start}, got {len(data)}."
+            raise ValueError(msg) from None
 
+    def add_instance(self, **kwargs):
+        assert self.instanced
+        self.domain._instances += 1
 
-class InstancedVertexList(VertexList):
-    pass
+        instance_id = self.domain._instances
+
+        start = self.domain.safe_alloc_instance(3)
+
+        for buffer, attributes in self.domain.buffer_attributes:
+            for attribute in attributes:
+                if attribute.instance:
+                    assert attribute.name in kwargs, f"{attribute.name} is defined as an instance attribute, keyword argument not found."
+                    attribute.set_region(attribute.buffer, instance_id-1, 1, kwargs[attribute.name])
+
+        return self.domain._vertexinstance_class(self, instance_id)
+
+    def delete_instance(self, instance):
+        assert self.instanced
+        if instance.id != self.domain._instances:
+            raise Exception("Only the last instance added can be removed.")
+
+        self.domain._instances -= 1
+
+        self.domain.instance_allocator.dealloc(instance.id, 1)
+
+    def set_attribute_data(self, name, data):
+        attribute = self.domain.attribute_names[name]
+        if attribute.instance:
+            count = 1
+        else:
+            count = self.count
+
+        array_start = attribute.count * self.start
+        array_end = attribute.count * count + array_start
+        try:
+            attribute.buffer.data[array_start:array_end] = data
+            attribute.buffer.invalidate_region(self.start, count)
+        except ValueError:
+            msg = f"Invalid data size for '{name}'. Expected {array_end-array_start}, got {len(data)}."
+            raise ValueError(msg) from None
+
 
 class IndexedVertexList(VertexList):
     """A list of vertices within an :py:class:`IndexedVertexDomain` that are
     indexed. Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
+    indexed = True
     _indices_cache = None
     _indices_cache_version = None
 
@@ -237,6 +307,34 @@ class IndexedVertexList(VertexList):
         self.index_start = new_start
         self._indices_cache_version = None
 
+    def set_instance_source(self, domain, instance_attributes):
+        assert self.instanced is False, "IndexedVertexList is already an instance."
+        old_start = self.start
+        old_domain = self.domain
+        super().set_instance_source(domain, instance_attributes)
+
+        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()),\
+            'Domain attributes must match.'
+
+        # Note: this code renumber the indices of the *original* domain
+        # because the vertices are in a new position in the new domain
+        if old_start != self.start:
+            diff = self.start - old_start
+            old_indices = old_domain.get_index_region(self.index_start, self.index_count)
+            old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])
+
+        # copy indices to new domain
+        old_array = old_domain.get_index_region(self.index_start, self.index_count)
+        # must delloc before calling safe_index_alloc or else problems when same
+        # batch is migrated to because index_start changes after dealloc
+        old_domain.index_allocator.dealloc(self.index_start, self.index_count)
+
+        new_start = self.domain.safe_index_alloc(self.index_count)
+        self.domain.set_index_region(new_start, self.index_count, old_array)
+
+        self.index_start = new_start
+        self._indices_cache_version = None
+
     @property
     def indices(self):
         """Array of index data."""
@@ -265,43 +363,6 @@ class VertexInstance:
         self._vertex_list.delete_instance(self)
 
 
-
-class InstancedIndexedVertexList(IndexedVertexList, InstancedVertexList):
-    def add_instance(self, **kwargs):
-        self.domain._instances += 1
-
-        instance_id = self.domain._instances
-
-        start = self.domain.safe_alloc_instance(3)
-
-        for buffer, attributes in self.domain.buffer_attributes:
-            for attribute in attributes:
-                if attribute.instance:
-                    assert attribute.name in kwargs, f"{attribute.name} is defined as an instance attribute, keyword argument not found."
-                    attribute.set_region(attribute.buffer, instance_id-1, 1, kwargs[attribute.name])
-
-        return self.domain._vertexinstance_class(self, instance_id)
-
-    def delete_instance(self, instance):
-        if instance.id != self.domain._instances:
-            raise Exception("Only the last instance added can be removed.")
-
-        self.domain._instances -= 1
-
-        self.domain.instance_allocator.dealloc(instance.id, 1)
-
-    def set_attribute_data(self, name, data):
-        attribute = self.domain.attribute_names[name]
-        if attribute.instance:
-            count = 1
-        else:
-            count = self.count
-
-        attribute.set_region(attribute.buffer, self.start, count, data)
-
-
-
-
 class VertexDomain:
     """Management of a set of vertex lists.
 
@@ -311,7 +372,7 @@ class VertexDomain:
     _initial_count = 16
     _vertex_class = VertexList
 
-    def __init__(self, program, attribute_meta):
+    def __init__(self, program: ShaderProgram, attribute_meta: dict[str, Any]) -> None:
         self.program = program          # Needed a reference for migration
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
@@ -327,8 +388,9 @@ class VertexDomain:
             count = meta['count']
             gl_type = _gl_types[meta['format'][0]]
             normalize = 'n' in meta['format']
+            instanced = meta['instance']
 
-            attribute = shader.Attribute(name, location, count, gl_type, normalize, meta['instance'])
+            attribute = shader.Attribute(name, location, count, gl_type, normalize, instanced)
             self.attribute_names[attribute.name] = attribute
 
             # Create buffer:
@@ -469,8 +531,8 @@ def _make_restricted_instance_attribute_property(name):
 
     return property(_attribute_getter, _attribute_setter)
 
+
 class InstancedVertexDomain(VertexDomain):
-    _vertex_class = InstancedVertexList
 
     def __init__(self, program, attribute_meta):
         super().__init__(program, attribute_meta)
@@ -484,7 +546,7 @@ class InstancedVertexDomain(VertexDomain):
             else:
                 self._instance_properties[name] = _make_restricted_instance_attribute_property(name)
 
-        self._vertexinstance_class = type(self._vertex_class.__name__, (VertexInstance,), self._instance_properties)
+        self._vertexinstance_class = type('VertexInstance', (VertexInstance,), self._instance_properties)
 
     def safe_alloc_instance(self, count):
         try:
@@ -602,7 +664,6 @@ class IndexedVertexDomain(VertexDomain):
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,),
                                       self._property_dict)
-
 
 
     def safe_index_alloc(self, count):
@@ -723,7 +784,6 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
     :py:func:`create_domain` function.
     """
     _initial_index_count = 16
-    _vertex_class = InstancedIndexedVertexList
 
     def __init__(self, program, attribute_meta, index_gl_type=GL_UNSIGNED_INT):
         super().__init__(program, attribute_meta, index_gl_type)

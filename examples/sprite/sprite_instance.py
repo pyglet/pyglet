@@ -1,7 +1,7 @@
 import pyglet
 import random
 
-from pyglet.graphics.instance import InstanceSource
+from pyglet.graphics.instance import InstanceGenerator
 
 window = pyglet.window.Window(1920, 1080, vsync=False)
 
@@ -26,17 +26,18 @@ scales = [1.0, 0.75, 0.5, 0.25]
 
 sprites = []
 # Create 1000 sprites at various scales.
-instance_sprite = pyglet.sprite.SpriteInstanceSource(image, ('translate', 'colors'),
+sprite = pyglet.sprite.Sprite(image,
                               x=random.randint(0, window.width),
                               y=random.randint(0, window.height),
                               batch=batch)
 
-instance = instance_sprite.create(translate=(100, 50, 0), colors=(255, 255, 255, 255))
+instance_generator = InstanceGenerator(sprite, ('translate', 'colors'))
+instance = instance_generator.create(translate=(100, 50, 0), colors=(255, 255, 255, 255))
 
 for i in range(10):
-    sprite_instance = instance_sprite.create(
+    sprite_instance = instance_generator.create(
         translate=(random.randint(0, window.width), random.randint(0, window.height), 0),
-        colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255)
+        colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255),
     )
 
     #Randomize scale.
@@ -61,7 +62,7 @@ def on_key_press(symbol, modifiers):
     elif symbol == pyglet.window.key.INSERT:
         sprite_instance = instance_sprite.create(
             translate=(random.randint(0, window.width), random.randint(0, window.height), 0),
-            colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255)
+            colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255),
         )
         sprites.append(sprite_instance)
 

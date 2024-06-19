@@ -790,30 +790,3 @@ class AdvancedSprite(pyglet.sprite.Sprite):
                                        self._group)
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
         self._program = program
-
-
-
-class SpriteInstanceSource(Sprite, InstanceSource):
-    invalid_attributes = ('tex_coords', 'position')
-
-    def __init__(self, img, attributes, x=0, y=0, z=0, blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA, batch=None,
-                 group=None, subpixel=False):
-        for name in attributes:
-            if name in self.invalid_attributes:
-                raise Exception(f"Attribute '{name}' is not allowed in this instance source.")
-
-        InstanceSource.__init__(self, attributes)
-        Sprite.__init__(self, img, x, y, z, blend_src, blend_dest, batch, group, subpixel)
-
-    def _create_vertex_list(self):
-        self._vertex_list = self.program.vertex_list_instanced_indexed(
-            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self.attributes,
-            self._batch, self._group,
-            position=('f', self._get_vertices()),
-            colors=('Bn', (*self._rgb, int(self._opacity)) * (1 if 'colors' in self.attributes else 4)),
-            translate=('f', (self._x, self._y, self._z) * (1 if 'translate' in self.attributes else 4)),
-            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * (1 if 'scale' in self.attributes else 4)),
-            rotation=('f', (self._rotation,) * (1 if 'rotation' in self.attributes else 4)),
-            tex_coords=('f', self._texture.tex_coords))
-
-
