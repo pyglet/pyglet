@@ -1024,6 +1024,9 @@ class ShaderProgram:
         for name, array in initial_arrays:
             vlist.set_attribute_data(name, array)
 
+        if instanced:
+            vlist.instanced = True
+
         return vlist
 
     def vertex_list(self, count, mode, batch=None, group=None, **data):
