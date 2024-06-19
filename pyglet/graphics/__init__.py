@@ -302,9 +302,9 @@ class Batch:
         program = vertex_list.domain.program
         attributes = vertex_list.domain.attribute_meta
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch.get_domain(True, mode, group, program, attributes)
+            domain = batch.get_domain(True, False, mode, group, program, attributes)
         else:
-            domain = batch.get_domain(False, mode, group, program, attributes)
+            domain = batch.get_domain(False, False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
     def convert_to_instanced(self, domain, instance_attributes):
