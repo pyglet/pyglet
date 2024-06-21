@@ -68,7 +68,7 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import pyglet
 from pyglet import clock, event, graphics, image
@@ -244,7 +244,7 @@ class SpriteGroup(graphics.Group):
 
 
 class Sprite(event.EventDispatcher):
-    """Presend and manipulate an on-screen image.
+    """Manipulate an on-screen image.
 
     See the module documentation for usage.
     """
@@ -261,7 +261,9 @@ class Sprite(event.EventDispatcher):
     _scale_y = 1.0
     _visible = True
     _vertex_list = None
-    group_class: Group = SpriteGroup
+
+    #: Default class used to create the rendering group.
+    group_class: ClassVar[type[SpriteGroup | Group]] = SpriteGroup
 
     def __init__(self,
                  img: AbstractImage | Animation,
@@ -299,6 +301,9 @@ class Sprite(event.EventDispatcher):
             program:
                 A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
                 based on the texture type passed.
+
+        .. versionadded:: 2.0.16
+           The *program* parameter.
         """
         self._x = x
         self._y = y
@@ -435,6 +440,8 @@ class Sprite(event.EventDispatcher):
     def group(self) -> Group:
         """Parent graphics group specified by the user.
 
+        This group will always be the parent of the internal sprite group.
+
         .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
         """
         return self._user_group
@@ -516,7 +523,10 @@ class Sprite(event.EventDispatcher):
     def get_sprite_group(self) -> SpriteGroup | Group:
         """Creates and returns a group to be used to render the sprite.
 
-        Can be overridden if the intended group requires other parameters.
+        This is used internally to create a consolidated group for rendering.
+
+        .. note:: This is for advanced usage. This is a group automatically created internally as a child of ``group``,
+                  and does not need to be modified unless the parameters of your custom group changes.
 
         .. versionadded:: 2.0.16
         """
@@ -641,6 +651,13 @@ class Sprite(event.EventDispatcher):
                 Horizontal scaling factor.
             scale_y:
                 Vertical scaling factor.
+
+        .. deprecated:: 2.0.x
+           No longer calculated with the vertices on the CPU. Now calculated within a shader.
+
+           * Use ``x``, ``y``, ``z``, or ``position`` to update position.
+           * Use ``rotation`` to update rotation.
+           * Use ``scale_x``, ``scale_y``, or ``scale`` to update scale.
         """
         translations_outdated = False
 
@@ -802,12 +819,14 @@ class Sprite(event.EventDispatcher):
     if _is_pyglet_doc_run:
         # Events
 
-        def on_animation_end(self) -> None:
+        def on_animation_end(self) -> None | Literal[True]:
             """The sprite animation reached the final frame.
 
             The event is triggered only if the sprite has an animation, not an
             image.  For looping animations, the event is triggered each time
             the animation loops.
+
+            :event:
             """
 
 
@@ -819,7 +838,8 @@ class AdvancedSprite(pyglet.sprite.Sprite):
 
     For advanced users who understand shaders.
 
-    :deprecated: Merged behavior with :py:class:`~pyglet.sprite.Sprite` as of 2.0.16.
+    .. deprecated:: 2.0.16
+       Merged behavior with :py:class:`~pyglet.sprite.Sprite`. Will be removed in a future version.
     """
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, D107
