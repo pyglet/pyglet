@@ -408,9 +408,9 @@ class Sprite(event.EventDispatcher):
     def program(self, program: ShaderProgram) -> None:
         if self._program == program:
             return
+        self._program = program
         self._group = self.get_sprite_group()
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
-        self._program = program
 
     @property
     def batch(self) -> Batch:
@@ -450,6 +450,7 @@ class Sprite(event.EventDispatcher):
     def group(self, group: Group) -> None:
         if self._user_group == group:
             return
+        self._user_group = group
         self._group = self.get_sprite_group()
         if self._batch is not None:
             self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
