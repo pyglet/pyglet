@@ -22,7 +22,7 @@ draw event handler::
 
     pyglet.app.run()
 
-The sprite can be moved by modifying the :py:attr:`~pyglet.sprite.Sprite.x` and 
+The sprite can be moved by modifying the :py:attr:`~pyglet.sprite.Sprite.x` and
 :py:attr:`~pyglet.sprite.Sprite.y` properties.  Other
 properties determine the sprite's :py:attr:`~pyglet.sprite.Sprite.rotation`,
 :py:attr:`~pyglet.sprite.Sprite.scale` and
@@ -67,24 +67,30 @@ sprites within batches.
 from __future__ import annotations
 
 import sys
-
+import warnings
 from typing import TYPE_CHECKING
 
 import pyglet
-
-from pyglet.gl import *
-from pyglet import clock
-from pyglet import event
-from pyglet import graphics
-from pyglet import image
+from pyglet import clock, event, graphics, image
+from pyglet.gl import (
+    GL_BLEND,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    GL_TEXTURE0,
+    GL_TRIANGLES,
+    glActiveTexture,
+    glBindTexture,
+    glBlendFunc,
+    glDisable,
+    glEnable,
+)
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage, Texture, Animation
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
-
+    from pyglet.image import AbstractImage, Animation, Texture
 
 vertex_source: str = """#version 150 core
     in vec3 translate;
@@ -154,11 +160,19 @@ fragment_array_source: str = """#version 150 core
 
 
 def get_default_shader() -> ShaderProgram:
+    """Create and return the default sprite shader.
+
+    This method allows the module to be imported without an OpenGL Context.
+    """
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                     (fragment_source, 'fragment'))
 
 
 def get_default_array_shader() -> ShaderProgram:
+    """Create and return the default array sprite shader.
+
+    This method allows the module to be imported without an OpenGL Context.
+    """
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
                                                     (fragment_array_source, 'fragment'))
 
@@ -172,7 +186,7 @@ class SpriteGroup(graphics.Group):
     """
 
     def __init__(self, texture: Texture, blend_src: int, blend_dest: int,
-                 program: ShaderProgram, parent: Group | None = None):
+                 program: ShaderProgram, parent: Group | None = None) -> None:
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -256,7 +270,8 @@ class Sprite(event.EventDispatcher):
                  blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
-                 subpixel: bool = False):
+                 subpixel: bool = False,
+                 program: ShaderProgram | None = None) -> None:
         """Create a Sprite instance.
 
         Args:
@@ -281,11 +296,13 @@ class Sprite(event.EventDispatcher):
             subpixel:
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
+            program:
+                A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
+                based on the texture type passed.
         """
         self._x = x
         self._y = y
         self._z = z
-        self._img = img
 
         if isinstance(img, image.Animation):
             self._animation = img
@@ -296,25 +313,26 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
+        if not program:
+            if isinstance(img, image.TextureArrayRegion):
+                program = get_default_array_shader()
+            else:
+                program = get_default_shader()
+
+        self._program = program
         self._batch = batch
-        self._group = self.group_class(self._texture, blend_src, blend_dest, self.program, group)
+        self._blend_src = blend_src
+        self._blend_dest = blend_dest
+        self._user_group = group
+        self._group = self.get_sprite_group()
         self._subpixel = subpixel
         self._create_vertex_list()
 
-    @property
-    def program(self) -> ShaderProgram:
-        if isinstance(self._img, image.TextureArrayRegion):
-            program = get_default_array_shader()
-        else:
-            program = get_default_shader()
-
-        return program
-
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             if self._vertex_list is not None:
                 self._vertex_list.delete()
-        except:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     def delete(self) -> None:
@@ -353,12 +371,50 @@ class Sprite(event.EventDispatcher):
             self.dispatch_event('on_animation_end')
 
     @property
+    def blend_mode(self) -> tuple[int, int]:
+        """The current blend mode applied to this sprite.
+
+        .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
+        """
+        return self._blend_src, self._blend_dest
+
+    @blend_mode.setter
+    def blend_mode(self, modes: tuple[int, int]) -> None:
+        src, dst = modes
+        if src == self._blend_src and dst == self._blend_dest:
+            return
+
+        self._blend_src = src
+        self._blend_dest = dst
+
+        self._group = self.get_sprite_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+
+    @property
+    def program(self) -> ShaderProgram:
+        """The current shader program.
+
+        .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
+        """
+        return self._program
+
+    @program.setter
+    def program(self, program: ShaderProgram) -> None:
+        if self._program == program:
+            return
+        self._group = self.get_sprite_group()
+        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+        self._program = program
+
+    @property
     def batch(self) -> Batch:
         """Graphics batch.
 
         The sprite can be migrated from one batch to another, or removed from
-        its batch (for individual drawing).  Note that this can be an expensive
-        operation.
+        its batch (for individual drawing).
+
+        .. note:: Changing this can be an expensive operation as it involves deleting the vertex list and recreating it.
         """
         return self._batch
 
@@ -377,28 +433,26 @@ class Sprite(event.EventDispatcher):
 
     @property
     def group(self) -> Group:
-        """Parent graphics group.
+        """Parent graphics group specified by the user.
 
-        The Sprite can change its rendering group, however this
-        can be a relatively expensive operation.
+        .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
         """
-        return self._group.parent
+        return self._user_group
 
     @group.setter
-    def group(self, group):
-        if self._group.parent == group:
+    def group(self, group: Group) -> None:
+        if self._user_group == group:
             return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       self._group.program,
-                                       group)
+        self._group = self.get_sprite_group()
         if self._batch is not None:
             self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self) -> AbstractImage | Animation:
-        """The Sprite's Image or Animation to display."""
+        """The Sprite's Image or Animation to display.
+
+        .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
+        """
         if self._animation:
             return self._animation
         return self._texture
@@ -422,13 +476,9 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture: Texture) -> None:
         if texture.id is not self._texture.id:
-            self._group = self._group.__class__(texture,
-                                                self._group.blend_src,
-                                                self._group.blend_dest,
-                                                self._group.program,
-                                                self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
+            self._group = self.get_sprite_group()
             self._create_vertex_list()
         else:
             self._vertex_list.tex_coords[:] = texture.tex_coords
@@ -440,28 +490,37 @@ class Sprite(event.EventDispatcher):
             position=('f', self._get_vertices()),
             colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
-            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+            scale=('f', (self._scale * self._scale_x, self._scale * self._scale_y) * 4),
             rotation=('f', (self._rotation,) * 4),
             tex_coords=('f', self._texture.tex_coords))
 
     def _get_vertices(self) -> tuple:
         if not self._visible:
             return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        else:
-            img = self._texture
-            x1 = -img.anchor_x
-            y1 = -img.anchor_y
-            x2 = x1 + img.width
-            y2 = y1 + img.height
-            vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
 
-            if not self._subpixel:
-                return tuple(map(int, vertices))
-            else:
-                return vertices
+        img = self._texture
+        x1 = -img.anchor_x
+        y1 = -img.anchor_y
+        x2 = x1 + img.width
+        y2 = y1 + img.height
+        vertices = (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)
+
+        if not self._subpixel:
+            return tuple(map(int, vertices))
+
+        return vertices
 
     def _update_position(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
+
+    def get_sprite_group(self) -> SpriteGroup | Group:
+        """Creates and returns a group to be used to render the sprite.
+
+        Can be overridden if the intended group requires other parameters.
+
+        .. versionadded:: 2.0.16
+        """
+        return self.group_class(self._texture, self._blend_src, self._blend_dest, self._program, self._user_group)
 
     @property
     def position(self) -> tuple[float, float, float]:
@@ -479,7 +538,7 @@ class Sprite(event.EventDispatcher):
         return self._x
 
     @x.setter
-    def x(self, x):
+    def x(self, x: float) -> None:
         self._x = x
         self._vertex_list.translate[:] = (x, self._y, self._z) * 4
 
@@ -489,7 +548,7 @@ class Sprite(event.EventDispatcher):
         return self._y
 
     @y.setter
-    def y(self, y):
+    def y(self, y: float) -> None:
         self._y = y
         self._vertex_list.translate[:] = (self._x, y, self._z) * 4
 
@@ -499,7 +558,7 @@ class Sprite(event.EventDispatcher):
         return self._z
 
     @z.setter
-    def z(self, z):
+    def z(self, z: float) -> None:
         self._z = z
         self._vertex_list.translate[:] = (self._x, self._y, z) * 4
 
@@ -513,7 +572,7 @@ class Sprite(event.EventDispatcher):
         return self._rotation
 
     @rotation.setter
-    def rotation(self, rotation: float):
+    def rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (self._rotation,) * 4
 
@@ -527,7 +586,7 @@ class Sprite(event.EventDispatcher):
         return self._scale
 
     @scale.setter
-    def scale(self, scale):
+    def scale(self, scale: float) -> None:
         self._scale = scale
         self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y) * 4
 
@@ -535,33 +594,33 @@ class Sprite(event.EventDispatcher):
     def scale_x(self) -> float:
         """Horizontal scaling factor.
 
-         A scaling factor of 1.0 (the default) has no effect. A scale of
-         2.0 will draw the sprite at twice the native width of its image.
+        A scaling factor of 1.0 (the default) has no effect. A scale of
+        2.0 will draw the sprite at twice the native width of its image.
         """
         return self._scale_x
 
     @scale_x.setter
-    def scale_x(self, scale_x):
+    def scale_x(self, scale_x: float) -> None:
         self._scale_x = scale_x
         self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y) * 4
 
     @property
-    def scale_y(self):
+    def scale_y(self) -> float:
         """Vertical scaling factor.
 
-         A scaling factor of 1.0 (the default) has no effect. A scale of
-         2.0 will draw the sprite at twice the native height of its image.
+        A scaling factor of 1.0 (the default) has no effect. A scale of
+        2.0 will draw the sprite at twice the native height of its image.
         """
         return self._scale_y
 
     @scale_y.setter
-    def scale_y(self, scale_y):
+    def scale_y(self, scale_y: float) -> None:
         self._scale_y = scale_y
         self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y) * 4
 
     def update(self, x: float | None = None, y: float | None = None, z: float | None = None,
                rotation: float | None = None, scale: float | None = None,
-               scale_x: float | None = None, scale_y: float | None = None):
+               scale_x: float | None = None, scale_y: float | None = None) -> None:
         """Simultaneously change the position, rotation or scale.
 
         This method is provided for convenience. There is not much
@@ -583,7 +642,6 @@ class Sprite(event.EventDispatcher):
             scale_y:
                 Vertical scaling factor.
         """
-
         translations_outdated = False
 
         # only bother updating if the translation actually changed
@@ -630,7 +688,7 @@ class Sprite(event.EventDispatcher):
         return w if self._subpixel else int(w)
 
     @width.setter
-    def width(self, width: float):
+    def width(self, width: float) -> None:
         self.scale_x = width / (self._texture.width * abs(self._scale))
 
     @property
@@ -643,7 +701,7 @@ class Sprite(event.EventDispatcher):
         return h if self._subpixel else int(h)
 
     @height.setter
-    def height(self, height: float):
+    def height(self, height: float) -> None:
         self.scale_y = height / (self._texture.height * abs(self._scale))
 
     @property
@@ -661,7 +719,7 @@ class Sprite(event.EventDispatcher):
         return self._opacity
 
     @opacity.setter
-    def opacity(self, opacity: int):
+    def opacity(self, opacity: int) -> None:
         self._opacity = opacity
         self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
@@ -678,7 +736,7 @@ class Sprite(event.EventDispatcher):
         return self._rgb
 
     @color.setter
-    def color(self, rgb: tuple[int, int, int]):
+    def color(self, rgb: tuple[int, int, int]) -> None:
         self._rgb = int(rgb[0]), int(rgb[1]), int(rgb[2])
         self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
@@ -688,13 +746,13 @@ class Sprite(event.EventDispatcher):
         return self._visible
 
     @visible.setter
-    def visible(self, visible):
+    def visible(self, visible: bool) -> None:
         self._visible = visible
         self._update_position()
 
     @property
     def paused(self) -> bool:
-        """Pause/resume the Sprite's Animation
+        """Pause/resume the Sprite's Animation.
 
         If ``Sprite.image`` is an Animation, you can pause or resume
         the animation by setting this property to True or False.
@@ -703,7 +761,7 @@ class Sprite(event.EventDispatcher):
         return self._paused
 
     @paused.setter
-    def paused(self, pause):
+    def paused(self, pause: bool) -> None:
         if not hasattr(self, '_animation') or pause == self._paused:
             return
         if pause is True:
@@ -725,11 +783,11 @@ class Sprite(event.EventDispatcher):
         return self._frame_index
 
     @frame_index.setter
-    def frame_index(self, index: int):
+    def frame_index(self, index: int) -> None:
         # Bound to available number of frames
         if self._animation is None:
             return
-        self._frame_index = max(0, min(index, len(self._animation.frames)-1))
+        self._frame_index = max(0, min(index, len(self._animation.frames) - 1))
 
     def draw(self) -> None:
         """Draw the sprite at its current position.
@@ -744,7 +802,7 @@ class Sprite(event.EventDispatcher):
     if _is_pyglet_doc_run:
         # Events
 
-        def on_animation_end(self):
+        def on_animation_end(self) -> None:
             """The sprite animation reached the final frame.
 
             The event is triggered only if the sprite has an animation, not an
@@ -757,43 +815,14 @@ Sprite.register_event_type('on_animation_end')
 
 
 class AdvancedSprite(pyglet.sprite.Sprite):
-    """Is a sprite that lets you change the shader program during initialization and after
-    For advanced users who understand shaders."""
-    def __init__(self,
-                 img, x=0, y=0, z=0,
-                 blend_src=GL_SRC_ALPHA,
-                 blend_dest=GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 group=None,
-                 subpixel=False,
-                 program=None):
+    """A Sprite that lets you change the shader program during initialization and after.
 
-        self._program = program
+    For advanced users who understand shaders.
 
-        if not program:
-            if isinstance(img, image.TextureArrayRegion):
-                self._program = get_default_array_shader()
-            else:
-                self._program = get_default_shader()
+    :deprecated: Merged behavior with :py:class:`~pyglet.sprite.Sprite` as of 2.0.16.
+    """
 
-        super().__init__(img, x, y, z, blend_src, blend_dest, batch, group, subpixel)
-
-    @property
-    def program(self) -> ShaderProgram:
-        return self._program
-
-    @program.setter
-    def program(self, program: ShaderProgram):
-        if self._program == program:
-            return
-        self._group = self.group_class(self._texture,
-                                       self._group.blend_src,
-                                       self._group.blend_dest,
-                                       program,
-                                       self._group)
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
-        self._program = program
-
-
-
-
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, D107
+        msg = f"{self.__class__.__name__} is deprecated. See documentation."
+        warnings.warn(msg, stacklevel=1)
+        super().__init__(*args, **kwargs)
