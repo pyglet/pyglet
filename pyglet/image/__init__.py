@@ -128,100 +128,6 @@ class TextureArrayDepthExceeded(Exception):
     pass
 
 
-def load(filename, file=None, decoder=None):
-    """Load an image from a file.
-
-    :Parameters:
-        `filename` : str
-            Used to guess the image format, and to load the file if `file` is
-            unspecified.
-        `file` : file-like object or None
-            Source of image data in any supported format.
-        `decoder` : ImageDecoder or None
-            If unspecified, all decoders that are registered for the filename
-            extension are tried.  If none succeed, the exception from the
-            first decoder is raised.
-
-    :rtype: AbstractImage
-
-    .. note:: You can make no assumptions about the return type; usually it will
-        be ImageData or CompressedImageData, but decoders are free to return
-        any subclass of AbstractImage.
-
-    """
-    if decoder:
-        return decoder.decode(filename, file)
-    else:
-        return _codec_registry.decode(filename, file)
-
-
-def load_animation(filename, file=None, decoder=None):
-    """Load an animation from a file.
-
-    Currently, the only supported format is GIF.
-
-    :Parameters:
-        `filename` : str
-            Used to guess the animation format, and to load the file if `file`
-            is unspecified.
-        `file` : file-like object or None
-            File object containing the animation stream.
-        `decoder` : ImageDecoder or None
-            If unspecified, all decoders that are registered for the filename
-            extension are tried.  If none succeed, the exception from the
-            first decoder is raised.
-
-    :rtype: Animation
-    """
-    if decoder:
-        return decoder.decode_animation(filename, file)
-    else:
-        return _codec_registry.decode_animation(filename, file)
-
-
-def create(width, height, pattern=None):
-    """Create an image optionally filled with the given pattern.
-
-    :Parameters:
-        `width` : int
-            Width of image to create
-        `height` : int
-            Height of image to create
-        `pattern` : ImagePattern or None
-            Pattern to fill image with.  If unspecified, the image will
-            initially be transparent.
-
-    :rtype: AbstractImage
-
-    .. note:: You can make no assumptions about the return type; usually it will
-              be ImageData or CompressedImageData, but patterns are free to return
-              any subclass of AbstractImage.
-    """
-    if not pattern:
-        pattern = SolidColorImagePattern()
-    return pattern.create_image(width, height)
-
-
-def get_max_texture_size():
-    """Query the maximum texture size available"""
-    size = c_int()
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
-    return size.value
-
-
-def get_max_array_texture_layers():
-    """Query the maximum TextureArray depth"""
-    max_layers = c_int()
-    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
-    return max_layers.value
-
-
-def _color_as_bytes(color):
-    if len(color) != 4:
-        raise TypeError("color is expected to have 4 components")
-    return bytes(color)
-
-
 class ImagePattern:
     """Abstract image creation class."""
 
@@ -237,55 +143,6 @@ class ImagePattern:
         :rtype: AbstractImage
         """
         raise NotImplementedError('abstract')
-
-
-class SolidColorImagePattern(ImagePattern):
-    """Creates an image filled with a solid color."""
-
-    def __init__(self, color=(0, 0, 0, 0)):
-        """Create a solid image pattern with the given color.
-
-        :Parameters:
-            `color` : (int, int, int, int)
-                4-tuple of ints in range [0,255] giving RGBA components of
-                color to fill with.
-
-        """
-        self.color = _color_as_bytes(color)
-
-    def create_image(self, width, height):
-        data = self.color * width * height
-        return ImageData(width, height, 'RGBA', data)
-
-
-class CheckerImagePattern(ImagePattern):
-    """Create an image with a tileable checker image.
-    """
-
-    def __init__(self, color1=(150, 150, 150, 255), color2=(200, 200, 200, 255)):
-        """Initialise with the given colors.
-
-        :Parameters:
-            `color1` : (int, int, int, int)
-                4-tuple of ints in range [0,255] giving RGBA components of
-                color to fill with.  This color appears in the top-left and
-                bottom-right corners of the image.
-            `color2` : (int, int, int, int)
-                4-tuple of ints in range [0,255] giving RGBA components of
-                color to fill with.  This color appears in the top-right and
-                bottom-left corners of the image.
-
-        """
-        self.color1 = _color_as_bytes(color1)
-        self.color2 = _color_as_bytes(color2)
-
-    def create_image(self, width, height):
-        hw = width // 2
-        hh = height // 2
-        row1 = self.color1 * hw + self.color2 * hw
-        row2 = self.color2 * hw + self.color1 * hw
-        data = row1 * hh + row2 * hh
-        return ImageData(width, height, 'RGBA', data)
 
 
 class AbstractImage:
@@ -426,108 +283,6 @@ class AbstractImage:
         the `z` coordinate gives the image slice to blit into.
         """
         raise ImageException('Cannot blit %r to a texture.' % self)
-
-
-class AbstractImageSequence:
-    """Abstract sequence of images.
-
-    The sequence is useful for storing image animations or slices of a volume.
-    For efficient access, use the `texture_sequence` member.  The class
-    also implements the sequence interface (`__len__`, `__getitem__`,
-    `__setitem__`).
-    """
-
-    def get_texture_sequence(self):
-        """Get a TextureSequence.
-
-        :rtype: `TextureSequence`
-
-        .. versionadded:: 1.1
-        """
-        raise NotImplementedError('abstract')
-
-    def get_animation(self, period, loop=True):
-        """Create an animation over this image sequence for the given constant
-        framerate.
-
-        :Parameters
-            `period` : float
-                Number of seconds to display each frame.
-            `loop` : bool
-                If True, the animation will loop continuously.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-
-        .. versionadded:: 1.1
-        """
-        return Animation.from_image_sequence(self, period, loop)
-
-    def __getitem__(self, slice):
-        """Retrieve a (list of) image.
-
-        :rtype: AbstractImage
-        """
-        raise NotImplementedError('abstract')
-
-    def __setitem__(self, slice, image):
-        """Replace one or more images in the sequence.
-
-        :Parameters:
-            `image` : `~pyglet.image.AbstractImage`
-                The replacement image.  The actual instance may not be used,
-                depending on this implementation.
-
-        """
-        raise NotImplementedError('abstract')
-
-    def __len__(self):
-        raise NotImplementedError('abstract')
-
-    def __iter__(self):
-        """Iterate over the images in sequence.
-
-        :rtype: Iterator
-
-        .. versionadded:: 1.1
-        """
-        raise NotImplementedError('abstract')
-
-
-class TextureSequence(AbstractImageSequence):
-    """Interface for a sequence of textures.
-
-    Typical implementations store multiple :py:class:`~pyglet.image.TextureRegion` s within one
-    :py:class:`~pyglet.image.Texture` so as to minimise state changes.
-    """
-
-    def get_texture_sequence(self):
-        return self
-
-
-class UniformTextureSequence(TextureSequence):
-    """Interface for a sequence of textures, each with the same dimensions.
-
-    :Parameters:
-        `item_width` : int
-            Width of each texture in the sequence.
-        `item_height` : int
-            Height of each texture in the sequence.
-
-    """
-
-    def _get_item_width(self):
-        raise NotImplementedError('abstract')
-
-    def _get_item_height(self):
-        raise NotImplementedError('abstract')
-
-    @property
-    def item_width(self):
-        return self._get_item_width()
-
-    @property
-    def item_height(self):
-        return self._get_item_height()
 
 
 class ImageData(AbstractImage):
@@ -962,6 +717,251 @@ class ImageData(AbstractImage):
         return GL_RGBA
 
 
+def load(filename, file=None, decoder=None):
+    """Load an image from a file.
+
+    :Parameters:
+        `filename` : str
+            Used to guess the image format, and to load the file if `file` is
+            unspecified.
+        `file` : file-like object or None
+            Source of image data in any supported format.
+        `decoder` : ImageDecoder or None
+            If unspecified, all decoders that are registered for the filename
+            extension are tried.  If none succeed, the exception from the
+            first decoder is raised.
+
+    :rtype: AbstractImage
+
+    .. note:: You can make no assumptions about the return type; usually it will
+        be ImageData or CompressedImageData, but decoders are free to return
+        any subclass of AbstractImage.
+
+    """
+    if decoder:
+        return decoder.decode(filename, file)
+    else:
+        return _codec_registry.decode(filename, file)
+
+
+def load_animation(filename, file=None, decoder=None):
+    """Load an animation from a file.
+
+    Currently, the only supported format is GIF.
+
+    :Parameters:
+        `filename` : str
+            Used to guess the animation format, and to load the file if `file`
+            is unspecified.
+        `file` : file-like object or None
+            File object containing the animation stream.
+        `decoder` : ImageDecoder or None
+            If unspecified, all decoders that are registered for the filename
+            extension are tried.  If none succeed, the exception from the
+            first decoder is raised.
+
+    :rtype: Animation
+    """
+    if decoder:
+        return decoder.decode_animation(filename, file)
+    else:
+        return _codec_registry.decode_animation(filename, file)
+
+
+def create(width: int, height: int, pattern: ImagePattern | None=None):
+    """Create an image optionally filled with the given pattern.
+
+    :Parameters:
+        `width` : int
+            Width of image to create
+        `height` : int
+            Height of image to create
+        `pattern` : ImagePattern or None
+            Pattern to fill image with.  If unspecified, the image will
+            initially be transparent.
+
+    :rtype: AbstractImage
+
+    .. note:: You can make no assumptions about the return type; usually it will
+              be ImageData or CompressedImageData, but patterns are free to return
+              any subclass of AbstractImage.
+    """
+    if not pattern:
+        pattern = SolidColorImagePattern()
+    return pattern.create_image(width, height)
+
+
+def get_max_texture_size():
+    """Query the maximum texture size available"""
+    size = c_int()
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
+    return size.value
+
+
+def get_max_array_texture_layers():
+    """Query the maximum TextureArray depth"""
+    max_layers = c_int()
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
+    return max_layers.value
+
+
+def _color_as_bytes(color):
+    if len(color) != 4:
+        raise TypeError("color is expected to have 4 components")
+    return bytes(color)
+
+
+class SolidColorImagePattern(ImagePattern):
+    """Creates an image filled with a solid color."""
+
+    def __init__(self, color=(0, 0, 0, 0)):
+        """Create a solid image pattern with the given color.
+
+        :Parameters:
+            `color` : (int, int, int, int)
+                4-tuple of ints in range [0,255] giving RGBA components of
+                color to fill with.
+
+        """
+        self.color = _color_as_bytes(color)
+
+    def create_image(self, width: int, height: int) -> ImageData:
+        data = self.color * width * height
+        return ImageData(width, height, 'RGBA', data)
+
+
+class CheckerImagePattern(ImagePattern):
+    """Create an image with a tileable checker image.
+    """
+
+    def __init__(self, color1=(150, 150, 150, 255), color2=(200, 200, 200, 255)):
+        """Initialise with the given colors.
+
+        :Parameters:
+            `color1` : (int, int, int, int)
+                4-tuple of ints in range [0,255] giving RGBA components of
+                color to fill with.  This color appears in the top-left and
+                bottom-right corners of the image.
+            `color2` : (int, int, int, int)
+                4-tuple of ints in range [0,255] giving RGBA components of
+                color to fill with.  This color appears in the top-right and
+                bottom-left corners of the image.
+
+        """
+        self.color1 = _color_as_bytes(color1)
+        self.color2 = _color_as_bytes(color2)
+
+    def create_image(self, width, height):
+        hw = width // 2
+        hh = height // 2
+        row1 = self.color1 * hw + self.color2 * hw
+        row2 = self.color2 * hw + self.color1 * hw
+        data = row1 * hh + row2 * hh
+        return ImageData(width, height, 'RGBA', data)
+
+
+class AbstractImageSequence:
+    """Abstract sequence of images.
+
+    The sequence is useful for storing image animations or slices of a volume.
+    For efficient access, use the `texture_sequence` member.  The class
+    also implements the sequence interface (`__len__`, `__getitem__`,
+    `__setitem__`).
+    """
+
+    def get_texture_sequence(self):
+        """Get a TextureSequence.
+
+        :rtype: `TextureSequence`
+
+        .. versionadded:: 1.1
+        """
+        raise NotImplementedError('abstract')
+
+    def get_animation(self, period, loop=True):
+        """Create an animation over this image sequence for the given constant
+        framerate.
+
+        :Parameters
+            `period` : float
+                Number of seconds to display each frame.
+            `loop` : bool
+                If True, the animation will loop continuously.
+
+        :rtype: :py:class:`~pyglet.image.Animation`
+
+        .. versionadded:: 1.1
+        """
+        return Animation.from_image_sequence(self, period, loop)
+
+    def __getitem__(self, slice):
+        """Retrieve a (list of) image.
+
+        :rtype: AbstractImage
+        """
+        raise NotImplementedError('abstract')
+
+    def __setitem__(self, slice, image):
+        """Replace one or more images in the sequence.
+
+        :Parameters:
+            `image` : `~pyglet.image.AbstractImage`
+                The replacement image.  The actual instance may not be used,
+                depending on this implementation.
+
+        """
+        raise NotImplementedError('abstract')
+
+    def __len__(self):
+        raise NotImplementedError('abstract')
+
+    def __iter__(self):
+        """Iterate over the images in sequence.
+
+        :rtype: Iterator
+
+        .. versionadded:: 1.1
+        """
+        raise NotImplementedError('abstract')
+
+
+class TextureSequence(AbstractImageSequence):
+    """Interface for a sequence of textures.
+
+    Typical implementations store multiple :py:class:`~pyglet.image.TextureRegion` s within one
+    :py:class:`~pyglet.image.Texture` so as to minimise state changes.
+    """
+
+    def get_texture_sequence(self):
+        return self
+
+
+class UniformTextureSequence(TextureSequence):
+    """Interface for a sequence of textures, each with the same dimensions.
+
+    :Parameters:
+        `item_width` : int
+            Width of each texture in the sequence.
+        `item_height` : int
+            Height of each texture in the sequence.
+
+    """
+
+    def _get_item_width(self):
+        raise NotImplementedError('abstract')
+
+    def _get_item_height(self):
+        raise NotImplementedError('abstract')
+
+    @property
+    def item_width(self):
+        return self._get_item_width()
+
+    @property
+    def item_height(self):
+        return self._get_item_height()
+
+
 class ImageDataRegion(ImageData):
     def __init__(self, x, y, width, height, image_data):
         super().__init__(width, height,
@@ -1357,55 +1357,17 @@ class Texture(AbstractImage):
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
         y2 = y1 + (height is None and self.height or height)
-        position = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
-        indices = [0, 1, 2, 0, 2, 3]
+        vertices = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
 
-        # Create and bind a throwaway VAO
-        vao_id = GLuint()
-        glGenVertexArrays(1, vao_id)
-        glBindVertexArray(vao_id)
+        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                     position=('f', vertices),
+                                     tex_coords=('f', self.tex_coords),
+                                     colors=('Bn', self.colors))
 
-        # Activate shader program:
-        program = pyglet.graphics.get_default_shader()
-        program.use()
-        pos_attrs = program.attributes['position']
-        tex_attrs = program.attributes['tex_coords']
-
-        # vertex position data:
-        position_attribute = Attribute('position', pos_attrs['location'], pos_attrs['count'], GL_FLOAT, False)
-        position_buffer = BufferObject(4 * position_attribute.stride)
-        data = (position_attribute.c_type * len(position))(*position)
-        position_buffer.set_data(data)
-        position_attribute.enable()
-        position_attribute.set_pointer(position_buffer.ptr)
-
-        # texture coordinate data:
-        texcoord_attribute = Attribute('tex_coords', tex_attrs['location'], tex_attrs['count'], GL_FLOAT, False)
-        texcoord_buffer = BufferObject(4 * texcoord_attribute.stride)
-        data = (texcoord_attribute.c_type * len(self.tex_coords))(*self.tex_coords)
-        texcoord_buffer.set_data(data)
-        texcoord_attribute.enable()
-        texcoord_attribute.set_pointer(texcoord_buffer.ptr)
-
-        # index data:
-        index_array = (c_ubyte * len(indices))(*indices)
-        index_buffer = BufferObject(sizeof(index_array))
-        index_buffer.set_data(index_array)
-        index_buffer.bind_to_index_buffer()
-
-        glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_BYTE, 0)
-        glFlush()
-
-        # Deactivate shader program:
-        program.stop()
-        # Discard everything after blitting:
-        position_buffer.delete()
-        texcoord_buffer.delete()
-        glBindVertexArray(0)
-        glDeleteVertexArrays(1, vao_id)
+        glBindTexture(self.target, 0)
 
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
