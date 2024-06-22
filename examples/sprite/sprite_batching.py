@@ -1,5 +1,6 @@
-import pyglet
 import random
+
+import pyglet
 
 window = pyglet.window.Window(vsync=False)
 
@@ -29,19 +30,21 @@ for i in range(1000):
                                   x=random.randint(0, window.width),
                                   y=random.randint(0, window.height),
                                   batch=batch)  # specify the batch to enter the sprites in.
-    
+
     # Randomize scale.
     sprite.scale = random.choice(scales)
-    
+
     # Random color multiplier.
     sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    
+
     # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
-    sprites.append(sprite)  
+    sprites.append(sprite)
+
 
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
-    
+
+
 pyglet.app.run()

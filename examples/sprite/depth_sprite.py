@@ -46,7 +46,7 @@ class DepthSpriteGroup(pyglet.sprite.SpriteGroup):
         self.program.stop()
 
 
-class DepthSprite(pyglet.sprite.AdvancedSprite):
+class DepthSprite(pyglet.sprite.Sprite):
     group_class = DepthSpriteGroup
 
 
