@@ -81,7 +81,6 @@ from pyglet.math import Vec2
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
-
 vertex_source = """#version 150 core
     in vec2 position;
     in vec2 translation;
@@ -149,12 +148,12 @@ def _point_in_polygon(polygon, point) -> bool:
     while i < len(polygon) - 1:
         i = i + 1
         if ((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (
-            point[0]
-            < (
-                (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1])
-                / (polygon[j][1] - polygon[i][1])
-            )
-            + polygon[i][0]
+                point[0]
+                < (
+                        (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1])
+                        / (polygon[j][1] - polygon[i][1])
+                )
+                + polygon[i][0]
         ):
             odd = not odd
         j = i
@@ -2055,22 +2054,22 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             arc_positions = [
                 # bottom-left
                 (x + self._radius[0][0],
-                 y + self._radius[0][1], math.pi),
-                # bottom-right
-                (x + self._width - self._radius[3][0],
-                 y + self._radius[3][1], math.pi * 3 / 2),
-                # top-right
-                (x + self._width - self._radius[2][0],
-                 y + self._height - self._radius[2][1], 0),
+                 y + self._radius[0][1], math.pi*3/2),
                 # top-left
                 (x + self._radius[1][0],
-                 y + self._height - self._radius[1][1], math.pi / 2),
+                 y + self._height - self._radius[1][1], math.pi),
+                # top-right
+                (x + self._width - self._radius[2][0],
+                 y + self._height - self._radius[2][1], math.pi/2),
+                # bottom-right
+                (x + self._width - self._radius[3][0],
+                 y + self._radius[3][1], 0),
             ]
 
             for (rx, ry), (arc_x, arc_y, arc_start), segments in zip(self._radius, arc_positions, self._segments):
-                tau_segs = math.pi / 2 / segments
-                points += [(arc_x + rx * math.cos(i * tau_segs + arc_start),
-                            arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)]
+                tau_segs = -math.pi / 2 / segments
+                points.extend([(arc_x + rx * math.cos(i * tau_segs + arc_start),
+                                arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)])
 
             center_x = self._width / 2
             center_y = self._height / 2
@@ -2114,7 +2113,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
     @property
     def radius(self) -> tuple[tuple[float, float], tuple[float, float],
-                              tuple[float, float], tuple[float, float]]:
+    tuple[float, float], tuple[float, float]]:
         return self._radius
 
     @radius.setter
