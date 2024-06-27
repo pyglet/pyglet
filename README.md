@@ -112,6 +112,8 @@ https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f
 
 <img width="788" alt="Screenshot 2024-06-27 at 14 25 56" src="https://github.com/sannedb/pyglet/assets/90255780/2b7349ae-6bf8-4a94-928e-9a686d3cbb15">
 
+After:
+
 <img width="798" alt="Screenshot 2024-06-27 at 14 32 28" src="https://github.com/sannedb/pyglet/assets/90255780/4e885b8b-f32d-4bbc-a270-60816103a4d4">
 
 <br/>
@@ -131,6 +133,11 @@ https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f
 
 <img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/5aced0f7-ce5e-44bd-b4d2-fabf543ca1ad">
 
+After:
+
+<img width="622" alt="Screenshot 2024-06-27 at 17 51 18" src="https://github.com/sannedb/pyglet/assets/90255780/07993b33-93b9-421b-a65a-3490fb77ce8f">
+
+
 <br/>
 
 The coverage for this function is now at 95%. I have created mock situations, that will print statements addressing what the error is, rather than raising the actual error, so that the testing can proceed without the file shutting down. Once again, there was no test made for it to begin with so its initial coverage was at 0%, meaning the coverage would have improved regardlessly even if i were to check just the 'None' situation. Below you can find the proof of improvement after checking with coverage.py:
@@ -142,7 +149,7 @@ The coverage for this function is now at 95%. I have created mock situations, th
 
 Sepaanta
 
-<Test 1>
+Test 1: limit.py
 
 https://github.com/sannedb/pyglet/commit/3e7bc00ec4c81870041557bf3a7075998b088129 
 
@@ -161,9 +168,7 @@ old results:
 
 the coverage is now 100% from 0%. There were no tests initially, which makes it easy to improve the coverage. I tested it with border values. One where the check is barely true and one where is barely false.
 
-<Test 2>
-
-<Provide the same kind of information provided for Test 1>
+Test 2: normalize.py
 
 <img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
 
@@ -230,7 +235,7 @@ Sanne:
 Sepaanta: 
 * Found the project;
 * ran the initial coverage test;
-* ...
+* instrumented and tested coverage for limit.py and normalize.py
 
 Emilija: 
 * Ran the initial NLOC check;
