@@ -38,8 +38,10 @@ branch_coverage = {
     "if_statement_1": False,
     "if_statement_in_called_1": False,
     "else_1": False,
-    "else_in_called_1": False
-}
+    "else_in_called_1": False,
+    "quaternion_if_1": False,
+    "quaternion_else_1": False
+    }
 
 class Vec2:
     """A two-dimensional vector represented as an X Y coordinate pair."""
@@ -237,7 +239,7 @@ def print_coverage():
     for branch, hit in branch_coverage.items():
         print(f"{branch} was {'hit' if hit else 'not hit'}")
 
-#print_coverage()
+print_coverage()
 
 class Vec3:
     """A three-dimensional vector represented as X Y Z coordinates."""
@@ -1018,8 +1020,11 @@ class Quaternion(tuple):
 
     def normalize(self) -> Quaternion:
         m = self.__abs__()
+        global branch_coverage
         if m == 0:
+            branch_coverage["quaternion_if_1"] = True
             return self
+        branch_coverage["quaternion_else_1"] = True
         return Quaternion(self[0] / m, self[1] / m, self[2] / m, self[3] / m)
 
     def __abs__(self) -> float:
