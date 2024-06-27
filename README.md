@@ -63,7 +63,8 @@ limit.py
 https://github.com/sannedb/pyglet/commit/68bec1593026c784580dc821d2a7b42e9738bdf1
 
 <Provide a screenshot of the coverage results output by the instrumentation>
-![Screenshot 2024-06-27 153706](https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450)
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
 
 <br/>
 <Function 2 name>
