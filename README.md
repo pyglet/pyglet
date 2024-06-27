@@ -16,7 +16,7 @@ Programming language: Python
 ### Existing tool
 
 <Inform the name of the existing tool that was executed and how it was executed>
-We used coverage.py as recommended by the coordinators. Pyglet instructed to only run the unit tests by calling pytest on their tests/unit directory, so we did just that. The commands were as follows:
+We used Coverage (coverage.py) as recommended by the coordinators. Pyglet instructed to only run the unit tests by calling pytest on their tests/unit directory, so we did just that. The commands to execute the tests were as follows:
   
 ```
 # installing necessities
@@ -43,13 +43,21 @@ Sanne
 
 get_document.py
 
+<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+
 https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f292338
 
 <Provide a screenshot of the coverage results output by the instrumentation>
+<img width="788" alt="Screenshot 2024-06-27 at 14 25 56" src="https://github.com/sannedb/pyglet/assets/90255780/b4cbe265-e94b-420b-8af1-b06e776807a7">
 
-<Function 2 name>
+
+handle_answer.py
 
 <Provide the same kind of information provided for Function 1>
+https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f292338
+
+<img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/2f54ffbe-6d8e-42dd-a00d-1478dbb05a4b">
+
 
 Sepaanta
 
@@ -63,6 +71,7 @@ Sepaanta
 
 <Provide the same kind of information provided for Function 1>
 
+
 Emilija
 
 <Function 1 name>
@@ -74,6 +83,7 @@ Emilija
 <Function 2 name>
 
 <Provide the same kind of information provided for Function 1>
+
 
 Rūta
 
@@ -87,6 +97,7 @@ Rūta
 
 <Provide the same kind of information provided for Function 1>
 
+
 ## Coverage improvement
 
 ### Individual tests
@@ -96,18 +107,37 @@ Rūta
 Sanne
 
 <Test 1>
+get_document.py
 
 <Show a patch (diff) or a link to a commit made in your forked repository that shows the new/enhanced test>
+https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f0 
 
 <Provide a screenshot of the old coverage results (the same as you already showed above)>
+<img width="788" alt="Screenshot 2024-06-27 at 14 25 56" src="https://github.com/sannedb/pyglet/assets/90255780/2b7349ae-6bf8-4a94-928e-9a686d3cbb15">
 
 <Provide a screenshot of the new coverage results>
+<img width="798" alt="Screenshot 2024-06-27 at 14 32 28" src="https://github.com/sannedb/pyglet/assets/90255780/4e885b8b-f32d-4bbc-a270-60816103a4d4">
 
 <State the coverage improvement with a number and elaborate on why the coverage is improved>
+The coverage is now 100%. In essence this was not too hard, because there can only be two situations: one where there is no document so they create one, and one where there is one and they return that. I created tests for both cases. The coverage was improved because it was 0% at first, which I am assuming is because either of the situations will always be true so creating a test for this function may not have had the highest priority for Pyglet's developer team. Below you can find the proof of improvement after checking with coverage.py:
+
+<img width="1098" alt="Screenshot 2024-06-27 at 14 52 23" src="https://github.com/sannedb/pyglet/assets/90255780/a53c67fb-f149-4484-809b-7c5f0d599c1a">
+<img width="1135" alt="Screenshot 2024-06-27 at 14 53 19" src="https://github.com/sannedb/pyglet/assets/90255780/67250345-09a2-42c4-8ed1-04fb91a2a870">
+
 
 <Test 2>
+handle_answer.py
 
 <Provide the same kind of information provided for Test 1>
+https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f0 
+
+<img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/5aced0f7-ce5e-44bd-b4d2-fabf543ca1ad">
+
+The coverage for this function is now at 95%. I have created mock situations, that will print statements addressing what the error is, rather than raising the actual error, so that the testing can proceed without the file shutting down. Once again, there was no test made for it to begin with so its initial coverage was at 0%, meaning the coverage would have improved regardlessly even if i were to check just the 'None' situation. Below you can find the proof of improvement after checking with coverage.py:
+
+<img width="943" alt="Screenshot 2024-06-27 at 14 43 51" src="https://github.com/sannedb/pyglet/assets/90255780/5af94469-7c1c-48fa-8dac-0010a6217449">
+<img width="944" alt="Screenshot 2024-06-27 at 14 44 18" src="https://github.com/sannedb/pyglet/assets/90255780/d7f4e2b8-b501-4c36-89bd-243dd8187a8b">
+
 
 Sepaanta
 
@@ -166,7 +196,20 @@ Rūta
 
 ## Statement of individual contributions
 
-Sanne: Tested the NLOC for this document, ran the coverage tool for this document, instrumented and tested coverage for get_document and handle_answers <br/>
-Sepaanta: Found the project, ran the initial coverage test, ... <br/>
-Emilija: Ran the initial NLOC check, ... <br/>
-Rūta: ... <br/>
+Sanne: 
+* Tested the NLOC for this document;
+* ran the coverage tool for this document;
+* instrumented and tested coverage for get_document and handle_answers;
+* handled README.md structure.
+
+Sepaanta: 
+* Found the project;
+* ran the initial coverage test;
+* ...
+
+Emilija: 
+* Ran the initial NLOC check;
+* ...
+
+Rūta:
+* ...
