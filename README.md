@@ -75,15 +75,15 @@ https://github.com/sannedb/pyglet/commit/0db04da130f651e0849d77826ba2a974ef47699
 
 Emilija
 
-<Function 1 name>
+inverse.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/sannedb/pyglet/commit/50ee8a173c09bc9bbfecc37ad67fdf1ce6cda241
 
-<Provide a screenshot of the coverage results output by the instrumentation>
+<img width="263" alt="Screenshot 2024-06-27 at 21 49 51" src="https://github.com/sannedb/pyglet/assets/89348302/54e4bb6c-ef9e-4ce8-ac76-465ca6193509">
 
-<Function 2 name>
+on_key_press.py
 
-<Provide the same kind of information provided for Function 1>
+https://github.com/sannedb/pyglet/commit/33fbb3e8d2ae0e39e8671a59c7ed0c085571a4b0
 
 Rūta
 
@@ -188,19 +188,27 @@ The coverage is now 100% from 0%. There also weren't existing tests for this fun
 
 Emilija
 
-<Test 1>
+Test 1: inverse.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the new/enhanced test>
+https://github.com/sannedb/pyglet/commit/50ee8a173c09bc9bbfecc37ad67fdf1ce6cda241
 
-<Provide a screenshot of the old coverage results (the same as you already showed above)>
+<img width="263" alt="Screenshot 2024-06-27 at 21 49 51" src="https://github.com/sannedb/pyglet/assets/89348302/54e4bb6c-ef9e-4ce8-ac76-465ca6193509">
 
-<Provide a screenshot of the new coverage results>
+<img width="1185" alt="Screenshot 2024-06-27 at 17 05 26" src="https://github.com/sannedb/pyglet/assets/89348302/0c6f4dfd-7b76-4a1d-bc10-4e44a0a6ad99">
 
-<State the coverage improvement with a number and elaborate on why the coverage is improved>
+<img width="979" alt="Screenshot 2024-06-27 at 20 49 32" src="https://github.com/sannedb/pyglet/assets/89348302/aa90ba04-cdf9-4533-bab1-7aad9a893a51">
 
-<Test 2>
+The coverage went from 54% to 86%. Because the added test functions (test_inverse_of_zero_matrix and test_inverse_of_all_same_matrix) ensured that the branches in the inverse function were executed during the tests. 
 
-<Provide the same kind of information provided for Test 1>
+Test 2: on_key_press
+
+https://github.com/sannedb/pyglet/commit/33fbb3e8d2ae0e39e8671a59c7ed0c085571a4b0
+
+<img width="969" alt="Screenshot 2024-06-27 at 20 51 03" src="https://github.com/sannedb/pyglet/assets/89348302/810e1f9e-defa-4e72-a852-fe58d3fb805d">
+<img width="1028" alt="Screenshot 2024-06-27 at 20 52 13" src="https://github.com/sannedb/pyglet/assets/89348302/20c7f56a-83b3-4d15-94c4-4e8f8b97ac39">
+
+The coverage went from 0% to 100% because the test function (test_on_key_press_pass) created ensured that the branches in on_key_press were executed.
+
 
 Rūta
 
@@ -242,7 +250,8 @@ Sepaanta:
 
 Emilija: 
 * Ran the initial NLOC check;
-* ...
+* Ran initial coverage report;
+* instrumented and tested coverage for inverse and on_key_press;
 
 Rūta:
 * ...
