@@ -142,17 +142,19 @@ def test_mat3_associative_mul():
 
 
 def test_limit1_bigger_than_max():
+    reset_coverage()
     v = Vec2(3, 4)
     result = v.limit(4.0)
-    #print_coverage()
+    print_coverage()
     assert (v != result), "expected not equal"
     return
 
 
 def test_limit2_not_bigger_max():
+    reset_coverage()
     v = Vec2(3, 4)
     result = v.limit(5.0)
-    #print_coverage()
+    print_coverage()
     assert (v == result), "expected to be the same"
 
 
@@ -160,3 +162,8 @@ def print_coverage():
     global branch_coverage
     for branch, hit in branch_coverage.items():
         print(f"{branch} was {'hit' if hit else 'not hit'}")
+
+def reset_coverage():
+    global branch_coverage
+    for branch in branch_coverage:
+        branch_coverage[branch] = False

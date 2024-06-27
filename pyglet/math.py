@@ -41,7 +41,6 @@ branch_coverage = {
     "else_in_called_1": False
 }
 
-
 class Vec2:
     """A two-dimensional vector represented as an X Y coordinate pair."""
 
@@ -233,6 +232,12 @@ class Vec2:
         return f"Vec2({self.x}, {self.y})"
 
 
+def print_coverage():
+    global branch_coverage
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+
+print_coverage()
 
 class Vec3:
     """A three-dimensional vector represented as X Y Z coordinates."""
