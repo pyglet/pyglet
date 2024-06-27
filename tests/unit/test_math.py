@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.math import Mat3, Mat4, Vec3
+from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage, print_coverage, Quaternion
 
 branch_coverage = {
     "inverse_1": False,  
@@ -167,8 +167,49 @@ def test_mat3_associative_mul():
     v2 = swap_xy @ (scale_x @ Vec3(0,1,0))
     assert v1 == v2 and abs(v1) != 0
 
+
 def print_coverage():
     for branch, hit in branch_coverage.items():
         print(f"{branch} {'was hit' if hit else 'was not hit'}") 
 
 print_coverage()
+
+
+def test_limit1_bigger_than_max():
+    reset_coverage()
+    v = Vec2(3, 4)
+    result = v.limit(4.0)
+    print_coverage()
+    assert (v != result), "expected not equal"
+    return
+
+
+def test_limit2_not_bigger_max():
+    reset_coverage()
+    v = Vec2(3, 4)
+    result = v.limit(5.0)
+    print_coverage()
+    assert (v == result), "expected to be the same"
+
+
+def test_quaternion_normalize1_zero():
+    reset_coverage()
+    q = Quaternion(0.0,0.0,0.0,0.0)
+    result_q = q.normalize()
+    print_coverage()
+    assert (q == result_q) and (q.__abs__() == 0), "expected to be the same"
+
+
+def test_quaternion_normalize2_nonzero():
+    reset_coverage()
+    q = Quaternion(1.0,3.0,2.0,4.0)
+    result_q = q.normalize()
+    print_coverage()
+    assert (q != result_q) and (q.__abs__() != 0), "expected not the same"
+
+
+def reset_coverage():
+    global branch_coverage
+    for branch in branch_coverage:
+        branch_coverage[branch] = False
+

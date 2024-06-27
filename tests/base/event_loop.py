@@ -36,6 +36,15 @@ class EventLoopFixture(InteractiveFixture):
         'height': 300,
     }
 
+    branch_coverage = {
+        "get_document_1": False,  # Text document is None
+        "get_document_2": False,  # Text document is not None
+        "handle_answer_1": False,
+        "handle_answer_2": False,
+        "handle_answer_3": False,
+        "handle_answer_4": False
+    }
+
     def __init__(self, request):
         super().__init__(request)
         self._request = request
@@ -60,7 +69,10 @@ class EventLoopFixture(InteractiveFixture):
 
     def get_document(self):
         if self.text_document is None:
+            self.branch_coverage["get_document_1"] = True
             self._create_text()
+        else:
+            self.branch_coverage["get_document_2"] = True
         return self.text_document
 
     def _create_text(self):
@@ -110,14 +122,21 @@ class EventLoopFixture(InteractiveFixture):
 
     def handle_answer(self):
         if self.answer is None:
+            self.branch_coverage["handle_answer_1"] = True
             raise Exception('Did not receive valid input in question window')
         elif self.answer == self.key_fail:
-            # TODO: Ask input
+            self.branch_coverage["handle_answer_2"] = True
             pytest.fail('Tester marked test failed')
         elif self.answer == self.key_skip:
+            self.branch_coverage["handle_answer_3"] = True
             pytest.skip('Tester marked test skipped')
         elif self.answer == self.key_quit:
+            self.branch_coverage["handle_answer_4"] = True
             pytest.exit('Tester requested to quit')
+
+    def print_coverage():
+        for branch, hit in EventLoopFixture.branch_coverage.items():
+            print(f"{branch} was {'hit' if hit else 'not hit'}")
 
     def ask_question_no_window(self, description=None):
         """Ask a question to verify the current test result. Uses the console or an external gui
@@ -185,6 +204,84 @@ def test_question_skip(event_loop):
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
 
+    
 def print_coverage():
     for branch, hit in branch_coverage.items():
         print(f"{branch} {'was hit' if hit else 'was not hit'}")
+
+
+# Mocking the 'request' and 'pytest' needed for the original fixture setup
+class MockRequest:
+    # Satisfying interface requirement
+    def addfinalizer(self, finalizer_func):
+        pass
+
+# Prevent pytest.exit from actually stopping the script
+def mock_pytest_fail(message):
+    print("Mock fail:", message)
+
+def mock_pytest_skip(message):
+    print("Mock skip:", message)
+
+def mock_pytest_exit(message):
+    print("Mock exit:", message)
+
+# Replace the real pytest functions with mock functions
+pytest.fail = mock_pytest_fail
+pytest.skip = mock_pytest_skip
+pytest.exit = mock_pytest_exit
+
+# Using the mocked request
+event_loop = EventLoopFixture(request=MockRequest())
+
+# Ensuring self.window is not None, these functions would of never been reached if so
+event_loop.create_window() 
+
+
+# Testing get_document
+print("Testing get_document when text_document is None:")
+event_loop.text_document = None 
+document = event_loop.get_document()  
+print("Document after creation:", document)
+EventLoopFixture.print_coverage()
+
+print("Testing get_document with pre-existing document:")
+event_loop.text_document = "Pre-existing document"
+document = event_loop.get_document()
+print("Document when already exists:", document)
+EventLoopFixture.print_coverage()
+
+
+# Testing handle_answer for all cases
+print("\nTesting handle_answer when answer is None:")
+event_loop.answer = None
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is None:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_fail:")
+event_loop.answer = event_loop.key_fail
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_fail:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_skip:")
+event_loop.answer = event_loop.key_skip
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_skip:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_quit:")
+event_loop.answer = event_loop.key_quit
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_quit:", str(e))
+EventLoopFixture.print_coverage()
+
