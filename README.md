@@ -167,8 +167,15 @@ the coverage is now 100% from 0%. There were no tests initially, which makes it 
 
 <img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
 
+<br/>
+
 <img src="https://github.com/sannedb/pyglet/assets/92684792/9f0f273e-6cb2-4c11-a9ef-82da6336131c">
 
+<br/>
+
+<img src= "https://github.com/sannedb/pyglet/assets/92684792/c601d59c-8365-445c-8728-81d80ae09675">
+
+The coverage is now 100% from 0%. There also weren't existing tests for this function. Which made it easy to improve
 
 
 Emilija
