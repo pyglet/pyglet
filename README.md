@@ -230,10 +230,11 @@ https://github.com/pyglet/pyglet/commit/cbda5d030a0bf155ae8cc6e51892bb93cca1209c
 
 ### Overall
 
-<Provide a screenshot of the old coverage results by running an existing tool (the same as you already showed above)>
 <img width="855" alt="Screenshot 2024-06-27 at 13 03 59" src="https://github.com/sannedb/pyglet/assets/90255780/398aa74d-b022-4457-91ab-9afd48c64fa5">
 
 <Provide a screenshot of the new coverage results by running the existing tool using all test modifications made by the group>
+<img width="737" alt="Screenshot 2024-06-27 at 23 26 48" src="https://github.com/sannedb/pyglet/assets/90255780/706cb23e-0e6a-4f34-a8f6-e17f13b37a82">
+
 
 ## Statement of individual contributions
 
@@ -251,7 +252,7 @@ Sepaanta:
 Emilija: 
 * Ran the initial NLOC check;
 * Ran initial coverage report;
-* instrumented and tested coverage for inverse and on_key_press;
+* instrumented and tested coverage for inverse and on_key_press.
 
 Rūta:
-* ...
+* instrumented and tested coverage for draw_text and tear_down;
