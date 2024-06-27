@@ -56,8 +56,6 @@ https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f29233
 
 <img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/2f54ffbe-6d8e-42dd-a00d-1478dbb05a4b">
 
-<br/>
-
 Sepaanta
 
 <Function 1 name>
@@ -70,7 +68,6 @@ Sepaanta
 
 <Provide the same kind of information provided for Function 1>
 
-
 Emilija
 
 <Function 1 name>
@@ -82,7 +79,6 @@ Emilija
 <Function 2 name>
 
 <Provide the same kind of information provided for Function 1>
-
 
 Rūta
 
@@ -138,9 +134,6 @@ The coverage for this function is now at 95%. I have created mock situations, th
 
 <img width="943" alt="Screenshot 2024-06-27 at 14 43 51" src="https://github.com/sannedb/pyglet/assets/90255780/5af94469-7c1c-48fa-8dac-0010a6217449">
 <img width="944" alt="Screenshot 2024-06-27 at 14 44 18" src="https://github.com/sannedb/pyglet/assets/90255780/d7f4e2b8-b501-4c36-89bd-243dd8187a8b">
-
-<br/>
-
 
 Sepaanta
 
