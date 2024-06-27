@@ -239,7 +239,7 @@ def print_coverage():
     for branch, hit in branch_coverage.items():
         print(f"{branch} was {'hit' if hit else 'not hit'}")
 
-print_coverage()
+#print_coverage()
 
 class Vec3:
     """A three-dimensional vector represented as X Y Z coordinates."""

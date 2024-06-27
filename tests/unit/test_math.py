@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage, print_coverage
+from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage, print_coverage, Quaternion
 
 
 @pytest.fixture()
@@ -156,6 +156,22 @@ def test_limit2_not_bigger_max():
     result = v.limit(5.0)
     print_coverage()
     assert (v == result), "expected to be the same"
+
+
+def test_quaternion_normalize1_zero():
+    reset_coverage()
+    q = Quaternion(0.0,0.0,0.0,0.0)
+    result_q = q.normalize()
+    print_coverage()
+    assert (q == result_q), "expected to be the same"
+
+
+def test_quaternion_normalize2_nonzero():
+    reset_coverage()
+    q = Quaternion(1.0,3.0,2.0,4.0)
+    result_q = q.normalize()
+    print_coverage()
+    assert (q != result_q), "expected not the same"
 
 
 def reset_coverage():
