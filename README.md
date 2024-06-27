@@ -65,9 +65,13 @@ https://github.com/sannedb/pyglet/commit/68bec1593026c784580dc821d2a7b42e9738bdf
 <img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
 
 <br/>
-<Function 2 name>
+
+normalize.py
 
 <Provide the same kind of information provided for Function 1>
+https://github.com/sannedb/pyglet/commit/0db04da130f651e0849d77826ba2a974ef476993
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
 
 Emilija
 
@@ -160,6 +164,8 @@ the coverage is now 100% from 0%. There were no tests initially, which makes it 
 <Test 2>
 
 <Provide the same kind of information provided for Test 1>
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
 
 Emilija
 
