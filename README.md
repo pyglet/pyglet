@@ -41,9 +41,9 @@ This resulted in the following coverage:
 
 Sanne
 
-<Function 1 name>
+get_document.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f292338
 
 <Provide a screenshot of the coverage results output by the instrumentation>
 
