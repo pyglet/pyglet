@@ -9,95 +9,114 @@ the buffer.
 """
 from __future__ import annotations
 
+import abc
 import ctypes
 import sys
 from functools import lru_cache
+from typing import TYPE_CHECKING, Sequence
+
+from _ctypes import _Pointer, _SimpleCData
 
 import pyglet
-from pyglet.gl import *
+from pyglet.gl.gl import (
+    GL_ARRAY_BUFFER,
+    GL_DYNAMIC_DRAW,
+    GL_ELEMENT_ARRAY_BUFFER,
+    GL_MAP_READ_BIT,
+    GL_MAP_WRITE_BIT,
+    GL_WRITE_ONLY,
+    GLubyte,
+    GLuint,
+    glBindBuffer,
+    glBufferData,
+    glBufferSubData,
+    glDeleteBuffers,
+    glGenBuffers,
+    glMapBuffer,
+    glMapBufferRange,
+    glUnmapBuffer,
+)
+
+if TYPE_CHECKING:
+    from pyglet.gl import Context
+    from pyglet.graphics.shader import Attribute
+
+CTypesDataType = type[_SimpleCData]
+CTypesPointer = _Pointer
 
 
 class AbstractBuffer:
     """Abstract buffer of byte data.
 
-    :Ivariables:
-        `size` : int
+    Attributes:
+        size:
             Size of buffer, in bytes
-        `ptr` : int
-            Memory offset of the buffer, as used by the ``glVertexPointer``
-            family of functions
-        `usage` : int
-            OpenGL buffer usage, for example ``GL_DYNAMIC_DRAW``
-
+        ptr:
+            Memory offset of the buffer, as used by the ``glVertexPointer`` family of functions
     """
 
-    ptr = 0
-    size = 0
+    ptr: int = 0
+    size: int = 0
 
-    def bind(self, target=GL_ARRAY_BUFFER):
+    @abc.abstractmethod
+    def bind(self, target: int = GL_ARRAY_BUFFER) -> None:
         """Bind this buffer to an OpenGL target."""
-        raise NotImplementedError('abstract')
 
-    def unbind(self):
+    @abc.abstractmethod
+    def unbind(self) -> None:
         """Reset the buffer's OpenGL target."""
-        raise NotImplementedError('abstract')
 
-    def set_data(self, data):
+    @abc.abstractmethod
+    def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
         """Set the entire contents of the buffer.
 
-        :Parameters:
-            `data` : sequence of int or ctypes pointer
+        Args:
+            data:
                 The byte array to set.
 
         """
-        raise NotImplementedError('abstract')
 
-    def set_data_region(self, data, start, length):
+    @abc.abstractmethod
+    def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
         """Set part of the buffer contents.
 
-        :Parameters:
-            `data` : sequence of int or ctypes pointer
+        Args:
+            data:
                 The byte array of data to set
-            `start` : int
+            start:
                 Offset to start replacing data
-            `length` : int
+            length:
                 Length of region to replace
 
         """
-        raise NotImplementedError('abstract')
 
-    def map(self):
+    @abc.abstractmethod
+    def map(self) -> CTypesPointer[ctypes.c_ubyte]:
         """Map the entire buffer into system memory.
 
         The mapped region must be subsequently unmapped with `unmap` before
         performing any other operations on the buffer.
 
-        :Parameters:
-            `invalidate` : bool
-                If True, the initial contents of the mapped block need not
-                reflect the actual contents of the buffer.
-
-        :rtype: ``POINTER(ctypes.c_ubyte)``
-        :return: Pointer to the mapped block in memory
+        Returns:
+            Pointer to the mapped block in memory
         """
-        raise NotImplementedError('abstract')
 
-    def unmap(self):
+    @abc.abstractmethod
+    def unmap(self) -> None:
         """Unmap a previously mapped memory block."""
-        raise NotImplementedError('abstract')
 
-    def resize(self, size):
+    def resize(self, size: int) -> None:
         """Resize the buffer to a new size.
 
-        :Parameters:
-            `size` : int
+        Args:
+            size:
                 New size of the buffer, in bytes
 
         """
 
-    def delete(self):
+    @abc.abstractmethod
+    def delete(self) -> None:
         """Delete this buffer, reducing system resource usage."""
-        raise NotImplementedError('abstract')
 
 
 class BufferObject(AbstractBuffer):
@@ -109,14 +128,15 @@ class BufferObject(AbstractBuffer):
     The target of the buffer is ``GL_ARRAY_BUFFER`` internally to avoid
     accidentally overriding other states when altering the buffer contents.
     The intended target can be set when binding the buffer.
-
-    This class does not implement :py:class:`AbstractMappable`, and so has no
-    :py:meth:`~AbstractMappable.get_region` method.  See 
-    :py:class:`MappableVertexBufferObject` for a Buffer class
-    that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
-    def __init__(self, size, usage=GL_DYNAMIC_DRAW):
+    id: int
+    size: int
+    usage: int
+    _context: Context | None
+
+    def __init__(self, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        """Initialize the BufferObject with the given size and draw usage."""
         self.size = size
         self.usage = usage
         self._context = pyglet.gl.current_context
@@ -129,46 +149,44 @@ class BufferObject(AbstractBuffer):
         data = (GLubyte * self.size)()
         glBufferData(GL_ARRAY_BUFFER, self.size, data, self.usage)
 
-    def invalidate(self):
+    def invalidate(self) -> None:
         glBufferData(GL_ARRAY_BUFFER, self.size, None, self.usage)
 
-    def bind(self, target=GL_ARRAY_BUFFER):
+    def bind(self, target: int = GL_ARRAY_BUFFER) -> None:
         glBindBuffer(target, self.id)
 
-    def unbind(self):
+    def unbind(self) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-    def bind_to_index_buffer(self):
+    def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
 
-    def set_data(self, data):
+    def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
         glBufferData(GL_ARRAY_BUFFER, self.size, data, self.usage)
 
-    def set_data_region(self, data, start, length):
+    def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
         glBufferSubData(GL_ARRAY_BUFFER, start, length, data)
 
-    def map(self):
+    def map(self) -> CTypesPointer[ctypes.c_byte]:
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        ptr = ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY),
-                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
-        return ptr
+        return ctypes.cast(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY),
+                           ctypes.POINTER(ctypes.c_byte * self.size)).contents
 
-    def map_range(self, start, size, ptr_type):
+    def map_range(self, start: int, size: int, ptr_type: type[CTypesPointer]) -> CTypesPointer:
         glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        ptr = ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
-        return ptr
+        return ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
 
-    def unmap(self):
+    def unmap(self) -> None:
         glUnmapBuffer(GL_ARRAY_BUFFER)
 
-    def delete(self):
+    def delete(self) -> None:
         glDeleteBuffers(1, GLuint(self.id))
         self.id = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.id is not None:
             try:
                 self._context.delete_buffer(self.id)
@@ -176,7 +194,7 @@ class BufferObject(AbstractBuffer):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def resize(self, size):
+    def resize(self, size: int) -> None:
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
@@ -188,7 +206,7 @@ class BufferObject(AbstractBuffer):
         self.size = size
         glBufferData(GL_ARRAY_BUFFER, self.size, temp, self.usage)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
@@ -200,8 +218,16 @@ class AttributeBufferObject(BufferObject):
     fewer OpenGL calls are needed, which can increasing performance at the
     expense of system memory.
     """
+    data: CTypesDataType
+    data_ptr: int
+    _dirty_min: int
+    _dirty_max: int
+    _dirty: bool
+    attribute_stride: int
+    attribute_count: int
+    attribute_ctype: CTypesDataType
 
-    def __init__(self, size, attribute, usage=GL_DYNAMIC_DRAW):
+    def __init__(self, size: int, attribute: Attribute, usage: int = GL_DYNAMIC_DRAW) -> None:  # noqa: D107
         # size is the allocator size * attribute.stride
         super().__init__(size, usage)
         number = size // attribute.element_size
@@ -216,9 +242,10 @@ class AttributeBufferObject(BufferObject):
         self.attribute_count = attribute.count
         self.attribute_ctype = attribute.c_type
 
-    def sub_data(self):
-        """Updates the buffer if any data has been changed or invalidated. Allows submitting multiple changes at once,
-        rather than having to call glBufferSubData for every change.
+    def sub_data(self) -> None:
+        """Updates the buffer if any data has been changed or invalidated.
+
+        Allows submitting multiple changes at once, rather than having to call glBufferSubData for every change.
         """
         if not self._dirty:
             return
@@ -235,14 +262,14 @@ class AttributeBufferObject(BufferObject):
             self._dirty_max = 0
             self._dirty = False
 
-    @lru_cache(maxsize=None)
-    def get_region(self, start, count):
+    @lru_cache(maxsize=None)  # noqa: B019
+    def get_region(self, start: int, count: int) -> int:
         byte_start = self.attribute_stride * start  # byte offset
         array_count = self.attribute_count * count  # number of values
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
         return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
-    def set_region(self, start, count, data):
+    def set_region(self, start: int, count: int, data: Sequence[float]) -> None:
         array_start = self.attribute_count * start
         array_end = self.attribute_count * count + array_start
 
@@ -258,7 +285,7 @@ class AttributeBufferObject(BufferObject):
             self._dirty_max = byte_end
         self._dirty = True
 
-    def resize(self, size):
+    def resize(self, size: int) -> None:
         # size is the allocator size * attribute.stride
         number = size // ctypes.sizeof(self.attribute_ctype)
         data = (self.attribute_ctype * number)()
@@ -276,11 +303,11 @@ class AttributeBufferObject(BufferObject):
 
         self.get_region.cache_clear()
 
-    def invalidate(self):
+    def invalidate(self) -> None:
         super().invalidate()
         self._dirty = True
 
-    def invalidate_region(self, start, count):
+    def invalidate_region(self, start: int, count: int) -> None:
         byte_start = self.attribute_stride * start
         byte_end = byte_start + self.attribute_stride * count
         # As of Python 3.11, this is faster than min/max:
