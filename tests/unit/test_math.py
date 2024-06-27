@@ -163,7 +163,7 @@ def test_quaternion_normalize1_zero():
     q = Quaternion(0.0,0.0,0.0,0.0)
     result_q = q.normalize()
     print_coverage()
-    assert (q == result_q), "expected to be the same"
+    assert (q == result_q) and (q.__abs__() == 0), "expected to be the same"
 
 
 def test_quaternion_normalize2_nonzero():
@@ -171,7 +171,7 @@ def test_quaternion_normalize2_nonzero():
     q = Quaternion(1.0,3.0,2.0,4.0)
     result_q = q.normalize()
     print_coverage()
-    assert (q != result_q), "expected not the same"
+    assert (q != result_q) and (q.__abs__() != 0), "expected not the same"
 
 
 def reset_coverage():
