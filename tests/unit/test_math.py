@@ -2,6 +2,12 @@ import pytest
 
 from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage, print_coverage, Quaternion
 
+branch_coverage = {
+    "inverse_1": False,  
+    "inverse_2": False,  
+    "inverse_3": False,  
+    "inverse_4": False,  
+}
 
 @pytest.fixture()
 def mat3():
@@ -11,6 +17,23 @@ def mat3():
 @pytest.fixture()
 def mat4():
     return Mat4()
+
+def test_inverse_of_zero_matrix():
+    zero_matrix = Mat4((0, 0, 0, 0,
+                     0, 0, 0, 0,
+                     0, 0, 0, 0,
+                     0, 0, 0, 0))
+    with pytest.raises(ValueError):
+        inverse(zero_matrix)
+
+def test_inverse_of_all_same_matrix():
+    same_matrix = Mat4((1, 1, 1, 1,
+                     1, 1, 1, 1,
+                     1, 1, 1, 1,
+                     1, 1, 1, 1))
+    with pytest.raises(ValueError):
+        inverse(same_matrix)
+
 
 
 ##################
@@ -38,16 +61,20 @@ def inverse(matrix):
     for c in range(4):
         # Find and swap pivot row into place
         if matrix[4*c + c] == 0:
+            branch_coverage["inverse_1"] = True
             for r in range(c + 1, 4):
                 if matrix[4*r + c] != 0:
+                    branch_coverage["inverse_2"] = True
                     matrix = _row_swap(matrix, c, r)
                     i = _row_swap(i, c, r)
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
             if r != c:  # not the pivot row
+                branch_coverage["inverse_4"] = True
                 r_piv = matrix[4*r + c]
                 if r_piv != 0:
+                    branch_coverage["inverse_3"] = True
                     piv = matrix[4*c + c]
                     scalar = r_piv / piv
                     matrix = _row_mul(matrix, c, scalar)
@@ -141,6 +168,13 @@ def test_mat3_associative_mul():
     assert v1 == v2 and abs(v1) != 0
 
 
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} {'was hit' if hit else 'was not hit'}") 
+
+print_coverage()
+
+
 def test_limit1_bigger_than_max():
     reset_coverage()
     v = Vec2(3, 4)
@@ -178,3 +212,4 @@ def reset_coverage():
     global branch_coverage
     for branch in branch_coverage:
         branch_coverage[branch] = False
+
