@@ -148,7 +148,9 @@ old results:
 <br/>
 
 <img src="https://github.com/sannedb/pyglet/assets/92684792/37a57dda-09fb-4ef7-b398-171b99063350">
+
 <br/>
+
 <img src="https://github.com/sannedb/pyglet/assets/92684792/4ec489c6-bfd9-457f-8334-1696c78ee1ad">
 
 <br/>
