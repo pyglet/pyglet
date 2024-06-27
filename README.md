@@ -62,8 +62,6 @@ limit.py
 
 https://github.com/sannedb/pyglet/commit/68bec1593026c784580dc821d2a7b42e9738bdf1
 
-<Provide a screenshot of the coverage results output by the instrumentation>
-
 <img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
 
 <br/>
@@ -142,13 +140,20 @@ Sepaanta
 
 <Test 1>
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the new/enhanced test>
+https://github.com/sannedb/pyglet/commit/3e7bc00ec4c81870041557bf3a7075998b088129 
 
-<Provide a screenshot of the old coverage results (the same as you already showed above)>
+old results:
+<img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
 
-<Provide a screenshot of the new coverage results>
+<br/>
 
-<State the coverage improvement with a number and elaborate on why the coverage is improved>
+<img src="https://github.com/sannedb/pyglet/assets/92684792/37a57dda-09fb-4ef7-b398-171b99063350">
+<br/>
+<img src="https://github.com/sannedb/pyglet/assets/92684792/4ec489c6-bfd9-457f-8334-1696c78ee1ad">
+
+<br/>
+
+the coverage is now 100% from 0%. There were no tests initially, which makes it easy to improve the coverage. I tested it with border values. One where the check is barely true and one where is barely false.
 
 <Test 2>
 
