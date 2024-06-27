@@ -89,13 +89,13 @@ Rūta
 
 draw_text.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/pyglet/pyglet/commit/423262dba9547773da371a9ad5f36e63e7455f75
 
 <img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
 
 tear_down.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/sannedb/pyglet/commit/cbda5d030a0bf155ae8cc6e51892bb93cca1209c
 <img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
 
 
@@ -214,7 +214,7 @@ Rūta
 
 Test 1: draw_text.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/pyglet/pyglet/commit/423262dba9547773da371a9ad5f36e63e7455f75
 
 <img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
 
@@ -224,7 +224,7 @@ Test 1: draw_text.py
 
 Test 2: tear_down.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+https://github.com/pyglet/pyglet/commit/cbda5d030a0bf155ae8cc6e51892bb93cca1209c
 
 <img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
 
