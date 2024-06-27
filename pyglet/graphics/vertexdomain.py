@@ -250,10 +250,8 @@ class VertexList:
         if new_start != self.start:
             # Copy contents to new location
             for attribute in self.domain.attribute_names.values():
-                old = attribute.get_region(attribute.buffer, self.start, self.count)
-                new = attribute.get_region(attribute.buffer, new_start, self.count)
-                new.array[:] = old.array[:]
-                new.invalidate()
+                old_data = attribute.get_region(attribute.buffer, self.start, self.count)
+                attribute.set_region(attribute.buffer, new_start, self.count, old_data)
         self.start = new_start
         self.count = count
 
