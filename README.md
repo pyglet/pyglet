@@ -16,8 +16,15 @@ Programming language: Python
 ### Existing tool
 
 <Inform the name of the existing tool that was executed and how it was executed>
+```
+  coverage run --branch -m pytest tests/unit
+```
 
 <Show the coverage results provided by the existing tool with a screenshot>
+<img width="855" alt="Screenshot 2024-06-27 at 13 03 59" src="https://github.com/sannedb/pyglet/assets/90255780/71156523-f3cc-4482-b554-67e1f87128b6">
+<img width="1129" alt="Screenshot 2024-06-27 at 13 03 31" src="https://github.com/sannedb/pyglet/assets/90255780/9a290a27-bf33-4a6a-8b44-ca7066982862">
+
+
 
 ### Your own coverage tool
 
