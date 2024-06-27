@@ -65,6 +65,7 @@ A simple example of drawing shapes::
 .. versionadded:: 1.5.4
 """
 from __future__ import annotations
+
 import math
 
 from abc import ABC, abstractmethod
@@ -1966,15 +1967,17 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             height:
                 The height of the rectangle.
             radius:
-                Specifies the radii used for the rounded corners clockwise:
-                bottom-left, top-left, top-right, bottom-right.
-                Elements of the list can be numbers or tuples of two numbers to specify different x,y dimensions.
-                One value will define all corner radii to be of this value.
+                One or four values to specify the radii used for the rounded corners.
+                If one value is given, all corners will use the same value. If four values
+                are given, it will specify the radii used for the rounded corners clockwise:
+                bottom-left, top-left, top-right, bottom-right. A value can be either a single
+                float, or a tuple of two floats to specify different x,y dimensions.
             segments:
-                You can optionally specify how many distinct triangles
-                the rounded corner should be made from. If not specified it will
-                be automatically calculated using the formula:
-                `max(14, int(radius / 1.25))`.
+                You can optionally specify how many distinct triangles each rounded corner
+                should be made from. This can be one int for all corners, or a tuple of
+                four ints for each corner, specified clockwise: bottom-left, top-left,
+                top-right, bottom-right. If no value is specified, it will automatically
+                calculated using the formula: ``max(14, int(radius / 1.25))``.
             color:
                 The RGB or RGBA color of the rectangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
@@ -2003,10 +2006,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
         self._create_vertex_list()
 
-    def _set_radius(
-            self,
-            radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]
-    ) -> None:
+    def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         if isinstance(radius, (int, float)):
             self._radius = ((radius, radius),) * 4
         elif len(radius) == 2:
@@ -2023,10 +2023,11 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
     def _set_segments(self, segments: int | tuple[int, int, int, int] | None) -> None:
         if segments is None:
-            self._segments = [int(max(a, b) / 1.25) for a, b in self._radius]
+            self._segments = tuple(int(max(a, b) / 1.25) for a, b in self._radius)
         elif isinstance(segments, int):
             self._segments = (segments,) * 4
         else:
+            assert len(segments) == 4
             self._segments = segments
 
     def __contains__(self, point: tuple[float, float]) -> bool:
@@ -2112,8 +2113,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         self._update_vertices()
 
     @property
-    def radius(self) -> tuple[tuple[float, float], tuple[float, float],
-    tuple[float, float], tuple[float, float]]:
+    def radius(self) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float], tuple[float, float]]:
         return self._radius
 
     @radius.setter
