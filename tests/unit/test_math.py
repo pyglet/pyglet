@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage
+from pyglet.math import Mat3, Mat4, Vec3, Vec2, branch_coverage, print_coverage
 
 
 @pytest.fixture()
@@ -157,11 +157,6 @@ def test_limit2_not_bigger_max():
     print_coverage()
     assert (v == result), "expected to be the same"
 
-
-def print_coverage():
-    global branch_coverage
-    for branch, hit in branch_coverage.items():
-        print(f"{branch} was {'hit' if hit else 'not hit'}")
 
 def reset_coverage():
     global branch_coverage
