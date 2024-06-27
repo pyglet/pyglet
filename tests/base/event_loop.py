@@ -14,6 +14,10 @@ from pyglet.window import Window, key
 
 from .interactive import InteractiveFixture
 
+branch_coverage = {
+    "on_key_press_1": False,  
+    "on_key_press_2": False, 
+}
 
 @pytest.fixture
 def event_loop(request):
@@ -144,13 +148,25 @@ class EventLoopFixture(InteractiveFixture):
         if self.text_batch is not None:
             self.text_batch.draw()
 
-    def on_key_press(self, symbol, modifiers):
+def test_on_key_press_pass(event_loop):
+    event_loop.create_window()
+    event_loop.on_key_press(event_loop.key_pass, None)
+    assert event_loop.answer == event_loop.key_pass
+    print_coverage()
+    
+
+def on_key_press(self, symbol, modifiers):
         if symbol in (self.key_pass, self.key_fail, self.key_skip, self.key_quit):
+            branch_coverage["on_key_press_1"] = False
             self.answer = symbol
             self.interrupt_event_loop()
-
+        else:
+            branch_coverage["on_key_press_2"] = False
         # Prevent handling of Escape to close the window
         return True
+
+
+
 
 
 def test_question_pass(event_loop):
@@ -168,3 +184,7 @@ def test_question_skip(event_loop):
     event_loop.create_window()
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
+
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} {'was hit' if hit else 'was not hit'}")
