@@ -14,6 +14,10 @@ from pyglet.window import Window, key
 
 from .interactive import InteractiveFixture
 
+branch_coverage = {
+    "on_key_press_1": False,  
+    "on_key_press_2": False, 
+}
 
 @pytest.fixture
 def event_loop(request):
@@ -43,6 +47,7 @@ class EventLoopFixture(InteractiveFixture):
         "draw_text_2": False,  # text_batch is None
         "tear_down_1": False,  # window is not None
         "tear_down_2": False   # window is None
+        "handle_answer_4": False
     }
 
     def __init__(self, request):
@@ -138,6 +143,7 @@ class EventLoopFixture(InteractiveFixture):
             pytest.exit('Tester requested to quit')
 
     def print_coverage(self):
+    def print_coverage():
         for branch, hit in EventLoopFixture.branch_coverage.items():
             print(f"{branch} was {'hit' if hit else 'not hit'}")
 
@@ -173,13 +179,25 @@ class EventLoopFixture(InteractiveFixture):
         else:
             self.branch_coverage["draw_text_2"] = True
 
-    def on_key_press(self, symbol, modifiers):
+def test_on_key_press_pass(event_loop):
+    event_loop.create_window()
+    event_loop.on_key_press(event_loop.key_pass, None)
+    assert event_loop.answer == event_loop.key_pass
+    print_coverage()
+    
+
+def on_key_press(self, symbol, modifiers):
         if symbol in (self.key_pass, self.key_fail, self.key_skip, self.key_quit):
+            branch_coverage["on_key_press_1"] = False
             self.answer = symbol
             self.interrupt_event_loop()
-
+        else:
+            branch_coverage["on_key_press_2"] = False
         # Prevent handling of Escape to close the window
         return True
+
+
+
 
 
 def test_question_pass(event_loop):
@@ -197,6 +215,11 @@ def test_question_skip(event_loop):
     event_loop.create_window()
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
+
+    
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} {'was hit' if hit else 'was not hit'}")
 
 
 # Mocking the 'request' and 'pytest' needed for the original fixture setup
@@ -233,12 +256,14 @@ event_loop.text_document = None
 document = event_loop.get_document()  
 print("Document after creation:", document)
 event_loop.print_coverage()
+EventLoopFixture.print_coverage()
 
 print("Testing get_document with pre-existing document:")
 event_loop.text_document = "Pre-existing document"
 document = event_loop.get_document()
 print("Document when already exists:", document)
 event_loop.print_coverage()
+EventLoopFixture.print_coverage()
 
 
 # Testing handle_answer for all cases
@@ -252,6 +277,10 @@ event_loop.print_coverage()
 
 print("\nTesting handle_answer when answer is key_fail:")
 event_loop.answer is not None
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_fail:")
+event_loop.answer = event_loop.key_fail
 try:
     event_loop.handle_answer()
 except Exception as e:
@@ -260,6 +289,10 @@ event_loop.print_coverage()
 
 print("\nTesting handle_answer when answer is key_skip:")
 event_loop.answer is not None
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_skip:")
+event_loop.answer = event_loop.key_skip
 try:
     event_loop.handle_answer()
 except Exception as e:
@@ -268,6 +301,10 @@ event_loop.print_coverage()
 
 print("\nTesting handle_answer when answer is key_quit:")
 event_loop.answer is not None
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_quit:")
+event_loop.answer = event_loop.key_quit
 try:
     event_loop.handle_answer()
 except Exception as e:
@@ -337,3 +374,5 @@ event_loop.print_coverage()
 print("\nTesting tear_down without window:")
 event_loop.tear_down()
 event_loop.print_coverage()
+EventLoopFixture.print_coverage()
+
