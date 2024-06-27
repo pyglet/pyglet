@@ -24,7 +24,6 @@ from operator import mul as _mul
 from collections.abc import Iterable as _Iterable
 from collections.abc import Iterator as _Iterator
 
-
 Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 
@@ -32,6 +31,15 @@ Mat4T = _typing.TypeVar("Mat4T", bound="Mat4")
 def clamp(num: float, min_val: float, max_val: float) -> float:
     """Clamp a value between a minimum and maximum limit."""
     return max(min(num, max_val), min_val)
+
+
+#branch coverage
+branch_coverage = {
+    "if_statement_1": False,
+    "if_statement_in_called_1": False,
+    "else_1": False,
+    "else_in_called_1": False
+}
 
 
 class Vec2:
@@ -152,8 +160,11 @@ class Vec2:
 
     def limit(self, maximum: float) -> Vec2:
         """Limit the magnitude of the vector to passed maximum value."""
+        global branch_coverage
         if self.x ** 2 + self.y ** 2 > maximum * maximum:
+            branch_coverage["if_statement_1"] = True
             return self.from_magnitude(maximum)
+        branch_coverage["else_1"] = True
         return self
 
     def lerp(self, other: Vec2, alpha: float) -> Vec2:
@@ -193,8 +204,11 @@ class Vec2:
     def normalize(self) -> Vec2:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         d = self.__abs__()
+        global branch_coverage
         if d:
+            branch_coverage["if_statement_in_called_1"] = True
             return Vec2(self.x / d, self.y / d)
+        branch_coverage["else_in_called_1"] = True
         return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec2:
@@ -217,6 +231,7 @@ class Vec2:
 
     def __repr__(self) -> str:
         return f"Vec2({self.x}, {self.y})"
+
 
 
 class Vec3:
@@ -523,6 +538,7 @@ class Mat3(tuple):
     
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
+
     def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
         new = super().__new__(cls, values)
         assert len(new) == 9, "A 3x3 Matrix requires 9 values"
@@ -617,6 +633,7 @@ class Mat4(tuple):
     
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
+
     def __new__(cls: type[Mat4T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0,
                                                               0.0, 1.0, 0.0, 0.0,
                                                               0.0, 0.0, 1.0, 0.0,
@@ -626,7 +643,8 @@ class Mat4(tuple):
         return new
 
     @classmethod
-    def orthogonal_projection(cls: type[Mat4T], left: float, right: float, bottom: float, top: float, z_near: float, z_far: float) -> Mat4T:
+    def orthogonal_projection(cls: type[Mat4T], left: float, right: float, bottom: float, top: float, z_near: float,
+                              z_far: float) -> Mat4T:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
         
         Given left, right, bottom, top values, and near/far z planes,
