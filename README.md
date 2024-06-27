@@ -87,15 +87,16 @@ Emilija
 
 Rūta
 
-<Function 1 name>
+draw_text.py
 
 <Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
 
-<Provide a screenshot of the coverage results output by the instrumentation>
+<img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
 
-<Function 2 name>
+tear_down.py
 
-<Provide the same kind of information provided for Function 1>
+<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+<img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
 
 
 ## Coverage improvement
@@ -203,19 +204,21 @@ Emilija
 
 Rūta
 
-<Test 1>
+Test 1: draw_text.py
 
-<Show a patch (diff) or a link to a commit made in your forked repository that shows the new/enhanced test>
+<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
 
-<Provide a screenshot of the old coverage results (the same as you already showed above)>
+<img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
 
 <Provide a screenshot of the new coverage results>
 
 <State the coverage improvement with a number and elaborate on why the coverage is improved>
 
-<Test 2>
+Test 2: tear_down.py
 
-<Provide the same kind of information provided for Test 1>
+<Show a patch (diff) or a link to a commit made in your forked repository that shows the instrumented code to gather coverage measurements>
+
+<img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
 
 ### Overall
 
