@@ -329,11 +329,11 @@ event_loop.on_draw()
 event_loop.print_coverage()
 
 # Tests for tear_down
-"""print("\nTesting tear_down with window:")
+print("\nTesting tear_down with window:")
 event_loop.create_window()
 event_loop.tear_down()
 event_loop.print_coverage()
 
 print("\nTesting tear_down without window:")
 event_loop.tear_down()
-event_loop.print_coverage()"""
+event_loop.print_coverage()
