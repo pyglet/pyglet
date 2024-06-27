@@ -188,6 +188,7 @@ def test_question_skip(event_loop):
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
 
+
 # Mocking the 'request' and 'pytest' needed for the original fixture setup
 class MockRequest:
     # Satisfying interface requirement
@@ -215,4 +216,50 @@ event_loop = EventLoopFixture(request=MockRequest())
 # Ensuring self.window is not None, these functions would of never been reached if so
 event_loop.create_window() 
 
+
+# Testing get_document
+print("Testing get_document when text_document is None:")
+event_loop.text_document = None 
+document = event_loop.get_document()  
+print("Document after creation:", document)
+EventLoopFixture.print_coverage()
+
+print("Testing get_document with pre-existing document:")
+event_loop.text_document = "Pre-existing document"
+document = event_loop.get_document()
+print("Document when already exists:", document)
+EventLoopFixture.print_coverage()
+
+
+# Testing handle_answer for all cases
+print("\nTesting handle_answer when answer is None:")
+event_loop.answer = None
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is None:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_fail:")
+event_loop.answer = event_loop.key_fail
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_fail:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_skip:")
+event_loop.answer = event_loop.key_skip
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_skip:", str(e))
+EventLoopFixture.print_coverage()
+
+print("\nTesting handle_answer when answer is key_quit:")
+event_loop.answer = event_loop.key_quit
+try:
+    event_loop.handle_answer()
+except Exception as e:
+    print("Caught exception when answer is key_quit:", str(e))
 EventLoopFixture.print_coverage()
