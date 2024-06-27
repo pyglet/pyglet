@@ -168,6 +168,8 @@ class Allocator:
             new_size: int
                 New size of the region.
 
+        Returns:
+            Starting index of the re-allocated region.
         """
         assert size >= 0 and new_size >= 0  # noqa: PT018
 

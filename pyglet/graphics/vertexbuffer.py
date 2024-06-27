@@ -15,7 +15,7 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-from _ctypes import _Pointer, _SimpleCData
+from _ctypes import Array, _Pointer, _SimpleCData
 
 import pyglet
 from pyglet.gl.gl import (
@@ -263,7 +263,7 @@ class AttributeBufferObject(BufferObject):
             self._dirty = False
 
     @lru_cache(maxsize=None)  # noqa: B019
-    def get_region(self, start: int, count: int) -> int:
+    def get_region(self, start: int, count: int) -> Array[CTypesDataType]:
         byte_start = self.attribute_stride * start  # byte offset
         array_count = self.attribute_count * count  # number of values
         ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)

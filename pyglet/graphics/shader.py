@@ -209,6 +209,9 @@ class Attribute:
     location: int
     name: str
 
+    #: Buffer is created and attached during VertexDomain creation.
+    buffer: AttributeBufferObject | None
+
     def __init__(self, name: str, location: int, count: int, gl_type: int, normalize: bool, instance: bool) -> None:
         """Create the attribute accessor.
 
@@ -238,6 +241,7 @@ class Attribute:
 
         self.element_size = sizeof(self.c_type)
         self.stride = count * self.element_size
+        self.buffer = None
 
     def enable(self) -> None:
         """Enable the attribute."""
@@ -258,7 +262,7 @@ class Attribute:
     def set_divisor(self) -> None:
         glVertexAttribDivisor(self.location, 1)
 
-    def get_region(self, buffer: AttributeBufferObject, start: int, count: int) -> int:
+    def get_region(self, buffer: AttributeBufferObject, start: int, count: int) -> Array[CTypesDataType]:
         """Map a buffer region using this attribute as an accessor.
 
         The returned region consists of a contiguous array of component
