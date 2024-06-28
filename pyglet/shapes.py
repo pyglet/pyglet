@@ -65,13 +65,15 @@ A simple example of drawing shapes::
 .. versionadded:: 1.5.4
 """
 from __future__ import annotations
+
 import math
 
 from abc import ABC, abstractmethod
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence, TYPE_CHECKING, Union, Tuple
 
 import pyglet
 
+from pyglet.extlibs import earcut
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGLES
 from pyglet.gl import glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Batch, Group
@@ -79,7 +81,6 @@ from pyglet.math import Vec2
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
-
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -136,21 +137,28 @@ def _rotate_point(center, point, angle):
     return center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle)
 
 
-def _sat(vertices, point):
-    # Separating Axis Theorem
-    # return True if point is in the shape
-    poly = vertices + [vertices[0]]
-    for i in range(len(poly) - 1):
-        a, b = poly[i], poly[i + 1]
-        base = Vec2(a[1] - b[1], b[0] - a[0])
-        projections = []
-        for x, y in poly:
-            vec = Vec2(x, y)
-            projections.append(base.dot(vec) / abs(base))
-        point_proj = base.dot(Vec2(*point)) / abs(base)
-        if point_proj < min(projections) or point_proj > max(projections):
-            return False
-    return True
+def _point_in_polygon(polygon, point) -> bool:
+    """Use raycasting to determine if a point is inside a polygon.
+
+    This function is an example implementation available under MIT License at:
+    https://www.algorithms-and-technologies.com/point_in_polygon/python
+    """
+    odd = False
+    i = 0
+    j = len(polygon) - 1
+    while i < len(polygon) - 1:
+        i = i + 1
+        if ((polygon[i][1] > point[1]) != (polygon[j][1] > point[1])) and (
+                point[0]
+                < (
+                        (polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1])
+                        / (polygon[j][1] - polygon[i][1])
+                )
+                + polygon[i][0]
+        ):
+            odd = not odd
+        j = i
+    return odd
 
 
 def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None):
@@ -800,6 +808,7 @@ class Arc(ShapeBase):
 
     @property
     def thickness(self) -> float:
+        """Get/set the thickness of the Arc"""
         return self._thickness
 
     @thickness.setter
@@ -1917,6 +1926,201 @@ class Box(ShapeBase):
         self._height = float(value)
         self._update_vertices()
 
+    @property
+    def thickness(self) -> float:
+        """Get/set the line thickness of the Box."""
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, thickness: float) -> None:
+        self._thickness = thickness
+        self._update_vertices()
+
+
+_RadiusT = Union[float, Tuple[float, float]]
+
+
+class RoundedRectangle(pyglet.shapes.ShapeBase):
+
+    def __init__(
+            self,
+            x: float, y: float,
+            width: float, height: float,
+            radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT],
+            segments: int | tuple[int, int, int, int] | None = None,
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            batch: pyglet.graphics.Batch | None = None,
+            group: pyglet.graphics.Group | None = None
+    ):
+        """Create a rectangle with rounded corners.
+
+        The rectangle's anchor point defaults to the ``(x, y)``
+        coordinates, which are at the bottom left.
+
+        Args:
+            x:
+                The X coordinate of the rectangle.
+            y:
+                The Y coordinate of the rectangle.
+            width:
+                The width of the rectangle.
+            height:
+                The height of the rectangle.
+            radius:
+                One or four values to specify the radii used for the rounded corners.
+                If one value is given, all corners will use the same value. If four values
+                are given, it will specify the radii used for the rounded corners clockwise:
+                bottom-left, top-left, top-right, bottom-right. A value can be either a single
+                float, or a tuple of two floats to specify different x,y dimensions.
+            segments:
+                You can optionally specify how many distinct triangles each rounded corner
+                should be made from. This can be one int for all corners, or a tuple of
+                four ints for each corner, specified clockwise: bottom-left, top-left,
+                top-right, bottom-right. If no value is specified, it will automatically
+                calculated using the formula: ``max(14, int(radius / 1.25))``.
+            color:
+                The RGB or RGBA color of the rectangle, specified as a
+                tuple of 3 or 4 ints in the range of 0-255. RGB colors
+                will be treated as having an opacity of 255.
+            batch:
+                Optional batch to add the rectangle to.
+            group:
+                Optional parent group of the rectangle.
+        """
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+        self._set_radius(radius)
+        self._set_segments(segments)
+
+        self._num_verts = (sum(self._segments) + 4) * 3
+        self._rotation = 0
+
+        r, g, b, *a = color
+        self._rgba = r, g, b, a[0] if a else 255
+
+        program = get_default_shader()
+        self._batch = batch or pyglet.graphics.Batch()
+        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._create_vertex_list()
+
+    def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
+        if isinstance(radius, (int, float)):
+            self._radius = ((radius, radius),) * 4
+        elif len(radius) == 2:
+            self._radius = (radius,) * 4
+        else:
+            assert len(radius) == 4
+            self._radius = []
+            for value in radius:
+                if isinstance(value, (int, float)):
+                    self._radius.append((value, value))
+                else:
+                    assert len(value) == 2
+                    self._radius.append(value)
+
+    def _set_segments(self, segments: int | tuple[int, int, int, int] | None) -> None:
+        if segments is None:
+            self._segments = tuple(int(max(a, b) / 1.25) for a, b in self._radius)
+        elif isinstance(segments, int):
+            self._segments = (segments,) * 4
+        else:
+            assert len(segments) == 4
+            self._segments = segments
+
+    def __contains__(self, point: tuple[float, float]) -> bool:
+        assert len(point) == 2
+        point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
+        x, y = self._x - self._anchor_x, self._y - self._anchor_y
+        return x < point[0] < x + self._width and y < point[1] < y + self._height
+
+    def _create_vertex_list(self):
+        self._vertex_list = self._group.program.vertex_list(
+            self._num_verts, self._draw_mode, self._batch, self._group,
+            position=('f', self._get_vertices()),
+            colors=('Bn', self._rgba * self._num_verts),
+            translation=('f', (self._x, self._y) * self._num_verts))
+
+    def _get_vertices(self):
+        if not self._visible:
+            return (0, 0) * self._num_verts
+        else:
+            x = -self._anchor_x
+            y = -self._anchor_y
+
+            points = []
+            # arc_x, arc_y, start_angle
+            arc_positions = [
+                # bottom-left
+                (x + self._radius[0][0],
+                 y + self._radius[0][1], math.pi*3/2),
+                # top-left
+                (x + self._radius[1][0],
+                 y + self._height - self._radius[1][1], math.pi),
+                # top-right
+                (x + self._width - self._radius[2][0],
+                 y + self._height - self._radius[2][1], math.pi/2),
+                # bottom-right
+                (x + self._width - self._radius[3][0],
+                 y + self._radius[3][1], 0),
+            ]
+
+            for (rx, ry), (arc_x, arc_y, arc_start), segments in zip(self._radius, arc_positions, self._segments):
+                tau_segs = -math.pi / 2 / segments
+                points.extend([(arc_x + rx * math.cos(i * tau_segs + arc_start),
+                                arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)])
+
+            center_x = self._width / 2
+            center_y = self._height / 2
+            vertices = []
+            for i, point in enumerate(points):
+                triangle = center_x, center_y, *points[i - 1], *point
+                vertices.extend(triangle)
+
+            return vertices
+
+    def _update_vertices(self):
+        self._vertex_list.position[:] = self._get_vertices()
+
+    @property
+    def width(self) -> float:
+        """Get/set width of the rectangle.
+
+        The new left and right of the rectangle will be set relative to
+        its :py:attr:`.anchor_x` value.
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value: float) -> None:
+        self._width = value
+        self._update_vertices()
+
+    @property
+    def height(self) -> float:
+        """Get/set the height of the rectangle.
+
+        The bottom and top of the rectangle will be positioned relative
+        to its :py:attr:`.anchor_y` value.
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value: float) -> None:
+        self._height = value
+        self._update_vertices()
+
+    @property
+    def radius(self) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float], tuple[float, float]]:
+        return self._radius
+
+    @radius.setter
+    def radius(self, value: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]):
+        self._set_radius(value)
+        self._update_vertices()
+
 
 class Triangle(ShapeBase):
     def __init__(
@@ -1974,7 +2178,9 @@ class Triangle(ShapeBase):
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
-        return _sat([(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3)], point)
+        return _point_in_polygon(
+            [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3), (self._x, self._y)],
+            point)
 
     def _create_vertex_list(self):
         self._vertex_list = self._group.program.vertex_list(
@@ -2183,7 +2389,7 @@ class Polygon(ShapeBase):
             batch: Batch | None = None,
             group: Group | None = None
     ):
-        """Create a convex polygon.
+        """Create a polygon.
 
         The polygon's anchor point defaults to the first vertex point.
 
@@ -2206,7 +2412,7 @@ class Polygon(ShapeBase):
         self._rotation = 0
         self._coordinates = list(coordinates)
         self._x, self._y = self._coordinates[0]
-        self._num_verts = (len(self._coordinates) - 2) * 3
+        self._num_verts = len(self._coordinates)
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -2220,12 +2426,15 @@ class Polygon(ShapeBase):
     def __contains__(self, point):
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
-        return _sat(self._coordinates, point)
+        return _point_in_polygon(self._coordinates + [self._coordinates[0]], point)
 
     def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
-            self._num_verts, self._draw_mode, self._batch, self._group,
-            position=('f', self._get_vertices()),
+        vertices = self._get_vertices()
+        self._vertex_list = self._group.program.vertex_list_indexed(
+            self._num_verts, self._draw_mode,
+            earcut.earcut(vertices),
+            self._batch, self._group,
+            position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
@@ -2239,13 +2448,8 @@ class Polygon(ShapeBase):
             trans_y += self._anchor_y
             coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-            # Triangulate the convex polygon.
-            triangles = []
-            for n in range(len(coords) - 2):
-                triangles += [coords[0], coords[n + 1], coords[n + 2]]
-
-            # Flattening the list before setting vertices to it.
-            return tuple(value for coordinate in triangles for value in coordinate)
+            # Return the flattened coords.
+            return earcut.flatten([coords])["vertices"]
 
     def _update_vertices(self):
         self._vertex_list.position[:] = self._get_vertices()

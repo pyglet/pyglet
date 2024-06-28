@@ -1,37 +1,50 @@
-import unicodedata
+from __future__ import annotations
 
+import unicodedata
+from typing import TYPE_CHECKING
+
+from pyglet.libs.darwin.cocoapy import (
+    CFSTR,
+    ObjCClass,
+    ObjCInstance,
+    ObjCSubclass,
+    PyObjectEncoding,
+    cf,
+    cfstring_to_string,
+    send_super,
+)
 from pyglet.window import key
 
-from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
-from pyglet.libs.darwin.cocoapy import PyObjectEncoding, send_super
-from pyglet.libs.darwin.cocoapy import CFSTR, cfstring_to_string, cf
+if TYPE_CHECKING:
+    from pyglet.window.cocoa import CocoaWindow
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')
+
 
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
 class PygletTextView_Implementation:
     PygletTextView = ObjCSubclass('NSTextView', 'PygletTextView')
 
-    @PygletTextView.method(b'@'+PyObjectEncoding)
-    def initWithCocoaWindow_(self, window):
+    @PygletTextView.method(b'@' + PyObjectEncoding)
+    def initWithCocoaWindow_(self, window: CocoaWindow) ->  ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
             return None
         self._window = window
         # Interpret tab and return as raw characters
         self.setFieldEditor_(False)
-        self.empty_string = CFSTR("")
+        self.empty_string = CFSTR('')
         return self
 
     @PygletTextView.method('v')
-    def dealloc(self):
+    def dealloc(self) -> None:
         cf.CFRelease(self.empty_string)
 
     # Other functions still seem to work?
     @PygletTextView.method('v@')
-    def keyDown_(self, nsevent):
+    def keyDown_(self, nsevent: ObjCInstance) -> None:
         array = NSArray.arrayWithObject_(nsevent)
         self.interpretKeyEvents_(array)
 
@@ -39,131 +52,130 @@ class PygletTextView_Implementation:
             self.nextResponder().keyDown_(nsevent)
 
     @PygletTextView.method('v@')
-    def keyUp_(self, nsevent):
+    def keyUp_(self, nsevent: ObjCInstance) -> None:
         self.nextResponder().keyUp_(nsevent)
 
     @PygletTextView.method('v@')
-    def insertText_(self, text):
+    def insertText_(self, text: CFSTR) -> None:
         text = cfstring_to_string(text)
         self.setString_(self.empty_string)
         # Don't send control characters (tab, newline) as on_text events.
-        if text:
-            if unicodedata.category(text[0]) != 'Cc':
-                self._window.dispatch_event("on_text", text)
+        if text and unicodedata.category(text[0]) != 'Cc':
+            self._window.dispatch_event('on_text', text)
 
     @PygletTextView.method('v@')
-    def insertNewline_(self, sender):
+    def insertNewline_(self, sender: ObjCInstance) -> None:
         # Distinguish between carriage return (u'\r') and enter (u'\x03').
         # Only the return key press gets sent as an on_text event.
         event = NSApplication.sharedApplication().currentEvent()
         chars = event.charactersIgnoringModifiers()
         ch = chr(chars.characterAtIndex_(0))
-        if ch == u'\r':
-            self._window.dispatch_event("on_text", u'\r')
+        if ch == '\r':
+            self._window.dispatch_event('on_text', '\r')
 
     @PygletTextView.method('v@')
-    def moveUp_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_UP)
+    def moveUp_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_UP)
 
     @PygletTextView.method('v@')
-    def moveDown_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_DOWN)
+    def moveDown_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_DOWN)
 
     @PygletTextView.method('v@')
-    def moveLeft_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_LEFT)
+    def moveLeft_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_LEFT)
 
     @PygletTextView.method('v@')
-    def moveRight_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_RIGHT)
+    def moveRight_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_RIGHT)
 
     @PygletTextView.method('v@')
-    def moveWordLeft_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_WORD)
+    def moveWordLeft_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_PREVIOUS_WORD)
 
     @PygletTextView.method('v@')
-    def moveWordRight_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_WORD)
+    def moveWordRight_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_NEXT_WORD)
 
     @PygletTextView.method('v@')
-    def moveToBeginningOfLine_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_BEGINNING_OF_LINE)
+    def moveToBeginningOfLine_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_BEGINNING_OF_LINE)
 
     @PygletTextView.method('v@')
-    def moveToEndOfLine_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_END_OF_LINE)
+    def moveToEndOfLine_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_END_OF_LINE)
 
     @PygletTextView.method('v@')
-    def scrollPageUp_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_PAGE)
+    def scrollPageUp_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_PREVIOUS_PAGE)
 
     @PygletTextView.method('v@')
-    def scrollPageDown_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_PAGE)
+    def scrollPageDown_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_NEXT_PAGE)
 
     @PygletTextView.method('v@')
-    def scrollToBeginningOfDocument_(self, sender):   # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion", key.MOTION_BEGINNING_OF_FILE)
+    def scrollToBeginningOfDocument_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion', key.MOTION_BEGINNING_OF_FILE)
 
     @PygletTextView.method('v@')
-    def scrollToEndOfDocument_(self, sender):         # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion", key.MOTION_END_OF_FILE)
+    def scrollToEndOfDocument_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion', key.MOTION_END_OF_FILE)
 
     @PygletTextView.method('v@')
-    def deleteBackward_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_BACKSPACE)
+    def deleteBackward_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_BACKSPACE)
 
     @PygletTextView.method('v@')
-    def deleteForward_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_DELETE)
+    def deleteForward_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion', key.MOTION_DELETE)
 
     @PygletTextView.method('v@')
-    def moveUpAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_UP)
+    def moveUpAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_UP)
 
     @PygletTextView.method('v@')
-    def moveDownAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_DOWN)
+    def moveDownAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_DOWN)
 
     @PygletTextView.method('v@')
-    def moveLeftAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_LEFT)
+    def moveLeftAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_LEFT)
 
     @PygletTextView.method('v@')
-    def moveRightAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_RIGHT)
+    def moveRightAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_RIGHT)
 
     @PygletTextView.method('v@')
-    def moveWordLeftAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_WORD)
+    def moveWordLeftAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_PREVIOUS_WORD)
 
     @PygletTextView.method('v@')
-    def moveWordRightAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_WORD)
+    def moveWordRightAndModifySelection_(self, sender: ObjCInstance) -> None:
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_NEXT_WORD)
 
     @PygletTextView.method('v@')
-    def moveToBeginningOfLineAndModifySelection_(self, sender):      # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_BEGINNING_OF_LINE)
+    def moveToBeginningOfLineAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_BEGINNING_OF_LINE)
 
     @PygletTextView.method('v@')
-    def moveToEndOfLineAndModifySelection_(self, sender):            # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_END_OF_LINE)
+    def moveToEndOfLineAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_END_OF_LINE)
 
     @PygletTextView.method('v@')
-    def pageUpAndModifySelection_(self, sender):                     # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_PAGE)
+    def pageUpAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_PREVIOUS_PAGE)
 
     @PygletTextView.method('v@')
-    def pageDownAndModifySelection_(self, sender):                   # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_PAGE)
+    def pageDownAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_NEXT_PAGE)
 
     @PygletTextView.method('v@')
-    def moveToBeginningOfDocumentAndModifySelection_(self, sender):  # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_BEGINNING_OF_FILE)
+    def moveToBeginningOfDocumentAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_BEGINNING_OF_FILE)
 
     @PygletTextView.method('v@')
-    def moveToEndOfDocumentAndModifySelection_(self, sender):        # Mac OS X 10.6
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_END_OF_FILE)
+    def moveToEndOfDocumentAndModifySelection_(self, sender: ObjCInstance) -> None:  # Mac OS X 10.6
+        self._window.dispatch_event('on_text_motion_select', key.MOTION_END_OF_FILE)
 
 
 PygletTextView = ObjCClass('PygletTextView')

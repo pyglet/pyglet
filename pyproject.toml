@@ -42,16 +42,17 @@ ignore = [
     "Q000",  # double quotes
 ]
 
-isort = { known-first-party = [
-  "pyglet"
-], required-imports = [
-  "from __future__ import annotations",
-] }
-
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyglet"]
+required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
 
 [tool.ruff.format]
 quote-style = "preserve"
@@ -69,5 +70,10 @@ inline-quotes = 'single'
 "pyglet/font/quartz.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/ttf.py" = ["RUF012", "D", "N", "ARG"]
 "pyglet/font/win32.py" = ["RUF012", "D", "N", "ARG"]
-
+"pyglet/window/cocoa/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "examples/*" = ["I"]
+

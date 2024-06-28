@@ -1,4 +1,4 @@
-"""2D Animations
+"""2D Animations.
 
 Animations can be used by the :py:class:`~pyglet.sprite.Sprite` class in place
 of static images. They are essentially containers for individual image frames,
@@ -24,7 +24,7 @@ You can also use an :py:class:`pyglet.image.ImageGrid`, which is iterable::
 
     ani = pyglet.image.Animation.from_image_sequence(image_grid, duration=0.1)
 
-In the above examples, all of the Animation Frames have the same duration.
+In the above examples, all the Animation Frames have the same duration.
 If you wish to adjust this, you can manually create the Animation from a list of
 :py:class:`~AnimationFrame`::
 
@@ -39,121 +39,91 @@ If you wish to adjust this, you can manually create the Animation from a list of
     ani = pyglet.image.Animation(frames=[frame_a, frame_b, frame_c])
 
 """
+from __future__ import annotations
+
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Literal
+    from collections.abc import Iterable
+    from pyglet.image import AbstractImage, ImageData
+    from pyglet.image.atlas import TextureBin
 
 
 class Animation:
     """Sequence of images with timing information.
 
+    Animations are a collection of :py:class:`~AnimationFrame`s, which are
+    simple containers for Image data and duration information.
+
     If no frames of the animation have a duration of ``None``, the animation
     loops continuously; otherwise the animation stops at the first frame with
     duration of ``None``.
-
-    :Ivariables:
-        `frames` : list of `~pyglet.image.AnimationFrame`
-            The frames that make up the animation.
-
     """
 
-    def __init__(self, frames):
-        """Create an animation directly from a list of frames.
-
-        :Parameters:
-            `frames` : list of `~pyglet.image.AnimationFrame`
-                The frames that make up the animation.
-
-        """
+    def __init__(self, frames: list[AnimationFrame]) -> None:
+        """Create an animation directly from a list of frames."""
         assert len(frames)
         self.frames = frames
 
-    def add_to_texture_bin(self, texture_bin, border=0):
+    def add_to_texture_bin(self, texture_bin: TextureBin, border: int = 0) -> None:
         """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
 
         The animation frames are modified in-place to refer to the texture bin
-        regions.
-
-        :Parameters:
-            `texture_bin` : `~pyglet.image.atlas.TextureBin`
-                Texture bin to upload animation frames into.
-            `border` : int
-                Leaves specified pixels of blank space around
-                each image frame when adding to the TextureBin.
-
+        regions. An optional border (in pixels) can be specified to reserve around
+        the images that are added to the texture bin.
         """
         for frame in self.frames:
             frame.image = texture_bin.add(frame.image, border)
 
-    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
-        """Create a copy of this animation applying a simple transformation.
+    def get_transform(self, flip_x: bool = False, flip_y: bool = False,
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> Animation:
+        """Create a copy of this animation, applying a simple transformation.
+
+        The transformation is performed by manipulating the texture coordinates,
+        which limits this operation to increments of 90 degrees.
 
         The transformation is applied around the image's anchor point of
         each frame.  The texture data is shared between the original animation
         and the transformed animation.
-
-        :Parameters:
-            `flip_x` : bool
-                If True, the returned animation will be flipped horizontally.
-            `flip_y` : bool
-                If True, the returned animation will be flipped vertically.
-            `rotate` : int
-                Degrees of clockwise rotation of the returned animation.  Only
-                90-degree increments are supported.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
         """
         frames = [AnimationFrame(frame.image.get_texture().get_transform(flip_x, flip_y, rotate),
                                  frame.duration) for frame in self.frames]
         return Animation(frames)
 
-    def get_duration(self):
-        """Get the total duration of the animation in seconds.
-
-        :rtype: float
-        """
+    def get_duration(self) -> float:
+        """Get the total duration of the animation in seconds."""
         return sum([frame.duration for frame in self.frames if frame.duration is not None])
 
-    def get_max_width(self):
+    def get_max_width(self) -> int:
         """Get the maximum image frame width.
 
         This method is useful for determining texture space requirements: due
         to the use of ``anchor_x`` the actual required playback area may be
         larger.
-
-        :rtype: int
         """
         return max([frame.image.width for frame in self.frames])
 
-    def get_max_height(self):
+    def get_max_height(self) -> int:
         """Get the maximum image frame height.
 
         This method is useful for determining texture space requirements: due
         to the use of ``anchor_y`` the actual required playback area may be
         larger.
-
-        :rtype: int
         """
         return max([frame.image.height for frame in self.frames])
 
     @classmethod
-    def from_image_sequence(cls, sequence, duration, loop=True):
-        """Create an animation from a list of images and a constant framerate.
-
-        :Parameters:
-            `sequence` : list of `~pyglet.image.AbstractImage`
-                Images that make up the animation, in sequence.
-            `duration` : float
-                Number of seconds to display each image.
-            `loop` : bool
-                If True, the animation will loop continuously.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-        """
+    def from_image_sequence(cls, sequence: Iterable[ImageData], duration: float, loop: bool = True) -> Animation:
+        """Create an animation from a list of images and a per-frame duration."""
         frames = [AnimationFrame(image, duration) for image in sequence]
         if not loop:
             frames[-1].duration = None
         return cls(frames)
 
-    def __repr__(self):
-        return "Animation(frames={0})".format(len(self.frames))
+    def __repr__(self) -> str:
+        return f"Animation(frames={len(self.frames)})"
 
 
 class AnimationFrame:
@@ -161,19 +131,10 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image, duration):
-        """Create an animation frame from an image.
-
-        :Parameters:
-            `image` : `~pyglet.image.AbstractImage`
-                The image of this frame.
-            `duration` : float
-                Number of seconds to display the frame, or ``None`` if it is
-                the last frame in the animation.
-
-        """
+    def __init__(self, image: AbstractImage | ImageData, duration: float) -> None:
+        """Create an animation frame from an image."""
         self.image = image
         self.duration = duration
 
-    def __repr__(self):
-        return "AnimationFrame({0}, duration={1})".format(self.image, self.duration)
+    def __repr__(self) -> str:
+        return f"AnimationFrame({self.image}, duration={self.duration})"

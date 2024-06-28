@@ -35,7 +35,7 @@ import pyglet
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.image import ImageData, TextureRegion, TextureArrayRegion
+    from pyglet.image import AbstractImage, ImageData, TextureRegion, TextureArrayRegion
 
 
 class AllocatorException(Exception):
@@ -191,7 +191,7 @@ class TextureBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img: ImageData, border: int = 0) -> TextureRegion:
+    def add(self, img: ImageData | AbstractImage, border: int = 0) -> TextureRegion:
         """Add an image into this texture bin.
 
         This method calls :py:meth:`~TextureAtlas.add` for the first atlas

@@ -1,8 +1,16 @@
 """This example shows how to use multiple textures in a shader with Pyglet."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.gl import *
-import random
+from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
+    glClearColor, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+
+if TYPE_CHECKING:
+    from pyglet.image import Texture, AbstractImage
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.shader import ShaderProgram
 
 vertex_source = """#version 150 core
     in vec3 translate;
@@ -48,35 +56,35 @@ fragment_source = """#version 150 core
     in vec4 vertex_colors;
     in vec3 texture_coords;
     out vec4 final_colors;
-    
+
     uniform sampler2D kitten_texture;
     uniform sampler2D pyglet_texture;
-    
+
     void main()
     {
-        final_colors = texture(kitten_texture, texture_coords.xy) * texture(pyglet_texture, texture_coords.xy) * vertex_colors;
+        final_colors = texture(kitten_texture, texture_coords.xy) * texture(pyglet_texture, texture_coords.xy) * 
+        vertex_colors;
     }
 """
 
 
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
-    """A sprite group that uses multiple active textures.
-    """
+    """A sprite group that uses multiple active textures."""
 
-    def __init__(self, textures, blend_src, blend_dest, program=None, parent=None):
+    def __init__(self, textures: dict[str, Texture], blend_src: int, blend_dest: int,
+                 program: ShaderProgram | None = None, parent: Group | None = None) -> None:
         """Create a sprite group for multiple textures and samplers.
-           All textures must share the same target type.
 
-        :Parameters:
-            `textures` : `dict`
-                Textures in samplername : texture.
-            `blend_src` : int
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` : int
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `~pyglet.graphics.Group`
+        All textures must share the same target type.
+
+        Args:
+            textures:
+                A dictionary of textures, with the keys being the GLSL sampler name.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            parent:
                 Optional parent group.
         """
         self.textures = textures
@@ -84,7 +92,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         self.target = texture.target
         super().__init__(texture, blend_src, blend_dest, program, parent)
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.use()
 
         for idx, name in enumerate(self.textures):
@@ -97,57 +105,78 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.stop()
         glActiveTexture(GL_TEXTURE0)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'
 
-    def __eq__(self, other):
+    def __eq__(self, other: object | Group | MultiTextureSpriteGroup) -> bool:
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
                 self.textures == other.textures and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((id(self.parent),
                      id(self.textures),
                      self.blend_src, self.blend_dest))
 
 
-class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
+class MultiTextureSprite(pyglet.sprite.Sprite):
+    """An example of a Sprite that can utilize multiple textures for an effect."""
     group_class = MultiTextureSpriteGroup
 
     def __init__(self,
-                 imgs, x=0, y=0, z=0,
-                 blend_src=GL_SRC_ALPHA,
-                 blend_dest=GL_ONE_MINUS_SRC_ALPHA,
-                 batch=None,
-                 group=None,
-                 subpixel=False,
-                 program=None):
-        # Ensure the images are textures.
-        textures = {}
-        for name, img in imgs.items():
-            textures[name] = img.get_texture()
+                 images: dict[str, AbstractImage],
+                 x: float = 0, y: float = 0, z: float = 0,
+                 blend_src: int = GL_SRC_ALPHA,
+                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 batch: Batch | None = None,
+                 group: Group | None = None,
+                 subpixel: bool = False,
+                 program: ShaderProgram | None = None) -> None:
+        """Create a Sprite instance.
 
-        same_target = all([texture.target for texture in textures.values()])
-        assert same_target is True, "All textures need to be the same target."
-        self._x = x
-        self._y = y
-        self._z = z
-        self._program = program
+        Args:
+            images:
+                A dictionary of images, with the keys being the GLSL sampler name.
+            x:
+                X coordinate of the sprite.
+            y:
+                Y coordinate of the sprite.
+            z:
+                Z coordinate of the sprite.
+            blend_src:
+                OpenGL blend source mode.  The default is suitable for
+                compositing sprites drawn from back-to-front.
+            blend_dest:
+                OpenGL blend destination mode.  The default is suitable for
+                compositing sprites drawn from back-to-front.
+            batch:
+                Optional batch to add the sprite to.
+            group:
+                Optional parent group of the sprite.
+            subpixel:
+                Allow floating-point coordinates for the sprite. By default,
+                coordinates are restricted to integer values.
+            program:
+                A specific shader program to initialize the sprite with. By default, a pre-made shader will be chosen
+                based on the texture type passed.
+        """
+        # Ensure the images are textures.
+        self.textures: dict[str, Texture] = {name: img.get_texture() for name, img in images.items()}
+        assert all(tex.target for tex in self.textures.values()) is True, "All textures need to be the same target."
 
         # Use first image as base.
-        self._texture = list(textures.values())[0]
+        super().__init__(list(self.textures.values())[0], x, y, z, blend_src, blend_dest, batch, group, subpixel,
+                         program)
 
-        self._batch = batch or graphics.get_default_batch()
-        self._group = self.group_class(textures, blend_src, blend_dest, self._program, group)
-        self._subpixel = subpixel
-        self._create_vertex_list()
+    def get_sprite_group(self) -> MultiTextureSpriteGroup:
+        return self.group_class(self.textures, self._blend_src, self._blend_dest, self._program, self._user_group)
 
 
 window = pyglet.window.Window()

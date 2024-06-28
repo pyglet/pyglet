@@ -132,17 +132,17 @@ class WidgetBase(EventDispatcher):
         change the same value that the Widget controls.  Note that events are not
         dispatched when changing this property directly.
         """
-        raise NotImplementedError("Value depends on control type!")
+        raise NotImplementedError('Value depends on control type!')
 
     @value.setter
     def value(self, value: int | float | bool):
-        raise NotImplementedError("Value depends on control type!")
+        raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
     def _update_position(self) -> None:
-        raise NotImplementedError("Unable to reposition this Widget")
+        raise NotImplementedError('Unable to reposition this Widget')
 
     # Handlers
 
@@ -161,7 +161,7 @@ class WidgetBase(EventDispatcher):
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         pass
 
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         pass
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
@@ -411,7 +411,7 @@ class Slider(WidgetBase):
         if self._in_update:
             self._update_knob(x)
 
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         if not self.enabled:
             return
         if self._check_hit(x, y):
