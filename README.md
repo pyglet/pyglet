@@ -1,154 +1,279 @@
-[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
+# Report for Assignment 1
 
-![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png)
+## Project chosen
 
-# pyglet
+Name: pyglet
 
-*pyglet* is a cross-platform windowing and multimedia library for Python, intended for developing games
-and other visually rich applications. It supports Windowing, input event handling, Controllers & Joysticks,
-OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
+URL: https://github.com/pyglet/pyglet
 
-> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
-> new exciting features, but also some necessary breaking changes. If your game/application has suddenly 
-> stopped working, please read the [migration section in the documentation](https://pyglet.readthedocs.io/en/latest/programming_guide/migration.html)
-> The previous version of pyglet is tracked in the `pyglet-1.5-maintenance` branch.
-> **If you want to do a pull request for the previous release, please target the appropriate branch**. 
+Number of lines of code and the tool used to count it: 100531, calculated by Lizard:
+<img width="640" alt="Screenshot 2024-06-27 at 11 42 34" src="https://github.com/sannedb/pyglet/assets/90255780/c267df1a-7ac9-4dfb-917d-d4fce0d34ae4">
 
-> :exclamation: `pyglet.graphics.draw` and `pyglet.graphics.draw_indexed` will be removed
-> in pyglet v2.1. The `shapes` module is an alternative for drawing simple shapes. 
+Programming language: Python
 
-* pyglet [documentation]
-* pyglet on [PyPI]
-* pyglet [discord] server
-* pyglet [mailing list]
-* pyglet [issue tracker]
-* pyglet [website]
+## Coverage measurement
 
-pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
-please [open an issue](https://github.com/pyglet/pyglet/issues).
-Anyone is welcome to join our [discord] server where a lot of the development discussion is going on.
-It's also a great place to ask for help.
+### Existing tool
 
-Some features of pyglet are:
-
-* **No external dependencies or installation requirements.** For most application and game requirements, *pyglet*
-  needs nothing else besides Python, simplifying distribution and installation. It's easy to package and distribute
-  your project with [Nuitka](https://nuitka.net) or [PyInstaller](https://pyinstaller.org). 
-* **Take advantage of multiple windows and multi-monitor desktops.** *pyglet* allows you to use multiple
-  platform-native windows, and is fully aware of multi-monitor setups for use with fullscreen games.
-* **Load images, sound, music and video in almost any format.** *pyglet* can optionally use FFmpeg to play back
-  audio formats such as MP3, OGG/Vorbis and WMA, and video formats such as MPEG2, H.264, H.265, WMV and Xvid.
-  Without FFmpeg, *pyglet* contains built-in support for standard formats such as wav, png, bmp, and others.
-* **pyglet is written entirely in pure Python**, and makes use of the *ctypes* module to interface with system
-  libraries. You can modify the codebase or make a contribution without any second language compilation steps or
-  compiler setup. Despite being pure Python, *pyglet* has excellent performance thanks to advanced batching for
-  drawing thousands of objects.
-* **pyglet is provided under the BSD open-source license**, allowing you to use it for both commercial and other
-  open-source projects with very little restriction.
-
-## Requirements
-
-pyglet runs under Python 3.8+. Being written in pure Python, it also works on other Python interpreters such as PyPy. Supported platforms are:
-
-* Windows 7 or later
-* Mac OS X 10.3 or later
-* Linux, with the following libraries (most recent distributions will have
-  these in a default installation):
-  * OpenGL and GLX
-  * GDK 2.0+ or Pillow (required for loading images other than PNG and BMP)
-  * OpenAL or Pulseaudio (required for playing audio)
-
-**As of pyglet 2.0, OpenGL 3.3+ is required**. 
-
-To play a large variety of compressed audio and video files,
-pyglet can optionally take advantage of [FFmpeg](https://ffmpeg.org/).
-
-## Installation
-
-pyglet is installable from PyPI:
-
-    pip install --upgrade --user pyglet
-
-## Installation from source
-
-If you're reading this `README` from a source distribution, you can install pyglet with:
-
-    pip install --upgrade --user .
-    # or
-    python setup.py install --user
-
-You can also install the latest development version directly from Github:
-
-    pip install --upgrade --user https://github.com/pyglet/pyglet/archive/master.zip
-
-For local development install pyglet in editable mode:
-
-```bash
-# with pip
-pip install -e .
-# with setup.py
-python setup.py develop
+<Inform the name of the existing tool that was executed and how it was executed>
+We used Coverage (coverage.py) as recommended by the coordinators. Pyglet instructed to only run the unit tests by calling pytest on their tests/unit directory, so we did just that. The commands to execute the tests were as follows:
+  
 ```
-
-There are no compilation steps during the installation; if you prefer,
-you can simply add this directory to your `PYTHONPATH` and use pyglet without
-installing it. You can also copy pyglet directly into your project folder.
-
-## Contributing
-
-**A good way to start contributing to a component of pyglet is by its documentation**. When studying the code you
-are going to work with, also read the associated docs. If you don't understand the code with the help of the docs,
-it is a sign that the docs should be improved. If you wish to make large changes to any part of pyglet, it's always
-a good idea to reach out for feedback first. This can avoid wasted effort in cases where someone is already working
-on something similar, or if your idea can't be accepted for any reason. 
-
-A basic outline of how to a contribution is as follows:
-
-* Fork the [official repository](https://github.com/pyglet/pyglet/fork).
-* In your fork, checkout the branch you wish to contribute to (such as *pyglet-1.5-maintenance*).
-* Apply your changes to your fork.
-* Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
-* Alternatively you can create a patch and submit it to the issue tracker.
-
-When making a pull request, check that you have addressed its respective documentation, both within the code docstrings
-and the programming guide (if applicable). It is very important to all of us that the documentation matches the latest
-code and vice-versa.
-
-Consequently, an error in the documentation, either because it is hard to understand or because it doesn't match the
-code, is a bug that deserves to be reported on a ticket.
-
-## Building Docs
-
-    pip install -r doc/requirements.txt
-    python setup.py build_sphinx
-
-Please check [the README.md file in the doc directory](doc/README.md) for more details.
-
-## Testing
-
-pyglet makes use of pytest for its test suite.
-
-```bash
+# installing necessities
+python3 -m pip install coverage
+pip install --upgrade --user pyglet
 pip install -r tests/requirements.txt --user
-# Only run unittests
-pytest tests/unit
+
+# running test and gathering results
+coverage run --branch -m pytest tests/unit
+coverage html
 ```
+This resulted in the following coverage:
+<Show the coverage results provided by the existing tool with a screenshot>
+<img width="855" alt="Screenshot 2024-06-27 at 13 03 59" src="https://github.com/sannedb/pyglet/assets/90255780/71156523-f3cc-4482-b554-67e1f87128b6">
+<img width="1129" alt="Screenshot 2024-06-27 at 13 03 31" src="https://github.com/sannedb/pyglet/assets/90255780/9a290a27-bf33-4a6a-8b44-ca7066982862">
 
-Please check the [testing section in the development guide](https://pyglet.readthedocs.io/en/latest/internal/testing.html)
-for more information about running and writing tests.
 
-## Contact
 
-pyglet is developed by many individual volunteers, and there is no central point of contact. If you have a question
-about developing with pyglet, or you wish to contribute, please join the [mailing list], [discord] server, or [subreddit].
+### Your own coverage tool
 
-For legal issues, please contact [Alex Holkner](mailto:Alex.Holkner@gmail.com).
+<The following is supposed to be repeated for each group member>
 
-[discord]: https://discord.gg/QXyegWe
-[mailing list]: http://groups.google.com/group/pyglet-users
-[subreddit]: https://www.reddit.com/r/pyglet/
-[documentation]: https://pyglet.readthedocs.io
-[wiki]:  https://github.com/pyglet/pyglet/wiki
-[pypi]:  https://pypi.org/project/pyglet/
-[website]: http://pyglet.org/
-[issue tracker]: https://github.com/pyglet/pyglet/issues
+Sanne
+
+get_document.py
+
+https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f292338
+
+<img width="788" alt="Screenshot 2024-06-27 at 14 25 56" src="https://github.com/sannedb/pyglet/assets/90255780/b4cbe265-e94b-420b-8af1-b06e776807a7">
+
+<br/>
+
+
+handle_answer.py
+
+https://github.com/sannedb/pyglet/commit/b4bc00c405f50ee607d8b7c33ead8e892f292338
+
+<img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/2f54ffbe-6d8e-42dd-a00d-1478dbb05a4b">
+
+Sepaanta
+
+limit.py
+
+https://github.com/sannedb/pyglet/commit/68bec1593026c784580dc821d2a7b42e9738bdf1
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
+
+<br/>
+
+normalize.py
+
+<Provide the same kind of information provided for Function 1>
+https://github.com/sannedb/pyglet/commit/0db04da130f651e0849d77826ba2a974ef476993
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
+
+Emilija
+
+inverse.py
+
+https://github.com/sannedb/pyglet/commit/50ee8a173c09bc9bbfecc37ad67fdf1ce6cda241
+
+<img width="263" alt="Screenshot 2024-06-27 at 21 49 51" src="https://github.com/sannedb/pyglet/assets/89348302/54e4bb6c-ef9e-4ce8-ac76-465ca6193509">
+
+on_key_press.py
+
+https://github.com/sannedb/pyglet/commit/33fbb3e8d2ae0e39e8671a59c7ed0c085571a4b0
+
+Rūta
+
+draw_text.py
+
+https://github.com/pyglet/pyglet/commit/423262dba9547773da371a9ad5f36e63e7455f75
+
+<br/>
+
+<img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
+
+tear_down.py
+
+https://github.com/sannedb/pyglet/commit/cbda5d030a0bf155ae8cc6e51892bb93cca1209c
+
+<br/>
+<img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
+
+
+## Coverage improvement
+
+### Individual tests
+
+<The following is supposed to be repeated for each group member>
+
+Sanne
+
+Test 1: get_document.py
+
+https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f0 
+
+<img width="788" alt="Screenshot 2024-06-27 at 14 25 56" src="https://github.com/sannedb/pyglet/assets/90255780/2b7349ae-6bf8-4a94-928e-9a686d3cbb15">
+
+After:
+
+<img width="798" alt="Screenshot 2024-06-27 at 14 32 28" src="https://github.com/sannedb/pyglet/assets/90255780/4e885b8b-f32d-4bbc-a270-60816103a4d4">
+
+<br/>
+
+The coverage is now 100%. In essence this was not too hard, because there can only be two situations: one where there is no document so they create one, and one where there is one and they return that. I created tests for both cases. The coverage was improved because it was 0% at first, which I am assuming is because either of the situations will always be true so creating a test for this function may not have had the highest priority for Pyglet's developer team. Below you can find the proof of improvement after checking with coverage.py:
+
+<br/>
+
+<img width="1098" alt="Screenshot 2024-06-27 at 14 52 23" src="https://github.com/sannedb/pyglet/assets/90255780/a53c67fb-f149-4484-809b-7c5f0d599c1a">
+<img width="1135" alt="Screenshot 2024-06-27 at 14 53 19" src="https://github.com/sannedb/pyglet/assets/90255780/67250345-09a2-42c4-8ed1-04fb91a2a870">
+
+<br/>
+
+Test 2: handle_answer.py
+
+https://github.com/sannedb/pyglet/commit/9e643251d0b8139fafc9ac9fa928f2d5c7a3e1f0 
+
+<img width="786" alt="Screenshot 2024-06-27 at 14 26 05" src="https://github.com/sannedb/pyglet/assets/90255780/5aced0f7-ce5e-44bd-b4d2-fabf543ca1ad">
+
+After:
+
+<img width="622" alt="Screenshot 2024-06-27 at 17 51 18" src="https://github.com/sannedb/pyglet/assets/90255780/07993b33-93b9-421b-a65a-3490fb77ce8f">
+
+
+<br/>
+
+The coverage for this function is now at 95%. I have created mock situations, that will print statements addressing what the error is, rather than raising the actual error, so that the testing can proceed without the file shutting down. Once again, there was no test made for it to begin with so its initial coverage was at 0%, meaning the coverage would have improved regardlessly even if i were to check just the 'None' situation. Below you can find the proof of improvement after checking with coverage.py:
+
+<br/>
+
+<img width="943" alt="Screenshot 2024-06-27 at 14 43 51" src="https://github.com/sannedb/pyglet/assets/90255780/5af94469-7c1c-48fa-8dac-0010a6217449">
+<img width="944" alt="Screenshot 2024-06-27 at 14 44 18" src="https://github.com/sannedb/pyglet/assets/90255780/d7f4e2b8-b501-4c36-89bd-243dd8187a8b">
+
+Sepaanta
+
+Test 1: limit.py
+
+https://github.com/sannedb/pyglet/commit/3e7bc00ec4c81870041557bf3a7075998b088129 
+
+old results:
+<img src="https://github.com/sannedb/pyglet/assets/92684792/cc98025d-9248-401b-9c75-9fd1d0591450">
+
+<br/>
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/37a57dda-09fb-4ef7-b398-171b99063350">
+
+<br/>
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/4ec489c6-bfd9-457f-8334-1696c78ee1ad">
+
+<br/>
+
+the coverage is now 100% from 0%. There were no tests initially, which makes it easy to improve the coverage. I tested it with border values. One where the check is barely true and one where is barely false.
+
+Test 2: normalize.py
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/f30ac9c5-c229-4e33-8fa1-26c7219c24b6">
+
+<br/>
+
+https://github.com/sannedb/pyglet/commit/66b3d38f7262866df85445d3283d81b2109e5069
+
+<img src="https://github.com/sannedb/pyglet/assets/92684792/9f0f273e-6cb2-4c11-a9ef-82da6336131c">
+
+<br/>
+
+<img src= "https://github.com/sannedb/pyglet/assets/92684792/c601d59c-8365-445c-8728-81d80ae09675">
+
+The coverage is now 100% from 0%. There also weren't existing tests for this function. Which made it easy to improve
+
+
+Emilija
+
+Test 1: inverse.py
+
+https://github.com/sannedb/pyglet/commit/50ee8a173c09bc9bbfecc37ad67fdf1ce6cda241
+
+<img width="263" alt="Screenshot 2024-06-27 at 21 49 51" src="https://github.com/sannedb/pyglet/assets/89348302/54e4bb6c-ef9e-4ce8-ac76-465ca6193509">
+
+<img width="1185" alt="Screenshot 2024-06-27 at 17 05 26" src="https://github.com/sannedb/pyglet/assets/89348302/0c6f4dfd-7b76-4a1d-bc10-4e44a0a6ad99">
+
+<img width="979" alt="Screenshot 2024-06-27 at 20 49 32" src="https://github.com/sannedb/pyglet/assets/89348302/aa90ba04-cdf9-4533-bab1-7aad9a893a51">
+
+The coverage went from 54% to 86%. Because the added test functions (test_inverse_of_zero_matrix and test_inverse_of_all_same_matrix) ensured that the branches in the inverse function were executed during the tests. 
+
+Test 2: on_key_press
+
+https://github.com/sannedb/pyglet/commit/33fbb3e8d2ae0e39e8671a59c7ed0c085571a4b0
+
+<img width="969" alt="Screenshot 2024-06-27 at 20 51 03" src="https://github.com/sannedb/pyglet/assets/89348302/810e1f9e-defa-4e72-a852-fe58d3fb805d">
+<img width="1028" alt="Screenshot 2024-06-27 at 20 52 13" src="https://github.com/sannedb/pyglet/assets/89348302/20c7f56a-83b3-4d15-94c4-4e8f8b97ac39">
+
+The coverage went from 0% to 100% because the test function (test_on_key_press_pass) created ensured that the branches in on_key_press were executed.
+
+
+Rūta
+
+Test 1: draw_text.py
+
+https://github.com/pyglet/pyglet/commit/423262dba9547773da371a9ad5f36e63e7455f75
+
+
+<img width="889" alt="Screenshot 2024-06-27 at 23 23 51" src="https://github.com/sannedb/pyglet/assets/55755724/98e650ab-c085-488a-9a6d-651ed10a2647">
+
+After:
+<br/>
+<img width="264" alt="Screenshot 2024-06-28 at 00 52 57" src="https://github.com/sannedb/pyglet/assets/55755724/547fea79-8421-4d0f-abc0-1a32ec27b3f9">
+<br/>
+
+![image](https://github.com/sannedb/pyglet/assets/55755724/ba8652a2-44c2-4cf7-a884-0826c26a03a8)
+![image](https://github.com/sannedb/pyglet/assets/55755724/616d6fa9-9361-483a-99a3-057d033b5139)
+
+<br/>
+The coverage went from 0 to 12%
+
+Test 2: tear_down.py
+
+https://github.com/pyglet/pyglet/commit/cbda5d030a0bf155ae8cc6e51892bb93cca1209c
+
+<img width="883" alt="Screenshot 2024-06-27 at 23 24 19" src="https://github.com/sannedb/pyglet/assets/55755724/98bce27d-9180-48c3-87af-429bf071526a">
+
+After:
+<br/>
+<img width="241" alt="Screenshot 2024-06-28 at 00 53 16" src="https://github.com/sannedb/pyglet/assets/55755724/82344e74-7884-4eb9-8e58-4bd1fc550037">
+<br/>
+![image](https://github.com/sannedb/pyglet/assets/55755724/6c1b714e-b6e5-4f2f-8598-2c4dbd264586)
+
+![image](https://github.com/sannedb/pyglet/assets/55755724/22bad205-e936-4b0d-a86e-2314665bf7f8)
+<br/>
+The coverage went from 20% to 71%
+
+### Overall
+
+<Provide a screenshot of the old coverage results by running an existing tool (the same as you already showed above)>
+<img width="855" alt="Screenshot 2024-06-27 at 13 03 59" src="https://github.com/sannedb/pyglet/assets/90255780/398aa74d-b022-4457-91ab-9afd48c64fa5">
+
+<Provide a screenshot of the new coverage results by running the existing tool using all test modifications made by the group>
+
+## Statement of individual contributions
+
+Sanne: 
+* Tested the NLOC for this document;
+* ran the coverage tool for this document;
+* instrumented and tested coverage for get_document and handle_answers;
+* handled README.md structure.
+
+Sepaanta: 
+* Found the project;
+* ran the initial coverage test;
+* instrumented and tested coverage for limit.py and normalize.py
+
+Emilija: 
+* Ran the initial NLOC check;
+* Ran initial coverage report;
+* instrumented and tested coverage for inverse and on_key_press;
+
+Rūta:
+* Did draw_text and tear_down
