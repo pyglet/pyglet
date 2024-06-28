@@ -33,6 +33,9 @@ from ctypes import (
     c_wchar,
     c_wchar_p,
     sizeof,
+    c_void_p,
+    c_bool,
+
 )
 
 import pyglet.lib

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ctypes import c_void_p
+
 from pyglet.libs.darwin.cocoapy import (
     NSApplicationDidHideNotification,
     NSApplicationDidUnhideNotification,
@@ -12,6 +14,7 @@ from pyglet.libs.darwin.cocoapy import (
     get_selector,
     quartz,
     send_super,
+    appkit,
 )
 
 from .systemcursor import SystemCursor
