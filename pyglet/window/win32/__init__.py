@@ -16,10 +16,10 @@ from pyglet.libs.win32.types import (
     MINMAXINFO,
     RAWINPUT,
     RAWINPUTHEADER,
-    TRACKMOUSEEVENT,
-    WCHAR,
     RECT,
     SIZE,
+    TRACKMOUSEEVENT,
+    WCHAR,
 )
 from pyglet.libs.win32.winkey import chmap, keymap
 
@@ -27,6 +27,7 @@ if compat_platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')  # noqa: EM101
 
 from ctypes import (
+    POINTER,
     byref,
     c_int,
     c_int16,
@@ -38,7 +39,6 @@ from ctypes import (
     memmove,
     sizeof,
     wstring_at,
-    POINTER
 )
 
 import pyglet
@@ -408,11 +408,7 @@ class Win32Window(BaseWindow):
                               constants.SWP_NOOWNERZORDER))
 
     def get_location(self) -> tuple[int, int]:
-        rect = RECT()
-        _user32.GetClientRect(self._hwnd, byref(rect))
-        point = POINT()
-        point.x = rect.left
-        point.y = rect.top
+        point = POINT(0, 0)
         _user32.ClientToScreen(self._hwnd, byref(point))
         return point.x, point.y
 
@@ -783,11 +779,7 @@ class Win32Window(BaseWindow):
         return rect.right - rect.left, rect.bottom - rect.top
 
     def _client_to_window_pos(self, x: int, y: int) -> tuple[int, int]:
-        rect = RECT()
-        rect.left = x
-        rect.top = y
-        _user32.AdjustWindowRectEx(byref(rect),
-            self._ws_style, False, self._ex_ws_style)
+        rect = RECT(x, y, x, y)
 
         if constants.WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
             _user32.AdjustWindowRectExForDpi(byref(rect),
