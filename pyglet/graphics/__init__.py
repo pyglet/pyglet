@@ -314,7 +314,10 @@ class Batch:
         """
         program = vertex_list.domain.program
         attributes = vertex_list.domain.attribute_meta
-        domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, program, attributes)
+        if isinstance(vertex_list, vertexdomain.IndexedVertexList):
+            domain = batch.get_domain(True, False, mode, group, program, attributes)
+        else:
+            domain = batch.get_domain(False, False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
     def _convert_to_instanced(self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain,
@@ -497,7 +500,7 @@ class Batch:
 
             # Draw domains using this group
             domain_map = self.group_map[group]
-            for (_, mode, _, _), domain in domain_map.items():
+            for (_, _, mode, _, _), domain in domain_map.items():
                 for alist in vertex_lists:
                     if alist.domain is domain:
                         alist.draw(mode)
