@@ -1,5 +1,6 @@
-import pyglet
 import random
+
+import pyglet
 
 window = pyglet.window.Window(vsync=False)
 

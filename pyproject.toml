@@ -42,13 +42,11 @@ ignore = [
     "Q000",  # double quotes
 ]
 
-isort = { known-first-party = [
-  "pyglet"
-], required-imports = [
-  "from __future__ import annotations",
-] }
-
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyglet"]
+required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

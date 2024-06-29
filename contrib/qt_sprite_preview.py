@@ -52,15 +52,15 @@ both frag and vertex (IE: test becomes test.vert and test.frag)
 
 Scrolling the mousewheel also zooms in.
 """
+from __future__ import annotations
 
+import argparse
 import os
 import sys
 import traceback
-import argparse
 from pathlib import Path
-
 from textwrap import dedent
-from typing import TYPE_CHECKING, Final, Dict, List, Optional, Tuple, Mapping
+from typing import TYPE_CHECKING, Final, Mapping
 
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
@@ -68,9 +68,9 @@ ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
 PYSIDE2: Final[str] = 'PySide2'
 PYQT5: Final[str] = 'PyQt5'
 
-valid_backends: Final[Dict[str, str]] = {
+valid_backends: Final[dict[str, str]] = {
     PYSIDE2: "LGPL; may allow releasing under non-GPL licenses",
-    PYQT5: "Dual GPL / Commercial license; requires GPL or a fee"
+    PYQT5: "Dual GPL / Commercial license; requires GPL or a fee",
 }
 
 # Default to PySide2 as part of allowing non-GPL licenses
@@ -80,34 +80,34 @@ DEFAULT: Final[str] = PYSIDE2
 
 # Argument parser for run-time config as __main__
 parser = argparse.ArgumentParser(
-    description=dedent('''\
+    description=dedent("""\
     A sprite & shader previewer using Qt and pyglet together.
 
     It defaults to PySide2, but can run on PyQt5. The details of how may
     be helpful to users who want to avoid spreading PyQt5's GPL license
     while using it as a fallback. See the docstrings and comments in the
     source to learn more.
-    '''),
+    """),
     formatter_class=argparse.RawTextHelpFormatter)
 
 # On Python 3.9+, argparse.BooleanOptionalAction is more concise
 # See https://docs.python.org/3.9/library/argparse.html#action
 parser.add_argument(
     '--use-qt-file-dialog', dest='native_file_dialog', action='store_false',
-    help="Use Qt's file chooser instead of the system's. Helpful on Gnome DE."
+    help="Use Qt's file chooser instead of the system's. Helpful on Gnome DE.",
 )
 parser.set_defaults(native_file_dialog=True)
 
 
 # Generate options help text lines
 backend_column_width: Final[int] = max(map(len, valid_backends))
-help_lines: List[str] = ["Which Qt binding to use.\n"]
+help_lines: list[str] = ["Which Qt binding to use.\n"]
 
 for backend, description in valid_backends.items():
    line_parts = [
        f"{backend: <{backend_column_width}} - ",
        '(Default) ' if backend == DEFAULT else '',
-       description
+       description,
    ]
    help_lines.append(''.join(line_parts))
 
@@ -122,12 +122,12 @@ arguments = None
 if __name__ == "__main__":
     arguments = parser.parse_args()
 
-reasons_with_backend_values: Final[Dict[str, Optional[str]]] = {
+reasons_with_backend_values: Final[dict[str, str | None]] = {
    'first positional argument'       : None if not arguments else arguments.backend,
    # An environment variable allows specifying the binding when
    # importing the module instead of running it as a main program.
    f'{ENV_VARIABLE!r} env variable'  : os.environ.get(ENV_VARIABLE, None),
-   'default'                         : DEFAULT
+   'default'                         : DEFAULT,
 }
 reason, backend = next(filter(
     lambda t: t[1] is not None, reasons_with_backend_values.items()))
@@ -143,16 +143,14 @@ import pyglet
 # uses of PyQt5-specific features as missing. For example, pyright is
 # one of the strict type checking and linting tools which can help.
 if TYPE_CHECKING or backend == PYSIDE2:
-    from PySide2.QtGui import QWheelEvent
-    from PySide2.QtWidgets import QFileDialog
     from PySide2 import QtCore, QtWidgets
-    from PySide2.QtWidgets import QOpenGLWidget
+    from PySide2.QtGui import QWheelEvent
+    from PySide2.QtWidgets import QFileDialog, QOpenGLWidget
 
 elif backend == PYQT5:
-    from PyQt5.QtGui import QWheelEvent
-    from PyQt5.QtWidgets import QFileDialog
     from PyQt5 import QtCore, QtWidgets
-    from PyQt5.QtWidgets import QOpenGLWidget
+    from PyQt5.QtGui import QWheelEvent
+    from PyQt5.QtWidgets import QFileDialog, QOpenGLWidget
 
 else:  # Handle import edge cases
     raise ValueError(
@@ -162,10 +160,17 @@ else:  # Handle import edge cases
 # Import the other constants after the UI libraries to avoid
 # cluttering the symbol table when debugging import problems.
 from pyglet.gl import (
-    glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glActiveTexture,
-    GL_TEXTURE0, glBindTexture, GL_BLEND, glEnable, glBlendFunc, glDisable
+   GL_BLEND,
+   GL_COLOR_BUFFER_BIT,
+   GL_DEPTH_BUFFER_BIT,
+   GL_TEXTURE0,
+   glActiveTexture,
+   glBindTexture,
+   glBlendFunc,
+   glClear,
+   glDisable,
+   glEnable,
 )
-
 
 default_vertex_src = """#version 150 core
 in vec3 translate;
@@ -233,8 +238,8 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             textures: Mapping[str, pyglet.image.Texture],
             blend_src: int,
             blend_dest: int,
-            program: Optional[pyglet.graphics.shader.ShaderProgram] = None,
-            parent: Optional[pyglet.graphics.Group] = None
+            program: pyglet.graphics.shader.ShaderProgram | None = None,
+            parent: pyglet.graphics.Group | None = None,
     ) -> None:
         """Create a sprite group for multiple textures and samplers.
 
@@ -297,7 +302,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
                      self.blend_src, self.blend_dest))
 
 
-class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
+class MultiTextureSprite(pyglet.sprite.Sprite):
 
     def __init__(
             self,
@@ -305,10 +310,10 @@ class MultiTextureSprite(pyglet.sprite.AdvancedSprite):
             x: float = 0, y: float = 0, z: float = 0,
             blend_src: int = pyglet.gl.GL_SRC_ALPHA,
             blend_dest: int = pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
-            batch: Optional[pyglet.graphics.Batch] = None,
-            group: Optional[MultiTextureSpriteGroup] = None,
+            batch: pyglet.graphics.Batch | None = None,
+            group: MultiTextureSpriteGroup | None = None,
             subpixel: bool = False,
-            program: pyglet.graphics.shader.ShaderProgram = None
+            program: pyglet.graphics.shader.ShaderProgram = None,
     ) -> None:
 
         self._x = x
@@ -484,7 +489,7 @@ class Ui_MainWindow:
             self.program = pyglet.graphics.shader.ShaderProgram(vertex_, fragment_)
 
             if len(self.images) == 1:
-                self.sprite = pyglet.sprite.AdvancedSprite(
+                self.sprite = pyglet.sprite.Sprite(
                     self.images[0],
                     x=self.SPRITE_POSITION[0], y=self.SPRITE_POSITION[1],
                     group=self.group, batch=self.openGLWidget.batch,
@@ -685,7 +690,6 @@ class PygletWidget(QOpenGLWidget):
 
     def initializeGL(self) -> None:
         """Call anything that needs a context to be created."""
-
         self._projection_matrix = pyglet.math.Mat4()
         self._view_matrix = pyglet.math.Mat4()
 
@@ -702,7 +706,7 @@ class PygletWidget(QOpenGLWidget):
         self.viewport = 0, 0, self.width(), self.height()
 
     @property
-    def viewport(self) -> Tuple[int, int, int, int]:
+    def viewport(self) -> tuple[int, int, int, int]:
         """The Window viewport
 
         The Window viewport, expressed as (x, y, width, height).
@@ -712,7 +716,7 @@ class PygletWidget(QOpenGLWidget):
         return self._viewport
 
     @viewport.setter
-    def viewport(self, values: Tuple[int, int, int, int]) -> None:
+    def viewport(self, values: tuple[int, int, int, int]) -> None:
         self._viewport = values
         pr = 1.0
         x, y, w, h = values

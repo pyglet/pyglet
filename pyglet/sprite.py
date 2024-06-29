@@ -847,4 +847,3 @@ class AdvancedSprite(pyglet.sprite.Sprite):
         msg = f"{self.__class__.__name__} is deprecated. See documentation."
         warnings.warn(msg, stacklevel=1)
         super().__init__(*args, **kwargs)
-
