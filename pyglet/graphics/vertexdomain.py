@@ -23,7 +23,7 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn, Sequence, Type
 
 from _ctypes import Array, _Pointer, _SimpleCData
 
@@ -50,7 +50,7 @@ from pyglet.gl.gl import (
 from pyglet.graphics import allocation, shader, vertexarray
 from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
 
-CTypesDataType = type[_SimpleCData]
+CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 if TYPE_CHECKING:

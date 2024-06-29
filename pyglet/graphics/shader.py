@@ -5,7 +5,7 @@ from ctypes import (
     POINTER, Structure, addressof, byref, c_buffer, c_byte, c_char, c_char_p, c_double, c_float, c_int,
     c_short, c_ubyte, c_uint, c_ushort, cast, create_string_buffer, pointer, sizeof, string_at, Array,
 )
-from typing import Sequence, Callable, Any, TYPE_CHECKING, Literal
+from typing import Sequence, Callable, Any, TYPE_CHECKING, Literal, Union, Type
 from weakref import proxy
 
 from _ctypes import _SimpleCData, _Pointer
@@ -57,10 +57,10 @@ class ShaderException(BaseException):  # noqa: D101
     pass
 
 
-CTypesDataType = type[_SimpleCData]
+CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 ShaderType = Literal['vertex', 'fragment', 'geometry', 'compute', 'tesscontrol', 'tessevaluation']
-GLDataType = type[GLint] | type[GLfloat] | type[GLboolean] | int
+GLDataType = Union[Type[GLint], Type[GLfloat], Type[GLboolean], int]
 GLFunc = Callable
 
 _c_types: dict[int, CTypesDataType] = {

@@ -13,7 +13,7 @@ import abc
 import ctypes
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, Type
 
 from _ctypes import Array, _Pointer, _SimpleCData
 
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from pyglet.gl import Context
     from pyglet.graphics.shader import Attribute
 
-CTypesDataType = type[_SimpleCData]
+CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 
