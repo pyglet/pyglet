@@ -255,8 +255,6 @@ class IndexedVertexList(VertexList):
 
     index_count: int
     index_start: int
-    _indices_cache: None = None
-    _indices_cache_version: None = None
 
     def __init__(self, domain: IndexedVertexDomain, start: int, count: int, index_start: int,  # noqa: D107
                  index_count: int) -> None:
@@ -300,7 +298,6 @@ class IndexedVertexList(VertexList):
         self.domain.set_index_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
-        self._indices_cache_version = None
 
     def set_instance_source(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain,
                             instance_attributes: Sequence[str]) -> None:
@@ -329,17 +326,11 @@ class IndexedVertexList(VertexList):
         self.domain.set_index_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
-        self._indices_cache_version = None
 
     @property
-    def indices(self) -> object:
+    def indices(self):
         """Array of index data."""
-        if self._indices_cache_version != self.domain.version:
-            domain = self.domain
-            self._indices_cache = domain.get_index_region(self.index_start, self.index_count)
-            self._indices_cache_version = domain.version
-
-        return self._indices_cache
+        return self.domain.get_index_region(self.index_start, self.index_count)
 
     @indices.setter
     def indices(self, data: Sequence[int]) -> None:

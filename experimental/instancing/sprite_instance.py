@@ -3,7 +3,7 @@ import random
 
 from pyglet.graphics.instance import InstanceGenerator
 
-window = pyglet.window.Window(1920, 1080, vsync=False)
+window = pyglet.window.Window(800, 600, vsync=False)
 
 # Set example resource path.
 pyglet.resource.path = ['../resources']
@@ -34,17 +34,11 @@ sprite = pyglet.sprite.Sprite(image,
 instance_generator = InstanceGenerator(sprite, ('translate', 'colors'))
 instance = instance_generator.create(translate=(100, 50, 0), colors=(255, 255, 255, 255))
 
-for i in range(10):
+for i in range(1000):
     sprite_instance = instance_generator.create(
         translate=(random.randint(0, window.width), random.randint(0, window.height), 0),
         colors=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 255),
     )
-
-    #Randomize scale.
-    #sprite_instance.scale = random.choice(scales)
-
-    #Random color multiplier.
-    #sprite_instance.colors = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
     sprites.append(sprite_instance)
