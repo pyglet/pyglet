@@ -13,8 +13,7 @@ Then preview the alpha-tested rendering using renderfield.py
 
     python renderfield.py py.df.png
 
-Enable pixel shader (requires OpenGL 2.0) with 'S' key.  Following keys modify
-the shader operation (and have no effect when shader is disabled):
+Following keys modify the shader operation:
 
     A   Toggle antialiasing
     B   Toggle bidirectional (see below)
