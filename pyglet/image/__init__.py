@@ -96,7 +96,7 @@ use of the data in this arbitrary format).
 import re
 import weakref
 
-from ctypes import *
+from ctypes import c_int
 
 import pyglet
 

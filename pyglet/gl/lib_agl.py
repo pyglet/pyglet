@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import c_int
 
 import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function

@@ -10,7 +10,6 @@ from ctypes import (
     CFUNCTYPE, POINTER, Structure, c_char, c_long, c_float, c_int,
     c_int64, c_ulong, c_ubyte, c_uint, c_int32,
 )
-from ctypes import c_ptrdiff_t # type: ignore (define by pyglet)
 from pyglet.gl.lib import link_GLX as _link_function
 
 
