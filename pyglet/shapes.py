@@ -1813,7 +1813,7 @@ class Box(ShapeBase):
         The box's anchor point defaults to the ``(x, y)`` coordinates,
         which are placed at the bottom left.
         Changing the thickness of the box will extend the walls inward;
-        the outward dimesions will not be affected.
+        the outward dimensions will not be affected.
 
         Args:
             x:
