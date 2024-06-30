@@ -24,7 +24,14 @@ import os
 import sys
 import weakref
 
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable,
+    glBlendFunc,
+    GL_BLEND,
+    GL_LINE_LOOP,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+)
 import pyglet
 from pyglet.window import key
 

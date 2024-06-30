@@ -1,6 +1,6 @@
 # Note: The display mode API used here is Mac OS 10.6 only.
 
-from ctypes import *
+from ctypes import c_uint32, c_void_p, byref
 
 from .base import Display, Screen, ScreenMode, Canvas
 

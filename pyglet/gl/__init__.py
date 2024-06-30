@@ -45,6 +45,9 @@ The information modules are provided for convenience, and are documented below.
 import pyglet as _pyglet
 
 from pyglet.gl.gl import *
+# keep it for backward compatibility
+# like from pyglet.gl import something in gl_compat
+
 from pyglet.gl.lib import GLException
 from pyglet.gl import gl_info
 from pyglet.gl.gl_compat import GL_LUMINANCE, GL_INTENSITY

@@ -13,7 +13,13 @@ from __future__ import print_function
 import sys
 
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable,
+    glBlendFunc,
+    GL_BLEND,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+)
 
 window = pyglet.window.Window(visible=False, resizable=True)
 

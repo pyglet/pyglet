@@ -1,5 +1,5 @@
 import ctypes
-from ctypes import *
+from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice

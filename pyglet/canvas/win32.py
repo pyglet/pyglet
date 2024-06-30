@@ -1,8 +1,18 @@
 from .base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.win32 import _user32
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import (
+    CDS_FULLSCREEN,
+    DISP_CHANGE_SUCCESSFUL,
+    ENUM_CURRENT_SETTINGS
+)
+from pyglet.libs.win32.types import (
+    DEVMODE,
+    MONITORINFOEX,
+    MONITORENUMPROC,
+    sizeof,
+    byref
+)
 from pyglet.libs.win32.context_managers import device_context
 
 

@@ -1,4 +1,6 @@
 
+from dataclasses import dataclass
+
 from . import app as app
 from . import canvas as canvas
 from . import clock as clock
@@ -26,4 +28,9 @@ MIN_PYTHON_VERSION_STR: str
 compat_platform: str
 env: str
 value: str
+
+@dataclass
+class Options:
+    ...
+
 options: Options

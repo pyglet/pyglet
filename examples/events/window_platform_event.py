@@ -23,7 +23,7 @@ if pyglet.compat_platform.startswith('linux'):
 
 elif pyglet.compat_platform == 'darwin':
     _have_cocoa = True
-    from pyglet.window.cocoa import *
+    # from pyglet.window.cocoa import *
 
 elif pyglet.compat_platform in ('win32', 'cygwin'):
     _have_win32 = True

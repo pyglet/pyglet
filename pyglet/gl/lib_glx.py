@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import POINTER, CFUNCTYPE, c_ubyte, cast, create_string_buffer, pointer
 from typing import Any, Callable
 
 import pyglet.lib

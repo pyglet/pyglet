@@ -8,7 +8,6 @@ channels without intervention.
 import random
 import sys
 
-from pyglet.gl import *
 import pyglet
 from pyglet.window import key
 

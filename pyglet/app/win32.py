@@ -3,7 +3,7 @@ import ctypes
 from .base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.types import HANDLE, TIMECAPS
 
 
 class Win32EventLoop(PlatformEventLoop):
