@@ -1,5 +1,8 @@
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glClearColor,
+    GL_TRIANGLES
+)
 
 
 # pyglet.options['debug_gl_shaders'] = True
@@ -93,6 +96,6 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    glClearColor(0.2, 0.3, 0.3, 1)
     pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()
