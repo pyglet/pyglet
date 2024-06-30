@@ -5,7 +5,12 @@ Do not modify this file.
 """
 
 import ctypes
-from ctypes import *
+
+from ctypes import (
+    CFUNCTYPE, POINTER, Structure, c_char, c_long, c_float, c_int,
+    c_int64, c_ulong, c_ubyte, c_uint, c_int32,
+)
+from ctypes import c_ptrdiff_t # type: ignore (define by pyglet)
 from pyglet.gl.lib import link_GLX as _link_function
 
 
@@ -257,13 +262,6 @@ XID = pyglet.libs.x11.xlib.XID
 GLXVideoSourceSGIX = XID 	# GL/glxext.h:451
 # SGIX_fbconfig (GL/glxext.h:454)
 GLXFBConfigIDSGIX = XID 	# GL/glxext.h:455
-class struct___GLXFBConfigRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXFBConfigRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 class struct___GLXFBConfigRec(Structure):
     __slots__ = [
     ]

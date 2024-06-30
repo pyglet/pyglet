@@ -17,9 +17,10 @@ Or, if using more than one display::
 
 """
 
-from ctypes import *
+from ctypes import byref, c_int
 
 from pyglet.gl.glx import *
+# keep it for backward compatibility
 from pyglet.util import asstr
 
 
