@@ -191,7 +191,8 @@ some helper functions for common build and distribution related tasks. For docs,
    ./make.py docs --open
 
 
-If the build succeeds, the generated static web pages will be in ``doc/_build/html``.
+If the build succeeds, a browser window will open. You can skip this by omitting `--open`.
+The generated static web pages will be in ``doc/_build/html``.
 
 You can also build the documentation by using Sphinx's ``Makefile``:
 
