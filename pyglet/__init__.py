@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ItemsView
 
 #: The release version
-version = '2.1.dev2'
+version = '2.1.dev3'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
