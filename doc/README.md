@@ -6,7 +6,7 @@ Install doc requirements:
 
     pip install -r doc/requirements.txt
 
-The simpleast way build html docs:
+The simplest way build html docs is with the `make.py` script:
 
     python setup.py build_sphinx
 
