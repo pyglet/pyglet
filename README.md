@@ -119,10 +119,14 @@ code, is a bug that deserves to be reported on a ticket.
 
 ## Building Docs
 
+[Documentation and Type Hints]: https://pyglet.readthedocs.io/en/latest/internal/doc.html
+
+To get started quickly:
+
     pip install -r doc/requirements.txt
     ./make.py docs
 
-Please check [the README.md file in the doc directory](doc/README.md) for more details.
+Please check [Documentation and Type Hints][] guide to learn more.
 
 ## Testing
 
