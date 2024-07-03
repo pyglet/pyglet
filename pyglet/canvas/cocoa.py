@@ -1,7 +1,7 @@
 # Note: The display mode API used here is Mac OS 10.6 only.
 from __future__ import annotations
 
-from ctypes import *
+from ctypes import c_uint32, c_void_p, byref
 
 from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, cf, cfarray_to_list, cfstring_to_string, quartz
 

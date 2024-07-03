@@ -16,7 +16,17 @@ import sys
 import random
 
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable,
+    glBlendFunc,
+    glFlush,
+    Config,
+    GL_BLEND,
+    GL_LINE_SMOOTH,
+    GL_LINES,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA,
+)
 
 # open a single-buffered window so we can do cheap accumulation
 config = Config(double_buffer=False)

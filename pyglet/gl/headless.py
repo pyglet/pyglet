@@ -6,6 +6,7 @@ from pyglet import gl
 from pyglet.canvas.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
 
+
 from .base import CanvasConfig, Config, Context
 
 _fake_gl_attributes = {

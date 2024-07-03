@@ -16,6 +16,7 @@ Or, if using more than one display::
         # ...
 
 """
+
 from __future__ import annotations
 
 from ctypes import byref, c_int
@@ -31,6 +32,7 @@ from pyglet.gl.glx import (
     glXQueryServerString,
     glXQueryVersion,
 )
+
 from pyglet.util import asstr
 
 if TYPE_CHECKING:

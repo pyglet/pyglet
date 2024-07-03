@@ -4,7 +4,7 @@ import warnings
 from .base import Display, Screen, ScreenMode, Canvas
 
 
-from ctypes import *
+from ctypes import byref
 from pyglet.libs.egl import egl
 from pyglet.libs.egl import eglext
 

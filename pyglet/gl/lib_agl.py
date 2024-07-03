@@ -5,6 +5,8 @@ from typing import Any, Callable, Sequence
 import pyglet.lib
 from pyglet.gl.lib import decorate_function, missing_function
 
+from typing import Callable
+
 __all__ = ['link_GL', 'link_AGL']
 
 gl_lib = pyglet.lib.load_library(framework='OpenGL')
