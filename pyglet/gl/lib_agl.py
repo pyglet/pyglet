@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, Callable, Sequence
+
 import pyglet.lib
-from pyglet.gl.lib import missing_function, decorate_function
+from pyglet.gl.lib import decorate_function, missing_function
 
 from typing import Callable
 
@@ -9,7 +13,8 @@ gl_lib = pyglet.lib.load_library(framework='OpenGL')
 agl_lib = pyglet.lib.load_library(framework='AGL')
 
 
-def link_GL(name: str, restype, argtypes, requires=None, suggestions=None) -> Callable:
+def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802, D103
+            suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
@@ -20,7 +25,8 @@ def link_GL(name: str, restype, argtypes, requires=None, suggestions=None) -> Ca
         return missing_function(name, requires, suggestions)
 
 
-def link_AGL(name: str, restype, argtypes, requires=None, suggestions=None) -> Callable:
+def link_AGL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802, D103
+            suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
     try:
         func = getattr(agl_lib, name)
         func.restype = restype
