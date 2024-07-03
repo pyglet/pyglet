@@ -11,37 +11,13 @@ from weakref import proxy
 from _ctypes import _SimpleCData, _Pointer
 
 import pyglet
-from pyglet.gl import GLException, gl_info, Context
+from pyglet.gl import gl, GLException, Context, gl_info
 from pyglet.gl.gl import (
-    GL_ACTIVE_ATTRIBUTES, GL_ACTIVE_UNIFORMS, GL_ACTIVE_UNIFORM_BLOCKS, GL_ALL_BARRIER_BITS,
-    GL_ARRAY_BUFFER, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_COMPILE_STATUS, GL_COMPUTE_SHADER,
-    GL_DOUBLE, GL_DOUBLE_VEC2, GL_DOUBLE_VEC3, GL_DOUBLE_VEC4, GL_FALSE, GL_FLOAT, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3,
-    GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3,
-    GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_GEOMETRY_SHADER, GL_IMAGE_1D, GL_IMAGE_1D_ARRAY,
-    GL_IMAGE_2D, GL_IMAGE_2D_ARRAY, GL_IMAGE_2D_MULTISAMPLE, GL_IMAGE_2D_MULTISAMPLE_ARRAY, GL_IMAGE_2D_RECT,
-    GL_IMAGE_3D, GL_IMAGE_BUFFER, GL_IMAGE_CUBE, GL_IMAGE_CUBE_MAP_ARRAY, GL_INFO_LOG_LENGTH, GL_INT, GL_INT_SAMPLER_1D,
-    GL_INT_SAMPLER_1D_ARRAY, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_2D_MULTISAMPLE,
-    GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_CUBE_MAP_ARRAY, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4,
-    GL_LINK_STATUS, GL_MAP_READ_BIT, GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, GL_MAX_COMPUTE_WORK_GROUP_COUNT,
-    GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, GL_MAX_COMPUTE_WORK_GROUP_SIZE, GL_SAMPLER_1D, GL_SAMPLER_1D_ARRAY,
-    GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_MULTISAMPLE, GL_SAMPLER_3D, GL_SAMPLER_CUBE,
-    GL_SAMPLER_CUBE_MAP_ARRAY, GL_SHADER_SOURCE_LENGTH, GL_SHORT, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER,
-    GL_TRUE, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, GL_UNIFORM_BLOCK_DATA_SIZE,
-    GL_UNIFORM_BUFFER, GL_UNIFORM_OFFSET, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_SAMPLER_1D,
-    GL_UNSIGNED_INT_SAMPLER_1D_ARRAY, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY,
-    GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE,
-    GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4,
-    GL_UNSIGNED_SHORT, GL_VERTEX_SHADER, GLboolean, GLenum, GLfloat, GLint, GLuint, glAttachShader, glBindBuffer,
-    glBindBufferBase, glCompileShader, glCreateProgram, glCreateShader, glDeleteProgram, glDeleteShader, glDetachShader,
-    glDispatchCompute, glEnableVertexAttribArray, glGetActiveAttrib, glGetActiveUniform, glGetActiveUniformBlockName,
-    glGetActiveUniformBlockiv, glGetActiveUniformsiv, glGetAttribLocation, glGetIntegeri_v, glGetIntegerv,
-    glGetProgramInfoLog, glGetProgramiv, glGetShaderInfoLog, glGetShaderSource, glGetShaderiv, glGetUniformLocation,
-    glGetUniformfv, glGetUniformiv, glLinkProgram, glMapBufferRange, glMemoryBarrier, glProgramUniform1fv,
-    glProgramUniform1iv, glProgramUniform2fv, glProgramUniform2iv, glProgramUniform3fv, glProgramUniform3iv,
-    glProgramUniform4fv, glProgramUniform4iv, glProgramUniformMatrix2fv, glProgramUniformMatrix3fv,
-    glProgramUniformMatrix4fv, glShaderSource, glUniform1fv, glUniform1iv, glUniform2fv, glUniform2iv, glUniform3fv,
-    glUniform3iv, glUniform4fv, glUniform4iv, glUniformBlockBinding, glUniformMatrix2fv, glUniformMatrix3fv,
-    glUniformMatrix4fv, glUnmapBuffer, glUseProgram, glVertexAttribDivisor, glVertexAttribPointer,
+    glEnableVertexAttribArray, glVertexAttribPointer, glVertexAttribDivisor, glUseProgram,
+    GL_FALSE, glGetProgramiv, glGetActiveAttrib, glCreateProgram, glAttachShader, glLinkProgram, GL_LINK_STATUS,
+    GL_INFO_LOG_LENGTH, glGetProgramInfoLog, glDetachShader, glBindBufferBase, GL_UNIFORM_BUFFER,
+    glBindBuffer, GL_ARRAY_BUFFER, glMapBufferRange, GL_MAP_READ_BIT, glUnmapBuffer, GL_TRUE, glDeleteShader,
+    glDeleteProgram, glDispatchCompute, glMemoryBarrier,
 )
 from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
 
@@ -60,88 +36,88 @@ class ShaderException(BaseException):  # noqa: D101
 CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 ShaderType = Literal['vertex', 'fragment', 'geometry', 'compute', 'tesscontrol', 'tessevaluation']
-GLDataType = Union[Type[GLint], Type[GLfloat], Type[GLboolean], int]
+GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
 
 _c_types: dict[int, CTypesDataType] = {
-    GL_BYTE: c_byte,
-    GL_UNSIGNED_BYTE: c_ubyte,
-    GL_SHORT: c_short,
-    GL_UNSIGNED_SHORT: c_ushort,
-    GL_INT: c_int,
-    GL_UNSIGNED_INT: c_uint,
-    GL_FLOAT: c_float,
-    GL_DOUBLE: c_double,
+    gl.GL_BYTE: c_byte,
+    gl.GL_UNSIGNED_BYTE: c_ubyte,
+    gl.GL_SHORT: c_short,
+    gl.GL_UNSIGNED_SHORT: c_ushort,
+    gl.GL_INT: c_int,
+    gl.GL_UNSIGNED_INT: c_uint,
+    gl.GL_FLOAT: c_float,
+    gl.GL_DOUBLE: c_double,
 }
 
 _shader_types: dict[ShaderType, int] = {
-    'compute': GL_COMPUTE_SHADER,
-    'fragment': GL_FRAGMENT_SHADER,
-    'geometry': GL_GEOMETRY_SHADER,
-    'tesscontrol': GL_TESS_CONTROL_SHADER,
-    'tessevaluation': GL_TESS_EVALUATION_SHADER,
-    'vertex': GL_VERTEX_SHADER,
+    'compute': gl.GL_COMPUTE_SHADER,
+    'fragment': gl.GL_FRAGMENT_SHADER,
+    'geometry': gl.GL_GEOMETRY_SHADER,
+    'tesscontrol': gl.GL_TESS_CONTROL_SHADER,
+    'tessevaluation': gl.GL_TESS_EVALUATION_SHADER,
+    'vertex': gl.GL_VERTEX_SHADER,
 }
 
 _uniform_getters: dict[GLDataType, Callable] = {
-    GLint: glGetUniformiv,
-    GLfloat: glGetUniformfv,
-    GLboolean: glGetUniformiv,
+    gl.GLint: gl.glGetUniformiv,
+    gl.GLfloat: gl.glGetUniformfv,
+    gl.GLboolean: gl.glGetUniformiv,
 }
 
 _uniform_setters: dict[int, tuple[GLDataType, GLFunc, GLFunc, int]] = {
     # uniform:    gl_type, legacy_setter, setter, length
-    GL_BOOL: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_BOOL_VEC2: (GLint, glUniform1iv, glProgramUniform1iv, 2),
-    GL_BOOL_VEC3: (GLint, glUniform1iv, glProgramUniform1iv, 3),
-    GL_BOOL_VEC4: (GLint, glUniform1iv, glProgramUniform1iv, 4),
+    gl.GL_BOOL: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_BOOL_VEC2: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
+    gl.GL_BOOL_VEC3: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_BOOL_VEC4: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 4),
 
-    GL_INT: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_VEC2: (GLint, glUniform2iv, glProgramUniform2iv, 2),
-    GL_INT_VEC3: (GLint, glUniform3iv, glProgramUniform3iv, 3),
-    GL_INT_VEC4: (GLint, glUniform4iv, glProgramUniform4iv, 4),
+    gl.GL_INT: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_VEC2: (gl.GLint, gl.glUniform2iv, gl.glProgramUniform2iv, 2),
+    gl.GL_INT_VEC3: (gl.GLint, gl.glUniform3iv, gl.glProgramUniform3iv, 3),
+    gl.GL_INT_VEC4: (gl.GLint, gl.glUniform4iv, gl.glProgramUniform4iv, 4),
 
-    GL_FLOAT: (GLfloat, glUniform1fv, glProgramUniform1fv, 1),
-    GL_FLOAT_VEC2: (GLfloat, glUniform2fv, glProgramUniform2fv, 2),
-    GL_FLOAT_VEC3: (GLfloat, glUniform3fv, glProgramUniform3fv, 3),
-    GL_FLOAT_VEC4: (GLfloat, glUniform4fv, glProgramUniform4fv, 4),
+    gl.GL_FLOAT: (gl.GLfloat, gl.glUniform1fv, gl.glProgramUniform1fv, 1),
+    gl.GL_FLOAT_VEC2: (gl.GLfloat, gl.glUniform2fv, gl.glProgramUniform2fv, 2),
+    gl.GL_FLOAT_VEC3: (gl.GLfloat, gl.glUniform3fv, gl.glProgramUniform3fv, 3),
+    gl.GL_FLOAT_VEC4: (gl.GLfloat, gl.glUniform4fv, gl.glProgramUniform4fv, 4),
 
     # 1D Samplers
-    GL_SAMPLER_1D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_SAMPLER_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_1D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_1D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_1D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_1D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_1D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
     # 2D Samplers
-    GL_SAMPLER_2D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_2D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_2D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
     # Multisample
-    GL_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
     # Cube Samplers
-    GL_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
     # 3D Samplers
-    GL_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_INT_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_UNSIGNED_INT_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
+    gl.GL_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_INT_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
-    GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, glProgramUniformMatrix2fv, 4),
-    GL_FLOAT_MAT3: (GLfloat, glUniformMatrix3fv, glProgramUniformMatrix3fv, 6),
-    GL_FLOAT_MAT4: (GLfloat, glUniformMatrix4fv, glProgramUniformMatrix4fv, 16),
+    gl.GL_FLOAT_MAT2: (gl.GLfloat, gl.glUniformMatrix2fv, gl.glProgramUniformMatrix2fv, 4),
+    gl.GL_FLOAT_MAT3: (gl.GLfloat, gl.glUniformMatrix3fv, gl.glProgramUniformMatrix3fv, 6),
+    gl.GL_FLOAT_MAT4: (gl.GLfloat, gl.glUniformMatrix4fv, gl.glProgramUniformMatrix4fv, 16),
 
     # TODO: test/implement these:
     # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glProgramUniformMatrix2x3fv,
@@ -151,47 +127,47 @@ _uniform_setters: dict[int, tuple[GLDataType, GLFunc, GLFunc, int]] = {
     # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
     # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
 
-    GL_IMAGE_1D: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_IMAGE_2D: (GLint, glUniform1iv, glProgramUniform1iv, 2),
-    GL_IMAGE_2D_RECT: (GLint, glUniform1iv, glProgramUniform1iv, 3),
-    GL_IMAGE_3D: (GLint, glUniform1iv, glProgramUniform1iv, 3),
+    gl.GL_IMAGE_1D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
+    gl.GL_IMAGE_2D_RECT: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
 
-    GL_IMAGE_1D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 2),
-    GL_IMAGE_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3),
+    gl.GL_IMAGE_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
+    gl.GL_IMAGE_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
 
-    GL_IMAGE_2D_MULTISAMPLE: (GLint, glUniform1iv, glProgramUniform1iv, 2),
-    GL_IMAGE_2D_MULTISAMPLE_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3),
+    gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
+    gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
 
-    GL_IMAGE_BUFFER: (GLint, glUniform1iv, glProgramUniform1iv, 3),
-    GL_IMAGE_CUBE: (GLint, glUniform1iv, glProgramUniform1iv, 1),
-    GL_IMAGE_CUBE_MAP_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 3),
+    gl.GL_IMAGE_BUFFER: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_CUBE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
 }
 
 _attribute_types: dict[int, tuple[int, str]] = {
-    GL_BOOL: (1, '?'),
-    GL_BOOL_VEC2: (2, '?'),
-    GL_BOOL_VEC3: (3, '?'),
-    GL_BOOL_VEC4: (4, '?'),
+    gl.GL_BOOL: (1, '?'),
+    gl.GL_BOOL_VEC2: (2, '?'),
+    gl.GL_BOOL_VEC3: (3, '?'),
+    gl.GL_BOOL_VEC4: (4, '?'),
 
-    GL_INT: (1, 'i'),
-    GL_INT_VEC2: (2, 'i'),
-    GL_INT_VEC3: (3, 'i'),
-    GL_INT_VEC4: (4, 'i'),
+    gl.GL_INT: (1, 'i'),
+    gl.GL_INT_VEC2: (2, 'i'),
+    gl.GL_INT_VEC3: (3, 'i'),
+    gl.GL_INT_VEC4: (4, 'i'),
 
-    GL_UNSIGNED_INT: (1, 'I'),
-    GL_UNSIGNED_INT_VEC2: (2, 'I'),
-    GL_UNSIGNED_INT_VEC3: (3, 'I'),
-    GL_UNSIGNED_INT_VEC4: (4, 'I'),
+    gl.GL_UNSIGNED_INT: (1, 'I'),
+    gl.GL_UNSIGNED_INT_VEC2: (2, 'I'),
+    gl.GL_UNSIGNED_INT_VEC3: (3, 'I'),
+    gl.GL_UNSIGNED_INT_VEC4: (4, 'I'),
 
-    GL_FLOAT: (1, 'f'),
-    GL_FLOAT_VEC2: (2, 'f'),
-    GL_FLOAT_VEC3: (3, 'f'),
-    GL_FLOAT_VEC4: (4, 'f'),
+    gl.GL_FLOAT: (1, 'f'),
+    gl.GL_FLOAT_VEC2: (2, 'f'),
+    gl.GL_FLOAT_VEC3: (3, 'f'),
+    gl.GL_FLOAT_VEC4: (4, 'f'),
 
-    GL_DOUBLE: (1, 'd'),
-    GL_DOUBLE_VEC2: (2, 'd'),
-    GL_DOUBLE_VEC3: (3, 'd'),
-    GL_DOUBLE_VEC4: (4, 'd'),
+    gl.GL_DOUBLE: (1, 'd'),
+    gl.GL_DOUBLE_VEC2: (2, 'd'),
+    gl.GL_DOUBLE_VEC3: (3, 'd'),
+    gl.GL_DOUBLE_VEC4: (4, 'd'),
 }
 
 
@@ -400,6 +376,13 @@ class _UniformArray:
         return f"UniformArray(uniform={self._uniform}, data={data})"
 
 
+_gl_matrices: tuple[int, ...] = (
+    gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT2x3, gl.GL_FLOAT_MAT2x4,
+    gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT3x2, gl.GL_FLOAT_MAT3x4,
+    gl.GL_FLOAT_MAT4, gl.GL_FLOAT_MAT4x2, gl.GL_FLOAT_MAT4x3,
+)
+
+
 class _Uniform:
     type: int
     size: int
@@ -424,9 +407,7 @@ class _Uniform:
         # Argument length of data
         self.length = length
 
-        is_matrix = uniform_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4,
-                                     GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4,
-                                     GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3)
+        is_matrix = uniform_type in _gl_matrices
 
         # If it's an array, use the wrapper object.
         if size > 1:
@@ -544,23 +525,23 @@ class UniformBlock:
         active_count = len(self.uniforms)
 
         # Query the uniform index order and each uniform's offset:
-        indices = (GLuint * active_count)()
-        offsets = (GLint * active_count)()
-        indices_ptr = cast(addressof(indices), POINTER(GLint))
-        offsets_ptr = cast(addressof(offsets), POINTER(GLint))
-        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-        glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+        indices = (gl.GLuint * active_count)()
+        offsets = (gl.GLint * active_count)()
+        indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
+        offsets_ptr = cast(addressof(offsets), POINTER(gl.GLint))
+        gl.glGetActiveUniformBlockiv(p_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+        gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_OFFSET, offsets_ptr)
 
         # Offsets may be returned in non-ascending order, sort them with the corresponding index:
         _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
         offsets = [x[0] for x in _oi] + [self.size]
-        indices = (GLuint * active_count)(*(x[1] for x in _oi))
+        indices = (gl.GLuint * active_count)(*(x[1] for x in _oi))
 
         # # Query other uniform information:
-        # gl_types = (GLint * active_count)()
-        # mat_stride = (GLint * active_count)()
-        # gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
-        # stride_ptr = cast(addressof(mat_stride), POINTER(GLint))
+        # gl_types = (gl.GLint * active_count)()
+        # mat_stride = (gl.GLint * active_count)()
+        # gl_types_ptr = cast(addressof(gl_types), POINTER(gl.GLint))
+        # stride_ptr = cast(addressof(mat_stride), POINTER(gl.GLint))
         # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_TYPE, gl_types_ptr)
         # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
@@ -641,15 +622,15 @@ class UniformBufferObject:
 
 def _get_number(program_id: int, variable_type: int) -> int:
     """Get the number of active variables of the passed GL type."""
-    number = GLint(0)
+    number = gl.GLint(0)
     glGetProgramiv(program_id, variable_type, byref(number))
     return number.value
 
 
 def _query_attribute(program_id: int, index: int) -> tuple[str, int, int]:
     """Query the name, type, and size of an Attribute by index."""
-    asize = GLint()
-    atype = GLenum()
+    asize = gl.GLint()
+    atype = gl.GLenum()
     buf_size = 192
     aname = create_string_buffer(buf_size)
     try:
@@ -663,10 +644,10 @@ def _introspect_attributes(program_id: int) -> dict[str, Any]:
     """Introspect a Program's Attributes, and return a dict of accessors."""
     attributes = {}
 
-    for index in range(_get_number(program_id, GL_ACTIVE_ATTRIBUTES)):
+    for index in range(_get_number(program_id, gl.GL_ACTIVE_ATTRIBUTES)):
         a_name, a_type, a_size = _query_attribute(program_id, index)
-        loc = glGetAttribLocation(program_id, create_string_buffer(a_name.encode('utf-8')))
-        if loc == -1:   # not a user defined attribute
+        loc = gl.glGetAttribLocation(program_id, create_string_buffer(a_name.encode('utf-8')))
+        if loc == -1:  # not a user defined attribute
             continue
         count, fmt = _attribute_types[a_type]
         attributes[a_name] = {
@@ -725,12 +706,12 @@ def _get_program_log(program_id: int) -> str:
 
 def _query_uniform(program_id: int, index: int) -> tuple[str, int, int]:
     """Query the name, type, and size of a Uniform by index."""
-    usize = GLint()
-    utype = GLenum()
+    usize = gl.GLint()
+    utype = gl.GLenum()
     buf_size = 192
     uname = create_string_buffer(buf_size)
     try:
-        glGetActiveUniform(program_id, index, buf_size, None, usize, utype, uname)
+        gl.glGetActiveUniform(program_id, index, buf_size, None, usize, utype, uname)
         return uname.value.decode(), utype.value, usize.value
 
     except GLException as exc:
@@ -741,7 +722,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
     """Introspect a Program's uniforms, and return a dict of accessors."""
     uniforms = {}
 
-    for index in range(_get_number(program_id, GL_ACTIVE_UNIFORMS)):
+    for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORMS)):
         u_name, u_type, u_size = _query_uniform(program_id, index)
 
         # Multidimensional arrays cannot be fully inspected via OpenGL calls.
@@ -750,7 +731,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
             msg = "Multidimensional arrays are not currently supported."
             raise ShaderException(msg)
 
-        loc = glGetUniformLocation(program_id, create_string_buffer(u_name.encode('utf-8')))
+        loc = gl.glGetUniformLocation(program_id, create_string_buffer(u_name.encode('utf-8')))
         if loc == -1:  # Skip uniforms that may be inside a Uniform Block
             continue
 
@@ -774,7 +755,7 @@ def _get_uniform_block_name(program_id: int, index: int) -> str:
     size = c_int(0)
     name_buf = create_string_buffer(buf_size)
     try:
-        glGetActiveUniformBlockName(program_id, index, buf_size, size, name_buf)
+        gl.glGetActiveUniformBlockName(program_id, index, buf_size, size, name_buf)
         return name_buf.value.decode()
     except GLException:
         msg = f"Unable to query UniformBlock name at index: {index}"
@@ -785,18 +766,18 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
     uniform_blocks = {}
     program_id = program.id
 
-    for index in range(_get_number(program_id, GL_ACTIVE_UNIFORM_BLOCKS)):
+    for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
         name = _get_uniform_block_name(program_id, index)
 
-        num_active = GLint()
-        block_data_size = GLint()
+        num_active = gl.GLint()
+        block_data_size = gl.GLint()
 
-        glGetActiveUniformBlockiv(program_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
-        glGetActiveUniformBlockiv(program_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+        gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
+        gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
 
-        indices = (GLuint * num_active.value)()
-        indices_ptr = cast(addressof(indices), POINTER(GLint))
-        glGetActiveUniformBlockiv(program_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+        indices = (gl.GLuint * num_active.value)()
+        indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
+        gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
         uniforms = {}
 
@@ -815,7 +796,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, uniforms)
         # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
         # one would be crazy enough to use more than 36 uniform blocks, right?
-        glUniformBlockBinding(program_id, index, index)
+        gl.glUniformBlockBinding(program_id, index, index)
 
         if _debug_gl_shaders:
             for block in uniform_blocks.values():
@@ -834,10 +815,10 @@ class ShaderSource:
     .. note:: We do assume the source is neat enough to be parsed this way and doesn't contain several statements in
               one line.
     """
-    _type: GLenum
+    _type: gl.GLenum
     _lines: list[str]
 
-    def __init__(self, source: str, source_type: GLenum) -> None:
+    def __init__(self, source: str, source_type: gl.GLenum) -> None:
         """Create a shader source wrapper."""
         self._lines = source.strip().splitlines()
         self._type = source_type
@@ -852,10 +833,10 @@ class ShaderSource:
             self._lines[0] = "#version 310 es"
             self._lines.insert(1, "precision mediump float;")
 
-            if self._type == GL_GEOMETRY_SHADER:
+            if self._type == gl.GL_GEOMETRY_SHADER:
                 self._lines.insert(1, "#extension GL_EXT_geometry_shader : require")
 
-            if self._type == GL_COMPUTE_SHADER:
+            if self._type == gl.GL_COMPUTE_SHADER:
                 self._lines.insert(1, "precision mediump image2D;")
 
             self._version = self._find_glsl_version()
@@ -927,13 +908,13 @@ class Shader:
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(shader_type)
+        shader_id = gl.glCreateShader(shader_type)
         self._id = shader_id
-        glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
-        glCompileShader(shader_id)
+        gl.glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
+        gl.glCompileShader(shader_id)
 
         status = c_int(0)
-        glGetShaderiv(shader_id, GL_COMPILE_STATUS, byref(status))
+        gl.glGetShaderiv(shader_id, gl.GL_COMPILE_STATUS, byref(status))
 
         if status.value != GL_TRUE:
             source = self._get_shader_source(shader_id)
@@ -957,9 +938,9 @@ class Shader:
 
     def _get_shader_log(self, shader_id: int) -> str:
         log_length = c_int(0)
-        glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, byref(log_length))
+        gl.glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, byref(log_length))
         result_str = create_string_buffer(log_length.value)
-        glGetShaderInfoLog(shader_id, log_length, None, result_str)
+        gl.glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
             return (f"OpenGL returned the following message when compiling the "
                     f"'{self.type}' shader: \n{result_str.value.decode('utf8')}")
@@ -970,9 +951,9 @@ class Shader:
     def _get_shader_source(shader_id: int) -> str:
         """Get the shader source from the shader object."""
         source_length = c_int(0)
-        glGetShaderiv(shader_id, GL_SHADER_SOURCE_LENGTH, source_length)
+        gl.glGetShaderiv(shader_id, gl.GL_SHADER_SOURCE_LENGTH, source_length)
         source_str = create_string_buffer(source_length.value)
-        glGetShaderSource(shader_id, source_length, None, source_str)
+        gl.glGetShaderSource(shader_id, source_length, None, source_str)
         return source_str.value.decode('utf8')
 
     def delete(self) -> None:
@@ -1265,28 +1246,28 @@ class ComputeShaderProgram:
         self._uniforms = _introspect_uniforms(self._id, True)
         self._uniform_blocks = _introspect_uniform_blocks(self)
 
-        self.max_work_group_size = self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_SIZE)  # x, y, z
-        self.max_work_group_count = self._get_tuple(GL_MAX_COMPUTE_WORK_GROUP_COUNT)  # x, y, z
-        self.max_shared_memory_size = self._get_value(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE)
-        self.max_work_group_invocations = self._get_value(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
+        self.max_work_group_size = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_SIZE)  # x, y, z
+        self.max_work_group_count = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_COUNT)  # x, y, z
+        self.max_shared_memory_size = self._get_value(gl.GL_MAX_COMPUTE_SHARED_MEMORY_SIZE)
+        self.max_work_group_invocations = self._get_value(gl.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
 
     @staticmethod
     def _get_tuple(parameter: int) -> tuple[int, int, int]:
-        val_x = GLint()
-        val_y = GLint()
-        val_z = GLint()
+        val_x = gl.GLint()
+        val_y = gl.GLint()
+        val_z = gl.GLint()
         for i, value in enumerate((val_x, val_y, val_z)):
-            glGetIntegeri_v(parameter, i, byref(value))
+            gl.glGetIntegeri_v(parameter, i, byref(value))
         return val_x.value, val_y.value, val_z.value
 
     @staticmethod
     def _get_value(parameter: int) -> int:
-        val = GLint()
-        glGetIntegerv(parameter, byref(val))
+        val = gl.GLint()
+        gl.glGetIntegerv(parameter, byref(val))
         return val.value
 
     @staticmethod
-    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier: int = GL_ALL_BARRIER_BITS) -> None:
+    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier: int = gl.GL_ALL_BARRIER_BITS) -> None:
         """Launch one or more compute work groups.
 
         The ComputeShaderProgram should be active (bound) before calling
