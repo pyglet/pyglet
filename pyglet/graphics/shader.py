@@ -940,13 +940,12 @@ class Shader:
             source_lines = "{0}".format("\n".join(f"{str(i + 1).zfill(3)}: {line} "
                                                   for i, line in enumerate(source.split("\n"))))
 
-            msg = (
-                f"Shader compilation failed.\n"
-                f"{self._get_shader_log(shader_id)}"
-                "------------------------------------------------------------\n"
-                f"{source_lines}\n"
-                "------------------------------------------------------------"
-            )
+            msg = (f"\n------------------------------------------------------------\n"
+                   f"{source_lines}"
+                   f"\n------------------------------------------------------------\n"
+                   f"Shader compilation failed. Please review the error on the specified line.\n"
+                   f"{self._get_shader_log(shader_id)}")
+
             raise ShaderException(msg)
 
         if _debug_gl_shaders:
