@@ -19,6 +19,8 @@ The following subpackages are imported into this "mega" package already
     OpenGL
 ``pyglet.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
+``pyglet.gl.gl.gl_compat``
+    Deprecated OpenGL extension functions.
 
 These subpackages are also available, but are not imported into this namespace
 by default:
@@ -42,17 +44,24 @@ by default:
 
 The information modules are provided for convenience, and are documented below.
 """
-import pyglet as _pyglet
-
-from pyglet.gl.gl import *
-from pyglet.gl.lib import GLException
-from pyglet.gl import gl_info
-from pyglet.gl.gl_compat import GL_LUMINANCE, GL_INTENSITY
-
-from pyglet import compat_platform
-from .base import ObjectSpace, CanvasConfig, Context
+from __future__ import annotations  # noqa: I001
 
 import sys as _sys
+
+import pyglet as _pyglet
+from pyglet import compat_platform
+from pyglet.gl.gl import *  # Must always be imported before gl_info or bad things happen.  # noqa: F403
+from pyglet.gl import gl_info  # noqa: F401
+
+from pyglet.gl.gl_compat import GL_INTENSITY, GL_LUMINANCE
+from pyglet.gl.lib import GLException  # noqa: F401
+
+from .base import CanvasConfig, Context, ObjectSpace  # noqa: F401, TCH001
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.window import Window
+
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run
 
 #: The active OpenGL context.
@@ -60,10 +69,8 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 #: You can change the current context by calling `Context.set_current`;
 #: do not modify this global.
 #:
-#: :type: `Context`
-#:
 #: .. versionadded:: 1.1
-current_context = None
+current_context: Context | None = None
 
 
 class ContextException(Exception):
@@ -145,8 +152,8 @@ if _pyglet.options['debug_texture']:
         return _glDeleteTextures(n, textures)
 
 
-def _create_shadow_window():
-    global _shadow_window
+def _create_shadow_window() -> None:
+    global _shadow_window  # noqa: PLW0603
 
     import pyglet
     if not pyglet.options['shadow_window'] or _is_pyglet_doc_run:
@@ -155,12 +162,11 @@ def _create_shadow_window():
     from pyglet.window import Window
 
     class ShadowWindow(Window):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__(width=1, height=1, visible=False)
 
-        def _create_projection(self):
+        def _create_projection(self) -> None:
             """Shadow window does not need a projection."""
-            pass
 
     _shadow_window = ShadowWindow()
     _shadow_window.switch_to()
@@ -182,10 +188,10 @@ elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
 
 
-_shadow_window = None
+_shadow_window: Window | None = None
 
 # Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
 if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
     # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
-    import pyglet.window
+    import pyglet.window  # noqa: F401
