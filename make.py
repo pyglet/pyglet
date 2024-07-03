@@ -53,10 +53,14 @@ def docs():
     os.makedirs(op.join(DOC_DIR, '_build', 'html'), exist_ok=True)
 
     # Should be similar to `sphinx-build` on the CLI:
-    sphinx.cmd.build.build_main([DOC_DIR, html_dir])
-
+    return_code = sphinx.cmd.build.build_main([DOC_DIR, html_dir])
     if '--open' in sys.argv:
-        webbrowser.open('file://' + op.abspath(DOC_DIR) + '/_build/html/index.html')
+        if return_code == 0:
+            webbrowser.open('file://' + op.abspath(DOC_DIR) + '/_build/html/index.html')
+        else:
+            print("Skipping --open preview due doc build failure")
+
+    exit(return_code)
 
 
 def dist():
