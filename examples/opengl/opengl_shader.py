@@ -1,6 +1,17 @@
 import pyglet
 
-from pyglet.gl import *
+from pyglet.gl import (
+    glActiveTexture,
+    glBindTexture,
+    glEnable,
+    glBlendFunc,
+    glDisable,
+    GL_TEXTURE0,
+    GL_TRIANGLES,
+    GL_BLEND,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA
+)
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
 

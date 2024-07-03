@@ -1,3 +1,4 @@
+from ctypes import byref, c_int, c_uint, sizeof
 from pyglet.canvas.win32 import Win32Canvas
 from .base import Config, CanvasConfig, Context
 
@@ -7,9 +8,13 @@ from pyglet.gl import wgl
 from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
-from pyglet.libs.win32 import _user32, _kernel32, _gdi32
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32 import _gdi32
+from pyglet.libs.win32.constants import (
+    PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, PFD_STEREO,
+    PFD_TYPE_RGBA, PFD_DOUBLEBUFFER_DONTCARE, PFD_STEREO_DONTCARE,
+    PFD_DEPTH_DONTCARE
+)
+from pyglet.libs.win32.types import PIXELFORMATDESCRIPTOR
 
 
 class Win32Config(Config):

@@ -97,7 +97,8 @@ from __future__ import annotations
 
 import re
 import weakref
-from ctypes import *
+
+from ctypes import c_int, c_uint, c_ubyte, sizeof, byref
 
 import pyglet
 from pyglet.gl import *
@@ -375,10 +376,11 @@ class AbstractImage:
                 attempted is raised.
 
         """
-        if not file:
+        if file is None:
+            assert filename is not None, "Either filename or file must be specified."
             file = open(filename, 'wb')
 
-        if encoder:
+        if encoder is not None:
             encoder.encode(self, filename, file)
         else:
             first_exception = None
@@ -393,7 +395,7 @@ class AbstractImage:
                 raise ImageEncodeException('No image encoders are available')
             raise first_exception
 
-    def blit(self, x, y, z=0):
+    def blit(self, x: int, y: int, z: int = 0):
         """Draw this image to the active framebuffers.
 
         The image will be drawn with the lower-left corner at
@@ -401,7 +403,7 @@ class AbstractImage:
         """
         raise ImageException('Cannot blit %r.' % self)
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source, x: int, y: int, z: int):
         """Draw `source` on this image.
 
         `source` will be copied into this image such that its anchor point
@@ -414,7 +416,7 @@ class AbstractImage:
         """
         raise ImageException('Cannot blit images onto %r.' % self)
 
-    def blit_to_texture(self, target, level, x, y, z=0):
+    def blit_to_texture(self, target, level, x: int, y: int, z: int = 0):
         """Draw this image on the currently bound texture at `target`.
 
         This image is copied into the texture such that this image's anchor
@@ -443,7 +445,7 @@ class AbstractImageSequence:
         """
         raise NotImplementedError('abstract')
 
-    def get_animation(self, period, loop=True):
+    def get_animation(self, period, loop: bool=True):
         """Create an animation over this image sequence for the given constant
         framerate.
 
@@ -512,18 +514,18 @@ class UniformTextureSequence(TextureSequence):
 
     """
 
-    def _get_item_width(self):
+    def _get_item_width(self) -> int:
         raise NotImplementedError('abstract')
 
-    def _get_item_height(self):
+    def _get_item_height(self) -> int:
         raise NotImplementedError('abstract')
 
     @property
-    def item_width(self):
+    def item_width(self) -> int:
         return self._get_item_width()
 
     @property
-    def item_height(self):
+    def item_height(self) -> int:
         return self._get_item_height()
 
 
@@ -590,7 +592,7 @@ class ImageData(AbstractImage):
         return self
 
     @property
-    def format(self):
+    def format(self) -> str:
         """Format string of the data.  Read-write.
 
         :type: str
@@ -598,11 +600,11 @@ class ImageData(AbstractImage):
         return self._desired_format
 
     @format.setter
-    def format(self, fmt):
+    def format(self, fmt: str):
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_data(self, fmt=None, pitch=None):
+    def get_data(self, fmt: str=None, pitch=None):
         """Get the byte data of the image.
 
         :Parameters:
@@ -623,7 +625,7 @@ class ImageData(AbstractImage):
             return self._current_data
         return self._convert(fmt, pitch)
 
-    def set_data(self, fmt, pitch, data):
+    def set_data(self, fmt: str, pitch, data):
         """Set the byte data of the image.
 
         :Parameters:
@@ -738,7 +740,7 @@ class ImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, width: int, height: int):
         """Retrieve a rectangular region of this image data.
 
         :Parameters:
@@ -755,10 +757,10 @@ class ImageData(AbstractImage):
         """
         return ImageDataRegion(x, y, width, height, self)
 
-    def blit(self, x, y, z=0, width=None, height=None):
+    def blit(self, x: int, y: int, z: int=0, width: int=None, height: int=None):
         self.get_texture().blit(x, y, z, width, height)
 
-    def blit_to_texture(self, target, level, x, y, z, internalformat=None):
+    def blit_to_texture(self, target, level, x: int, y: int, z: int, internalformat=None):
         """Draw this image to to the currently bound texture at `target`.
 
         This image's anchor point will be aligned to the given `x` and `y`

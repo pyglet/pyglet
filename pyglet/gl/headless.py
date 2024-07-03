@@ -1,9 +1,13 @@
-from ctypes import *
+from ctypes import byref
 
 from pyglet import gl
 from pyglet.canvas.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
-from pyglet.libs.egl.egl import *
+from pyglet.libs.egl.egl import (
+    EGL_NONE, EGL_CONTEXT_MAJOR_VERSION, EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_OPENGL_ES3_BIT,
+    EGL_CONTEXT_MINOR_VERSION, EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE,
+    EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_NONE, EGL_CONTEXT_OPENGL_DEBUG
+)
 
 from .base import CanvasConfig, Config, Context
 
