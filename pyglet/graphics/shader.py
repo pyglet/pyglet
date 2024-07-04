@@ -8,7 +8,6 @@ from ctypes import (
     c_short, c_ubyte, c_uint, c_ushort, cast, create_string_buffer, pointer, sizeof, string_at, Array,
 )
 from typing import Sequence, Callable, Any, TYPE_CHECKING, Literal, Union, Type
-from weakref import proxy
 
 from _ctypes import _SimpleCData, _Pointer
 
@@ -581,7 +580,7 @@ class UniformBlock:
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict[int, tuple[str, GLDataType, int]]) -> None:
         """Initialize a uniform block for a ShaderProgram."""
-        self.program = proxy(program)
+        self.program = weakref.proxy(program)
         self.name = name
         self.index = index
         self.size = size
