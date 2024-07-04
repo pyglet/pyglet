@@ -488,6 +488,13 @@ class _Uniform:
         return f"Uniform(type={self.type}, size={self.size}, location={self.location})"
 
 
+def get_maximum_binding_count() -> int:
+    """The maximum binding value that can be used for this hardware."""
+    val = gl.GLint()
+    gl.glGetIntegerv(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS, byref(val))
+    return val.value
+
+
 class _UBOBindingManager:
     """Manages the global Uniform Block binding assignments in the OpenGL context."""
     _in_use: set[int]
@@ -499,12 +506,12 @@ class _UBOBindingManager:
     def __init__(self) -> None:
         self._ubo_programs = defaultdict(lambda: weakref.WeakSet())
         self._ubo_names = {}
-        self._max_binding_count = self._get_value(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS)
+        self._max_binding_count = get_maximum_binding_count()
         self._pool = list(range(self._max_binding_count))
         self._in_use = set()
 
     @property
-    def max_value(self):
+    def max_value(self) -> int:
         return self._max_binding_count
 
     def get_name(self, binding: int) -> str | None:
@@ -559,12 +566,6 @@ class _UBOBindingManager:
             msg = f"Uniform binding point: {index} is not in use."
             raise ValueError(msg)
 
-    @staticmethod
-    def _get_value(parameter: int) -> int:
-        val = gl.GLint()
-        gl.glGetIntegerv(parameter, byref(val))
-        return val.value
-
 
 class UniformBlock:
     program: CallableProxyType[Callable[..., Any] | Any] | Any
@@ -595,7 +596,7 @@ class UniformBlock:
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
-        
+
         This only affects the program this Uniform Block is derived from.
 
         Binding value of 0 is reserved for the Pyglet's internal uniform block named ``WindowBlock``.
@@ -691,7 +692,7 @@ class UniformBufferObject:
     buffer: BufferObject
     view: Structure
     _view_ptr: CTypesPointer[Structure]
-    index: int
+    binding: int
     buffer: BufferObject
     __slots__ = 'buffer', 'view', '_view_ptr', 'binding'
 
@@ -704,9 +705,11 @@ class UniformBufferObject:
 
     @property
     def id(self) -> int:
+        """The buffer ID associated with this UBO."""
         return self.buffer.id
 
     def bind(self) -> None:
+        """Bind this buffer to the bind point established by the UniformBuffer parent."""
         glBindBufferBase(GL_UNIFORM_BUFFER, self.binding, self.buffer.id)
 
     def read(self) -> bytes:
@@ -1405,7 +1408,7 @@ class ComputeShaderProgram:
         return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
 
     @property
-    def uniform_blocks(self) -> dict:
+    def uniform_blocks(self) -> dict[str, UniformBlock]:
         return self._uniform_blocks
 
     def use(self) -> None:
