@@ -504,11 +504,12 @@ class _UBOBindingManager:
     _ubo_programs: defaultdict[Any, weakref.WeakSet[ShaderProgram]]
 
     def __init__(self) -> None:
-        self._ubo_programs = defaultdict(lambda: weakref.WeakSet())
-        self._ubo_names = {}
+        self._ubo_programs = defaultdict(weakref.WeakSet)
+        # Reserve 'WindowBlock' for 0.
+        self._ubo_names = {'WindowBlock': 0}
         self._max_binding_count = get_maximum_binding_count()
-        self._pool = list(range(self._max_binding_count))
-        self._in_use = set()
+        self._pool = list(range(1, self._max_binding_count))
+        self._in_use = {0}
 
     @property
     def max_value(self) -> int:
@@ -543,7 +544,7 @@ class _UBOBindingManager:
     def _check_freed_bindings(self) -> None:
         """Find and remove any Uniform Block names that no longer have a shader in use."""
         for ubo_name in list(self._ubo_programs):
-            if not self._ubo_programs[ubo_name]:
+            if ubo_name != 'WindowBlock' and not self._ubo_programs[ubo_name]:
                 del self._ubo_programs[ubo_name]
                 # Return the binding number to the pool.
                 self.return_binding(self._ubo_names[ubo_name])
