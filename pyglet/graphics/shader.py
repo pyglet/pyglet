@@ -503,6 +503,17 @@ class _UBOBindingManager:
         self._pool = list(range(self._max_binding_count))
         self._in_use = set()
 
+    @property
+    def max_value(self):
+        return self._max_binding_count
+
+    def get_name(self, binding: int) -> str | None:
+        """Return the uniform name associated with the binding number."""
+        for name, current_binding in self._ubo_names.items():
+            if binding == current_binding:
+                return name
+        return None
+
     def binding_exists(self, binding: int) -> bool:
         """Check if a binding index value is in use."""
         return binding in self._in_use
@@ -583,14 +594,30 @@ class UniformBlock:
         return UniformBufferObject(self.view_cls, self.size, self.binding)
 
     def set_binding(self, binding: int) -> None:
-        """Rebind the existing UniformBlock to a new binding index number.
+        """Rebind the Uniform Block to a new binding index number.
+        
+        This only affects the program this Uniform Block is derived from.
 
-        Binding value of 0 is reserved for the internal Pyglet 'WindowBlock'.
+        Binding value of 0 is reserved for the Pyglet's internal uniform block named ``WindowBlock``.
+
+        .. warning:: By setting a binding manually, the user is expected to manage all Uniform Block bindings
+                     for all shader programs manually. Since the internal global ID's will be unaware of changes set
+                     by this function, collisions may occur if you use a lower number.
 
         .. note:: You must call ``create_ubo`` to get another Uniform Buffer Object after calling this,
-                  and discontinue use of previous ones.
+                  as the previous buffers are still bound to the old binding point.
         """
         assert binding != 0, "Binding 0 is reserved for the internal Pyglet 'WindowBlock'."
+        assert pyglet.gl.current_context is not None, "No context available."
+        manager: _UBOBindingManager = pyglet.gl.current_context.ubo_manager
+        if binding >= manager.max_value:
+            msg = f"Binding value exceeds maximum allowed by hardware: {manager.max_value}"
+            raise ShaderException(msg)
+        existing_name = manager.get_name(binding)
+        if existing_name and existing_name != self.name:
+            msg = f"Binding: {binding} was in use by {existing_name}, and has been overridden."
+            warnings.warn(msg)
+
         self.binding = binding
         gl.glUniformBlockBinding(self.program.id, self.index, self.binding)
 
@@ -649,8 +676,15 @@ class UniformBlock:
 
         return View
 
+    def _actual_binding_point(self) -> int:
+        """Queries OpenGL to find what the bind point currently is."""
+        binding = gl.GLint()
+        gl.glGetActiveUniformBlockiv(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
+        return binding.value
+
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(location={self.index}, size={self.size})"
+        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+                f"binding={self.binding})")
 
 
 class UniformBufferObject:
