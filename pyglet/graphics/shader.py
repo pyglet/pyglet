@@ -525,6 +525,14 @@ class _UBOBindingManager:
         """Check if a binding index value is in use."""
         return binding in self._in_use
 
+    def add_explicit_binding(self, shader_program: ShaderProgram, ub_name: str, binding: int) -> None:
+        """Used when a uniform block has set its own binding point."""
+        self._ubo_programs[ub_name].add(shader_program)
+        self._ubo_names[ub_name] = binding
+        if binding in self._pool:
+            self._pool.remove(binding)
+        self._in_use.add(binding)
+
     def get_binding(self, shader_program: ShaderProgram, ub_name: str) -> int:
         """Retrieve a global Uniform Block Binding ID value."""
         self._ubo_programs[ub_name].add(shader_program)
@@ -533,8 +541,6 @@ class _UBOBindingManager:
             return self._ubo_names[ub_name]
 
         self._check_freed_bindings()
-
-        self._ubo_programs[ub_name].add(shader_program)
 
         binding = self._get_new_binding()
         self._ubo_names[ub_name] = binding
@@ -885,9 +891,11 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
 
         num_active = gl.GLint()
         block_data_size = gl.GLint()
+        binding = gl.GLint()
 
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+        gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
 
         indices = (gl.GLuint * num_active.value)()
         indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
@@ -912,12 +920,25 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
             gl_type, _, _, length = _uniform_setters[u_type]
             uniforms[block_uniform_index] = (uniform_name, gl_type, length)
 
-        binding_index = manager.get_binding(program, name)
+        binding_index = binding.value
+        if pyglet.options.shader_bind_management:
+            # If no binding is specified in GLSL, then assign it internally.
+            if binding.value == 0:
+                binding_index = manager.get_binding(program, name)
+
+                # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
+                # one would be crazy enough to use more than 36 uniform blocks, right?
+                gl.glUniformBlockBinding(program_id, index, binding_index)
+            else:
+                # If a binding was manually set in GLSL, just check if the values collide to warn the user.
+                _block_name = manager.get_name(binding.value)
+                if _block_name and _block_name != name:
+                    msg = (f"{program} explicitly set '{name}' to {binding.value} in the shader. '{_block_name}' has "
+                           f"been overridden.")
+                    warnings.warn(msg)
+                manager.add_explicit_binding(program, name, binding.value)
 
         uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, binding_index, uniforms)
-        # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
-        # one would be crazy enough to use more than 36 uniform blocks, right?
-        gl.glUniformBlockBinding(program_id, index, binding_index)
 
         if _debug_gl_shaders:
             for block in uniform_blocks.values():
