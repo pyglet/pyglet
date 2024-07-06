@@ -53,29 +53,35 @@ class Vec2(_typing.NamedTuple):
 
     __match_args__ = 'x', 'y'
 
-    def __add__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x + other.x, self.y + other.y)
+    def __add__(self, other: Vec2 | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x + other[0], self.y + other[1])
+        except TypeError:
+            return Vec2(self.x + other, self.y + other)
 
-    def __sub__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x - other.x, self.y - other.y)
+    def __sub__(self, other: Vec2 | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x - other[0], self.y - other[1])
+        except TypeError:
+            return Vec2(self.x - other, self.y - other)
 
     def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self.x * scalar, self.y * scalar)
-        except TypeError:
             return Vec2(self.x * scalar[0], self.y * scalar[1])
+        except TypeError:
+            return Vec2(self.x * scalar, self.y * scalar)
 
     def __truediv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self.x / scalar, self.y / scalar)
-        except TypeError:
             return Vec2(self.x / scalar[0], self.y / scalar[1])
+        except TypeError:
+            return Vec2(self.x / scalar, self.y / scalar)
 
     def __floordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self.x // scalar, self.y // scalar)
-        except TypeError:
             return Vec2(self.x // scalar[0], self.y // scalar[1])
+        except TypeError:
+            return Vec2(self.x // scalar, self.y // scalar)
 
     def __radd__(self, other: Vec2 | int) -> Vec2:
         try:
@@ -202,7 +208,7 @@ class Vec2(_typing.NamedTuple):
         return self.x * other.x + self.y * other.y
 
     def index(self, *args):
-        raise NotImplemented("Vec types can be indexed directly.")
+        raise NotImplementedError("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
@@ -344,7 +350,7 @@ class Vec3(_typing.NamedTuple):
                     clamp(self.z, min_val, max_val))
 
     def index(self, *args):
-        raise NotImplemented("Vec types can be indexed directly.")
+        raise NotImplementedError("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
