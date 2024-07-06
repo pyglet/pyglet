@@ -8,8 +8,11 @@ import os
 import sys
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ItemsView, Sized, Callable
-from types import FrameType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import FrameType
+    from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
 version = "2.0.15"
@@ -169,7 +172,7 @@ class Options:
 
     headless_device: int = 0
     """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
-    GPU to use. This is only useful on multi-GPU systems. 
+    GPU to use. This is only useful on multi-GPU systems.
     """
 
     win32_disable_shaping: bool = False
