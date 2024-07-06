@@ -116,7 +116,7 @@ the particular class documentation.
         dispatcher.push_handlers(my_handler_instance)
 
 """
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import inspect
 import os.path
@@ -126,7 +126,12 @@ from typing import TYPE_CHECKING
 from weakref import WeakMethod
 
 if TYPE_CHECKING:
+    import sys
     from typing import Any, Callable, Generator
+    if sys.version_info >= (3, 11):
+        from typing import Self
+    else:
+        Self = Any
 
 
 EVENT_HANDLED = True
@@ -147,7 +152,7 @@ class EventDispatcher:
     _event_stack: tuple | list = ()
 
     @classmethod
-    def register_event_type(cls: EventDispatcher, name: str) -> str:
+    def register_event_type(cls: Self, name: str) -> str:
         """Register an event type with the dispatcher.
 
         Before dispatching events, they must first be registered by name.
@@ -179,7 +184,7 @@ class EventDispatcher:
         self._event_stack.insert(0, {})
         self.set_handlers(*args, **kwargs)
 
-    def _get_handlers(self, args: Any, kwargs: Any) -> Generator[str, Callable]:
+    def _get_handlers(self, args: list, kwargs: dict) -> Generator[str, Callable]:
         """Implement handler matching on arguments for set_handlers and remove_handlers."""
         for obj in args:
             if inspect.isroutine(obj):

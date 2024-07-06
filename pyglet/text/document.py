@@ -140,7 +140,7 @@ if TYPE_CHECKING:
     from pyglet.font.base import Font
     from pyglet.text.layout import TextLayout
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run # pyright: ignore reportAttributeAccessIssue
 
 #: The style attribute takes on multiple values in the document.
 STYLE_INDETERMINATE = "indeterminate"
@@ -360,7 +360,7 @@ class AbstractDocument(event.EventDispatcher):
                 :see: :py:func:`~pyglet.font.load`.
         """
 
-    def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:
+    def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:  # noqa: D417
         """Insert text into the document.
 
         Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_insert_text` event.
@@ -372,7 +372,7 @@ class AbstractDocument(event.EventDispatcher):
                 Text to insert.
             attributes:
                 Optional dictionary giving named style attributes of the inserted text.
-        """
+        """  # noqa: D411, D405, D214, D410
         self._insert_text(start, text, attributes)
         self.dispatch_event("on_insert_text", start, text)
 
@@ -402,10 +402,10 @@ class AbstractDocument(event.EventDispatcher):
     def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
             assert element.position is not None
-            if start <= element._position < end:  # noqa: SLF001
+            if start <= element._position < end:  # pyright: ignore reportOperatorIssue # noqa: SLF001
                 self._elements.remove(element)
-            elif element._position >= end:  # fixes #538  # noqa: SLF001
-                element._position -= (end - start)  # noqa: SLF001
+            elif element._position >= end:  # fixes #538  # noqa: SLF001 # pyright: ignore reportOptionalOperand
+                element._position -= (end - start)  # noqa: SLF001 # pyright: ignore reportOperatorIssue
 
         self._text = self._text[:start] + self._text[end:]
 
@@ -446,7 +446,7 @@ class AbstractDocument(event.EventDispatcher):
         msg = f"No element at position {position}"
         raise RuntimeError(msg)
 
-    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: D417
         """Set text style of a range between start and end of the document.
 
         Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_style_text` event.
@@ -459,7 +459,7 @@ class AbstractDocument(event.EventDispatcher):
             attributes:
                 Dictionary giving named style attributes of the text.
 
-        """
+        """  # noqa: D214, D405, D411, D410
         self._set_style(start, end, attributes)
         self.dispatch_event("on_style_text", start, end, attributes)
 
@@ -482,7 +482,7 @@ class AbstractDocument(event.EventDispatcher):
             attributes:
                 Dictionary giving named style attributes of the paragraphs.
 
-        """
+        """  # noqa: D214, D405, D411, D410
         start = self.get_paragraph_start(start)
         end = self.get_paragraph_end(end)
         self._set_style(start, end, attributes)
@@ -525,7 +525,7 @@ class AbstractDocument(event.EventDispatcher):
                     Dictionary giving updated named style attributes of the text.
 
             :event:
-            """
+            """  # noqa: D214, D405, D411, D410
 
 
 AbstractDocument.register_event_type("on_insert_text")
