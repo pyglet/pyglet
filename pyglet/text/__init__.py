@@ -101,7 +101,7 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
         DocumentDecodeException: If MIME type is not from the supported types.
     """
     if mimetype is None:
-        _, ext = _splitext(filename)
+        _, ext = _splitext(filename) # type: ignore reportCallIssue, reportArgumentType
         if ext.lower() in (".htm", ".html", ".xhtml"):
             mimetype = "text/html"
         else:
@@ -121,8 +121,9 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
     raise DocumentDecodeException(msg)
 
 
-def load(filename: str, file: BinaryIO | None = None, mimetype: SupportedMimeTypes | None = None) \
-        -> AbstractDocument:
+def load(filename: str,
+         file: BinaryIO | None = None,
+         mimetype: SupportedMimeTypes | None = None) -> AbstractDocument:
     """Load a document from a file.
 
     Args:
@@ -145,10 +146,10 @@ def load(filename: str, file: BinaryIO | None = None, mimetype: SupportedMimeTyp
         file.close()
 
     if hasattr(file_contents, "decode"):
-        file_contents = file_contents.decode()
+        file_contents = file_contents.decode() # type: ignore reportAttributeAccessIssue
 
     location = pyglet.resource.FileLocation(_dirname(filename))
-    return decoder.decode(file_contents, location)
+    return decoder.decode(file_contents, location) # type: ignore reportArgumentType
 
 
 def decode_html(text: str, location: str | None = None) -> FormattedDocument:
@@ -161,7 +162,7 @@ def decode_html(text: str, location: str | None = None) -> FormattedDocument:
             Location giving the base path for additional resources referenced from the document (e.g., images).
     """
     decoder = get_decoder(None, "text/html")
-    return decoder.decode(text, location)
+    return decoder.decode(text, location) # type: ignore reportArgumentType reportReturnType
 
 
 def decode_attributed(text: str) -> FormattedDocument:
@@ -170,13 +171,13 @@ def decode_attributed(text: str) -> FormattedDocument:
     See `pyglet.text.formats.attributed` for a description of attributed text.
     """
     decoder = get_decoder(None, "text/vnd.pyglet-attributed")
-    return decoder.decode(text)
+    return decoder.decode(text) # type: ignore reportReturnType
 
 
 def decode_text(text: str) -> UnformattedDocument:
     """Create a document directly from some plain text."""
     decoder = get_decoder(None, "text/plain")
-    return decoder.decode(text)
+    return decoder.decode(text) # type: ignore reportReturnType
 
 
 class DocumentLabel(layout.TextLayout):
@@ -498,3 +499,21 @@ class HTMLLabel(DocumentLabel):
     def text(self, text: str) -> None:
         self._text = text
         self.document = decode_html(text, self._location)
+
+
+__all__ = [
+    "DocumentDecodeException",
+    "DocumentDecoder",
+    "SupportedMimeTypes",
+    "get_decoder",
+    "load",
+    "decode_html",
+    "decode_attributed",
+    "decode_text",
+    "DocumentLabel",
+    "Label",
+    "HTMLLabel",
+    # imported from lower
+    "document",
+    "layout",
+]
