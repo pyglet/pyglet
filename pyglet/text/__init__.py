@@ -35,7 +35,7 @@ Refer to the Programming Guide for advanced usage of the document and layout
 classes, including interactive editing, embedding objects within documents and
 creating scrollable layouts.
 """
-from __future__ import annotations
+from __future__ import annotations # noqa: I001
 
 from abc import abstractmethod
 from os.path import dirname as _dirname
@@ -101,7 +101,7 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
         DocumentDecodeException: If MIME type is not from the supported types.
     """
     if mimetype is None:
-        _, ext = _splitext(filename) # type: ignore reportCallIssue, reportArgumentType
+        _, ext = _splitext(filename) # pyright: ignore [reportCallIssue, reportArgumentType]
         if ext.lower() in (".htm", ".html", ".xhtml"):
             mimetype = "text/html"
         else:
@@ -146,10 +146,10 @@ def load(filename: str,
         file.close()
 
     if hasattr(file_contents, "decode"):
-        file_contents = file_contents.decode() # type: ignore reportAttributeAccessIssue
+        file_contents = file_contents.decode() # pyright: ignore [reportAttributeAccessIssue]
 
     location = pyglet.resource.FileLocation(_dirname(filename))
-    return decoder.decode(file_contents, location) # type: ignore reportArgumentType
+    return decoder.decode(file_contents, location) # pyright: ignore [reportArgumentType]
 
 
 def decode_html(text: str, location: str | None = None) -> FormattedDocument:
@@ -162,7 +162,7 @@ def decode_html(text: str, location: str | None = None) -> FormattedDocument:
             Location giving the base path for additional resources referenced from the document (e.g., images).
     """
     decoder = get_decoder(None, "text/html")
-    return decoder.decode(text, location) # type: ignore reportArgumentType reportReturnType
+    return decoder.decode(text, location) # pyright: ignore [reportArgumentType, reportReturnType]
 
 
 def decode_attributed(text: str) -> FormattedDocument:
@@ -171,13 +171,13 @@ def decode_attributed(text: str) -> FormattedDocument:
     See `pyglet.text.formats.attributed` for a description of attributed text.
     """
     decoder = get_decoder(None, "text/vnd.pyglet-attributed")
-    return decoder.decode(text) # type: ignore reportReturnType
+    return decoder.decode(text) # pyright: ignore [reportReturnType]
 
 
 def decode_text(text: str) -> UnformattedDocument:
     """Create a document directly from some plain text."""
     decoder = get_decoder(None, "text/plain")
-    return decoder.decode(text) # type: ignore reportReturnType
+    return decoder.decode(text) # pyright: ignore [reportReturnType]
 
 
 class DocumentLabel(layout.TextLayout):
@@ -271,7 +271,7 @@ class DocumentLabel(layout.TextLayout):
     @opacity.setter
     def opacity(self, alpha: int) -> None:
         if alpha != self.color[3]:
-            self.color = list(map(int, (*self.color[:3], alpha))) # type: ignore reportAttributeAccessIssue
+            self.color = list(map(int, (*self.color[:3], alpha))) # pyright: ignore reportAttributeAccessIssue
 
     @property
     def font_name(self) -> str | list[str]:
@@ -441,7 +441,7 @@ class HTMLLabel(DocumentLabel):
                  x: float = 0.0, y: float = 0.0, z: float = 0.0,
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-                 multiline: bool = False, dpi: float | None = None,
+                 multiline: bool = False, dpi: int | None = None,
                  batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None) -> None:
         """Create a label with an HTML string.
@@ -487,7 +487,7 @@ class HTMLLabel(DocumentLabel):
         """
         self._text = text
         self._location = location
-        doc = decode_html(text, location)
+        doc = decode_html(text, location) # pyright: ignore [reportArgumentType]
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
                          multiline, dpi, batch, group, program, init_document=False)
 
@@ -499,7 +499,7 @@ class HTMLLabel(DocumentLabel):
     @text.setter
     def text(self, text: str) -> None:
         self._text = text
-        self.document = decode_html(text, self._location)
+        self.document = decode_html(text, self._location) # pyright: ignore [reportArgumentType]
 
 
 __all__ = [

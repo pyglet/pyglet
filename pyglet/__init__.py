@@ -2,7 +2,7 @@
 
 More information is available at http://www.pyglet.org
 """
-from __future__ import annotations
+from __future__ import annotations # noqa: I001
 
 import os
 import sys
@@ -125,7 +125,7 @@ class Options:
 
      .. versionadded:: 1.1"""
 
-    vsync: bool = None
+    vsync: bool | None = None
     """If set, the `pyglet.window.Window.vsync` property is ignored, and
      this option overrides it (to either force vsync on or off).  If unset,
      or set to None, the `pyglet.window.Window.vsync` property behaves
@@ -268,10 +268,10 @@ if compat_platform == "cygwin":
     # DirectSound support.
     import ctypes
 
-    ctypes.windll = ctypes.cdll  # type: ignore
-    ctypes.oledll = ctypes.cdll  # type: ignore
+    ctypes.windll = ctypes.cdll
+    ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
-    ctypes.HRESULT = ctypes.c_long  # type: ignore
+    ctypes.HRESULT = ctypes.c_long
 
 # Call tracing
 # ------------
@@ -290,10 +290,10 @@ def _trace_repr(value: Sized, size: int=40) -> str:
     return value
 
 
-def _trace_frame(thread, frame, indent):
+def _trace_frame(thread, frame: FrameType, indent: str) -> None:
     if frame.f_code is lib._TraceFunction.__call__.__code__:
         is_ctypes = True
-        func = frame.f_locals["self"]._func
+        func = frame.f_locals["self"]._func # noqa: SLF001
         name = func.__name__
         location = "[ctypes]"
     else:
