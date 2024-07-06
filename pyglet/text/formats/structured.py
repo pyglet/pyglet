@@ -47,7 +47,9 @@ class _InlineElementGroup(pyglet.graphics.Group):
         glDisable(GL_BLEND)
         self.program.stop()
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: _InlineElementGroup) -> bool:
+        if not isinstance(other, _InlineElementGroup):
+            return False
         return (self.__class__ is other.__class__ and
                 self._order == other.order and
                 self.program == other.program and
