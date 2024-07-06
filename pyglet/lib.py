@@ -2,6 +2,7 @@
 
 These extend and correct ctypes functions.
 """
+from __future__ import annotations  # noqa: I001
 
 import os
 import re
@@ -11,6 +12,7 @@ import ctypes
 import ctypes.util
 
 import pyglet
+from typing import NoReturn, Callable, Any
 
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
@@ -28,19 +30,19 @@ else:
 
 
 class _TraceFunction:
-    def __init__(self, func):
+    def __init__(self, func: Callable) -> None:
         self.__dict__['_func'] = func
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._func.__name__
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):  # noqa: ANN002, ANN003, ANN204
         return self._func(*args, **kwargs)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self._func, name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: object) -> None:
         setattr(self._func, name, value)
 
 
@@ -58,29 +60,29 @@ class _TraceLibrary:
 if _is_pyglet_doc_run:
     class LibraryMock:
         """Mock library used when generating documentation."""
-        def __getattr__(self, name):
+        def __getattr__(self, name: str):  # noqa: ANN204
             return LibraryMock()
 
-        def __setattr__(self, name, value):
+        def __setattr__(self, name: str, value) -> None:  # noqa: ANN001
             pass
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, *args, **kwargs):  # noqa: ANN003, ARG002, ANN002, ANN204
             return LibraryMock()
 
-        def __rshift__(self, other):
+        def __rshift__(self, other):  # noqa: ANN204, ANN001
             return 0
 
 
-class LibraryLoader:
+class LibraryLoader:  # noqa: D101
 
     platform = pyglet.compat_platform
     # this is only for library loading, don't include it in pyglet.platform
     if platform == 'cygwin':
         platform = 'win32'
 
-    def load_library(self, *names, **kwargs):
-        """Find and load a library.  
-        
+    def load_library(self, *names: str, **kwargs):  # noqa: ANN201, ANN003
+        """Find and load a library.
+
         More than one name can be specified, they will be tried in order.
         Platform-specific library names (given as kwargs) are tried first.
 
@@ -93,7 +95,8 @@ class LibraryLoader:
             return self.load_framework(kwargs['framework'])
 
         if not names:
-            raise ImportError("No library name specified")
+            msg = "No library name specified"
+            raise ImportError(msg)
 
         platform_names = kwargs.get(self.platform, [])
         if isinstance(platform_names, str):
@@ -111,35 +114,36 @@ class LibraryLoader:
             try:
                 lib = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
-                    print(name, self.find_library(name))
+                    print(name, self.find_library(name))  # noqa: T201
                 if _debug_trace:
                     lib = _TraceLibrary(lib)
                 return lib
-            except OSError as o:
+            except OSError as o: # noqa: PERF203
                 path = self.find_library(name)
                 if path:
                     try:
                         lib = ctypes.cdll.LoadLibrary(path)
                         if _debug_lib:
-                            print(path)
+                            print(path) # noqa: T201
                         if _debug_trace:
                             lib = _TraceLibrary(lib)
                         return lib
                     except OSError as e:
                         if _debug_lib:
-                            print(f"Unexpected error loading library {name}: {str(e)}")
-                elif self.platform == "win32" and o.winerror != 126:
-                    if _debug_lib:
-                        print(f"Unexpected error loading library {name}: {str(o)}")
+                            print(f"Unexpected error loading library {name}: {e!s}") # noqa: T201
+                elif self.platform == "win32" and o.winerror != 126 and _debug_lib:
+                    print(f"Unexpected error loading library {name}: {o!s}") # noqa: T201
 
-        raise ImportError(f'Library "{names[0]}" not found.')
+        msg = f'Library "{names[0]}" not found.'
+        raise ImportError(msg)
 
-    def find_library(self, name):
+    def find_library(self, name: str) -> str | None:
         return ctypes.util.find_library(name)
 
     @staticmethod
-    def load_framework(name):
-        raise RuntimeError("Can't load framework on this platform.")
+    def load_framework(_name: str) -> NoReturn:
+        msg = "Can't load framework on this platform."
+        raise RuntimeError(msg)
 
 
 class MachOLibraryLoader(LibraryLoader):
@@ -164,7 +168,7 @@ class MachOLibraryLoader(LibraryLoader):
         else:
             self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
 
-    def find_library(self, path):
+    def find_library(self, path):  # noqa: ANN201, ANN001
         """Implements the dylib search as specified in Apple documentation:
 
         http://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
@@ -172,8 +176,7 @@ class MachOLibraryLoader(LibraryLoader):
         Before commencing the standard search, the method first checks
         the bundle's ``Frameworks`` directory if the application is running
         within a bundle (OS X .app).
-        """
-
+        """  # noqa: D415
         libname = os.path.basename(path)
         search_path = []
 
@@ -193,8 +196,7 @@ class MachOLibraryLoader(LibraryLoader):
 
         # pyinstaller.py sets sys.frozen to True, and puts dylibs in
         # Contents/macOS, which path pyinstaller puts in sys._MEIPASS
-        if getattr(sys, 'frozen', False) and getattr(sys, '_MEIPASS', None):
-            meipass = getattr(sys, '_MEIPASS')
+        if getattr(sys, 'frozen', False) and (meipass := getattr(sys, '_MEIPASS', None)):
             search_path.append(os.path.join(meipass, libname))
 
         # conda support
@@ -218,36 +220,37 @@ class MachOLibraryLoader(LibraryLoader):
         return None
 
     @staticmethod
-    def load_framework(name):
+    def load_framework(name: str):  # noqa: ANN205
         path = ctypes.util.find_library(name)
 
-        # Hack for compatibility with macOS > 11.0
+        # Hack for compatibility with macOS > 11.0  # noqa: FIX004
         if path is None:
             frameworks = {
                 'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
                 'IOKit': '/System/Library/Frameworks/IOKit.framework/IOKit',
                 'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
-                'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL'
+                'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL',
             }
             path = frameworks.get(name)
 
         if path:
             lib = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
-                print(path)
+                print(path)  # noqa: T201
             if _debug_trace:
                 lib = _TraceLibrary(lib)
             return lib
 
-        raise ImportError(f"Can't find framework {name}.")
+        msg = f"Can't find framework {name}."
+        raise ImportError(msg)
 
 
-class LinuxLibraryLoader(LibraryLoader):
+class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
     _ld_so_cache = None
     _local_libs_cache = None
 
     @staticmethod
-    def _find_libs(directories):
+    def _find_libs(directories: list[str]):
         cache = {}
         lib_re = re.compile(r'lib(.*)\.so(?:$|\.)')
         for directory in directories:
