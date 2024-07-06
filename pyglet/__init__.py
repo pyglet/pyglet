@@ -8,7 +8,8 @@ import os
 import sys
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ItemsView
+from typing import TYPE_CHECKING, Any, ItemsView, Sized, Callable
+from types import FrameType
 
 #: The release version
 version = "2.0.15"
@@ -22,7 +23,7 @@ if sys.version_info < MIN_PYTHON_VERSION:
     raise Exception(msg)
 
 if "sphinx" in sys.modules:
-    sys.is_pyglet_doc_run = True
+    sys.is_pyglet_doc_run = True # type: ignore reportAttributeAccessIssue
 
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -282,7 +283,7 @@ _trace_depth = options["debug_trace_depth"]
 _trace_flush = options["debug_trace_flush"]
 
 
-def _trace_repr(value, size=40):
+def _trace_repr(value: Sized, size: int=40) -> str:
     value = repr(value)
     if len(value) > size:
         value = value[:size // 2 - 2] + "..." + value[-size // 2 - 1:]
@@ -322,44 +323,44 @@ def _trace_frame(thread, frame, indent):
 
     if indent:
         name = f"Called from {name}"
-    print(f"[{thread}] {indent}{name} {location}")
+    print(f"[{thread}] {indent}{name} {location}") # noqa: T201
 
     if _trace_args:
         if is_ctypes:
             args = [_trace_repr(arg) for arg in frame.f_locals["args"]]
-            print(f'  {indent}args=({", ".join(args)})')
+            print(f'  {indent}args=({", ".join(args)})') # noqa: T201
         else:
             for argname in code.co_varnames[:code.co_argcount]:
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
-                    print(f"  {indent}{argname}={argvalue}")
-                except:
+                    print(f"  {indent}{argname}={argvalue}") # noqa: T201
+                except: # noqa: S110, E722, PERF203
                     pass
 
     if _trace_flush:
         sys.stdout.flush()
 
 
-def _thread_trace_func(thread):
-    def _trace_func(frame, event, arg):
+def _thread_trace_func(thread) -> Callable:
+    def _trace_func(frame: FrameType, event: str, arg) -> None:
         if event == "call":
             indent = ""
-            for i in range(_trace_depth):
+            for _ in range(_trace_depth):
                 _trace_frame(thread, frame, indent)
                 indent += "  "
-                frame = frame.f_back
-                if not frame:
+                if frame.f_back is None:
                     break
+                frame = frame.f_back
 
         elif event == "exception":
             (exception, value, traceback) = arg
-            print("First chance exception raised:", repr(exception))
+            print("First chance exception raised:", repr(exception)) # noqa: T201
 
     return _trace_func
 
 
-def _install_trace():
-    global _trace_thread_count
+def _install_trace() -> None:
+    global _trace_thread_count # noqa: PLW0603
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
 
@@ -370,10 +371,10 @@ def _install_trace():
 class _ModuleProxy:
     _module = None
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.__dict__["_module_name"] = name
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str): # noqa: ANN204
         try:
             return getattr(self._module, name)
         except AttributeError:
@@ -387,7 +388,7 @@ class _ModuleProxy:
             globals()[self._module_name] = module
             return getattr(module, name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any): # noqa: ANN204
         try:
             setattr(self._module, name, value)
         except AttributeError:
@@ -427,26 +428,26 @@ if TYPE_CHECKING:
         window,
     )
 else:
-    app = _ModuleProxy("app")  # type: ignore
-    canvas = _ModuleProxy("canvas")  # type: ignore
-    clock = _ModuleProxy("clock")  # type: ignore
-    customtypes = _ModuleProxy("customtypes")  # type: ignore
-    event = _ModuleProxy("event")  # type: ignore
-    font = _ModuleProxy("font")  # type: ignore
-    gl = _ModuleProxy("gl")  # type: ignore
-    graphics = _ModuleProxy("graphics")  # type: ignore
-    gui = _ModuleProxy("gui")  # type: ignore
-    image = _ModuleProxy("image")  # type: ignore
-    input = _ModuleProxy("input")  # type: ignore
-    lib = _ModuleProxy("lib")  # type: ignore
-    math = _ModuleProxy("math")  # type: ignore
-    media = _ModuleProxy("media")  # type: ignore
-    model = _ModuleProxy("model")  # type: ignore
-    resource = _ModuleProxy("resource")  # type: ignore
-    sprite = _ModuleProxy("sprite")  # type: ignore
-    shapes = _ModuleProxy("shapes")  # type: ignore
-    text = _ModuleProxy("text")  # type: ignore
-    window = _ModuleProxy("window")  # type: ignore
+    app = _ModuleProxy("app")
+    canvas = _ModuleProxy("canvas")
+    clock = _ModuleProxy("clock")
+    customtypes = _ModuleProxy("customtypes")
+    event = _ModuleProxy("event")
+    font = _ModuleProxy("font")
+    gl = _ModuleProxy("gl")
+    graphics = _ModuleProxy("graphics")
+    gui = _ModuleProxy("gui")
+    image = _ModuleProxy("image")
+    input = _ModuleProxy("input") # noqa: A001 TODO: change this name
+    lib = _ModuleProxy("lib")
+    math = _ModuleProxy("math")
+    media = _ModuleProxy("media")
+    model = _ModuleProxy("model")
+    resource = _ModuleProxy("resource")
+    sprite = _ModuleProxy("sprite")
+    shapes = _ModuleProxy("shapes")
+    text = _ModuleProxy("text")
+    window = _ModuleProxy("window")
 
 # Call after creating proxies:
 if options["debug_trace"]:
