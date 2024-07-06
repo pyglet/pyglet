@@ -88,7 +88,7 @@ layout_vertex_source = """#version 330 core
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
-"""
+"""  # noqa: E501
 layout_fragment_source = """#version 330 core
     in vec4 text_colors;
     in vec2 texture_coords;
@@ -169,12 +169,12 @@ decoration_vertex_source = """#version 330 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible; 
+        gl_Position = window.projection * window.view * m_translate * m_anchor * m_rotation * vec4(position + view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
         vert_colors = colors;
     }
-"""
+"""  # noqa: E501
 decoration_fragment_source = """#version 330 core
     in vec4 vert_colors;
     in vec4 vert_position;
@@ -784,7 +784,7 @@ class TextDecorationGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, program: ShaderProgram, order: int = 0,
+    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
                  parent: graphics.Group | None = None) -> None:
         super().__init__(order=order, parent=parent)
         self.program = program
@@ -943,8 +943,7 @@ class TextLayout:
     def _flow_glyphs(self) -> Callable:
         if self._multiline:
             return self._flow_glyphs_wrap
-        else:
-            return self._flow_glyphs_single_line
+        return self._flow_glyphs_single_line
 
     def _initialize_groups(self) -> None:
         decoration_shader = get_default_decoration_shader()
@@ -1163,7 +1162,7 @@ class TextLayout:
 
     @property
     def width(self) -> int | None:
-        """The defined maximum width of the layout in pixels, or None
+        """The defined maximum width of the layout in pixels, or None.
 
         If `multiline` and `wrap_lines` is True, the `width` defines where the
         text will be wrapped. If `multiline` is False or `wrap_lines` is False,
@@ -1179,7 +1178,7 @@ class TextLayout:
 
     @property
     def height(self) -> int | None:
-        """The defined maximum height of the layout in pixels, or None
+        """The defined maximum height of the layout in pixels, or None.
 
         When `height` is not None, it affects the positioning of the
         text when :py:attr:`~pyglet.text.layout.TextLayout.anchor_y` and
@@ -1301,7 +1300,7 @@ class TextLayout:
 
     @property
     def right(self) -> float:
-        """The x-coordinate of the right side of the layout"""
+        """The x-coordinate of the right side of the layout."""
         if self._width is None:
             width = self._content_width
         else:
@@ -1329,7 +1328,7 @@ class TextLayout:
         assert not self._wrap_lines or self._width, \
             "When the parameters 'multiline' and 'wrap_lines' are True, the parameter 'width' must be a number."
 
-    def _parse_distance(self, distance: str | int | float | None) -> int | None:
+    def _parse_distance(self, distance: str | int | float | None) -> int | None:  # noqa: PYI041
         if distance is None:
             return None
         return _parse_distance(distance, self._dpi)

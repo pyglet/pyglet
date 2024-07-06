@@ -22,7 +22,7 @@ The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
 .. versionadded:: 1.2
-"""
+"""  # noqa: I002
 
 import sys
 import weakref
@@ -31,23 +31,23 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 if _is_pyglet_doc_run:
-    from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
+    from pyglet.canvas.base import Canvas, Display, Screen, ScreenMode
 else:
     from pyglet import compat_platform, options
     if options['headless']:
-        from pyglet.canvas.headless import HeadlessDisplay as Display
+        from pyglet.canvas.headless import HeadlessDisplay as Display  # noqa: I001
         from pyglet.canvas.headless import HeadlessScreen as Screen
         from pyglet.canvas.headless import HeadlessCanvas as Canvas
     elif compat_platform == 'darwin':
-        from pyglet.canvas.cocoa import CocoaDisplay as Display
+        from pyglet.canvas.cocoa import CocoaDisplay as Display  # noqa: I001
         from pyglet.canvas.cocoa import CocoaScreen as Screen
         from pyglet.canvas.cocoa import CocoaCanvas as Canvas
     elif compat_platform in ('win32', 'cygwin'):
-        from pyglet.canvas.win32 import Win32Display as Display
+        from pyglet.canvas.win32 import Win32Display as Display  # noqa: I001
         from pyglet.canvas.win32 import Win32Screen as Screen
         from pyglet.canvas.win32 import Win32Canvas as Canvas
     else:
-        from pyglet.canvas.xlib import XlibDisplay as Display
+        from pyglet.canvas.xlib import XlibDisplay as Display  # noqa: I001
         from pyglet.canvas.xlib import XlibScreen as Screen
         from pyglet.canvas.xlib import XlibCanvas as Canvas
 
@@ -74,3 +74,5 @@ def get_display() -> Display:
 
     # Otherwise, create a new display and return it.
     return Display()
+
+__all__ = ['Display', 'Screen', 'Canvas', 'ScreenMode', 'get_display']

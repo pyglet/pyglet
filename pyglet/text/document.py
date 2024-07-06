@@ -467,7 +467,7 @@ class AbstractDocument(event.EventDispatcher):
     def _set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         ...
 
-    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: D417
         """Set the style for a range of paragraphs.
 
         This is a convenience method for `set_style` that aligns the character range to the enclosing paragraph(s).
@@ -513,7 +513,7 @@ class AbstractDocument(event.EventDispatcher):
             :event:
             """
 
-        def on_style_text(self, start: int, end: int, attributes: dict[str, Any] | None) -> None:
+        def on_style_text(self, start: int, end: int, attributes: dict[str, Any] | None) -> None:  # noqa: D417
             """Text character style was modified.
 
             Args:

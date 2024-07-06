@@ -449,24 +449,24 @@ class Batch:
 
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
-            print(indent, 'Begin group', group)
+            print(indent, 'Begin group', group)  # noqa: T201
             domain_map = self.group_map[group]
-            for _, domain in domain_map.items():
-                print(indent, '  ', domain)
+            for domain in domain_map.values():
+                print(indent, '  ', domain)  # noqa: T201
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size))
+                    print(indent, '    ', 'Region %d size %d:' % (start, size))  # noqa: T201
                     for key, attribute in domain.attribute_names.items():
-                        print(indent, '      ', end=' ')
+                        print(indent, '      ', end=' ')  # noqa: T201
                         try:
                             region = attribute.get_region(attribute.buffer, start, size)
-                            print(key, region.array[:])
-                        except:
-                            print(key, '(unmappable)')
+                            print(key, region.array[:])  # noqa: T201
+                        except:  # noqa: E722
+                            print(key, '(unmappable)')  # noqa: T201
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print(indent, 'End group', group)
+            print(indent, 'End group', group)  # noqa: T201
 
-        print(f'Draw list for {self!r}:')
+        print(f'Draw list for {self!r}:')  # noqa: T201
         for group in self.top_groups:
             dump(group)
 
