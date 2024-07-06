@@ -7,6 +7,7 @@ from __future__ import annotations  # noqa: I001
 import os
 import re
 import sys
+import contextlib
 
 import ctypes
 import ctypes.util
@@ -14,12 +15,12 @@ import ctypes.util
 import pyglet
 from typing import NoReturn, Callable, Any
 
-_debug_lib = pyglet.options['debug_lib']
-_debug_trace = pyglet.options['debug_trace']
+_debug_lib = pyglet.options['debug_lib'] # pyright: ignore reportIndexIssue
+_debug_trace = pyglet.options['debug_trace'] # pyright: ignore reportIndexIssue
 
 _is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
 
-if pyglet.options['search_local_libs']:
+if pyglet.options['search_local_libs']: # pyright: ignore reportIndexIssue
     script_path = pyglet.resource.get_script_home()
     cwd = os.getcwd()
     _local_lib_paths = [script_path, os.path.join(script_path, 'lib'), os.path.join(cwd, 'lib')]
@@ -47,14 +48,13 @@ class _TraceFunction:
 
 
 class _TraceLibrary:
-    def __init__(self, library):
+    def __init__(self, library: Any) -> None:
         self._library = library
-        print(library)
+        print(library)  # noqa: T201
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Callable:
         func = getattr(self._library, name)
-        f = _TraceFunction(func)
-        return f
+        return _TraceFunction(func)
 
 
 if _is_pyglet_doc_run:
@@ -146,8 +146,8 @@ class LibraryLoader:  # noqa: D101
         raise RuntimeError(msg)
 
 
-class MachOLibraryLoader(LibraryLoader):
-    def __init__(self):
+class MachOLibraryLoader(LibraryLoader):  # noqa: D101
+    def __init__(self) -> None:  # noqa: D107
         if 'LD_LIBRARY_PATH' in os.environ:
             self.ld_library_path = os.environ['LD_LIBRARY_PATH'].split(':')
         else:
@@ -250,8 +250,8 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
     _local_libs_cache = None
 
     @staticmethod
-    def _find_libs(directories: list[str]):
-        cache = {}
+    def _find_libs(directories: list[str]) -> dict[str, str]:
+        libs = {}
         lib_re = re.compile(r'lib(.*)\.so(?:$|\.)')
         for directory in directories:
             try:
@@ -260,17 +260,17 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
                     if match:
                         # Index by filename
                         path = os.path.join(directory, file)
-                        if file not in cache:
-                            cache[file] = path
+                        if file not in libs:
+                            libs[file] = path
                         # Index by library name
                         library = match.group(1)
-                        if library not in cache:
-                            cache[library] = path
-            except OSError:
+                        if library not in libs:
+                            libs[library] = path
+            except OSError:  # noqa: PERF203
                 pass
-        return cache
+        return libs
 
-    def _create_ld_so_cache(self):
+    def _create_ld_so_cache(self) -> None:
         # Recreate search path followed by ld.so.  This is going to be
         # slow to build, and incorrect (ld.so uses ld.so.cache, which may
         # not be up-to-date).  Used only as fallback for distros without
@@ -279,22 +279,17 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
         # We assume the DT_RPATH and DT_RUNPATH binary sections are omitted.
 
         directories = []
-        try:
+        with contextlib.suppress(KeyError):
             directories.extend(os.environ['LD_LIBRARY_PATH'].split(':'))
-        except KeyError:
-            pass
 
-        try:
-            with open('/etc/ld.so.conf') as fid:
-                directories.extend([directory.strip() for directory in fid])
-        except IOError:
-            pass
+        with contextlib.suppress(OSError), open('/etc/ld.so.conf') as fid:
+            directories.extend([directory.strip() for directory in fid])
 
         directories.extend(['/lib', '/usr/lib'])
 
         self._ld_so_cache = self._find_libs(directories)
 
-    def find_library(self, path):
+    def find_library(self, path: str) -> str:
 
         # search first for local libs
         if _local_lib_paths:
@@ -315,7 +310,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
         if self._ld_so_cache is None:
             self._create_ld_so_cache()
 
-        return self._ld_so_cache.get(path)
+        return self._ld_so_cache.get(path) # pyright: ignore reportOptionalMemberAccess
 
 
 if pyglet.compat_platform == 'darwin':

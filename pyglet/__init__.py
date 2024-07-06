@@ -251,7 +251,7 @@ class Options:
 
 
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
-options = Options()
+options: Options = Options()
 
 
 for _key, _type in options.__annotations__.items():
