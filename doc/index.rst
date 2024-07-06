@@ -61,6 +61,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/time
    programming_guide/context
    programming_guide/gl
+   programming_guide/opengles
    programming_guide/math
    programming_guide/eventloop
    programming_guide/examplegame
