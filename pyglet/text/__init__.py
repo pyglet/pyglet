@@ -271,7 +271,7 @@ class DocumentLabel(layout.TextLayout):
     @opacity.setter
     def opacity(self, alpha: int) -> None:
         if alpha != self.color[3]:
-            self.color = list(map(int, (*self.color[:3], alpha)))
+            self.color = list(map(int, (*self.color[:3], alpha))) # type: ignore reportAttributeAccessIssue
 
     @property
     def font_name(self) -> str | list[str]:
@@ -438,7 +438,8 @@ class HTMLLabel(DocumentLabel):
     """
 
     def __init__(self, text: str = "", location: Location | None = None,
-                 x: float = 0.0, y: float = 0.0, z: float = 0.0, width: int | None = None, height: int | None = None,
+                 x: float = 0.0, y: float = 0.0, z: float = 0.0,
+                 width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
                  multiline: bool = False, dpi: float | None = None,
                  batch: Batch | None = None, group: Group | None = None,
