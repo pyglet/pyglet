@@ -188,7 +188,7 @@ class DocumentLabel(layout.TextLayout):
     """
 
     def __init__(
-            self, document: AbstractDocument | None = None,
+            self, document: AbstractDocument,
             x: float = 0.0, y: float = 0.0, z: float = 0.0,
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
