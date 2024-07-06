@@ -66,13 +66,13 @@ layout_vertex_source = """#version 330 core
         mat4 view;
     } window;
 
-    mat4 m_rotation = mat4(1.0);
-    vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_translate = mat4(1.0);
-
     void main()
     {
+        mat4 m_rotation = mat4(1.0);
+        vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
+        mat4 m_anchor = mat4(1.0);
+        mat4 m_translate = mat4(1.0);
+
         m_translate[3][0] = translation.x;
         m_translate[3][1] = translation.y;
         m_translate[3][2] = translation.z;
@@ -153,13 +153,13 @@ decoration_vertex_source = """#version 330 core
         mat4 view;
     } window;
 
-    mat4 m_rotation = mat4(1.0);
-    vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
-    mat4 m_anchor = mat4(1.0);
-    mat4 m_translate = mat4(1.0);
-
     void main()
     {
+        mat4 m_rotation = mat4(1.0);
+        vec3 v_anchor = vec3(anchor.x, anchor.y, 0);
+        mat4 m_anchor = mat4(1.0);
+        mat4 m_translate = mat4(1.0);
+
         m_translate[3][0] = translation.x;
         m_translate[3][1] = translation.y;
         m_translate[3][2] = translation.z;
