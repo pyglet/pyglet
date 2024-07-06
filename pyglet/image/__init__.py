@@ -126,7 +126,7 @@ class TextureArrayDepthExceeded(Exception):
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
-def load(filename, file=None, decoder=None):
+def load(filename: str, file=None, decoder=None):
     """Load an image from a file.
 
     :Parameters:
@@ -153,7 +153,7 @@ def load(filename, file=None, decoder=None):
         return _codec_registry.decode(filename, file)
 
 
-def load_animation(filename, file=None, decoder=None):
+def load_animation(filename: str, file=None, decoder=None):
     """Load an animation from a file.
 
     Currently, the only supported format is GIF.
@@ -302,14 +302,14 @@ class AbstractImage:
     anchor_x = 0
     anchor_y = 0
 
-    def __init__(self, width, height):
+    def __init__(self, width: int, height: int) -> None: # noqa: D107
         self.width = width
         self.height = height
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(size={self.width}x{self.height})"
 
-    def get_image_data(self):
+    def get_image_data(self): # noqa: ANN201
         """Get an ImageData view of this image.
 
         Changes to the returned instance may or may not be reflected in this
@@ -319,9 +319,10 @@ class AbstractImage:
 
         .. versionadded:: 1.1
         """
-        raise ImageException('Cannot retrieve image data for %r' % self)
+        msg = f'Cannot retrieve image data for {self!r}'
+        raise ImageException(msg)
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool = False): # noqa: ANN201, ARG002
         """A :py:class:`~pyglet.image.Texture` view of this image.
 
         :Parameters:
@@ -333,18 +334,20 @@ class AbstractImage:
 
         .. versionadded:: 1.1
         """
-        raise ImageException('Cannot retrieve texture for %r' % self)
+        msg = f'Cannot retrieve texture for {self!r}'
+        raise ImageException(msg)
 
-    def get_mipmapped_texture(self):
+    def get_mipmapped_texture(self): # noqa: ANN201
         """Retrieve a :py:class:`~pyglet.image.Texture` instance with all mipmap levels filled in.
 
         :rtype: :py:class:`~pyglet.image.Texture`
 
         .. versionadded:: 1.1
         """
-        raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
+        msg = f'Cannot retrieve mipmapped texture for {self!r}'
+        raise ImageException(msg)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, width: int, height: int): # noqa: ANN201, ARG002
         """Retrieve a rectangular region of this image.
 
         :Parameters:
@@ -359,9 +362,10 @@ class AbstractImage:
 
         :rtype: AbstractImage
         """
-        raise ImageException('Cannot get region for %r' % self)
+        msg = f'Cannot get region for {self!r}'
+        raise ImageException(msg)
 
-    def save(self, filename=None, file=None, encoder=None):
+    def save(self, filename: str | None = None, file: str | None = None, encoder=None):
         """Save this image to a file.
 
         :Parameters:
