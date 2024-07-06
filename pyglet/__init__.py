@@ -23,7 +23,7 @@ if sys.version_info < MIN_PYTHON_VERSION:
     raise Exception(msg)
 
 if "sphinx" in sys.modules:
-    sys.is_pyglet_doc_run = True # type: ignore reportAttributeAccessIssue
+    sys.is_pyglet_doc_run = True # pyright: ignore reportAttributeAccessIssue
 
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -290,8 +290,8 @@ def _trace_repr(value: Sized, size: int=40) -> str:
     return value
 
 
-def _trace_frame(thread, frame: FrameType, indent: str) -> None:
-    if frame.f_code is lib._TraceFunction.__call__.__code__:
+def _trace_frame(thread: int, frame: FrameType, indent: str) -> None:
+    if frame.f_code is lib._TraceFunction.__call__.__code__: # noqa: SLF001
         is_ctypes = True
         func = frame.f_locals["self"]._func # noqa: SLF001
         name = func.__name__
@@ -341,8 +341,8 @@ def _trace_frame(thread, frame: FrameType, indent: str) -> None:
         sys.stdout.flush()
 
 
-def _thread_trace_func(thread) -> Callable:
-    def _trace_func(frame: FrameType, event: str, arg) -> None:
+def _thread_trace_func(thread: int) -> Callable[[FrameType, str, Any], object]:
+    def _trace_func(frame: FrameType, event: str, arg: Any) -> None:
         if event == "call":
             indent = ""
             for _ in range(_trace_depth):
