@@ -138,7 +138,7 @@ EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
 
-class EventException(Exception):
+class EventException(Exception):  # noqa: N818
     """An exception raised when an event handler could not be attached."""
 
 
@@ -191,7 +191,8 @@ class EventDispatcher:
                 # Single magically named function
                 name = obj.__name__
                 if name not in self.event_types:
-                    raise EventException(f'Unknown event "{name}"')
+                    msg = f'Unknown event "{name}"'
+                    raise EventException(msg)
                 if inspect.ismethod(obj):
                     yield name, WeakMethod(obj, partial(self._remove_handler, name))
                 else:
@@ -206,7 +207,8 @@ class EventDispatcher:
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
-                raise EventException(f'Unknown event "{name}"')
+                msg = f'Unknown event "{name}"'
+                raise EventException(msg)
             if inspect.ismethod(handler):
                 yield name, WeakMethod(handler, partial(self._remove_handler, name))
             else:
@@ -235,7 +237,7 @@ class EventDispatcher:
 
     def pop_handlers(self) -> None:
         """Pop the top level of event handlers off the stack."""
-        assert self._event_stack and 'No handlers pushed'
+        assert self._event_stack, 'No handlers pushed'
 
         del self._event_stack[0]
 
@@ -256,13 +258,14 @@ class EventDispatcher:
         handlers = list(self._get_handlers(args, kwargs))
 
         # Find the first stack frame containing any of the handlers
-        def find_frame():
+        def find_frame() -> dict | None:
             for _frame in self._event_stack:
                 for _name, _handler in handlers:
                     if _name not in _frame:
                         continue
                     if _frame[_name] == _handler:
                         return _frame
+            return None
 
         frame = find_frame()
 
@@ -275,7 +278,7 @@ class EventDispatcher:
             try:
                 if frame[name] == handler:
                     del frame[name]
-            except KeyError:
+            except KeyError:  # noqa: PERF203
                 pass
 
         # Remove the frame if it's empty.
@@ -307,7 +310,6 @@ class EventDispatcher:
         This is normally called from a dead ``WeakMethod`` to remove itself from the
         event stack.
         """
-
         # Iterate over a copy as we might mutate the list
         for frame in list(self._event_stack):
 
@@ -433,13 +435,13 @@ class EventDispatcher:
 
         raise exception
 
-    def _dump_handlers(self):
+    def _dump_handlers(self) -> None:
 
         for level, handlers in enumerate(self._event_stack):
-            print(f"level: {level}")
+            print(f"level: {level}")  # noqa: T201
 
             for event_type, handler in handlers.items():
-                print(f" - '{event_type}': {handler}")
+                print(f" - '{event_type}': {handler}")  # noqa: T201
 
     # Decorator
 
@@ -493,5 +495,5 @@ class EventDispatcher:
 
             return decorator
 
-        else:
-            raise TypeError("Argument must be the name of the event as a `str`.")
+        msg = "Argument must be the name of the event as a `str`."
+        raise TypeError(msg)
