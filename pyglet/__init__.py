@@ -2,7 +2,7 @@
 
 More information is available at http://www.pyglet.org
 """
-from __future__ import annotations # noqa: I001
+from __future__ import annotations  # noqa: I001
 
 import os
 import sys

@@ -2,6 +2,7 @@
 
 These extend and correct ctypes functions.
 """
+# ruff: noqa: ANN002, ANN003, ANN204, ARG002, T201
 from __future__ import annotations  # noqa: I001
 
 import os
@@ -37,7 +38,7 @@ class _TraceFunction:
     def __str__(self) -> str:
         return self._func.__name__
 
-    def __call__(self, *args, **kwargs):  # noqa: ANN002, ANN003, ANN204
+    def __call__(self, *args, **kwargs):
         return self._func(*args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
@@ -50,7 +51,7 @@ class _TraceFunction:
 class _TraceLibrary:
     def __init__(self, library: Any) -> None:
         self._library = library
-        print(library)  # noqa: T201
+        print(library)
 
     def __getattr__(self, name: str) -> Callable:
         func = getattr(self._library, name)
@@ -60,16 +61,16 @@ class _TraceLibrary:
 if _is_pyglet_doc_run:
     class LibraryMock:
         """Mock library used when generating documentation."""
-        def __getattr__(self, name: str):  # noqa: ANN204
+        def __getattr__(self, name: str):
             return LibraryMock()
 
         def __setattr__(self, name: str, value) -> None:  # noqa: ANN001
             pass
 
-        def __call__(self, *args, **kwargs):  # noqa: ANN003, ARG002, ANN002, ANN204
+        def __call__(self, *args, **kwargs):
             return LibraryMock()
 
-        def __rshift__(self, other):  # noqa: ANN204, ANN001
+        def __rshift__(self, other: LibraryMock):
             return 0
 
 
@@ -80,7 +81,7 @@ class LibraryLoader:  # noqa: D101
     if platform == 'cygwin':
         platform = 'win32'
 
-    def load_library(self, *names: str, **kwargs):  # noqa: ANN201, ANN003
+    def load_library(self, *names: str, **kwargs):  # noqa: ANN201
         """Find and load a library.
 
         More than one name can be specified, they will be tried in order.
@@ -114,7 +115,7 @@ class LibraryLoader:  # noqa: D101
             try:
                 lib = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
-                    print(name, self.find_library(name))  # noqa: T201
+                    print(name, self.find_library(name))
                 if _debug_trace:
                     lib = _TraceLibrary(lib)
                 return lib
@@ -124,15 +125,15 @@ class LibraryLoader:  # noqa: D101
                     try:
                         lib = ctypes.cdll.LoadLibrary(path)
                         if _debug_lib:
-                            print(path) # noqa: T201
+                            print(path)
                         if _debug_trace:
                             lib = _TraceLibrary(lib)
                         return lib
                     except OSError as e:
                         if _debug_lib:
-                            print(f"Unexpected error loading library {name}: {e!s}") # noqa: T201
+                            print(f"Unexpected error loading library {name}: {e!s}")
                 elif self.platform == "win32" and o.winerror != 126 and _debug_lib:
-                    print(f"Unexpected error loading library {name}: {o!s}") # noqa: T201
+                    print(f"Unexpected error loading library {name}: {o!s}")
 
         msg = f'Library "{names[0]}" not found.'
         raise ImportError(msg)
@@ -236,7 +237,7 @@ class MachOLibraryLoader(LibraryLoader):  # noqa: D101
         if path:
             lib = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
-                print(path)  # noqa: T201
+                print(path)
             if _debug_trace:
                 lib = _TraceLibrary(lib)
             return lib
