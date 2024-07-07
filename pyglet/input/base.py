@@ -7,9 +7,8 @@ from __future__ import annotations
 import sys
 import enum
 import warnings
-import operator
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
@@ -564,6 +563,49 @@ class Controller(EventDispatcher):
         self._hat_y_control = None
 
         self._initialize_controls()
+
+    @property
+    def type(self) -> Literal['PS', 'XB', 'GENERIC']:
+        """The type, or family, of the Controller
+
+        This property uses a simple heuristic query to attempt
+        to determine which general family the controller falls
+        into. For example, the controller may have Ⓐ,Ⓑ,Ⓧ,Ⓨ,
+        or ✕,○,□,△ labels on the face buttons. Using this
+        information, you can choose to display matching button
+        prompt images in your game. For example::
+
+            if controller.type == 'PS':
+                a_glyph = 'ps_cross_button.png'
+                b_glyph = 'ps_circle_button.png'
+                ...
+            elif controller.type == 'XB':
+                a_glyph = 'ms_a_button.png'
+                b_glyph = 'ms_b_button.png'
+                ...
+            else:
+                ...
+
+        Returns:
+            A string, currently one of "PS", "XB", or "GENERIC".
+        """
+        product_id = None
+        # TODO: add more checks for vender hardware ids.
+
+        # Windows
+        if self.name == 'XINPUTCONTROLLER':
+            return 'XB'
+
+        # Linux
+        if id_product := getattr(self.device, 'id_product'):
+            product_id = int(id_product, base=0)
+
+        if product_id in (0x5C4,):
+            return 'PS'
+        elif product_id in (0x045E,):
+            return 'XB'
+
+        return 'GENERIC'
 
     def _bind_axis_control(self, relation: Relation, control: AbsoluteAxis, axis_name: str) -> None:
         if not (control.min or control.max):

@@ -1,3 +1,16 @@
+pyglet 2.0.16
+
+Changes and Improvements
+------------------------
+- library-wide overhaul of docstrings, and addition of type hints (#1084)
+
+Bugfixes
+--------
+- resource: Fix indexing of directories inside of Zip files. Remove broken code for multi-part archives.
+- shapes: Add missing `thickness` property to Box.
+- shapes: Add missing docstrings to `Arc` `thickness` property.
+
+
 pyglet 2.0.15
 
 Changes and Improvements
@@ -911,7 +924,7 @@ New features
 Improvements
 ------------
 - Improved font rendering for fonts with negative bearing (#99)
-- Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The 
+- Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The
   existing `scale` attribute sets the overall scaling, and functions as before.
 - Sprites have a new `update` method which allows simultaneous changing of position, scale, and
   rotation. This reduces some overhead when changing multiple attributes at once.
@@ -941,16 +954,16 @@ Bugfixes
 
 
 pyglet 1.2.3
-============                                                                                        
-Minor bugfix release.                                                                               
-                                                                                                    
-Bugfixes:                                                                                           
-- Windows: Fix issue where ALT key causes app to hang.                                              
-- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).                         
-- OSX: Fix stealing the menu when already present in cocoa.                                         
-- Fix multi texturing support (#28).                                                                
-- OSX: Prevent segfault with multiple runs (#37/GC728)                                              
-- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25) 
+============
+Minor bugfix release.
+
+Bugfixes:
+- Windows: Fix issue where ALT key causes app to hang.
+- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).
+- OSX: Fix stealing the menu when already present in cocoa.
+- Fix multi texturing support (#28).
+- OSX: Prevent segfault with multiple runs (#37/GC728)
+- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25)
 
 
 pyglet 1.2.2

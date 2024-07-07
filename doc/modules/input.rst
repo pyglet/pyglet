@@ -75,6 +75,8 @@ Classes
   .. automethod:: on_button_press
   .. automethod:: on_button_release
 
+  .. autoattribute:: type
+
 
 .. autoclass:: Joystick
   :show-inheritance:

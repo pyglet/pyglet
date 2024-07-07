@@ -322,12 +322,13 @@ class _UniformArray:
 
 
 class _Uniform:
-    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set'
+    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program'
 
     def __init__(self, program, uniform_type, size, location, dsa):
         self.type = uniform_type
         self.size = size
         self.location = location
+        self.program = program
 
         gl_type, gl_setter_legacy, gl_setter_dsa, length = _uniform_setters[uniform_type]
         gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
@@ -568,6 +569,8 @@ def _introspect_attributes(program_id: int) -> dict:
     for index in range(_get_number(program_id, GL_ACTIVE_ATTRIBUTES)):
         a_name, a_type, a_size = _query_attribute(program_id, index)
         loc = glGetAttribLocation(program_id, create_string_buffer(a_name.encode('utf-8')))
+        if loc == -1:   # not a user defined attribute
+            continue
         count, fmt = _attribute_types[a_type]
         attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt)
 

@@ -1,14 +1,33 @@
+"""Macintosh key scancode constants.
+
+For a quick visual reference, see Inside Macintosh's keycode diagram:
+http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
+
+For clarity, a few constants use custom pyglet-specific names.
+These include:
+================ ======================
+New pyglet name  Name in referenced .h
+================ ======================
+QZ_LCOMMAND      QZ_LMETA
+QZ_LOPTION       QZ_LALT
+QZ_ROPTION       QZ_RALT
+QZ_RCOMMAND      QZ_RMETA
+
+This module was originally created by consulting a 2006 version of
+SDL 1.X's SDL_Quartzkeys.h. Although some names are pyglet-specific,
+all values are the same as those in Mac OS X 10.6's Events.h.
+
+To learn more, please see:
+
+* SDL 1.2's SDL_Quartzkeys.h https://github.com/libsdl-org/SDL-1.2/blob/main/src/video/quartz/SDL_QuartzKeys.h
+* Event.h from Mac OS X 10.6 https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.6.sdk/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h
+
+"""
 from pyglet.window import key
 
-# From SDL: src/video/quartz/SDL_QuartzKeys.h
-# These are the Macintosh key scancode constants -- from Inside Macintosh
-# http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
-# Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
-# and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
-#
-# See also:
-# /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Headers/Events.h
-
+# These values and most of their names are taken from SDL 1.X's
+# SQL_Quartzkeys.h. Changed names are listed in the top-level
+# docstring and marked with comments below.
 QZ_ESCAPE = 0x35
 QZ_F1 = 0x7A
 QZ_F2 = 0x78
@@ -107,11 +126,11 @@ QZ_KP2 = 0x54
 QZ_KP3 = 0x55
 QZ_KP_ENTER = 0x4C
 QZ_LCTRL = 0x3B
-QZ_LOPTION = 0x3A
-QZ_LCOMMAND = 0x37
+QZ_LOPTION = 0x3A  # Originally QZ_LMETA
+QZ_LCOMMAND = 0x37  # Originally QZ_LALT
 QZ_SPACE = 0x31
-QZ_RCOMMAND = 0x36
-QZ_ROPTION = 0x3D
+QZ_RCOMMAND = 0x36  # Originally QZ_RALT
+QZ_ROPTION = 0x3D  # Originally QZ_RMETA
 QZ_RCTRL = 0x3E
 QZ_FUNCTION = 0x3F
 QZ_LEFT = 0x7B
