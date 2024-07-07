@@ -129,7 +129,7 @@ class Vec2(_typing.NamedTuple):
     def from_heading(self, heading: float) -> Vec2:
         """Create a new vector of the same magnitude with the given heading.
 
-         In effect, the vector rotated to the new heading.
+        In effect, the vector rotated to the new heading.
 
         Args:
           heading: The desired heading, in radians.
