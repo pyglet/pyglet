@@ -5,7 +5,11 @@ Shaders and Rendering
 
 At the lowest level, pyglet uses OpenGL to draw graphics in program windows.
 The OpenGL interface is exposed via the :py:mod:`pyglet.gl` module
-(see :ref:`guide_gl`).
+(see :ref:`guid
+
+.. Note::
+    If you intend to use OpenGL ES with pyglet on devices like the Raspberry
+    Pi, please read the :ref:`programming-guide-opengles` section first.
 
 For new users, however, using the OpenGL interface directly can be daunting.
 The :py:mod:`pyglet.graphics` module provides high level abstractions that

@@ -120,7 +120,7 @@ code, is a bug that deserves to be reported on a ticket.
 ## Building Docs
 
     pip install -r doc/requirements.txt
-    python setup.py build_sphinx
+    python make.py docs
 
 Please check [the README.md file in the doc directory](doc/README.md) for more details.
 

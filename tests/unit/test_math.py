@@ -133,6 +133,13 @@ def test_mat4_inversion(mat4):
     assert round(mat4 @ inverse_2, 9) == Mat4()
 
 
+def test_mat3_inversion(mat3):
+    # TODO: add long hand inversion for mat3
+    inverse_2 = ~mat3
+    # Confirm that Matrix @ its inverse == identity Matrix:
+    assert round(mat3 @ inverse_2, 9) ==  Mat3()
+
+
 def test_mat3_associative_mul():
     swap_xy = Mat3((0,1,0, 1,0,0, 0,0,1))
     scale_x = Mat3((2,0,0, 0,1,0, 0,0,1))

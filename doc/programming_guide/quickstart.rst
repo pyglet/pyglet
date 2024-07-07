@@ -8,6 +8,10 @@ when presented with a large amount of reference material to read.
 This chapter gives a very quick introduction to pyglet without going into
 too much detail.
 
+.. Note::
+    If you intend to use OpenGL ES with pyglet on devices like the Raspberry
+    Pi, please read the :ref:`programming-guide-opengles` section first.
+
 Hello, World
 ------------
 
