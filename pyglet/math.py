@@ -143,18 +143,11 @@ class Vec2(_typing.NamedTuple):
         """
         return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
 
+    @property
     def length(self) -> float:
         """Get the length of the vector: ``sqrt(x ** 2 + y ** 2)``
         """
         return _math.sqrt(self[0] ** 2 + self[1] ** 2)
-
-    def length_squared(self) -> float:
-        """Get the squared length of the vector.
-
-        This is simply shortcut for `x ** 2 + y ** 2` and can be used
-        for faster comparisons without the need for a square root.
-        """
-        return self[0] ** 2.0 + self[1] ** 2.0
 
     @property
     def heading(self) -> float:
@@ -165,6 +158,15 @@ class Vec2(_typing.NamedTuple):
         is positive moving towards pi, and clockwise is negative moving towards -pi.
         """
         return _math.atan2(self[1], self[0])
+
+    @property
+    def length_squared(self) -> float:
+        """Get the squared length of the vector.
+
+        This is simply shortcut for `x ** 2 + y ** 2` and can be used
+        for faster comparisons without the need for a square root.
+        """
+        return self[0] ** 2.0 + self[1] ** 2.0
 
     def lerp(self, other: tuple[float, float], alpha: float) -> Vec2:
         """Create a new Vec2 linearly interpolated between this vector and another Vec2.
@@ -187,7 +189,7 @@ class Vec2(_typing.NamedTuple):
         return self - vector * 2 * vector.dot(self)
 
     def rotate(self, angle: float) -> Vec2:
-        """Create a new vector rotated by the angle. The magnitude remains unchanged.
+        """Create a new vector rotated by the angle. The length remains unchanged.
 
         Args:
           angle: The desired angle, in radians.

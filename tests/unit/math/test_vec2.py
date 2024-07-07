@@ -56,6 +56,14 @@ def test_len():
     assert len(Vec2(0)) == 2
 
 
+def test_max_min():
+    assert max(Vec2(1, 2)) == 2
+    assert max(Vec2(1, -2)) == 1
+
+    assert min(Vec2(1, 2)) == 1
+    assert min(Vec2(1, -2)) == -2
+
+
 def test_add():
     assert Vec2(1, 2) + Vec2(3, 4) == Vec2(4, 6)
 
@@ -167,14 +175,25 @@ def test_floordiv():
 
 
 def test_length():
-    assert Vec2(1, 0).length() == 1
-    assert Vec2(0, 1).length() == 1
+    assert Vec2(1, 0).length == 1
+    assert Vec2(0, 1).length == 1
 
-    assert Vec2(3, 0).length() == 3
-    assert Vec2(0, 3).length() == 3
+    assert Vec2(3, 0).length == 3
+    assert Vec2(0, 3).length == 3
 
-    assert Vec2(1, 1).length() == pytest.approx(1.41421, abs=1e-5)
-    assert Vec2(-1, -1).length() == pytest.approx(1.41421, abs=1e-5)
+    assert Vec2(1, 1).length == pytest.approx(1.41421, abs=1e-5)
+    assert Vec2(-1, -1).length == pytest.approx(1.41421, abs=1e-5)
+
+
+def test_length_squared():
+    assert Vec2(1, 0).length_squared == 1
+    assert Vec2(0, -1).length_squared == 1
+
+    assert Vec2(3, 0).length_squared == 9
+    assert Vec2(0, 3).length_squared == 9
+
+    assert Vec2(1, 1).length_squared == 2
+    assert Vec2(-1, -1).length_squared == 2
 
 
 def test_abs():
@@ -244,12 +263,12 @@ def test_reflect():
     assert Vec2(1, 0). reflect(Vec2(1, 0)) == Vec2(-1, 0)
 
 
-def rest_rotate():
+def test_rotate():
     """Rotate vector by degrees."""
-    assert Vec2(1, 0).rotate(90) == Vec2(0, 1)
-    assert Vec2(1, 0).rotate(180) == Vec2(-1, 0)
-    assert Vec2(1, 0).rotate(270) == Vec2(0, -1)
-    assert Vec2(1, 0).rotate(360) == Vec2(1, 0)
+    assert Vec2(1, 0).rotate(math.radians(90)) == pytest.approx(Vec2(0, 1), abs=1e-5)
+    assert Vec2(1, 0).rotate(math.radians(180)) == pytest.approx(Vec2(-1, 0), abs=1e-5)
+    assert Vec2(1, 0).rotate(math.radians(270)) == pytest.approx(Vec2(0, -1), abs=1e-5)
+    assert Vec2(1, 0).rotate(math.radians(360)) == pytest.approx(Vec2(1, 0), abs=1e-5)
 
 
 def test_distance():
