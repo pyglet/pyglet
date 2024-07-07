@@ -111,8 +111,8 @@ class Vec2(_typing.NamedTuple):
 
     __rmul__ = __mul__  # Order doesn't matter here so we can use __mul__
 
-    def __abs__(self) -> float:
-        return Vec2(abs(self.x), abs(self.y))
+    def __abs__(self) -> Vec2:
+        return Vec2(abs(self[0]), abs(self[1]))
 
     def __neg__(self) -> Vec2:
         return Vec2(-self[0], -self[1])
@@ -272,29 +272,53 @@ class Vec3(_typing.NamedTuple):
         """
         return self.__abs__()
 
-    def __add__(self, other: Vec3) -> Vec3:
-        return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
+    def __add__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+        try:
+            return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
+        except TypeError:
+            return Vec3(self[0] + other, self[1] + other, self[2] + other)
 
-    def __sub__(self, other: Vec3) -> Vec3:
-        return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
+    def __sub__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+        try:
+            return Vec3(self[0] - other[0], self[1] - other[1], self[2] - other[2])
+        except TypeError:
+            return Vec3(self[0] - other, self[1] - other, self[2] - other)
+
+    def __rsub__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+        try:
+            return Vec3(other[0] - self[0], other[1] - self[1], other[2] - self[2])
+        except TypeError:
+            return Vec3(other - self[0], other - self[1], other - self[2])  
 
     def __mul__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
+            return Vec3(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2])
         except TypeError:
-            return Vec3(self.x * scalar[0], self.y * scalar[1], self.z * scalar[2])
+            return Vec3(self[0] * scalar, self[1] * scalar, self[2] * scalar)
 
     def __truediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self.x / scalar, self.y / scalar, self.z / scalar)
+            return Vec3(self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2])
         except TypeError:
-            return Vec3(self.x / scalar[0], self.y / scalar[1], self.z / scalar[2])
+            return Vec3(self[0] / scalar, self[1] / scalar, self[2] / scalar)
+
+    def __rtruediv__(self, scalar: float | tuple[float, float, float]) -> Vec3: 
+        try:
+            return Vec3(scalar[0] / self[0], scalar[1] / self[1], scalar[2] / self[2])
+        except TypeError:
+            return Vec3(scalar / self[0], scalar / self[1], scalar / self[2])
 
     def __floordiv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self.x // scalar, self.y // scalar, self.z // scalar)
+            return Vec3(self[0] // scalar[0], self[1] // scalar[1], self[2] // scalar[2])
         except TypeError:
-            return Vec3(self.x // scalar[0], self.y // scalar[1], self.z // scalar[2])
+            return Vec3(self[0] // scalar, self[1] // scalar, self[2] // scalar)
+
+    def __rfloordiv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+        try:
+            return Vec3(scalar[0] // self[0], scalar[1] // self[1], scalar[2] // self[2])
+        except TypeError:
+            return Vec3(scalar // self[0], scalar // self[1], scalar // self[2])
 
     def __radd__(self, other: _typing.Union[Vec3, int]) -> Vec3:
         try:
@@ -304,36 +328,29 @@ class Vec3(_typing.NamedTuple):
                 return self
             raise err
 
-    __rsub__ = __sub__
     __rmul__ = __mul__
-    __rtruediv__ = __truediv__
-    __rfloordiv__ = __floordiv__
 
-    def __abs__(self) -> float:
-        return _math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+    def __abs__(self) -> Vec3:
+        return Vec3(abs(self[0]), abs(self[1]), abs(self[2]))
 
     def __neg__(self) -> Vec3:
-        return Vec3(-self.x, -self.y, -self.z)
+        return Vec3(-self[0], -self[1], -self[2])
 
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec3:
         return Vec3(*(round(v, ndigits) for v in self))
 
     def __lt__(self, other: Vec3) -> bool:
-        return abs(self) < abs(other)
+        # TODO: Inline squared
+        return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
 
-    def from_magnitude(self, magnitude: float) -> Vec3:
-        """Create a new vector of the given magnitude
+    @property
+    def length(self) -> float:
+        """Get the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2)``"""
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
-        The new vector will be created by first normalizing,
-        then scaling the vector. The heading remains unchanged.
-        """
-        return self.normalize() * magnitude
-
-    def limit(self, maximum: float) -> Vec3:
-        """Limit the magnitude of the vector to passed maximum value."""
-        if self.x ** 2 + self.y ** 2 + self.z ** 2 > maximum * maximum * maximum:
-            return self.from_magnitude(maximum)
-        return self
+    @property
+    def length_squared(self) -> float:
+        return self[0] ** 2 + self[1] ** 2 + self[2] ** 2
 
     def cross(self, other: Vec3) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector."""

@@ -39,6 +39,9 @@ def test_swizzle():
     """Test swizzle."""
     v = Vec2(1, 2)
     assert v.xy == (1, 2)
+    assert v.yx == (2, 1)
+    assert v.xx == (1, 1)
+    assert v.yy == (2, 2)
 
 
 def test_mutability():
@@ -197,7 +200,6 @@ def test_length_squared():
 
 
 def test_abs():
-    # NOTE: Possibly this should just be normal abs
     assert abs(Vec2(1, 2)) == Vec2(1, 2)
     assert abs(Vec2(-1, -2)) == Vec2(1, 2)
 
@@ -222,8 +224,7 @@ def test_lt():
 
 
 def test_sum():
-    # assert sum(Vec2(1, 2), Vec2(3, 4)) == Vec2(4, 6)  # ??
-    pass
+    assert sum(Vec2(1, 2)) == 3
 
 
 def test_from_polar():
