@@ -517,6 +517,41 @@ class Mat3(tuple):
     def __neg__(self) -> Mat3:
         return Mat3(-v for v in self)
 
+    def __invert__(self) -> Mat3:
+        # extract the elements in row-column form. (matrix is stored column first)
+        a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+
+        # Calculate Adj(self) values column-row order
+        # | a d g |
+        # | b e h |
+        # | c f i |
+        a = a22 * a33 - a32 * a23 # +
+        b = a31 * a23 - a21 * a33 # -
+        c = a21 * a32 - a22 * a31 # +
+        d = a32 * a13 - a12 * a33 # -
+        e = a11 * a33 - a31 * a13 # +
+        f = a31 * a12 - a11 * a32 # -
+        g = a12 * a23 - a22 * a13 # +
+        h = a21 * a13 - a11 * a23 # -
+        i = a21 * a12 - a11 * a22 # +
+
+        # Calculate determinant
+        det = a11 * a + a21 * d + a31 * g
+
+        if det == 0:
+            _warnings.warn("Unable to calculate inverse of singular Matrix")
+            return self
+
+        # get determinant inverse
+        rep = 1.0 / det
+
+        return Mat3((
+            a * rep, b * rep, c * rep,
+            d * rep, e * rep, f * rep,
+            g * rep, h * rep, i * rep,
+        ))
+
+
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat3:
         return Mat3(round(v, ndigits) for v in self)
 
