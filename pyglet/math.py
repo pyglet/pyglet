@@ -384,7 +384,7 @@ class Vec3(_typing.NamedTuple):
     def normalize(self) -> Vec3:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         try:
-            d = self.length()
+            d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
             return Vec3(self.x / d, self.y / d, self.z / d)
         except ZeroDivisionError:
             return self

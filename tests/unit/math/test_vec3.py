@@ -232,3 +232,48 @@ def test_lt():
 def test_sum():
     assert sum(Vec3(1, 2, 3)) == 6
 
+
+def test_cross():
+    assert Vec3(1, 0, 0).cross(Vec3(0, 1, 0)) == Vec3(0, 0, 1)
+    assert Vec3(0, 1, 0).cross(Vec3(0, 0, 1)) == Vec3(1, 0, 0)
+    assert Vec3(0, 0, 1).cross(Vec3(1, 0, 0)) == Vec3(0, 1, 0)
+
+
+def test_dot():
+    assert Vec3(1, 0, 0).dot(Vec3(1, 0, 0)) == 1
+    assert Vec3(0, 1, 0).dot(Vec3(0, 1, 0)) == 1
+    assert Vec3(0, 0, 1).dot(Vec3(0, 0, 1)) == 1
+
+    assert Vec3(0, 1, 0).dot(Vec3(1, 0, 0)) == 0
+    assert Vec3(1, 0, 0).dot(Vec3(0, 1, 0)) == 0
+    assert Vec3(1, 0, 0).dot(Vec3(0, 0, 1)) == 0
+
+
+def test_lerp():
+    assert Vec3(1, 2, 3).lerp(Vec3(2, 3, 4), 0) == Vec3(1, 2, 3)
+    assert Vec3(1, 2, 3).lerp(Vec3(2, 3, 4), 1) == Vec3(2, 3, 4)
+    assert Vec3(1, 2, 3).lerp(Vec3(2, 3, 4), 0.5) == Vec3(1.5, 2.5, 3.5)
+
+
+def test_distance():
+    assert Vec3(0, 0, 0).distance(Vec3(1, 0, 0)) == 1
+    assert Vec3(0, 0, 0).distance(Vec3(0, 1, 0)) == 1
+    assert Vec3(0, 0, 0).distance(Vec3(0, 0, 1)) == 1
+
+    assert Vec3(1, 2, 3).distance(Vec3(2, 3, 4)) == pytest.approx(1.73205, abs=1e-5)
+
+
+def test_normalize():
+    assert Vec3(1, 0, 0).normalize() == Vec3(1, 0, 0)
+    assert Vec3(0, 1, 0).normalize() == Vec3(0, 1, 0)
+    assert Vec3(0, 0, 1).normalize() == Vec3(0, 0, 1)
+
+    assert Vec3(1, 1, 1).normalize() == Vec3(1 / math.sqrt(3), 1 / math.sqrt(3), 1 / math.sqrt(3))
+    assert Vec3(-1, -1, -1).normalize() == -Vec3(1 / math.sqrt(3), 1 / math.sqrt(3), 1 / math.sqrt(3))
+
+
+def test_clamp():
+    assert Vec3(-10, 0, 10).clamp(-20, 0) == Vec3(-10, 0, 0)
+    assert Vec3(-10, 0, 10).clamp(-5, 5) == Vec3(-5, 0, 5)
+    assert Vec3(-10, 0, 10).clamp(0, 20) == Vec3(0, 0, 10)
+    assert Vec3(-10, 0, 10).clamp(-20, 20) == Vec3(-10, 0, 10)
