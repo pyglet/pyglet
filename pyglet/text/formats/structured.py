@@ -67,8 +67,8 @@ class ImageElement(pyglet.text.document.InlineElement):
 
     def __init__(self, image: AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
         self.image = image.get_texture()
-        self.width = width is None and image.width or width
-        self.height = height is None and image.height or height
+        self.width = width or image.width
+        self.height = height or image.height
         self.vertex_lists = {}
 
         anchor_y = self.height // image.height * image.anchor_y
