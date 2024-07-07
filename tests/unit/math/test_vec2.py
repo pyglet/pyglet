@@ -256,6 +256,14 @@ def test_lerp():
     assert Vec2(1, 2).lerp((3, 4), 0.5) == Vec2(2, 3)
 
 
+def test_step():
+    """Step function."""
+    assert Vec2(1, 1).step(Vec2(1, 1)) == Vec2(1, 1)
+    assert Vec2(0, 2).step(Vec2(1, 1)) == Vec2(0, 1)
+    assert Vec2(2, 0).step(Vec2(1, 1)) == Vec2(1, 0)
+    assert Vec2(3, 3).step(Vec2(1, 1)) == Vec2(1, 1)
+
+
 def test_reflect():
     """Reflect vector off another vector."""
     assert Vec2(1, 0). reflect(Vec2(1, 0)) == Vec2(-1, 0)

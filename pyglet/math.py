@@ -168,17 +168,36 @@ class Vec2(_typing.NamedTuple):
         """
         return self[0] ** 2.0 + self[1] ** 2.0
 
-    def lerp(self, other: tuple[float, float], alpha: float) -> Vec2:
+    def lerp(self, other: tuple[float, float], amount: float) -> Vec2:
         """Create a new Vec2 linearly interpolated between this vector and another Vec2.
+
+        The equivalent in GLSL is `mix`.
 
         Args:
           other: Another Vec2 instance.
-          alpha: The amount of interpolation between this vector, and the other
-                 vector. This should be a value between 0.0 and 1.0. For example:
-                 0.5 is the midway point between both vectors.
+          amount: The amount of interpolation between this vector, and the other
+                  vector. This should be a value between 0.0 and 1.0. For example:
+                  0.5 is the midway point between both vectors.
         """
-        return Vec2(self[0] + (alpha * (other[0] - self.x)),
-                    self[1] + (alpha * (other[1] - self.y)))
+        return Vec2(self[0] + (amount * (other[0] - self.x)),
+                    self[1] + (amount * (other[1] - self.y)))
+
+    def step(self, edge: tuple[float, float]) -> Vec2:
+        """A step function that returns 0.0 for a component if it is less than the edge, and 1.0 otherwise.
+
+        This can be used enable and disable some behavior based on a condition.
+
+        Example::
+
+            # First component is less than 1.0, second component is greater than 1.0
+            >>> Vec2(0.5, 1.5).step((1.0, 1.0))
+            Vec2(1.0, 0.0)
+
+        Args:
+            edge: A Vec2 instance.
+        """
+        return Vec2(0.0 if self[0] < edge[0] else 1.0,
+                    0.0 if self[1] < edge[1] else 1.0)
 
     def reflect(self, vector: Vec2) -> Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normalized vector.
