@@ -53,54 +53,85 @@ class Vec2(_typing.NamedTuple):
 
     __match_args__ = 'x', 'y'
 
-    def __add__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: Vec2) -> Vec2:
-        return Vec2(self.x - other.x, self.y - other.y)
-
-    def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
+    def __add__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self.x * scalar, self.y * scalar)
+            return Vec2(self[0] + other[0], self.y + other[1])
         except TypeError:
-            return Vec2(self.x * scalar[0], self.y * scalar[1])
+            return Vec2(self[0] + other, self[1] + other)
 
-    def __truediv__(self, scalar: float | tuple[float, float]) -> Vec2:
+    def __radd__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self.x / scalar, self.y / scalar)
-        except TypeError:
-            return Vec2(self.x / scalar[0], self.y / scalar[1])
-
-    def __floordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
-        try:
-            return Vec2(self.x // scalar, self.y // scalar)
-        except TypeError:
-            return Vec2(self.x // scalar[0], self.y // scalar[1])
-
-    def __radd__(self, other: Vec2 | int) -> Vec2:
-        try:
-            return self.__add__(_typing.cast(Vec2, other))
+            return self.__add__(other)
         except TypeError as err:
             if other == 0:  # Required for functionality with sum()
                 return self
             raise err
 
-    __rsub__ = __sub__
-    __rmul__ = __mul__
-    __rtruediv__ = __truediv__
-    __rfloordiv__ = __floordiv__
+    def __sub__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
+        try:
+            return Vec2(self[0] - other[0], self[1] - other[1])
+        except TypeError:
+            return Vec2(self[0] - other, self[1] - other)
+
+    def __rsub__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
+        try:
+            return Vec2(other[0] - self[0], other[1] - self[1])
+        except TypeError:
+            return Vec2(other - self[0], other - self[1])
+
+    def __mul__(self, scalar: Vec2 | float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self[0] * scalar[0], self[1] * scalar[1])
+        except TypeError:
+            return Vec2(self[0] * scalar, self[1] * scalar)
+
+    def __truediv__(self, scalar: Vec2 | float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self[0] / scalar[0], self[1] / scalar[1])
+        except TypeError:
+            return Vec2(self[0] / scalar, self[1] / scalar)
+
+    def __rtruediv__(self, scalar: Vec2 | float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(scalar[0] / self[0], scalar[1] / self[1])
+        except TypeError:
+            return Vec2(scalar / self[0], scalar / self[1])
+
+    def __floordiv__(self, scalar: Vec2 | float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(self.x // scalar[0], self.y // scalar[1])
+        except TypeError:
+            return Vec2(self[0] // scalar, self[1] // scalar)
+
+    def __rfloordiv__(self, scalar: Vec2 | float | tuple[float, float]) -> Vec2:
+        try:
+            return Vec2(scalar[0] // self[0], scalar[1] // self[1])
+        except TypeError:
+            return Vec2(scalar // self[0], scalar // self[1])
+
+    __rmul__ = __mul__  # Order doesn't matter here so we can use __mul__
 
     def __abs__(self) -> float:
-        return _math.sqrt(self.x ** 2 + self.y ** 2)
+        return Vec2(abs(self.x), abs(self.y))
 
     def __neg__(self) -> Vec2:
-        return Vec2(-self.x, -self.y)
+        return Vec2(-self[0], -self[1])
 
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Vec2:
         return Vec2(*(round(v, ndigits) for v in self))
 
-    def __lt__(self, other: Vec2) -> bool:
-        return abs(self) < abs(other)
+    def __lt__(self, other: Vec2 | tuple[float, float]) -> bool:
+        return self[0] ** 2 + self[0] ** 2 < other[0] ** 2 + other[1] ** 2
+
+    @staticmethod
+    def from_heading(heading: float, length: float = 1.0) -> Vec2:
+        """Create a new vector from the given heading and length.
+
+        Args:
+          heading: The desired heading, in radians
+          length: The desired length of the vector
+        """
+        return Vec2(length * _math.cos(heading), length * _math.sin(heading))
 
     @staticmethod
     def from_polar(mag: float, angle: float) -> Vec2:
@@ -112,57 +143,61 @@ class Vec2(_typing.NamedTuple):
         """
         return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
 
-    def from_magnitude(self, magnitude: float) -> Vec2:
-        """Create a new vector of the given magnitude
-
-        The new vector will be created by first normalizing,
-        then scaling the vector. The heading remains unchanged.
+    @property
+    def length(self) -> float:
+        """Get the length of the vector: ``sqrt(x ** 2 + y ** 2)``
         """
-        return self.normalize() * magnitude
-
-    def from_heading(self, heading: float) -> Vec2:
-        """Create a new vector of the same magnitude with the given heading.
-
-         In effect, the vector rotated to the new heading.
-
-        Args:
-          heading: The desired heading, in radians.
-
-        """
-        mag = self.__abs__()
-        return Vec2(mag * _math.cos(heading), mag * _math.sin(heading))
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2)
 
     @property
     def heading(self) -> float:
-        """The angle of the vector in radians."""
-        return _math.atan2(self.y, self.x)
+        """The heading of the vector in radians.
+
+        Shortcut for `atan2(y, x)` meaning it returns a value between
+        -pi and pi. ``Vec2(1, 0)`` will have a heading of 0. Counter-clockwise
+        is positive moving towards pi, and clockwise is negative moving towards -pi.
+        """
+        return _math.atan2(self[1], self[0])
 
     @property
-    def mag(self) -> float:
-        """The magnitude, or length of the vector.
+    def length_squared(self) -> float:
+        """Get the squared length of the vector.
 
-        The distance between the coordinates and the origin.
-        Alias of abs(vec2_instance).
+        This is simply shortcut for `x ** 2 + y ** 2` and can be used
+        for faster comparisons without the need for a square root.
         """
-        return self.__abs__()
+        return self[0] ** 2.0 + self[1] ** 2.0
 
-    def limit(self, maximum: float) -> Vec2:
-        """Limit the magnitude of the vector to passed maximum value."""
-        if self.x ** 2 + self.y ** 2 > maximum * maximum:
-            return self.from_magnitude(maximum)
-        return self
-
-    def lerp(self, other: Vec2, alpha: float) -> Vec2:
+    def lerp(self, other: tuple[float, float], amount: float) -> Vec2:
         """Create a new Vec2 linearly interpolated between this vector and another Vec2.
+
+        The equivalent in GLSL is `mix`.
 
         Args:
           other: Another Vec2 instance.
-          alpha: The amount of interpolation between this vector, and the other
-                 vector. This should be a value between 0.0 and 1.0. For example:
-                 0.5 is the midway point between both vectors.
+          amount: The amount of interpolation between this vector, and the other
+                  vector. This should be a value between 0.0 and 1.0. For example:
+                  0.5 is the midway point between both vectors.
         """
-        return Vec2(self.x + (alpha * (other.x - self.x)),
-                    self.y + (alpha * (other.y - self.y)))
+        return Vec2(self[0] + (amount * (other[0] - self.x)),
+                    self[1] + (amount * (other[1] - self.y)))
+
+    def step(self, edge: tuple[float, float]) -> Vec2:
+        """A step function that returns 0.0 for a component if it is less than the edge, and 1.0 otherwise.
+
+        This can be used enable and disable some behavior based on a condition.
+
+        Example::
+
+            # First component is less than 1.0, second component is greater than 1.0
+            >>> Vec2(0.5, 1.5).step((1.0, 1.0))
+            Vec2(1.0, 0.0)
+
+        Args:
+            edge: A Vec2 instance.
+        """
+        return Vec2(0.0 if self[0] < edge[0] else 1.0,
+                    0.0 if self[1] < edge[1] else 1.0)
 
     def reflect(self, vector: Vec2) -> Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normalized vector.
@@ -173,36 +208,36 @@ class Vec2(_typing.NamedTuple):
         return self - vector * 2 * vector.dot(self)
 
     def rotate(self, angle: float) -> Vec2:
-        """Create a new vector rotated by the angle. The magnitude remains unchanged.
+        """Create a new vector rotated by the angle. The length remains unchanged.
 
         Args:
           angle: The desired angle, in radians.
         """
         s = _math.sin(angle)
         c = _math.cos(angle)
-        return Vec2(c * self.x - s * self.y, s * self.x + c * self.y)
+        return Vec2(c * self[0] - s * self[1], s * self[0] + c * self[1])
 
-    def distance(self, other: Vec2) -> float:
-        """Calculate the distance between this vector and another 2D vector."""
-        return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2))
+    def distance(self, other: tuple[int, int]) -> float:
+        """Calculate the distance between this vector and another vector."""
+        return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self) -> Vec2:
-        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
-        d = self.__abs__()
+        """Normalize the vector to have a length of 1.0. i.e. make it a unit vector."""
+        d = _math.sqrt(self[0] ** 2 + self[1] ** 2)
         if d:
-            return Vec2(self.x / d, self.y / d)
+            return Vec2(self[0] / d, self[1] / d)
         return self
 
     def clamp(self, min_val: float, max_val: float) -> Vec2:
         """Restrict the value of the X and Y components of the vector to be within the given values."""
         return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
 
-    def dot(self, other: Vec2) -> float:
+    def dot(self, other: tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
-        return self.x * other.x + self.y * other.y
+        return self[0] * other[0] + self[1] * other[1]
 
     def index(self, *args):
-        raise NotImplemented("Vec types can be indexed directly.")
+        raise NotImplementedError("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
@@ -332,7 +367,7 @@ class Vec3(_typing.NamedTuple):
     def normalize(self) -> Vec3:
         """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector."""
         try:
-            d = self.__abs__()
+            d = self.length()
             return Vec3(self.x / d, self.y / d, self.z / d)
         except ZeroDivisionError:
             return self
@@ -344,7 +379,7 @@ class Vec3(_typing.NamedTuple):
                     clamp(self.z, min_val, max_val))
 
     def index(self, *args):
-        raise NotImplemented("Vec types can be indexed directly.")
+        raise NotImplementedError("Vec types can be indexed directly.")
 
     def __getattr__(self, attrs: str) -> _typing.Union[Vec2, Vec3, Vec4]:
         try:
