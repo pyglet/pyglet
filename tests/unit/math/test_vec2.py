@@ -6,6 +6,16 @@ import math
 import pytest
 from pyglet.math import Vec2
 
+# mix
+# min / max
+# angle (between two vectors)
+# from_heading (from angle to vector)
+
+
+def test_create():
+    assert Vec2(1, 2) == Vec2(1, 2)
+    # assert Vec2(1) == Vec2(1, 1)  # not supported
+
 
 def test_access():
     """Test Vec2 class."""
@@ -16,6 +26,13 @@ def test_access():
     assert v[0] == 1
     assert v[1] == 2
     assert v == (1, 2)
+
+
+def test_comparison():
+    assert Vec2(1, 2) == Vec2(1, 2)
+    assert Vec2(1, 2) != Vec2(2, 1)
+    assert Vec2(1, 2) == (1, 2)
+    assert (1, 2) == Vec2(1, 2)
 
 
 def test_swizzle():
@@ -34,61 +51,136 @@ def test_mutability():
         v[0] = 1  # __setitem__ is not supported
 
 
+def test_len():
+    """Len of the collection is always 2."""
+    assert len(Vec2(0)) == 2
+
+
 def test_add():
     assert Vec2(1, 2) + Vec2(3, 4) == Vec2(4, 6)
+
     assert Vec2(1, 2) + 3 == Vec2(4, 5)
-    assert Vec2(1, 2) + (3, 4) == Vec2(4, 6)
     assert 2 + Vec2(1, 2) == Vec2(3, 4)
+
+    assert Vec2(1, 2) + (3, 4) == Vec2(4, 6)
+    assert (1, 2) + Vec2(3, 4) == Vec2(4, 6)
+
     v = Vec2(1, 2)
     v += 1
     assert v == Vec2(2, 3)
-    v += Vec2(1, 2)
-    assert v == Vec2(3, 5)
+
+    v = Vec2(1, 3)
+    v += Vec2(3, 4)
+    assert v == Vec2(4, 7)
+
+    v = Vec2(1, 2)
+    v += (3, 4)
+    assert v == Vec2(4, 6)
 
 
 def test_sub():
     assert Vec2(1, 2) - Vec2(3, 4) == Vec2(-2, -2)
-    assert Vec2(1, 2) - 3
+
+    assert Vec2(1, 2) - 3 == Vec2(-2, -1)
+    assert 2 - Vec2(1, 2) == Vec2(1, 0)
+
     assert Vec2(1, 2) - (3, 4) == Vec2(-2, -2)
-    assert 2 - Vec2(1, 2) == Vec2(-1, 0)
+    assert (1, 2) - Vec2(3, 4) == Vec2(-2, -2)
+
     v = Vec2(1, 2)
-    v -= 1
+    v -= Vec2(1, 1)
     assert v == Vec2(0, 1)
-    v -= Vec2(1, 2)
-    assert v == Vec2(-1, -1)
+
+    v = Vec2(1, 2)
+    v -= (1, 2)
+    assert v == Vec2(0, 0)
+
+    v = Vec2(0, 1)
+    v -= 1
+    assert v == Vec2(-1, 0)
 
 
 def test_mul():
     assert Vec2(2, 3) * Vec2(4, 5) == Vec2(8, 15)
+
     assert Vec2(1, 2) * 2 == Vec2(2, 4)
     assert 2 * Vec2(1, 2) == Vec2(2, 4)
 
+    assert Vec2(1, 2) * (2, 2) == Vec2(2, 4)
+    assert (1, 2) * Vec2(2, 2) == Vec2(2, 4)
+
+    v = Vec2(1, 2)
+    v *= Vec2(2, 2)
+    assert v == Vec2(2, 4)
+
+    v = Vec2(1, 2)
+    v *= 2
+    assert v == Vec2(2, 4)
+
+    v = Vec2(1, 2)
+    v *= Vec2(2, 2)
+    assert v == Vec2(2, 4)
+
 
 def test_truediv():
+    assert Vec2(2, 4) / Vec2(2, 2) == Vec2(1, 2)
+
     assert Vec2(2, 4) / 2.0 == Vec2(1, 2)
-    # assert 1 / Vec2(0.5, 0.5) == Vec2(2, 2)  # Allowed by division order is wrong
-    assert Vec2(2, 4) / Vec2(2, 2) == Vec2(1, 2)  # Not supported
+    assert 1.0 / Vec2(0.5, 0.5) == Vec2(2, 2)
+
+    assert (2, 4) / Vec2(2, 2) == Vec2(1, 2)
+    assert Vec2(2, 4) / (2, 2) == Vec2(1, 2)
+
+    v = Vec2(2, 4)
+    v /= Vec2(2, 2)
+    assert v == Vec2(1, 2)
+
     v = Vec2(2, 4)
     v /= 2
     assert v == Vec2(1, 2)
-    v /= Vec2(2, 2)
-    assert v == Vec2(0.5, 1)
+
+    v = Vec2(2, 4)
+    v /= (2, 2)
+    assert v == Vec2(1, 2)
 
 
 def test_floordiv():
+    assert Vec2(2, 4) // Vec2(2, 2) == Vec2(1, 2)
+
     assert Vec2(2, 4) // 2 == Vec2(1, 2)
-    # assert 1 / Vec2(0.5, 0.5) == Vec2(2, 2)  # Allowed by division order is wrong
-    assert Vec2(2, 4) // Vec2(2, 2) == Vec2(1, 2)  # Not supported
+    assert 4 // Vec2(2, 4) == Vec2(2, 1)
+
+    assert (1, 2) / Vec2(0.5, 0.5) == Vec2(2, 4)
+    assert Vec2(1, 2) / (0.5, 0.5) == Vec2(2, 4)
+
     v = Vec2(4, 8)
     v //= 2
     assert v == Vec2(2, 4)
+
+    v = Vec2(4, 8)
     v //= Vec2(2, 2)
-    assert v == Vec2(1, 2)
+    assert v == Vec2(2, 4)
+
+    v = Vec2(4, 8)
+    v //= (2, 2)
+    assert v == Vec2(2, 4)
+
+
+def test_length():
+    assert Vec2(1, 0).length() == 1
+    assert Vec2(0, 1).length() == 1
+
+    assert Vec2(3, 0).length() == 3
+    assert Vec2(0, 3).length() == 3
+
+    assert Vec2(1, 1).length() == pytest.approx(1.41421, abs=1e-5)
+    assert Vec2(-1, -1).length() == pytest.approx(1.41421, abs=1e-5)
 
 
 def test_abs():
     # NOTE: Possibly this should just be normal abs
-    assert abs(Vec2(1, 2)) == pytest.approx(2.23606, abs=1e-5)
+    assert abs(Vec2(1, 2)) == Vec2(1, 2)
+    assert abs(Vec2(-1, -2)) == Vec2(1, 2)
 
 
 def test_neg():
@@ -105,9 +197,9 @@ def test_round():
 def test_lt():
     """Compares the length of the vectors."""
     assert Vec2(1, 2) < Vec2(2, 3)
-    with pytest.raises(TypeError):
-        assert Vec2(1, 2) < (2, 3)
-    assert not Vec2(1, 2) < Vec2(1, 2)
+
+    assert Vec2(1, 2) < (2, 3)
+    assert (1, 2) < Vec2(2, 3)
 
 
 def test_sum():
@@ -122,42 +214,19 @@ def test_from_polar():
     assert Vec2.from_polar(mag=1, angle=math.radians(270)) == pytest.approx(Vec2(0, -1), abs=1e-5)
 
 
-def test_from_magnitude():
-    """Recreate the vector with a new magnitude keeping the heading"""
-    assert Vec2(2, 0).from_magnitude(0) == Vec2(0, 0)
-    assert Vec2(2, 0).from_magnitude(1) == Vec2(1, 0)
-    assert Vec2(2, 0).from_magnitude(2) == Vec2(2, 0)
-
-    assert Vec2(0, 2).from_magnitude(0) == Vec2(0, 0)
-    assert Vec2(0, 2).from_magnitude(2) == Vec2(0, 2)
-    assert Vec2(0, 2).from_magnitude(4) == Vec2(0, 4)
-
-
 def test_from_heading():
-    """Recreate the vector with a new heading keeping the length"""
-    vec = Vec2(2, 0)
-    assert vec.from_heading(0) == Vec2(2, 0)
-    assert vec.from_heading(math.radians(90)) == pytest.approx(Vec2(0, 2), abs=1e-5)
-    assert vec.from_heading(math.radians(180)) == pytest.approx(Vec2(-2, 0), abs=1e-5)
-    assert vec.from_heading(math.radians(270)) == pytest.approx(Vec2(0, -2), abs=1e-3)
+    """Create a vector from a heading."""
+    assert Vec2.from_heading(0, length=1) == Vec2(1, 0)
+    assert Vec2.from_heading(math.radians(90), length=2) == pytest.approx(Vec2(0, 2), abs=1e-5)
+    assert Vec2.from_heading(math.radians(180), length=3) == pytest.approx(Vec2(-3, 0), abs=1e-5)
+    assert Vec2.from_heading(math.radians(-90), length=4) == pytest.approx(Vec2(0, -4), abs=1e-5)
 
 
 def test_heading():
-    pass
-
-
-def test_mag():
-    """Calculate the magnitude of the vector."""
-    assert Vec2(1, 0).mag == 1
-    assert Vec2(1, 1).mag == pytest.approx(1.41421, abs=1e-5)
-    assert Vec2(1, 2).mag == pytest.approx(2.23607, abs=1e-5)
-
-
-def test_limit():
-    """Limit the magnitude of the vector."""
-    assert Vec2(1, 0).limit(1) == Vec2(1, 0)
-    assert Vec2(1, 0).limit(0.5) == Vec2(0.5, 0)
-    assert Vec2(1, 0).limit(0) == Vec2(0, 0)
+    assert Vec2(1, 0).heading == 0
+    assert Vec2(0, 1).heading == math.radians(90)
+    assert Vec2(-1, 0).heading == math.radians(180)
+    assert Vec2(0, -1).heading == math.radians(-90)
 
 
 def test_lerp():
@@ -165,6 +234,7 @@ def test_lerp():
     assert Vec2(1, 2).lerp(Vec2(3, 4), 0.5) == Vec2(2, 3)
     assert Vec2(1, 2).lerp(Vec2(3, 4), 0) == Vec2(1, 2)
     assert Vec2(1, 2).lerp(Vec2(3, 4), 1) == Vec2(3, 4)
+    assert Vec2(1, 2).lerp((3, 4), 0.5) == Vec2(2, 3)
 
 
 def test_reflect():
@@ -211,6 +281,6 @@ def test_dot():
     assert Vec2(1, 0).dot(Vec2(0, 1)) == 0  # perpendicular
     assert Vec2(1, 2).dot(Vec2(3, 4)) == 11
 
-    assert Vec2(-1, 0).dot(Vec2(-1, 0)) == 1  # same direction
-    assert Vec2(-1, 0).dot(Vec2(0, -1)) == 0  # perpendicular
-    assert Vec2(-1, -2).dot(Vec2(-3, -4)) == 11
+    assert Vec2(-1, 0).dot((-1, 0)) == 1  # same direction
+    assert Vec2(-1, 0).dot((0, -1)) == 0  # perpendicular
+    assert Vec2(-1, -2).dot((-3, -4)) == 11
