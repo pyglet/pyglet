@@ -470,11 +470,11 @@ class Vec4(_typing.NamedTuple):
 
 
 class Mat3(tuple):
-    """A 3x3 Matrix
+    """A 3x3 Matrix.
 
     `Mat3` is an immutable 3x3 Matrix, wich includes most common operators.
 
-    A Matrix can be created with a list or tuple of 12 values.
+    A Matrix can be created with a list or tuple of 9 values.
     If no values are provided, an "identity matrix" will be created
     (1.0 on the main diagonal). Because Mat3 objects are immutable,
     all operations return a new Mat3 object.
@@ -533,37 +533,38 @@ class Mat3(tuple):
 
     def __matmul__(self, other):
         if isinstance(other, Vec3):
-            # Rows:
-            r0 = self[0::3]
-            r1 = self[1::3]
-            r2 = self[2::3]
-            return Vec3(_sumprod(r0, other),
-                        _sumprod(r1, other),
-                        _sumprod(r2, other))
+            x, y, z = other
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+            return Vec3(
+                a11 * x + a21 * y + a31 * z,
+                a12 * x + a22 * y + a32 * z,
+                a13 * x + a23 * y + a33 * z,
+            )
 
         if not isinstance(other, Mat3):
             raise TypeError("Can only multiply with Mat3 or Vec3 types")
 
-        # Rows:
-        r0 = self[0::3]
-        r1 = self[1::3]
-        r2 = self[2::3]
-        # Columns:
-        c0 = other[0:3]
-        c1 = other[3:6]
-        c2 = other[6:9]
+        # extract the elements in row-column form. (matrix is stored column first)
+        a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+        b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
 
-        # Multiply and sum rows * columns:
-        return Mat3((_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2),
-                     _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2),
-                     _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2)))
+        # Multiply and sum rows * columns :~}
+        return Mat3((
+            # Column 1
+            a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
+            # Column 2
+            a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
+            # Column 3
+            a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
+        ))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
 
 
 class Mat4(tuple):
-    """A 4x4 Matrix
+    """A 4x4 Matrix.
 
     `Mat4` is an immutable 4x4 Matrix, which includs most common operators.
     This includes class methods for creating orthogonal and perspective
@@ -754,29 +755,32 @@ class Mat4(tuple):
         return Mat4(-v for v in self)
 
     def __invert__(self) -> Mat4:
-        a = self[10] * self[15] - self[11] * self[14]
-        b = self[9] * self[15] - self[11] * self[13]
-        c = self[9] * self[14] - self[10] * self[13]
-        d = self[8] * self[15] - self[11] * self[12]
-        e = self[8] * self[14] - self[10] * self[12]
-        f = self[8] * self[13] - self[9] * self[12]
-        g = self[6] * self[15] - self[7] * self[14]
-        h = self[5] * self[15] - self[7] * self[13]
-        i = self[5] * self[14] - self[6] * self[13]
-        j = self[6] * self[11] - self[7] * self[10]
-        k = self[5] * self[11] - self[7] * self[9]
-        l = self[5] * self[10] - self[6] * self[9]
-        m = self[4] * self[15] - self[7] * self[12]
-        n = self[4] * self[14] - self[6] * self[12]
-        o = self[4] * self[11] - self[7] * self[8]
-        p = self[4] * self[10] - self[6] * self[8]
-        q = self[4] * self[13] - self[5] * self[12]
-        r = self[4] * self[9] - self[5] * self[8]
+        # extract the elements in row-column form. (matrix is stored column first)
+        a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
 
-        det = (self[0] * (self[5] * a - self[6] * b + self[7] * c)
-               - self[1] * (self[4] * a - self[6] * d + self[7] * e)
-               + self[2] * (self[4] * b - self[5] * d + self[7] * f)
-               - self[3] * (self[4] * c - self[5] * e + self[6] * f))
+        a = a33 * a44 - a34 * a43
+        b = a32 * a44 - a34 * a42
+        c = a32 * a43 - a33 * a42
+        d = a31 * a44 - a34 * a41
+        e = a31 * a43 - a33 * a41
+        f = a31 * a42 - a32 * a41
+        g = a23 * a44 - a24 * a43
+        h = a22 * a44 - a24 * a42
+        i = a22 * a43 - a23 * a42
+        j = a23 * a34 - a24 * a33
+        k = a22 * a34 - a24 * a32
+        l = a22 * a33 - a23 * a32
+        m = a21 * a44 - a24 * a41
+        n = a21 * a43 - a23 * a41
+        o = a21 * a34 - a24 * a31
+        p = a21 * a33 - a23 * a31
+        q = a21 * a42 - a22 * a41
+        r = a21 * a32 - a22 * a31
+
+        det = (a11 * (a22 * a - a23 * b + a24 * c)
+               - a12 * (a21 * a - a23 * d + a24 * e)
+               + a13 * (a21 * b - a22 * d + a24 * f)
+               - a14 * (a21 * c - a22 * e + a23 * f))
 
         if det == 0:
             _warnings.warn("Unable to calculate inverse of singular Matrix")
@@ -785,22 +789,22 @@ class Mat4(tuple):
         pdet = 1 / det
         ndet = -pdet
 
-        return Mat4((pdet * (self[5] * a - self[6] * b + self[7] * c),
-                     ndet * (self[1] * a - self[2] * b + self[3] * c),
-                     pdet * (self[1] * g - self[2] * h + self[3] * i),
-                     ndet * (self[1] * j - self[2] * k + self[3] * l),
-                     ndet * (self[4] * a - self[6] * d + self[7] * e),
-                     pdet * (self[0] * a - self[2] * d + self[3] * e),
-                     ndet * (self[0] * g - self[2] * m + self[3] * n),
-                     pdet * (self[0] * j - self[2] * o + self[3] * p),
-                     pdet * (self[4] * b - self[5] * d + self[7] * f),
-                     ndet * (self[0] * b - self[1] * d + self[3] * f),
-                     pdet * (self[0] * h - self[1] * m + self[3] * q),
-                     ndet * (self[0] * k - self[1] * o + self[3] * r),
-                     ndet * (self[4] * c - self[5] * e + self[6] * f),
-                     pdet * (self[0] * c - self[1] * e + self[2] * f),
-                     ndet * (self[0] * i - self[1] * n + self[2] * q),
-                     pdet * (self[0] * l - self[1] * p + self[2] * r)))
+        return Mat4((pdet * (a22 * a - a23 * b + a24 * c),
+                     ndet * (a12 * a - a13 * b + a14 * c),
+                     pdet * (a12 * g - a13 * h + a14 * i),
+                     ndet * (a12 * j - a13 * k + a14 * l),
+                     ndet * (a21 * a - a23 * d + a24 * e),
+                     pdet * (a11 * a - a13 * d + a14 * e),
+                     ndet * (a11 * g - a13 * m + a14 * n),
+                     pdet * (a11 * j - a13 * o + a14 * p),
+                     pdet * (a21 * b - a22 * d + a24 * f),
+                     ndet * (a11 * b - a12 * d + a14 * f),
+                     pdet * (a11 * h - a12 * m + a14 * q),
+                     ndet * (a11 * k - a12 * o + a14 * r),
+                     ndet * (a21 * c - a22 * e + a23 * f),
+                     pdet * (a11 * c - a12 * e + a13 * f),
+                     ndet * (a11 * i - a12 * n + a13 * q),
+                     pdet * (a11 * l - a12 * p + a13 * r)))
 
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat4:
         return Mat4(round(v, ndigits) for v in self)
@@ -818,34 +822,37 @@ class Mat4(tuple):
 
     def __matmul__(self, other):
         if isinstance(other, Vec4):
-            # Rows:
-            r0 = self[0::4]
-            r1 = self[1::4]
-            r2 = self[2::4]
-            r3 = self[3::4]
-            return Vec4(_sumprod(r0, other),
-                        _sumprod(r1, other),
-                        _sumprod(r2, other),
-                        _sumprod(r3, other))
+            x, y, z, w = other
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
+            return Vec4(
+                x * a11 + y * a21 + z * a31 + w * a41,
+                x * a12 + y * a22 + z * a32 + w * a42,
+                x * a13 + y * a23 + z * a33 + w * a43,
+                x * a14 + y * a24 + z * a34 + w * a44,
+            )
 
         if not isinstance(other, Mat4):
             raise TypeError("Can only multiply with Mat4 or Vec4 types")
-        # Rows:
-        r0 = self[0::4]
-        r1 = self[1::4]
-        r2 = self[2::4]
-        r3 = self[3::4]
-        # Columns:
-        c0 = other[0:4]
-        c1 = other[4:8]
-        c2 = other[8:12]
-        c3 = other[12:16]
 
+        # extract the elements in row-column form. (matrix is stored column first)
+        a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
+        b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
         # Multiply and sum rows * columns:
-        return Mat4((_sumprod(c0, r0), _sumprod(c0, r1), _sumprod(c0, r2), _sumprod(c0, r3),
-                     _sumprod(c1, r0), _sumprod(c1, r1), _sumprod(c1, r2), _sumprod(c1, r3),
-                     _sumprod(c2, r0), _sumprod(c2, r1), _sumprod(c2, r2), _sumprod(c2, r3),
-                     _sumprod(c3, r0), _sumprod(c3, r1), _sumprod(c3, r2), _sumprod(c3, r3)))
+        return Mat4((
+            # Column 1
+            a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
+            a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
+            # Column 2
+            a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
+            a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
+            # Column 3
+            a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
+            a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
+            # Column 4
+            a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
+            a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
+        ))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
