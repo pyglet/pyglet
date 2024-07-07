@@ -4,9 +4,9 @@
 OpenGL ES
 =========
 
-Pyglet have experimental support for OpenGL ES 3.2 with some limitations. Devices like Raspberry Pi 4
-and 5 supports OpenGL ES 3.1 with extensions covering most of the missing 3.2 features with the
-exception of tessellation shaders. There are likely other devices with ES support that can run Pyglet.
+Pyglet has experimental support for OpenGL ES 3.2, with some limitations. Devices like Raspberry Pi 4
+and 5 supports OpenGL ES 3.1 with extensions covering most of the missing 3.2 features (with the
+exception of tessellation shaders). There are likely other devices with ES support that can run Pyglet.
 
 Creating a window / context
 ---------------------------
@@ -52,22 +52,22 @@ Textures
 
 Pixel format for textures and images are limited to ``RGBA``. If you try to
 load any other pixel format through pyglet's image loading functions you
-will get an error when they turned into OpenGL textures later.
+will get an error when they are turned into OpenGL textures later.
 
 The reason for this limitation is that OpenGL ES does not support pixel
 format conversion during pixel transfer, meaning when calling ``glTexImage``
 to upload pixel data to the GPU, the pixel format must match the internalformat.
-In desktop OpenGL an RGB image can be converted to RGBA during this transfer.
-This is not supported in OpenGL ES.
+In desktop OpenGL an RGB image will be automatically converted to RGBA during
+this transfer. This is not supported in OpenGL ES.
 
-You are however free to create your own textures with any pixel format
+You are, however, free to create your own textures with any pixel format
 using the gl bindings directly.
 
 Compute Shader
 ~~~~~~~~~~~~~~
 
 If you are planning to bind textures to image units with the intention of
-using them in a compute shader you need to create these textures yourself
+using them in a compute shader, you need to create these textures yourself
 using the gl bindings and allocate space using ``glTexStorage``. Pyglet is
 using ``glTexImage`` to allocate space and upload the pixel data for textures.
 
