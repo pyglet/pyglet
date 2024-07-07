@@ -122,12 +122,12 @@ def test_mat3_inversion(mat3):
     # TODO: add long hand inversion for mat3
     inverse_2 = ~mat3
     # Confirm that Matrix @ its inverse == identity Matrix:
-    assert round(mat3 @ inverse_2, 9) ==  Mat3()
+    assert round(mat3 @ inverse_2, 9) == Mat3()
 
 
 def test_mat3_associative_mul():
-    swap_xy = Mat3((0, 1, 0, 1, 0, 0, 0, 0, 1))
-    scale_x = Mat3((2, 0, 0, 0, 1, 0, 0, 0, 1))
+    swap_xy = Mat3(0, 1, 0, 1, 0, 0, 0, 0, 1)
+    scale_x = Mat3(2, 0, 0, 0, 1, 0, 0, 0, 1)
     v1 = (swap_xy @ scale_x) @ Vec3(0, 1, 0)
     v2 = swap_xy @ (scale_x @ Vec3(0, 1, 0))
     assert v1 == v2 and abs(v1) != 0
