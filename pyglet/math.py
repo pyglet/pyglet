@@ -11,26 +11,11 @@ order and multiply on the left of vectors, which are treated as columns.
 
 All objects are immutable and hashable.
 """
-
 from __future__ import annotations
 
 import math as _math
 import typing as _typing
 import warnings as _warnings
-
-from collections.abc import Iterable as _Iterable
-
-try:
-    from math import sumprod as _sumprod
-except ImportError:
-    from operator import mul as _mul
-
-    # TODO: remove Python < 3.12 fallback when 3.11 is EOL
-    def _sumprod(p, q, /):
-        return sum(map(_mul, p, q))
-
-
-Mat3T = _typing.TypeVar("Mat3T", bound="Mat3")
 
 
 def clamp(num: float, minimum: float, maximum: float) -> float:
@@ -108,9 +93,9 @@ class Vec2(_typing.NamedTuple):
         except TypeError:
             return Vec2(scalar // self[0], scalar // self[1])
 
-    __rmul__ = __mul__  # Order doesn't matter here so we can use __mul__
+    __rmul__ = __mul__  # Order doesn't matter here, so we can use __mul__
 
-    def __abs__(self) -> float:
+    def __abs__(self) -> Vec2:
         return Vec2(abs(self.x), abs(self.y))
 
     def __neg__(self) -> Vec2:
@@ -189,7 +174,7 @@ class Vec2(_typing.NamedTuple):
         Example::
 
             # First component is less than 1.0, second component is greater than 1.0
-            >>> Vec2(0.5, 1.5).step((1.0, 1.0))
+            Vec2(0.5, 1.5).step((1.0, 1.0))
             Vec2(1.0, 0.0)
 
         Args:
@@ -231,7 +216,7 @@ class Vec2(_typing.NamedTuple):
         """Restrict the value of the X and Y components of the vector to be within the given values."""
         return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
 
-    def dot(self, other: tuple[float, float]) -> float:
+    def dot(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
         return self[0] * other[0] + self[1] * other[1]
 
@@ -503,7 +488,7 @@ class Vec4(_typing.NamedTuple):
             raise AttributeError(f"'Vec4' has no attribute: '{attrs}'.")
 
 
-class Mat3(tuple):
+class Mat3(_typing.NamedTuple):
     """A 3x3 Matrix.
 
     `Mat3` is an immutable 3x3 Matrix, wich includes most common operators.
@@ -516,40 +501,47 @@ class Mat3(tuple):
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
 
-    def __new__(cls: type[Mat3T], values: _Iterable[float] = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)) -> Mat3T:
-        new = super().__new__(cls, values)
-        assert len(new) == 9, "A 3x3 Matrix requires 9 values"
-        return new
+    a: float = 1.0
+    b: float = 0.0
+    c: float = 0.0
+
+    d: float = 0.0
+    e: float = 1.0
+    f: float = 0.0
+
+    g: float = 0.0
+    h: float = 0.0
+    i: float = 1.0
 
     def scale(self, sx: float, sy: float) -> Mat3:
-        return self @ Mat3((1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0))
+        return self @ Mat3(1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0)
 
     def translate(self, tx: float, ty: float) -> Mat3:
-        return self @ Mat3((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0))
+        return self @ Mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0)
 
     def rotate(self, phi: float) -> Mat3:
         s = _math.sin(_math.radians(phi))
         c = _math.cos(_math.radians(phi))
-        return self @ Mat3((c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0))
+        return self @ Mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0)
 
     def shear(self, sx: float, sy: float) -> Mat3:
-        return self @ Mat3((1.0, sy, 0.0, sx, 1.0, 0.0, 0.0, 0.0, 1.0))
+        return self @ Mat3(1.0, sy, 0.0, sx, 1.0, 0.0, 0.0, 0.0, 1.0)
 
     def __add__(self, other: Mat3) -> Mat3:
         if not isinstance(other, Mat3):
             raise TypeError("Can only add to other Mat3 types")
-        return Mat3(s + o for s, o in zip(self, other))
+        return Mat3(*(s + o for s, o in zip(self, other)))
 
     def __sub__(self, other: Mat3) -> Mat3:
         if not isinstance(other, Mat3):
             raise TypeError("Can only subtract from other Mat3 types")
-        return Mat3(s - o for s, o in zip(self, other))
+        return Mat3(*(s - o for s, o in zip(self, other)))
 
     def __pos__(self) -> Mat3:
         return self
 
     def __neg__(self) -> Mat3:
-        return Mat3(-v for v in self)
+        return Mat3(*(-v for v in self))
 
     def __invert__(self) -> Mat3:
         # extract the elements in row-column form. (matrix is stored column first)
@@ -559,15 +551,15 @@ class Mat3(tuple):
         # | a d g |
         # | b e h |
         # | c f i |
-        a = a22 * a33 - a32 * a23 # +
-        b = a31 * a23 - a21 * a33 # -
-        c = a21 * a32 - a22 * a31 # +
-        d = a32 * a13 - a12 * a33 # -
-        e = a11 * a33 - a31 * a13 # +
-        f = a31 * a12 - a11 * a32 # -
-        g = a12 * a23 - a22 * a13 # +
-        h = a21 * a13 - a11 * a23 # -
-        i = a11 * a22 - a21 * a12 # +
+        a = a22 * a33 - a32 * a23  # +
+        b = a31 * a23 - a21 * a33  # -
+        c = a21 * a32 - a22 * a31  # +
+        d = a32 * a13 - a12 * a33  # -
+        e = a11 * a33 - a31 * a13  # +
+        f = a31 * a12 - a11 * a32  # -
+        g = a12 * a23 - a22 * a13  # +
+        h = a21 * a13 - a11 * a23  # -
+        i = a11 * a22 - a21 * a12  # +
 
         # Calculate determinant
         det = a11 * a + a21 * d + a31 * g
@@ -580,15 +572,12 @@ class Mat3(tuple):
         rep = 1.0 / det
 
         # get inverse: A^-1 = def(A)^-1 * adj(A)
-        return Mat3((
-            a * rep, b * rep, c * rep,
-            d * rep, e * rep, f * rep,
-            g * rep, h * rep, i * rep,
-        ))
-
+        return Mat3(*(a * rep, b * rep, c * rep,
+                      d * rep, e * rep, f * rep,
+                      g * rep, h * rep, i * rep))
 
     def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat3:
-        return Mat3(round(v, ndigits) for v in self)
+        return Mat3(*(round(v, ndigits) for v in self))
 
     def __mul__(self, other: object) -> _typing.NoReturn:
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
@@ -619,15 +608,15 @@ class Mat3(tuple):
         a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
         b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
 
-        # Multiply and sum rows * columns :~}
-        return Mat3((
+        # Multiply and sum rows * columns
+        return Mat3(
             # Column 1
             a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
             # Column 2
             a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
             # Column 3
             a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
-        ))
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
@@ -668,7 +657,8 @@ class Mat4(_typing.NamedTuple):
     p: float = 1.0
 
     @classmethod
-    def orthogonal_projection(cls: Mat4, left: float, right: float, bottom: float, top: float, z_near: float, z_far: float) -> Mat4:
+    def orthogonal_projection(cls: Mat4, left: float, right: float, bottom: float, top: float, z_near: float,
+                              z_far: float) -> Mat4:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
 
         Given left, right, bottom, top values, and near/far z planes,
@@ -693,7 +683,7 @@ class Mat4(_typing.NamedTuple):
                    t_x, t_y, t_z, 1.0)
 
     @classmethod
-    def perspective_projection(cls:  Mat4, aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
+    def perspective_projection(cls: Mat4, aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
         """Create a Mat4 perspective projection matrix for use with OpenGL.
 
         Given a desired aspect ratio, near/far planes, and fov (field of view),
@@ -859,10 +849,10 @@ class Mat4(_typing.NamedTuple):
         q = a21 * a42 - a22 * a41
         r = a21 * a32 - a22 * a31
 
-        det = (a11 * (a22 * a - a23 * b + a24 * c)
-               - a12 * (a21 * a - a23 * d + a24 * e)
-               + a13 * (a21 * b - a22 * d + a24 * f)
-               - a14 * (a21 * c - a22 * e + a23 * f))
+        det = (a11 * (a22 * a - a23 * b + a24 * c) -
+               a12 * (a21 * a - a23 * d + a24 * e) +
+               a13 * (a21 * b - a22 * d + a24 * f) -
+               a14 * (a21 * c - a22 * e + a23 * f))
 
         if det == 0:
             _warnings.warn("Unable to calculate inverse of singular Matrix")
@@ -1004,7 +994,7 @@ class Quaternion(_typing.NamedTuple):
         # i, j, k, -
         # -, -, -, -
 
-        return Mat3((a, b, c, e, f, g, i, j, k))
+        return Mat3(*(a, b, c, e, f, g, i, j, k))
 
     @property
     def mag(self) -> float:
