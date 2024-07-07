@@ -533,7 +533,7 @@ class Mat3(tuple):
         f = a31 * a12 - a11 * a32 # -
         g = a12 * a23 - a22 * a13 # +
         h = a21 * a13 - a11 * a23 # -
-        i = a21 * a12 - a11 * a22 # +
+        i = a11 * a22 - a21 * a12 # +
 
         # Calculate determinant
         det = a11 * a + a21 * d + a31 * g
@@ -542,9 +542,10 @@ class Mat3(tuple):
             _warnings.warn("Unable to calculate inverse of singular Matrix")
             return self
 
-        # get determinant inverse
+        # get determinant reciprocal
         rep = 1.0 / det
 
+        # get inverse: A^-1 = def(A)^-1 * adj(A)
         return Mat3((
             a * rep, b * rep, c * rep,
             d * rep, e * rep, f * rep,
