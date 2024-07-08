@@ -16,7 +16,7 @@ python gengl.py --source url
 python gengl.py --source local
 """  # noqa: D205
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from opengl_registry import Registry, RegistryReader
@@ -73,7 +73,7 @@ def main() -> None:  # noqa: D103
     # es_writer.run()
 
 
-def parse_args(args):  # noqa: ANN201
+def parse_args(args: str) -> Namespace:  # noqa: D103
     parser = ArgumentParser()
     parser.add_argument("--source", choices=["local", "url"], default="url")
     return parser.parse_args(args)

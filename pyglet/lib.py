@@ -2,7 +2,6 @@
 
 These extend and correct ctypes functions.
 """
-# ruff: noqa: ANN002, ANN003, ANN204, ARG002, T201
 from __future__ import annotations
 
 import os
@@ -64,7 +63,7 @@ if _is_pyglet_doc_run:
         def __getattr__(self, name: str):
             return LibraryMock()
 
-        def __setattr__(self, name: str, value) -> None:  # noqa: ANN001
+        def __setattr__(self, name: str, value) -> None:
             pass
 
         def __call__(self, *args, **kwargs):
@@ -81,7 +80,7 @@ class LibraryLoader:  # noqa: D101
     if platform == 'cygwin':
         platform = 'win32'
 
-    def load_library(self, *names: str, **kwargs):  # noqa: ANN201
+    def load_library(self, *names: str, **kwargs):
         """Find and load a library.
 
         More than one name can be specified, they will be tried in order.
@@ -169,7 +168,7 @@ class MachOLibraryLoader(LibraryLoader):  # noqa: D101
         else:
             self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
 
-    def find_library(self, path):  # noqa: ANN201, ANN001
+    def find_library(self, path: str) -> str | None:
         """Implements the dylib search as specified in Apple documentation:
 
         http://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
