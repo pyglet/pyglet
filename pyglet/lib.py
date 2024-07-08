@@ -221,7 +221,7 @@ class MachOLibraryLoader(LibraryLoader):  # noqa: D101
         return None
 
     @staticmethod
-    def load_framework(name: str):  # noqa: ANN205
+    def load_framework(name: str) -> ctypes.CDLL | _TraceLibrary:
         path = ctypes.util.find_library(name)
 
         # Hack for compatibility with macOS > 11.0  # noqa: FIX004
