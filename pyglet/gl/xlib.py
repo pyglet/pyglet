@@ -1,23 +1,29 @@
+from __future__ import annotations
+
 import warnings
-from ctypes import *
+from ctypes import POINTER, byref, c_int, c_uint, cast
+from typing import TYPE_CHECKING, NoReturn
 
-from .base import Config, CanvasConfig, Context
-from pyglet.canvas.xlib import XlibCanvas
-from pyglet.gl import glx
-from pyglet.gl import glxext_arb
-from pyglet.gl import glx_info
-from pyglet.gl import glxext_mesa
-from pyglet.gl import lib
 from pyglet import gl
+from pyglet.canvas.xlib import XlibCanvas
+from pyglet.gl import glx, glx_info, glxext_arb, glxext_mesa, lib
+
+from .base import CanvasConfig, Config, Context
+
+if TYPE_CHECKING:
+    from pyglet.libs.x11.xlib import Display
+
+    from .glx_info import GLXInfo
 
 
-class XlibConfig(Config):
+class XlibConfig(Config):  # noqa: D101
 
-    def match(self, canvas):
+    def match(self, canvas: XlibCanvas) -> list[XlibCanvasConfig]:
         if not isinstance(canvas, XlibCanvas):
-            raise RuntimeError('Canvas must be an instance of XlibCanvas')
+            msg = 'Canvas must be an instance of XlibCanvas'
+            raise RuntimeError(msg)
 
-        x_display = canvas.display._display
+        x_display = canvas.display._display  # noqa: SLF001
         x_screen = canvas.display.x_screen
 
         info = glx_info.GLXInfo(x_display)
@@ -50,9 +56,10 @@ class XlibConfig(Config):
         return result
 
 
-class XlibCanvasConfig(CanvasConfig):
+class XlibCanvasConfig(CanvasConfig):  # noqa: D101
+    glx_info: GLXInfo
 
-    attribute_ids = {
+    attribute_ids = {  # noqa: RUF012
         'buffer_size': glx.GLX_BUFFER_SIZE,
         'level': glx.GLX_LEVEL,  # Not supported
         'double_buffer': glx.GLX_DOUBLEBUFFER,
@@ -86,7 +93,8 @@ class XlibCanvasConfig(CanvasConfig):
         'x_renderable': glx.GLX_X_RENDERABLE,
     }
 
-    def __init__(self, canvas, info, fbconfig, config):
+    def __init__(self, canvas: XlibCanvas, info: GLXInfo, fbconfig: glx.GLXFBConfig,  # noqa: D107
+                 config: XlibConfig) -> None:
         super().__init__(canvas, config)
 
         self.glx_info = info
@@ -94,37 +102,51 @@ class XlibCanvasConfig(CanvasConfig):
 
         for name, attr in self.attribute_ids.items():
             value = c_int()
-            result = glx.glXGetFBConfigAttrib(canvas.display._display, self.fbconfig, attr, byref(value))
+            result = glx.glXGetFBConfigAttrib(canvas.display._display, self.fbconfig, attr,  # noqa: SLF001
+                                              byref(value))
             if result >= 0:
                 setattr(self, name, value.value)
 
-    def get_visual_info(self):
-        return glx.glXGetVisualFromFBConfig(self.canvas.display._display, self.fbconfig).contents
+    def get_visual_info(self) -> glx.XVisualInfo:
+        return glx.glXGetVisualFromFBConfig(self.canvas.display._display, self.fbconfig).contents  # noqa: SLF001
 
-    def create_context(self, share):
+    def create_context(self, share: XlibContext | None) -> XlibContext:
         return XlibContext(self, share)
 
-    def compatible(self, canvas):
+    def compatible(self, canvas: XlibCanvas) -> bool:
         # TODO check more
         return isinstance(canvas, XlibCanvas)
 
-    def _create_glx_context(self, share):
-        raise NotImplementedError('abstract')
+    def _create_glx_context(self, _share: None) -> NoReturn:
+        raise NotImplementedError
 
-    def is_complete(self):
+    def is_complete(self) -> bool:
         return True
 
 
-class XlibContext(Context):
-    def __init__(self, config, share):
+class XlibContext(Context):  # noqa: D101
+    x_display: Display
+    glx_context: glx.GLXContext
+    glx_window: glx.GLXWindow | None
+    _use_video_sync: bool
+    _vsync: bool
+    config: XlibCanvasConfig
+
+    _have_SGI_swap_control: bool  # noqa: N815
+    _have_EXT_swap_control: bool  # noqa: N815
+    _have_MESA_swap_control: bool  # noqa: N815
+    _have_SGI_video_sync: bool  # noqa: N815
+
+    def __init__(self, config: XlibCanvasConfig, share: XlibContext | None) -> None:  # noqa: D107
         super().__init__(config, share)
 
-        self.x_display = config.canvas.display._display
+        self.x_display = config.canvas.display._display  # noqa: SLF001
 
         self.glx_context = self._create_glx_context(share)
         if not self.glx_context:
             # TODO: Check Xlib error generated
-            raise gl.ContextException('Could not create GL context')
+            msg = 'Could not create GL context'
+            raise gl.ContextException(msg)
 
         self._have_SGI_video_sync = config.glx_info.have_extension('GLX_SGI_video_sync')
         self._have_SGI_swap_control = config.glx_info.have_extension('GLX_SGI_swap_control')
@@ -144,10 +166,10 @@ class XlibContext(Context):
 
         self.glx_window = None
 
-    def is_direct(self):
-        return glx.glXIsDirect(self.x_display, self.glx_context)
+    def is_direct(self) -> bool:
+        return bool(glx.glXIsDirect(self.x_display, self.glx_context))
 
-    def _create_glx_context(self, share):
+    def _create_glx_context(self, share: XlibContext | None) -> glx.GLXContext:
         if share:
             share_context = share.glx_context
         else:
@@ -175,10 +197,10 @@ class XlibContext(Context):
         attribs.append(0)
         attribs = (c_int * len(attribs))(*attribs)
 
-        return glxext_arb.glXCreateContextAttribsARB(self.config.canvas.display._display,
+        return glxext_arb.glXCreateContextAttribsARB(self.config.canvas.display._display,  # noqa: SLF001
                                                      self.config.fbconfig, share_context, True, attribs)
 
-    def attach(self, canvas):
+    def attach(self, canvas: XlibCanvas) -> None:
         if canvas is self.canvas:
             return
 
@@ -187,11 +209,11 @@ class XlibContext(Context):
         self.glx_window = glx.glXCreateWindow(self.x_display, self.config.fbconfig, canvas.x_window, None)
         self.set_current()
 
-    def set_current(self):
+    def set_current(self) -> None:
         glx.glXMakeContextCurrent(self.x_display, self.glx_window, self.glx_window, self.glx_context)
         super().set_current()
 
-    def detach(self):
+    def detach(self) -> None:
         if not self.canvas:
             return
 
@@ -205,16 +227,16 @@ class XlibContext(Context):
             glx.glXDestroyWindow(self.x_display, self.glx_window)
             self.glx_window = None
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         if self.glx_window:
-            glx.glXDestroyWindow(self.config.display._display, self.glx_window)
+            glx.glXDestroyWindow(self.x_display, self.glx_window)
             self.glx_window = None
         if self.glx_context:
             glx.glXDestroyContext(self.x_display, self.glx_context)
             self.glx_context = None
 
-    def set_vsync(self, vsync=True):
+    def set_vsync(self, vsync: bool = True) -> None:
         self._vsync = vsync
         interval = vsync and 1 or 0
         try:
@@ -227,16 +249,16 @@ class XlibContext(Context):
         except lib.MissingFunctionException as e:
             warnings.warn(str(e))
 
-    def get_vsync(self):
+    def get_vsync(self) -> bool:
         return self._vsync
 
-    def _wait_vsync(self):
+    def _wait_vsync(self) -> None:
         if self._vsync and self._have_SGI_video_sync and self._use_video_sync:
             count = c_uint()
             glxext_arb.glXGetVideoSyncSGI(byref(count))
             glxext_arb.glXWaitVideoSyncSGI(2, (count.value + 1) % 2, byref(count))
 
-    def flip(self):
+    def flip(self) -> None:
         if not self.glx_window:
             return
 

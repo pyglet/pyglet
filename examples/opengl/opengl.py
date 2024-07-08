@@ -16,7 +16,14 @@ This example demonstrates:
 from math import pi, sin, cos
 
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable, 
+    glClearColor, 
+    Config,
+    GL_DEPTH_TEST, 
+    GL_CULL_FACE, 
+    GL_TRIANGLES
+)
 from pyglet.math import Mat4, Vec3
 
 try:

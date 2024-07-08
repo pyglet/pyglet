@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import ctypes
-from ctypes import *
+from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
-from .base import Display, Screen, ScreenMode, Canvas
 
+from ..libs.x11.xlib import Window
 from . import xlib_vidmoderestore
+from .base import Canvas, Display, Screen, ScreenMode
 
 
 # XXX
@@ -174,7 +177,7 @@ class XlibScreen(Screen):
     _initial_mode = None
 
     def __init__(self, display, x, y, width, height, xinerama):
-        super(XlibScreen, self).__init__(display, x, y, width, height)
+        super().__init__(display, x, y, width, height)
         self._xinerama = xinerama
 
     def get_matching_configs(self, template):
@@ -228,7 +231,7 @@ class XlibScreen(Screen):
 
         xf86vmode.XF86VidModeSwitchToMode(self.display._display, self.display.x_screen, mode.info)
         xlib.XFlush(self.display._display)
-        xf86vmode.XF86VidModeSetViewPort(self.display._display,  self.display.x_screen, 0, 0)
+        xf86vmode.XF86VidModeSetViewPort(self.display._display, self.display.x_screen, 0, 0)
         xlib.XFlush(self.display._display)
 
         self.width = mode.width
@@ -243,10 +246,9 @@ class XlibScreen(Screen):
                f"width={self.width}, height={self.height}, xinerama={self._xinerama})"
 
 
-
 class XlibScreenMode(ScreenMode):
     def __init__(self, screen, info):
-        super(XlibScreenMode, self).__init__(screen)
+        super().__init__(screen)
         self.info = info
         self.width = info.hdisplay
         self.height = info.vdisplay
@@ -254,7 +256,9 @@ class XlibScreenMode(ScreenMode):
         self.depth = None
 
 
-class XlibCanvas(Canvas):
-    def __init__(self, display, x_window):
-        super(XlibCanvas, self).__init__(display)
+class XlibCanvas(Canvas):  # noqa: D101
+    display: XlibDisplay
+
+    def __init__(self, display: XlibDisplay, x_window: Window) -> None:  # noqa: D107
+        super().__init__(display)
         self.x_window = x_window

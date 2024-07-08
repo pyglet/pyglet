@@ -3,7 +3,10 @@
 Do not modify generated portions of this file.
 """
 
-from ctypes import *
+from ctypes import (
+    CFUNCTYPE, POINTER, Structure, c_size_t, c_ulong, c_float, c_int,
+    c_int64, c_char_p, c_ubyte, c_uint, c_long, Union
+)
 from pyglet.gl.lib import link_GLX as _link_function
 from pyglet.gl.lib import c_void
 
@@ -114,24 +117,10 @@ struct___GLXcontextRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-class struct___GLXcontextRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXcontextRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 GLXContext = POINTER(struct___GLXcontextRec) 	# /usr/include/GL/glx.h:178
 XID = pyglet.libs.x11.xlib.XID
 GLXPixmap = XID 	# /usr/include/GL/glx.h:179
 GLXDrawable = XID 	# /usr/include/GL/glx.h:180
-class struct___GLXFBConfigRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXFBConfigRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
 class struct___GLXFBConfigRec(Structure):
     __slots__ = [
     ]

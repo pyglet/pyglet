@@ -1,14 +1,12 @@
+from __future__ import annotations
+
 import platform
-from ctypes import c_uint32, c_int, byref
-
-from pyglet.gl.base import Config, CanvasConfig, Context
-
-from pyglet.gl import ContextException
+from ctypes import byref, c_int, c_uint32
 
 from pyglet.canvas.cocoa import CocoaCanvas
-
+from pyglet.gl import ContextException
+from pyglet.gl.base import CanvasConfig, Config, Context
 from pyglet.libs.darwin import cocoapy, quartz
-
 
 NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')
 NSOpenGLContext = cocoapy.ObjCClass('NSOpenGLContext')
@@ -37,35 +35,37 @@ mojave:         18.0 -> 18.2
 catalina:       19.0 -> 19.6
 big_sur:        20.0 ->
 """
-os_x_release = {
-    'pre-release':      (0,1),
-    'kodiak':           (1,2,1),
-    'cheetah':          (1,3,1),
-    'puma':             (1,4.1),
-    'jaguar':           (6,0,1),
-    'panther':          (7,),
-    'tiger':            (8,),
-    'leopard':          (9,),
-    'snow_leopard':     (10,),
-    'lion':             (11,),
-    'mountain_lion':    (12,),
-    'mavericks':        (13,),
-    'yosemite':         (14,),
-    'el_capitan':       (15,),
-    'sierra':           (16,),
-    'high_sierra':      (17,),
-    'mojave':           (18,),
-    'catalina':         (19,),
-    'big_sur':          (20,)
+os_x_release: dict[str, tuple[float] | tuple[float, float] | tuple[float, float, float]] = {
+    'pre-release': (0, 1),
+    'kodiak': (1, 2, 1),
+    'cheetah': (1, 3, 1),
+    'puma': (1, 4.1),
+    'jaguar': (6, 0, 1),
+    'panther': (7,),
+    'tiger': (8,),
+    'leopard': (9,),
+    'snow_leopard': (10,),
+    'lion': (11,),
+    'mountain_lion': (12,),
+    'mavericks': (13,),
+    'yosemite': (14,),
+    'el_capitan': (15,),
+    'sierra': (16,),
+    'high_sierra': (17,),
+    'mojave': (18,),
+    'catalina': (19,),
+    'big_sur': (20,),
 }
 
-def os_x_version():
+
+def os_x_version() -> tuple[int, ...]:  # noqa: D103
     version = tuple([int(v) for v in platform.release().split('.')])
 
     # ensure we return a tuple
     if len(version) > 0:
         return version
     return (version,)
+
 
 _os_x_version = os_x_version()
 
@@ -86,7 +86,7 @@ _gl_attributes = {
     'fullscreen': cocoapy.NSOpenGLPFAFullScreen,
     'minimum_policy': cocoapy.NSOpenGLPFAMinimumPolicy,
     'maximum_policy': cocoapy.NSOpenGLPFAMaximumPolicy,
-    'screen_mask' : cocoapy.NSOpenGLPFAScreenMask,
+    'screen_mask': cocoapy.NSOpenGLPFAScreenMask,
 
     # Not supported in current pyglet API
     'color_float': cocoapy.NSOpenGLPFAColorFloat,
@@ -122,12 +122,13 @@ _fake_gl_attributes = {
     'accum_red_size': 0,
     'accum_green_size': 0,
     'accum_blue_size': 0,
-    'accum_alpha_size': 0
+    'accum_alpha_size': 0,
 }
 
-class CocoaConfig(Config):
 
-    def match(self, canvas):
+class CocoaConfig(Config):  # noqa: D101
+
+    def match(self, canvas: CocoaCanvas) -> list[CocoaCanvasConfig]:
         # Construct array of attributes for NSOpenGLPixelFormat
         attrs = []
         for name, value in self.get_gl_attributes():
@@ -186,14 +187,14 @@ class CocoaConfig(Config):
         # Return the match list.
         if pixel_format is None:
             return []
-        else:
-            return [CocoaCanvasConfig(canvas, self, pixel_format)]
+
+        return [CocoaCanvasConfig(canvas, self, pixel_format)]
 
 
-class CocoaCanvasConfig(CanvasConfig):
+class CocoaCanvasConfig(CanvasConfig):  # noqa: D101
 
-    def __init__(self, canvas, config, pixel_format):
-        super(CocoaCanvasConfig, self).__init__(canvas, config)
+    def __init__(self, canvas: CocoaCanvas, config: CocoaConfig, pixel_format: NSOpenGLPixelFormat) -> None:  # noqa: D107
+        super().__init__(canvas, config)
         self._pixel_format = pixel_format
 
         # Query values for the attributes of the pixel format, and then set the
@@ -213,23 +214,23 @@ class CocoaCanvasConfig(CanvasConfig):
             profile = self._pixel_format.getValues_forAttribute_forVirtualScreen_(
                 byref(vals),
                 cocoapy.NSOpenGLPFAOpenGLProfile,
-                0
-                )
+                0,
+            )
 
             if vals.value == cocoapy.NSOpenGLProfileVersion4_1Core:
-                setattr(self, "major_version", 4)
-                setattr(self, "minor_version", 1)
+                self.major_version = 4
+                self.minor_version = 1
             elif vals.value == cocoapy.NSOpenGLProfileVersion3_2Core:
-                setattr(self, "major_version", 3)
-                setattr(self, "minor_version", 2)
+                self.major_version = 3
+                self.minor_version = 2
             else:
-                setattr(self, "major_version", 2)
-                setattr(self, "minor_version", 1)
+                self.major_version = 2
+                self.minor_version = 1
 
-    def create_context(self, share):
+    def create_context(self, share: CocoaContext | None) -> CocoaContext:
         # Determine the shared NSOpenGLContext.
         if share:
-            share_context = share._nscontext
+            share_context = share._nscontext  # noqa: SLF001
         else:
             share_context = None
 
@@ -240,59 +241,60 @@ class CocoaCanvasConfig(CanvasConfig):
 
         return CocoaContext(self, nscontext, share)
 
-    def compatible(self, canvas):
+    def compatible(self, canvas: CocoaCanvas) -> bool:
         return isinstance(canvas, CocoaCanvas)
 
 
-class CocoaContext(Context):
+class CocoaContext(Context):  # noqa: D101
 
-    def __init__(self, config, nscontext, share):
-        super(CocoaContext, self).__init__(config, share)
+    def __init__(self, config: CocoaCanvasConfig, nscontext: NSOpenGLContext, share: CocoaContext | None) -> None:  # noqa: D107
+        super().__init__(config, share)
         self.config = config
         self._nscontext = nscontext
 
-    def attach(self, canvas):
+    def attach(self, canvas: CocoaCanvas) -> None:
         # See if we want OpenGL 3 in a non-Lion OS
         if _os_x_version < os_x_release['lion']:
-            raise ContextException('OpenGL 3 not supported')
+            msg = 'OpenGL 3 not supported'
+            raise ContextException(msg)
 
-        super(CocoaContext, self).attach(canvas)
+        super().attach(canvas)
         # The NSView instance should be attached to a nondeferred window before calling
         # setView, otherwise you get an "invalid drawable" message.
         self._nscontext.setView_(canvas.nsview)
         self._nscontext.view().setWantsBestResolutionOpenGLSurface_(1)
         self.set_current()
 
-    def detach(self):
-        super(CocoaContext, self).detach()
+    def detach(self) -> None:
+        super().detach()
         self._nscontext.clearDrawable()
 
-    def set_current(self):
+    def set_current(self) -> None:
         self._nscontext.makeCurrentContext()
-        super(CocoaContext, self).set_current()
+        super().set_current()
 
-    def update_geometry(self):
+    def update_geometry(self) -> None:
         # Need to call this method whenever the context drawable (an NSView)
         # changes size or location.
         self._nscontext.update()
 
-    def set_full_screen(self):
+    def set_full_screen(self) -> None:
         self._nscontext.makeCurrentContext()
         self._nscontext.setFullScreen()
 
-    def destroy(self):
-        super(CocoaContext, self).destroy()
+    def destroy(self) -> None:
+        super().destroy()
         self._nscontext.release()
         self._nscontext = None
 
-    def set_vsync(self, vsync=True):
+    def set_vsync(self, vsync: bool=True) -> None:
         vals = c_int(vsync)
         self._nscontext.setValues_forParameter_(byref(vals), cocoapy.NSOpenGLCPSwapInterval)
 
-    def get_vsync(self):
+    def get_vsync(self) -> bool:
         vals = c_int()
         self._nscontext.getValues_forParameter_(byref(vals), cocoapy.NSOpenGLCPSwapInterval)
-        return vals.value
+        return bool(vals.value)
 
-    def flip(self):
+    def flip(self) -> None:
         self._nscontext.flushBuffer()
