@@ -3,7 +3,7 @@
 These extend and correct ctypes functions.
 """
 # ruff: noqa: ANN002, ANN003, ANN204, ARG002, T201
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 import os
 import re

@@ -47,7 +47,7 @@ This avoids a common programmer error when porting applications between platform
 The default path is ``['.']``.  If you modify the path, you must call
 :py:func:`reindex`.
 """
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 import os
 import sys

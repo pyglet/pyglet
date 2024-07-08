@@ -35,7 +35,7 @@ Refer to the Programming Guide for advanced usage of the document and layout
 classes, including interactive editing, embedding objects within documents and
 creating scrollable layouts.
 """
-from __future__ import annotations # noqa: I001
+from __future__ import annotations
 
 from abc import abstractmethod
 from os.path import dirname as _dirname # pyright: ignore reportShadowedImports

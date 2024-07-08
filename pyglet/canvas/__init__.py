@@ -35,19 +35,19 @@ if _is_pyglet_doc_run:
 else:
     from pyglet import compat_platform, options
     if options['headless']:
-        from pyglet.canvas.headless import HeadlessDisplay as Display  # noqa: I001
+        from pyglet.canvas.headless import HeadlessDisplay as Display
         from pyglet.canvas.headless import HeadlessScreen as Screen
         from pyglet.canvas.headless import HeadlessCanvas as Canvas
     elif compat_platform == 'darwin':
-        from pyglet.canvas.cocoa import CocoaDisplay as Display  # noqa: I001
+        from pyglet.canvas.cocoa import CocoaDisplay as Display
         from pyglet.canvas.cocoa import CocoaScreen as Screen
         from pyglet.canvas.cocoa import CocoaCanvas as Canvas
     elif compat_platform in ('win32', 'cygwin'):
-        from pyglet.canvas.win32 import Win32Display as Display  # noqa: I001
+        from pyglet.canvas.win32 import Win32Display as Display
         from pyglet.canvas.win32 import Win32Screen as Screen
         from pyglet.canvas.win32 import Win32Canvas as Canvas
     else:
-        from pyglet.canvas.xlib import XlibDisplay as Display  # noqa: I001
+        from pyglet.canvas.xlib import XlibDisplay as Display
         from pyglet.canvas.xlib import XlibScreen as Screen
         from pyglet.canvas.xlib import XlibCanvas as Canvas
 

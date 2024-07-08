@@ -116,7 +116,7 @@ the particular class documentation.
         dispatcher.push_handlers(my_handler_instance)
 
 """
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 import inspect
 import os.path

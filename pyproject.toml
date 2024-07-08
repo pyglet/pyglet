@@ -42,6 +42,7 @@ ignore = [
     "TRY",    # no triceratops.
     "NPY",    # remove numpy
     "Q000",   # double quotes
+    "I001",   # Ignore import order
 ]
 
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
@@ -80,6 +81,9 @@ inline-quotes = 'single'
 "examples/*" = [
     "I",
     "D",
+    "B",
+    "W",
+    "S",
     "ANN",
     "ARG",
     "E501",

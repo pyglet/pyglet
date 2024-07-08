@@ -1,5 +1,5 @@
 """Holds type aliases used throughout the codebase."""
-import ctypes  # noqa: I001
+import ctypes
 import sys
 
 from typing import Union, Literal

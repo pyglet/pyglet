@@ -44,7 +44,7 @@ by default:
 
 The information modules are provided for convenience, and are documented below.
 """
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 import sys as _sys
 

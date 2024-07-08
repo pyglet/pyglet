@@ -17,7 +17,7 @@ Or, if using more than one display::
 
 """
 
-from __future__ import annotations  # noqa: I001
+from __future__ import annotations
 
 from ctypes import byref, c_int
 from typing import TYPE_CHECKING
