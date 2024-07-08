@@ -217,8 +217,8 @@ def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None
 
     # Quick fix for preventing the scaling factors from getting out of hand
     # with extreme angles.
-    scale1 = min(scale1,2.0 * thickness)
-    scale2 = min(scale2,2.0 * thickness)
+    scale1 = min(scale1, 2.0 * thickness)
+    scale2 = min(scale2, 2.0 * thickness)
 
     # Make these tuples instead of Vec2 because accessing
     # members of Vec2 is suprisingly slow
