@@ -13,8 +13,11 @@ from pyglet.math import Vec2
 
 
 def test_create():
+    assert Vec2
     assert Vec2(1, 2) == Vec2(1, 2)
     # assert Vec2(1) == Vec2(1, 1)  # not supported
+    with pytest.raises(TypeError):
+        Vec2(1, 2, 3)
 
 
 def test_access():
@@ -154,15 +157,27 @@ def test_truediv():
     v /= (2, 2)
     assert v == Vec2(1, 2)
 
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) / Vec2(0, 0)
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) / (0, 0)
+    with pytest.raises(ZeroDivisionError):
+        (1, 2) / Vec2(0, 0)
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) / 0
+    with pytest.raises(ZeroDivisionError):
+        v = Vec2(1, 2)
+        v /= 0
+
 
 def test_floordiv():
-    assert Vec2(2, 4) // Vec2(2, 2) == Vec2(1, 2)
+    assert Vec2(2.5, 4.5) // Vec2(2, 2) == Vec2(1, 2)
 
-    assert Vec2(2, 4) // 2 == Vec2(1, 2)
-    assert 4 // Vec2(2, 4) == Vec2(2, 1)
+    assert Vec2(2.5, 4.5) // 2 == Vec2(1, 2)
+    assert 4.2 // Vec2(2, 4) == Vec2(2, 1)
 
-    assert (1, 2) / Vec2(0.5, 0.5) == Vec2(2, 4)
-    assert Vec2(1, 2) / (0.5, 0.5) == Vec2(2, 4)
+    assert (1, 2) // Vec2(0.5, 0.5) == Vec2(2, 4)
+    assert Vec2(1, 2) // (0.5, 0.5) == Vec2(2, 4)
 
     v = Vec2(4, 8)
     v //= 2
@@ -176,27 +191,39 @@ def test_floordiv():
     v //= (2, 2)
     assert v == Vec2(2, 4)
 
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) // Vec2(0, 0)
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) // (0, 0)
+    with pytest.raises(ZeroDivisionError):
+        (1, 2) // Vec2(0, 0)
+    with pytest.raises(ZeroDivisionError):
+        Vec2(1, 2) // 0
+    with pytest.raises(ZeroDivisionError):
+        v = Vec2(1, 2)
+        v //= 0
+
 
 def test_length():
-    assert Vec2(1, 0).length == 1
-    assert Vec2(0, 1).length == 1
+    assert Vec2(1, 0).length() == 1
+    assert Vec2(0, 1).length() == 1
 
-    assert Vec2(3, 0).length == 3
-    assert Vec2(0, 3).length == 3
+    assert Vec2(3, 0).length() == 3
+    assert Vec2(0, 3).length() == 3
 
-    assert Vec2(1, 1).length == pytest.approx(1.41421, abs=1e-5)
-    assert Vec2(-1, -1).length == pytest.approx(1.41421, abs=1e-5)
+    assert Vec2(1, 1).length() == pytest.approx(1.41421, abs=1e-5)
+    assert Vec2(-1, -1).length() == pytest.approx(1.41421, abs=1e-5)
 
 
 def test_length_squared():
-    assert Vec2(1, 0).length_squared == 1
-    assert Vec2(0, -1).length_squared == 1
+    assert Vec2(1, 0).length_squared() == 1
+    assert Vec2(0, -1).length_squared() == 1
 
-    assert Vec2(3, 0).length_squared == 9
-    assert Vec2(0, 3).length_squared == 9
+    assert Vec2(3, 0).length_squared() == 9
+    assert Vec2(0, 3).length_squared() == 9
 
-    assert Vec2(1, 1).length_squared == 2
-    assert Vec2(-1, -1).length_squared == 2
+    assert Vec2(1, 1).length_squared() == 2
+    assert Vec2(-1, -1).length_squared() == 2
 
 
 def test_abs():
@@ -215,6 +242,30 @@ def test_round():
     assert round(Vec2(1.1, 2.2), 1) == Vec2(1.1, 2.2)
 
 
+def test_ceil():
+    assert math.ceil(Vec2(1.1, 2.2)) == Vec2(2, 3)
+
+
+def test_floor():
+    assert math.floor(Vec2(1.1, 2.2)) == Vec2(1, 2)
+
+
+def test_trunc():
+    assert math.trunc(Vec2(1.1, 2.2)) == Vec2(1, 2)
+
+
+def test_mod():
+    assert Vec2(3, 4) % Vec2(2, 2) == Vec2(1, 0)
+    assert Vec2(3, 4) % 2 == Vec2(1, 0)
+
+    assert Vec2(5.3, 4.7) % 2 == pytest.approx(Vec2(1.3, 0.7), abs=1e-5)
+
+
+def test_pow():
+    assert Vec2(2, 3) ** Vec2(2, 3) == Vec2(4, 27)
+    assert Vec2(2, 3) ** 2 == Vec2(4, 9)
+
+
 def test_lt():
     """Compares the length of the vectors."""
     assert Vec2(1, 2) < Vec2(2, 3)
@@ -229,9 +280,9 @@ def test_sum():
 
 def test_from_polar():
     """Create a vector from polar coordinates."""
-    assert Vec2.from_polar(mag=1, angle=math.radians(90)) == pytest.approx(Vec2(0, 1), abs=1e-5)
-    assert Vec2.from_polar(mag=1, angle=math.radians(180)) == pytest.approx(Vec2(-1, 0), abs=1e-5)
-    assert Vec2.from_polar(mag=1, angle=math.radians(270)) == pytest.approx(Vec2(0, -1), abs=1e-5)
+    assert Vec2.from_polar(math.radians(90)) == pytest.approx(Vec2(0, 1), abs=1e-5)
+    assert Vec2.from_polar(math.radians(180)) == pytest.approx(Vec2(-1, 0), abs=1e-5)
+    assert Vec2.from_polar(math.radians(270)) == pytest.approx(Vec2(0, -1), abs=1e-5)
 
 
 def test_from_heading():
@@ -243,10 +294,10 @@ def test_from_heading():
 
 
 def test_heading():
-    assert Vec2(1, 0).heading == 0
-    assert Vec2(0, 1).heading == math.radians(90)
-    assert Vec2(-1, 0).heading == math.radians(180)
-    assert Vec2(0, -1).heading == math.radians(-90)
+    assert Vec2(1, 0).heading() == 0
+    assert Vec2(0, 1).heading() == math.radians(90)
+    assert Vec2(-1, 0).heading() == math.radians(180)
+    assert Vec2(0, -1).heading() == math.radians(-90)
 
 
 def test_lerp():
@@ -303,6 +354,9 @@ def test_clamp():
     assert Vec2(-10, 10).clamp(5, 15) == Vec2(5, 10)
     assert Vec2(-10, 10).clamp(5, 5) == Vec2(5, 5)
 
+    assert Vec2(-10, 10).clamp(Vec2(-20, -20), Vec2(20, 20)) == Vec2(-10, 10)
+    assert Vec2(-10, 10).clamp(Vec2(-5, 5), Vec2(5, 5)) == Vec2(-5, 5)
+
 
 def test_dot():
     assert Vec2(1, 0).dot(Vec2(1, 0)) == 1  # same direction
@@ -312,3 +366,8 @@ def test_dot():
     assert Vec2(-1, 0).dot((-1, 0)) == 1  # same direction
     assert Vec2(-1, 0).dot((0, -1)) == 0  # perpendicular
     assert Vec2(-1, -2).dot((-3, -4)) == 11
+
+
+def test_index():
+    with pytest.raises(NotImplementedError):
+        Vec2(0).index(0)
