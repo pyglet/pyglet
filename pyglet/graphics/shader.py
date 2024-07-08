@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import warnings
+import weakref
+from collections import defaultdict
 from ctypes import (
     POINTER, Structure, addressof, byref, c_buffer, c_byte, c_char, c_char_p, c_double, c_float, c_int,
     c_short, c_ubyte, c_uint, c_ushort, cast, create_string_buffer, pointer, sizeof, string_at, Array,
 )
 from typing import Sequence, Callable, Any, TYPE_CHECKING, Literal, Union, Type
-from weakref import proxy
 
 from _ctypes import _SimpleCData, _Pointer
 
@@ -486,36 +487,146 @@ class _Uniform:
         return f"Uniform(type={self.type}, size={self.size}, location={self.location})"
 
 
+def get_maximum_binding_count() -> int:
+    """The maximum binding value that can be used for this hardware."""
+    val = gl.GLint()
+    gl.glGetIntegerv(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS, byref(val))
+    return val.value
+
+
+class _UBOBindingManager:
+    """Manages the global Uniform Block binding assignments in the OpenGL context."""
+    _in_use: set[int]
+    _pool: list[int]
+    _max_binding_count: int
+    _ubo_names: dict[str, int]
+    _ubo_programs: defaultdict[Any, weakref.WeakSet[ShaderProgram]]
+
+    def __init__(self) -> None:
+        self._ubo_programs = defaultdict(weakref.WeakSet)
+        # Reserve 'WindowBlock' for 0.
+        self._ubo_names = {'WindowBlock': 0}
+        self._max_binding_count = get_maximum_binding_count()
+        self._pool = list(range(1, self._max_binding_count))
+        self._in_use = {0}
+
+    @property
+    def max_value(self) -> int:
+        return self._max_binding_count
+
+    def get_name(self, binding: int) -> str | None:
+        """Return the uniform name associated with the binding number."""
+        for name, current_binding in self._ubo_names.items():
+            if binding == current_binding:
+                return name
+        return None
+
+    def binding_exists(self, binding: int) -> bool:
+        """Check if a binding index value is in use."""
+        return binding in self._in_use
+
+    def add_explicit_binding(self, shader_program: ShaderProgram, ub_name: str, binding: int) -> None:
+        """Used when a uniform block has set its own binding point."""
+        self._ubo_programs[ub_name].add(shader_program)
+        self._ubo_names[ub_name] = binding
+        if binding in self._pool:
+            self._pool.remove(binding)
+        self._in_use.add(binding)
+
+    def get_binding(self, shader_program: ShaderProgram, ub_name: str) -> int:
+        """Retrieve a global Uniform Block Binding ID value."""
+        self._ubo_programs[ub_name].add(shader_program)
+
+        if ub_name in self._ubo_names:
+            return self._ubo_names[ub_name]
+
+        self._check_freed_bindings()
+
+        binding = self._get_new_binding()
+        self._ubo_names[ub_name] = binding
+        return binding
+
+    def _check_freed_bindings(self) -> None:
+        """Find and remove any Uniform Block names that no longer have a shader in use."""
+        for ubo_name in list(self._ubo_programs):
+            if ubo_name != 'WindowBlock' and not self._ubo_programs[ubo_name]:
+                del self._ubo_programs[ubo_name]
+                # Return the binding number to the pool.
+                self.return_binding(self._ubo_names[ubo_name])
+                del self._ubo_names[ubo_name]
+
+    def _get_new_binding(self) -> int:
+        if not self._pool:
+            msg = "All Uniform Buffer Bindings are in use."
+            raise ValueError(msg)
+
+        number = self._pool.pop(0)
+        self._in_use.add(number)
+        return number
+
+    def return_binding(self, index: int) -> None:
+        if index in self._in_use:
+            self._pool.append(index)
+            self._in_use.remove(index)
+        else:
+            msg = f"Uniform binding point: {index} is not in use."
+            raise ValueError(msg)
+
+
 class UniformBlock:
     program: CallableProxyType[Callable[..., Any] | Any] | Any
     name: str
     index: int
     size: int
+    binding: int
     uniforms: dict[int, tuple[str, GLDataType, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'program', 'name', 'index', 'size', 'uniforms', 'view_cls'
+    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls'
 
-    def __init__(self, program: ShaderProgram, name: str, index: int, size: int,
+    def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict[int, tuple[str, GLDataType, int]]) -> None:
         """Initialize a uniform block for a ShaderProgram."""
-        self.program = proxy(program)
+        self.program = weakref.proxy(program)
         self.name = name
         self.index = index
         self.size = size
+        self.binding = binding
         self.uniforms = uniforms
         self.view_cls = None
 
-    def create_ubo(self, index: int = 0) -> UniformBufferObject:
-        """Create a new UniformBufferObject from this uniform block.
-
-        Args:
-            index:
-                The uniform buffer index the returned UBO will bind itself to.
-                By default, this is 0.
-        """
+    def create_ubo(self) -> UniformBufferObject:
+        """Create a new UniformBufferObject from this uniform block."""
         if self.view_cls is None:
             self.view_cls = self._introspect_uniforms()
-        return UniformBufferObject(self.view_cls, self.size, index)
+        return UniformBufferObject(self.view_cls, self.size, self.binding)
+
+    def set_binding(self, binding: int) -> None:
+        """Rebind the Uniform Block to a new binding index number.
+
+        This only affects the program this Uniform Block is derived from.
+
+        Binding value of 0 is reserved for the Pyglet's internal uniform block named ``WindowBlock``.
+
+        .. warning:: By setting a binding manually, the user is expected to manage all Uniform Block bindings
+                     for all shader programs manually. Since the internal global ID's will be unaware of changes set
+                     by this function, collisions may occur if you use a lower number.
+
+        .. note:: You must call ``create_ubo`` to get another Uniform Buffer Object after calling this,
+                  as the previous buffers are still bound to the old binding point.
+        """
+        assert binding != 0, "Binding 0 is reserved for the internal Pyglet 'WindowBlock'."
+        assert pyglet.gl.current_context is not None, "No context available."
+        manager: _UBOBindingManager = pyglet.gl.current_context.ubo_manager
+        if binding >= manager.max_value:
+            msg = f"Binding value exceeds maximum allowed by hardware: {manager.max_value}"
+            raise ShaderException(msg)
+        existing_name = manager.get_name(binding)
+        if existing_name and existing_name != self.name:
+            msg = f"Binding: {binding} was in use by {existing_name}, and has been overridden."
+            warnings.warn(msg)
+
+        self.binding = binding
+        gl.glUniformBlockBinding(self.program.id, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
         """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
@@ -572,31 +683,40 @@ class UniformBlock:
 
         return View
 
+    def _actual_binding_point(self) -> int:
+        """Queries OpenGL to find what the bind point currently is."""
+        binding = gl.GLint()
+        gl.glGetActiveUniformBlockiv(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
+        return binding.value
+
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(location={self.index}, size={self.size})"
+        return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
+                f"binding={self.binding})")
 
 
 class UniformBufferObject:
     buffer: BufferObject
     view: Structure
     _view_ptr: CTypesPointer[Structure]
-    index: int
+    binding: int
     buffer: BufferObject
-    __slots__ = 'buffer', 'view', '_view_ptr', 'index'
+    __slots__ = 'buffer', 'view', '_view_ptr', 'binding'
 
-    def __init__(self, view_class: type[Structure], buffer_size: int, index: int) -> None:
+    def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
         """Initialize the Uniform Buffer Object with the specified Structure."""
         self.buffer = BufferObject(buffer_size)
         self.view = view_class()
         self._view_ptr = pointer(self.view)
-        self.index = index
+        self.binding = binding
 
     @property
     def id(self) -> int:
+        """The buffer ID associated with this UBO."""
         return self.buffer.id
 
-    def bind(self, index: int | None = None) -> None:
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.index if index is None else index, self.buffer.id)
+    def bind(self) -> None:
+        """Bind this buffer to the bind point established by the UniformBuffer parent."""
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.binding, self.buffer.id)
 
     def read(self) -> bytes:
         """Read the byte contents of the buffer."""
@@ -615,7 +735,7 @@ class UniformBufferObject:
         self.buffer.set_data(self._view_ptr)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.buffer.id})"
+        return f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding})"
 
 
 # Utility functions:
@@ -771,15 +891,22 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
 
         num_active = gl.GLint()
         block_data_size = gl.GLint()
+        binding = gl.GLint()
 
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+        gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
 
         indices = (gl.GLuint * num_active.value)()
         indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
         uniforms = {}
+
+        if not hasattr(pyglet.gl.current_context, "ubo_manager"):
+            pyglet.gl.current_context.ubo_manager = _UBOBindingManager()
+
+        manager = pyglet.gl.current_context.ubo_manager
 
         for block_uniform_index in indices:
             uniform_name, u_type, u_size = _query_uniform(program_id, block_uniform_index)
@@ -793,10 +920,25 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
             gl_type, _, _, length = _uniform_setters[u_type]
             uniforms[block_uniform_index] = (uniform_name, gl_type, length)
 
-        uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, uniforms)
-        # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
-        # one would be crazy enough to use more than 36 uniform blocks, right?
-        gl.glUniformBlockBinding(program_id, index, index)
+        binding_index = binding.value
+        if pyglet.options.shader_bind_management:
+            # If no binding is specified in GLSL, then assign it internally.
+            if binding.value == 0:
+                binding_index = manager.get_binding(program, name)
+
+                # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
+                # one would be crazy enough to use more than 36 uniform blocks, right?
+                gl.glUniformBlockBinding(program_id, index, binding_index)
+            else:
+                # If a binding was manually set in GLSL, just check if the values collide to warn the user.
+                _block_name = manager.get_name(binding.value)
+                if _block_name and _block_name != name:
+                    msg = (f"{program} explicitly set '{name}' to {binding.value} in the shader. '{_block_name}' has "
+                           f"been overridden.")
+                    warnings.warn(msg)
+                manager.add_explicit_binding(program, name, binding.value)
+
+        uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, binding_index, uniforms)
 
         if _debug_gl_shaders:
             for block in uniform_blocks.values():
@@ -1287,7 +1429,7 @@ class ComputeShaderProgram:
         return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
 
     @property
-    def uniform_blocks(self) -> dict:
+    def uniform_blocks(self) -> dict[str, UniformBlock]:
         return self._uniform_blocks
 
     def use(self) -> None:
