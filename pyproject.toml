@@ -41,6 +41,10 @@ ignore = [
     "TRY",  # no triceratops.
     "NPY",  # remove numpy
     "Q000",  # double quotes
+    "EM101",  # String literals in exception
+    "B028",  # No explicit stack level in warn
+    "FIX002",  # Fixme
+    "TD003",  # Missing issue link on the line following this TODO"
 ]
 
 [tool.ruff.lint.isort]
@@ -56,10 +60,6 @@ inline-quotes = "single"
 [tool.ruff.format]
 quote-style = "preserve"
 indent-style = "space"
-
-[tool.ruff.flake8-quotes]
-inline-quotes = 'single'
-
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore doc requirements, naming, arguments in platform and lib files.
