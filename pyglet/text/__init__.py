@@ -350,7 +350,7 @@ class Label(DocumentLabel):
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
-            font_name: str | None = None, font_size: int | None = None,
+            font_name: str | None = None, font_size: float | None = None,
             bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
