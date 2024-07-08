@@ -215,6 +215,11 @@ def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None
         v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
         scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
 
+    # Quick fix for preventing the scaling factors from getting out of hand
+    # with extreme angles.
+    scale1 = min(scale1, 2.0 * thickness)
+    scale2 = min(scale2, 2.0 * thickness)
+
     # Make these tuples instead of Vec2 because accessing
     # members of Vec2 is suprisingly slow
     miter1_scaled_p = (v_miter1.x * scale1, v_miter1.y * scale1)
