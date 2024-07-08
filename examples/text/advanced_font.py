@@ -1,5 +1,7 @@
-"""Example of advanced font rendering features."""
-# ruff: noqa: E501
+"""Example of advanced font rendering features.
+mostliky for windows with DirectWrite, other than that, might not work as expected."""
+
+import warnings
 import pyglet
 import os
 
@@ -13,6 +15,8 @@ if os.name == "nt":
     D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE = 2 # same as default
     D2D1_TEXT_ANTIALIAS_MODE_ALIASED = 3 # looks worse than grayscale
     DirectWriteGlyphRenderer.antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
+else:
+    warnings.warn("This example works best on Windows with DirectWrite, other platforms might not work as expected.")
 
 window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()
@@ -32,12 +36,17 @@ segoe_ui_light = pyglet.text.Label("Hello World 🥳👍", font_name="Segoe UI",
 segoe_ui = pyglet.text.Label("Hello World 😀✌", font_name="Segoe UI", font_size=25, x=50, y=10, batch=batch)
 
 if os.name == "nt":
-    # On Windows DirectWrite can render directly to an image for special cases!
-    # Note: Labels are recommended unless you know what you are doing, or if you use these in a limited fashion.
-    font = pyglet.font.load("Segoe UI")
-    image = font.render_to_image("I am rendered as a texture! 🌎", 100, 300) # pyright: ignore reportAttributeAccessIssue
-    sprite = pyglet.sprite.Sprite(image, x=400, y=400, batch=batch)
-    sprite.rotation = 45
+    if not pyglet.options.win32_gdi_font: # pyright: ignore reportAttributeAccessIssue
+        # On Windows DirectWrite can render directly to an image for special cases!
+        # Note: Labels are recommended unless you know what you are doing, or if you use these in a limited fashion.
+        font = pyglet.font.load("Segoe UI")
+        image = font.render_to_image("I am rendered as a texture! 🌎", 100, 300) # pyright: ignore reportAttributeAccessIssue
+        sprite = pyglet.sprite.Sprite(image, x=400, y=400, batch=batch)
+        sprite.rotation = 45
+    else:
+        warnings.warn("Text into image rendering is only with DirectWrite enabled, GDI can't do it")
+else:
+    warnings.warn("Text into image rendering is only supported on Windows with DirectWrite enabled.")
 
 
 @window.event
