@@ -43,6 +43,7 @@ ignore = [
     "NPY",    # remove numpy
     "Q000",   # double quotes
     "I001",   # Ignore import order
+    "ERA001", # allow commented-out code
 ]
 
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
