@@ -17,6 +17,7 @@ Home = "https://pyglet.org"
 line-length = 120
 indent-width = 4
 target-version = "py38"
+exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*", "tests"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -42,8 +43,6 @@ ignore = [
     "Q000",  # double quotes
 ]
 
-exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
-
 [tool.ruff.lint.isort]
 known-first-party = ["pyglet"]
 required-imports = ["from __future__ import annotations"]
@@ -60,6 +59,7 @@ indent-style = "space"
 
 [tool.ruff.flake8-quotes]
 inline-quotes = 'single'
+
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore doc requirements, naming, arguments in platform and lib files.
