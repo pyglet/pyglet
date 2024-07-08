@@ -107,7 +107,7 @@ if TYPE_CHECKING:
     from pyglet.gl import CanvasConfig, Config, Context
     from pyglet.text import Label
 
-_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
+_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run # pyright: ignore reportAttributeAccessIssue
 
 
 class WindowException(Exception):
@@ -1792,3 +1792,26 @@ else:
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()  # noqa: SLF001
+
+
+__all__ = (
+    # imported  # noqa: ERA001
+    "event",
+    "key",
+    # classes  # noqa: ERA001
+    "BaseWindow",
+    "Window",
+    "MouseCursor",
+    "DefaultMouseCursor",
+    "ImageMouseCursor",
+    "FPSDisplay",
+    # functions  # noqa: ERA001
+    "_ViewEventHandler",
+    # errors  # noqa: ERA001
+    "WindowException",
+    "NoSuchScreenModeException",
+    "NoSuchDisplayException",
+    "NoSuchConfigException",
+    "MouseCursorException",
+
+)
