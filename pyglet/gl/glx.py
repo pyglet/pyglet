@@ -2,7 +2,6 @@
 
 Do not modify generated portions of this file.
 """
-# ruff: noqa: N816, I001, N801, E501
 from __future__ import annotations
 
 from ctypes import (
