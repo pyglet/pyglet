@@ -107,7 +107,7 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            bold: bool = False, italic: bool = False, stretch: bool = False, dpi: int = 96, locale: str | None = None,
+            bold: bool = False, italic: bool = False, stretch: bool = False, dpi: float = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -180,7 +180,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
             ascent: int | None = None, descent: int | None = None, bold: bool = False, italic: bool = False,
-            stretch: bool = False, dpi: int = 96, locale: str | None = None) -> None:
+            stretch: bool = False, dpi: float = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 
         Args:
