@@ -1805,8 +1805,6 @@ __all__ = (
     "DefaultMouseCursor",
     "ImageMouseCursor",
     "FPSDisplay",
-    # functions  # noqa: ERA001
-    "_ViewEventHandler",
     # errors  # noqa: ERA001
     "WindowException",
     "NoSuchScreenModeException",
