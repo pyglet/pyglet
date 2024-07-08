@@ -440,26 +440,26 @@ if TYPE_CHECKING:
         window,
     )
 else:
-    app = _ModuleProxy("app") # type: ignore
-    canvas = _ModuleProxy("canvas") # type: ignore
-    clock = _ModuleProxy("clock") # type: ignore
-    customtypes = _ModuleProxy("customtypes") # type: ignore
-    event = _ModuleProxy("event") # type: ignore
-    font = _ModuleProxy("font") # type: ignore
-    gl = _ModuleProxy("gl") # type: ignore
-    graphics = _ModuleProxy("graphics") # type: ignore
-    gui = _ModuleProxy("gui") # type: ignore
-    image = _ModuleProxy("image") # type: ignore
-    input = _ModuleProxy("input") # noqa: A001 TODO: change this name # type: ignore
-    lib = _ModuleProxy("lib") # type: ignore
-    math = _ModuleProxy("math") # type: ignore
-    media = _ModuleProxy("media") # type: ignore
-    model = _ModuleProxy("model") # type: ignore
-    resource = _ModuleProxy("resource") # type: ignore
-    sprite = _ModuleProxy("sprite") # type: ignore
-    shapes = _ModuleProxy("shapes") # type: ignore
-    text = _ModuleProxy("text") # type: ignore
-    window = _ModuleProxy("window") # type: ignore
+    app = _ModuleProxy("app")  # type: ignore
+    canvas = _ModuleProxy("canvas")  # type: ignore
+    clock = _ModuleProxy("clock")  # type: ignore
+    customtypes = _ModuleProxy("customtypes")  # type: ignore
+    event = _ModuleProxy("event")  # type: ignore
+    font = _ModuleProxy("font")  # type: ignore
+    gl = _ModuleProxy("gl")  # type: ignore
+    graphics = _ModuleProxy("graphics")  # type: ignore
+    gui = _ModuleProxy("gui")  # type: ignore
+    image = _ModuleProxy("image")  # type: ignore
+    input = _ModuleProxy("input") # noqa: A001 TODO: change this name  # type: ignore
+    lib = _ModuleProxy("lib")  # type: ignore
+    math = _ModuleProxy("math")  # type: ignore
+    media = _ModuleProxy("media")  # type: ignore
+    model = _ModuleProxy("model")  # type: ignore
+    resource = _ModuleProxy("resource")  # type: ignore
+    sprite = _ModuleProxy("sprite")  # type: ignore
+    shapes = _ModuleProxy("shapes")  # type: ignore
+    text = _ModuleProxy("text")  # type: ignore
+    window = _ModuleProxy("window")  # type: ignore
 
 # Call after creating proxies:
 if options["debug_trace"]:
