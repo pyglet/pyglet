@@ -3,20 +3,21 @@
 import pyglet
 import os
 
-# On Windows, it's possible to change the font anti-aliasing mode.
-# Uncomment the below lines to set the options:
-#
-from pyglet.font.directwrite import DirectWriteGlyphRenderer
-D2D1_TEXT_ANTIALIAS_MODE_DEFAULT = 0
-D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE = 1 # not working?
-D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE = 2 # same as default
-D2D1_TEXT_ANTIALIAS_MODE_ALIASED = 3 # looks worse than grayscale
-DirectWriteGlyphRenderer.antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
+if os.name == "nt":
+    # On Windows, it's possible to change the font anti-aliasing mode.
+    # Uncomment the below lines to set the options:
+    #
+    from pyglet.font.directwrite import DirectWriteGlyphRenderer
+    D2D1_TEXT_ANTIALIAS_MODE_DEFAULT = 0
+    D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE = 1 # not working?
+    D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE = 2 # same as default
+    D2D1_TEXT_ANTIALIAS_MODE_ALIASED = 3 # looks worse than grayscale
+    DirectWriteGlyphRenderer.antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
 
 window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()
 
-float_font_size = pyglet.text.Label("Hello World on size 14.1", font_name="Arial", font_size=14.1, x=50, y=500, batch=batch)
+float_font_size = pyglet.text.Label("Hello World on size 15.1", font_name="Arial", font_size=15.1, x=30, y=500, batch=batch)
 float_font_size_1 = pyglet.text.Label("Hello World on size 15", font_name="Arial", font_size=15, x=270, y=500, batch=batch)
 
 arial_bold = pyglet.text.Label("Hello World 👽", font_name="Arial", bold=True, font_size=25, x=50, y=400, batch=batch)
