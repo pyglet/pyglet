@@ -438,10 +438,10 @@ class EventDispatcher:
     def _dump_handlers(self) -> None:
 
         for level, handlers in enumerate(self._event_stack):
-            print(f"level: {level}")  # noqa: T201
+            print(f"level: {level}") 
 
             for event_type, handler in handlers.items():
-                print(f" - '{event_type}': {handler}")  # noqa: T201
+                print(f" - '{event_type}': {handler}") 
 
     # Decorator
 

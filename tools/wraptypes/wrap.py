@@ -227,7 +227,7 @@ def main(*argv) -> None:
 
     (options, args) = op.parse_args(list(argv[1:]))
     if len(args) < 1:
-        print('No header files specified.', file=sys.stderr)  # noqa: T201
+        print('No header files specified.', file=sys.stderr) 
         sys.exit(1)
     headers = args
 

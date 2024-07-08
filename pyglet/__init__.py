@@ -335,17 +335,17 @@ def _trace_frame(thread: int, frame: FrameType, indent: str) -> None:
 
     if indent:
         name = f"Called from {name}"
-    print(f"[{thread}] {indent}{name} {location}") # noqa: T201
+    print(f"[{thread}] {indent}{name} {location}")
 
     if _trace_args:
         if is_ctypes:
             args = [_trace_repr(arg) for arg in frame.f_locals["args"]]
-            print(f'  {indent}args=({", ".join(args)})') # noqa: T201
+            print(f'  {indent}args=({", ".join(args)})')
         else:
             for argname in code.co_varnames[:code.co_argcount]:
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
-                    print(f"  {indent}{argname}={argvalue}") # noqa: T201
+                    print(f"  {indent}{argname}={argvalue}")
                 except: # noqa: S110, E722, PERF203
                     pass
 
@@ -366,7 +366,7 @@ def _thread_trace_func(thread: int) -> Callable[[FrameType, str, Any], object]:
 
         elif event == "exception":
             (exception, value, traceback) = arg
-            print("First chance exception raised:", repr(exception)) # noqa: T201
+            print("First chance exception raised:", repr(exception))
 
     return _trace_func
 

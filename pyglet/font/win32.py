@@ -377,7 +377,7 @@ class GDIPlusFont(Win32Font):
         # Then in system collection:
         if not family:
             if _debug_font:
-                print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}")  # noqa: T201
+                print(f"Warning: Font '{name}' was not found. Defaulting to: {self._default_name}") 
 
             gdiplus.GdipCreateFontFamilyFromName(name, None, ctypes.byref(family))
 

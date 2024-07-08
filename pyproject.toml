@@ -44,6 +44,7 @@ ignore = [
     "Q000",   # double quotes
     "I001",   # Ignore import order
     "ERA001", # allow commented-out code
+    "T201",   # allow writing print
 ]
 
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
@@ -92,6 +93,8 @@ inline-quotes = 'single'
     "INP001",
     "F811",
     "PLW0602",
+    "PLW0604",
+    "SLF001",
     "ERA001",
     "F405",
 ]
