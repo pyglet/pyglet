@@ -38,8 +38,8 @@ creating scrollable layouts.
 from __future__ import annotations # noqa: I001
 
 from abc import abstractmethod
-from os.path import dirname as _dirname
-from os.path import splitext as _splitext
+from os.path import dirname as _dirname # pyright: ignore reportShadowedImports
+from os.path import splitext as _splitext # pyright: ignore reportShadowedImports
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
