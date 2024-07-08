@@ -6,7 +6,6 @@ from __future__ import annotations  # noqa: I001
 
 import os
 import sys
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -234,6 +233,15 @@ class Options:
     other odd behavior can be seen with the standard event loop such as randomly crashing from events.
 
     .. versionadded:: 2.0.5"""
+
+    shader_bind_management: bool = True
+    """If ``True``, this will enable internal management of Uniform Block bindings for
+     :py:class:`~pyglet.graphics.shader.ShaderProgram`'s.
+
+    If ``False``, bindings will not be managed by Pyglet. The user will be responsible for either setting the binding
+    points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.
+
+    .. versionadded:: 2.0.16"""
 
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
