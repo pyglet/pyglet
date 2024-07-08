@@ -41,7 +41,7 @@ if os.name == "nt":
 
 
 @window.event
-def on_draw() -> None:  # noqa: D103
+def on_draw():
     window.clear()
     batch.draw()
 

@@ -21,7 +21,7 @@ center_image(bullet_image)
 asteroid_image = pyglet.resource.image("asteroid.png")
 center_image(asteroid_image)
 
-# The engine flame should not be centered on the ship. Rather, it should be shown 
+# The engine flame should not be centered on the ship. Rather, it should be shown
 # behind it. To achieve this effect, we just set the anchor point outside the
 # image bounds.
 engine_image = pyglet.resource.image("engine_flame.png")

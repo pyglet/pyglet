@@ -10,7 +10,6 @@ A message will be printed to stdout when the following events are caught:
 
 """
 
-from __future__ import print_function
 
 import pyglet
 

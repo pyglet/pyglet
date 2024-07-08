@@ -15,7 +15,7 @@ window = pyglet.window.Window(fullscreen=True)
 
 class Timer:
     def __init__(self):
-        self.label = pyglet.text.Label('00:00', font_size=360, 
+        self.label = pyglet.text.Label('00:00', font_size=360,
                                        x=window.width//2, y=window.height//2,
                                        anchor_x='center', anchor_y='center')
         self.reset()

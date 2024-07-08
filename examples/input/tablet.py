@@ -39,7 +39,7 @@ def on_text(text):
     @canvas.event
     def on_enter(cursor):
         print(f'{name}: on_enter({cursor!r})')
-        
+
 
     @canvas.event
     def on_leave(cursor):

@@ -28,7 +28,6 @@ import pyglet
 from pyglet.graphics import Group
 from pyglet.math import Vec2
 
-from typing import Optional
 
 
 class CameraGroup(Group):
@@ -122,13 +121,13 @@ if __name__ == "__main__":
     # Create some "UI"
     ui_text = pyglet.text.Label(
         "Simply don't add to the group to make UI static (like this)",
-        anchor_y="bottom", batch=batch
+        anchor_y="bottom", batch=batch,
     )
     position_text = pyglet.text.Label(
         "",
         x=window.width,
         anchor_x="right", anchor_y="bottom",
-        batch=batch
+        batch=batch,
     )
 
     @window.event
