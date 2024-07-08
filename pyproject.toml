@@ -38,7 +38,6 @@ ignore = [
     "ANN401", # Allow Any as type annotation
     "D105",   # Allow no docstring magic method.
     "SIM108", # Simplify if/else is not always best.
-    "PTH",    # don't require pathlib. Add eventually?
     "TRY",    # no triceratops.
     "NPY",    # remove numpy
     "Q000",   # double quotes
