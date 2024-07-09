@@ -1,3 +1,10 @@
+# mypy: ignore-errors
+# Even when the notoriously picky pyright reports 0 errors, mypy will
+# incorrectly report plenty because:
+# 1. This file contains typing.NamedTuple subclasses
+# 2. The mypy stance on NamedTuple is "Duplicate of #5613, still low
+#    priority, better use dataclasses, as suggested above.", per
+#    https://github.com/python/mypy/issues/5944#issuecomment-441285456
 """Matrix and Vector math.
 
 .. WARNING! DO NOT TRY TO MAKE THIS FILE "PRETTIER"!
