@@ -66,9 +66,15 @@ class Vec2(_typing.NamedTuple):
 
     def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self[0] * scalar[0], self[1] * scalar[1])
+            return Vec2(
+                self[0] * scalar[0],  # type: ignore
+                self[1] * scalar[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] * scalar, self[1] * scalar)
+            return Vec2(
+                self[0] * scalar,  # type: ignore
+                self[1] * scalar  # type: ignore
+            )
 
     def __rmul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
