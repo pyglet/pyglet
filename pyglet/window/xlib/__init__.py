@@ -762,6 +762,7 @@ class XlibWindow(BaseWindow):
         super().set_exclusive_mouse(exclusive)
         self._update_exclusivity()
 
+    def set_exclusive_keyboard(self, exclusive: bool = True):
         if exclusive == self._keyboard_exclusive:
             return
 
