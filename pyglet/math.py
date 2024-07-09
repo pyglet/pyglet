@@ -792,7 +792,7 @@ class Mat3(_typing.NamedTuple):
                       d * rep, e * rep, f * rep,
                       g * rep, h * rep, i * rep))
 
-    def __round__(self, ndigits: _typing.Optional[int] = None) -> Mat3:
+    def __round__(self, ndigits: int | None = None) -> Mat3:
         return Mat3(*(round(v, ndigits) for v in self))
 
     def __mul__(self, other: object) -> _typing.NoReturn:
@@ -839,7 +839,7 @@ class Mat3(_typing.NamedTuple):
 
 
 class Mat4(_typing.NamedTuple):
-    """A 4x4 Matrix
+    """A 4x4 Matrix.
 
     `Mat4` is an immutable 4x4 Matrix, which includes most common operators.
     This includes class methods for creating orthogonal and perspective
@@ -952,7 +952,7 @@ class Mat4(_typing.NamedTuple):
                    vector.x, vector.y, vector.z, 1.0)
 
     @classmethod
-    def look_at(cls: Mat4, position: Vec3, target: Vec3, up: Vec3):
+    def look_at(cls: Mat4, position: Vec3, target: Vec3, up: Vec3) -> Mat4:
         """Create a viewing matrix that points toward a target.
 
         This method takes three Vec3s, describing the viewer's position,
