@@ -768,7 +768,6 @@ class Vec4(_typing.NamedTuple):
         def clamp(self, min_val: float, max_val: float) -> Vec4:
             ...
 
-
         @_typing.overload
         def clamp(self, min_val: tuple[float, float, float, float], max_val: tuple[float, float, float, float]) -> Vec4:
             ...
