@@ -1,5 +1,9 @@
 """Matrix and Vector math.
 
+.. WARNING! DO NOT TRY TO MAKE THIS FILE "PRETTIER"!
+..
+.. See the bottom of the docstring to learn why & what to do instead.
+
 This module provides Vector and Matrix objects, including Vec2, Vec3,
 Vec4, Mat3, and Mat4. Most common matrix and vector operations are
 supported. Helper methods are included for rotating, scaling, and
@@ -10,6 +14,20 @@ Matrices behave just like they do in GLSL: they are specified in column-major
 order and multiply on the left of vectors, which are treated as columns.
 
 All objects are immutable and hashable.
+..
+.. The code in this file is ugly and breaks the usual rules for a reason.
+.. Also, this portion of the docstring is a Sphinx comment which doesn't
+.. render in the web documentation.
+.. The code in this file has to have decent performance because:
+.. 1. It's core math code for the library
+.. 2. It has to achieve good developer ergonomics
+.. 3. It has to all of this with decent performance
+.. Unusual style is the price we pay to get all of that because:
+.. 1. pyglet is the world's only pure Python, 0-dependency GL binding
+.. 2. we can't rely on compute shaders to speed things up
+.. Compute shaders only became a core OpenGL in 2017 with v4.6. Plenty
+.. hardware still lacks full support for them, so we claw back every
+.. scrap of performance we can in other ways.
 """
 from __future__ import annotations
 
