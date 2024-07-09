@@ -360,9 +360,17 @@ class Vec3(_typing.NamedTuple):
 
     def __truediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2])
+            return Vec3(
+                self[0] / other[0],  # type: ignore
+                self[1] / other[1],  # type: ignore
+                self[2] / other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] / scalar, self[1] / scalar, self[2] / scalar)
+            return Vec3(
+                 self[0] / other,  # type: ignore
+                 self[1] / other,  # type: ignore
+                 self[2] / other  # type: ignore
+            )
 
     def __rtruediv__(self, other: float | tuple[float, float, float]) -> Vec3:
         try:
