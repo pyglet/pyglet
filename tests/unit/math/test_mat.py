@@ -37,26 +37,26 @@ def inverse(matrix):
     # Any time matrix is changed, so is i.
     for c in range(4):
         # Find and swap pivot row into place
-        if matrix[4*c + c] == 0:
+        if matrix[4 * c + c] == 0:
             for r in range(c + 1, 4):
-                if matrix[4*r + c] != 0:
+                if matrix[4 * r + c] != 0:
                     matrix = _row_swap(matrix, c, r)
                     i = _row_swap(i, c, r)
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
             if r != c:  # not the pivot row
-                r_piv = matrix[4*r + c]
+                r_piv = matrix[4 * r + c]
                 if r_piv != 0:
-                    piv = matrix[4*c + c]
+                    piv = matrix[4 * c + c]
                     scalar = r_piv / piv
                     matrix = _row_mul(matrix, c, scalar)
-                    matrix = row_sub(matrix, c, r)
+                    matrix = _row_sub(matrix, c, r)
                     i = _row_mul(i, c, scalar)
-                    i = row_sub(i, c, r)
+                    i = _row_sub(i, c, r)
 
         # Put matrix in reduced row-echelon form.
-        piv = matrix[4*c + c]
+        piv = matrix[4 * c + c]
         matrix = _row_mul(matrix, c, 1 / piv)
         i = _row_mul(i, c, 1 / piv)
     return i
@@ -65,29 +65,29 @@ def inverse(matrix):
 def _row_swap(matrix, r1, r2):
     lo = min(r1, r2)
     hi = max(r1, r2)
-    values = (matrix[:lo*4]
-              + matrix[hi*4:hi*4 + 4]
-              + matrix[lo*4 + 4:hi*4]
-              + matrix[lo*4:lo*4 + 4]
-              + matrix[hi*4 + 4:])
-    return Mat4(values)
+    values = (matrix[:lo * 4]
+              + matrix[hi * 4:hi * 4 + 4]
+              + matrix[lo * 4 + 4:hi * 4]
+              + matrix[lo * 4:lo * 4 + 4]
+              + matrix[hi * 4 + 4:])
+    return Mat4(*values)
 
 
 def _row_mul(matrix, r, x):
-    values = (matrix[:r*4]
-              + tuple(v * x for v in matrix[r*4:r*4 + 4])
-              + matrix[r*4 + 4:])
-    return Mat4(values)
+    values = (matrix[:r * 4]
+              + tuple(v * x for v in matrix[r * 4:r * 4 + 4])
+              + matrix[r * 4 + 4:])
+    return Mat4(*values)
 
 
 # subtracts r1 from r2
-def row_sub(matrix, r1, r2):
-    row1 = matrix[4*r1:4*r1 + 4]
-    row2 = matrix[4*r2:4*r2 + 4]
-    values = (matrix[:r2*4]
+def _row_sub(matrix, r1, r2):
+    row1 = matrix[4 * r1:4 * r1 + 4]
+    row2 = matrix[4 * r2:4 * r2 + 4]
+    values = (matrix[:r2 * 4]
               + tuple(v2 - v1 for (v1, v2) in zip(row1, row2))
-              + matrix[r2*4 + 4:])
-    return matrix.Mat4(values)
+              + matrix[r2 * 4 + 4:])
+    return Mat4(*values)
 
 
 ############
@@ -100,27 +100,12 @@ def test_mat3_creation(mat3):
                     0, 0, 1)
 
 
-def test_mat3_creation_from_list(mat3):
-    mat3_from_list = Mat3([1, 0, 0,
-                           0, 1, 0,
-                           0, 0, 1])
-    assert mat3_from_list == mat3
-
-
 def test_mat4_creation(mat4):
     assert len(mat4) == 16
     assert mat4 == (1, 0, 0, 0,
                     0, 1, 0, 0,
                     0, 0, 1, 0,
                     0, 0, 0, 1)
-
-
-def test_mat4_creation_from_list(mat4):
-    mat4_from_list = Mat4([1, 0, 0, 0,
-                           0, 1, 0, 0,
-                           0, 0, 1, 0,
-                           0, 0, 0, 1])
-    assert mat4_from_list == mat4
 
 
 def test_mat4_inversion(mat4):
@@ -137,12 +122,12 @@ def test_mat3_inversion(mat3):
     # TODO: add long hand inversion for mat3
     inverse_2 = ~mat3
     # Confirm that Matrix @ its inverse == identity Matrix:
-    assert round(mat3 @ inverse_2, 9) ==  Mat3()
+    assert round(mat3 @ inverse_2, 9) == Mat3()
 
 
 def test_mat3_associative_mul():
-    swap_xy = Mat3((0,1,0, 1,0,0, 0,0,1))
-    scale_x = Mat3((2,0,0, 0,1,0, 0,0,1))
-    v1 = (swap_xy @ scale_x) @ Vec3(0,1,0)
-    v2 = swap_xy @ (scale_x @ Vec3(0,1,0))
+    swap_xy = Mat3(0, 1, 0, 1, 0, 0, 0, 0, 1)
+    scale_x = Mat3(2, 0, 0, 0, 1, 0, 0, 0, 1)
+    v1 = (swap_xy @ scale_x) @ Vec3(0, 1, 0)
+    v2 = swap_xy @ (scale_x @ Vec3(0, 1, 0))
     assert v1 == v2 and abs(v1) != 0
