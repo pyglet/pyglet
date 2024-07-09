@@ -196,7 +196,7 @@ class Vec2(_typing.NamedTuple):
                 self[1] ** other  # type: ignore
             )
 
-    def __lt__(self, other: float | tuple[float, float]) -> bool:
+    def __lt__(self, other: tuple[float, float]) -> bool:
         return self[0] ** 2 + self[0] ** 2 < other[0] ** 2 + other[1] ** 2
 
     @staticmethod
