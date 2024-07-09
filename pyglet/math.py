@@ -851,7 +851,6 @@ class Mat4(_typing.NamedTuple):
 
     .. note:: Matrix multiplication is performed using the "@" operator.
     """
-    __slots__ = ()
 
     a: float = 1.0
     b: float = 0.0
