@@ -120,9 +120,15 @@ class Vec2(_typing.NamedTuple):
 
     def __mod__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] % other[0], self[1] % other[1])
+            return Vec2(
+                self[0] % other[0],  # type: ignore
+                self[1] % other[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] % other, self[1] % other)
+            return Vec2(
+                self[0] % other,  # type: ignore
+                self[1] % other  # type: ignore
+            )
 
     def __pow__(self, other: tuple[float, float] | float) -> Vec2:
         try:
