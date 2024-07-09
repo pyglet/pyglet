@@ -406,7 +406,7 @@ class Vec3(_typing.NamedTuple):
         except TypeError:
             return Vec3(self[0] % other, self[1] % other, self[2] % other)
 
-    def __pow__(self, other: Vec3 | tuple[int, int, int] | float) -> Vec3:
+    def __pow__(self, other: Vec3 | tuple[float, float, float] | float) -> Vec3:
         try:
             return Vec3(self[0] ** other[0], self[1] ** other[1], self[2] ** other[2])
         except TypeError:
