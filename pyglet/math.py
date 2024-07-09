@@ -873,7 +873,7 @@ class Mat4(_typing.NamedTuple):
     p: float = 1.0
 
     @classmethod
-    def orthogonal_projection(cls: Mat4, left: float, right: float, bottom: float, top: float, z_near: float,
+    def orthogonal_projection(cls: _typing.Type[Mat4], left: float, right: float, bottom: float, top: float, z_near: float,
                               z_far: float) -> Mat4:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
 
@@ -899,7 +899,7 @@ class Mat4(_typing.NamedTuple):
                    t_x, t_y, t_z, 1.0)
 
     @classmethod
-    def perspective_projection(cls: Mat4, aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
+    def perspective_projection(cls: _typing.Type[Mat4], aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
         """Create a Mat4 perspective projection matrix for use with OpenGL.
 
         Given a desired aspect ratio, near/far planes, and fov (field of view),
@@ -936,7 +936,7 @@ class Mat4(_typing.NamedTuple):
         return cls().rotate(angle, vector)
 
     @classmethod
-    def from_scale(cls: Mat4, vector: Vec3) -> Mat4:
+    def from_scale(cls: _typing.Type[Mat4], vector: Vec3) -> Mat4:
         """Create a scale matrix from a Vec3."""
         return cls(vector.x, 0.0, 0.0, 0.0,
                    0.0, vector.y, 0.0, 0.0,
@@ -944,7 +944,7 @@ class Mat4(_typing.NamedTuple):
                    0.0, 0.0, 0.0, 1.0)
 
     @classmethod
-    def from_translation(cls: Mat4, vector: Vec3) -> Mat4:
+    def from_translation(cls: _typing.Type[Mat4], vector: Vec3) -> Mat4:
         """Create a translation matrix from a Vec3."""
         return cls(1.0, 0.0, 0.0, 0.0,
                    0.0, 1.0, 0.0, 0.0,
@@ -952,7 +952,7 @@ class Mat4(_typing.NamedTuple):
                    vector.x, vector.y, vector.z, 1.0)
 
     @classmethod
-    def look_at(cls: Mat4, position: Vec3, target: Vec3, up: Vec3) -> Mat4:
+    def look_at(cls: _typing.Type[Mat4], position: Vec3, target: Vec3, up: Vec3) -> Mat4:
         """Create a viewing matrix that points toward a target.
 
         This method takes three Vec3s, describing the viewer's position,
