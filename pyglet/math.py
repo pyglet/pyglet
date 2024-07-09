@@ -348,7 +348,7 @@ class Vec3(_typing.NamedTuple):
                  self[2] - other  # type: ignore
             )
 
-    def __rsub__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+    def __rsub__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
             return Vec3(
                 self[0] - other[0],  # type: ignore
