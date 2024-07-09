@@ -737,17 +737,17 @@ class Vec4(_typing.NamedTuple):
     def __sub__(self, other: Vec4 | tuple[int, int] | float) -> Vec4:
         try:
             return Vec4(
-                other[0] - self[0],  # type: ignore
-                other[1] - self[1],  # type: ignore
-                other[2] - self[2],  # type: ignore
-                other[3] - self[3]  # type: ignore
+                 self[0] - other[0],  # type: ignore
+                 self[1] - other[1],  # type: ignore
+                 self[2] - other[2],  # type: ignore
+                 self[3] - other[3]  # type: ignore
             )
         except TypeError:
             return Vec4(
-                other - self[0],  # type: ignore
-                other - self[1],  # type: ignore
-                other - self[2],  # type: ignore
-                other - self[3]  # type: ignore
+                self[0] - other,  # type: ignore
+                self[1] - other,  # type: ignore
+                self[2] - other,  # type: ignore
+                self[3] - other  # type: ignore
             )
 
     def __rsub__(self, other: Vec4 | tuple[int, int] | float) -> Vec4:
