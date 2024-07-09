@@ -45,6 +45,11 @@ def test_swizzle():
     assert v.wzyx == (4, 3, 2, 1)
     assert v.xxxx == (1, 1, 1, 1)
 
+    with pytest.raises(AttributeError):
+        v.xxxxx
+
+
+
 
 def test_mutability():
     v = Vec4(1, 2, 3, 4)
