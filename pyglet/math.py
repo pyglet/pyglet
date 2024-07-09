@@ -40,7 +40,7 @@ class Vec2(_typing.NamedTuple):
 
     def __add__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] + other[0], self.y + other[1])
+            return Vec2(self[0] + other[0], self[1] + other[1])
         except TypeError:
             return Vec2(self[0] + other, self[1] + other)
 
@@ -185,7 +185,7 @@ class Vec2(_typing.NamedTuple):
                   vector. This should be a value between 0.0 and 1.0. For example:
                   0.5 is the midway point between both vectors.
         """
-        return Vec2(self[0] + (amount * (other[0] - self.x)), self[1] + (amount * (other[1] - self.y)))
+        return Vec2(self[0] + (amount * (other[0] - self.x)), self[1] + (amount * (other[1] - self[1])))
 
     def step(self, edge: tuple[float, float]) -> Vec2:
         """A step function that returns 0.0 for a component if it is less than the edge, and 1.0 otherwise.
@@ -442,7 +442,7 @@ class Vec3(_typing.NamedTuple):
         return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2) + ((other.z - self.z) ** 2))
 
     def normalize(self) -> Vec3:
-        """Return an normalized version of the vector.
+        """Return a normalized version of the vector.
 
         This simply means the vector will have a length of 1.0. If the vector
         has a length of 0, the original vector will be returned.

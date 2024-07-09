@@ -67,14 +67,14 @@ class FPSCamera:
 
         # Look
 
-        if abs(self.controller_look) > self.deadzone:
+        if self.controller_look.length() > self.deadzone:
             # Don't reset the vector to 0,0 because new events don't come
             # in when the analoge stick is held in a steady position.
             look_speed = self.look_speed ** 2 * dt
             self.yaw += self.controller_look.x * look_speed
             self.pitch = clamp(self.pitch + self.controller_look.y * look_speed, -89.0, 89.0)
 
-        if abs(self.mouse_look) > 0.0:
+        if self.mouse_look.length() > 0.0:
             # Reset the vector back to 0 each time, because there is no event
             # for when the mouse stops moving. It will get "stuck" otherwise.
             look_speed = self.look_speed * dt
@@ -88,11 +88,11 @@ class FPSCamera:
 
         # Movement
 
-        if abs(self.controller_move) > self.deadzone:
+        if self.controller_move.length() > self.deadzone:
             self.position += (norm_target * self.controller_move.y +
                               norm_target.cross(self.up).normalize() * self.controller_move.x) * walk_speed
 
-        if abs(self.keybord_move) > 0:
+        if self.keybord_move.length() > 0:
             self.position += (norm_target * self.keybord_move.y +
                               norm_target.cross(self.up).normalize() * self.keybord_move.x) * walk_speed
 
@@ -135,7 +135,7 @@ class FPSCamera:
 
     def on_stick_motion(self, _controller, stick, vector):
         if stick == "leftstick":
-            self.controller_move = self.target * vector.y + self.target.cross(self.up).normalize() * vector.x
+            self.controller_move = vector
 
         elif stick == "rightstick":
             self.controller_look = vector
