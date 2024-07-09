@@ -528,9 +528,19 @@ class Vec4(_typing.NamedTuple):
 
     def __rsub__(self, other: Vec4 | tuple[int, int] | float) -> Vec4:
         try:
-            return Vec4(other[0] - self[0], other[1] - self[1], other[2] - self[2], other[3] - self[3])
+            return Vec4(
+                other[0] - self[0],  # type: ignore
+                other[1] - self[1],  # type: ignore
+                other[2] - self[2],  # type: ignore
+                other[3] - self[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(other - self[0], other - self[1], other - self[2], other - self[3])
+            return Vec4(
+                other - self[0],  # type: ignore
+                other - self[1],  # type: ignore
+                other - self[2],  # type: ignore
+                other - self[3]  # type: ignore
+            )
 
     def __mul__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
