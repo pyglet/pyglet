@@ -354,9 +354,17 @@ class Vec3(_typing.NamedTuple):
 
     def __rmul__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2])
+            return Vec3(
+                self[0] * scalar[0],  # type: ignore
+                self[1] * scalar[1],  # type: ignore
+                self[2] * scalar[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] * scalar, self[1] * scalar, self[2] * scalar)
+            return Vec3(
+                 self[0] * scalar,  # type: ignore
+                 self[1] * scalar,  # type: ignore
+                 self[2] * scalar  # type: ignore
+            )
 
     def __truediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
