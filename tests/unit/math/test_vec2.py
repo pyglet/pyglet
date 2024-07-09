@@ -45,6 +45,10 @@ def test_swizzle():
     assert v.yx == (2, 1)
     assert v.xx == (1, 1)
     assert v.yy == (2, 2)
+    assert v.xyxy == (1, 2, 1, 2)
+
+    with pytest.raises(AttributeError):
+        v.xxxxx
 
 
 def test_mutability():
