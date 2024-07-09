@@ -1043,7 +1043,8 @@ class Vec4(_typing.NamedTuple):
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}\
+                .get(len(attrs)) # type: ignore
             return vec_class(*(self['xyzw'.index(c)] for c in attrs))
         except (ValueError, TypeError) as err:
             msg = f"'Vec4' has no attribute: '{attrs}'."
