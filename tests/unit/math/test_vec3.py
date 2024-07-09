@@ -326,6 +326,11 @@ def test_clamp():
     assert Vec3(-10, 0, 10).clamp(Vec3(-20, 5, 0), Vec3(0, 20, 10)) == Vec3(-10, 5, 10) 
     assert Vec3(-10, 0, 10).clamp(Vec3(0, -5, 0), Vec3(20, 5, 10)) == Vec3(0, 0, 10)
 
+    # Revert if necessary for perf
+    assert Vec3(-1, 50, 50).clamp(Vec3(0, 0, 0), 10) == Vec3(0, 10, 10)
+    assert Vec4(-1, -1, 50).clamp(0, Vec3(10, 10, 10)) == Vec3(0, 0, 10)
+
+
 
 def test_index():
     with pytest.raises(NotImplementedError):

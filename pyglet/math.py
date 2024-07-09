@@ -453,7 +453,27 @@ class Vec3(_typing.NamedTuple):
         except ZeroDivisionError:
             return self
 
-    def clamp(self, min_val: float | tuple[float, float], max_val: float | tuple[float, float]) -> Vec3:
+    if _typing.TYPE_CHECKING:
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec3:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float], max_val: tuple[float, float, float]) -> Vec3:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float], max_val: float) -> Vec3:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float, float]) -> Vec3:
+            ...
+        # -- End revert if perf-impacting block --
+
+    def clamp(self, min_val: float | tuple[float, float, float], max_val: float | tuple[float, float, float]) -> Vec3:
         """Restrict the value of the X, Y and Z components of the vector to be within the given values.
 
         If a single value is provided, it will be used for all components.
@@ -463,18 +483,25 @@ class Vec3(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
+        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            return Vec3(
-                clamp(self.x, min_val[0], max_val[0]),
-                clamp(self.y, min_val[1], max_val[1]),
-                clamp(self.z, min_val[2], max_val[2]),
-            )
+            min_x, min_y, min_z = min_val
         except TypeError:
-            return Vec3(
-                clamp(self.x, min_val, max_val),
-                clamp(self.y, min_val, max_val),
-                clamp(self.z, min_val, max_val),
-            )
+            min_x = min_val
+            min_y = min_val
+            min_z = min_val
+        try:
+            max_x, max_y, max_z = max_val
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
+            max_z = max_val
+
+        return Vec3(
+            clamp(self[0], min_x, max_x), # type: ignore
+            clamp(self[1], min_y, max_y), # type: ignore
+            clamp(self[2], min_z, max_z), # type: ignore
+        )
 
     def index(self, *args: _typing.Any) -> int:
         raise NotImplementedError("Vec types can be indexed directly.")
