@@ -514,13 +514,13 @@ class Vec3(_typing.NamedTuple):
         """
         # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            min_x, min_y, min_z = min_val
+            min_x, min_y, min_z = min_val  # type: ignore
         except TypeError:
             min_x = min_val
             min_y = min_val
             min_z = min_val
         try:
-            max_x, max_y, max_z = max_val
+            max_x, max_y, max_z = max_val  # type: ignore
         except TypeError:
             max_x = max_val
             max_y = max_val
