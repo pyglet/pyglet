@@ -49,8 +49,6 @@ def test_swizzle():
         v.xxxxx
 
 
-
-
 def test_mutability():
     v = Vec4(1, 2, 3, 4)
     with pytest.raises(AttributeError):
