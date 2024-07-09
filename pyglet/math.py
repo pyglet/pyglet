@@ -566,7 +566,7 @@ class Vec3(_typing.NamedTuple):
                  self[2] ** other   # type: ignore
             )
 
-    def __lt__(self, other: Vec3) -> bool:
+    def __lt__(self, other: tuple[float, float, float]) -> bool:
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
 
     def length(self) -> float:
