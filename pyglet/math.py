@@ -96,9 +96,15 @@ class Vec2(_typing.NamedTuple):
 
     def __rfloordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(scalar[0] // self[0], scalar[1] // self[1])
+            return Vec2(
+                scalar[0] // self[0],  # type: ignore
+                scalar[1] // self[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(scalar // self[0], scalar // self[1])
+            return Vec2(
+                scalar // self[0],  # type: ignore
+                scalar // self[1]  # type: ignore
+            )
 
     def __abs__(self) -> Vec2:
         return Vec2(abs(self[0]), abs(self[1]))
