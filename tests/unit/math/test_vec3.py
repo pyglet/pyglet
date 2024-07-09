@@ -328,8 +328,7 @@ def test_clamp():
 
     # Revert if necessary for perf
     assert Vec3(-1, 50, 50).clamp(Vec3(0, 0, 0), 10) == Vec3(0, 10, 10)
-    assert Vec4(-1, -1, 50).clamp(0, Vec3(10, 10, 10)) == Vec3(0, 0, 10)
-
+    assert Vec3(-1, -1, 50).clamp(0, Vec3(10, 10, 10)) == Vec3(0, 0, 10)
 
 
 def test_index():
