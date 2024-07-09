@@ -334,7 +334,7 @@ class Vec3(_typing.NamedTuple):
                 return self
             raise err
 
-    def __sub__(self, other: Vec3 | tuple[float, float] | float) -> Vec3:
+    def __sub__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
             return Vec3(
                 self[0] - other[0],  # type: ignore
