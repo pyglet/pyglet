@@ -654,6 +654,26 @@ class Vec4(_typing.NamedTuple):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
+    if _typing.TYPE_CHECKING:
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec4:
+            ...
+
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float, float], max_val: tuple[float, float, float, float]) -> Vec4:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float, float], max_val: float) -> Vec4:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float, float, float]) -> Vec4:
+            ...
+        # -- End revert if perf-impacting block --
+
     def clamp(
         self,
         min_val: float | tuple[float, float, float, float],
@@ -668,20 +688,28 @@ class Vec4(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
+        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            return Vec4(
-                clamp(self[0], min_val[0], max_val[0]),
-                clamp(self[1], min_val[1], max_val[1]),
-                clamp(self[2], min_val[2], max_val[2]),
-                clamp(self[3], min_val[3], max_val[3]),
-            )
+            min_x, min_y, min_z, min_w = min_val
         except TypeError:
-            return Vec4(
-                clamp(self[0], min_val, max_val),
-                clamp(self[1], min_val, max_val),
-                clamp(self[2], min_val, max_val),
-                clamp(self[3], min_val, max_val),
-            )
+            min_x = min_val
+            min_y = min_val
+            min_z = min_val
+            min_w = min_val
+        try:
+            max_x, max_y, max_z, max_w = max_val
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
+            max_z = max_val
+            max_w = max_val
+
+        return Vec4(
+            clamp(self[0], min_x, max_x), # type: ignore
+            clamp(self[1], min_y, max_y), # type: ignore
+            clamp(self[2], min_z, max_z), # type: ignore
+            clamp(self[3], min_w, max_w), # type: ignore
+        )
 
     def dot(self, other: Vec4) -> float:
         """Calculate the dot product of this vector and another 4D vector.

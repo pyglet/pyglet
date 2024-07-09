@@ -329,6 +329,9 @@ def test_clamp():
     assert Vec4(-6, -2, 2, 6).clamp(0, 8) == Vec4(0, 0, 2, 6)
 
     assert Vec4(-10, 0, 10, 20).clamp(Vec4(-20, -4, 0, 0), Vec4(0, 4, 8, 10)) == Vec4(-10, 0, 8, 10)
+    # Revert if necessary for perf
+    assert Vec4(-1, -1, 50, 50).clamp(Vec4(0, 0, 0, 0), 10) == Vec4(0, 0, 10, 10)
+    assert Vec4(-1, -1, 50, 50).clamp(0, Vec4(10, 10, 10, 10)) == Vec4(0, 0, 10, 10)
 
 
 def test_dot():
