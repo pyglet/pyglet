@@ -259,6 +259,17 @@ class ToggleButton(PushButton):
 
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
+    def __init__(self, toggled: bool = False, *args, **kwargs):  # noqa: ANN002, ANN003
+        """Create a toggle button.
+
+        Args:
+            toggled:
+                Initial state of the toggle button.
+        """
+        super().__init__(*args, **kwargs)
+
+        self._sprite.image = self._pressed_img if toggled else self._depressed_img
+        self._pressed = toggled
 
     def _get_release_image(self, x: int, y: int):
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
