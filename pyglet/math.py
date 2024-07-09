@@ -589,9 +589,19 @@ class Vec4(_typing.NamedTuple):
 
     def __mod__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
-            return Vec4(self[0] % other[0], self[1] % other[1], self[2] % other[2], self[3] % other[3])
+            return Vec4(
+                self[0] % other[0],  # type: ignore
+                self[1] % other[1],  # type: ignore
+                self[2] % other[2],  # type: ignore
+                self[3] % other[3]   # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] % other, self[1] % other, self[2] % other, self[3] % other)
+            return Vec4(
+                self[0] % other,  # type: ignore
+                self[1] % other,  # type: ignore
+                self[2] % other,  # type: ignore
+                self[3] % other   # type: ignore
+            )
 
     def __pow__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
