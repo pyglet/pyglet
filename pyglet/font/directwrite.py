@@ -2560,9 +2560,10 @@ class Win32DirectWriteFont(base.Font):
         p_bold, p_italic, p_stretch = cls.parse_name(font_name, bold, italic, stretch)
 
         _debug_print(f"directwrite: '{font_name}' not found. Attempting legacy name lookup in all collections.")
-        collection_idx = cls.find_legacy_font(cls._custom_collection, font_name, p_bold, p_italic, p_stretch)
-        if collection_idx is not None:
-            return collection_idx, cls._custom_collection
+        if cls._custom_collection:
+            collection_idx = cls.find_legacy_font(cls._custom_collection, font_name, p_bold, p_italic, p_stretch)
+            if collection_idx is not None:
+                return collection_idx, cls._custom_collection
 
         sys_collection = IDWriteFontCollection()
         cls._write_factory.GetSystemFontCollection(byref(sys_collection), 1)
