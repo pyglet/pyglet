@@ -60,6 +60,18 @@ def test_mutability():
     with pytest.raises(TypeError):
         v[0] = 1  # __setitem__ is not supported
 
+    # Swizzle is an output-only operation
+    with pytest.raises(AttributeError):
+        v.xy = (1, 2)
+    with pytest.raises(AttributeError):
+        v.yx = (2, 1)
+    with pytest.raises(AttributeError):
+        v.xx = (1, 1)
+    with pytest.raises(AttributeError):
+        v.yy = (2, 2)
+    with pytest.raises(AttributeError):
+        v.xyxy = (1, 2, 1, 2)
+
 
 def test_len():
     """Len of the collection is always 2."""
