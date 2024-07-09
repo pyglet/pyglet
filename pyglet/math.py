@@ -475,15 +475,15 @@ class Vec3(_typing.NamedTuple):
     def __rtruediv__(self, other: float | tuple[float, float, float]) -> Vec3:
         try:
             return Vec3(
-                self[0] / other[0],  # type: ignore
-                self[1] / other[1],  # type: ignore
-                self[2] / other[2]   # type: ignore
+                other[0] / self[0],  # type: ignore
+                other[1] / self[1],  # type: ignore
+                other[2] / self[2]  # type: ignore
             )
         except TypeError:
             return Vec3(
-                 self[0] / other,  # type: ignore
-                 self[1] / other,  # type: ignore
-                 self[2] / other   # type: ignore
+                  other / self[0],  # type: ignore
+                  other / self[1],  # type: ignore
+                  other / self[2]  # type: ignore
             )
 
     def __rfloordiv__(self, other: float | tuple[float, float, float]) -> Vec3:
