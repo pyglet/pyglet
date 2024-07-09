@@ -817,17 +817,17 @@ class Vec4(_typing.NamedTuple):
     def __rtruediv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
             return Vec4(
-                self[0] / scalar[0],  # type: ignore
-                self[1] / scalar[1],  # type: ignore
-                self[2] / scalar[2],  # type: ignore
-                self[3] / scalar[3]  # type: ignore
+                scalar[0] / self[0],  # type: ignore
+                scalar[1] / self[1],  # type: ignore
+                scalar[2] / self[2],  # type: ignore
+                scalar[3] / self[3]   # type: ignore
             )
         except TypeError:
             return Vec4(
-                self[0] / scalar,  # type: ignore
-                self[1] / scalar,  # type: ignore
-                self[2] / scalar,  # type: ignore
-                self[3] / scalar  # type: ignore
+               scalar / self[0],  # type: ignore
+               scalar / self[1],  # type: ignore
+               scalar / self[2],  # type: ignore
+               scalar / self[3]   # type: ignore
             )
 
     def __floordiv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
