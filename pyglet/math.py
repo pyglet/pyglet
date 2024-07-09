@@ -60,9 +60,15 @@ class Vec2(_typing.NamedTuple):
 
     def __rsub__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(other[0] - self[0], other[1] - self[1])
+            return Vec2(
+                other[0] - self[0],  # type: ignore
+                other[1] - self[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(other - self[0], other - self[1])
+            return Vec2(
+                other - self[0],  # type: ignore
+                other - self[1]  # type: ignore
+            )
 
     def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
