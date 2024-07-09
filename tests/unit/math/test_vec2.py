@@ -357,6 +357,10 @@ def test_clamp():
     assert Vec2(-10, 10).clamp(Vec2(-20, -20), Vec2(20, 20)) == Vec2(-10, 10)
     assert Vec2(-10, 10).clamp(Vec2(-5, 5), Vec2(5, 5)) == Vec2(-5, 5)
 
+    # Revert if necessary for perf
+    assert Vec2(-1, 50).clamp(Vec2(0, 0), 10) == Vec2(0, 10)
+    assert Vec2(-1,  50).clamp(0, Vec2(10, 10)) == Vec2(0, 10)
+
 
 def test_dot():
     assert Vec2(1, 0).dot(Vec2(1, 0)) == 1  # same direction
