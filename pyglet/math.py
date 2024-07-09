@@ -240,6 +240,26 @@ class Vec2(_typing.NamedTuple):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
+    if _typing.TYPE_CHECKING:
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec2:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float], max_val: tuple[float, float]) -> Vec2:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float], max_val: float) -> Vec2:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float]) -> Vec2:
+            ...
+        # -- End revert if perf-impacting block --
+
     def clamp(self, min_val: float | tuple[float, float], max_val: float | tuple[float, float]) -> Vec2:
         """Restrict the value of the X and Y components of the vector to be within the given values.
 
@@ -250,13 +270,22 @@ class Vec2(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
+        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            return Vec2(
-                clamp(self[0], min_val[0], max_val[0]),
-                clamp(self[1], min_val[1], max_val[1]),
-            )
+            min_x, min_y, min_z = min_val  # type: ignore
         except TypeError:
-            return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
+            min_x = min_val
+            min_y = min_val
+        try:
+            max_x, max_y, max_z = max_val  # type: ignore
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
+
+        return Vec2(
+            clamp(self[0], min_x, max_x), # type: ignore
+            clamp(self[1], min_y, max_y), # type: ignore
+        )
 
     def dot(self, other: Vec2 | tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
