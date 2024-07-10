@@ -338,14 +338,13 @@ class Vec2(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
-        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            min_x, min_y = min_val  # type: ignore
+            min_x, min_y = min_val[0], min_val[1]  # type: ignore
         except TypeError:
             min_x = min_val
             min_y = min_val
         try:
-            max_x, max_y = max_val  # type: ignore
+            max_x, max_y = max_val[0], max_val[1]  # type: ignore
         except TypeError:
             max_x = max_val
             max_y = max_val
@@ -622,15 +621,14 @@ class Vec3(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
-        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            min_x, min_y, min_z = min_val  # type: ignore
+            min_x, min_y, min_z = min_val[0], min_val[1], min_val[2]  # type: ignore
         except TypeError:
             min_x = min_val
             min_y = min_val
             min_z = min_val
         try:
-            max_x, max_y, max_z = max_val  # type: ignore
+            max_x, max_y, max_z = max_val[0], max_val[1], max_val[2]  # type: ignore
         except TypeError:
             max_x = max_val
             max_y = max_val
@@ -894,16 +892,15 @@ class Vec4(_typing.NamedTuple):
             min_val: The minimum value(s)
             max_val: The maximum value(s)
         """
-        # Note: double-unroll assumes this isn't prohibitively expensive for perf
         try:
-            min_x, min_y, min_z, min_w = min_val  # type: ignore
+            min_x, min_y, min_z, min_w = min_val[0], min_val[1], min_val[2], min_val[3]  # type: ignore
         except TypeError:
             min_x = min_val
             min_y = min_val
             min_z = min_val
             min_w = min_val
         try:
-            max_x, max_y, max_z, max_w = max_val  # type: ignore
+            max_x, max_y, max_z, max_w = max_val[0], max_val[1],  max_val[2], max_val[3]  # type: ignore
         except TypeError:
             max_x = max_val
             max_y = max_val
