@@ -17,7 +17,7 @@ your own classes easily.
 Even handlers are simply functions or methods that are written to accept the same
 arguments as the dispatched event. Event handlers can be registered or unregistered
 during runtime. More than one handler can be registered to receive the same events,
-which is described in the following sections. Event dispatchers can _optionally_ have
+which is described in the following sections. Event dispatchers can *optionally* have
 default handlers for some of their events. Your own handlers can replace these entirely,
 or just be added on.
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import ItemsView, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -38,11 +39,21 @@ if getattr(sys, "frozen", None):
     _enable_optimisations = True
 
 
+_SPECIAL_OPTION_VALIDATORS = {
+    "audio": lambda x: isinstance(x, Sequence),
+    "vsync": lambda x: x is None or isinstance(x, bool),
+}
+
+_OPTION_TYPE_VALIDATORS = {
+    "bool": lambda x: isinstance(x, bool),
+    "int": lambda x: isinstance(x, int),
+}
+
 @dataclass
 class Options:
     """Dataclass for global pyglet options."""
 
-    audio: tuple = ("xaudio2", "directsound", "openal", "pulse", "silent")
+    audio: Sequence[str] = ("xaudio2", "directsound", "openal", "pulse", "silent")
     """A :py:class:`~typing.Sequence` of valid audio modules names. They will
      be tried from first to last until either a driver loads or no entries
      remain. See :ref:`guide-audio-driver-order` for more information.
@@ -255,7 +266,8 @@ class Options:
 
     def __setitem__(self, key: str, value: Any) -> None:
         assert key in self.__annotations__, f"Invalid option name: '{key}'"
-        assert type(value).__name__ == self.__annotations__[key], f"Invalid type: '{type(value)}' for '{key}'"
+        assert (_SPECIAL_OPTION_VALIDATORS.get(key, None) or _OPTION_TYPE_VALIDATORS[self.__annotations__[key]])(value), \
+            f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
 
 
