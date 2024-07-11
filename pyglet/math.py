@@ -334,7 +334,7 @@ class Vec2(_typing.NamedTuple):
             clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y),  # type: ignore
         )
 
-    def dot(self, other: Vec2 | tuple[float, float]) -> float:
+    def dot(self, other: tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
         return self[0] * other[0] + self[1] * other[1]
 
