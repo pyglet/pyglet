@@ -108,6 +108,29 @@ def test_add():
     assert v == Vec2(4, 6)
 
 
+def test_radd():
+    # These should be distinct and  unreachable through
+    # simple mis-addition of the mirrored values below.
+    goal_x = -1901.0
+    goal_y = 7919.0
+    pairs = [
+        # A few (+even, -odd) Vec2s + tuples
+        Vec2( -8.0,     7.0),
+        ( -6.0,     5.0),
+        Vec2( -4.0,     3.0),
+        ( -2.0,     1.0),
+
+        Vec2(goal_x, goal_y),
+
+        # Negatives of the block above the marker line
+        (  2.0, -    1.0),
+        Vec2(  4.0, -    3.0),
+        (  6.0, -    5.0),
+        Vec2(  8.0, -    7.0),
+    ]
+    assert sum(pairs) == Vec2(goal_x, goal_y)
+
+
 def test_sub():
     assert Vec2(1, 2) - Vec2(3, 4) == Vec2(-2, -2)
 

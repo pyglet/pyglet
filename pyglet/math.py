@@ -37,6 +37,15 @@ class Vec2(_typing.NamedTuple):
 
     .. note:: The Python `len` operator returns the number of elements in
               the vector. For the vector length, use the `length()` method.
+
+    .. note:: Python's :py:func:`sum` requires the first item to be a ``Vec2``.
+
+              After that, you can mix ``Vec2``-like :py:class:`tuple`
+              and ``Vec2`` instances freely in the iterable.
+
+              If you do not, you will see a :py:class:`TypeError` about being
+              unable to add a :py:class:`tuple` and a :py:class:`int`.
+
     """
 
     x: float = 0.0
