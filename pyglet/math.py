@@ -655,7 +655,7 @@ class Vec4(_typing.NamedTuple):
 
     __match_args__ = 'x', 'y', 'z', 'w'
 
-    def __add__(self, other: Vec4 | tuple[float, float] | float) -> Vec4:
+    def __add__(self, other: tuple[float, float, float, float] | float) -> Vec4:
         try:
             return Vec4(
                 other[0] + self[0], other[1] + self[1], other[2] + self[2], other[3] + self[3]  # type: ignore
