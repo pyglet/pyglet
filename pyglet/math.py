@@ -518,16 +518,16 @@ class Vec3(_typing.NamedTuple):
         """
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2
 
-    def cross(self, other: Vec3) -> Vec3:
+    def cross(self, other: tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
         Args:
-            other: Another Vec3 instance.
+            other: Another Vec3 or tuple of 3 floats.
         """
         return Vec3(
-            (self.y * other.z) - (self.z * other.y),
-            (self.z * other.x) - (self.x * other.z),
-            (self.x * other.y) - (self.y * other.x),
+            (self.y * other[2]) - (self.z * other[1]),
+            (self.z * other[0]) - (self.x * other[2]),
+            (self.x * other[1]) - (self.y * other[0]),
         )
 
     def dot(self, other: Vec3) -> float:
