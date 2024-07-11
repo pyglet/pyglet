@@ -377,7 +377,7 @@ class Vec3(_typing.NamedTuple):
                 self[0] + other, self[1] + other, self[2] + other  # type: ignore
             )
 
-    def __radd__(self, other: Vec3 | float) -> Vec3:
+    def __radd__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
             return self.__add__(_typing.cast(Vec3, other))
         except TypeError as err:
