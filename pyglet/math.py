@@ -553,13 +553,13 @@ class Vec3(_typing.NamedTuple):
             self.z + (alpha * (other[2] - self.z)),
         )
 
-    def distance(self, other: Vec3) -> float:
+    def distance(self, other: tuple[float, float, float]) -> float:
         """Calculate the distance between this vector and another 3D vector.
 
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2) + ((other.z - self.z) ** 2))
+        return _math.sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
 
     def normalize(self) -> Vec3:
         """Return a normalized version of the vector.
