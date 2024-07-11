@@ -116,6 +116,32 @@ def test_add():
     assert v == Vec4(2, 4, 6, 8)
 
 
+def test_radd():
+    # The goals should be distinct and unreachable by
+    # simple mis-addition of the values below
+    goal_x = -3251.0
+    goal_y = 593.0
+    goal_z = 3847.0
+    goal_w = 7621.0
+    seq = [
+        Vec4(3.0, 0.0, 0.0, 0.0),
+        (0.0, 5.0, 0.0, 0.0),
+        Vec4(0.0, 0.0, 7.0, 0.0),
+        (0.0, 0.0, 0.0, 9.0),
+
+        Vec4(goal_x, goal_y, goal_z, goal_w),
+
+        # Opposites of the block above
+        (0.0, 0.0, 0.0, -9.0),
+        Vec4(-3.0, 0.0, 0.0, 0.0),
+        (0.0, -5.0, 0.0, 0.0),
+        Vec4(0.0, 0.0, -7.0, 0.0)
+    ]
+    assert sum(seq) == Vec4(goal_x, goal_y, goal_z, goal_w)
+
+
+
+
 def test_sub():
     assert Vec4(1, 2, 3, 4) - Vec4(5, 6, 7, 8) == Vec4(-4, -4, -4, -4)
 
