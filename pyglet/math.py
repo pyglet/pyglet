@@ -538,19 +538,19 @@ class Vec3(_typing.NamedTuple):
         """
         return self.x * other[0] + self.y * other[1] + self.z * other[2]
 
-    def lerp(self, other: Vec3, alpha: float) -> Vec3:
-        """Create a new Vec3 linearly interpolated between this vector and another Vec3.
+    def lerp(self, other: tuple[float, float, float], alpha: float) -> Vec3:
+        """Create a new Vec3 linearly interpolated between this vector and another Vec3-like.
 
         Args:
-          other: Another Vec3 instance.
+          other: Another Vec3 instance or tuple of 3 floats.
           alpha: The amount of interpolation between this vector, and the other
                  vector. This should be a value between 0.0 and 1.0. For example:
                  0.5 is the midway point between both vectors.
         """
         return Vec3(
-            self.x + (alpha * (other.x - self.x)),
-            self.y + (alpha * (other.y - self.y)),
-            self.z + (alpha * (other.z - self.z)),
+            self.x + (alpha * (other[0] - self.x)),
+            self.y + (alpha * (other[1] - self.y)),
+            self.z + (alpha * (other[2] - self.z)),
         )
 
     def distance(self, other: Vec3) -> float:
