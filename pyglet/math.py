@@ -530,13 +530,13 @@ class Vec3(_typing.NamedTuple):
             (self.x * other[1]) - (self.y * other[0]),
         )
 
-    def dot(self, other: Vec3) -> float:
+    def dot(self, other: tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
         Args:
-            other: Another Vec3 instance.
+            other: Another Vec3 or tuple of 3 floats.
         """
-        return self.x * other.x + self.y * other.y + self.z * other.z
+        return self.x * other[0] + self.y * other[1] + self.z * other[2]
 
     def lerp(self, other: Vec3, alpha: float) -> Vec3:
         """Create a new Vec3 linearly interpolated between this vector and another Vec3.
