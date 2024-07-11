@@ -109,6 +109,27 @@ def test_add():
     assert v == Vec3(2, 4, 6)
 
 
+def test_radd():
+    # The goals should be distinct and unreachable by
+    # simple mis-addition of the values below
+    goal_x = -6709.0
+    goal_y = 359.0
+    goal_z = 7829.0
+    seq = [
+        Vec3(3.0, 0.0, 0.0),
+        (0.0, 5.0, 0.0),
+        Vec3(0.0, 0.0, 7.0),
+
+        Vec3(goal_x, goal_y, goal_z),
+
+        # Opposites of the block above
+        (-3.0, 0.0, 0.0),
+        Vec3(0.0, -5.0, 0.0),
+        (0.0, 0.0, -7.0)
+    ]
+    assert sum(seq) == Vec3(goal_x, goal_y, goal_z)
+
+
 def test_sub():
     assert Vec3(1, 2, 3) - Vec3(3, 4, 6) == Vec3(-2, -2, -3)
 
