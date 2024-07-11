@@ -375,7 +375,7 @@ class _AbstractBox(ABC):
         ...
 
     @abstractmethod
-    def update_colors(self, colors: list[int]) -> None:
+    def update_colors(self, colors: list[int], start: int, end: int) -> None:
         ...
 
     @abstractmethod
@@ -573,11 +573,24 @@ class _GlyphBox(_AbstractBox):
         for _vertex_list in self.vertex_lists:
             _vertex_list.translation[:] = translation * _vertex_list.count
 
-    def update_colors(self, colors: list[int]) -> None:
-        # Receives flattened list of colors based on the count. In GlyphBox case, we need to slice by vertex count
-        # as decorations have different counts.
+    def update_colors(self, colors: list[int], start: int, end: int) -> None:
+        """Update the glyph colors only when specified by a single color attribute in set_style.
+
+        Update just the specific range of glyphs with the colors.
+        """
+        # Receives flattened list of colors based on the count.
         for _vertex_list in self.vertex_lists:
-            _vertex_list.colors[:] = colors[:_vertex_list.count] * 4
+            vertices_per_char = _vertex_list.count // self.length
+            # Check length, because underlines and BG's can exist.
+            if vertices_per_char == 4:
+                color_end_index = (end - start) * 4
+
+                # Calculate the vertex start and end indices for (RGBA)
+                vertex_start_index = start * vertices_per_char * 4
+                vertex_end_index = end * vertices_per_char * 4
+
+                # Update the vertex colors
+                _vertex_list.colors[vertex_start_index:vertex_end_index] = colors[:color_end_index] * vertices_per_char
 
     def update_view_translation(self, translate_x: float, translate_y: float) -> None:
         view_translation = (-translate_x, -translate_y, 0)
@@ -651,7 +664,7 @@ class _InlineElementBox(_AbstractBox):
         if self.placed:
             self.element.update_translation(x, y, z)
 
-    def update_colors(self, colors: list[int]) -> None:
+    def update_colors(self, colors: list[int], _start: int, _end: int) -> None:
         if self.placed:
             self.element.update_color(colors)
 
@@ -1454,19 +1467,26 @@ class TextLayout:
             self._boxes.extend(line.boxes)
             self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 
-    def _update_color(self) -> None:
+    def _update_color(self, start: int, end: int) -> None:
         # This function usually is only called by Labels/HTML when updating just colors.
         colors_iter = self._document.get_style_runs("color")
-        colors = []
-        for start, end, color in colors_iter.ranges(0, colors_iter.end):
-            if color is None:
-                color = (0, 0, 0, 255)
-            colors.extend(color * (end - start))
 
-        start = 0
+        colors = []
+        for iter_start, iter_end, color in colors_iter.ranges(start, end):
+            colors.extend(color * (iter_end - iter_start))
+
+        char_index = 0
+
+        # Search all boxes for the characters that are going to be updated.
         for box in self._boxes:
-            box.update_colors(colors[start:start + box.length * 4])
-            start += box.length * 4
+            box_length = box.length  # Number of glyphs in the box
+
+            if char_index + box_length > start and char_index < end:
+                box_start = max(0, start - char_index)
+                box_end = min(box_length, end - char_index)
+                box.update_colors(colors, box_start, box_end)
+
+            char_index += box_length
 
     def _get_left_anchor(self) -> int:
         """Returns the anchor for the X axis from the left."""
@@ -1573,7 +1593,7 @@ class TextLayout:
         """
         self._init_document()
 
-    def on_style_text(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
+    def on_style_text(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         """Event handler for `AbstractDocument.on_style_text`.
 
         The event handler is bound by the text layout; there is no need for
@@ -1581,7 +1601,7 @@ class TextLayout:
         """
         # To save performance when lerping colors, only update color values instead of recreating layout.
         if len(attributes) == 1 and "color" in attributes:
-            self._update_color()
+            self._update_color(start, end)
         else:
             self._init_document()
 
