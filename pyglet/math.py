@@ -253,13 +253,19 @@ class Vec2(_typing.NamedTuple):
         """
         return Vec2(0.0 if self[0] < edge[0] else 1.0, 0.0 if self[1] < edge[1] else 1.0)
 
-    def reflect(self, vector: Vec2) -> Vec2:
+    def reflect(self, vector: tuple[float, float]) -> Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normalized vector.
 
         Args:
-            vector: A normalized vector.
+            vector: A normalized Vec2 or Vec2-like tuple.
         """
-        return self - vector * 2 * vector.dot(self)
+        #Less unrolled equivalent of code below:
+        # return self - vector * 2 * vector.dot(self)
+        twice_dot_value = self.dot(vector) * 2
+        return Vec2(
+            self[0] - twice_dot_value * vector[0],
+            self[1] - twice_dot_value * vector[1]
+        )
 
     def rotate(self, angle: float) -> Vec2:
         """Create a new vector rotated by the angle. The length remains unchanged.
