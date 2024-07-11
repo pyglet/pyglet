@@ -1,15 +1,4 @@
-# mypy: ignore-errors
-# Even when the notoriously picky pyright reports 0 errors, mypy will
-# incorrectly report plenty because:
-# 1. This file contains typing.NamedTuple subclasses
-# 2. The mypy stance on NamedTuple is "Duplicate of #5613, still low
-#    priority, better use dataclasses, as suggested above.", per
-#    https://github.com/python/mypy/issues/5944#issuecomment-441285456
 """Matrix and Vector math.
-
-.. WARNING! DO NOT TRY TO MAKE THIS FILE "PRETTIER"!
-..
-.. See the bottom of the docstring to learn why & what to do instead.
 
 This module provides Vector and Matrix objects, including Vec2, Vec3,
 Vec4, Mat3, and Mat4. Most common matrix and vector operations are
@@ -21,21 +10,13 @@ Matrices behave just like they do in GLSL: they are specified in column-major
 order and multiply on the left of vectors, which are treated as columns.
 
 All objects are immutable and hashable.
-..
-.. The code in this file is ugly and breaks the usual rules for a reason.
-.. Also, this portion of the docstring is a Sphinx comment which doesn't
-.. render in the web documentation.
-.. The code in this file has to have decent performance because:
-.. 1. It's core math code for the library
-.. 2. It has to achieve good developer ergonomics
-.. 3. It has to all of this with decent performance
-.. Unusual style is the price we pay to get all of that because:
-.. 1. pyglet is the world's only pure Python, 0-dependency GL binding
-.. 2. we can't rely on compute shaders to speed things up
-.. Compute shaders only became a core OpenGL in 2017 with v4.6. Plenty
-.. hardware still lacks full support for them, so we claw back every
-.. scrap of performance we can in other ways.
 """
+# WARNING! DO NOT TRY TO MAKE THIS FILE "PRETTIER"
+#
+# The unusual code style in this module is an intentional sacrifice:
+# * It allows decent performance despite being written in pure Python
+# * It ensures good developer experience outside pyglet.math, especially
+#   on systems without access to compute shaders
 from __future__ import annotations
 
 import math as _math
