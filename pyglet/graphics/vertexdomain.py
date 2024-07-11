@@ -232,7 +232,7 @@ class VertexList:
                                                       f"keyword argument not found.")
                     attribute.set_region(attribute.buffer, instance_id - 1, 1, kwargs[attribute.name])
 
-        return self.domain._vertexinstance_class(self, instance_id)  # noqa: SLF001
+        return self.domain._vertexinstance_class(self, instance_id, start)  # noqa: SLF001
 
     def delete_instance(self, instance: VertexInstance) -> None:
         assert self.instanced
@@ -242,7 +242,7 @@ class VertexList:
 
         self.domain._instances -= 1  # noqa: SLF001
 
-        self.domain.instance_allocator.dealloc(instance.id, 1)
+        self.domain.instance_allocator.dealloc(instance.start, 3)
 
 
 class IndexedVertexList(VertexList):
@@ -339,10 +339,12 @@ class IndexedVertexList(VertexList):
 
 class VertexInstance:
     id: int
+    start: int
     _vertex_list: VertexList | IndexedVertexList
 
-    def __init__(self, vertex_list: VertexList | IndexedVertexList, instance_id: int) -> None:
+    def __init__(self, vertex_list: VertexList | IndexedVertexList, instance_id: int, start: int) -> None:
         self.id = instance_id
+        self.start = start
         self._vertex_list = vertex_list
 
     @property
@@ -351,6 +353,7 @@ class VertexInstance:
 
     def delete(self) -> None:
         self._vertex_list.delete_instance(self)
+        self._vertex_list = None
 
 
 class VertexDomain:
