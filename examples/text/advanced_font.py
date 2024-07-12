@@ -17,6 +17,7 @@ if os.name == "nt":
     DirectWriteGlyphRenderer.antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
 else:
     warnings.warn("This example works best on Windows with DirectWrite, other platforms might not work as expected.")
+    exit(0)
 
 window = pyglet.window.Window()
 batch = pyglet.graphics.Batch()
