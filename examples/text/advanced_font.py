@@ -37,11 +37,11 @@ segoe_ui_light = pyglet.text.Label("Hello World 🥳👍", font_name="Segoe UI",
 segoe_ui = pyglet.text.Label("Hello World 😀✌", font_name="Segoe UI", font_size=25, x=50, y=10, batch=batch)
 
 if os.name == "nt":
-    if not pyglet.options.win32_gdi_font: # pyright: ignore reportAttributeAccessIssue
+    if not pyglet.options.win32_gdi_font:
         # On Windows DirectWrite can render directly to an image for special cases!
         # Note: Labels are recommended unless you know what you are doing, or if you use these in a limited fashion.
         font = pyglet.font.load("Segoe UI")
-        image = font.render_to_image("I am rendered as a texture! 🌎", 100, 300) # pyright: ignore reportAttributeAccessIssue
+        image = font.render_to_image("I am rendered as a texture! 🌎", 100, 300)
         sprite = pyglet.sprite.Sprite(image, x=400, y=400, batch=batch)
         sprite.rotation = 45
     else:

@@ -140,7 +140,7 @@ if TYPE_CHECKING:
     from pyglet.font.base import Font
     from pyglet.text.layout import TextLayout
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run # pyright: ignore reportAttributeAccessIssue
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 #: The style attribute takes on multiple values in the document.
 STYLE_INDETERMINATE = "indeterminate"
@@ -402,10 +402,10 @@ class AbstractDocument(event.EventDispatcher):
     def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
             assert element.position is not None
-            if start <= element._position < end:  # pyright: ignore reportOperatorIssue # noqa: SLF001
+            if start <= element._position < end: # noqa: SLF001
                 self._elements.remove(element)
-            elif element._position >= end:  # fixes #538  # noqa: SLF001 # pyright: ignore reportOptionalOperand
-                element._position -= (end - start)  # noqa: SLF001 # pyright: ignore reportOperatorIssue
+            elif element._position >= end:  # fixes #538  # noqa: SLF001
+                element._position -= (end - start)  # noqa: SLF001
 
         self._text = self._text[:start] + self._text[end:]
 

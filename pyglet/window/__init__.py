@@ -107,7 +107,7 @@ if TYPE_CHECKING:
     from pyglet.gl import CanvasConfig, Config, Context
     from pyglet.text import Label
 
-_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run # pyright: ignore reportAttributeAccessIssue
+_is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 
 
 class WindowException(Exception):

@@ -15,12 +15,12 @@ import ctypes.util
 import pyglet
 from typing import NoReturn, Callable, Any
 
-_debug_lib = pyglet.options['debug_lib'] # pyright: ignore reportIndexIssue
-_debug_trace = pyglet.options['debug_trace'] # pyright: ignore reportIndexIssue
+_debug_lib = pyglet.options['debug_lib']
+_debug_trace = pyglet.options['debug_trace']
 
 _is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
 
-if pyglet.options['search_local_libs']: # pyright: ignore reportIndexIssue
+if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
     cwd = os.getcwd()
     _local_lib_paths = [script_path, os.path.join(script_path, 'lib'), os.path.join(cwd, 'lib')]
@@ -310,7 +310,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
         if self._ld_so_cache is None:
             self._create_ld_so_cache()
 
-        return self._ld_so_cache.get(path) # pyright: ignore reportOptionalMemberAccess
+        return self._ld_so_cache.get(path)
 
 
 if pyglet.compat_platform == 'darwin':

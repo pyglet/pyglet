@@ -27,7 +27,7 @@ if sys.version_info < MIN_PYTHON_VERSION:
     raise Exception(msg)
 
 if "sphinx" in sys.modules:
-    sys.is_pyglet_doc_run = True # pyright: ignore reportAttributeAccessIssue
+    sys.is_pyglet_doc_run = True
 
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
