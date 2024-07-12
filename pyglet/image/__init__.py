@@ -97,8 +97,7 @@ from __future__ import annotations
 
 import re
 import weakref
-
-from ctypes import c_int, c_uint, c_ubyte, sizeof, byref
+from ctypes import byref, c_int, c_ubyte, c_uint, sizeof
 
 import pyglet
 from pyglet.gl import *
@@ -1587,7 +1586,7 @@ class Texture3D(Texture, UniformTextureSequence):
         glTexImage3D(texture.target, texture.level,
                      internalformat,
                      texture.width, texture.height, texture.images, 0,
-                     GL_ALPHA, GL_UNSIGNED_BYTE,
+                     internalformat, GL_UNSIGNED_BYTE,
                      blank)
 
         items = []
