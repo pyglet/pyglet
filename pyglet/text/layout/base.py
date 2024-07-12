@@ -232,7 +232,7 @@ def get_default_decoration_shader() -> ShaderProgram:
 _distance_re: Pattern[str] = re.compile(r"([-0-9.]+)([a-zA-Z]+)")
 
 
-def _parse_distance(distance: str | float, dpi: float) -> int:
+def _parse_distance(distance: str | float, dpi: int) -> int:
     """Parse a distance string and return corresponding distance in pixels as an integer."""
     if isinstance(distance, int):
         return distance
@@ -866,7 +866,7 @@ class TextLayout:
                  x: float = 0, y: float = 0, z: float = 0,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "bottom",
                  rotation: float = 0, multiline: bool = False,
-                 dpi: float | None = None,
+                 dpi: int | None = None,
                  batch: Batch | None = None, group: graphics.Group | None = None,
                  program: ShaderProgram | None = None, wrap_lines: bool = True, init_document: bool = True) -> None:
         """Initialize a text layout.

@@ -263,7 +263,7 @@ class Win32Font(base.Font):
             self,
             name: str, size: float,
             bold: bool = False, italic: bool = False, stretch: bool = False,
-            dpi: float | None = None,
+            dpi: int | None = None,
     ) -> None:
         super().__init__()
 
@@ -280,7 +280,7 @@ class Win32Font(base.Font):
             self.max_glyph_width = metrics.tmMaxCharWidth
 
     @staticmethod
-    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: float | None = None) -> LOGFONTW:
+    def get_logfont(name: str, size: float, bold: bool, italic: bool, dpi: int | None = None) -> LOGFONTW:
         """Get a raw Win32 :py:class:`.LOGFONTW` struct for the given arguments.
 
         Args:
@@ -350,7 +350,7 @@ class GDIPlusFont(Win32Font):
     _default_name = "Arial"
 
     def __init__(self, name: str, size: float, bold: bool=False, italic: bool=False, stretch: bool=False,
-                 dpi: float | None=None) -> None:
+                 dpi: int | None=None) -> None:
         if not name:
             name = self._default_name
 

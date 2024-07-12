@@ -192,7 +192,7 @@ class DocumentLabel(layout.TextLayout):
             x: float = 0.0, y: float = 0.0, z: float = 0.0,
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-            multiline: bool = False, dpi: float | None = None,
+            multiline: bool = False, dpi: int | None = None,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
             init_document: bool = True,
@@ -349,7 +349,7 @@ class Label(DocumentLabel):
             x: float = 0.0, y: float = 0.0, z: float = 0.0,
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-            multiline: bool = False, dpi: float | None = None,
+            multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
             bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
@@ -441,7 +441,7 @@ class HTMLLabel(DocumentLabel):
                  x: float = 0.0, y: float = 0.0, z: float = 0.0,
                  width: int | None = None, height: int | None = None,
                  anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
-                 multiline: bool = False, dpi: float | None = None,
+                 multiline: bool = False, dpi: int | None = None,
                  batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None) -> None:
         """Create a label with an HTML string.

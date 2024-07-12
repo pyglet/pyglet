@@ -333,7 +333,7 @@ class AbstractDocument(event.EventDispatcher):
         return value
 
     @abstractmethod
-    def get_font_runs(self, dpi: float | None = None) -> runlist.AbstractRunIterator:
+    def get_font_runs(self, dpi: int | None = None) -> runlist.AbstractRunIterator:
         """Get a style iterator over the `pyglet.font.Font` instances used in the document.
 
         The font instances are created on-demand by inspection of the
@@ -347,7 +347,7 @@ class AbstractDocument(event.EventDispatcher):
         """
 
     @abstractmethod
-    def get_font(self, position: int, dpi: float | None = None) -> Font:
+    def get_font(self, position: int, dpi: int | None = None) -> Font:
         """Get the font instance used at the given position.
 
         :see: `get_font_runs`
@@ -562,11 +562,11 @@ class UnformattedDocument(AbstractDocument):
     def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
         return super().set_paragraph_style(0, len(self.text), attributes)
 
-    def get_font_runs(self, dpi: float | None = None) -> runlist.ConstRunIterator:
+    def get_font_runs(self, dpi: int | None = None) -> runlist.ConstRunIterator:
         ft: Font = self.get_font(dpi=dpi)
         return runlist.ConstRunIterator(len(self.text), ft)
 
-    def get_font(self, position: int | None = None, dpi: float | None = None) -> Font:  # noqa: ARG002
+    def get_font(self, position: int | None = None, dpi: int | None = None) -> Font:  # noqa: ARG002
         from pyglet import font
         font_name = self.styles.get("font_name")
         font_size = self.styles.get("font_size")
@@ -611,7 +611,7 @@ class FormattedDocument(AbstractDocument):
                 runs.insert(0, len(self._text))
             runs.set_run(start, end, value)
 
-    def get_font_runs(self, dpi: float | None = None) -> _FontStyleRunsRangeIterator:
+    def get_font_runs(self, dpi: int | None = None) -> _FontStyleRunsRangeIterator:
         return _FontStyleRunsRangeIterator(
             self.get_style_runs("font_name"),
             self.get_style_runs("font_size"),
@@ -620,7 +620,7 @@ class FormattedDocument(AbstractDocument):
             self.get_style_runs("stretch"),
             dpi)
 
-    def get_font(self, position: int, dpi: float | None = None) -> Font:
+    def get_font(self, position: int, dpi: int | None = None) -> Font:
         runs_iter = self.get_font_runs(dpi)
         return runs_iter[position]
 
@@ -670,7 +670,7 @@ class _ElementIterator(runlist.RunIterator):
 class _FontStyleRunsRangeIterator(runlist.RunIterator):
     # XXX subclass runlist
     def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, bolds: runlist.RunIterator,
-                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: float | None) -> None:
+                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: int | None) -> None:
         self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 
