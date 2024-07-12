@@ -11,6 +11,12 @@ order and multiply on the left of vectors, which are treated as columns.
 
 All objects are immutable and hashable.
 """
+# WARNING! DO NOT TRY TO MAKE THIS FILE "PRETTIER"
+#
+# The unusual code style in this module is an intentional sacrifice:
+# * It allows decent performance despite being written in pure Python
+# * It ensures good developer experience outside pyglet.math, especially
+#   on systems without access to compute shaders
 from __future__ import annotations
 
 import math as _math
@@ -31,6 +37,15 @@ class Vec2(_typing.NamedTuple):
 
     .. note:: The Python `len` operator returns the number of elements in
               the vector. For the vector length, use the `length()` method.
+
+    .. note:: Python's :py:func:`sum` requires the first item to be a ``Vec2``.
+
+              After that, you can mix ``Vec2``-like :py:class:`tuple`
+              and ``Vec2`` instances freely in the iterable.
+
+              If you do not, you will see a :py:class:`TypeError` about being
+              unable to add a :py:class:`tuple` and a :py:class:`int`.
+
     """
 
     x: float = 0.0
@@ -40,9 +55,13 @@ class Vec2(_typing.NamedTuple):
 
     def __add__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] + other[0], self[1] + other[1])
+            return Vec2(
+                self[0] + other[0], self[1] + other[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] + other, self[1] + other)
+            return Vec2(
+                self[0] + other, self[1] + other  # type: ignore
+            )
 
     def __radd__(self, other: tuple[float, float] | float) -> Vec2:
         try:
@@ -54,51 +73,83 @@ class Vec2(_typing.NamedTuple):
 
     def __sub__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] - other[0], self[1] - other[1])
+            return Vec2(
+                self[0] - other[0], self[1] - other[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] - other, self[1] - other)
+            return Vec2(
+                self[0] - other, self[1] - other  # type: ignore
+            )
 
     def __rsub__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(other[0] - self[0], other[1] - self[1])
+            return Vec2(
+                other[0] - self[0], other[1] - self[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(other - self[0], other - self[1])
+            return Vec2(
+                other - self[0], other - self[1]  # type: ignore
+            )
 
     def __mul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self[0] * scalar[0], self[1] * scalar[1])
+            return Vec2(
+                self[0] * scalar[0], self[1] * scalar[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] * scalar, self[1] * scalar)
+            return Vec2(
+                self[0] * scalar, self[1] * scalar  # type: ignore
+            )
 
     def __rmul__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self[0] * scalar[0], self[1] * scalar[1])
+            return Vec2(
+                self[0] * scalar[0], self[1] * scalar[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] * scalar, self[1] * scalar)
+            return Vec2(
+                self[0] * scalar, self[1] * scalar  # type: ignore
+            )
 
     def __truediv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self[0] / scalar[0], self[1] / scalar[1])
+            return Vec2(
+                self[0] / scalar[0], self[1] / scalar[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] / scalar, self[1] / scalar)
+            return Vec2(
+                self[0] / scalar, self[1] / scalar  # type: ignore
+            )
 
     def __rtruediv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(scalar[0] / self[0], scalar[1] / self[1])
+            return Vec2(
+                scalar[0] / self[0], scalar[1] / self[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(scalar / self[0], scalar / self[1])
+            return Vec2(
+                scalar / self[0], scalar / self[1]  # type: ignore
+            )
 
     def __floordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(self.x // scalar[0], self.y // scalar[1])
+            return Vec2(
+                self.x // scalar[0], self.y // scalar[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] // scalar, self[1] // scalar)
+            return Vec2(
+                self[0] // scalar, self[1] // scalar  # type: ignore
+            )
 
     def __rfloordiv__(self, scalar: float | tuple[float, float]) -> Vec2:
         try:
-            return Vec2(scalar[0] // self[0], scalar[1] // self[1])
+            return Vec2(
+                scalar[0] // self[0], scalar[1] // self[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(scalar // self[0], scalar // self[1])
+            return Vec2(
+                scalar // self[0], scalar // self[1]  # type: ignore
+            )
 
     def __abs__(self) -> Vec2:
         return Vec2(abs(self[0]), abs(self[1]))
@@ -120,17 +171,25 @@ class Vec2(_typing.NamedTuple):
 
     def __mod__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] % other[0], self[1] % other[1])
+            return Vec2(
+                self[0] % other[0], self[1] % other[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] % other, self[1] % other)
+            return Vec2(
+                self[0] % other, self[1] % other  # type: ignore
+            )
 
     def __pow__(self, other: tuple[float, float] | float) -> Vec2:
         try:
-            return Vec2(self[0] ** other[0], self[1] ** other[1])
+            return Vec2(
+                self[0] ** other[0], self[1] ** other[1]  # type: ignore
+            )
         except TypeError:
-            return Vec2(self[0] ** other, self[1] ** other)
+            return Vec2(
+                self[0] ** other, self[1] ** other  # type: ignore
+            )
 
-    def __lt__(self, other: float | tuple[float, float]) -> bool:
+    def __lt__(self, other: tuple[float, float]) -> bool:
         return self[0] ** 2 + self[0] ** 2 < other[0] ** 2 + other[1] ** 2
 
     @staticmethod
@@ -203,13 +262,19 @@ class Vec2(_typing.NamedTuple):
         """
         return Vec2(0.0 if self[0] < edge[0] else 1.0, 0.0 if self[1] < edge[1] else 1.0)
 
-    def reflect(self, vector: Vec2) -> Vec2:
+    def reflect(self, vector: tuple[float, float]) -> Vec2:
         """Create a new Vec2 reflected (ricochet) from the given normalized vector.
 
         Args:
-            vector: A normalized vector.
+            vector: A normalized Vec2 or Vec2-like tuple.
         """
-        return self - vector * 2 * vector.dot(self)
+        #Less unrolled equivalent of code below:
+        # return self - vector * 2 * vector.dot(self)
+        twice_dot_value = self.dot(vector) * 2
+        return Vec2(
+            self[0] - twice_dot_value * vector[0],
+            self[1] - twice_dot_value * vector[1]
+        )
 
     def rotate(self, angle: float) -> Vec2:
         """Create a new vector rotated by the angle. The length remains unchanged.
@@ -240,6 +305,25 @@ class Vec2(_typing.NamedTuple):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
+    if _typing.TYPE_CHECKING:
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec2:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float], max_val: tuple[float, float]) -> Vec2:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float], max_val: float) -> Vec2:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float]) -> Vec2:
+            ...
+        # -- End revert if perf-impacting block --
+
     def clamp(self, min_val: float | tuple[float, float], max_val: float | tuple[float, float]) -> Vec2:
         """Restrict the value of the X and Y components of the vector to be within the given values.
 
@@ -251,14 +335,21 @@ class Vec2(_typing.NamedTuple):
             max_val: The maximum value(s)
         """
         try:
-            return Vec2(
-                clamp(self[0], min_val[0], max_val[0]),
-                clamp(self[1], min_val[1], max_val[1]),
-            )
+            min_x, min_y = min_val[0], min_val[1]  # type: ignore
         except TypeError:
-            return Vec2(clamp(self.x, min_val, max_val), clamp(self.y, min_val, max_val))
+            min_x = min_val
+            min_y = min_val
+        try:
+            max_x, max_y = max_val[0], max_val[1]  # type: ignore
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
 
-    def dot(self, other: Vec2 | tuple[float, float]) -> float:
+        return Vec2(
+            clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y),  # type: ignore
+        )
+
+    def dot(self, other: tuple[float, float]) -> float:
         """Calculate the dot product of this vector and another 2D vector."""
         return self[0] * other[0] + self[1] * other[1]
 
@@ -268,9 +359,9 @@ class Vec2(_typing.NamedTuple):
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
             return vec_class(*(self['xy'.index(c)] for c in attrs))
-        except (ValueError, TypeError) as err:
+        except (ValueError, KeyError, TypeError) as err:
             msg = f"'Vec2' has no attribute: '{attrs}'."
             raise AttributeError(msg) from err
 
@@ -291,13 +382,17 @@ class Vec3(_typing.NamedTuple):
 
     __match_args__ = 'x', 'y', 'z'
 
-    def __add__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+    def __add__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
-            return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
+            return Vec3(
+                self[0] + other[0], self[1] + other[1], self[2] + other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] + other, self[1] + other, self[2] + other)
+            return Vec3(
+                self[0] + other, self[1] + other, self[2] + other  # type: ignore
+            )
 
-    def __radd__(self, other: Vec3 | float) -> Vec3:
+    def __radd__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
             return self.__add__(_typing.cast(Vec3, other))
         except TypeError as err:
@@ -305,53 +400,85 @@ class Vec3(_typing.NamedTuple):
                 return self
             raise err
 
-    def __sub__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+    def __sub__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
-            return Vec3(self[0] - other[0], self[1] - other[1], self[2] - other[2])
+            return Vec3(
+                self[0] - other[0], self[1] - other[1], self[2] - other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] - other, self[1] - other, self[2] - other)
+            return Vec3(
+                self[0] - other, self[1] - other, self[2] - other  # type: ignore
+            )
 
-    def __rsub__(self, other: Vec3 | tuple[int, int] | float) -> Vec3:
+    def __rsub__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
-            return Vec3(other[0] - self[0], other[1] - self[1], other[2] - self[2])
+            return Vec3(
+                other[0] - self[0], other[1] - self[1], other[2] - self[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(other - self[0], other - self[1], other - self[2])
+            return Vec3(
+                other - self[0], other - self[1], other - self[2]  # type: ignore
+            )
 
     def __mul__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2])
+            return Vec3(
+                self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] * scalar, self[1] * scalar, self[2] * scalar)
+            return Vec3(
+                self[0] * scalar, self[1] * scalar, self[2] * scalar  # type: ignore
+            )
 
     def __rmul__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2])
+            return Vec3(
+                self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] * scalar, self[1] * scalar, self[2] * scalar)
+            return Vec3(
+                self[0] * scalar, self[1] * scalar, self[2] * scalar  # type: ignore
+            )
 
     def __truediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2])
+            return Vec3(
+                self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] / scalar, self[1] / scalar, self[2] / scalar)
+            return Vec3(
+                self[0] / scalar, self[1] / scalar, self[2] / scalar  # type: ignore
+            )
 
-    def __rtruediv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+    def __rtruediv__(self, other: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(scalar[0] / self[0], scalar[1] / self[1], scalar[2] / self[2])
+            return Vec3(
+                other[0] / self[0], other[1] / self[1], other[2] / self[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(scalar / self[0], scalar / self[1], scalar / self[2])
+            return Vec3(
+                other / self[0], other / self[1], other / self[2]  # type: ignore
+            )
 
-    def __floordiv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+    def __floordiv__(self, other: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(self[0] // scalar[0], self[1] // scalar[1], self[2] // scalar[2])
+            return Vec3(
+                self[0] // other[0], self[1] // other[1], self[2] // other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] // scalar, self[1] // scalar, self[2] // scalar)
+            return Vec3(
+                self[0] // other, self[1] // other, self[2] // other  # type: ignore
+            )
 
-    def __rfloordiv__(self, scalar: float | tuple[float, float, float]) -> Vec3:
+    def __rfloordiv__(self, other: float | tuple[float, float, float]) -> Vec3:
         try:
-            return Vec3(scalar[0] // self[0], scalar[1] // self[1], scalar[2] // self[2])
+            return Vec3(
+                other[0] // self[0], other[1] // self[1], other[2] // self[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(scalar // self[0], scalar // self[1], scalar // self[2])
+            return Vec3(
+                other // self[0], other // self[1], other // self[2]  # type: ignore
+            )
 
     def __abs__(self) -> Vec3:
         return Vec3(abs(self[0]), abs(self[1]), abs(self[2]))
@@ -371,19 +498,27 @@ class Vec3(_typing.NamedTuple):
     def __trunc__(self) -> Vec3:
         return Vec3(_math.trunc(self[0]), _math.trunc(self[1]), _math.trunc(self[2]))
 
-    def __mod__(self, other: Vec3 | tuple[int, int, int] | float) -> Vec3:
+    def __mod__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
-            return Vec3(self[0] % other[0], self[1] % other[1], self[2] % other[2])
+            return Vec3(
+                self[0] % other[0], self[1] % other[1], self[2] % other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] % other, self[1] % other, self[2] % other)
+            return Vec3(
+                self[0] % other, self[1] % other, self[2] % other  # type: ignore
+            )
 
-    def __pow__(self, other: Vec3 | tuple[int, int, int] | float) -> Vec3:
+    def __pow__(self, other: tuple[float, float, float] | float) -> Vec3:
         try:
-            return Vec3(self[0] ** other[0], self[1] ** other[1], self[2] ** other[2])
+            return Vec3(
+                self[0] ** other[0], self[1] ** other[1], self[2] ** other[2]  # type: ignore
+            )
         except TypeError:
-            return Vec3(self[0] ** other, self[1] ** other, self[2] ** other)
+            return Vec3(
+                self[0] ** other, self[1] ** other, self[2] ** other  # type: ignore
+            )
 
-    def __lt__(self, other: Vec3) -> bool:
+    def __lt__(self, other: tuple[float, float, float]) -> bool:
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
 
     def length(self) -> float:
@@ -398,48 +533,48 @@ class Vec3(_typing.NamedTuple):
         """
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2
 
-    def cross(self, other: Vec3) -> Vec3:
+    def cross(self, other: tuple[float, float, float]) -> Vec3:
         """Calculate the cross product of this vector and another 3D vector.
 
         Args:
-            other: Another Vec3 instance.
+            other: Another Vec3 or tuple of 3 floats.
         """
         return Vec3(
-            (self.y * other.z) - (self.z * other.y),
-            (self.z * other.x) - (self.x * other.z),
-            (self.x * other.y) - (self.y * other.x),
+            (self.y * other[2]) - (self.z * other[1]),
+            (self.z * other[0]) - (self.x * other[2]),
+            (self.x * other[1]) - (self.y * other[0]),
         )
 
-    def dot(self, other: Vec3) -> float:
+    def dot(self, other: tuple[float, float, float]) -> float:
         """Calculate the dot product of this vector and another 3D vector.
 
         Args:
-            other: Another Vec3 instance.
+            other: Another Vec3 or tuple of 3 floats.
         """
-        return self.x * other.x + self.y * other.y + self.z * other.z
+        return self.x * other[0] + self.y * other[1] + self.z * other[2]
 
-    def lerp(self, other: Vec3, alpha: float) -> Vec3:
-        """Create a new Vec3 linearly interpolated between this vector and another Vec3.
+    def lerp(self, other: tuple[float, float, float], alpha: float) -> Vec3:
+        """Create a new Vec3 linearly interpolated between this vector and another Vec3-like.
 
         Args:
-          other: Another Vec3 instance.
+          other: Another Vec3 instance or tuple of 3 floats.
           alpha: The amount of interpolation between this vector, and the other
                  vector. This should be a value between 0.0 and 1.0. For example:
                  0.5 is the midway point between both vectors.
         """
         return Vec3(
-            self.x + (alpha * (other.x - self.x)),
-            self.y + (alpha * (other.y - self.y)),
-            self.z + (alpha * (other.z - self.z)),
+            self.x + (alpha * (other[0] - self.x)),
+            self.y + (alpha * (other[1] - self.y)),
+            self.z + (alpha * (other[2] - self.z)),
         )
 
-    def distance(self, other: Vec3) -> float:
+    def distance(self, other: tuple[float, float, float]) -> float:
         """Calculate the distance between this vector and another 3D vector.
 
         Args:
             other: The point to calculate the distance to.
         """
-        return _math.sqrt(((other.x - self.x) ** 2) + ((other.y - self.y) ** 2) + ((other.z - self.z) ** 2))
+        return _math.sqrt(((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2) + ((other[2] - self.z) ** 2))
 
     def normalize(self) -> Vec3:
         """Return a normalized version of the vector.
@@ -453,7 +588,26 @@ class Vec3(_typing.NamedTuple):
         except ZeroDivisionError:
             return self
 
-    def clamp(self, min_val: float | tuple[float, float], max_val: float | tuple[float, float]) -> Vec3:
+    if _typing.TYPE_CHECKING:
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec3:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float], max_val: tuple[float, float, float]) -> Vec3:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float], max_val: float) -> Vec3:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float, float]) -> Vec3:
+            ...
+        # -- End revert if perf-impacting block --
+
+    def clamp(self, min_val: float | tuple[float, float, float], max_val: float | tuple[float, float, float]) -> Vec3:
         """Restrict the value of the X, Y and Z components of the vector to be within the given values.
 
         If a single value is provided, it will be used for all components.
@@ -464,17 +618,21 @@ class Vec3(_typing.NamedTuple):
             max_val: The maximum value(s)
         """
         try:
-            return Vec3(
-                clamp(self.x, min_val[0], max_val[0]),
-                clamp(self.y, min_val[1], max_val[1]),
-                clamp(self.z, min_val[2], max_val[2]),
-            )
+            min_x, min_y, min_z = min_val[0], min_val[1], min_val[2]  # type: ignore
         except TypeError:
-            return Vec3(
-                clamp(self.x, min_val, max_val),
-                clamp(self.y, min_val, max_val),
-                clamp(self.z, min_val, max_val),
-            )
+            min_x = min_val
+            min_y = min_val
+            min_z = min_val
+        try:
+            max_x, max_y, max_z = max_val[0], max_val[1], max_val[2]  # type: ignore
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
+            max_z = max_val
+
+        return Vec3(
+            clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y), clamp(self[2], min_z, max_z)  # type: ignore
+        )
 
     def index(self, *args: _typing.Any) -> int:
         raise NotImplementedError("Vec types can be indexed directly.")
@@ -482,9 +640,9 @@ class Vec3(_typing.NamedTuple):
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
             return vec_class(*(self['xyz'.index(c)] for c in attrs))
-        except (ValueError, TypeError) as err:
+        except (ValueError, KeyError, TypeError) as err:
             msg = f"'Vec3' has no attribute: '{attrs}'."
             raise AttributeError(msg) from err
 
@@ -506,11 +664,15 @@ class Vec4(_typing.NamedTuple):
 
     __match_args__ = 'x', 'y', 'z', 'w'
 
-    def __add__(self, other: Vec4 | tuple[float, float] | float) -> Vec4:
+    def __add__(self, other: tuple[float, float, float, float] | float) -> Vec4:
         try:
-            return Vec4(self[0] + other[0], self[1] + other[1], self[2] + other[2], self[3] + other[3])
+            return Vec4(
+                other[0] + self[0], other[1] + self[1], other[2] + self[2], other[3] + self[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] + other, self[1] + other, self[2] + other, self[3] + other)
+            return Vec4(
+                other + self[0], other + self[1], other + self[2], other + self[3]  # type: ignore
+            )
 
     def __radd__(self, other: Vec4 | int) -> Vec4:
         try:
@@ -522,52 +684,83 @@ class Vec4(_typing.NamedTuple):
 
     def __sub__(self, other: Vec4 | tuple[int, int] | float) -> Vec4:
         try:
-            return Vec4(self[0] - other[0], self[1] - other[1], self[2] - other[2], self[3] - other[3])
+            return Vec4(
+                self[0] - other[0], self[1] - other[1], self[2] - other[2], self[3] - other[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] - other, self[1] - other, self[2] - other, self[3] - other)
+            return Vec4(
+                self[0] - other, self[1] - other, self[2] - other, self[3] - other  # type: ignore
+            )
 
     def __rsub__(self, other: Vec4 | tuple[int, int] | float) -> Vec4:
         try:
-            return Vec4(other[0] - self[0], other[1] - self[1], other[2] - self[2], other[3] - self[3])
+            return Vec4(
+                other[0] - self[0], other[1] - self[1], other[2] - self[2], other[3] - self[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(other - self[0], other - self[1], other - self[2], other - self[3])
+            return Vec4(
+                other - self[0], other - self[1], other - self[2], other - self[3]  # type: ignore
+            )
 
     def __mul__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2], self[3] * scalar[3])
+            return Vec4(
+                self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2], self[3] * scalar[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] * scalar, self[1] * scalar, self[2] * scalar, self[3] * scalar)
+            return Vec4(
+                self[0] * scalar, self[1] * scalar, self[2] * scalar, self[3] * scalar  # type: ignore
+            )
 
     def __rmul__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2], self[3] * scalar[3])
+            return Vec4(
+                self[0] * scalar[0], self[1] * scalar[1], self[2] * scalar[2], self[3] * scalar[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] * scalar, self[1] * scalar, self[2] * scalar, self[3] * scalar)
-
+            return Vec4(
+                self[0] * scalar, self[1] * scalar, self[2] * scalar, self[3] * scalar  # type: ignore
+            )
 
     def __truediv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2], self[3] / scalar[3])
+            return Vec4(
+                self[0] / scalar[0], self[1] / scalar[1], self[2] / scalar[2], self[3] / scalar[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] / scalar, self[1] / scalar, self[2] / scalar, self[3] / scalar)
+            return Vec4(
+                self[0] / scalar, self[1] / scalar, self[2] / scalar, self[3] / scalar  # type: ignore
+            )
 
     def __rtruediv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(scalar[0] / self[0], scalar[1] / self[1], scalar[2] / self[2], scalar[3] / self[3])
+            return Vec4(
+                scalar[0] / self[0], scalar[1] / self[1], scalar[2] / self[2], scalar[3] / self[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(scalar / self[0], scalar / self[1], scalar / self[2], scalar / self[3])
+            return Vec4(
+                scalar / self[0], scalar / self[1], scalar / self[2], scalar / self[3]  # type: ignore
+            )
 
     def __floordiv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(self[0] // scalar[0], self[1] // scalar[1], self[2] // scalar[2], self[3] // scalar[3])
+            return Vec4(
+                self[0] // scalar[0], self[1] // scalar[1], self[2] // scalar[2], self[3] // scalar[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] // scalar, self[1] // scalar, self[2] // scalar, self[3] // scalar)
+            return Vec4(
+                self[0] // scalar, self[1] // scalar, self[2] // scalar, self[3] // scalar  # type: ignore
+            )
 
     def __rfloordiv__(self, scalar: float | tuple[float, float, float, float]) -> Vec4:
         try:
-            return Vec4(scalar[0] // self[0], scalar[1] // self[1], scalar[2] // self[2], scalar[3] // self[3])
+            return Vec4(
+                scalar[0] // self[0], scalar[1] // self[1], scalar[2] // self[2], scalar[3] // self[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(scalar // self[0], scalar // self[1], scalar // self[2], scalar // self[3])
+            return Vec4(
+                scalar // self[0], scalar // self[1], scalar // self[2], scalar // self[3]  # type: ignore
+            )
 
     def __abs__(self) -> Vec4:
         return Vec4(abs(self[0]), abs(self[1]), abs(self[2]), abs(self[3]))
@@ -589,15 +782,23 @@ class Vec4(_typing.NamedTuple):
 
     def __mod__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
-            return Vec4(self[0] % other[0], self[1] % other[1], self[2] % other[2], self[3] % other[3])
+            return Vec4(
+                self[0] % other[0], self[1] % other[1], self[2] % other[2], self[3] % other[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] % other, self[1] % other, self[2] % other, self[3] % other)
+            return Vec4(
+                self[0] % other, self[1] % other, self[2] % other, self[3] % other  # type: ignore
+            )
 
     def __pow__(self, other: Vec4 | tuple[int, int, int, int] | float) -> Vec4:
         try:
-            return Vec4(self[0] ** other[0], self[1] ** other[1], self[2] ** other[2], self[3] ** other[3])
+            return Vec4(
+                self[0] ** other[0], self[1] ** other[1], self[2] ** other[2], self[3] ** other[3]  # type: ignore
+            )
         except TypeError:
-            return Vec4(self[0] ** other, self[1] ** other, self[2] ** other, self[3] ** other)
+            return Vec4(
+                self[0] ** other, self[1] ** other, self[2] ** other, self[3] ** other  # type: ignore
+            )
 
     def __lt__(self, other: Vec4) -> bool:
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
@@ -654,6 +855,25 @@ class Vec4(_typing.NamedTuple):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
+    if _typing.TYPE_CHECKING:
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: float) -> Vec4:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float, float], max_val: tuple[float, float, float, float]) -> Vec4:
+            ...
+
+        # -- Begin revert if perf-impacting block --
+        @_typing.overload
+        def clamp(self, min_val: tuple[float, float, float, float], max_val: float) -> Vec4:
+            ...
+
+        @_typing.overload
+        def clamp(self, min_val: float, max_val: tuple[float, float, float, float]) -> Vec4:
+            ...
+        # -- End revert if perf-impacting block --
+
     def clamp(
         self,
         min_val: float | tuple[float, float, float, float],
@@ -669,19 +889,24 @@ class Vec4(_typing.NamedTuple):
             max_val: The maximum value(s)
         """
         try:
-            return Vec4(
-                clamp(self[0], min_val[0], max_val[0]),
-                clamp(self[1], min_val[1], max_val[1]),
-                clamp(self[2], min_val[2], max_val[2]),
-                clamp(self[3], min_val[3], max_val[3]),
-            )
+            min_x, min_y, min_z, min_w = min_val[0], min_val[1], min_val[2], min_val[3]  # type: ignore
         except TypeError:
-            return Vec4(
-                clamp(self[0], min_val, max_val),
-                clamp(self[1], min_val, max_val),
-                clamp(self[2], min_val, max_val),
-                clamp(self[3], min_val, max_val),
-            )
+            min_x = min_val
+            min_y = min_val
+            min_z = min_val
+            min_w = min_val
+        try:
+            max_x, max_y, max_z, max_w = max_val[0], max_val[1],  max_val[2], max_val[3]  # type: ignore
+        except TypeError:
+            max_x = max_val
+            max_y = max_val
+            max_z = max_val
+            max_w = max_val
+
+        return Vec4(
+            clamp(self[0], min_x, max_x), clamp(self[1], min_y, max_y),  # type: ignore
+            clamp(self[2], min_z, max_z), clamp(self[3], min_w, max_w),  # type: ignore
+        )
 
     def dot(self, other: Vec4) -> float:
         """Calculate the dot product of this vector and another 4D vector.
@@ -697,9 +922,9 @@ class Vec4(_typing.NamedTuple):
     def __getattr__(self, attrs: str) -> Vec2 | Vec3 | Vec4:
         try:
             # Allow swizzled getting of attrs
-            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}[len(attrs)]
             return vec_class(*(self['xyzw'.index(c)] for c in attrs))
-        except (ValueError, TypeError) as err:
+        except (ValueError, KeyError, TypeError) as err:
             msg = f"'Vec4' has no attribute: '{attrs}'."
             raise AttributeError(msg) from err
 
@@ -873,7 +1098,7 @@ class Mat4(_typing.NamedTuple):
     p: float = 1.0
 
     @classmethod
-    def orthogonal_projection(cls: Mat4, left: float, right: float, bottom: float, top: float, z_near: float,
+    def orthogonal_projection(cls: _typing.Type[Mat4], left: float, right: float, bottom: float, top: float, z_near: float,
                               z_far: float) -> Mat4:
         """Create a Mat4 orthographic projection matrix for use with OpenGL.
 
@@ -899,7 +1124,7 @@ class Mat4(_typing.NamedTuple):
                    t_x, t_y, t_z, 1.0)
 
     @classmethod
-    def perspective_projection(cls: Mat4, aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
+    def perspective_projection(cls: _typing.Type[Mat4], aspect: float, z_near: float, z_far: float, fov: float = 60) -> Mat4:
         """Create a Mat4 perspective projection matrix for use with OpenGL.
 
         Given a desired aspect ratio, near/far planes, and fov (field of view),
@@ -936,7 +1161,7 @@ class Mat4(_typing.NamedTuple):
         return cls().rotate(angle, vector)
 
     @classmethod
-    def from_scale(cls: Mat4, vector: Vec3) -> Mat4:
+    def from_scale(cls: _typing.Type[Mat4], vector: Vec3) -> Mat4:
         """Create a scale matrix from a Vec3."""
         return cls(vector.x, 0.0, 0.0, 0.0,
                    0.0, vector.y, 0.0, 0.0,
@@ -944,7 +1169,7 @@ class Mat4(_typing.NamedTuple):
                    0.0, 0.0, 0.0, 1.0)
 
     @classmethod
-    def from_translation(cls: Mat4, vector: Vec3) -> Mat4:
+    def from_translation(cls: _typing.Type[Mat4], vector: Vec3) -> Mat4:
         """Create a translation matrix from a Vec3."""
         return cls(1.0, 0.0, 0.0, 0.0,
                    0.0, 1.0, 0.0, 0.0,
@@ -952,7 +1177,7 @@ class Mat4(_typing.NamedTuple):
                    vector.x, vector.y, vector.z, 1.0)
 
     @classmethod
-    def look_at(cls: Mat4, position: Vec3, target: Vec3, up: Vec3) -> Mat4:
+    def look_at(cls: _typing.Type[Mat4], position: Vec3, target: Vec3, up: Vec3) -> Mat4:
         """Create a viewing matrix that points toward a target.
 
         This method takes three Vec3s, describing the viewer's position,

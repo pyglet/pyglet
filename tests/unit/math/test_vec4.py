@@ -45,6 +45,9 @@ def test_swizzle():
     assert v.wzyx == (4, 3, 2, 1)
     assert v.xxxx == (1, 1, 1, 1)
 
+    with pytest.raises(AttributeError):
+        v.xxxxx
+
 
 def test_mutability():
     v = Vec4(1, 2, 3, 4)
@@ -58,6 +61,24 @@ def test_mutability():
         v.w = 1
     with pytest.raises(TypeError):
         v[0] = 1  # __setitem__ is not supported
+
+    # Swizzle is an output-only operation
+    with pytest.raises(AttributeError):
+        v.xyzw = (1, 2, 3, 4)
+    with pytest.raises(AttributeError):
+        v.yxzw = (2, 1, 3, 4)
+    with pytest.raises(AttributeError):
+        v.yzxw = (2, 3, 1, 4)
+    with pytest.raises(AttributeError):
+        v.zyxw = (3, 2, 1, 4)
+    with pytest.raises(AttributeError):
+        v.xy = (1, 2)
+    with pytest.raises(AttributeError):
+        v.xyz = (1, 2, 3)
+    with pytest.raises(AttributeError):
+        v.wzyx = (4, 3, 2, 1)
+    with pytest.raises(AttributeError):
+        v.xxxx = (1, 1, 1, 1)
 
 
 def test_len():
@@ -93,6 +114,32 @@ def test_add():
     v = Vec4(1, 2, 3, 4)
     v += (1, 2, 3, 4)
     assert v == Vec4(2, 4, 6, 8)
+
+
+def test_radd():
+    # The goals should be distinct and unreachable by
+    # simple mis-addition of the values below
+    goal_x = -3251.0
+    goal_y = 593.0
+    goal_z = 3847.0
+    goal_w = 7621.0
+    seq = [
+        Vec4(3.0, 0.0, 0.0, 0.0),
+        (0.0, 5.0, 0.0, 0.0),
+        Vec4(0.0, 0.0, 7.0, 0.0),
+        (0.0, 0.0, 0.0, 9.0),
+
+        Vec4(goal_x, goal_y, goal_z, goal_w),
+
+        # Opposites of the block above
+        (0.0, 0.0, 0.0, -9.0),
+        Vec4(-3.0, 0.0, 0.0, 0.0),
+        (0.0, -5.0, 0.0, 0.0),
+        Vec4(0.0, 0.0, -7.0, 0.0)
+    ]
+    assert sum(seq) == Vec4(goal_x, goal_y, goal_z, goal_w)
+
+
 
 
 def test_sub():
@@ -329,6 +376,9 @@ def test_clamp():
     assert Vec4(-6, -2, 2, 6).clamp(0, 8) == Vec4(0, 0, 2, 6)
 
     assert Vec4(-10, 0, 10, 20).clamp(Vec4(-20, -4, 0, 0), Vec4(0, 4, 8, 10)) == Vec4(-10, 0, 8, 10)
+    # Revert if necessary for perf
+    assert Vec4(-1, -1, 50, 50).clamp(Vec4(0, 0, 0, 0), 10) == Vec4(0, 0, 10, 10)
+    assert Vec4(-1, -1, 50, 50).clamp(0, Vec4(10, 10, 10, 10)) == Vec4(0, 0, 10, 10)
 
 
 def test_dot():

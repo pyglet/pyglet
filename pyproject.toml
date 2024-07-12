@@ -13,6 +13,17 @@ requires-python = ">=3.8"
 [project.urls]
 Home = "https://pyglet.org"
 
+[[tool.mypy.overrides]]
+# mypy incorrectly reports issues everywhere in pyglet.math because:
+# 1. pyglet.math is almost entirely typing.NamedTuple subclasses
+# 2. The mypy project has the following long-standing stance on
+#    supporting collections.namedtuple and typing.NamedTuple:
+#    "Duplicate of #5613, still low priority, better use dataclasses,
+#    as suggested above."
+#    https://github.com/python/mypy/issues/5944#issuecomment-441285456
+module = "pyglet.math"
+ignore_errors = true
+
 [tool.ruff]
 line-length = 120
 indent-width = 4

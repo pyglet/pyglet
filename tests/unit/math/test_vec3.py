@@ -40,6 +40,10 @@ def test_swizzle():
     assert v.zyx == (3, 2, 1)
     assert v.xy == (1, 2)
     assert v.xxxx == (1, 1, 1, 1)
+    assert v.xyzx == (1, 2, 3, 1)
+
+    with pytest.raises(AttributeError):
+        v.xxxxx
 
 
 def test_mutability():
@@ -52,6 +56,22 @@ def test_mutability():
         v.z = 1
     with pytest.raises(TypeError):
         v[0] = 1  # __setitem__ is not supported
+
+    # Swizzle is an output-only operation
+    with pytest.raises(AttributeError):
+        v.xyz = (1, 2, 3)
+    with pytest.raises(AttributeError):
+        v.yxz = (2, 1, 3)
+    with pytest.raises(AttributeError):
+        v.yzx = (2, 3, 1)
+    with pytest.raises(AttributeError):
+        v.zyx = (3, 2, 1)
+    with pytest.raises(AttributeError):
+        v.xy = (1, 2)
+    with pytest.raises(AttributeError):
+        v.xxxx = (1, 1, 1, 1)
+    with pytest.raises(AttributeError):
+        v.xyzx = (1, 2, 3, 1)
 
 
 def test_len():
@@ -87,6 +107,27 @@ def test_add():
     v = Vec3(1, 2, 3)
     v += (1, 2, 3)
     assert v == Vec3(2, 4, 6)
+
+
+def test_radd():
+    # The goals should be distinct and unreachable by
+    # simple mis-addition of the values below
+    goal_x = -6709.0
+    goal_y = 359.0
+    goal_z = 7829.0
+    seq = [
+        Vec3(3.0, 0.0, 0.0),
+        (0.0, 5.0, 0.0),
+        Vec3(0.0, 0.0, 7.0),
+
+        Vec3(goal_x, goal_y, goal_z),
+
+        # Opposites of the block above
+        (-3.0, 0.0, 0.0),
+        Vec3(0.0, -5.0, 0.0),
+        (0.0, 0.0, -7.0)
+    ]
+    assert sum(seq) == Vec3(goal_x, goal_y, goal_z)
 
 
 def test_sub():
@@ -325,6 +366,10 @@ def test_clamp():
     assert Vec3(-10, 0, 10).clamp(Vec3(-20, -5, 0), Vec3(0, 5, 10)) == Vec3(-10, 0, 10)
     assert Vec3(-10, 0, 10).clamp(Vec3(-20, 5, 0), Vec3(0, 20, 10)) == Vec3(-10, 5, 10) 
     assert Vec3(-10, 0, 10).clamp(Vec3(0, -5, 0), Vec3(20, 5, 10)) == Vec3(0, 0, 10)
+
+    # Revert if necessary for perf
+    assert Vec3(-1, 50, 50).clamp(Vec3(0, 0, 0), 10) == Vec3(0, 10, 10)
+    assert Vec3(-1, -1, 50).clamp(0, Vec3(10, 10, 10)) == Vec3(0, 0, 10)
 
 
 def test_index():
