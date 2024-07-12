@@ -2,7 +2,6 @@
 
 More information is available at http://www.pyglet.org
 """
-# ruff: noqa: PGH003
 from __future__ import annotations
 
 import os

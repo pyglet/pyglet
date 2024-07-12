@@ -81,6 +81,7 @@ inline-quotes = 'single'
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/lib.py" = ["ANN", "ARG002", "T201"]
 "pyglet/gl/*" = ["N816", "I001", "N801", "E501", "D"]
+"pyglet/__init__.py" = ["PGH003"]
 "examples/*" = [
     "I",
     "D",
