@@ -42,7 +42,6 @@ ignore = [
     "TRY",    # no triceratops.
     "NPY",    # remove numpy
     "Q000",   # double quotes
-    "I001",   # Ignore import order
     "ERA001", # allow commented-out code
     "T201",   # allow writing print
 ]
