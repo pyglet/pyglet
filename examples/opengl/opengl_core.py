@@ -1,7 +1,7 @@
 import pyglet
 from pyglet.gl import (
     glClearColor,
-    GL_TRIANGLES
+    GL_TRIANGLES,
 )
 
 
@@ -9,7 +9,7 @@ from pyglet.gl import (
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 batch = pyglet.graphics.Batch()
-print("OpenGL Context: {}".format(window.context.get_info().version))
+print(f"OpenGL Context: {window.context.get_info().version}")
 
 program = pyglet.graphics.get_default_shader()
 

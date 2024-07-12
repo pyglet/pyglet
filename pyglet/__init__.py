@@ -8,7 +8,11 @@ import os
 import sys
 from collections.abc import ItemsView, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import FrameType
+    from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
 version = "2.0.15"
@@ -178,7 +182,7 @@ class Options:
 
     headless_device: int = 0
     """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
-    GPU to use. This is only useful on multi-GPU systems. 
+    GPU to use. This is only useful on multi-GPU systems.
     """
 
     win32_disable_shaping: bool = False
@@ -267,7 +271,7 @@ class Options:
 
 
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
-options = Options()
+options: Options = Options()
 
 
 for _key, _type in options.__annotations__.items():
@@ -287,10 +291,10 @@ if compat_platform == "cygwin":
     # DirectSound support.
     import ctypes
 
-    ctypes.windll = ctypes.cdll  # type: ignore
-    ctypes.oledll = ctypes.cdll  # type: ignore
+    ctypes.windll = ctypes.cdll
+    ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
-    ctypes.HRESULT = ctypes.c_long  # type: ignore
+    ctypes.HRESULT = ctypes.c_long
 
 # Call tracing
 # ------------
@@ -302,17 +306,17 @@ _trace_depth = options["debug_trace_depth"]
 _trace_flush = options["debug_trace_flush"]
 
 
-def _trace_repr(value, size=40):
+def _trace_repr(value: Sized, size: int=40) -> str:
     value = repr(value)
     if len(value) > size:
         value = value[:size // 2 - 2] + "..." + value[-size // 2 - 1:]
     return value
 
 
-def _trace_frame(thread, frame, indent):
-    if frame.f_code is lib._TraceFunction.__call__.__code__:
+def _trace_frame(thread: int, frame: FrameType, indent: str) -> None:
+    if frame.f_code is lib._TraceFunction.__call__.__code__: # noqa: SLF001
         is_ctypes = True
-        func = frame.f_locals["self"]._func
+        func = frame.f_locals["self"]._func # noqa: SLF001
         name = func.__name__
         location = "[ctypes]"
     else:
@@ -353,23 +357,23 @@ def _trace_frame(thread, frame, indent):
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
                     print(f"  {indent}{argname}={argvalue}")
-                except:
+                except: # noqa: S110, E722, PERF203
                     pass
 
     if _trace_flush:
         sys.stdout.flush()
 
 
-def _thread_trace_func(thread):
-    def _trace_func(frame, event, arg):
+def _thread_trace_func(thread: int) -> Callable[[FrameType, str, Any], object]:
+    def _trace_func(frame: FrameType, event: str, arg: Any) -> None:
         if event == "call":
             indent = ""
-            for i in range(_trace_depth):
+            for _ in range(_trace_depth):
                 _trace_frame(thread, frame, indent)
                 indent += "  "
-                frame = frame.f_back
-                if not frame:
+                if frame.f_back is None:
                     break
+                frame = frame.f_back
 
         elif event == "exception":
             (exception, value, traceback) = arg
@@ -378,8 +382,8 @@ def _thread_trace_func(thread):
     return _trace_func
 
 
-def _install_trace():
-    global _trace_thread_count
+def _install_trace() -> None:
+    global _trace_thread_count # noqa: PLW0603
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
 
@@ -390,10 +394,10 @@ def _install_trace():
 class _ModuleProxy:
     _module = None
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.__dict__["_module_name"] = name
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str): # noqa: ANN204
         try:
             return getattr(self._module, name)
         except AttributeError:
@@ -407,7 +411,7 @@ class _ModuleProxy:
             globals()[self._module_name] = module
             return getattr(module, name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any): # noqa: ANN204
         try:
             setattr(self._module, name, value)
         except AttributeError:
@@ -457,7 +461,7 @@ else:
     graphics = _ModuleProxy("graphics")  # type: ignore
     gui = _ModuleProxy("gui")  # type: ignore
     image = _ModuleProxy("image")  # type: ignore
-    input = _ModuleProxy("input")  # type: ignore
+    input = _ModuleProxy("input") # noqa: A001 TODO: change this name  # type: ignore
     lib = _ModuleProxy("lib")  # type: ignore
     math = _ModuleProxy("math")  # type: ignore
     media = _ModuleProxy("media")  # type: ignore

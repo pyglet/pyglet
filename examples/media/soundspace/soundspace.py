@@ -79,12 +79,12 @@ class Handle:
         self.player = player
 
     def hit_test(self, x, y, z):
-        dx, dy, dz = [a - b for a, b in zip(self.pos(), (x, y, z))]
+        dx, dy, dz = (a - b for a, b in zip(self.pos(), (x, y, z)))
         if dx * dx + dy * dy + dz * dz < self.radius * self.radius:
             return -dx, -dy, -dz
 
     def pos(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def delete(self):
         pass
@@ -240,7 +240,7 @@ class ConeAngleHandle(Handle):
         return px + x, py, pz + z
 
     def get_angle(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def update_shapes(self):
         px, _, py = self.player.position
@@ -335,7 +335,7 @@ class MoreHandle(Handle):
         return x + 1, y, z + 1
 
     def get_angle(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def update_shapes(self):
         self._box.visible = self.open

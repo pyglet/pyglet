@@ -5,7 +5,7 @@ help or introductory screen.
 import os
 import pyglet
 
-html = '''
+html = """
 <h1>HTML labels in pyglet</h1>
 
 <p align="center"><img src="pyglet.png" /></p>
@@ -15,7 +15,7 @@ Different <font face="Helvetica,Arial" size=+2>fonts</font>, <em>styles</em>,
 <u>underlines</u>, and <font color=maroon>colours</font> are supported.
 
 <p>This window has been made resizable; text will reflow to fit the new size.
-'''
+"""
 
 window = pyglet.window.Window(resizable=True)
 location = pyglet.resource.FileLocation(os.path.dirname(__file__))

@@ -35,11 +35,11 @@ def toggle_button_handler(value):
 
 
 def push_button_handler():
-    push_label.text = f"Push Button: True"
+    push_label.text = "Push Button: True"
 
 
 def release_button_handler():
-    push_label.text = f"Push Button: False"
+    push_label.text = "Push Button: False"
 
 
 def text_entry_handler(text):

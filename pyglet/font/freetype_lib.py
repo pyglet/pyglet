@@ -160,7 +160,7 @@ class FT_LibraryRec(Structure):
     def __del__(self) -> None:
         global _library  # noqa: PLW0603
         try:
-            print("FT_LibraryRec.__del__")  # noqa: T201
+            print("FT_LibraryRec.__del__") 
             FT_Done_FreeType(byref(self))
             _library = None
         except:  # noqa: S110, E722
@@ -196,7 +196,7 @@ class FT_Glyph_Metrics(Structure):
 
     def dump(self) -> None:
         for (name, _) in self._fields_:
-            print("FT_Glyph_Metrics", name, repr(getattr(self, name)))  # noqa: T201
+            print("FT_Glyph_Metrics", name, repr(getattr(self, name))) 
 
 
 FT_Glyph_Format = c_ulong
@@ -343,7 +343,7 @@ class FT_FaceRec(Structure):
 
     def dump(self) -> None:
         for (name, _) in self._fields_:
-            print("FT_FaceRec", name, repr(getattr(self, name)))  # noqa: T201
+            print("FT_FaceRec", name, repr(getattr(self, name))) 
 
     def has_kerning(self) -> bool:
         return self.face_flags & FT_FACE_FLAG_KERNING

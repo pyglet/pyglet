@@ -14,6 +14,7 @@ Modules must also implement the two functions::
         return []
 
 """
+from __future__ import annotations
 
 import os.path
 
@@ -29,8 +30,7 @@ class _ImageCodecRegistry(CodecRegistry):
         super().__init__()
 
     def add_decoders(self, module):
-        """Override the default method to also add animation decoders.
-        """
+        """Override the default method to also add animation decoders."""
         super().add_decoders(module)
         for decoder in module.get_decoders():
             for extension in decoder.get_animation_file_extensions():
@@ -68,7 +68,8 @@ class _ImageCodecRegistry(CodecRegistry):
                     file.seek(0)
 
         if not first_exception:
-            raise DecodeException(f"No decoders available for this file type: {filename}")
+            msg = f"No decoders available for this file type: {filename}"
+            raise DecodeException(msg)
         raise first_exception
 
 
@@ -90,7 +91,7 @@ class ImageEncodeException(EncodeException):
 
 class ImageDecoder(Decoder):
 
-    def get_animation_file_extensions(self):
+    def get_animation_file_extensions(self) -> list[str]:
         """Return a list of accepted file extensions, e.g. ['.gif', '.flc']
         Lower-case only.
         """
@@ -110,8 +111,8 @@ class ImageDecoder(Decoder):
         """
         raise ImageDecodeException('This decoder cannot decode animations.')
 
-    def __repr__(self):
-        return "{0}{1}".format(self.__class__.__name__,
+    def __repr__(self) -> str:
+        return "{}{}".format(self.__class__.__name__,
                                self.get_animation_file_extensions() +
                                self.get_file_extensions())
 
@@ -124,8 +125,8 @@ class ImageEncoder(Encoder):
         """
         raise NotImplementedError()
 
-    def __repr__(self):
-        return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}{self.get_file_extensions()}"
 
 
 def add_default_codecs():

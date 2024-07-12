@@ -17,12 +17,12 @@ from math import pi, sin, cos
 
 import pyglet
 from pyglet.gl import (
-    glEnable, 
-    glClearColor, 
+    glEnable,
+    glClearColor,
     Config,
-    GL_DEPTH_TEST, 
-    GL_CULL_FACE, 
-    GL_TRIANGLES
+    GL_DEPTH_TEST,
+    GL_CULL_FACE,
+    GL_TRIANGLES,
 )
 from pyglet.math import Mat4, Vec3
 

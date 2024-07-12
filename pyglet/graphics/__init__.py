@@ -449,24 +449,24 @@ class Batch:
 
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
-            print(indent, 'Begin group', group)
+            print(indent, 'Begin group', group) 
             domain_map = self.group_map[group]
-            for _, domain in domain_map.items():
-                print(indent, '  ', domain)
+            for domain in domain_map.values():
+                print(indent, '  ', domain) 
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size))
+                    print(indent, '    ', 'Region %d size %d:' % (start, size)) 
                     for key, attribute in domain.attribute_names.items():
-                        print(indent, '      ', end=' ')
+                        print(indent, '      ', end=' ') 
                         try:
                             region = attribute.get_region(attribute.buffer, start, size)
-                            print(key, region.array[:])
-                        except:
-                            print(key, '(unmappable)')
+                            print(key, region.array[:]) 
+                        except:  # noqa: E722
+                            print(key, '(unmappable)') 
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print(indent, 'End group', group)
+            print(indent, 'End group', group) 
 
-        print(f'Draw list for {self!r}:')
+        print(f'Draw list for {self!r}:') 
         for group in self.top_groups:
             dump(group)
 

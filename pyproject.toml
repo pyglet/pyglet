@@ -4,9 +4,11 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "pyglet"
-authors = [{name = "Alex Holkner & contributors", email = "Alex.Holkner@gmail.com"}]
+authors = [
+    { name = "Alex Holkner & contributors", email = "Alex.Holkner@gmail.com" },
+]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 dynamic = ["version", "description"]
 requires-python = ">=3.8"
 
@@ -24,22 +26,24 @@ extend-safe-fixes = ["UP007", "UP006"]
 
 ignore = [
     "C90",  # mccabe
-    "FBT", # allow boolean args.
+    "FBT",  # allow boolean args.
     "CPY",  # copyright
     "S101", # allow asserts.
-    "E731",  # Allow lambda
-    "E741",  # Allow short variable names.
-    "D102",  # Do not check public method docstrings (Cannot determine overridden docstrings)
-             # @typing.override not available until python 3.12 (PEP 698)
-    "PLR",  # Too many of too many checks.
-    "ANN101",  # Ignore self type annotation.
+    "E731", # Allow lambda
+    "E741", # Allow short variable names.
+    "D102", # Do not check public method docstrings (Cannot determine overridden docstrings)
+    # @typing.override not available until python 3.12 (PEP 698)
+    "PLR",    # Too many of too many checks.
+    "ANN101", # Ignore self type annotation.
     "ANN401", # Allow Any as type annotation
-    "D105",  # Allow no docstring magic method.
+    "D105",   # Allow no docstring magic method.
     "SIM108", # Simplify if/else is not always best.
-    "PTH",  # don't require pathlib. Add eventually?
-    "TRY",  # no triceratops.
-    "NPY",  # remove numpy
-    "Q000",  # double quotes
+    "PTH123", # allow to use `open` not `Path.open`
+    "TRY",    # no triceratops.
+    "NPY",    # remove numpy
+    "Q000",   # double quotes
+    "ERA001", # allow commented-out code
+    "T201",   # allow writing print
 ]
 
 exclude = ["venv/*", ".venv/*", "build/*", "doc/*", ".github/*"]
@@ -75,5 +79,23 @@ inline-quotes = 'single'
 "pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
-"examples/*" = ["I"]
-"pyglet/graphics/shader.py" = ["I001"]
+"pyglet/lib.py" = ["ANN", "ARG002", "T201"]
+"pyglet/gl/*" = ["N816", "I001", "N801", "E501", "D"]
+"pyglet/__init__.py" = ["PGH003"]
+"examples/*" = [
+    "I",
+    "D",
+    "B",
+    "W",
+    "S",
+    "ANN",
+    "ARG",
+    "E501",
+    "INP001",
+    "F811",
+    "PLW0602",
+    "PLW0604",
+    "SLF001",
+    "ERA001",
+    "F405",
+]

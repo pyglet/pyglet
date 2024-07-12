@@ -333,7 +333,7 @@ class AbstractDocument(event.EventDispatcher):
         return value
 
     @abstractmethod
-    def get_font_runs(self, dpi: float | None = None) -> runlist.AbstractRunIterator:
+    def get_font_runs(self, dpi: int | None = None) -> runlist.AbstractRunIterator:
         """Get a style iterator over the `pyglet.font.Font` instances used in the document.
 
         The font instances are created on-demand by inspection of the
@@ -347,7 +347,7 @@ class AbstractDocument(event.EventDispatcher):
         """
 
     @abstractmethod
-    def get_font(self, position: int, dpi: float | None = None) -> Font:
+    def get_font(self, position: int, dpi: int | None = None) -> Font:
         """Get the font instance used at the given position.
 
         :see: `get_font_runs`
@@ -360,7 +360,7 @@ class AbstractDocument(event.EventDispatcher):
                 :see: :py:func:`~pyglet.font.load`.
         """
 
-    def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:
+    def insert_text(self, start: int, text: str, attributes: dict[str, Any] | None = None) -> None:  # noqa: D417
         """Insert text into the document.
 
         Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_insert_text` event.
@@ -372,7 +372,7 @@ class AbstractDocument(event.EventDispatcher):
                 Text to insert.
             attributes:
                 Optional dictionary giving named style attributes of the inserted text.
-        """
+        """  # noqa: D411, D405, D214, D410
         self._insert_text(start, text, attributes)
         self.dispatch_event("on_insert_text", start, text)
 
@@ -402,7 +402,7 @@ class AbstractDocument(event.EventDispatcher):
     def _delete_text(self, start: int, end: int) -> None:
         for element in list(self._elements):
             assert element.position is not None
-            if start <= element._position < end:  # noqa: SLF001
+            if start <= element._position < end: # noqa: SLF001
                 self._elements.remove(element)
             elif element._position >= end:  # fixes #538  # noqa: SLF001
                 element._position -= (end - start)  # noqa: SLF001
@@ -446,7 +446,7 @@ class AbstractDocument(event.EventDispatcher):
         msg = f"No element at position {position}"
         raise RuntimeError(msg)
 
-    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+    def set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: D417
         """Set text style of a range between start and end of the document.
 
         Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_style_text` event.
@@ -459,7 +459,7 @@ class AbstractDocument(event.EventDispatcher):
             attributes:
                 Dictionary giving named style attributes of the text.
 
-        """
+        """  # noqa: D214, D405, D411, D410
         self._set_style(start, end, attributes)
         self.dispatch_event("on_style_text", start, end, attributes)
 
@@ -467,7 +467,7 @@ class AbstractDocument(event.EventDispatcher):
     def _set_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
         ...
 
-    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:
+    def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: D417
         """Set the style for a range of paragraphs.
 
         This is a convenience method for `set_style` that aligns the character range to the enclosing paragraph(s).
@@ -482,7 +482,7 @@ class AbstractDocument(event.EventDispatcher):
             attributes:
                 Dictionary giving named style attributes of the paragraphs.
 
-        """
+        """  # noqa: D214, D405, D411, D410
         start = self.get_paragraph_start(start)
         end = self.get_paragraph_end(end)
         self._set_style(start, end, attributes)
@@ -513,7 +513,7 @@ class AbstractDocument(event.EventDispatcher):
             :event:
             """
 
-        def on_style_text(self, start: int, end: int, attributes: dict[str, Any] | None) -> None:
+        def on_style_text(self, start: int, end: int, attributes: dict[str, Any] | None) -> None:  # noqa: D417
             """Text character style was modified.
 
             Args:
@@ -525,7 +525,7 @@ class AbstractDocument(event.EventDispatcher):
                     Dictionary giving updated named style attributes of the text.
 
             :event:
-            """
+            """  # noqa: D214, D405, D411, D410
 
 
 AbstractDocument.register_event_type("on_insert_text")
@@ -562,11 +562,11 @@ class UnformattedDocument(AbstractDocument):
     def set_paragraph_style(self, start: int, end: int, attributes: dict[str, Any]) -> None:  # noqa: ARG002
         return super().set_paragraph_style(0, len(self.text), attributes)
 
-    def get_font_runs(self, dpi: float | None = None) -> runlist.ConstRunIterator:
+    def get_font_runs(self, dpi: int | None = None) -> runlist.ConstRunIterator:
         ft: Font = self.get_font(dpi=dpi)
         return runlist.ConstRunIterator(len(self.text), ft)
 
-    def get_font(self, position: int | None = None, dpi: float | None = None) -> Font:  # noqa: ARG002
+    def get_font(self, position: int | None = None, dpi: int | None = None) -> Font:  # noqa: ARG002
         from pyglet import font
         font_name = self.styles.get("font_name")
         font_size = self.styles.get("font_size")
@@ -611,7 +611,7 @@ class FormattedDocument(AbstractDocument):
                 runs.insert(0, len(self._text))
             runs.set_run(start, end, value)
 
-    def get_font_runs(self, dpi: float | None = None) -> _FontStyleRunsRangeIterator:
+    def get_font_runs(self, dpi: int | None = None) -> _FontStyleRunsRangeIterator:
         return _FontStyleRunsRangeIterator(
             self.get_style_runs("font_name"),
             self.get_style_runs("font_size"),
@@ -620,7 +620,7 @@ class FormattedDocument(AbstractDocument):
             self.get_style_runs("stretch"),
             dpi)
 
-    def get_font(self, position: int, dpi: float | None = None) -> Font:
+    def get_font(self, position: int, dpi: int | None = None) -> Font:
         runs_iter = self.get_font_runs(dpi)
         return runs_iter[position]
 
@@ -670,7 +670,7 @@ class _ElementIterator(runlist.RunIterator):
 class _FontStyleRunsRangeIterator(runlist.RunIterator):
     # XXX subclass runlist
     def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, bolds: runlist.RunIterator,
-                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: float | None) -> None:
+                 italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: int | None) -> None:
         self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 

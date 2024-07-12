@@ -8,7 +8,6 @@ Usage::
 A checkerboard background is visible behind any transparent areas.
 """
 
-from __future__ import print_function
 
 import sys
 

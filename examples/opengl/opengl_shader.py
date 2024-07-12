@@ -10,7 +10,7 @@ from pyglet.gl import (
     GL_TRIANGLES,
     GL_BLEND,
     GL_SRC_ALPHA,
-    GL_ONE_MINUS_SRC_ALPHA
+    GL_ONE_MINUS_SRC_ALPHA,
 )
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram

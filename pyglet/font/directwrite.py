@@ -2046,7 +2046,7 @@ class Win32DirectWriteFont(base.Font):
     texture_internalformat = pyglet.gl.GL_RGBA
 
     def __init__(self, name: str, size: float, bold: bool | str = False, italic: bool | str = False,
-                 stretch: bool | str = False, dpi: float | None = None, locale: str | None = None) -> None:
+                 stretch: bool | str = False, dpi: int | None = None, locale: str | None = None) -> None:
         self._filename: str | None = None
         self._advance_cache = {}  # Stores glyph's by the indice and advance.
 

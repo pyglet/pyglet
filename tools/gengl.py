@@ -1,6 +1,5 @@
-"""
-Generate gl.py and gl_compat.py
-See : tools/requirements.txt
+"""Generate gl.py and gl_compat.py
+See : tools/requirements.txt.
 
 We are using the opengl-registry project to extract this information from
 https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/master/xml/gl.xml
@@ -15,9 +14,9 @@ python gengl.py --source url
 
 # Use local gl.xml
 python gengl.py --source local
-"""
+"""  # noqa: D205
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from opengl_registry import Registry, RegistryReader
@@ -26,7 +25,7 @@ REPO_ROOT = Path(__file__).parent.parent.resolve()
 DEST_PATH = REPO_ROOT / "pyglet" / "gl"
 
 
-def main():
+def main() -> None:  # noqa: D103
     values = parse_args(sys.argv[1:])
     if values.source == "url":
         # Fetch gl.xml from Khronos Github repo
@@ -36,7 +35,7 @@ def main():
         reader = RegistryReader.from_file(Path(REPO_ROOT / "tools" / "gl.xml"))
 
     registry = reader.read()
-    
+
     # OpenGL extensions we want to include
     extensions = [
         "GL_ARB_multisample",
@@ -74,18 +73,18 @@ def main():
     # es_writer.run()
 
 
-def parse_args(args):
+def parse_args(args: str) -> Namespace:  # noqa: D103
     parser = ArgumentParser()
     parser.add_argument("--source", choices=["local", "url"], default="url")
     return parser.parse_args(args)
 
 
 class PygletGLWriter:
-    """Writes gl.py, gl_compat.py, and gl_es.py"""
+    """Writes gl.py, gl_compat.py, and gl_es.py."""
 
     # All gl types manually matched to ctypes.
     # Inspect registry.types
-    types = {
+    types = {  # noqa: RUF012
         "GLenum": "c_uint",
         "GLboolean": "c_ubyte",
         "GLbitfield": "c_uint",
@@ -133,26 +132,26 @@ class PygletGLWriter:
         """Write out a string to the out file"""
         self._out.write(content)
 
-    def write_lines(self, lines: str):
-        """Write one or several lines to the out file"""
+    def write_lines(self, lines: str) -> None:
+        """Write one or several lines to the out file."""
         for line in lines:
             self._out.write(line)
             self._out.write("\n")
 
-    def write_header(self):
-        """Write the header"""
+    def write_header(self) -> None:
+        """Write the header."""
         with open(REPO_ROOT / "tools" / "gl.template") as fd:
             self.write(fd.read())
 
-    def write_types(self):
-        """Write all types"""
+    def write_types(self) -> None:
+        """Write all types."""
         self.write_lines(["# GL type definitions"])
         self.write_lines([f"{k} = {v}" for k, v in self.types.items()])
         self.write_lines([""])
         self._all.extend(self.types.keys())
 
-    def write_enums(self):
-        """Write all enums"""
+    def write_enums(self) -> None:
+        """Write all enums."""
         self.write_lines(["# GL enumerant (token) definitions"])
         self.write_lines([
             f"{e.name} = {e.value_int}"
@@ -161,8 +160,8 @@ class PygletGLWriter:
         self.write_lines([""])
         self._all.extend(self._registry.enums.keys())
 
-    def write_commands(self):
-        """Write all commands"""
+    def write_commands(self) -> None:
+        """Write all commands."""
         self.write_lines(["# GL command definitions"])
 
         # _link_function params : name, restype, argtypes, requires=None, suggestions=None
@@ -210,8 +209,8 @@ class PygletGLWriter:
 
         self.write_lines([""])
 
-    def write_footer(self):
-        """Write __all__ section"""
+    def write_footer(self) -> None:
+        """Write __all__ section."""
         self.write_lines([
             "",
             "__all__ = [",
