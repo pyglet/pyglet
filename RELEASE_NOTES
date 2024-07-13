@@ -2,13 +2,37 @@ pyglet 2.0.16
 
 Changes and Improvements
 ------------------------
-- library-wide overhaul of docstrings, and addition of type hints (#1084)
+- library-wide overhaul of docstrings, and addition of type hints. (#1084)
+- sprite: Add `blend_mode` property to change BLEND_MODE without needing to re-create the Sprite.
+- sprite: Deprecate `AdvancedSprite`, and merge functionality into default `Sprite` class.
+- sprite: Add `get_sprite_group` method, allowing easy usage of custom SpriteGroups in subclasses.
+- image: Code for `Texture.blit` has been inlined. (#1109)
+- shapes: Concave polygon can be drawn by earcutting a polygon. (#1121)
+- shapes: Add Rounded Rectangle shape. (#1131)
+- shapes: Add `thickness` property to `Box` shapes.
+- libs: Add `pyglet.libs.ioctl` module, to consolidate shared code on Linux.
+- gui: Add a pseudo "nine-path" Sprite-like class for variable sized windows.
+- math: Add `match` statement support to Vec classes.
+- graphics: Don't re-create a Shader each call to `draw` or `draw_indexed`.
+- pyglet.options: Add runtime typing enforcement to user-set options.
+- pyglet.experimental: Add simple GPU-based particle system in `particles` module.
+- text.layout: Update `on_style_text` to be more efficient.
 
 Bugfixes
 --------
-- resource: Fix indexing of directories inside of Zip files. Remove broken code for multi-part archives.
+- window.macos: Fix constant appearance of blinking caret on M1 based Macs. (#1160)
+- window.xlib: Avoid XSet/UnsetICFocus calls when _have_utf8 is False. (#1049)
+- window.win32: Fix application not updating timers and redrawing during moves. (#1125)
 - shapes: Add missing `thickness` property to Box.
 - shapes: Add missing docstrings to `Arc` `thickness` property.
+- shapes: Fix ShapeBase.group setter to only migrate batch when batch is not None. (#1090)
+- shapes: BezierCurve: fix miter artifacts from #1134. (#1155)
+- examples: Fix "more" button outline in soundspace example. (#1085)
+- tests: Fix a rarely-failing audio time test. (#1092)
+- input.controller: Fix accidentially missed mappings.
+- graphics.shader: Add missing parent program reference in Uniforms (#1103)
+- graphics.domain: Fix VertexList.resize method.
+- text.directwrite: Fix crash with dw_legacy_naming. Check if a custom collection exists before find a font with it.
 
 
 pyglet 2.0.15
