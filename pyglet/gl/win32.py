@@ -21,7 +21,7 @@ from .base import DisplayConfig, Config, Context
 
 
 class Win32Config(Config):  # noqa: D101
-    def match(self, canvas: Win32Canvas) -> list[Win32DisplayConfig] | list[Win32CanvasConfigARB]:
+    def match(self, canvas: Win32Canvas) -> list[Win32DisplayConfig] | list[Win32DisplayConfigARB]:
         if not isinstance(canvas, Win32Canvas):
             msg = 'Canvas must be instance of Win32Canvas'
             raise RuntimeError(msg)
@@ -32,7 +32,7 @@ class Win32Config(Config):  # noqa: D101
 
         return self._get_pixel_format_descriptor_matching_configs(canvas)
 
-    def _get_pixel_format_descriptor_matching_configs(self, canvas: Win32Canvas) -> list[Win32CanvasConfig]:
+    def _get_pixel_format_descriptor_matching_configs(self, canvas: Win32Canvas) -> list[Win32DisplayConfig]:
         """Get matching configs using standard PIXELFORMATDESCRIPTOR technique."""
         pfd = PIXELFORMATDESCRIPTOR()
         pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
@@ -74,7 +74,7 @@ class Win32Config(Config):  # noqa: D101
         else:
             return []
 
-    def _get_arb_pixel_format_matching_configs(self, canvas: Win32Canvas) -> list[Win32CanvasConfigARB]:
+    def _get_arb_pixel_format_matching_configs(self, canvas: Win32Canvas) -> list[Win32DisplayConfigARB]:
         """Get configs using the WGL_ARB_pixel_format extension.
 
         This method assumes a (dummy) GL context is already created.

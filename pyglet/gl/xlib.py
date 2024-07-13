@@ -203,7 +203,7 @@ class XlibContext(Context):  # noqa: D101
         return glxext_arb.glXCreateContextAttribsARB(self.config.canvas.display._display,  # noqa: SLF001
                                                      self.config.fbconfig, share_context, True, attribs)
 
-    def attach(self, canvas: XlibDisplay) -> None:
+    def attach(self, canvas: XlibCanvas) -> None:
         if canvas is self.canvas:
             return
 
