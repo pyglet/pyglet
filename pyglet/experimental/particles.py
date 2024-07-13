@@ -18,15 +18,19 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 vertex_source = """#version 150
     in vec3 position;
     in vec4 size;
-    in vec2 scale;
-    in vec4 color;
+    in vec4 scale;
+    in vec4 velocity;
+    in vec4 color_start;
+    in vec4 color_end;
     in vec4 texture_uv;
     in float rotation;
     in float birth;
 
     out vec4 geo_size;
-    out vec2 geo_scale;
-    out vec4 geo_color;
+    out vec4 geo_scale;
+    out vec4 geo_velocity;
+    out vec4 geo_color_start;
+    out vec4 geo_color_end;
     out vec4 geo_tex_coords;
     out float geo_rotation;
     out float geo_birth;
@@ -36,7 +40,9 @@ vertex_source = """#version 150
         gl_Position = vec4(position, 1);
         geo_size = size;
         geo_scale = scale;
-        geo_color = color;
+        geo_velocity = velocity;
+        geo_color_start = color_start;
+        geo_color_end = color_end;
         geo_tex_coords = texture_uv;
         geo_rotation = rotation;
         geo_birth = birth;
@@ -62,8 +68,10 @@ geometry_source = """#version 150
     // shader we need to define the inputs from it as arrays.
     // For our purposes, we just take single values (points).
     in vec4 geo_size[];
-    in vec2 geo_scale[];
-    in vec4 geo_color[];
+    in vec4 geo_scale[];
+    in vec4 geo_velocity[];
+    in vec4 geo_color_start[];
+    in vec4 geo_color_end[];
     in vec4 geo_tex_coords[];
     in float geo_rotation[];
     in float geo_birth[];
@@ -76,12 +84,11 @@ geometry_source = """#version 150
         // Unpack the image size and anchor
         vec2 size = geo_size[0].xy;
         vec2 anchor = geo_size[0].zw;
-
-        vec2 scale = geo_scale[0].xy;
-        float rotation = geo_rotation[0];
-
-        float gravity = -1.0;
-        float velocity = 100.0;
+        vec2 scale_start = geo_scale[0].xy;
+        vec2 scale_end = geo_scale[0].zw;
+        
+        vec2 velocity = geo_velocity[0].xy;
+        vec2 spread = geo_velocity[0].zw;
 
         float birth = geo_birth[0];
         float elapsed = time - birth;
@@ -90,16 +97,25 @@ geometry_source = """#version 150
         int vert_id = geo_vert_id[0];
 
         for(int i=0;i<8;++i){
-            frag_color = geo_color[0];
-            frag_color.r -= sin(birth * 0.1);
-            frag_color.g -= sin(birth * 0.3);
-            frag_color.b -= sin(birth * 0.6);
-            frag_color.a -= mod(elapsed, 1.0);
+            // TODO: user supplied rotation speed
+            float time_scale = mod(elapsed - (i / 7.0), 1.0);
+            float rotation = geo_rotation[0] + time_scale * 100;
 
+            // TODO: user supplied X, Y velocities
             vec3 center = gl_in[0].gl_Position.xyz;
-            center.x += repeater * velocity * sin(vert_id) * sin(i * 0.25);
-            center.y += repeater * velocity * cos(vert_id) * sin(i * 0.25);
-      
+            center.x += time_scale * velocity.x * (spread.x * cos(vert_id + 1) * sin(i + 1));
+            center.y += time_scale * velocity.y * (spread.y * sin(vert_id + 1) * cos(i + 1));
+            
+            // Interpolate between the start and end colors, based on the lifetime 
+            // (end - start) * step + start
+            frag_color = (geo_color_end[0] - geo_color_start[0]) * time_scale + geo_color_start[0]; 
+    
+            // Interpolate between the start and end scale, based on the lifetime 
+            // (end - start) * step + start
+            mat4 m_scale = mat4(1.0);
+            m_scale[0][0] = ((scale_end - scale_start) * time_scale + scale_start).x;
+            m_scale[1][1] = ((scale_end - scale_start) * time_scale + scale_start).y;
+
             // This matrix controls the actual position of the particles:
             mat4 m_translate = mat4(1.0);
             m_translate[3][0] = center.x;
@@ -110,11 +126,7 @@ geometry_source = """#version 150
             m_rotation[0][0] =  cos(radians(-rotation)); 
             m_rotation[0][1] =  sin(radians(-rotation));
             m_rotation[1][0] = -sin(radians(-rotation));
-            m_rotation[1][1] =  cos(radians(-rotation));
-    
-            mat4 m_scale = mat4(1.0);
-            m_scale[0][0] = scale.x;
-            m_scale[1][1] = scale.y;
+            m_rotation[1][1] =  cos(radians(-rotation));    
     
             // Final UV coords (left, bottom, right, top):
             float uv_l = geo_tex_coords[0].s;
@@ -218,14 +230,13 @@ class Emitter(event.EventDispatcher):
     _frame_index = 0
     _paused = False
     _rotation = 0
-    _scale = 1.0
-    _scale_x = 1.0
-    _scale_y = 1.0
     _visible = True
     _vertex_list = None
     group_class = EmitterGroup
 
-    def __init__(self, img, x=0, y=0, z=0, count=1,
+    def __init__(self, img, x, y, z, count, velocity, spread,
+                 color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
                  blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, program=None):
 
@@ -234,8 +245,12 @@ class Emitter(event.EventDispatcher):
         self._y = y
         self._z = z
         self._count = count
+        self._velocity = velocity + spread
 
-        self._rgba = [255, 255, 255, 255]
+        self._color_start = color_start
+        self._color_end = color_end
+        self._scale_start = scale_start
+        self._scale_end = scale_end
 
         if isinstance(img, image.Animation):
             self._animation = img
@@ -258,9 +273,15 @@ class Emitter(event.EventDispatcher):
         self._vertex_list = self.program.vertex_list(
             count, GL_POINTS, self._batch, self._group,
             position=('f', (self._x, self._y, self._z) * count),
+
             size=('f', (texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count),
-            scale=('f', (self._scale_x, self._scale_y) * count),
-            color=('Bn', self._rgba * count),
+            scale=('f', (self._scale_start + self._scale_end) * count),
+
+            velocity=('f', self._velocity * count),
+
+            color_start=('Bn', self._color_start * count),
+            color_end=('Bn', self._color_end * count),
+
             texture_uv=('f', texture.uv * count),
             rotation=('f', (self._rotation,) * count),
             birth=('f', (time.perf_counter(),) * count))
@@ -307,7 +328,7 @@ class Emitter(event.EventDispatcher):
 
         if frame.duration is not None:
             duration = frame.duration - (self._next_dt - dt)
-            duration = min(max(0, duration), frame.duration)
+            duration = min(max(0.0, duration), frame.duration)
             clock.schedule_once(self._animate, duration)
             self._next_dt = duration
         else:
@@ -353,11 +374,21 @@ Emitter.register_event_type('on_animation_end')
 
 class ParticleManager:
 
-    def __init__(self, img, lifespan, count, batch, group=None):
+    def __init__(self, img, lifespan, count, velocity,
+                 spread=(10.0, 10.0),
+                 color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
+                 batch=None, group=None):
 
         self._img = img
         self._lifespan = lifespan
         self._count = count
+        self._velocity = velocity
+        self._spread = spread
+        self._color_start = color_start
+        self._color_end = color_end
+        self._scale_start = scale_start
+        self._scale_end = scale_end
 
         self._batch = batch
         self._group = group
@@ -366,7 +397,7 @@ class ParticleManager:
 
         # TODO: remove debug
         self.total_number = 0
-        self.total_label = pyglet.text.Label(str(self.total_number), 10, 10, dpi=256, color=(10, 200, 10), batch=batch)
+        self.total_label = pyglet.text.Label("particles: 0", 10, 10, dpi=256, color=(10, 200, 10), batch=batch)
 
     def _update_shader_time(self, dt):
         self._program['time'] = time.perf_counter()
@@ -376,14 +407,17 @@ class ParticleManager:
 
         # TODO: remove debug
         self.total_number -= 1
-        self.total_label.text = str(self.total_number * self._count * 8)
+        self.total_label.text = f"particles: {str(self.total_number * self._count * 8)}"
 
     def create_emitter(self, x, y, z=0):
-        emitter = Emitter(self._img, x, y, count=self._count, batch=self._batch, group=self._group)
+        emitter = Emitter(self._img, x, y, z, self._count, self._velocity, self._spread,
+                          color_start=self._color_start, color_end=self._color_end,
+                          scale_start=self._scale_start, scale_end=self._scale_end,
+                          batch=self._batch, group=self._group)
         pyglet.clock.schedule_once(self._delete_callback, self._lifespan, emitter)
 
         # TODO: remove debug
         self.total_number += 1
-        self.total_label.text = str(self.total_number * self._count * 8)
+        self.total_label.text = f"particles: {str(self.total_number * self._count * 8)}"
 
         return emitter
