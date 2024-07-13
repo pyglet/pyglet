@@ -187,8 +187,8 @@ class CocoaConfig(Config):  # noqa: D101
         # Return the match list.
         if pixel_format is None:
             return []
-        else:
-            return [CocoaDisplayConfig(canvas, self, pixel_format)]
+
+        return [CocoaDisplayConfig(canvas, self, pixel_format)]
 
 
 class CocoaDisplayConfig(DisplayConfig):  # noqa: D101
@@ -240,6 +240,9 @@ class CocoaDisplayConfig(DisplayConfig):  # noqa: D101
             share_context)
 
         return CocoaContext(self, nscontext, share)
+
+    def compatible(self, canvas: CocoaCanvas) -> bool:
+        return isinstance(canvas, CocoaCanvas)
 
 
 class CocoaContext(Context):  # noqa: D101
