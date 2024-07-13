@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pyglet
 from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
-    glClearColor, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES
+    GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES
 
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """Shared Multi-texture Sprite rendering Group.

@@ -1,1 +1,1 @@
-from .multitexture_sprite import *
+from .multitexture_sprite import MultiTextureSprite
