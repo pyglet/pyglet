@@ -21,6 +21,7 @@ from .base import DisplayConfig, Config, Context
 
 
 class Win32Config(Config):  # noqa: D101
+
     def match(self, canvas: Win32Canvas) -> list[Win32DisplayConfig] | list[Win32DisplayConfigARB]:
         if not isinstance(canvas, Win32Canvas):
             msg = 'Canvas must be instance of Win32Canvas'
@@ -125,7 +126,10 @@ class Win32DisplayConfig(DisplayConfig):  # noqa: D101
         self.stencil_size = self._pfd.cStencilBits
         self.aux_buffers = self._pfd.cAuxBuffers
 
-    def create_context(self, share):
+    def compatible(self, canvas: Win32Canvas) -> bool:
+        return isinstance(canvas, Win32Canvas)
+
+    def create_context(self, share: Win32Context | None) -> Win32Context:
         return Win32Context(self, share)
 
     def _set_pixel_format(self, canvas: Win32Canvas) -> None:
@@ -165,6 +169,10 @@ class Win32DisplayConfigARB(DisplayConfig):  # noqa: D101
 
         for name, value in zip(names, values):
             setattr(self, name, value)
+
+    def compatible(self, canvas: Win32Canvas) -> bool:
+        # TODO more careful checking
+        return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share: Win32ARBContext | None) -> Win32ARBContext | Win32Context:
         if wgl_info.have_extension('WGL_ARB_create_context'):
