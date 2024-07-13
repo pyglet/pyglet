@@ -1821,3 +1821,24 @@ else:
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()  # noqa: SLF001
+
+
+__all__ = (
+    # imported  # noqa: ERA001
+    "event",
+    "key",
+    # classes  # noqa: ERA001
+    "BaseWindow",
+    "Window",
+    "MouseCursor",
+    "DefaultMouseCursor",
+    "ImageMouseCursor",
+    "FPSDisplay",
+    # errors  # noqa: ERA001
+    "WindowException",
+    "NoSuchScreenModeException",
+    "NoSuchDisplayException",
+    "NoSuchConfigException",
+    "MouseCursorException",
+
+)

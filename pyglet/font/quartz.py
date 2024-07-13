@@ -180,7 +180,7 @@ class QuartzFont(base.Font):
         return descriptor
 
     def __init__(self, name: str, size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
-                 dpi: float | None = None) -> None:
+                 dpi: int | None = None) -> None:
 
         if stretch:
             warnings.warn("The current font render does not support stretching.")  # noqa: B028

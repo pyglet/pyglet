@@ -1,8 +1,28 @@
 from .base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.win32 import _user32, _shcore, _gdi32
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import (
+    CDS_FULLSCREEN,
+    DISP_CHANGE_SUCCESSFUL,
+    ENUM_CURRENT_SETTINGS,
+    WINDOWS_8_1_OR_GREATER,
+    WINDOWS_VISTA_OR_GREATER,
+    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
+    USER_DEFAULT_SCREEN_DPI,
+    LOGPIXELSX,
+    LOGPIXELSY,
+
+)
+from pyglet.libs.win32.types import (
+    DEVMODE,
+    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+    MONITORINFOEX,
+    MONITORENUMPROC,
+    PROCESS_PER_MONITOR_DPI_AWARE,
+    UINT,
+    sizeof,
+    byref
+)
 from pyglet.libs.win32.context_managers import device_context
 
 

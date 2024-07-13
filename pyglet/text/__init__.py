@@ -121,8 +121,9 @@ def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None
     raise DocumentDecodeException(msg)
 
 
-def load(filename: str, file: BinaryIO | None = None, mimetype: SupportedMimeTypes | None = None) \
-        -> AbstractDocument:
+def load(filename: str,
+         file: BinaryIO | None = None,
+         mimetype: SupportedMimeTypes | None = None) -> AbstractDocument:
     """Load a document from a file.
 
     Args:
@@ -187,7 +188,7 @@ class DocumentLabel(layout.TextLayout):
     """
 
     def __init__(
-            self, document: AbstractDocument | None = None,
+            self, document: AbstractDocument,
             x: float = 0.0, y: float = 0.0, z: float = 0.0,
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
@@ -349,7 +350,7 @@ class Label(DocumentLabel):
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
-            font_name: str | None = None, font_size: int | None = None,
+            font_name: str | None = None, font_size: float | None = None,
             bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
@@ -499,3 +500,21 @@ class HTMLLabel(DocumentLabel):
     def text(self, text: str) -> None:
         self._text = text
         self.document = decode_html(text, self._location)
+
+
+__all__ = [
+    "DocumentDecodeException",
+    "DocumentDecoder",
+    "SupportedMimeTypes",
+    "get_decoder",
+    "load",
+    "decode_html",
+    "decode_attributed",
+    "decode_text",
+    "DocumentLabel",
+    "Label",
+    "HTMLLabel",
+    # imported from lower
+    "document",
+    "layout",
+]

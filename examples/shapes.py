@@ -30,7 +30,7 @@ class ShapesDemo(pyglet.window.Window):
         septagon_step = math.pi * 2 / 7
         self.fading_septagon = shapes.Polygon(
             *[[50 + 40 * math.sin(i * septagon_step), 200 + 40 * math.cos(i * septagon_step)] for i in range(7)],
-            batch=self.batch
+            batch=self.batch,
         )
 
         self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=270.0, color=(255, 255, 255), batch=self.batch)

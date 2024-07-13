@@ -1,14 +1,19 @@
-"""Wrapper for /usr/include/GL/glx.h
+"""Wrapper for /usr/include/GL/glx.h.
 
 Do not modify generated portions of this file.
 """
+from __future__ import annotations
 
-from ctypes import *
+from ctypes import (
+    CFUNCTYPE, POINTER, Structure, c_size_t, c_ulong, c_float, c_int,
+    c_int64, c_char_p, c_ubyte, c_uint, c_long, Union,
+)
 from pyglet.gl.lib import link_GLX as _link_function
 from pyglet.gl.lib import c_void
 
 if not _link_function:
-    raise ImportError('libGL.so is not available.')
+    msg = 'libGL.so is not available.'
+    raise ImportError(msg)
 
 # BEGIN GENERATED CONTENT (do not edit below this line)
 
@@ -111,14 +116,7 @@ class struct___GLXcontextRec(Structure):
     __slots__ = [
     ]
 struct___GLXcontextRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct___GLXcontextRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXcontextRec._fields_ = [
-    ('_opaque_struct', c_int)
+    ('_opaque_struct', c_int),
 ]
 
 GLXContext = POINTER(struct___GLXcontextRec) 	# /usr/include/GL/glx.h:178
@@ -129,14 +127,7 @@ class struct___GLXFBConfigRec(Structure):
     __slots__ = [
     ]
 struct___GLXFBConfigRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct___GLXFBConfigRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXFBConfigRec._fields_ = [
-    ('_opaque_struct', c_int)
+    ('_opaque_struct', c_int),
 ]
 
 GLXFBConfig = POINTER(struct___GLXFBConfigRec) 	# /usr/include/GL/glx.h:182

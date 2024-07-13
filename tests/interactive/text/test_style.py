@@ -1,15 +1,9 @@
 import pytest
 
-from tests.base.interactive import InteractiveTestCase
-
-from pyglet import app
-from pyglet import gl
-from pyglet import graphics
-from pyglet import text
-from pyglet.text import caret
-from pyglet.text import layout
-from pyglet import window
+from pyglet import app, gl, graphics, text, window
+from pyglet.text import caret, layout
 from pyglet.window import key, mouse
+from tests.base.interactive import InteractiveTestCase
 
 doctext = """STYLE.py test document.
 
@@ -50,7 +44,7 @@ officia deserunt mollit anim id est laborum.
 12pt.  When an {font_size 18}18pt font is used{font_size None}, the text
 overlaps and the baselines stay equally spaced. Lorem ipsum dolor sit amet,
 consectetur adipisicing elit, {font_size 18}sed do eiusmod tempor incididunt
-ut labore et dolore{font_size None} magna aliqua. 
+ut labore et dolore{font_size None} magna aliqua.
 
 {.line_spacing None}{.indent '20pt'}This paragraph has a 20pt indent. Lorem
 ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor

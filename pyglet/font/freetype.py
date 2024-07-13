@@ -165,7 +165,7 @@ class FreeTypeFont(base.Font):
     face: FreeTypeFace
 
     def __init__(self, name: str, size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
-                 dpi: float | None = None) -> None:
+                 dpi: int | None = None) -> None:
 
         if stretch:
             warnings.warn("The current font render does not support stretching.")  # noqa: B028
@@ -288,7 +288,7 @@ class FreeTypeFace:
             FT_Done_Face(self.ft_face)
             self.ft_face = None
 
-    def set_char_size(self, size: float, dpi: float) -> bool:
+    def set_char_size(self, size: float, dpi: int) -> bool:
         face_size = float_to_f26p6(size)
         try:
             FT_Set_Char_Size(self.ft_face,
@@ -312,7 +312,7 @@ class FreeTypeFace:
         FT_Load_Glyph(self.ft_face, glyph_index, FT_LOAD_RENDER)
         return self.ft_face.contents.glyph.contents
 
-    def get_font_metrics(self, size: float, dpi: float) -> FreeTypeFontMetrics:
+    def get_font_metrics(self, size: float, dpi: int) -> FreeTypeFontMetrics:
         if self.set_char_size(size, dpi):
             metrics = self.ft_face.contents.size.contents.metrics
             if metrics.ascender == 0 and metrics.descender == 0:

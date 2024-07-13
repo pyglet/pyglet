@@ -20,7 +20,7 @@ The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
 .. versionadded:: 1.2
-"""
+"""  # noqa: I002
 
 import sys
 import weakref
@@ -72,3 +72,5 @@ def get_display() -> Display:
 
     # Otherwise, create a new display and return it.
     return Display()
+
+__all__ = ['Display', 'Screen', 'Canvas', 'ScreenMode', 'get_display']

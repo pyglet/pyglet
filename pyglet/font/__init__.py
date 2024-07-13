@@ -106,7 +106,7 @@ def have_font(name: str) -> bool:
 
 
 def load(name: str | Iterable[str] | None = None, size: float | None = None, bold: bool | str = False,
-         italic: bool | str = False, stretch: bool | str = False, dpi: float | None = None) -> Font:
+         italic: bool | str = False, stretch: bool | str = False, dpi: int | None = None) -> Font:
     """Load a font for rendering.
 
     Args:
@@ -128,7 +128,7 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, bol
         stretch:
             If True, a stretch variant is returned, if one exists for the given family and size.  Currently only
             supported by Windows through the ``DirectWrite`` font renderer. For example, "condensed" or "expanded".
-        dpi: float
+        dpi: int
             The assumed resolution of the display device, for the purposes of
             determining the pixel size of the font.  Defaults to 96.
     """
@@ -149,11 +149,9 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, bol
     font_hold = shared_object_space.pyglet_font_font_hold
     font_name_match = shared_object_space.pyglet_font_font_name_match
 
-    name_type = type(name)
-    if name_type in (tuple, list):
-        if name_type == list:
+    if isinstance(name, (tuple, list)):
+        if isinstance(name, list):
             name = tuple(name)
-
         if name in font_name_match:
             name = font_name_match[name]
         else:

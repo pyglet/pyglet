@@ -6,9 +6,13 @@ from __future__ import annotations
 
 import os
 import sys
-
+from collections.abc import ItemsView, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ItemsView
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import FrameType
+    from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
 version = '2.1.dev3'
@@ -34,11 +38,21 @@ if getattr(sys, "frozen", None):
     _enable_optimisations = True
 
 
+_SPECIAL_OPTION_VALIDATORS = {
+    "audio": lambda x: isinstance(x, Sequence),
+    "vsync": lambda x: x is None or isinstance(x, bool),
+}
+
+_OPTION_TYPE_VALIDATORS = {
+    "bool": lambda x: isinstance(x, bool),
+    "int": lambda x: isinstance(x, int),
+}
+
 @dataclass
 class Options:
     """Dataclass for global pyglet options."""
 
-    audio: tuple[str] = ("xaudio2", "directsound", "openal", "pulse", "silent")
+    audio: Sequence[str] = ("xaudio2", "directsound", "openal", "pulse", "silent")
     """A :py:class:`~typing.Sequence` of valid audio modules names. They will
      be tried from first to last until either a driver loads or no entries
      remain. See :ref:`guide-audio-driver-order` for more information.
@@ -122,12 +136,13 @@ class Options:
      must be loaded after the window using them was created).  Recommended
      for advanced developers only.
 
-     .. versionadded:: 1.1"""
+     .. versionadded:: 1.1
+     """
 
     vsync: bool | None = None
-    """If set to ``True`` or ``False``, this option takes overrides the
-     ``vsync`` argument passed to :py:class:`~pyglet.window.Window`. This
-     allows forcing vsync on or off.  If set to None (the default), the
+    """If set, the `pyglet.window.Window.vsync` property is ignored, and
+     this option overrides it (to either force vsync on or off).  If unset,
+     or set to None, the `pyglet.window.Window.vsync` property behaves
      as documented.
      """
 
@@ -170,7 +185,7 @@ class Options:
 
     headless_device: int = 0
     """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
-    GPU to use. This is only useful on multi-GPU systems. 
+    GPU to use. This is only useful on multi-GPU systems.
     """
 
     win32_disable_shaping: bool = False
@@ -246,6 +261,16 @@ class Options:
     number of pixels requested.
     """
 
+    shader_bind_management: bool = True
+    """If ``True``, this will enable internal management of Uniform Block bindings for
+     :py:class:`~pyglet.graphics.shader.ShaderProgram`'s.
+
+    If ``False``, bindings will not be managed by Pyglet. The user will be responsible for either setting the binding
+    points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.
+
+    .. versionadded:: 2.0.16
+    """
+
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
 
@@ -257,12 +282,13 @@ class Options:
 
     def __setitem__(self, key: str, value: Any) -> None:
         assert key in self.__annotations__, f"Invalid option name: '{key}'"
-        assert type(value).__name__ == self.__annotations__[key], f"Invalid type: '{type(value)}' for '{key}'"
+        assert (_SPECIAL_OPTION_VALIDATORS.get(key, None) or _OPTION_TYPE_VALIDATORS[self.__annotations__[key]])(value), \
+            f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
 
 
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
-options = Options()
+options: Options = Options()
 
 
 for _key, _type in options.__annotations__.items():
@@ -282,10 +308,10 @@ if compat_platform == "cygwin":
     # DirectSound support.
     import ctypes
 
-    ctypes.windll = ctypes.cdll  # type: ignore
-    ctypes.oledll = ctypes.cdll  # type: ignore
+    ctypes.windll = ctypes.cdll
+    ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
-    ctypes.HRESULT = ctypes.c_long  # type: ignore
+    ctypes.HRESULT = ctypes.c_long
 
 # Call tracing
 # ------------
@@ -297,17 +323,17 @@ _trace_depth = options["debug_trace_depth"]
 _trace_flush = options["debug_trace_flush"]
 
 
-def _trace_repr(value, size=40):
+def _trace_repr(value: Sized, size: int=40) -> str:
     value = repr(value)
     if len(value) > size:
         value = value[:size // 2 - 2] + "..." + value[-size // 2 - 1:]
     return value
 
 
-def _trace_frame(thread, frame, indent):
-    if frame.f_code is lib._TraceFunction.__call__.__code__:
+def _trace_frame(thread: int, frame: FrameType, indent: str) -> None:
+    if frame.f_code is lib._TraceFunction.__call__.__code__: # noqa: SLF001
         is_ctypes = True
-        func = frame.f_locals["self"]._func
+        func = frame.f_locals["self"]._func # noqa: SLF001
         name = func.__name__
         location = "[ctypes]"
     else:
@@ -348,23 +374,23 @@ def _trace_frame(thread, frame, indent):
                 try:
                     argvalue = _trace_repr(frame.f_locals[argname])
                     print(f"  {indent}{argname}={argvalue}")
-                except:
+                except: # noqa: S110, E722, PERF203
                     pass
 
     if _trace_flush:
         sys.stdout.flush()
 
 
-def _thread_trace_func(thread):
-    def _trace_func(frame, event, arg):
+def _thread_trace_func(thread: int) -> Callable[[FrameType, str, Any], object]:
+    def _trace_func(frame: FrameType, event: str, arg: Any) -> None:
         if event == "call":
             indent = ""
-            for i in range(_trace_depth):
+            for _ in range(_trace_depth):
                 _trace_frame(thread, frame, indent)
                 indent += "  "
-                frame = frame.f_back
-                if not frame:
+                if frame.f_back is None:
                     break
+                frame = frame.f_back
 
         elif event == "exception":
             (exception, value, traceback) = arg
@@ -373,8 +399,8 @@ def _thread_trace_func(thread):
     return _trace_func
 
 
-def _install_trace():
-    global _trace_thread_count
+def _install_trace() -> None:
+    global _trace_thread_count # noqa: PLW0603
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
 
@@ -385,10 +411,10 @@ def _install_trace():
 class _ModuleProxy:
     _module = None
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.__dict__["_module_name"] = name
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str): # noqa: ANN204
         try:
             return getattr(self._module, name)
         except AttributeError:
@@ -402,7 +428,7 @@ class _ModuleProxy:
             globals()[self._module_name] = module
             return getattr(module, name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any): # noqa: ANN204
         try:
             setattr(self._module, name, value)
         except AttributeError:

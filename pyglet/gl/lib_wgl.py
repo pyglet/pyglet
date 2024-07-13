@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import ctypes
-from ctypes import *
+from ctypes import CFUNCTYPE, POINTER, c_char_p, c_int, cast
+from typing import Any, Callable, Sequence
 
 import pyglet
-from pyglet.gl.lib import missing_function, decorate_function
+from pyglet.gl.lib import decorate_function, missing_function
 from pyglet.util import asbytes
 
 __all__ = ['link_GL', 'link_WGL']
@@ -19,7 +22,7 @@ if _debug_trace:
     wgl_lib = _TraceLibrary(wgl_lib)
 
 try:
-    wglGetProcAddress = wgl_lib.wglGetProcAddress
+    wglGetProcAddress = wgl_lib.wglGetProcAddress  # noqa: N816
     wglGetProcAddress.restype = CFUNCTYPE(POINTER(c_int))
     wglGetProcAddress.argtypes = [c_char_p]
     _have_get_proc_address = True
@@ -29,7 +32,7 @@ except AttributeError:
 class_slots = ['name', 'requires', 'suggestions', 'ftype', 'func']
 
 
-def makeWGLFunction(func):
+def makeWGLFunction(func: Callable) -> Callable:  # noqa: N802
     class WGLFunction:
         __slots__ = class_slots
         __call__ = func
@@ -40,7 +43,8 @@ def makeWGLFunction(func):
 class WGLFunctionProxy:
     __slots__ = class_slots
 
-    def __init__(self, name, ftype, requires, suggestions):
+    def __init__(self, name: str, ftype: ctypes.WINFUNCTYPE, requires: str | None,
+                 suggestions: list[str] | None) -> None:
         assert _have_get_proc_address
         self.name = name
         self.ftype = ftype
@@ -48,11 +52,11 @@ class WGLFunctionProxy:
         self.suggestions = suggestions
         self.func = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> Callable:
         from pyglet.gl import current_context
         if not current_context:
-            raise Exception(
-                'Call to function "%s" before GL context created' % self.name)
+            msg = f'Call to function "{self.name}" before GL context created'
+            raise Exception(msg)
         address = wglGetProcAddress(asbytes(self.name))
         if cast(address, POINTER(c_int)):  # check cast because address is func
             self.func = cast(address, self.ftype)
@@ -66,7 +70,8 @@ class WGLFunctionProxy:
         return self.func(*args, **kwargs)
 
 
-def link_GL(name, restype, argtypes, requires=None, suggestions=None):
+def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802, D103
+            suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
@@ -89,10 +94,11 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
                 else:
                     # Insert proxy until we have a context
                     return WGLFunctionProxy(name, ftype, requires, suggestions)
-        except:
+        except:  # noqa: E722, S110
+            # TODO: Figure out what exception this can cause instead of catching all.
             pass
 
         return missing_function(name, requires, suggestions)
 
 
-link_WGL = link_GL
+link_WGL = link_GL  # noqa: N816

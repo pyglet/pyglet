@@ -1,5 +1,10 @@
 from pyglet.libs.egl import egl as libegl
-from pyglet.libs.egl.egl import *
+from pyglet.libs.egl.egl import (
+    EGL_SINGLE_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_OPENGL_API, EGL_OPENGL_ES_API,
+    EGL_SUCCESS, EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_BLUE_SIZE, EGL_GREEN_SIZE, EGL_RED_SIZE,
+    EGL_DEPTH_SIZE, EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE, EGL_WIDTH, EGL_HEIGHT,
+    EGL_CONTEXT_MAJOR_VERSION, EGL_RENDER_BUFFER,
+)
 
 
 _buffer_types = {EGL_SINGLE_BUFFER: "EGL_RENDER_BUFFER",
@@ -65,7 +70,7 @@ result = libegl.eglMakeCurrent(display_connection, surface, surface, context)
 assert result == 1, "Failed to make context current"
 
 error_code = libegl.eglGetError()
-assert error_code == EGL_SUCCESS, "EGL Error code {} returned".format(error_code)
+assert error_code == EGL_SUCCESS, f"EGL Error code {error_code} returned"
 
 # Print some context details:
 buffer_type = libegl.EGLint()

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from pyglet.resource import Location
 
 
-def _hex_color(val: int) -> list[int, int, int, int]:
+def _hex_color(val: int) -> list[int, int, int, int]: # type: ignore reportInvalidTypeArguments
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
 
@@ -53,7 +53,7 @@ _color_names = {
 }
 
 
-def _parse_color(value: str) -> list[int, int, int, int]:
+def _parse_color(value: str) -> list[int, int, int, int]: # type: ignore reportInvalidTypeArguments
     if value.startswith("#"):
         return _hex_color(int(value[1:], 16))
 
@@ -111,7 +111,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
     def decode_structured(self, text: str, location: Location) -> None:
         self.location = location
         self._font_size_stack = [3]
-        self.list_stack.append(structured.UnorderedListBuilder({}))
+        self.list_stack.append(structured.UnorderedListBuilder({})) # type: ignore reportArgumentType
         self.strip_leading_space = True
         self.block_begin = True
         self.need_block_begin = False
@@ -283,7 +283,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             left_margin = self.current_style.get("margin_left") or 0
             style["margin_left"] = left_margin + 30
         elif element == "img":
-            image = self.get_image(attrs.get("src"))
+            image = self.get_image(attrs.get("src")) # type: ignore reportArgumentType
             if image:
                 width = attrs.get("width")
                 if width:

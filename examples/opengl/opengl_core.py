@@ -1,14 +1,17 @@
 """This is a simple example that visually confirms """
 
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glClearColor,
+    GL_TRIANGLES,
+)
 
 
 # pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 batch = pyglet.graphics.Batch()
-print("OpenGL Context: {}".format(window.context.get_info().version))
+print(f"OpenGL Context: {window.context.get_info().version}")
 
 program = pyglet.graphics.get_default_shader()
 
@@ -85,6 +88,6 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    glClearColor(0.2, 0.3, 0.3, 1)
     pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()

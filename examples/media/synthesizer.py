@@ -41,7 +41,7 @@ class Keyboard:
         def on_key_press(key, mod):
             try:
                 self.play_note(self.c4_notes[self.key_map[key]])
-                self.current_note.text = "Current note: {0}".format(self.key_map[key])
+                self.current_note.text = f"Current note: {self.key_map[key]}"
             except KeyError:
                 pass
 

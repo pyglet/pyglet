@@ -10,7 +10,28 @@ __version__ = '$Id$'
 import re
 import os.path
 import pyglet
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable,
+    glBlendFunc,
+    glHint,
+    GL_LINE_SMOOTH,
+    GL_BLEND,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_LINE_SMOOTH_HINT,
+    GL_LINES,
+    GL_DONT_CARE,
+)
+from pyglet.gl.gl_compat import (
+    glPushAttrib,
+    glPopAttrib,
+    glPushMatrix,
+    glPopMatrix,
+    glScalef,
+    glTranslatef,
+    GL_ENABLE_BIT,
+)
+
 import xml.dom
 import xml.dom.minidom
 
