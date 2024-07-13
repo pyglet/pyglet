@@ -56,7 +56,7 @@ from pyglet.gl import gl_info  # noqa: F401
 from pyglet.gl.gl_compat import GL_INTENSITY, GL_LUMINANCE
 from pyglet.gl.lib import GLException  # noqa: F401
 
-from .base import CanvasConfig, Context, ObjectSpace  # noqa: F401, TCH001
+from .base import DisplayConfig, Context, ObjectSpace  # noqa: F401, TCH001
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

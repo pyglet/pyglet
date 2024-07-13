@@ -12,10 +12,10 @@ from pyglet.gl import glxext_mesa
 from pyglet.gl import lib
 from pyglet.gl.base import Config, DisplayConfig, Context
 
+from pyglet.display.xlib import XlibCanvas
+
 if TYPE_CHECKING:
     from pyglet.libs.x11.xlib import Display
-    from pyglet.display.xlib import XlibCanvas
-
     from .glx_info import GLXInfo
 
 
@@ -23,7 +23,7 @@ class XlibConfig(Config):  # noqa: D101
 
     def match(self, canvas: XlibCanvas) -> list[XlibDisplayConfig]:
         if not isinstance(canvas, XlibCanvas):
-            msg = 'Canvas must be an instance of XlibCanvas'
+            msg = f'Canvas must be an instance of XlibCanvas {type(canvas)}'
             raise RuntimeError(msg)
 
         x_display = canvas.display._display  # noqa: SLF001
@@ -133,14 +133,14 @@ class XlibContext(Context):  # noqa: D101
     glx_window: glx.GLXWindow | None
     _use_video_sync: bool
     _vsync: bool
-    config: XlibCanvasConfig
+    config: XlibDisplayConfig
 
     _have_SGI_swap_control: bool  # noqa: N815
     _have_EXT_swap_control: bool  # noqa: N815
     _have_MESA_swap_control: bool  # noqa: N815
     _have_SGI_video_sync: bool  # noqa: N815
 
-    def __init__(self, config: XlibCanvasConfig, share: XlibContext | None) -> None:  # noqa: D107
+    def __init__(self, config: XlibDisplayConfig, share: XlibContext | None) -> None:  # noqa: D107
         super().__init__(config, share)
 
         self.x_display = config.canvas.display._display  # noqa: SLF001
@@ -203,7 +203,7 @@ class XlibContext(Context):  # noqa: D101
         return glxext_arb.glXCreateContextAttribsARB(self.config.canvas.display._display,  # noqa: SLF001
                                                      self.config.fbconfig, share_context, True, attribs)
 
-    def attach(self, canvas: XlibCanvas) -> None:
+    def attach(self, canvas: XlibDisplay) -> None:
         if canvas is self.canvas:
             return
 
