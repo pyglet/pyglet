@@ -19,8 +19,11 @@ crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"),1,
 crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, None, False)
 shader_images = {'brick': brick_animation, 'crack': crack_animation}
 
+test = pyglet.image.ImageGrid(pyglet.image.load("../../examples/resources/Brick1Crack3.png"), 1, 3)
+tex_grid = pyglet.image.Animation.from_image_sequence(pyglet.image.TextureArray.create_for_image_grid(test), None, False)
 
-sprite = pyglet.experimental.MultiTextureSprite(shader_images,
+
+sprite = pyglet.experimental.MultiTextureSprite({'brick': brick_animation, 'crack': tex_grid},
                                                 x=0,
                                                 y=0,
                                                 batch=batch)

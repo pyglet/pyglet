@@ -39,7 +39,6 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         """
         self.textures = textures
         texture = list(self.textures.values())[0]
-        self.target = texture.target
         super().__init__(texture, blend_src, blend_dest, program, parent)
 
     def set_state(self) -> None:
@@ -50,7 +49,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
 
         for i, texture in enumerate(self.textures.values()):
             glActiveTexture(GL_TEXTURE0 + i)
-            glBindTexture(self.target, texture.id)
+            glBindTexture(texture.target, texture.id)
 
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
@@ -89,6 +88,18 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         tex_target = tuple([texture.target for texture in self.textures.values()])
         return hash((self.parent,
                      self.blend_src, self.blend_dest) + tex_id + tex_target)
+
+# Allows the default shader to pick the appropriate sampler for the fragment shader
+_SAMPLER_TYPES = {
+    pyglet.gl.GL_TEXTURE_2D: "sampler2D",
+    pyglet.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray"
+}
+
+# Allows the default shader to grab the correct coords based on texture type
+_SAMPLER_COORDS = {
+    pyglet.gl.GL_TEXTURE_2D: ".xy",
+    pyglet.gl.GL_TEXTURE_2D_ARRAY: ""
+}
 
 def _get_default_mt_shader(images):
     max_tex = GLint()
@@ -137,14 +148,15 @@ def _get_default_mt_shader(images):
 
     fragment_source.append("out vec4 final_colors;")
 
-    fragment_source.extend([f"uniform sampler2D {name};" for name in images.keys()])
+    fragment_source.extend([f"uniform {_SAMPLER_TYPES[tex.target]} {name};" for name,tex in images.items()])
+
     fragment_source.append("vec4 layer(vec4 foreground, vec4 background) {")
     fragment_source.append("  return foreground * foreground.a + background * (1.0 - foreground.a);")
     fragment_source.append("}")
 
     fragment_source.append("void main() {")
     fragment_source.append("  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);")
-    fragment_source.extend([f"  color = layer(texture({name}, {name}_coords_frag.xy), color);" for name in images.keys()])
+    fragment_source.extend([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name,tex in images.items()])
     fragment_source.append("  final_colors = color * vertex_colors;")
     fragment_source.append("}")
 
@@ -171,7 +183,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             images:
                 A dict object with the key being the name of the texture and the
                 value is either an Animation or AbstractImage.  Currently
-                each item must be of the same target and size.
+                each item must be of the same size.
             x:
                 X coordinate of the sprite.
             y:
@@ -205,10 +217,9 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 self.textures[name] = img.frames[0].image.get_texture()
             else:
                 self.textures[name] = img.get_texture()
-        assert all(tex.target for tex in self.textures.values()) is True, "All textures need to be the same target."
 
         if not program:
-            self._program = _get_default_mt_shader(images)
+            self._program = _get_default_mt_shader(self.textures)
         else:
             self._program = program
 
