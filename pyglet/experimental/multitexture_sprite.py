@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pyglet
 from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
-    GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES
+    glGetIntegerv, GLint, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES, GL_MAX_TEXTURE_IMAGE_UNITS
 
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """Shared Multi-texture Sprite rendering Group.
@@ -90,6 +90,67 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         return hash((self.parent,
                      self.blend_src, self.blend_dest) + tex_id + tex_target)
 
+def _get_default_mt_shader(images):
+    max_tex = GLint()
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, max_tex)
+    assert len(images) <= max_tex.value, f"The default multi-texture shader only supports up to a max of {max_tex.value} textures."
+
+    # Generate the default vertex shader
+    vertex_source = []
+    vertex_source.append("#version 150 core")
+    vertex_source.append("in vec3 translate;")
+    vertex_source.append("in vec4 colors;")
+    vertex_source.append("in vec2 scale;")
+    vertex_source.append("in vec3 position;")
+    vertex_source.append("in float rotation;")
+    vertex_source.extend([f"in vec3 {name}_coords;" for name in images.keys()])
+
+    vertex_source.append("out vec4 vertex_colors;")
+    vertex_source.extend([f"out vec3 {name}_coords_frag;" for name in images.keys()])
+
+    vertex_source.append("uniform WindowBlock {mat4 projection; mat4 view;} window;")
+    vertex_source.append("mat4 m_scale = mat4(1.0);")
+    vertex_source.append("mat4 m_rotation = mat4(1.0);")
+    vertex_source.append("mat4 m_translate = mat4(1.0);")
+
+    vertex_source.append("void main() {")
+    vertex_source.append("  m_scale[0][0] = scale.x;")
+    vertex_source.append("  m_scale[1][1] = scale.y;")
+    vertex_source.append("  m_translate[3][0] = translate.x;")
+    vertex_source.append("  m_translate[3][1] = translate.y;")
+    vertex_source.append("  m_translate[3][2] = translate.z;")
+    vertex_source.append("  m_rotation[0][0] =  cos(-radians(rotation));")
+    vertex_source.append("  m_rotation[0][1] =  sin(-radians(rotation));")
+    vertex_source.append("  m_rotation[1][0] = -sin(-radians(rotation));")
+    vertex_source.append("  m_rotation[1][1] =  cos(-radians(rotation));")
+    vertex_source.append("  gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);")
+    vertex_source.append("  vertex_colors = colors;")
+
+    vertex_source.extend([f"{name}_coords_frag = {name}_coords;" for name in images.keys()])
+    vertex_source.append("}")
+    vertex_source = '\n'.join(vertex_source)
+
+    fragment_source = []
+    fragment_source.append("#version 150 core")
+    fragment_source.append("in vec4 vertex_colors;")
+    fragment_source.extend([f"in vec3 {name}_coords_frag;" for name in images.keys()])
+
+    fragment_source.append("out vec4 final_colors;")
+
+    fragment_source.extend([f"uniform sampler2D {name};" for name in images.keys()])
+    fragment_source.append("vec4 layer(vec4 foreground, vec4 background) {")
+    fragment_source.append("  return foreground * foreground.a + background * (1.0 - foreground.a);")
+    fragment_source.append("}")
+
+    fragment_source.append("void main() {")
+    fragment_source.append("  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);")
+    fragment_source.extend([f"  color = layer(texture({name}, {name}_coords_frag.xy), color);" for name in images.keys()])
+    fragment_source.append("  final_colors = color * vertex_colors;")
+    fragment_source.append("}")
+
+    fragment_source = '\n'.join(fragment_source)
+
+    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
     """Creates a multi-textured sprite."""
@@ -102,12 +163,14 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                  blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
-                 subpixel: bool = False) -> None:
+                 subpixel: bool = False,
+                 program: ShaderProgram | None = None) -> None:
         """Create a Sprite instance.
 
         Args:
             images:
-                A list of images or animations for the sprite.  Currently
+                A dict object with the key being the name of the texture and the
+                value is either an Animation or AbstractImage.  Currently
                 each item must be of the same target and size.
             x:
                 X coordinate of the sprite.
@@ -128,98 +191,26 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             subpixel:
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
+
+            program:
+                A specific shader program to initialize the sprite with.  The
+                default multi-texture overlay shader will be used if one is
+                not provided.
         """
         # Ensure the images are textures and load them up into a dict.
         self.textures = {}
-        for idx, img in enumerate(images):
+        for name, img in images.items():
             if isinstance(img, pyglet.image.Animation):
                 # Grab the first frame
-                self.textures[f"tex_{idx}"] = img.frames[0].image.get_texture()
+                self.textures[name] = img.frames[0].image.get_texture()
             else:
-                self.textures[f"tex_{idx}"] = img.get_texture()
+                self.textures[name] = img.get_texture()
         assert all(tex.target for tex in self.textures.values()) is True, "All textures need to be the same target."
 
-        # Create our new shader that handles multiple texture sprites.
-        v_source = """#version 150 core
-                      in vec3 translate;
-                      in vec4 colors;"""
-
-        # Create tex coordinate variables for each supplied texture
-        for name,tex in self.textures.items():
-            v_source += f"in vec3 {name}_coords;"
-
-        v_source += """in vec2 scale;
-                       in vec3 position;
-                       in float rotation;
-
-                       out vec4 vertex_colors;"""
-
-        for name, tex in self.textures.items():
-            v_source += f"out vec3 {name}_coords_frag;"
-
-        v_source += """uniform WindowBlock
-                   {
-                       mat4 projection;
-                       mat4 view;
-                   } window;
-
-                   mat4 m_scale = mat4(1.0);
-                   mat4 m_rotation = mat4(1.0);
-                   mat4 m_translate = mat4(1.0);
-
-                   void main()
-                   {
-                       m_scale[0][0] = scale.x;
-                       m_scale[1][1] = scale.y;
-                       m_translate[3][0] = translate.x;
-                       m_translate[3][1] = translate.y;
-                       m_translate[3][2] = translate.z;
-                       m_rotation[0][0] =  cos(-radians(rotation));
-                       m_rotation[0][1] =  sin(-radians(rotation));
-                       m_rotation[1][0] = -sin(-radians(rotation));
-                       m_rotation[1][1] =  cos(-radians(rotation));
-
-                       gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
-
-                       vertex_colors = colors;"""
-
-        for name, tex in self.textures.items():
-            v_source += f"{name}_coords_frag = {name}_coords;"
-
-        v_source += "}"
-
-        f_source = """#version 150 core
-            in vec4 vertex_colors;"""
-        for name, tex in self.textures.items():
-            f_source += f"in vec3 {name}_coords_frag;"
-
-        f_source += "out vec4 final_colors;"
-        # For now each texture gets its own sampler.  This works even for atlases because
-        # it is ok to pass in the same id for multiple samplers.  This limits the max
-        # number of potential textures but makes generating the shader simpler and
-        # increases the chance that other multi-textured sprites will be grouped together
-        # for drawing.
-        for name, tex in self.textures.items():
-            f_source += f"uniform sampler2D {name};"
-
-        f_source += """
-            vec4 layer(vec4 foreground, vec4 background) {
-                return foreground * foreground.a + background * (1.0 - foreground.a);
-            }"""
-        f_source += """
-
-            void main()
-            {
-                vec4 color = vec4(0.0, 0.0, 0.0, 1.0);"""
-
-        for name, tex in self.textures.items():
-            f_source += f"color = layer(texture({name}, {name}_coords_frag.xy),color);"
-        f_source += """
-                final_colors = color * vertex_colors;
-            }
-        """
-        # Creating the program this way allows for caching of and therefore efficent grouping
-        program = pyglet.gl.current_context.create_program((v_source, 'vertex'), (f_source, 'fragment'))
+        if not program:
+            self._program = _get_default_mt_shader(images)
+        else:
+            self._program = program
 
         # Right now don't call super unfortunently so we have to do everything ourselves
         self._x = x
@@ -228,16 +219,14 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
         # Go through the images and find all animations
         self._animations = {}
-        # FIXME: Look at optimizing this with the loops above
-        for idx, img in enumerate(images):
+        for name, img in images.items():
             if isinstance(img, pyglet.image.Animation):
                 # Setup all of the animation things
                 # The key needs to match the key for self.textures so we change it out as needed
-                self._animations[f"tex_{idx}"] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
+                self._animations[name] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
                 if img.frames[0].duration:
-                    pyglet.clock.schedule_once(self._animate, self._animations[f"tex_{idx}"]["next_dt"], f"tex_{idx}")
+                    pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
 
-        self._program = program
         self._batch = batch
         self._blend_src = blend_src
         self._blend_dest = blend_dest
@@ -303,7 +292,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         for name, tex in self.textures.items():
             tex_coords[f"{name}_coords"] = ('f', tex.tex_coords)
 
-        self._vertex_list = self.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
@@ -312,15 +301,20 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             rotation=('f', (self._rotation,) * 4),
             **tex_coords)
 
-    def set_frame_index(self, tex_idx, frame_idx):
+    def set_frame_index(self, name, frame_idx) -> None:
         """Set the current Animation frame for the requested texture layer
 
         If the texture layer isn't an animation then this method has no effect.
+
+        Args:
+            name:
+              The dict key given for the texture layer in the constructor
+            frame_idx:
+              The frame index to set for the given layer.
         """
-        key = f"tex_{tex_idx}"
-        if key in self._animations:
-            animation = self._animations[key]
+        if name in self._animations:
+            animation = self._animations[name]
             if frame_idx < len(animation["animation"].frames):
                 animation["frame_idx"] = frame_idx
                 frame = animation["animation"].frames[animation["frame_idx"]]
-                self._set_multi_texture(key, frame.image.get_texture())
+                self._set_multi_texture(name, frame.image.get_texture())
