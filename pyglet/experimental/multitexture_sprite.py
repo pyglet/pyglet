@@ -75,7 +75,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             if name not in other.textures:
                 return False
 
-            if texture.id != other.textures[name].id or texture.target != other.texture.target:
+            if texture.id != other.textures[name].id or texture.target != other.textures[name].target:
                 return False
 
         # Made it this far so just check the remainder
