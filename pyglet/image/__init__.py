@@ -1581,7 +1581,7 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.images = depth
 
-        blank = (GLubyte * (texture.width * texture.height * texture.images))() if blank_data else None
+        blank = (GLubyte * (texture.width * texture.height * texture.images * 4))() if blank_data else None
         glBindTexture(texture.target, texture.id)
         glTexImage3D(texture.target, texture.level,
                      internalformat,
