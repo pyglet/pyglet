@@ -37,17 +37,29 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             parent:
                 Optional parent group.
         """
-        self.textures = textures
-        texture = list(self.textures.values())[0]
+        self._textures = textures
+        texture = list(self._textures.values())[0]
         super().__init__(texture, blend_src, blend_dest, program, parent)
 
+        # must be after call to super.__init__
+        self._hash = hash((self.parent,
+                           self.blend_src,
+                           self.blend_dest) +
+                          tuple([texture.id for texture in self._textures.values()]) +
+                          tuple([texture.target for texture in self._textures.values()]))
+
     def set_state(self) -> None:
+        """Called before this group is drawn to setup the shader state.
+
+        The shader program is activated than then all textures are bound and the
+        blend mode is setup.
+        """
         self.program.use()
 
-        for idx, name in enumerate(self.textures):
+        for idx, name in enumerate(self._textures):
             self.program[name] = idx
 
-        for i, texture in enumerate(self.textures.values()):
+        for i, texture in enumerate(self._textures.values()):
             glActiveTexture(GL_TEXTURE0 + i)
             glBindTexture(texture.target, texture.id)
 
@@ -55,6 +67,11 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self) -> None:
+        """Called after all draw calls for the group have been made.
+
+        When done the blend mode is disabled, the shader program is deactivated,
+        and all textures are deactivated.
+        """
         glDisable(GL_BLEND)
         self.program.stop()
         glActiveTexture(GL_TEXTURE0)
@@ -71,11 +88,11 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             return False
 
         # Check targets and ids
-        for name, texture in self.textures.items():
-            if name not in other.textures:
+        for name, texture in self._textures.items():
+            if name not in other._textures:
                 return False
 
-            if texture.id != other.textures[name].id or texture.target != other.textures[name].target:
+            if texture.id != other._textures[name].id or texture.target != other._textures[name].target:
                 return False
 
         # Made it this far so just check the remainder
@@ -84,10 +101,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self) -> int:
-        tex_id = tuple([texture.id for texture in self.textures.values()])
-        tex_target = tuple([texture.target for texture in self.textures.values()])
-        return hash((self.parent,
-                     self.blend_src, self.blend_dest) + tex_id + tex_target)
+        return self._hash
 
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
@@ -101,75 +115,134 @@ _SAMPLER_COORDS = {
     pyglet.gl.GL_TEXTURE_2D_ARRAY: ""
 }
 
-def _get_default_mt_shader(images):
+def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
+    """Creates the default multi-texture shader based on the dict of textures passed in.
+
+    The default shader program will 'overlay' each texture layer on top of each other taking
+    into account of the alpha channel of each texture.  Textures can be either normal
+    2D textures or 2D texture arrays.  The maximum number of textures you can layer is
+    determined by the maximum number of samplers you can have in a fragment shader.
+    """
     max_tex = GLint()
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, max_tex)
     assert len(images) <= max_tex.value, f"The default multi-texture shader only supports up to a max of {max_tex.value} textures."
 
     # Generate the default vertex shader
-    vertex_source = []
-    vertex_source.append("#version 150 core")
-    vertex_source.append("in vec3 translate;")
-    vertex_source.append("in vec4 colors;")
-    vertex_source.append("in vec2 scale;")
-    vertex_source.append("in vec3 position;")
-    vertex_source.append("in float rotation;")
-    vertex_source.extend([f"in vec3 {name}_coords;" for name in images.keys()])
+    in_tex_coords = '\n'.join([f"in vec3 {name}_coords;" for name in images.keys()])
+    out_tex_coords = '\n'.join([f"out vec3 {name}_coords_frag;" for name in images.keys()])
+    tex_coords_assignments = '\n'.join([f"{name}_coords_frag = {name}_coords;" for name in images.keys()])
 
-    vertex_source.append("out vec4 vertex_colors;")
-    vertex_source.extend([f"out vec3 {name}_coords_frag;" for name in images.keys()])
+    vertex_source = f"""
+    #version 150 core
 
-    vertex_source.append("uniform WindowBlock {mat4 projection; mat4 view;} window;")
-    vertex_source.append("mat4 m_scale = mat4(1.0);")
-    vertex_source.append("mat4 m_rotation = mat4(1.0);")
-    vertex_source.append("mat4 m_translate = mat4(1.0);")
+    in vec3 translate;
+    in vec4 colors;
+    in vec2 scale;
+    in vec3 position;
+    in float rotation;
 
-    vertex_source.append("void main() {")
-    vertex_source.append("  m_scale[0][0] = scale.x;")
-    vertex_source.append("  m_scale[1][1] = scale.y;")
-    vertex_source.append("  m_translate[3][0] = translate.x;")
-    vertex_source.append("  m_translate[3][1] = translate.y;")
-    vertex_source.append("  m_translate[3][2] = translate.z;")
-    vertex_source.append("  m_rotation[0][0] =  cos(-radians(rotation));")
-    vertex_source.append("  m_rotation[0][1] =  sin(-radians(rotation));")
-    vertex_source.append("  m_rotation[1][0] = -sin(-radians(rotation));")
-    vertex_source.append("  m_rotation[1][1] =  cos(-radians(rotation));")
-    vertex_source.append("  gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);")
-    vertex_source.append("  vertex_colors = colors;")
+    {in_tex_coords}
 
-    vertex_source.extend([f"{name}_coords_frag = {name}_coords;" for name in images.keys()])
-    vertex_source.append("}")
-    vertex_source = '\n'.join(vertex_source)
+    out vec4 vertex_colors;
 
-    fragment_source = []
-    fragment_source.append("#version 150 core")
-    fragment_source.append("in vec4 vertex_colors;")
-    fragment_source.extend([f"in vec3 {name}_coords_frag;" for name in images.keys()])
+    {out_tex_coords}
 
-    fragment_source.append("out vec4 final_colors;")
+    uniform WindowBlock {{
+        mat4 projection;
+        mat4 view;
+    }} window;
+    mat4 m_scale = mat4(1.0);
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
 
-    fragment_source.extend([f"uniform {_SAMPLER_TYPES[tex.target]} {name};" for name,tex in images.items()])
+    void main()
+    {{
+        m_scale[0][0] = scale.x;
+        m_scale[1][1] = scale.y;
+        m_translate[3][0] = translate.x;
+        m_translate[3][1] = translate.y;
+        m_translate[3][2] = translate.z;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
+        vertex_colors = colors;
 
-    fragment_source.append("vec4 layer(vec4 foreground, vec4 background) {")
-    fragment_source.append("  return foreground * foreground.a + background * (1.0 - foreground.a);")
-    fragment_source.append("}")
+        {tex_coords_assignments}
+    }}
+    """
 
-    fragment_source.append("void main() {")
-    fragment_source.append("  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);")
-    fragment_source.extend([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name,tex in images.items()])
-    fragment_source.append("  final_colors = color * vertex_colors;")
-    fragment_source.append("}")
+    in_tex_coords = '\n'.join([f"in vec3 {name}_coords_frag;" for name in images.keys()])
+    uniform_samplers = '\n'.join([f"uniform {_SAMPLER_TYPES[tex.target]} {name};" for name,tex in images.items()])
+    tex_operations = '\n'.join([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name,tex in images.items()])
+    fragment_source = f"""
+    #version 150 core
 
-    fragment_source = '\n'.join(fragment_source)
+    in vec4 vertex_colors;
+    {in_tex_coords}
+
+    out vec4 final_colors;
+
+    {uniform_samplers}
+
+    vec4 layer(vec4 foreground, vec4 background) {{
+        return foreground * foreground.a + background * (1.0 - foreground.a);
+    }}
+
+    void main() {{
+        vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
+        {tex_operations}
+        final_colors = color * vertex_colors;
+    }}
+    """
 
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
-    """Creates a multi-textured sprite."""
+    """Creates a multi-textured sprite.
+
+    Multi-textured sprites behave just like regular sprites except they can
+    contain multiple texture layers.  The default behavior is to overlay each
+    layer on top of each other.  Each texture layer can be either a static image
+    or an animation.  If the default behavior is not desired then a custom
+    shader program can be supplied overriding the default program.
+
+    The following complete example loads a 2 layer sprite and draws it to the
+    screen::
+
+      import pyglet
+
+      batch = pyglet.graphics.Batch()
+
+      logo_image = pyglet.image.load('logo.png')
+      kitten_image = pyglet.image.load('kitten.png')
+      sprite = pyglet.experimental.MultiTextureSprite({'kitten': kitten_image, 'logo': logo_image},
+                                                      x=50, y=50, batch=batch)
+
+      window = pyglet.window.Window()
+
+      @window.event
+      def on_draw():
+        batch.draw()
+
+      pyglet.app.run()
+
+    If a custom program is provided then several assumptions are made by the
+    MultiTextureSprite class.
+
+    * The vertex shader is expected to have each texture coordinates passed in
+      with variables named ``<name>_coords`` as vec3 types where ``<name>`` is
+      the name of the layer given to the constructor.
+    * The fragment shader is expected to have samplers of the appropriate type
+      with variables named ``<name>`` where ``<name>`` is the name of the layer
+      given to the constructor.
+
+    """
     group_class = MultiTextureSpriteGroup
 
     def __init__(self,
-                 images: list[AbstractImage | Animation],
+                 images: dict[str, AbstractImage | Animation],
                  x: float = 0, y: float = 0, z: float = 0,
                  blend_src: int = GL_SRC_ALPHA,
                  blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
