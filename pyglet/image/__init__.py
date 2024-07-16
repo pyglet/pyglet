@@ -1386,7 +1386,7 @@ class Texture(AbstractImage):
         glBindVertexArray(vao_id)
 
         # Activate shader program:
-        program = pyglet.graphics.get_default_shader()
+        program = pyglet.graphics.get_default_blit_shader()
         program.use()
         pos_attrs = program.attributes['position']
         tex_attrs = program.attributes['tex_coords']
