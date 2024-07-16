@@ -402,3 +402,22 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 animation["frame_idx"] = frame_idx
                 frame = animation["animation"].frames[animation["frame_idx"]]
                 self._set_multi_texture(name, frame.image.get_texture())
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    @paused.setter
+    def paused(self, pause: bool) -> None:
+        if not hasattr(self, '_animations') or pause == self._paused:
+            return
+
+        if pause:
+            pyglet.clock.unschedule(self._animate)
+        else:
+            # Kick off all of the animations again
+            for name, animation in self._animations:
+                frame = animation["animation"].frames[animation["frame_idx"]]
+            if frame.duration:
+                animation["next_dt"] = frame.duration
+                pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
