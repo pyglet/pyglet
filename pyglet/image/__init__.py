@@ -1359,8 +1359,6 @@ class Texture(AbstractImage):
             glPixelStorei(GL_PACK_ALIGNMENT, 1)
             glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
-        glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
-
         data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
@@ -1417,7 +1415,8 @@ class Texture(AbstractImage):
 
         glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_BYTE, 0)
         glFlush()
-
+        glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
+        
         # Deactivate shader program:
         program.stop()
         # Discard everything after blitting:
