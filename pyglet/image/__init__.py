@@ -1415,7 +1415,6 @@ class Texture(AbstractImage):
 
         glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_BYTE, 0)
         glFlush()
-        glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0)
         
         # Deactivate shader program:
         program.stop()
