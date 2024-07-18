@@ -424,7 +424,7 @@ class ShapeBase(ABC):
 
         self._group = self.get_shape_group()
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
         else:
             self._vertex_list.delete()
             self._create_vertex_list()
@@ -445,7 +445,7 @@ class ShapeBase(ABC):
         self._group = self.get_shape_group()
 
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
         else:
             self._vertex_list.delete()
             self._create_vertex_list()
