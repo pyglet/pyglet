@@ -152,7 +152,7 @@ class EventDispatcher:
     _event_stack: tuple | list = ()
 
     @classmethod
-    def register_event_type(cls: Self, name: str) -> str:
+    def register_event_type(cls: type[Self], name: str) -> str:
         """Register an event type with the dispatcher.
 
         Before dispatching events, they must first be registered by name.
