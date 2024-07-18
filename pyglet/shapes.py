@@ -713,21 +713,16 @@ class ShapeBase(ABC):
         If :py:attr:`.batch` isn't ``None``, setting this property will
         also trigger a batch migration.
         """
-        return self._group.parent
+        return self._user_group
 
     @group.setter
     def group(self, group: Group) -> None:
-        if self._group.parent == group:
+        if self._user_group == group:
             return
-        self._group = self.group_class(self._group.blend_src,
-                                       self._group.blend_dest,
-                                       self._group.program,
-                                       group)
+        self._user_group = group
+        self._group = self.get_shape_group()
         if self._batch:
-            self._batch.migrate(self._vertex_list,
-                                self._draw_mode,
-                                self._group,
-                                self._batch)
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
 
     @property
     def batch(self) -> Batch | None:
@@ -838,7 +833,7 @@ class Arc(ShapeBase):
         )
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1008,7 +1003,7 @@ class BezierCurve(ShapeBase):
         return p
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1144,7 +1139,7 @@ class Circle(ShapeBase):
         return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1261,7 +1256,7 @@ class Ellipse(ShapeBase):
         return math.dist(shape_center, point) < self._b
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1393,7 +1388,7 @@ class Sector(ShapeBase):
         return False
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1534,7 +1529,7 @@ class Line(ShapeBase):
         return h < self._width / 2
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1659,7 +1654,7 @@ class Rectangle(ShapeBase):
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1801,7 +1796,7 @@ class BorderedRectangle(ShapeBase):
 
     def _create_vertex_list(self) -> None:
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             8, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
@@ -2014,7 +2009,7 @@ class Box(ShapeBase):
         #     1    4
         #   0        5
         indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -2192,7 +2187,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -2342,7 +2337,7 @@ class Triangle(ShapeBase):
             point)
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -2477,7 +2472,7 @@ class Star(ShapeBase):
         return math.dist(center, point) < radius
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -2600,7 +2595,7 @@ class Polygon(ShapeBase):
 
     def _create_vertex_list(self) -> None:
         vertices = self._get_vertices()
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             self._num_verts, self._draw_mode,
             earcut.earcut(vertices),
             self._batch, self._group,
@@ -2687,7 +2682,7 @@ class MultiLine(ShapeBase):
         )
 
     def _create_vertex_list(self) -> None:
-        self._vertex_list = self._group.program.vertex_list(
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
