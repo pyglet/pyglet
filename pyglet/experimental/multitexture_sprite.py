@@ -9,7 +9,7 @@ import pyglet
 from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
     glGetIntegerv, GLint, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES, GL_MAX_TEXTURE_IMAGE_UNITS
 
-class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
+class MultiTextureSpriteGroup(pyglet.graphics.Group):
     """Shared Multi-texture Sprite rendering Group.
 
     The Group defines custom ``__eq__`` and ``__hash__`` methods, and so will be
@@ -37,16 +37,11 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             parent:
                 Optional parent group.
         """
+        super().__init__(parent=parent)
         self._textures = textures
-        texture = list(self._textures.values())[0]
-        super().__init__(texture, blend_src, blend_dest, program, parent)
-
-        # must be after call to super.__init__
-        self._hash = hash((self.parent,
-                           self.blend_src,
-                           self.blend_dest) +
-                          tuple([texture.id for texture in self._textures.values()]) +
-                          tuple([texture.target for texture in self._textures.values()]))
+        self.blend_src = blend_src
+        self.blend_dest = blend_dest
+        self.program = program
 
     def set_state(self) -> None:
         """Called before this group is drawn to setup the shader state.
@@ -77,7 +72,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         glActiveTexture(GL_TEXTURE0)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'
+        return f'{self.__class__.__name__}({[(name,texture) for name,texture in self._textures.items()]})'
 
     def __eq__(self, other: object | Group | MultiTextureSpriteGroup) -> bool:
         """Determines if this group is the same as the other group.
@@ -87,7 +82,9 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         if other.__class__ is not self.__class__:
             return False
 
-        # Check targets and ids
+        if len(self._textures) != len(other._textures):
+            return False
+
         for name, texture in self._textures.items():
             if name not in other._textures:
                 return False
@@ -101,7 +98,11 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self) -> int:
-        return self._hash
+        return hash((self.parent, self.program,
+                           self.blend_src,
+                           self.blend_dest) +
+                          tuple([texture.id for texture in self._textures.values()]) +
+                          tuple([texture.target for texture in self._textures.values()]))
 
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
@@ -360,6 +361,11 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
     def _set_multi_texture(self, key, new_tex: Texture) -> None:
         if new_tex.id is not self.textures[key].id:
+            # Need to make a shallow copy to allow the batch object
+            # to correctly split this sprite from other sprite's groups.
+            # if not then you will be modifing all othe the other sprites
+            # textures dict object as well.
+            self.textures = self.textures.copy()
             self.textures[key] = new_tex
             self._vertex_list.delete()
             self._group = self.get_sprite_group()
@@ -385,7 +391,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             rotation=('f', (self._rotation,) * 4),
             **tex_coords)
 
-    def set_frame_index(self, name, frame_idx) -> None:
+    def set_frame_index(self, name: str, frame_idx: int) -> None:
         """Set the current Animation frame for the requested texture layer
 
         If the texture layer isn't an animation then this method has no effect.
@@ -402,6 +408,78 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 animation["frame_idx"] = frame_idx
                 frame = animation["animation"].frames[animation["frame_idx"]]
                 self._set_multi_texture(name, frame.image.get_texture())
+
+    def get_frame_index(self, name: str) -> int:
+        """Get the current Animation frame for the requested texture layer
+
+        If the texture layer isn't an animation then this method always returns 0.
+
+        Args:
+            name:
+              The dict key given for the texture layer in the constructor
+        """
+        if name in self._animations:
+            animation = self._animations[name]
+            return animation["frame_idx"]
+
+        return 0
+
+    def get_layer(self, name: str) -> AbstractImage | Animation | None:
+        """Return the requested layer.  If it is not found then None is returned
+
+        Args:
+            name:
+              The dict key given for the texture layer in the constructor.
+        """
+        if name in self._animations:
+            return self._animations[name]
+        elif name in self.textures:
+            return self.textures[name]
+
+        return None
+
+    def set_layer(self, name: str, img: AbstractImage | Animation) -> None:
+        """Sets the layer to the new image or animation.
+
+        This method has no effect if name is not a valid layer.  Note: if you
+        want to swap out a layer which is an animation then this will cause
+        all other animated layers for this sprite to pause until the swap is done.
+
+        Args:
+            name:
+              The dict key given for the texture layer in the constructor
+        """
+        if name in self._animations:
+            # Need to stop all animations temporarly so we can swap the layer out
+            pyglet.clock.unschedule(self._animate)
+            self._animations.pop(name)
+
+        # Grab the texture and replace what was there
+        if isinstance(img, pyglet.image.Animation):
+            # Add the animation and schedule it based on pause
+            self._animations[name] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
+            if img.frames[0].duration and not self._paused:
+                pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
+
+            self._set_multi_texture(name, img.frames[0].image.get_texture())
+        else:
+            self._set_multi_texture(name, img.get_texture())
+
+    @property
+    def frame_index(self) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support the frame_index property.  Use get_frame_index instead.")
+
+    @frame_index.setter
+    def frame_index(self, index: int) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support the frame_index property.  Use set_frame_index instead.")
+
+    @property
+    def image(self) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support the image property.  Use get_layer instead.")
+
+    @image.setter
+    def image(self, img: AbstractImage | Animation) -> None:
+        raise NotImplementedError("MultiTextureSprite does not support the image property.  Use set_layer instead.")
 
     @property
     def paused(self) -> bool:
