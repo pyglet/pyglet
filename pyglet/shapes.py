@@ -67,15 +67,12 @@ A simple example of drawing shapes::
 from __future__ import annotations
 
 import math
-
 from abc import ABC, abstractmethod
-from typing import Sequence, TYPE_CHECKING, Union, Tuple
+from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 import pyglet
-
 from pyglet.extlibs import earcut
-from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_BLEND, GL_TRIANGLES
-from pyglet.gl import glBlendFunc, glEnable, glDisable
+from pyglet.gl import GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES, glBlendFunc, glDisable, glEnable
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
 
@@ -130,14 +127,14 @@ def get_default_shader() -> ShaderProgram:
                                                     (fragment_source, 'fragment'))
 
 
-def _rotate_point(center, point, angle):
+def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
     prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
     now_angle = prev_angle + angle
     r = math.dist(point, center)
     return center[0] + r * math.cos(now_angle), center[1] + r * math.sin(now_angle)
 
 
-def _point_in_polygon(polygon, point) -> bool:
+def _point_in_polygon(polygon: Sequence[tuple[float, float]], point: tuple[float, float]) -> bool:
     """Use raycasting to determine if a point is inside a polygon.
 
     This function is an example implementation available under MIT License at:
@@ -161,7 +158,10 @@ def _point_in_polygon(polygon, point) -> bool:
     return odd
 
 
-def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None):
+def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] | list[float],
+                 p2: tuple[float, float] | list[float], p3: tuple[float, float] | list[float],
+                 thickness: float = 1.0, prev_miter: Vec2 | None = None, prev_scale: Vec2 | None = None) -> tuple[
+    Vec2, Vec2, float, float, float, float, float, float, float, float, float, float, float, float]:
     """Computes a line segment between the points p1 and p2.
 
     If points p0 or p3 are supplied then the segment p1->p2 will have the correct "miter" angle
@@ -169,23 +169,25 @@ def _get_segment(p0, p1, p2, p3, thickness=1.0, prev_miter=None, prev_scale=None
     to the next call of the method for a minor performance improvement.  If they are not supplied
     then they will be computed.
 
-    :Parameters:
-        `p0` : (float, float)
+    Args:
+        p0:
             The "previous" point for the segment p1->p2 which is used to compute the "miter"
             angle of the start of the segment.  If None is supplied then the start of the line
             is 90 degrees to the segment p1->p2.
-        `p1` : (float, float)
+        p1:
             The origin of the segment p1->p2.
-        `p2` : (float, float)
+        p2:
             The end of the segment p1->p2
-        `p3` : (float, float)
+        p3:
             The "following" point for the segment p1->p2 which is used to compute the "miter"
             angle to the end of the segment.  If None is supplied then the end of the line is
             90 degrees to the segment p1->p2.
-        `prev_miter`: pyglet.math.Vec2
+        thickness:
+            Thickness of the miter.
+        prev_miter:
             The miter value to be used.
-
-    :type: (pyglet.math.Vec2, pyglet.math.Vec2, float, float, float, float, float, float)
+        prev_scale:
+            The scale value to be used.
     """
     v_np1p2 = Vec2(p2[0] - p1[0], p2[1] - p1[1]).normalize()
     v_normal = Vec2(-v_np1p2.y, v_np1p2.x)
@@ -242,7 +244,7 @@ class _ShapeGroup(Group):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src: int, blend_dest: int, program: ShaderProgram, parent: Group | None = None):
+    def __init__(self, blend_src: int, blend_dest: int, program: ShaderProgram, parent: Group | None = None) -> None:
         """Create a Shape group.
 
         The group is created internally. Usually you do not
@@ -263,23 +265,23 @@ class _ShapeGroup(Group):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
-    def set_state(self):
+    def set_state(self) -> None:
         self.program.bind()
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-    def unset_state(self):
+    def unset_state(self) -> None:
         glDisable(GL_BLEND)
         self.program.unbind()
 
-    def __eq__(self, other):
+    def __eq__(self, other: Group | _ShapeGroup) -> None:
         return (other.__class__ is self.__class__ and
                 self.program == other.program and
                 self.parent == other.parent and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.program, self.parent, self.blend_src, self.blend_dest))
 
 
@@ -303,22 +305,69 @@ class ShapeBase(ABC):
     _y: float = 0.0
     _anchor_x: float = 0.0
     _anchor_y: float = 0.0
-    _batch = None
-    _group = None
+    _batch: Batch | None = None
+    _group: _ShapeGroup | Group | None = None
     _num_verts: int = 0
+    _user_group: Group | None = None
     _vertex_list = None
     _draw_mode: int = GL_TRIANGLES
-    group_class = _ShapeGroup
+    group_class: Group = _ShapeGroup
 
-    def __del__(self):
+    def __init__(self,
+                 vertex_count: int,
+                 blend_src: int = GL_SRC_ALPHA,
+                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 batch: Batch | None = None,
+                 group: Group | None = None,
+                 program: ShaderProgram | None = None,
+                 ) -> None:
+        """Initialize attributes that all Shape object's require.
+
+        Args:
+            vertex_count:
+                The amount of vertices this Shape object has.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            batch:
+                Optional batch object.
+            group:
+                Optional group object.
+            program:
+                Optional ShaderProgram object.
+        """
+        self._num_verts = vertex_count
+        self._blend_src = blend_src
+        self._blend_dest = blend_dest
+        self._batch = batch
+        self._user_group = group
+        self._program = program or get_default_shader()
+        self._group = self.get_shape_group()
+        self._create_vertex_list()
+
+    def __del__(self) -> None:
         if self._vertex_list is not None:
             self._vertex_list.delete()
+            self._vertex_list = None
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         """Test whether a point is inside a shape."""
         raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
-    def _update_color(self):
+    def get_shape_group(self) -> _ShapeGroup | Group:
+        """Creates and returns a group to be used to render the shap[e.
+
+        This is used internally to create a consolidated group for rendering.
+
+        .. note:: This is for advanced usage. This is a group automatically created internally as a child of ``group``,
+                  and does not need to be modified unless the parameters of your custom group changes.
+
+        .. versionadded:: 2.0.16
+        """
+        return self.group_class(self._blend_src, self._blend_dest, self._program, self._user_group)
+
+    def _update_color(self) -> None:
         """Send the new colors for each vertex to the GPU.
 
         This method must set the contents of `self._vertex_list.colors`
@@ -328,10 +377,10 @@ class ShapeBase(ABC):
         """
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    def _update_translation(self):
+    def _update_translation(self) -> None:
         self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         """Build internal vertex list.
 
         This method must create a vertex list and assign it to
@@ -343,21 +392,63 @@ class ShapeBase(ABC):
         namely `batch` and `group`) rely on this method to properly
         recreate the vertex list.
         """
-        raise NotImplementedError('_create_vertex_list must be defined in '
-                                  'order to use group or batch properties')
+        raise NotImplementedError('_create_vertex_list must be defined in order to use group or batch properties')
 
     @abstractmethod
-    def _update_vertices(self):
-        """
-        Generate up-to-date vertex positions & send them to the GPU.
+    def _update_vertices(self) -> None:
+        """Generate up-to-date vertex positions & send them to the GPU.
 
         This method must set the contents of `self._vertex_list.vertices`
         using a list or tuple that contains the new vertex coordinates for
         each vertex in the shape. See the `ShapeBase` subclasses in this
         module for examples of how to do this.
         """
-        raise NotImplementedError("_update_vertices must be defined"
-                                  "for every ShapeBase subclass")
+        raise NotImplementedError("_update_vertices must be defined for every ShapeBase subclass")
+
+    @property
+    def blend_mode(self) -> tuple[int, int]:
+        """The current blend mode applied to this shape.
+
+        .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
+        """
+        return self._blend_src, self._blend_dest
+
+    @blend_mode.setter
+    def blend_mode(self, modes: tuple[int, int]) -> None:
+        src, dst = modes
+        if src == self._blend_src and dst == self._blend_dest:
+            return
+
+        self._blend_src = src
+        self._blend_dest = dst
+
+        self._group = self.get_shape_group()
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
+        else:
+            self._vertex_list.delete()
+            self._create_vertex_list()
+
+    @property
+    def program(self) -> ShaderProgram:
+        """The current shader program.
+
+        .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
+        """
+        return self._program
+
+    @program.setter
+    def program(self, program: ShaderProgram) -> None:
+        if self._program == program:
+            return
+        self._program = program
+        self._group = self.get_shape_group()
+
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
+        else:
+            self._vertex_list.delete()
+            self._create_vertex_list()
 
     @property
     def rotation(self) -> float:
@@ -515,7 +606,7 @@ class ShapeBase(ABC):
 
     @property
     def anchor_position(self) -> tuple[float, float]:
-        """Get/set the anchor's ``(x, y)`` offset from :py:attr:`.position`
+        """Get/set the anchor's ``(x, y)`` offset from :py:attr:`.position`.
 
         This defines the point a shape rotates around. By default, it is
         ``(0.0, 0.0)``. However:
@@ -553,7 +644,7 @@ class ShapeBase(ABC):
     @color.setter
     def color(
             self,
-            values: tuple[int, int, int, int] | tuple[int, int, int]
+            values: tuple[int, int, int, int] | tuple[int, int, int],
     ) -> None:
         r, g, b, *a = values
 
@@ -622,21 +713,16 @@ class ShapeBase(ABC):
         If :py:attr:`.batch` isn't ``None``, setting this property will
         also trigger a batch migration.
         """
-        return self._group.parent
+        return self._user_group
 
     @group.setter
     def group(self, group: Group) -> None:
-        if self._group.parent == group:
+        if self._user_group == group:
             return
-        self._group = self.group_class(self._group.blend_src,
-                                       self._group.blend_dest,
-                                       self._group.program,
-                                       group)
+        self._user_group = group
+        self._group = self.get_shape_group()
         if self._batch:
-            self._batch.migrate(self._vertex_list,
-                                self._draw_mode,
-                                self._group,
-                                self._batch)
+            self._batch.migrate(self._vertex_list, self._draw_mode, self._group, self._batch)
 
     @property
     def batch(self) -> Batch | None:
@@ -676,10 +762,13 @@ class Arc(ShapeBase):
             start_angle: float = 0.0,
             closed: bool = False,
             thickness: float = 1.0,
-            color=(255, 255, 255, 255),
+            color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create an Arc.
 
         The Arc's anchor point (x, y) defaults to its center.
@@ -710,10 +799,16 @@ class Arc(ShapeBase):
                 The RGB or RGBA color of the arc, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the circle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the circle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -731,74 +826,71 @@ class Arc(ShapeBase):
         self._closed = closed if abs(math.tau - self._angle) > 1e-9 else False
         self._rotation = 0
 
-        # Each segment is now 6 vertices long
-        self._num_verts = self._segments * 6 + (6 if self._closed else 0)
+        super().__init__(
+            # Each segment is now 6 vertices long
+            self._segments * 6 + (6 if self._closed else 0),
+            blend_src, blend_dest, batch, group, program,
+        )
 
-        self._batch = batch or Batch()
-        program = get_default_shader()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
-
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
-            r = self._radius
-            tau_segs = self._angle / self._segments
-            start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Calculate the outer points of the arc:
-            points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
-                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
+        x = -self._anchor_x
+        y = -self._anchor_y
+        r = self._radius
+        tau_segs = self._angle / self._segments
+        start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Create a list of quads from the points
-            vertices = []
-            prev_miter = None
-            prev_scale = None
-            for i in range(len(points) - 1):
-                prev_point = None
-                next_point = None
-                if i > 0:
-                    prev_point = points[i - 1]
-                elif self._closed:
-                    prev_point = points[-1]
-                elif abs(self._angle - math.tau) <= 1e-9:
-                    prev_point = points[-2]
+        # Calculate the outer points of the arc:
+        points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
+                   y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
-                if i + 2 < len(points):
-                    next_point = points[i + 2]
-                elif self._closed:
-                    next_point = points[0]
-                elif abs(self._angle - math.tau) <= 1e-9:
-                    next_point = points[1]
+        # Create a list of quads from the points
+        vertices = []
+        prev_miter = None
+        prev_scale = None
+        for i in range(len(points) - 1):
+            prev_point = None
+            next_point = None
+            if i > 0:
+                prev_point = points[i - 1]
+            elif self._closed:
+                prev_point = points[-1]
+            elif abs(self._angle - math.tau) <= 1e-9:
+                prev_point = points[-2]
 
-                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
-                                                                self._thickness, prev_miter, prev_scale)
-                vertices.extend(segment)
+            if i + 2 < len(points):
+                next_point = points[i + 2]
+            elif self._closed:
+                next_point = points[0]
+            elif abs(self._angle - math.tau) <= 1e-9:
+                next_point = points[1]
 
-            if self._closed:
-                prev_point = None
-                next_point = None
-                if len(points) > 2:
-                    prev_point = points[-2]
-                    next_point = points[1]
-                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[-1], points[0], next_point,
-                                                                self._thickness, prev_miter, prev_scale)
-                vertices.extend(segment)
+            prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                            self._thickness, prev_miter, prev_scale)
+            vertices.extend(segment)
 
-            return vertices
+        if self._closed:
+            prev_point = None
+            next_point = None
+            if len(points) > 2:
+                prev_point = points[-2]
+                next_point = points[1]
+            prev_miter, prev_scale, *segment = _get_segment(prev_point, points[-1], points[0], next_point,
+                                                            self._thickness, prev_miter, prev_scale)
+            vertices.extend(segment)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -813,7 +905,7 @@ class Arc(ShapeBase):
 
     @property
     def thickness(self) -> float:
-        """Get/set the thickness of the Arc"""
+        """Get/set the thickness of the Arc."""
         return self._thickness
 
     @thickness.setter
@@ -837,7 +929,7 @@ class Arc(ShapeBase):
         return self._start_angle
 
     @start_angle.setter
-    def start_angle(self, angle: float):
+    def start_angle(self, angle: float) -> None:
         self._start_angle = angle
         self._update_vertices()
 
@@ -851,9 +943,12 @@ class BezierCurve(ShapeBase):
             segments: int = 100,
             thickness: int = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a Bézier curve.
 
         The curve's anchor point (x, y) defaults to its first control point.
@@ -874,27 +969,31 @@ class BezierCurve(ShapeBase):
                 The RGB or RGBA color of the curve, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the curve to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the curve.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._points = list(points)
         self._x, self._y = self._points[0]
         self._t = t
         self._segments = segments
         self._thickness = thickness
-        self._num_verts = self._segments * 6
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        super().__init__(
+            self._segments * 6,
+            blend_src, blend_dest, batch, group, program,
+        )
 
-        self._create_vertex_list()
-
-    def _make_curve(self, t):
+    def _make_curve(self, t: float) -> list[float]:
         n = len(self._points) - 1
         p = [0, 0]
         for i in range(n + 1):
@@ -903,48 +1002,48 @@ class BezierCurve(ShapeBase):
             p[1] += m * self._points[i][1]
         return p
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x - self._x
-            y = -self._anchor_y - self._y
 
-            # Calculate the points of the curve:
-            points = [(x + self._make_curve(self._t * t / self._segments)[0],
-                       y + self._make_curve(self._t * t / self._segments)[1]) for t in range(self._segments + 1)]
-            trans_x, trans_y = points[0]
-            trans_x += self._anchor_x
-            trans_y += self._anchor_y
-            coords = [[x - trans_x, y - trans_y] for x, y in points]
+        x = -self._anchor_x - self._x
+        y = -self._anchor_y - self._y
 
-            # Create a list of doubled-up points from the points:
-            vertices = []
-            prev_miter = None
-            prev_scale = None
-            for i in range(len(coords) - 1):
-                prev_point = None
-                next_point = None
-                if i > 0:
-                    prev_point = points[i - 1]
+        # Calculate the points of the curve:
+        points = [(x + self._make_curve(self._t * t / self._segments)[0],
+                   y + self._make_curve(self._t * t / self._segments)[1]) for t in range(self._segments + 1)]
+        trans_x, trans_y = points[0]
+        trans_x += self._anchor_x
+        trans_y += self._anchor_y
+        coords = [[x - trans_x, y - trans_y] for x, y in points]
 
-                if i + 2 < len(points):
-                    next_point = points[i + 2]
+        # Create a list of doubled-up points from the points:
+        vertices = []
+        prev_miter = None
+        prev_scale = None
+        for i in range(len(coords) - 1):
+            prev_point = None
+            next_point = None
+            if i > 0:
+                prev_point = points[i - 1]
 
-                prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
-                                                                self._thickness, prev_miter, prev_scale)
-                vertices.extend(segment)
+            if i + 2 < len(points):
+                next_point = points[i + 2]
 
-            return vertices
+            prev_miter, prev_scale, *segment = _get_segment(prev_point, points[i], points[i + 1], next_point,
+                                                            self._thickness, prev_miter, prev_scale)
+            vertices.extend(segment)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -953,7 +1052,7 @@ class BezierCurve(ShapeBase):
         return self._points
 
     @points.setter
-    def points(self, value: list[tuple[float, float]]):
+    def points(self, value: list[tuple[float, float]]) -> None:
         self._points = value
         self._update_vertices()
 
@@ -986,9 +1085,12 @@ class Circle(ShapeBase):
             radius: float,
             segments: int | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a circle.
 
         The circle's anchor point (x, y) defaults to the center of the circle.
@@ -1009,58 +1111,62 @@ class Circle(ShapeBase):
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the circle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the circle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
-        self._num_verts = self._segments * 3
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(
+            self._segments * 3,
+            blend_src, blend_dest, batch, group, program,
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
-            r = self._radius
-            tau_segs = math.pi * 2 / self._segments
 
-            # Calculate the outer points of the circle:
-            points = [(x + (r * math.cos(i * tau_segs)),
-                       y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
+        x = -self._anchor_x
+        y = -self._anchor_y
+        r = self._radius
+        tau_segs = math.pi * 2 / self._segments
 
-            # Create a list of triangles from the points:
-            vertices = []
-            for i, point in enumerate(points):
-                triangle = x, y, *points[i - 1], *point
-                vertices.extend(triangle)
+        # Calculate the outer points of the circle:
+        points = [(x + (r * math.cos(i * tau_segs)),
+                   y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
 
-            return vertices
+        # Create a list of triangles from the points:
+        vertices = []
+        for i, point in enumerate(points):
+            triangle = x, y, *points[i - 1], *point
+            vertices.extend(triangle)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1082,9 +1188,12 @@ class Ellipse(ShapeBase):
             a: float, b: float,
             segments: int | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create an ellipse.
 
         The ellipse's anchor point ``(x, y)`` defaults to the center of
@@ -1099,14 +1208,25 @@ class Ellipse(ShapeBase):
                 Semi-major axes of the ellipse.
             b:
                 Semi-minor axes of the ellipse.
+            segments:
+                You can optionally specify how many distinct line segments
+                the ellipse should be made from. If not specified it will be
+                automatically calculated using the formula:
+                ``int(max(a, b) / 1.25)``.
             color:
                 The RGB or RGBA color of the ellipse, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the circle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the circle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -1120,13 +1240,11 @@ class Ellipse(ShapeBase):
 
         self._rotation = 0
         self._segments = segments or int(max(a, b) / 1.25)
-        self._num_verts = self._segments * 3
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(
+            self._segments * 3,
+            blend_src, blend_dest, batch, group, program,
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1137,34 +1255,34 @@ class Ellipse(ShapeBase):
         shape_center = (self._b / self._a * (self._x - self._anchor_x), self._y - self._anchor_y)
         return math.dist(shape_center, point) < self._b
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
-            tau_segs = math.pi * 2 / self._segments
 
-            # Calculate the points of the ellipse by formula:
-            points = [(x + self._a * math.cos(i * tau_segs),
-                       y + self._b * math.sin(i * tau_segs)) for i in range(self._segments)]
+        x = -self._anchor_x
+        y = -self._anchor_y
+        tau_segs = math.pi * 2 / self._segments
 
-            # Create a list of triangles from the points:
-            vertices = []
-            for i, point in enumerate(points):
-                triangle = x, y, *points[i - 1], *point
-                vertices.extend(triangle)
+        # Calculate the points of the ellipse by formula:
+        points = [(x + self._a * math.cos(i * tau_segs),
+                   y + self._b * math.sin(i * tau_segs)) for i in range(self._segments)]
 
-            return vertices
+        # Create a list of triangles from the points:
+        vertices = []
+        for i, point in enumerate(points):
+            triangle = x, y, *points[i - 1], *point
+            vertices.extend(triangle)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1198,9 +1316,12 @@ class Sector(ShapeBase):
             angle: float = math.tau,
             start_angle: float = 0.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a Sector of a circle.
 
         By default, ``(x, y)`` is used as:
@@ -1228,16 +1349,21 @@ class Sector(ShapeBase):
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the sector to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the sector.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
-        self._num_verts = self._segments * 3
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
@@ -1246,11 +1372,10 @@ class Sector(ShapeBase):
         self._start_angle = start_angle
         self._rotation = 0
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(
+            self._segments * 3,
+            blend_src, blend_dest, batch, group, program,
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1262,36 +1387,36 @@ class Sector(ShapeBase):
             return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
         return False
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
-            r = self._radius
-            tau_segs = self._angle / self._segments
-            start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Calculate the outer points of the sector.
-            points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
-                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
+        x = -self._anchor_x
+        y = -self._anchor_y
+        r = self._radius
+        tau_segs = self._angle / self._segments
+        start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Create a list of triangles from the points
-            vertices = []
-            for i, point in enumerate(points[1:], start=1):
-                triangle = x, y, *points[i - 1], *point
-                vertices.extend(triangle)
+        # Calculate the outer points of the sector.
+        points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
+                   y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
-            return vertices
+        # Create a list of triangles from the points
+        vertices = []
+        for i, point in enumerate(points[1:], start=1):
+            triangle = x, y, *points[i - 1], *point
+            vertices.extend(triangle)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1336,8 +1461,11 @@ class Line(ShapeBase):
             x: float, y: float, x2: float, y2: float,
             width: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
     ):
         """Create a line.
 
@@ -1359,10 +1487,16 @@ class Line(ShapeBase):
                 The RGB or RGBA color of the line, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the line to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the line.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -1371,16 +1505,11 @@ class Line(ShapeBase):
 
         self._width = width
         self._rotation = 0
-        self._num_verts = 6
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(6,blend_src, blend_dest, batch, group, program)
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1399,39 +1528,39 @@ class Line(ShapeBase):
         h = double_area / math.dist((self._x, self._y), (self._x2, self._y2))
         return h < self._width / 2
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x1 = 0
-            y1 = -self._width / 2
-            x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
-            y2 = y1 + self._width
 
-            r = math.atan2(self._y2 - self._y, self._x2 - self._x)
-            cr = math.cos(r)
-            sr = math.sin(r)
-            anchor_x = self._anchor_x
-            anchor_y = self._anchor_y
-            ax = x1 * cr - y1 * sr - anchor_x
-            ay = x1 * sr + y1 * cr - anchor_y
-            bx = x2 * cr - y1 * sr - anchor_x
-            by = x2 * sr + y1 * cr - anchor_y
-            cx = x2 * cr - y2 * sr - anchor_x
-            cy = x2 * sr + y2 * cr - anchor_y
-            dx = x1 * cr - y2 * sr - anchor_x
-            dy = x1 * sr + y2 * cr - anchor_y
+        x1 = 0
+        y1 = -self._width / 2
+        x2 = x1 + math.hypot(self._y2 - self._y, self._x2 - self._x)
+        y2 = y1 + self._width
 
-            return ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy
+        r = math.atan2(self._y2 - self._y, self._x2 - self._x)
+        cr = math.cos(r)
+        sr = math.sin(r)
+        anchor_x = self._anchor_x
+        anchor_y = self._anchor_y
+        ax = x1 * cr - y1 * sr - anchor_x
+        ay = x1 * sr + y1 * cr - anchor_y
+        bx = x2 * cr - y1 * sr - anchor_x
+        by = x2 * sr + y1 * cr - anchor_y
+        cx = x2 * cr - y2 * sr - anchor_x
+        cy = x2 * sr + y2 * cr - anchor_y
+        dx = x1 * cr - y2 * sr - anchor_x
+        dy = x1 * sr + y2 * cr - anchor_y
 
-    def _update_vertices(self):
+        return ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1472,8 +1601,11 @@ class Rectangle(ShapeBase):
             x: float, y: float,
             width: float, height: float,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
     ):
         """Create a rectangle or square.
 
@@ -1493,26 +1625,27 @@ class Rectangle(ShapeBase):
                 The RGB or RGBA color of the circle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the rectangle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the rectangle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
         self._width = width
         self._height = height
         self._rotation = 0
-        self._num_verts = 6
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(6, blend_src, blend_dest, batch, group, program)
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1520,14 +1653,14 @@ class Rectangle(ShapeBase):
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
@@ -1538,7 +1671,7 @@ class Rectangle(ShapeBase):
 
             return x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1578,8 +1711,11 @@ class BorderedRectangle(ShapeBase):
             border: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255),
             border_color: tuple[int, int, int, int] | tuple[int, int, int] = (100, 100, 100),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
     ):
         """Create a bordered rectangle.
 
@@ -1610,10 +1746,16 @@ class BorderedRectangle(ShapeBase):
                 both this argument and `border_color`. If they do not,
                 a `ValueError` will be raised informing you of the
                 ambiguity.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the rectangle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the rectangle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -1621,7 +1763,6 @@ class BorderedRectangle(ShapeBase):
         self._height = height
         self._rotation = 0
         self._border = border
-        self._num_verts = 8
 
         fill_r, fill_g, fill_b, *fill_a = color
         border_r, border_g, border_b, *border_a = border_color
@@ -1645,11 +1786,7 @@ class BorderedRectangle(ShapeBase):
         self._rgba = fill_r, fill_g, fill_b, alpha
         self._border_rgba = border_r, border_g, border_b, alpha
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(8, blend_src, blend_dest, batch, group, program)
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1657,35 +1794,35 @@ class BorderedRectangle(ShapeBase):
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             8, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            bx1 = -self._anchor_x
-            by1 = -self._anchor_y
-            bx2 = bx1 + self._width
-            by2 = by1 + self._height
-            b = self._border
-            ix1 = bx1 + b
-            iy1 = by1 + b
-            ix2 = bx2 - b
-            iy2 = by2 - b
 
-            return (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
-                    bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+        bx1 = -self._anchor_x
+        by1 = -self._anchor_y
+        bx2 = bx1 + self._width
+        by2 = by1 + self._height
+        b = self._border
+        ix1 = bx1 + b
+        iy1 = by1 + b
+        ix2 = bx2 - b
+        iy2 = by2 - b
 
-    def _update_vertices(self):
+        return (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+                bx1, by1, bx2, by1, bx2, by2, bx1, by2)
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1751,8 +1888,8 @@ class BorderedRectangle(ShapeBase):
     @border_color.setter
     def border_color(
             self,
-            values: tuple[int, int, int, int] | tuple[int, int, int]
-    ):
+            values: tuple[int, int, int, int] | tuple[int, int, int],
+    ) -> None:
         r, g, b, *a = values
 
         if a:
@@ -1766,8 +1903,8 @@ class BorderedRectangle(ShapeBase):
         self._update_color()
 
     @property
-    def color(self):
-        """Get/set the bordered rectangle's interior fill color
+    def color(self) -> tuple[int, int, int, int] | tuple[int, int, int]:
+        """Get/set the bordered rectangle's interior fill color.
 
         To set the color of the border outline, see
         :py:attr:`.border_color`.
@@ -1788,7 +1925,7 @@ class BorderedRectangle(ShapeBase):
     @color.setter
     def color(
             self,
-            values: tuple[int, int, int, int] | tuple[int, int, int]
+            values: tuple[int, int, int, int] | tuple[int, int, int],
     ) -> None:
         r, g, b, *a = values
 
@@ -1810,9 +1947,12 @@ class Box(ShapeBase):
             width: float, height: float,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create an unfilled rectangular shape, with optional thickness.
 
         The box's anchor point defaults to the ``(x, y)`` coordinates,
@@ -1835,10 +1975,16 @@ class Box(ShapeBase):
                 The RGB or RGBA color of the box, specified as a tuple
                 of 3 or 4 ints in the range of 0-255. RGB colors will
                 be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the box to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the box.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -1846,16 +1992,10 @@ class Box(ShapeBase):
         self._height = height
         self._thickness = thickness
 
-        self._num_verts = 8
-
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(8, blend_src, blend_dest, batch, group, program)
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1863,13 +2003,13 @@ class Box(ShapeBase):
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         #   3        6
         #     2    7
         #     1    4
         #   0        5
         indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
@@ -1878,29 +2018,28 @@ class Box(ShapeBase):
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
 
-            t = self._thickness
-            left = -self._anchor_x
-            bottom = -self._anchor_y
-            right = left + self._width
-            top = bottom + self._height
+        t = self._thickness
+        left = -self._anchor_x
+        bottom = -self._anchor_y
+        right = left + self._width
+        top = bottom + self._height
 
-            x1 = left
-            x2 = left + t
-            x3 = right - t
-            x4 = right
-            y1 = bottom
-            y2 = bottom + t
-            y3 = top - t
-            y4 = top
-            #     |  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7   |
-            return x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
+        x1 = left
+        x2 = left + t
+        x3 = right - t
+        x4 = right
+        y1 = bottom
+        y2 = bottom + t
+        y3 = top - t
+        y4 = top
+        #     |  0   |   1   |   2   |   3   |   4   |   5   |   6   |   7   |
+        return x1, y1, x2, y2, x2, y3, x1, y4, x3, y2, x4, y1, x4, y4, x3, y3
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -1954,9 +2093,12 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT],
             segments: int | tuple[int, int, int, int] | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            batch: pyglet.graphics.Batch | None = None,
-            group: pyglet.graphics.Group | None = None
-    ):
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            batch: Batch | None = None,
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a rectangle with rounded corners.
 
         The rectangle's anchor point defaults to the ``(x, y)``
@@ -1987,10 +2129,16 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
                 The RGB or RGBA color of the rectangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the rectangle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the rectangle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -1998,18 +2146,15 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         self._height = height
         self._set_radius(radius)
         self._set_segments(segments)
-
-        self._num_verts = (sum(self._segments) + 4) * 3
         self._rotation = 0
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or pyglet.graphics.Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(
+            (sum(self._segments) + 4) * 3,
+            blend_src, blend_dest, batch, group, program,
+        )
 
     def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         if isinstance(radius, (int, float)):
@@ -2041,52 +2186,52 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         x, y = self._x - self._anchor_x, self._y - self._anchor_y
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
 
-            points = []
-            # arc_x, arc_y, start_angle
-            arc_positions = [
-                # bottom-left
-                (x + self._radius[0][0],
-                 y + self._radius[0][1], math.pi*3/2),
-                # top-left
-                (x + self._radius[1][0],
-                 y + self._height - self._radius[1][1], math.pi),
-                # top-right
-                (x + self._width - self._radius[2][0],
-                 y + self._height - self._radius[2][1], math.pi/2),
-                # bottom-right
-                (x + self._width - self._radius[3][0],
-                 y + self._radius[3][1], 0),
-            ]
+        x = -self._anchor_x
+        y = -self._anchor_y
 
-            for (rx, ry), (arc_x, arc_y, arc_start), segments in zip(self._radius, arc_positions, self._segments):
-                tau_segs = -math.pi / 2 / segments
-                points.extend([(arc_x + rx * math.cos(i * tau_segs + arc_start),
-                                arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)])
+        points = []
+        # arc_x, arc_y, start_angle
+        arc_positions = [
+            # bottom-left
+            (x + self._radius[0][0],
+             y + self._radius[0][1], math.pi * 3 / 2),
+            # top-left
+            (x + self._radius[1][0],
+             y + self._height - self._radius[1][1], math.pi),
+            # top-right
+            (x + self._width - self._radius[2][0],
+             y + self._height - self._radius[2][1], math.pi / 2),
+            # bottom-right
+            (x + self._width - self._radius[3][0],
+             y + self._radius[3][1], 0),
+        ]
 
-            center_x = self._width / 2
-            center_y = self._height / 2
-            vertices = []
-            for i, point in enumerate(points):
-                triangle = center_x, center_y, *points[i - 1], *point
-                vertices.extend(triangle)
+        for (rx, ry), (arc_x, arc_y, arc_start), segments in zip(self._radius, arc_positions, self._segments):
+            tau_segs = -math.pi / 2 / segments
+            points.extend([(arc_x + rx * math.cos(i * tau_segs + arc_start),
+                            arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)])
 
-            return vertices
+        center_x = self._width / 2
+        center_y = self._height / 2
+        vertices = []
+        for i, point in enumerate(points):
+            triangle = center_x, center_y, *points[i - 1], *point
+            vertices.extend(triangle)
 
-    def _update_vertices(self):
+        return vertices
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -2122,7 +2267,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         return self._radius
 
     @radius.setter
-    def radius(self, value: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]):
+    def radius(self, value: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         self._set_radius(value)
         self._update_vertices()
 
@@ -2134,9 +2279,12 @@ class Triangle(ShapeBase):
             x2: float, y2: float,
             x3: float, y3: float,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a triangle.
 
         The triangle's anchor point defaults to the first vertex point.
@@ -2158,10 +2306,16 @@ class Triangle(ShapeBase):
                 The RGB or RGBA color of the triangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the triangle to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the triangle.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
@@ -2170,16 +2324,11 @@ class Triangle(ShapeBase):
         self._x3 = x3
         self._y3 = y3
         self._rotation = 0
-        self._num_verts = 3
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
+        super().__init__(3, blend_src, blend_dest, batch, group, program)
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -2187,14 +2336,14 @@ class Triangle(ShapeBase):
             [(self._x, self._y), (self._x2, self._y2), (self._x3, self._y3), (self._x, self._y)],
             point)
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
         else:
@@ -2206,7 +2355,7 @@ class Triangle(ShapeBase):
             y3 = self._y3 + y1 - self._y
             return x1, y1, x2, y2, x3, y3
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -2259,8 +2408,11 @@ class Star(ShapeBase):
             num_spikes: int,
             rotation: float = 0.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group = None
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
     ) -> None:
         """Create a star.
 
@@ -2286,73 +2438,76 @@ class Star(ShapeBase):
                 The RGB or RGBA color of the star, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the star to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the star.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         self._x = x
         self._y = y
         self._outer_radius = outer_radius
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes
-        self._num_verts = num_spikes * 6
         self._rotation = rotation
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        super().__init__(
+            num_spikes * 6,
+            blend_src, blend_dest, batch, group, program,
+        )
 
-        self._create_vertex_list()
-        self._update_vertices()
-
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
         center = (self._x - self._anchor_x, self._y - self._anchor_y)
         radius = (self._outer_radius + self._inner_radius) / 2
         return math.dist(center, point) < radius
 
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             rotation=('f', (self._rotation,) * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x = -self._anchor_x
-            y = -self._anchor_y
-            r_i = self._inner_radius
-            r_o = self._outer_radius
 
-            # get angle covered by each line (= half a spike)
-            d_theta = math.pi / self._num_spikes
+        x = -self._anchor_x
+        y = -self._anchor_y
+        r_i = self._inner_radius
+        r_o = self._outer_radius
 
-            # calculate alternating points on outer and outer circles
-            points = []
-            for i in range(self._num_spikes):
-                points.append((x + (r_o * math.cos(2 * i * d_theta)),
-                               y + (r_o * math.sin(2 * i * d_theta))))
-                points.append((x + (r_i * math.cos((2 * i + 1) * d_theta)),
-                               y + (r_i * math.sin((2 * i + 1) * d_theta))))
+        # get angle covered by each line (= half a spike)
+        d_theta = math.pi / self._num_spikes
 
-            # create a list of doubled-up points from the points
-            vertices = []
-            for i, point in enumerate(points):
-                triangle = x, y, *points[i - 1], *point
-                vertices.extend(triangle)
+        # calculate alternating points on outer and outer circles
+        points = []
+        for i in range(self._num_spikes):
+            points.append((x + (r_o * math.cos(2 * i * d_theta)),
+                           y + (r_o * math.sin(2 * i * d_theta))))
+            points.append((x + (r_i * math.cos((2 * i + 1) * d_theta)),
+                           y + (r_i * math.sin((2 * i + 1) * d_theta))))
+
+        # create a list of doubled-up points from the points
+        vertices = []
+        for i, point in enumerate(points):
+            triangle = x, y, *points[i - 1], *point
+            vertices.extend(triangle)
 
         return vertices
 
-    def _update_vertices(self):
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
@@ -2391,9 +2546,12 @@ class Polygon(ShapeBase):
             self,
             *coordinates: tuple[float, float] | Sequence[float],
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create a polygon.
 
         The polygon's anchor point defaults to the first vertex point.
@@ -2407,35 +2565,37 @@ class Polygon(ShapeBase):
                 The RGB or RGBA color of the polygon, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
-                Optional batch to add the polygon to.
+                Optional batch to add the shape to.
             group:
-                Optional parent group of the polygon.
+                Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
-
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._rotation = 0
         self._coordinates = list(coordinates)
         self._x, self._y = self._coordinates[0]
-        self._num_verts = len(self._coordinates)
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
+        super().__init__(
+            len(self._coordinates),
+            blend_src, blend_dest, batch, group, program,
+        )
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
-
-        self._create_vertex_list()
-
-    def __contains__(self, point):
+    def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point(self._coordinates[0], point, math.radians(self._rotation))
         return _point_in_polygon(self._coordinates + [self._coordinates[0]], point)
 
-    def _create_vertex_list(self):
+    def _create_vertex_list(self) -> None:
         vertices = self._get_vertices()
-        self._vertex_list = self._group.program.vertex_list_indexed(
+        self._vertex_list = self._program.vertex_list_indexed(
             self._num_verts, self._draw_mode,
             earcut.earcut(vertices),
             self._batch, self._group,
@@ -2443,20 +2603,20 @@ class Polygon(ShapeBase):
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            # Adjust all coordinates by the anchor.
-            trans_x, trans_y = self._coordinates[0]
-            trans_x += self._anchor_x
-            trans_y += self._anchor_y
-            coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-            # Return the flattened coords.
-            return earcut.flatten([coords])["vertices"]
+        # Adjust all coordinates by the anchor.
+        trans_x, trans_y = self._coordinates[0]
+        trans_x += self._anchor_x
+        trans_y += self._anchor_y
+        coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-    def _update_vertices(self):
+        # Return the flattened coords.
+        return earcut.flatten([coords])["vertices"]
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
 
@@ -2468,9 +2628,12 @@ class MultiLine(ShapeBase):
             closed: bool = False,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] = (255, 255, 255, 255),
+            blend_src: int = GL_SRC_ALPHA,
+            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
-            group: Group | None = None
-    ):
+            group: Group | None = None,
+            program: ShaderProgram | None = None,
+    ) -> None:
         """Create multiple connected lines from a series of coordinates.
 
         The shape's anchor point defaults to the first vertex point.
@@ -2489,10 +2652,16 @@ class MultiLine(ShapeBase):
                 The RGB or RGBA color of the shape, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
                 Optional parent group of the shape.
+            program:
+                Optional shader program of the shape.
         """
         # len(self._coordinates) = the number of vertices in the shape.
         self._thickness = thickness
@@ -2503,53 +2672,51 @@ class MultiLine(ShapeBase):
             # connect final point with first
             self._coordinates.append(self._coordinates[0])
         self._x, self._y = self._coordinates[0]
-        self._num_verts = (len(self._coordinates) - 1) * 6
 
         r, g, b, *a = color
         self._rgba = r, g, b, a[0] if a else 255
 
-        program = get_default_shader()
-        self._batch = batch or Batch()
-        self._group = self.group_class(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+        super().__init__(
+            (len(self._coordinates) - 1) * 6,
+            blend_src, blend_dest, batch, group, program,
+        )
 
-        self._create_vertex_list()
-
-    def _create_vertex_list(self):
-        self._vertex_list = self._group.program.vertex_list(
+    def _create_vertex_list(self) -> None:
+        self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
 
-    def _get_vertices(self):
+    def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            trans_x, trans_y = self._coordinates[0]
-            trans_x += self._anchor_x
-            trans_y += self._anchor_y
-            coords = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-            # Create a list of triangles from segments between 2 points:
-            triangles = []
-            prev_miter = None
-            prev_scale = None
-            for i in range(len(coords) - 1):
-                prev_point = None
-                next_point = None
-                if i > 0:
-                    prev_point = coords[i - 1]
+        trans_x, trans_y = self._coordinates[0]
+        trans_x += self._anchor_x
+        trans_y += self._anchor_y
+        coords: list[list[float]] = [[x - trans_x, y - trans_y] for x, y in self._coordinates]
 
-                if i + 2 < len(coords):
-                    next_point = coords[i + 2]
+        # Create a list of triangles from segments between 2 points:
+        triangles = []
+        prev_miter = None
+        prev_scale = None
+        for i in range(len(coords) - 1):
+            prev_point: list[float] | None = None
+            next_point: list[float] | None = None
+            if i > 0:
+                prev_point = coords[i - 1]
 
-                prev_miter, prev_scale, *segment = _get_segment(prev_point, coords[i], coords[i + 1], next_point,
-                                                                self._thickness, prev_miter, prev_scale)
-                triangles.extend(segment)
+            if i + 2 < len(coords):
+                next_point = coords[i + 2]
 
-            return triangles
+            prev_miter, prev_scale, *segment = _get_segment(prev_point, coords[i], coords[i + 1], next_point,
+                                                            self._thickness, prev_miter, prev_scale)
+            triangles.extend(segment)
 
-    def _update_vertices(self):
+        return triangles
+
+    def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
 
     @property
