@@ -1,7 +1,11 @@
-import pytest
-from functools import partial
+from __future__ import annotations
 
-from pyglet.graphics import Group, Batch
+from functools import partial
+from unittest.mock import MagicMock
+
+import pytest
+
+from pyglet.graphics import Batch, Group
 from pyglet.shapes import *
 
 
@@ -22,19 +26,19 @@ from pyglet.shapes import *
     (Triangle, (0, 0, 2, 2, 5, 5)),
     (Star, (1, 1, 20, 11, 5)),
     (Polygon, ((0, 0), (1, 1), (2, 2))),
-    (MultiLine, ((0, 0), (1, 1), (2, 2)))
+    (MultiLine, ((0, 0), (1, 1), (2, 2))),
 ])
 def shape_and_positionals(request):
     return request.param
 
 
 # Enable type-specific behavior; just Line + rotation at the moment
-@pytest.fixture
+@pytest.fixture()
 def shape_type(shape_and_positionals):
     return shape_and_positionals[0]
 
 
-@pytest.fixture
+@pytest.fixture()
 def shape_keywords_only(shape_and_positionals):
     class_, positional_args = shape_and_positionals
     return partial(class_, *positional_args)
@@ -45,7 +49,7 @@ def rgb_or_rgba_shape(shape_keywords_only, original_rgb_or_rgba_color):
     return shape_keywords_only(color=original_rgb_or_rgba_color)
 
 
-@pytest.fixture
+@pytest.fixture()
 def rgba_shape(shape_keywords_only):
     return shape_keywords_only(color=(0, 255, 0, 37))
 
@@ -106,3 +110,20 @@ def test_batch_setter(shape_keywords_only):
     new_batch = Batch()
     shape.batch = new_batch
     assert shape.batch is new_batch
+
+
+def test_program_setter(shape_keywords_only):
+    shape = shape_keywords_only()
+
+    program = MagicMock()
+    shape.program = program
+    assert shape.program == program
+
+
+def test_blend_setter(shape_keywords_only):
+    shape = shape_keywords_only()
+
+    blend_mode = (1, 1)
+    shape.blend_mode = blend_mode
+    assert shape._group.blend_src == 1  # noqa: SLF001
+    assert shape._group.blend_dest == 1  # noqa: SLF001
