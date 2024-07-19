@@ -36,7 +36,6 @@ if _is_pyglet_doc_run:
     from pyglet.display.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform, options
-
     if options['headless']:
         from pyglet.display.headless import HeadlessDisplay as Display
         from pyglet.display.headless import HeadlessScreen as Screen
