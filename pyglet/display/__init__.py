@@ -37,15 +37,15 @@ if _is_pyglet_doc_run:
 else:
     from pyglet import compat_platform, options
 
-    if options["headless"]:
+    if options['headless']:
         from pyglet.display.headless import HeadlessDisplay as Display
         from pyglet.display.headless import HeadlessScreen as Screen
         from pyglet.display.headless import HeadlessCanvas as Canvas
-    elif compat_platform == "darwin":
+    elif compat_platform == 'darwin':
         from pyglet.display.cocoa import CocoaDisplay as Display
         from pyglet.display.cocoa import CocoaScreen as Screen
         from pyglet.display.cocoa import CocoaCanvas as Canvas
-    elif compat_platform in ("win32", "cygwin"):
+    elif compat_platform in ('win32', 'cygwin'):
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
         from pyglet.display.win32 import Win32Canvas as Canvas

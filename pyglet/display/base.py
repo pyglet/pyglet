@@ -25,17 +25,17 @@ class DisplayBase:
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the
-        default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X
-        screen number to use with this display.  A pyglet display can only be
+        default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X 
+        screen number to use with this display.  A pyglet display can only be 
         used with one X screen; open multiple display connections to access
-        multiple X screens.
+        multiple X screens.  
 
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
         screen to be accessed through a single pyglet`~pyglet.display.Display`
 
-        On platforms other than X11, :attr:`name` and :attr:`x_screen` are
+        On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
         """
         display._displays.add(self)
@@ -44,7 +44,7 @@ class DisplayBase:
         """Get the available screens.
 
         A typical multi-monitor workstation comprises one :class:`Display`
-        with multiple :class:`Screen` s.  This method returns a list of
+        with multiple :class:`Screen` s.  This method returns a list of 
         screens which can be enumerated to select one for full-screen display.
 
         For the purposes of creating an OpenGL config, the default screen
