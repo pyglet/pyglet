@@ -12,6 +12,8 @@ pyglet.resource.reindex()
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
 batch = pyglet.graphics.Batch()
 
+brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Gray.png", atlas=False),1, 6)
+brick_gray = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
 # Load 2 animation images for our sprites
 brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Blue.png"),1, 6)
 brick_animation = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
@@ -19,15 +21,11 @@ crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"),1,
 crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, None, False)
 shader_images = {'brick': brick_animation, 'crack': crack_animation}
 
-test = pyglet.image.ImageGrid(pyglet.image.load("../../examples/resources/Brick1Crack3.png"), 1, 3)
-tex_grid = pyglet.image.Animation.from_image_sequence(pyglet.image.TextureArray.create_for_image_grid(test), None, False)
-
-
-sprite = pyglet.experimental.MultiTextureSprite({'brick': brick_animation, 'crack': tex_grid},
+sprite = pyglet.experimental.MultiTextureSprite(shader_images,
                                                 x=0,
                                                 y=0,
                                                 batch=batch)
-sprite2 = pyglet.experimental.MultiTextureSprite(shader_images,
+sprite2 = pyglet.experimental.MultiTextureSprite({'brick': brick_animation, 'crack': crack_animation},
                                                  x=100,
                                                  y=100,
                                                  batch=batch)
@@ -132,7 +130,16 @@ def crack(dt):
     sprite.set_frame_index('crack',f)
     pyglet.clock.schedule_once(crack, 1.0)
 
+def pause(dt):
+    print(f"Current paused value of sprite2 {sprite2.paused}")
+    sprite2.paused = not sprite2.paused
+    pyglet.clock.schedule_once(pause, 3.5)
+
+def swap_animation(dt):
+    sprite.set_layer('brick', brick_gray)
 
 pyglet.clock.schedule_once(crack, 1.0)
+pyglet.clock.schedule_once(pause, 3.5)
+pyglet.clock.schedule_once(swap_animation, 5)
 
 pyglet.app.run()
