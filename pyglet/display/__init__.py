@@ -22,6 +22,8 @@ by the application; see the documentation for :class:`Screen`.
 .. versionadded:: 1.2
 """  # noqa: I002
 
+from __future__ import annotations
+
 import sys
 import weakref
 
