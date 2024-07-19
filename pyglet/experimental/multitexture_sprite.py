@@ -253,6 +253,9 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                  program: ShaderProgram | None = None) -> None:
         """Create a Sprite instance.
 
+        If the texture layers are different sizes then the largest texture by area is picked for
+        size of the sprite and then the other layers are scaled to that size.
+
         Args:
             images:
                 A dict object with the key being the name of the texture and the
@@ -284,16 +287,20 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 not provided.
         """
         # Ensure the images are textures and load them up into a dict.
-        self.textures = {}
+        self._textures = {}
+        self._texture = None
         for name, img in images.items():
             if isinstance(img, pyglet.image.Animation):
                 # Grab the first frame
-                self.textures[name] = img.frames[0].image.get_texture()
+                self._textures[name] = img.frames[0].image.get_texture()
             else:
-                self.textures[name] = img.get_texture()
+                self._textures[name] = img.get_texture()
+
+            if not self._texture or (self._textures[name].height * self._textures[name].width) > (self._texture.height * self._texture.width):
+                self._texture = self._textures[name]
 
         if not program:
-            self._program = _get_default_mt_shader(self.textures)
+            self._program = _get_default_mt_shader(self._textures)
         else:
             self._program = program
 
@@ -307,7 +314,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         for name, img in images.items():
             if isinstance(img, pyglet.image.Animation):
                 # Setup all of the animation things
-                # The key needs to match the key for self.textures so we change it out as needed
+                # The key needs to match the key for self._textures so we change it out as needed
                 self._animations[name] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
                 if img.frames[0].duration:
                     pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
@@ -319,7 +326,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         self._group = self.get_sprite_group()
         self._subpixel = subpixel
         # FIXME: This is to satisfy the main sprite code and should be done better
-        self._texture = list(self.textures.values())[0].get_texture()
+        #self._texture = list(self._textures.values())[0].get_texture()
         self._create_vertex_list()
 
     def delete(self) -> None:
@@ -338,7 +345,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
         This is used internally to create a consolidated group for rendering.
         """
-        return self.group_class(self.textures, self._blend_src, self._blend_dest, self._program, self._user_group)
+        return self.group_class(self._textures, self._blend_src, self._blend_dest, self._program, self._user_group)
 
     def _animate(self, dt, key) -> None:
         if key in self._animations:
@@ -360,26 +367,26 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 pyglet.clock.schedule_once(self._animate, animation["next_dt"], key)
 
     def _set_multi_texture(self, key, new_tex: Texture) -> None:
-        if new_tex.id is not self.textures[key].id:
+        if new_tex.id is not self._textures[key].id:
             # Need to make a shallow copy to allow the batch object
             # to correctly split this sprite from other sprite's groups.
             # if not then you will be modifing all othe the other sprites
             # textures dict object as well.
-            self.textures = self.textures.copy()
-            self.textures[key] = new_tex
+            self._textures = self._textures.copy()
+            self._textures[key] = new_tex
             self._vertex_list.delete()
             self._group = self.get_sprite_group()
             self._create_vertex_list()
         else:
-            self.textures[key] = new_tex
-            getattr(self._vertex_list,f"{key}_coords")[:] = self.textures[key].tex_coords
+            self._textures[key] = new_tex
+            getattr(self._vertex_list,f"{key}_coords")[:] = self._textures[key].tex_coords
 
     def _create_vertex_list(self) -> None:
         """
         Override so we can send over texture coords for each texture being used.
         """
         tex_coords = {}
-        for name, tex in self.textures.items():
+        for name, tex in self._textures.items():
             tex_coords[f"{name}_coords"] = ('f', tex.tex_coords)
 
         self._vertex_list = self._program.vertex_list_indexed(
@@ -433,8 +440,8 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         """
         if name in self._animations:
             return self._animations[name]
-        elif name in self.textures:
-            return self.textures[name]
+        elif name in self._textures:
+            return self._textures[name]
 
         return None
 
@@ -455,15 +462,25 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             self._animations.pop(name)
 
         # Grab the texture and replace what was there
+        tex = None
         if isinstance(img, pyglet.image.Animation):
             # Add the animation and schedule it based on pause
             self._animations[name] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
             if img.frames[0].duration and not self._paused:
                 pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
 
-            self._set_multi_texture(name, img.frames[0].image.get_texture())
+            tex = img.frames[0].image.get_texture()
         else:
-            self._set_multi_texture(name, img.get_texture())
+            tex = img.get_texture()
+
+        if tex:
+            self._set_multi_texture(name, tex)
+
+            if (tex.width * tex.height) > (self._texture.width * self._texture.height):
+                self._texture = tex
+                # Only update if we actually changed the "base" texture
+                self._update_position()
+
 
     @property
     def frame_index(self) -> None:
