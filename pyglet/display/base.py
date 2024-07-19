@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pyglet.window import BaseWindow
 
 
-class Display:
+class DisplayBase:
     """A display device supporting one or more screens."""
 
     name: str = None
@@ -21,30 +21,30 @@ class Display:
     x_screen: int = None
     """The X11 screen number of this display, if applicable."""
 
-    def __init__(self, name: str = None, x_screen: int = None) -> None:
+    def __init__(self, name: str | None = None, x_screen: int | None = None) -> None:
         """Create a display connection for the given name and screen.
 
         On X11, :attr:`name` is of the form ``"hostname:display"``, where the
-        default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X 
-        screen number to use with this display.  A pyglet display can only be 
+        default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X
+        screen number to use with this display.  A pyglet display can only be
         used with one X screen; open multiple display connections to access
-        multiple X screens.  
-        
+        multiple X screens.
+
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
         screen to be accessed through a single pyglet`~pyglet.display.Display`
 
-        On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
+        On platforms other than X11, :attr:`name` and :attr:`x_screen` are
         ignored; there is only a single display device on these systems.
         """
         display._displays.add(self)
 
-    def get_screens(self) -> list[Screen]:
+    def get_screens(self) -> list[ScreenBase]:
         """Get the available screens.
 
         A typical multi-monitor workstation comprises one :class:`Display`
-        with multiple :class:`Screen` s.  This method returns a list of 
+        with multiple :class:`Screen` s.  This method returns a list of
         screens which can be enumerated to select one for full-screen display.
 
         For the purposes of creating an OpenGL config, the default screen
@@ -54,7 +54,7 @@ class Display:
         """
         raise NotImplementedError('abstract')
 
-    def get_default_screen(self) -> Screen:
+    def get_default_screen(self) -> ScreenBase:
         """Get the default (primary) screen as specified by the user's operating system
         preferences.
         """
@@ -71,7 +71,12 @@ class Display:
         return [win for win in app.windows if win.display is self]
 
 
-class Screen:
+# NOTE: Dynamically overridden to the platform specific class
+class Display(DisplayBase):
+    pass
+
+
+class ScreenBase:
     """A virtual monitor that supports fullscreen windows.
 
     Screens typically map onto a physical display such as a
@@ -218,19 +223,24 @@ class Screen:
         """
         raise NotImplementedError('abstract')
 
-    def get_dpi(self):
+    def get_dpi(self) -> int:
         """Get the DPI of the screen.
 
         :rtype: int
         """
         raise NotImplementedError('abstract')
 
-    def get_scale(self):
+    def get_scale(self) -> float:
         """Get the pixel scale ratio of the screen.
 
         :rtype: float
         """
         raise NotImplementedError('abstract')
+
+
+# NOTE: Dynamically overridden to the platform specific class
+class Screen(ScreenBase):
+    pass
 
 
 class ScreenMode:
@@ -257,7 +267,7 @@ class ScreenMode:
     rate: int = None
     """Screen refresh rate in Hz."""
 
-    def __init__(self, screen: Screen) -> None:
+    def __init__(self, screen: ScreenBase) -> None:
         self.screen = screen
 
     def __repr__(self) -> str:
@@ -273,6 +283,6 @@ class Canvas:
     .. versionadded:: 1.2
     """
 
-    def __init__(self, display: Display) -> None:
+    def __init__(self, display: DisplayBase) -> None:
         self.display = display
         """Display this canvas was created on."""

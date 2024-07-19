@@ -25,6 +25,8 @@ by the application; see the documentation for :class:`Screen`.
 import sys
 import weakref
 
+from pyglet.display.base import DisplayBase
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
@@ -32,15 +34,16 @@ if _is_pyglet_doc_run:
     from pyglet.display.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform, options
-    if options['headless']:
+
+    if options["headless"]:
         from pyglet.display.headless import HeadlessDisplay as Display
         from pyglet.display.headless import HeadlessScreen as Screen
         from pyglet.display.headless import HeadlessCanvas as Canvas
-    elif compat_platform == 'darwin':
+    elif compat_platform == "darwin":
         from pyglet.display.cocoa import CocoaDisplay as Display
         from pyglet.display.cocoa import CocoaScreen as Screen
         from pyglet.display.cocoa import CocoaCanvas as Canvas
-    elif compat_platform in ('win32', 'cygwin'):
+    elif compat_platform in ("win32", "cygwin"):
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
         from pyglet.display.win32 import Win32Canvas as Canvas
@@ -50,14 +53,14 @@ else:
         from pyglet.display.xlib import XlibCanvas as Canvas
 
 
-_displays: weakref.WeakSet = weakref.WeakSet()
+_displays: weakref.WeakSet[DisplayBase] = weakref.WeakSet()
 """Set of all open displays.  Instances of :class:`Display` are automatically
 added to this set upon construction.  The set uses weak references, so displays
 are removed from the set when they are no longer referenced.
 """
 
 
-def get_display() -> Display:
+def get_display() -> DisplayBase:
     """Get the default display device.
 
     If there is already a :class:`Display` connection, that display will be
@@ -72,5 +75,6 @@ def get_display() -> Display:
 
     # Otherwise, create a new display and return it.
     return Display()
+
 
 __all__ = ['Display', 'Screen', 'Canvas', 'ScreenMode', 'get_display']
