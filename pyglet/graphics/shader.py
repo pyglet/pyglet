@@ -4,28 +4,69 @@ import warnings
 import weakref
 from collections import defaultdict
 from ctypes import (
-    POINTER, Structure, addressof, byref, c_buffer, c_byte, c_char, c_char_p, c_double, c_float, c_int,
-    c_short, c_ubyte, c_uint, c_ushort, cast, create_string_buffer, pointer, sizeof, string_at, Array,
+    POINTER,
+    Array,
+    Structure,
+    addressof,
+    byref,
+    c_buffer,
+    c_byte,
+    c_char,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ushort,
+    cast,
+    create_string_buffer,
+    pointer,
+    sizeof,
+    string_at,
 )
-from typing import Sequence, Callable, Any, TYPE_CHECKING, Literal, Union, Type
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union
 
-from _ctypes import _SimpleCData, _Pointer
+from _ctypes import _Pointer, _SimpleCData
 
 import pyglet
-from pyglet.gl import gl, GLException, Context, gl_info
+from pyglet.gl import Context, GLException, gl, gl_info
 from pyglet.gl.gl import (
-    glEnableVertexAttribArray, glVertexAttribPointer, glVertexAttribDivisor, glUseProgram,
-    GL_FALSE, glGetProgramiv, glGetActiveAttrib, glCreateProgram, glAttachShader, glLinkProgram, GL_LINK_STATUS,
-    GL_INFO_LOG_LENGTH, glGetProgramInfoLog, glDetachShader, glBindBufferBase, GL_UNIFORM_BUFFER,
-    glBindBuffer, GL_ARRAY_BUFFER, glMapBufferRange, GL_MAP_READ_BIT, glUnmapBuffer, GL_TRUE, glDeleteShader,
-    glDeleteProgram, glDispatchCompute, glMemoryBarrier,
+    GL_ARRAY_BUFFER,
+    GL_FALSE,
+    GL_INFO_LOG_LENGTH,
+    GL_LINK_STATUS,
+    GL_MAP_READ_BIT,
+    GL_TRUE,
+    GL_UNIFORM_BUFFER,
+    glAttachShader,
+    glBindBuffer,
+    glBindBufferBase,
+    glCreateProgram,
+    glDeleteProgram,
+    glDeleteShader,
+    glDetachShader,
+    glDispatchCompute,
+    glEnableVertexAttribArray,
+    glGetActiveAttrib,
+    glGetProgramInfoLog,
+    glGetProgramiv,
+    glLinkProgram,
+    glMapBufferRange,
+    glMemoryBarrier,
+    glUnmapBuffer,
+    glUseProgram,
+    glVertexAttribDivisor,
+    glVertexAttribPointer,
 )
 from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
 
 if TYPE_CHECKING:
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
-    from pyglet.graphics import Group, Batch
     from _weakref import CallableProxyType
+
+    from pyglet.graphics import Batch, Group
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
 
@@ -579,12 +620,12 @@ class UniformBlock:
     index: int
     size: int
     binding: int
-    uniforms: dict[int, tuple[str, GLDataType, int]]
+    uniforms: dict[int, tuple[str, GLDataType, int, int, bool]]
     view_cls: type[Structure] | None
     __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
-                 uniforms: dict[int, tuple[str, GLDataType, int]]) -> None:
+                 uniforms: dict[int, tuple[str, GLDataType, int, int, bool]]) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self.program = weakref.proxy(program)
         self.name = name
@@ -653,26 +694,44 @@ class UniformBlock:
         # mat_stride = (gl.GLint * active_count)()
         # gl_types_ptr = cast(addressof(gl_types), POINTER(gl.GLint))
         # stride_ptr = cast(addressof(mat_stride), POINTER(gl.GLint))
-        # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_TYPE, gl_types_ptr)
-        # glGetActiveUniformsiv(p_id, active_count, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
+        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_TYPE, gl_types_ptr)
+        # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
         view_fields = []
+
         for i in range(active_count):
-            u_name, gl_type, length = self.uniforms[indices[i]]
-            size = offsets[i + 1] - offsets[i]
-            c_type_size = sizeof(gl_type)
-            actual_size = c_type_size * length
-            padding = size - actual_size
+            u_name, gl_type, length, u_size, is_array = self.uniforms[indices[i]]
 
-            # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
-            # m_stride = mat_stride[i]
+            # Is something like a vec2,3,4.
+            if length > 1:
+                # If it's an array, further divide it.
+                if is_array:
+                    final_gl_type = gl_type * length * u_size
+                else:
+                    final_gl_type = gl_type * length
+            else:
+                # A single length, but may be an array.
+                if is_array:
+                    final_gl_type = gl_type * u_size
+                else:
+                    final_gl_type = gl_type
 
-            arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
+            offset_size = offsets[i + 1] - offsets[i]
+            c_type_size = sizeof(final_gl_type)
+            padding = offset_size - c_type_size
+
+            arg = (u_name, final_gl_type)
             view_fields.append(arg)
 
             if padding > 0:
-                padding_bytes = padding // c_type_size
-                view_fields.append((f'_padding{i}', gl_type * padding_bytes))
+                view_fields.append((f'_padding{i}', c_byte * padding))
+
+            # TODO: Cannot get a different stride on my hardware. Needs testing.
+            # is_matrix = gl_types[i] in _gl_matrices
+            # if is_matrix:
+            #     stride_padding = (mat_stride[i] // 4) * 4 - offset_size
+            #     if stride_padding > 0:
+            #         view_fields.append((f'_matrix_stride{i}', c_byte * stride_padding))
 
         # Custom ctypes Structure for Uniform access:
         class View(Structure):
@@ -901,7 +960,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
-        uniforms = {}
+        uniforms: dict[int, tuple[str, GLDataType, int, int, bool]] = {}
 
         if not hasattr(pyglet.gl.current_context, "ubo_manager"):
             pyglet.gl.current_context.ubo_manager = _UBOBindingManager()
@@ -911,6 +970,18 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         for block_uniform_index in indices:
             uniform_name, u_type, u_size = _query_uniform(program_id, block_uniform_index)
 
+            is_array = False
+            array_count = uniform_name.count("[0]")
+            if array_count > 0:
+                is_array = True
+
+                # Strip [0] from array name for a more user-friendly name.
+                if array_count == 1:
+                    uniform_name = uniform_name.strip('[0]')
+                else:
+                    msg = "Multidimensional arrays are not currently supported."
+                    raise ShaderException(msg)
+
             # Separate uniform name from block name (Only if instance name is provided on the Uniform Block)
             try:
                 _, uniform_name = uniform_name.split(".")
@@ -918,7 +989,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
                 pass
 
             gl_type, _, _, length = _uniform_setters[u_type]
-            uniforms[block_uniform_index] = (uniform_name, gl_type, length)
+            uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size, is_array)
 
         binding_index = binding.value
         if pyglet.options.shader_bind_management:
