@@ -389,9 +389,9 @@ class Source:
         """Return the ``Source`` to be used as the queue source for a player.
 
         Default implementation returns ``self`` if this source is precise as
-        specified by :meth:`is_precise` or if the ``imprecise_ok`` argument
-        is given. Otherwise, a new :class:`PreciseStreamingSource` wrapping
-        this source is returned.
+        specified by :meth:`is_precise`.
+        Otherwise, a new :class:`PreciseStreamingSource` wrapping this source
+        is returned.
 
         Returns:
             :class:`Source`
