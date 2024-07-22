@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pyglet
-import pyglet.experimental
+from pyglet.experimental import multitexture_sprite
 
 window = pyglet.window.Window()
 window.set_size(400, 400)
@@ -12,20 +12,20 @@ pyglet.resource.reindex()
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
 batch = pyglet.graphics.Batch()
 
-brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Gray.png", atlas=False),1, 6)
+brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Gray.png", atlas=False), 1, 6)
 brick_gray = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
 # Load 2 animation images for our sprites
-brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Blue.png"),1, 6)
+brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Blue.png"), 1, 6)
 brick_animation = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
-crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"),1, 3)
-crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, None, False)
+crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"), 1, 3)
+crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, 1.0, False)
 shader_images = {'brick': brick_animation, 'crack': crack_animation}
 
-sprite = pyglet.experimental.MultiTextureSprite(shader_images,
+sprite = multitexture_sprite.MultiTextureSprite(shader_images,
                                                 x=0,
                                                 y=0,
                                                 batch=batch)
-sprite2 = pyglet.experimental.MultiTextureSprite({'brick': brick_animation, 'crack': crack_animation},
+sprite2 = multitexture_sprite.MultiTextureSprite({'brick': brick_animation, 'crack': crack_animation},
                                                  x=100,
                                                  y=100,
                                                  batch=batch)
@@ -108,7 +108,7 @@ kitten = pyglet.resource.image("kitten.jpg")
 multi_vert_shader = pyglet.graphics.shader.Shader(custom_vertex_source, 'vertex')
 multi_frag_shader = pyglet.graphics.shader.Shader(custom_fragment_source, 'fragment')
 multitex_shader_program = pyglet.graphics.shader.ShaderProgram(multi_vert_shader, multi_frag_shader)
-sprite3 = pyglet.experimental.MultiTextureSprite({'kitten': kitten, 'logo': logo},
+sprite3 = multitexture_sprite.MultiTextureSprite({'kitten': kitten, 'logo': logo},
                                                  x=150,
                                                  y=150,
                                                  batch=batch,
@@ -117,26 +117,31 @@ sprite3.scale = 0.2
 
 f = 0
 
+
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
+
 
 def crack(dt):
     """Change frames for the second layer.
     """
     global f
     f = (f + 1) % 3
-    sprite.set_frame_index('crack',f)
+    sprite.set_frame_index('crack', f)
     pyglet.clock.schedule_once(crack, 1.0)
+
 
 def pause(dt):
     print(f"Current paused value of sprite2 {sprite2.paused}")
     sprite2.paused = not sprite2.paused
     pyglet.clock.schedule_once(pause, 3.5)
 
+
 def swap_animation(dt):
     sprite.set_layer('brick', brick_gray)
+
 
 pyglet.clock.schedule_once(crack, 1.0)
 pyglet.clock.schedule_once(pause, 3.5)

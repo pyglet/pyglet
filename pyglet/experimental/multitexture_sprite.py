@@ -1,13 +1,19 @@
 """Allows for a somewhat generic multitextured sprite.
 
 This sprite behaves just like regular sprites.
-
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pyglet
-from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
-    glGetIntegerv, GLint, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES, GL_MAX_TEXTURE_IMAGE_UNITS
+from pyglet.gl import glActiveTexture, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, glGetIntegerv, GLint
+from pyglet.gl import GL_SRC_ALPHA, GL_TEXTURE0, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES, GL_MAX_TEXTURE_IMAGE_UNITS
+
+if TYPE_CHECKING:
+    from pyglet.image import Texture, AbstractImage, Animation
+    from pyglet.graphics import Batch, Group, ShaderProgram
+
 
 class MultiTextureSpriteGroup(pyglet.graphics.Group):
     """Shared Multi-texture Sprite rendering Group.
@@ -104,6 +110,7 @@ class MultiTextureSpriteGroup(pyglet.graphics.Group):
                           tuple([texture.id for texture in self._textures.values()]) +
                           tuple([texture.target for texture in self._textures.values()]))
 
+
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
     pyglet.gl.GL_TEXTURE_2D: "sampler2D",
@@ -116,6 +123,7 @@ _SAMPLER_COORDS = {
     pyglet.gl.GL_TEXTURE_2D_ARRAY: ""
 }
 
+
 def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     """Creates the default multi-texture shader based on the dict of textures passed in.
 
@@ -126,7 +134,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     """
     max_tex = GLint()
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, max_tex)
-    assert len(images) <= max_tex.value, f"The default multi-texture shader only supports up to a max of {max_tex.value} textures."
+    assert len(images) <= max_tex.value, f"Only {max_tex.value} Texture Units are available."
 
     # Generate the default vertex shader
     in_tex_coords = '\n'.join([f"in vec3 {name}_coords;" for name in images.keys()])
@@ -176,7 +184,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
 
     in_tex_coords = '\n'.join([f"in vec3 {name}_coords_frag;" for name in images.keys()])
     uniform_samplers = '\n'.join([f"uniform {_SAMPLER_TYPES[tex.target]} {name};" for name,tex in images.items()])
-    tex_operations = '\n'.join([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name,tex in images.items()])
+    tex_operations = '\n'.join([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name, tex in images.items()])
     fragment_source = f"""
     #version 150 core
 
@@ -199,6 +207,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     """
 
     return pyglet.gl.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
+
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
     """Creates a multi-textured sprite.
@@ -259,7 +268,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         Args:
             images:
                 A dict object with the key being the name of the texture and the
-                value is either an Animation or AbstractImage.  Currently
+                value is either an Animation or AbstractImage. Currently,
                 each item must be of the same size.
             x:
                 X coordinate of the sprite.
@@ -280,7 +289,6 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             subpixel:
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-
             program:
                 A specific shader program to initialize the sprite with.  The
                 default multi-texture overlay shader will be used if one is
@@ -392,7 +400,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         self._vertex_list = self._program.vertex_list_indexed(
             4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
             position=('f', self._get_vertices()),
-            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
+            colors=('Bn', self._rgba * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
             scale=('f', (self._scale * self._scale_x, self._scale * self._scale_y) * 4),
             rotation=('f', (self._rotation,) * 4),
@@ -455,6 +463,8 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         Args:
             name:
               The dict key given for the texture layer in the constructor
+            img:
+               The Image or Animation to set
         """
         if name in self._animations:
             # Need to stop all animations temporarly so we can swap the layer out
@@ -465,7 +475,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         tex = None
         if isinstance(img, pyglet.image.Animation):
             # Add the animation and schedule it based on pause
-            self._animations[name] = { "animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration }
+            self._animations[name] = {"animation": img, "frame_idx": 0, "next_dt": img.frames[0].duration}
             if img.frames[0].duration and not self._paused:
                 pyglet.clock.schedule_once(self._animate, self._animations[name]["next_dt"], name)
 
@@ -480,7 +490,6 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                 self._texture = tex
                 # Only update if we actually changed the "base" texture
                 self._update_position()
-
 
     @property
     def frame_index(self) -> None:
@@ -512,7 +521,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         if pause:
             pyglet.clock.unschedule(self._animate)
         else:
-            # Kick off all of the animations again
+            # Kick off all animations again
             for name, animation in self._animations.items():
                 frame = animation["animation"].frames[animation["frame_idx"]]
                 if frame.duration:
