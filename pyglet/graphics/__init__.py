@@ -201,6 +201,37 @@ _fragment_source: str = """#version 330 core
     }
 """
 
+# Default blit source
+_blit_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec3 tex_coords;
+    out vec3 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        texture_coords = tex_coords;
+    }
+"""
+
+_blit_fragment_source: str = """#version 330 core
+    in vec3 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords.xy);
+    }
+"""
 
 def get_default_batch() -> Batch:
     """Batch used globally for objects that have no Batch specified."""
@@ -222,6 +253,16 @@ def get_default_shader() -> ShaderProgram:
         pyglet.gl.current_context.object_space.pyglet_graphics_default_shader = _shader_program
         return pyglet.gl.current_context.object_space.pyglet_graphics_default_shader
 
+def get_default_blit_shader() -> ShaderProgram:
+    """A default basic shader for blitting, provides no blending."""
+    try:
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_blit_shader
+    except AttributeError:
+        _vertex_shader = shader.Shader(_blit_vertex_source, 'vertex')
+        _fragment_shader = shader.Shader(_blit_fragment_source, 'fragment')
+        _shader_program = shader.ShaderProgram(_vertex_shader, _fragment_shader)
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_blit_shader = _shader_program
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_blit_shader
 
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     # Indexed, Instanced : Domain
@@ -449,24 +490,24 @@ class Batch:
 
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
-            print(indent, 'Begin group', group) 
+            print(indent, 'Begin group', group)
             domain_map = self.group_map[group]
             for domain in domain_map.values():
-                print(indent, '  ', domain) 
+                print(indent, '  ', domain)
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size)) 
+                    print(indent, '    ', 'Region %d size %d:' % (start, size))
                     for key, attribute in domain.attribute_names.items():
-                        print(indent, '      ', end=' ') 
+                        print(indent, '      ', end=' ')
                         try:
                             region = attribute.get_region(attribute.buffer, start, size)
-                            print(key, region.array[:]) 
+                            print(key, region.array[:])
                         except:  # noqa: E722
-                            print(key, '(unmappable)') 
+                            print(key, '(unmappable)')
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print(indent, 'End group', group) 
+            print(indent, 'End group', group)
 
-        print(f'Draw list for {self!r}:') 
+        print(f'Draw list for {self!r}:')
         for group in self.top_groups:
             dump(group)
 
