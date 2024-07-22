@@ -48,14 +48,14 @@ from pyglet.gl.gl import (
     glMultiDrawElements,
 )
 from pyglet.graphics import allocation, shader, vertexarray
-from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
+from pyglet.graphics.vertexbuffer import AttributeBufferObject, IndexedBufferObject
 
 CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 if TYPE_CHECKING:
     from pyglet.graphics.allocation import Allocator
-    from pyglet.graphics.shader import Attribute, ShaderProgram
+    from pyglet.graphics.shader import Attribute
     from pyglet.graphics.vertexarray import VertexArray
 
 
@@ -96,14 +96,14 @@ _gl_types = {
 
 def _make_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexList) -> Array[float | int]:
-        attribute = self.domain.attribute_names[name]
-        region = attribute.buffer.get_region(self.start, self.count)
-        attribute.buffer.invalidate_region(self.start, self.count)
+        buffer = self.domain.attrib_name_buffers[name]
+        region = buffer.get_region(self.start, self.count)
+        buffer.invalidate_region(self.start, self.count)
         return region
 
     def _attribute_setter(self: VertexList, data: Any) -> None:
-        attribute = self.domain.attribute_names[name]
-        attribute.buffer.set_region(self.start, self.count, data)
+        buffer = self.domain.attrib_name_buffers[name]
+        buffer.set_region(self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
@@ -118,11 +118,13 @@ class VertexList:
     domain: VertexDomain | InstancedVertexDomain
     indexed: bool = False
     instanced: bool = False
+    initial_attribs: dict
 
     def __init__(self, domain: VertexDomain, start: int, count: int) -> None:  # noqa: D107
         self.domain = domain
         self.start = start
         self.count = count
+        self.initial_attribs = domain.attribute_meta
 
     def draw(self, mode: int) -> None:
         """Draw this vertex list in the given OpenGL mode.
@@ -146,9 +148,9 @@ class VertexList:
         new_start = self.domain.safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
-            for attribute in self.domain.attribute_names.values():
-                old_data = attribute.get_region(attribute.buffer, self.start, self.count)
-                attribute.set_region(attribute.buffer, new_start, self.count, old_data)
+            for buffer in self.domain.attrib_name_buffers.values():
+                old_data = buffer.get_region(self.start, self.count)
+                buffer.set_region(new_start, self.count, old_data)
         self.start = new_start
         self.count = count
 
@@ -162,15 +164,16 @@ class VertexList:
             'Domain attributes must match.'
 
         new_start = domain.safe_alloc(self.count)
-        for key, old_attribute in self.domain.attribute_names.items():
-            new_attribute = domain.attribute_names[key]
-            old_data = old_attribute.buffer.get_region(self.start, self.count)
+        for key, current_buffer in self.domain.attrib_name_buffers.items():
+            new_buffer = domain.attrib_name_buffers[key]
+            old_data = current_buffer.get_region(self.start, self.count)
             if key in instance_attributes:
+                attrib = domain.attribute_names[key]
                 count = 1
-                old_data = old_data[:new_attribute.count]
+                old_data = old_data[:attrib.count]
             else:
                 count = self.count
-            new_attribute.buffer.set_region(new_start, count, old_data)
+            new_buffer.set_region(new_start, count, old_data)
 
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
@@ -192,27 +195,24 @@ class VertexList:
             'Domain attributes must match.'
 
         new_start = domain.safe_alloc(self.count)
-        for key, old_attribute in self.domain.attribute_names.items():
-            new_attribute = domain.attribute_names[key]
-            old_data = old_attribute.buffer.get_region(self.start, self.count)
-            new_attribute.buffer.set_region(new_start, self.count, old_data)
+        for name, old_buffer in self.domain.attrib_name_buffers.items():
+            new_buffer = domain.attrib_name_buffers[name]
+            old_data = old_buffer.get_region(self.start, self.count)
+            new_buffer.set_region(new_start, self.count, old_data)
 
         self.domain.allocator.dealloc(self.start, self.count)
         self.domain = domain
         self.start = new_start
 
     def set_attribute_data(self, name: str, data: Any) -> None:
-        attribute = self.domain.attribute_names[name]
-        if attribute.instance:
-            count = 1
-        else:
-            count = self.count
+        buffer = self.domain.attrib_name_buffers[name]
+        count = self.count
 
-        array_start = attribute.count * self.start
-        array_end = attribute.count * count + array_start
+        array_start = buffer.count * self.start
+        array_end = buffer.count * count + array_start
         try:
-            attribute.buffer.data[array_start:array_end] = data
-            attribute.buffer.invalidate_region(self.start, count)
+            buffer.data[array_start:array_end] = data
+            buffer.invalidate_region(self.start, count)
         except ValueError:
             msg = f"Invalid data size for '{name}'. Expected {array_end - array_start}, got {len(data)}."
             raise ValueError(msg) from None
@@ -225,12 +225,11 @@ class VertexList:
 
         start = self.domain.safe_alloc_instance(3)
 
-        for buffer, attributes in self.domain.buffer_attributes:
-            for attribute in attributes:
-                if attribute.instance:
-                    assert attribute.name in kwargs, (f"{attribute.name} is defined as an instance attribute, "
-                                                      f"keyword argument not found.")
-                    attribute.set_region(attribute.buffer, instance_id - 1, 1, kwargs[attribute.name])
+        for buffer, attribute in self.domain.buffer_attributes:
+            if attribute.instance:
+                assert attribute.name in kwargs, (f"{attribute.name} is defined as an instance attribute, "
+                                                  f"keyword argument not found.")
+                buffer.set_region(instance_id - 1, 1, kwargs[attribute.name])
 
         return self.domain._vertexinstance_class(self, instance_id, start)  # noqa: SLF001
 
@@ -285,17 +284,17 @@ class IndexedVertexList(VertexList):
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
             diff = self.start - old_start
-            old_indices = old_domain.get_index_region(self.index_start, self.index_count)
-            old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])
+            old_indices = old_domain.index_buffer.get_region(self.index_start, self.index_count)
+            old_domain.index_buffer.set_region(self.index_start, self.index_count, [i + diff for i in old_indices])
 
         # copy indices to new domain
-        old_array = old_domain.get_index_region(self.index_start, self.index_count)
+        old_array = old_domain.index_buffer.get_region(self.index_start, self.index_count)
         # must delloc before calling safe_index_alloc or else problems when same
         # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
 
         new_start = self.domain.safe_index_alloc(self.index_count)
-        self.domain.set_index_region(new_start, self.index_count, old_array)
+        self.domain.index_buffer.set_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
 
@@ -313,28 +312,28 @@ class IndexedVertexList(VertexList):
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
             diff = self.start - old_start
-            old_indices = old_domain.get_index_region(self.index_start, self.index_count)
-            old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])
+            old_indices = old_domain.index_buffer.get_region(self.index_start, self.index_count)
+            old_domain.index_buffer.set_region(self.index_start, self.index_count, [i + diff for i in old_indices])
 
         # copy indices to new domain
-        old_array = old_domain.get_index_region(self.index_start, self.index_count)
+        old_array = old_domain.index_buffer.get_region(self.index_start, self.index_count)
         # must delloc before calling safe_index_alloc or else problems when same
         # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
 
         new_start = self.domain.safe_index_alloc(self.index_count)
-        self.domain.set_index_region(new_start, self.index_count, old_array)
+        self.domain.index_buffer.set_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
 
     @property
-    def indices(self):
+    def indices(self) -> list[int]:
         """Array of index data."""
-        return self.domain.get_index_region(self.index_start, self.index_count)
+        return self.domain.index_buffer.get_region(self.index_start, self.index_count)
 
     @indices.setter
     def indices(self, data: Sequence[int]) -> None:
-        self.domain.set_index_region(self.index_start, self.index_count, data)
+        self.domain.index_buffer.set_region(self.index_start, self.index_count, data)
 
 
 class VertexInstance:
@@ -363,12 +362,12 @@ class VertexDomain:
     :py:func:`create_domain` function.
     """
 
-    program: ShaderProgram
     attribute_meta: dict[str, dict[str, Any]]
     allocator: Allocator
-    buffer_attributes: list[tuple[AttributeBufferObject, tuple[Attribute]]]
+    buffer_attributes: list[tuple[AttributeBufferObject, Attribute]]
     vao: VertexArray
     attribute_names: dict[str, Attribute]
+    attrib_name_buffers: dict[str, AttributeBufferObject]
 
     _property_dict: dict[str, property]
     _vertexlist_class: type
@@ -376,13 +375,13 @@ class VertexDomain:
     _initial_count: int = 16
     _vertex_class: type[VertexList] = VertexList
 
-    def __init__(self, program: ShaderProgram, attribute_meta: dict[str, dict[str, Any]]) -> None:  # noqa: D107
-        self.program = program  # Needed a reference for migration
+    def __init__(self, attribute_meta: dict[str, dict[str, Any]]) -> None:  # noqa: D107
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
 
         self.attribute_names = {}  # name: attribute
-        self.buffer_attributes = []  # list of (buffer, attributes)
+        self.buffer_attributes = []  # list of (buffer, attribute)
+        self.attrib_name_buffers = {}  # dict of AttributeName: AttributeBufferObject (for VertexLists)
 
         self._property_dict = {}  # name: property(_getter, _setter)
 
@@ -394,13 +393,14 @@ class VertexDomain:
             normalize = 'n' in meta['format']
             instanced = meta['instance']
 
-            attribute = shader.Attribute(name, location, count, gl_type, normalize, instanced)
-            self.attribute_names[attribute.name] = attribute
+            self.attribute_names[name] = attribute = shader.Attribute(name, location, count, gl_type, normalize,
+                                                                      instanced)
 
             # Create buffer:
-            attribute.buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity, attribute)
+            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity,
+                                                                            attribute)
 
-            self.buffer_attributes.append((attribute.buffer, (attribute,)))
+            self.buffer_attributes.append((buffer, attribute))
 
             # Create custom property to be used in the VertexList:
             self._property_dict[attribute.name] = _make_attribute_property(name)
@@ -410,13 +410,12 @@ class VertexDomain:
 
         self.vao = vertexarray.VertexArray()
         self.vao.bind()
-        for buffer, attributes in self.buffer_attributes:
+        for buffer, attribute in self.buffer_attributes:
             buffer.bind()
-            for attribute in attributes:
-                attribute.enable()
-                attribute.set_pointer(buffer.ptr)
-                if attribute.instance:
-                    attribute.set_divisor()
+            attribute.enable()
+            attribute.set_pointer(buffer.ptr)
+            if attribute.instance:
+                attribute.set_divisor()
         self.vao.unbind()
 
     def safe_alloc(self, count: int) -> int:
@@ -426,7 +425,7 @@ class VertexDomain:
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.attribute_stride)
+                buffer.resize(capacity * buffer.stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.alloc(count)
 
@@ -437,7 +436,7 @@ class VertexDomain:
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.attribute_stride)
+                buffer.resize(capacity * buffer.stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
@@ -509,22 +508,22 @@ class VertexDomain:
 
 def _make_instance_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
-        attribute = self.domain.attribute_names[name]
-        region = attribute.buffer.get_region(self.id - 1, 1)
-        attribute.buffer.invalidate_region(self.id - 1, 1)
+        buffer = self.domain.attrib_name_buffers[name]
+        region = buffer.get_region(self.id - 1, 1)
+        buffer.invalidate_region(self.id - 1, 1)
         return region
 
     def _attribute_setter(self: VertexInstance, data: Any) -> None:
-        attribute = self.domain.attribute_names[name]
-        attribute.buffer.set_region(self.id - 1, 1, data)
+        buffer = self.domain.attrib_name_buffers[name]
+        buffer.set_region(self.id - 1, 1, data)
 
     return property(_attribute_getter, _attribute_setter)
 
 
 def _make_restricted_instance_attribute_property(name: str) -> property:
     def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
-        attribute = self.domain.attribute_names[name]
-        return attribute.buffer.get_region(self.id - 1, 1)
+        buffer = self.domain.attrib_name_buffers[name]
+        return buffer.get_region(self.id - 1, 1)
 
     def _attribute_setter(_self: VertexInstance, _data: Any) -> NoReturn:
         msg = f"Attribute '{name}' is not an instanced attribute."
@@ -533,14 +532,14 @@ def _make_restricted_instance_attribute_property(name: str) -> property:
     return property(_attribute_getter, _attribute_setter)
 
 
-class InstancedVertexDomain(VertexDomain):
+class InstancedVertexDomain(VertexDomain):  # noqa: D101
     instance_allocator: Allocator
     _instances: int
     _instance_properties: dict[str, property]
     _vertexinstance_class: type
 
-    def __init__(self, program: ShaderProgram, attribute_meta: dict[str, dict[str, Any]]) -> None:
-        super().__init__(program, attribute_meta)
+    def __init__(self, attribute_meta: dict[str, dict[str, Any]]) -> None:
+        super().__init__(attribute_meta)
         self._instances = 1
         self.instance_allocator = allocation.Allocator(self._initial_count)
 
@@ -558,10 +557,9 @@ class InstancedVertexDomain(VertexDomain):
             return self.instance_allocator.alloc(count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            for buffer, attributes in self.buffer_attributes:
-                for attribute in attributes:
-                    if attribute.instance:
-                        buffer.resize(capacity * buffer.attribute_stride)
+            for buffer, attribute in self.buffer_attributes:
+                if attribute.instance:
+                    buffer.resize(capacity * buffer.stride)
             self.instance_allocator.set_capacity(capacity)
             return self.instance_allocator.alloc(count)
 
@@ -572,7 +570,7 @@ class InstancedVertexDomain(VertexDomain):
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.attribute_stride)
+                buffer.resize(capacity * buffer.stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.alloc(count)
 
@@ -583,7 +581,7 @@ class InstancedVertexDomain(VertexDomain):
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             for buffer, _ in self.buffer_attributes:
-                buffer.resize(capacity * buffer.attribute_stride)
+                buffer.resize(capacity * buffer.stride)
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
@@ -638,20 +636,23 @@ class IndexedVertexDomain(VertexDomain):
     index_gl_type: int
     index_c_type: CTypesDataType
     index_element_size: int
-    index_buffer: BufferObject
+    index_buffer: IndexedBufferObject
     _initial_index_count = 16
     _vertex_class = IndexedVertexList
 
-    def __init__(self, program: ShaderProgram, attribute_meta: dict[str, dict[str, Any]],
+    def __init__(self, attribute_meta: dict[str, dict[str, Any]],  # noqa: D107
                  index_gl_type: int = GL_UNSIGNED_INT) -> None:
-        super().__init__(program, attribute_meta)
+        super().__init__(attribute_meta)
 
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 
         self.index_gl_type = index_gl_type
         self.index_c_type = shader._c_types[index_gl_type]  # noqa: SLF001
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = BufferObject(self.index_allocator.capacity * self.index_element_size)
+        self.index_buffer = IndexedBufferObject(self.index_allocator.capacity * self.index_element_size,
+                                                shader._c_types[index_gl_type],
+                                                self.index_element_size,
+                                                1)
 
         self.vao.bind()
         self.index_buffer.bind_to_index_buffer()
@@ -695,31 +696,6 @@ class IndexedVertexDomain(VertexDomain):
         index_start = self.safe_index_alloc(index_count)
         return self._vertexlist_class(self, start, count, index_start, index_count)
 
-    def get_index_region(self, start: int, count: int) -> Array[int]:
-        """Get a data from a region of the index buffer.
-
-        Args:
-            start:
-                Start of the region to map.
-            count:
-                Number of indices to map.
-        """
-        byte_start = self.index_element_size * start
-        byte_count = self.index_element_size * count
-        ptr_type = ctypes.POINTER(self.index_c_type * count)
-        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
-        data = map_ptr[:]
-        self.index_buffer.unmap()
-        return data
-
-    def set_index_region(self, start: int, count: int, data: Sequence[int]) -> None:
-        byte_start = self.index_element_size * start
-        byte_count = self.index_element_size * count
-        ptr_type = ctypes.POINTER(self.index_c_type * count)
-        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
-        map_ptr[:] = data
-        self.index_buffer.unmap()
-
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
 
@@ -734,6 +710,8 @@ class IndexedVertexDomain(VertexDomain):
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
             buffer.sub_data()
+
+        self.index_buffer.sub_data()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         primcount = len(starts)
@@ -778,9 +756,9 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
     """
     _initial_index_count: int = 16
 
-    def __init__(self, program: ShaderProgram, attribute_meta: dict[str, dict[str, Any]],  # noqa: D107
+    def __init__(self, attribute_meta: dict[str, dict[str, Any]],  # noqa: D107
                  index_gl_type: int = GL_UNSIGNED_INT) -> None:
-        super().__init__(program, attribute_meta, index_gl_type)
+        super().__init__(attribute_meta, index_gl_type)
 
     def safe_index_alloc(self, count: int) -> int:
         """Allocate indices, resizing the buffers if necessary.
@@ -819,31 +797,6 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
         start = self.safe_alloc(count)
         index_start = self.safe_index_alloc(index_count)
         return self._vertexlist_class(self, start, count, index_start, index_count)
-
-    def get_index_region(self, start: int, count: int) -> Array[int]:
-        """Get a data from a region of the index buffer.
-
-        Args:
-            start:
-                Start of the region to map.
-            count:
-                Number of indices to map.
-        """
-        byte_start = self.index_element_size * start
-        byte_count = self.index_element_size * count
-        ptr_type = ctypes.POINTER(self.index_c_type * count)
-        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
-        data = map_ptr[:]
-        self.index_buffer.unmap()
-        return data
-
-    def set_index_region(self, start: int, count: int, data: Sequence[int]) -> None:
-        byte_start = self.index_element_size * start
-        byte_count = self.index_element_size * count
-        ptr_type = ctypes.POINTER(self.index_c_type * count)
-        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
-        map_ptr[:] = data
-        self.index_buffer.unmap()
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.

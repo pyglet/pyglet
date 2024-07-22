@@ -1,6 +1,9 @@
-from typing import Tuple
-from unittest.mock import MagicMock
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
 import pytest
+
 import pyglet
 
 
@@ -10,7 +13,7 @@ def monkeypatch_default_sprite_shader(monkeypatch, get_dummy_shader_program):
     monkeypatch.setattr('pyglet.sprite.get_default_shader', get_dummy_shader_program)
 
 
-@pytest.fixture
+@pytest.fixture()
 def sprite():
     """A sprite with no image data.
 
@@ -28,7 +31,26 @@ def sprite():
     return sprite
 
 
-def _new_or_none(new_value: float = 0.0) -> Tuple[float, None]:
+@pytest.fixture()
+def batched_sprite():
+    """A sprite with no image data, but is initially added to a batch.
+
+    It is created at a non-zero position so that the update method can
+    be verified as working when passed zero positions (Issue #673).
+    Scale values do not need to be set to 0 in the fixture as they are
+    all 1.0 by default.
+
+    The lack of image data doesn't matter because these tests never touch
+    a real GL context which would require it.
+    """
+    from pyglet.graphics import Batch
+    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=Batch())
+    sprite.rotation = 90
+
+    return sprite
+
+
+def _new_or_none(new_value: float = 0.0) -> tuple[float, None]:
     return new_value, None
 
 
@@ -63,7 +85,6 @@ def scale_y(request):
 
 
 def test_update_sets_passed_positions(sprite, x, y, z):
-
     sprite.update(x=x, y=y, z=z)
 
     if x is not None:
@@ -127,3 +148,46 @@ def test_update_sets_rotation_when_passed(sprite):
 def test_update_leaves_rotation_alone_when_none(sprite):
     sprite.update()
     assert sprite.rotation == 90
+
+
+@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
+def test_group_setter(request, fixture):
+    _sprite = request.getfixturevalue(fixture)
+    from pyglet.graphics import Group
+    new_group = Group()
+    # Patch since magicmock returns functions for class variables...
+    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
+        _sprite.group = new_group
+
+        assert _sprite.group is new_group
+
+
+@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
+def test_batch_setter(request, fixture):
+    _sprite = request.getfixturevalue(fixture)
+    from pyglet.graphics import Batch
+    new_batch = Batch()
+    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
+        _sprite.batch = new_batch
+        assert _sprite.batch is new_batch
+
+
+@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
+def test_program_setter(request, fixture):
+    _sprite = request.getfixturevalue(fixture)
+
+    program = MagicMock()
+    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
+        _sprite.program = program
+        assert _sprite.program == program
+
+
+@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
+def test_blend_setter(request, fixture):
+    _sprite = request.getfixturevalue(fixture)
+
+    blend_mode = (1, 1)
+    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
+        _sprite.blend_mode = blend_mode
+        assert _sprite._group.blend_src == 1  # noqa: SLF001
+        assert _sprite._group.blend_dest == 1  # noqa: SLF001

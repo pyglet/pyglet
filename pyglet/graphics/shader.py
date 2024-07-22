@@ -227,9 +227,6 @@ class Attribute:
     location: int
     name: str
 
-    #: Buffer is created and attached during VertexDomain creation.
-    buffer: AttributeBufferObject | None
-
     def __init__(self, name: str, location: int, count: int, gl_type: int, normalize: bool, instance: bool) -> None:
         """Create the attribute accessor.
 
@@ -259,7 +256,6 @@ class Attribute:
 
         self.element_size = sizeof(self.c_type)
         self.stride = count * self.element_size
-        self.buffer = None
 
     def enable(self) -> None:
         """Enable the attribute."""
@@ -1334,21 +1330,25 @@ class ShaderProgram:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
                     initial_arrays.append((name, array))
-                attributes[name] = {
-                    **attributes[name], 'format': fmt,
-                    'instance': name in instances if instances else False,
-                }
+                attributes[name] = {**attributes[name], 'format': fmt, 'instance': name in instances if instances else False}
             except KeyError:  # noqa: PERF203
+                if _debug_gl_shaders:
+                    msg = (f"The attribute `{name}` was not found in the Shader Program.\n"
+                           f"Please check the spelling, or it may have been optimized out by the OpenGL driver.\n"
+                           f"Valid names: {list(attributes)}")
+                    print(msg)
+                continue
+
+        if _debug_gl_shaders:
+            if missing_data := [key for key in data if key not in attributes]:
                 msg = (
-                    f"An attribute with the name `{name}` was not found. Please "
-                    f"check the spelling.\nIf the attribute is not in use in the "
-                    f"program, it may have been optimized out by the OpenGL driver.\n"
-                    f"Valid names: \n{list(attributes)}"
+                    f"No data was supplied for the following found attributes: `{missing_data}`.\n"
                 )
-                raise ShaderException(msg)  # noqa: B904
+                print(msg)
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch.get_domain(indexed, instanced, mode, group, self, attributes)
+        group = group or pyglet.graphics.ShaderGroup(program=self)
+        domain = batch.get_domain(indexed, instanced, mode, group, attributes)
 
         # Create vertex list and initialize
         if indexed:
@@ -1359,7 +1359,10 @@ class ShaderProgram:
             vlist = domain.create(count)
 
         for name, array in initial_arrays:
-            vlist.set_attribute_data(name, array)
+            try:
+                vlist.set_attribute_data(name, array)
+            except KeyError:  # noqa: PERF203
+                continue
 
         if instanced:
             vlist.instanced = True
@@ -1411,6 +1414,8 @@ class ShaderProgram:
                 Using a Batch is strongly recommended.
             group:
                 Group to add the VertexList to, or ``None`` if no group is required.
+            strict:
+                Enforces that the attributes of the vertex list matches those found in the shader.
             data:
                 Attribute formats and initial data for the vertex list.
         """

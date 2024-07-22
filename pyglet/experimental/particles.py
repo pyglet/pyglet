@@ -6,12 +6,8 @@ import sys
 import time
 
 import pyglet
-
+from pyglet import clock, event, graphics, image
 from pyglet.gl import *
-from pyglet import clock
-from pyglet import event
-from pyglet import graphics
-from pyglet import image
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -299,8 +295,14 @@ class Emitter(event.EventDispatcher):
                                        self._group.blend_dest,
                                        program,
                                        self._user_group)
-        self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
-        self._program = program
+        if (self._batch and
+                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+            # Exit early if changing domain is not needed.
+            return
+
+        # Recreate vertex list.
+        self._vertex_list.delete()
+        self._create_vertex_list()
 
     def delete(self):
         """Force immediate removal of the emitter from video memory.
@@ -407,7 +409,7 @@ class ParticleManager:
 
         # TODO: remove debug
         self.total_number -= 1
-        self.total_label.text = f"particles: {str(self.total_number * self._count * 8)}"
+        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
 
     def create_emitter(self, x, y, z=0):
         emitter = Emitter(self._img, x, y, z, self._count, self._velocity, self._spread,
@@ -418,6 +420,6 @@ class ParticleManager:
 
         # TODO: remove debug
         self.total_number += 1
-        self.total_label.text = f"particles: {str(self.total_number * self._count * 8)}"
+        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
 
         return emitter

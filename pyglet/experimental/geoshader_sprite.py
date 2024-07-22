@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import sys
 
 import pyglet
-
+from pyglet import clock, event, graphics, image
 from pyglet.gl import *
-from pyglet import clock
-from pyglet import event
-from pyglet import graphics
-from pyglet import image
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -209,7 +207,7 @@ class SpriteGroup(graphics.Group):
         self.program.stop()
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.texture)
+        return f"{self.__class__.__name__}({self.texture})"
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
@@ -328,8 +326,14 @@ class Sprite(event.EventDispatcher):
                                        self._group.blend_dest,
                                        program,
                                        self._user_group)
-        self._batch.migrate(self._vertex_list, GL_POINTS, self._group, self._batch)
-        self._program = program
+        if (self._batch and
+                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+            # Exit early if changing domain is not needed.
+            return
+
+        # Recreate vertex list.
+        self._vertex_list.delete()
+        self._create_vertex_list()
 
     def delete(self):
         """Force immediate removal of the sprite from video memory.
@@ -596,7 +600,6 @@ class Sprite(event.EventDispatcher):
             `scale_y` : float
                 Vertical scaling factor.
         """
-
         translations_outdated = False
 
         # only bother updating if the translation actually changed
