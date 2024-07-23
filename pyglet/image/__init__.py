@@ -131,6 +131,7 @@ from .codecs import registry as _codec_registry
 
 if TYPE_CHECKING:
     from typing import BinaryIO, Sequence, Callable, Literal
+    from collections.abc import Iterator
     from .codecs import ImageDecoder, ImageEncoder
 
 
@@ -449,7 +450,7 @@ class AbstractImageSequence(ABC):
         """Length of the image sequence."""
 
     @abstractmethod
-    def __iter__(self) -> Sequence[AbstractImage]:
+    def __iter__(self) -> Iterator[AbstractImage]:
         """Iterate over the images in sequence."""
 
 
@@ -469,7 +470,7 @@ class TextureSequence(AbstractImageSequence):
     def __len__(self) -> int:
         raise NotImplementedError
 
-    def __iter__(self) -> Sequence[Texture]:
+    def __iter__(self) -> Iterator[Texture]:
         raise NotImplementedError
 
     def get_texture_sequence(self) -> TextureSequence:
@@ -478,20 +479,6 @@ class TextureSequence(AbstractImageSequence):
 
 class UniformTextureSequence(TextureSequence):
     """Interface for a sequence of textures, each with the same dimensions."""
-
-    def _get_item_width(self) -> int:
-        ...
-
-    def _get_item_height(self) -> int:
-        ...
-
-    @property
-    def item_width(self) -> int:
-        return self._get_item_width()
-
-    @property
-    def item_height(self) -> int:
-        return self._get_item_height()
 
 
 class ImageData(AbstractImage):
@@ -1563,7 +1550,7 @@ class Texture3D(Texture, UniformTextureSequence):
         else:
             self.blit_into(value, value.anchor_x, value.anchor_y, self[index].z)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TextureRegion]:
         return iter(self.items)
 
 
@@ -1691,7 +1678,7 @@ class TextureArray(Texture, UniformTextureSequence):
             self.blit_into(value, value.anchor_x, value.anchor_y, index)
             self.items[index] = item
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TextureRegion]:
         return iter(self.items)
 
 
@@ -1762,8 +1749,8 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     """
 
-    _items: list
-    _texture_grid: TextureGrid
+    _items: list = []
+    _texture_grid: TextureGrid = None
 
     def __init__(self, image: AbstractImage, rows: int, columns: int, item_width: int | None = None,
                  item_height: int | None = None, row_padding: int = 0, column_padding: int = 0) -> None:
@@ -1854,7 +1841,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def __len__(self) -> int:
         return self.rows * self.columns
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ImageDataRegion]:
         self._update_items()
         return iter(self._items)
 
@@ -1891,13 +1878,13 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         images = texture_grid[(1,1):(3,3)]
 
     """
-    items = ()
-    rows = 1
-    columns = 1
-    item_width = 0
-    item_height = 0
+    items: list
+    rows: int
+    columns: int
+    item_width: int
+    item_height: int
 
-    def __init__(self, grid):
+    def __init__(self, grid: ImageGrid) -> None:
         image = grid.get_texture()
         if isinstance(image, TextureRegion):
             owner = image.owner
@@ -1921,10 +1908,10 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         self.item_width = grid.item_width
         self.item_height = grid.item_height
 
-    def get(self, row, column):
+    def get(self, row: int, column: int):
         return self[(row, column)]
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int | tuple[int, int] | slice) -> TextureRegion | list[TextureRegion]:
         if type(index) is slice:
             if type(index.start) is not tuple and type(index.stop) is not tuple:
                 return self.items[index]
@@ -1961,7 +1948,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
             elif type(index) is int:
                 return self.items[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: int | slice, value: AbstractImage | Sequence[AbstractImage]):
         if type(index) is slice:
             for region, image in zip(self[index], value):
                 if image.width != self.item_width or image.height != self.item_height:
@@ -1973,10 +1960,10 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 raise ImageException('Image has incorrect dimensions')
             image.blit_into(self[index], image.anchor_x, image.anchor_y, 0)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.items)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TextureRegion]:
         return iter(self.items)
 
 
@@ -2074,6 +2061,7 @@ def get_buffer_manager() -> BufferManager:
 
 class BufferImage(AbstractImage):
     """An abstract framebuffer."""
+
     #: The OpenGL read and write target for this buffer.
     gl_buffer = GL_BACK
 
@@ -2084,8 +2072,6 @@ class BufferImage(AbstractImage):
     format = ''
 
     owner = None
-
-    # TODO: enable methods
 
     def __init__(self, x, y, width, height):
         super().__init__(width, height)
@@ -2117,6 +2103,21 @@ class BufferImage(AbstractImage):
         region.owner = self
         return region
 
+    def get_texture(self, rectangle: bool = False) -> Texture:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def get_mipmapped_texture(self) -> Texture:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def blit(self, x: int, y: int, z: int = 0) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def blit_into(self, source, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")
+
 
 class ColorBufferImage(BufferImage):
     """A color framebuffer.
@@ -2134,8 +2135,7 @@ class ColorBufferImage(BufferImage):
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
         glReadBuffer(self.gl_buffer)
-        glCopyTexSubImage2D(target, level, x - self.anchor_x, y - self.anchor_y, self.x, self.y, self.width,
-                            self.height)
+        glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
 
 class DepthBufferImage(BufferImage):
@@ -2150,13 +2150,11 @@ class DepthBufferImage(BufferImage):
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
         glReadBuffer(self.gl_buffer)
-        glCopyTexSubImage2D(target, level, x - self.anchor_x, y - self.anchor_y, self.x, self.y, self.width,
-                            self.height)
+        glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
 
 class BufferImageMask(BufferImage):
-    """A single bit of the stencil buffer.
-    """
+    """A single bit of the stencil buffer."""
     gl_format = GL_STENCIL_INDEX
     format = 'R'
 
