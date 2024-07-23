@@ -2060,7 +2060,7 @@ def get_buffer_manager() -> BufferManager:
 
 
 class BufferImage(AbstractImage):
-    """An abstract framebuffer."""
+    """An abstract "default" framebuffer."""
 
     #: The OpenGL read and write target for this buffer.
     gl_buffer = GL_BACK
