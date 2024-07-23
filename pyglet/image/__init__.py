@@ -40,7 +40,7 @@ This assumes an appropriate view transform and projection have been applied.
 
 Some images have an intrinsic "anchor point": this is the point which will be
 aligned to the ``x`` and ``y`` coordinates when the image is drawn.  By
-default the anchor point is the lower-left corner of the image.  You can use
+default, the anchor point is the lower-left corner of the image.  You can use
 the anchor point to center an image at a given point, for example::
 
     pic.anchor_x = pic.width // 2
@@ -130,7 +130,7 @@ from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
 
 if TYPE_CHECKING:
-    from typing import BinaryIO, Sequence, Any
+    from typing import BinaryIO, Sequence, Callable, Literal
     from .codecs import ImageDecoder, ImageEncoder
 
 
@@ -138,11 +138,11 @@ class ImageException(Exception):
     pass
 
 
-class TextureArraySizeExceeded(Exception):
+class TextureArraySizeExceeded(ImageException):
     """Exception occurs ImageData dimensions are larger than the array supports."""
 
 
-class TextureArrayDepthExceeded(Exception):
+class TextureArrayDepthExceeded(ImageException):
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
@@ -161,13 +161,13 @@ def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | No
             first decoder is raised.
 
     .. note:: You can make no assumptions about the return type; usually it will
-        be ImageData or CompressedImageData, but decoders are free to return
-        any subclass of AbstractImage.
+              be ImageData or CompressedImageData, but decoders are free to return
+              any subclass of AbstractImage.
     """
     if decoder:
         return decoder.decode(filename, file)
-    else:
-        return _codec_registry.decode(filename, file)
+
+    return _codec_registry.decode(filename, file)
 
 
 def load_animation(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> Animation:
@@ -186,8 +186,8 @@ def load_animation(filename: str, file: BinaryIO | None = None, decoder: ImageDe
     """
     if decoder:
         return decoder.decode_animation(filename, file)
-    else:
-        return _codec_registry.decode_animation(filename, file)
+
+    return _codec_registry.decode_animation(filename, file)
 
 
 def create(width: int, height: int, pattern: ImagePattern | None = None) -> AbstractImage:
@@ -241,7 +241,7 @@ class ImagePattern(ABC):
 
 
 class SolidColorImagePattern(ImagePattern):
-    """Creates an image filled with a solid color."""
+    """Creates an image filled with a solid RGBA color."""
 
     def __init__(self, color: Sequence[int, int, int, int] = (0, 0, 0, 0)):
         """Create a solid image pattern with the given color.
@@ -368,13 +368,12 @@ class AbstractImage:
         """Draw this image to the active framebuffer.
 
         The image will be drawn with the lower-left corner at
-        (``x -`` `anchor_x`, ``y -`` `anchor_y`, ``z``).
+        (``x - anchor_x``, ``y - anchor_y``, ``z``).
 
-        .. note:: This can be a slow method, as a full OpenGL setup and draw call
-                  is required for each blit. For performance, consider creating
-                  a Sprite from the Image, and adding it to a Batch.
+        .. note:: This is a relatively slow method, as a full OpenGL setup and
+                  draw call is required for each blit. For performance, consider
+                  creating a Sprite from the Image, and adding it to a Batch.
         """
-        raise ImageException('Cannot blit %r.' % self)
 
     @abstractmethod
     def blit_into(self, source, x: int, y: int, z: int) -> None:
@@ -391,6 +390,7 @@ class AbstractImage:
         this image.
         """
 
+    @abstractmethod
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
         """Draw this image on the currently bound texture at ``target``.
 
@@ -460,20 +460,24 @@ class TextureSequence(AbstractImageSequence):
     within one :py:class:`~pyglet.image.Texture` to minimise state changes.
     """
 
+    def __getitem__(self, item) -> Texture:
+        raise NotImplementedError
+
+    def __setitem__(self, item, texture: type[Texture]) -> AbstractImage:
+        raise NotImplementedError
+
+    def __len__(self) -> int:
+        raise NotImplementedError
+
+    def __iter__(self) -> Sequence[Texture]:
+        raise NotImplementedError
+
     def get_texture_sequence(self) -> TextureSequence:
         return self
 
 
 class UniformTextureSequence(TextureSequence):
-    """Interface for a sequence of textures, each with the same dimensions.
-
-    :Parameters:
-        `item_width` : int
-            Width of each texture in the sequence.
-        `item_height` : int
-            Height of each texture in the sequence.
-
-    """
+    """Interface for a sequence of textures, each with the same dimensions."""
 
     def _get_item_width(self) -> int:
         ...
@@ -616,7 +620,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls: Texture, rectangle: bool = False) -> Texture:
+    def create_texture(self, cls: type[Texture], rectangle: bool = False) -> Texture:
         """Given a texture class, create a texture containing this image."""
         internalformat = self._get_internalformat(self._desired_format)
         texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, blank_data=False)
@@ -674,6 +678,10 @@ class ImageData(AbstractImage):
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
         self.get_texture().blit(x, y, z, width, height)
+
+    def blit_into(self, source, x: int, y: int, z: int) -> None:
+        # TODO: Implement this
+        pass
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat=None):
         """Draw this image to the currently bound texture at ``target``.
@@ -749,9 +757,11 @@ class ImageData(AbstractImage):
         glFlush()
 
     def _apply_region_unpack(self):
+        # Not needed on full images
         pass
 
     def _default_region_unpack(self):
+        # Not needed on full images
         pass
 
     def _convert(self, fmt: str, pitch: int) -> bytes:
@@ -796,7 +806,7 @@ class ImageData(AbstractImage):
                 new_pitch = abs(self._current_pitch)
                 rows = [data[i:i + new_pitch] for i in range(0, len(data), new_pitch)]
                 rows = [swap_pattern.sub(repl, r[:packed_pitch]) for r in rows]
-                data = asbytes('').join(rows)
+                data = b''.join(rows)
             else:
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
@@ -810,23 +820,23 @@ class ImageData(AbstractImage):
                 # New pitch is shorter than old pitch, chop bytes off each row
                 new_pitch = abs(pitch)
                 rows = [data[i:i + new_pitch - diff] for i in range(0, len(data), new_pitch)]
-                data = asbytes('').join(rows)
+                data = b''.join(rows)
 
             elif diff < 0:
                 # New pitch is longer than old pitch, add '0' bytes to each row
                 new_pitch = abs(current_pitch)
                 padding = bytes(1) * -diff
                 rows = [data[i:i + new_pitch] + padding for i in range(0, len(data), new_pitch)]
-                data = asbytes('').join(rows)
+                data = b''.join(rows)
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
                 new_pitch = abs(pitch)
                 rows = [data[i:i + new_pitch] for i in range(0, len(data), new_pitch)]
                 rows.reverse()
-                data = asbytes('').join(rows)
+                data = b''.join(rows)
 
-        return asbytes(data)
+        return data
 
     def _ensure_bytes(self) -> None:
         if type(self._current_data) is not bytes:
@@ -920,6 +930,7 @@ class ImageDataRegion(ImageData):
         return super().get_data(fmt, pitch)
 
     def set_data(self, fmt, pitch, data):
+        # TODO: Why does this override the parent ImageData?
         self.x = 0
         self.y = 0
         super().set_data(fmt, pitch, data)
@@ -939,33 +950,32 @@ class ImageDataRegion(ImageData):
 
 
 class CompressedImageData(AbstractImage):
-    """Image representing some compressed data suitable for direct uploading
-    to driver.
-    """
+    """Compressed image data suitable for direct uploading to GPU."""
 
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, gl_format, data, extension=None, decoder=None):
+    def __init__(self, width: int, height: int, gl_format: int, data: bytes,
+                 extension: str | None = None,
+                 decoder: Callable[[bytes, int, int], AbstractImage] | None = None) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
-        :Parameters:
-            `width` : int
-                Width of image
-            `height` : int
-                Height of image
-            `gl_format` : int
-                GL constant giving format of compressed data; for example,
-                ``GL_COMPRESSED_RGBA_S3TC_DXT5_EXT``.
-            `data` : sequence
-                String or array/list of bytes giving compressed image data.
-            `extension` : str or None
+        Args:
+            width:
+                The width of the image.
+            height:
+                The height of the image.
+            gl_format:
+                GL constant giving the format of the compressed data.
+                For example: ``GL_COMPRESSED_RGBA_S3TC_DXT5_EXT``.
+            data:
+                An array of bytes containing the compressed image data.
+            extension:
                 If specified, gives the name of a GL extension to check for
                 before creating a texture.
-            `decoder` : function(data, width, height) -> AbstractImage
-                A function to decode the compressed data, to be used if the
-                required extension is not present.
-
+            decoder:
+                An optional fallback function used to decode the compressed data.
+                This function is called if the required extension is not present.
         """
         super().__init__(width, height)
         self.data = data
@@ -974,45 +984,29 @@ class CompressedImageData(AbstractImage):
         self.decoder = decoder
         self.mipmap_data = []
 
-    def set_mipmap_data(self, level, data):
-        """Set data for a mipmap level.
+    def set_mipmap_data(self, level: int, data: bytes) -> None:
+        """Set compressed image data for a mipmap level.
 
         Supplied data gives a compressed image for the given mipmap level.
-        The image must be of the correct dimensions for the level
-        (i.e., width >> level, height >> level); but this is not checked.  If
-        any mipmap levels are specified, they are used; otherwise, mipmaps for
-        `mipmapped_texture` are generated automatically.
-
-        :Parameters:
-            `level` : int
-                Level of mipmap image to set.
-            `data` : sequence
-                String or array/list of bytes giving compressed image data.
-                Data must be in same format as specified in constructor.
-
+        This image data must be in the same format as was used in the
+        constructor. The image data must also be of the correct dimensions for
+        the level (i.e., width >> level, height >> level); but this is not checked.
+        If *any* mipmap levels are specified, they are used; otherwise, mipmaps for
+        ``mipmapped_texture`` are generated automatically.
         """
         # Extend mipmap_data list to required level
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def _have_extension(self):
+    def _have_extension(self) -> bool:
         return self.extension is None or gl_info.have_extension(self.extension)
 
-    def _verify_driver_supported(self):
-        """Assert that the extension required for this image data is
-        supported.
-
-        Raises `ImageException` if not.
-        """
-        if not self._have_extension():
-            raise ImageException('%s is required to decode %r' % (self.extension, self))
-
-    def get_texture(self, rectangle=False):
-        if rectangle:
-            raise ImageException('Compressed texture rectangles not supported')
-
+    def get_texture(self, rectangle=False) -> Texture:
         if self._current_texture:
             return self._current_texture
+
+        if rectangle:
+            raise ImageException('Compressed texture rectangles not supported')
 
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
 
@@ -1029,23 +1023,26 @@ class CompressedImageData(AbstractImage):
                                    self.gl_format,
                                    self.width, self.height, 0,
                                    len(self.data), self.data)
-        else:
+        elif self.decoder:
             image = self.decoder(self.data, self.width, self.height)
             texture = image.get_texture()
             assert texture.width == self.width
             assert texture.height == self.height
+        else:
+            msg = f"No extension or fallback decoder is available to decode {self}"
+            raise ImageException(msg)
 
         glFlush()
         self._current_texture = texture
         return texture
 
-    def get_mipmapped_texture(self):
+    def get_mipmapped_texture(self) -> Texture:
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
         if not self._have_extension():
-            # TODO mip-mapped software decoded compressed textures.  For now,
-            # just return a non-mipmapped texture.
+            # TODO: mip-mapped software decoded compressed textures.
+            #       For now, just return a non-mipmapped texture.
             return self.get_texture()
 
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
@@ -1080,7 +1077,8 @@ class CompressedImageData(AbstractImage):
         return texture
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
-        self._verify_driver_supported()
+        if not self._have_extension():
+            raise ImageException(f"{self.extension} is required to decode {self}")
 
         if target == GL_TEXTURE_3D:
             glCompressedTexSubImage3D(target, level,
@@ -1095,48 +1093,79 @@ class CompressedImageData(AbstractImage):
                                       self.gl_format,
                                       len(self.data), self.data)
 
+    def get_image_data(self) -> CompressedImageData:
+        return self
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def blit(self, x: int, y: int, z: int = 0) -> None:
+        self.get_texture().blit(x, y, z)
+
+    def blit_into(self, source, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")
+
 
 class Texture(AbstractImage):
-    """An image loaded into video memory that can be efficiently drawn
-    to the framebuffer.
+    """An image loaded into GPU memory
 
-    Typically, you will get an instance of Texture by accessing the `texture`
-    member of any other AbstractImage.
-
-    :Parameters:
-        `region_class` : class (subclass of TextureRegion)
-            Class to use when constructing regions of this texture.
-        `tex_coords` : tuple
-            12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).  u, v, r
-            give the 3D texture coordinates for vertices 1-4.  The vertices
-            are specified in the order bottom-left, bottom-right, top-right
-            and top-left.
-        `target` : int
-            The GL texture target (e.g., ``GL_TEXTURE_2D``).
-        `level` : int
-            The mipmap level of this texture.
-
+    Typically, you will get an instance of Texture by accessing calling
+    the ``get_texture()`` method of any AbstractImage class (such as ImageData).
     """
 
-    region_class = None  # Set to TextureRegion after it's defined
-    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
-    tex_coords_order = (0, 1, 2, 3)
-    colors = (0, 0, 0, 0) * 4
-    level = 0
-    images = 1
-    x = y = z = 0
-    default_min_filter = GL_LINEAR
-    default_mag_filter = GL_LINEAR
+    region_class: TextureRegion  # Set to TextureRegion after it's defined
+    """The class to use when constructing regions of this texture.
+     The class should be a subclass of TextureRegion.
+    """
 
-    def __init__(self, width, height, target, tex_id):
+    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
+    """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
+    ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
+    are specified in the order bottom-left, bottom-right, top-right and top-left.
+    """
+
+    tex_coords_order: tuple[int, int, int, int] = (0, 1, 2, 3)
+    """The default vertex winding order for a quad.
+    This defaults to counter-clockwise, starting at the bottom-left.
+    """
+
+    target: int
+    """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
+
+    colors = (0, 0, 0, 0) * 4
+    """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
+
+    level: int = 0
+    """The mipmap level of this texture."""
+
+    images = 1
+
+    x: int = 0
+    y: int = 0
+    z: int = 0
+
+    default_min_filter = GL_LINEAR
+    """The default minification filter. Defaults to GL_LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
+    default_mag_filter = GL_LINEAR
+    """The default magnification filter. Defaults to GL_LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
+    def __init__(self, width: int, height: int, target: int, tex_id: int) -> None:
         super().__init__(width, height)
         self.target = target
         self.id = tex_id
         self._context = pyglet.gl.current_context
 
-    def delete(self):
+    def delete(self) -> None:
         """Delete this texture and the memory it occupies.
-        After this, it may not be used anymore.
+
+        Textures are invalid after deletion, and may no longer be used.
         """
         glDeleteTextures(1, GLuint(self.id))
         self.id = None
@@ -1149,12 +1178,13 @@ class Texture(AbstractImage):
             except (AttributeError, ImportError):
                 pass  # Interpreter is shutting down
 
-    def bind(self, texture_unit: int = 0):
+    def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
         glActiveTexture(GL_TEXTURE0 + texture_unit)
         glBindTexture(self.target, self.id)
 
-    def bind_image_texture(self, unit, level=0, layered=False, layer=0, access=GL_READ_WRITE, fmt=GL_RGBA32F):
+    def bind_image_texture(self, unit: int, level: int = 0, layered: bool = False,
+                           layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
         .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
@@ -1162,37 +1192,35 @@ class Texture(AbstractImage):
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA8, min_filter=None, mag_filter=None,
-               fmt=GL_RGBA, blank_data=True):
+    def create(cls, width: int, height: int, target: int = GL_TEXTURE_2D,
+               internalformat: int | None = GL_RGBA8, min_filter: int | None = None, mag_filter: int | None = None,
+               fmt: int = GL_RGBA, blank_data: bool = True) -> Texture:
         """Create a Texture
 
         Create a Texture with the specified dimentions, target and format.
         On return, the texture will be bound.
 
-        :Parameters:
-            `width` : int
+        Args:
+            width:
                 Width of texture in pixels.
-            `height` : int
+            height:
                 Height of texture in pixels.
-            `target` : int
+            target:
                 GL constant giving texture target to use, typically ``GL_TEXTURE_2D``.
-            `internalformat` : int
+            internalformat:
                 GL constant giving internal format of texture; for example, ``GL_RGBA``.
                 The internal format decides how the texture data will be stored internally.
                 If ``None``, the texture will be created but not initialized.
-            `min_filter` : int
+            min_filter:
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `mag_filter` : int
+            mag_filter:
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `fmt` : int
+            fmt:
                 GL constant giving format of texture; for example, ``GL_RGBA``.
                 The format specifies what format the pixel data we're expecting to write
                 to the texture and should ideally be the same as for internal format.
-            `blank_data` : bool
-                Setting to True will initialize the texture data with all zeros. Setting False, will initialize Texture
-                with no data.
-
-        :rtype: :py:class:`~pyglet.image.Texture`
+            blank_data:
+                If True, initialize the texture data with all zeros. If False, do not pass initial data.
         """
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
@@ -1221,17 +1249,19 @@ class Texture(AbstractImage):
 
         return texture
 
-    def get_image_data(self, z=0):
+    def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
 
-        Changes to the returned instance will not be reflected in this
-        texture.
+        Bind the texture, and read the pixel data back from the GPU.
+        This can be a somewhat costly operation.
 
-        :Parameters:
-            `z` : int
+        Modifying the returned ImageData object has no effect on the
+        texture itself. Uploading ImageData back to the GPU/texture
+        can be done with the :py:meth:`~Texture.blit_into` method.
+
+        Args:
+            z:
                 For 3D textures, the image slice to retrieve.
-
-        :rtype: :py:class:`~pyglet.image.ImageData`
         """
         glBindTexture(self.target, self.id)
 
@@ -1262,12 +1292,22 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool = False) -> Texture:
         return self
 
-    # no implementation of blit_to_texture yet
+    def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
+        """Blit the texture to the screen.
 
-    def blit(self, x, y, z=0, width=None, height=None):
+        This is a costly operation, and should not be used for performance critical
+        code. Blitting a texture requires binding it, setting up throwaway buffers,
+        creating a VAO, uploading attribute data, and then making a single draw call.
+        This is quite wasteful and slow, so blitting should not be used for more than
+        a few images. This method is provided to assist with debugging, but not intended
+        for drawing of multiple images.
+
+        Instead, consider creating a :py:class:`~pyglet.sprite.Sprite` with the Texture,
+        and drawing it as part of a larger :py:class:`~pyglet.graphics.Batch`.
+        """
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
@@ -1322,30 +1362,35 @@ class Texture(AbstractImage):
         glBindVertexArray(0)
         glDeleteVertexArrays(1, vao_id)
 
-    def blit_into(self, source, x, y, z):
+    def get_mipmapped_texture(self) -> Texture:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def blit_into(self, source: AbstractImage, x: int, y: int, z: int):
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.target, self.level, x, y, z)
 
-    def get_region(self, x, y, width, height):
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         return self.region_class(x, y, 0, width, height, self)
 
-    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
+    def get_transform(self, flip_x: bool = False, flip_y: bool = False,
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureRegion:
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
-        :py:meth:`~pyglet.image.ImageData.get_image_data` will return the untransformed data.  The
-        transformation is applied around the anchor point.
+        :py:meth:`~pyglet.image.AbstractImage.get_image_data` will return the
+        untransformed data. The transformation is applied around the anchor point.
 
-        :Parameters:
-            `flip_x` : bool
+        Args:
+            flip_x:
                 If True, the returned image will be flipped horizontally.
-            `flip_y` : bool
+            flip_y:
                 If True, the returned image will be flipped vertically.
-            `rotate` : int
+            rotate:
                 Degrees of clockwise rotation of the returned image.  Only
                 90-degree increments are supported.
-
-        :rtype: :py:class:`~pyglet.image.TextureRegion`
         """
         transform = self.get_region(0, 0, self.width, self.height)
         bl, br, tr, tl = 0, 1, 2, 3
@@ -1373,7 +1418,7 @@ class Texture(AbstractImage):
             bl, br, tr, tl = tl, bl, br, tr
             transform.anchor_x, transform.anchor_y = transform.height - transform.anchor_y, transform.anchor_x
         else:
-            assert False, 'Only 90 degree rotations are supported.'
+            raise ImageException("Only 90 degree rotations are supported.")
         if rotate in (90, 270):
             transform.width, transform.height = transform.height, transform.width
         transform._set_tex_coords_order(bl, br, tr, tl)
@@ -1390,25 +1435,26 @@ class Texture(AbstractImage):
         self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
     @property
-    def uv(self):
+    def uv(self) -> tuple[float, float, float, float]:
         """Tuple containing the left, bottom, right, top 2D texture coordinates."""
         tex_coords = self.tex_coords
         return tex_coords[0], tex_coords[1], tex_coords[3], tex_coords[7]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height})"
 
 
 class TextureRegion(Texture):
-    """A rectangular region of a texture, presented as if it were a separate texture.
-    """
+    """A rectangular region of a texture, presented as if it were a separate texture."""
 
-    def __init__(self, x, y, z, width, height, owner):
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
         super().__init__(width, height, owner.target, owner.id)
 
         self.x = x
         self.y = y
         self.z = z
+        self._width = width
+        self._height = height
         self.owner = owner
         owner_u1 = owner.tex_coords[0]
         owner_v1 = owner.tex_coords[1]
@@ -1427,23 +1473,23 @@ class TextureRegion(Texture):
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
-    def get_region(self, x, y, width, height):
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         x += self.x
         y += self.y
         region = self.region_class(x, y, self.z, width, height, self.owner)
         region._set_tex_coords_order(*self.tex_coords_order)
         return region
 
-    def blit_into(self, source, x, y, z):
+    def blit_into(self, source: AbstractImage, x: int, y: int, z: int) -> None:
+        assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, owner={self.owner.width}x{self.owner.height})"
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}(id={self.id},"
+                f" size={self.width}x{self.height}, owner={self.owner.width}x{self.owner.height})")
 
-    def delete(self):
-        """Deleting a TextureRegion has no effect. Operate on the owning
-        texture instead.
-        """
+    def delete(self) -> None:
+        """Deleting a TextureRegion has no effect. Operate on the owning texture instead."""
 
     def __del__(self):
         pass
@@ -1455,29 +1501,27 @@ Texture.region_class = TextureRegion
 class Texture3D(Texture, UniformTextureSequence):
     """A texture with more than one image slice.
 
-    Use `create_for_images` or `create_for_image_grid` classmethod to
-    construct.
+    Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
+    classmethod to construct a Texture3D.
     """
-    item_width = 0
-    item_height = 0
-    items = ()
+    item_width: int = 0
+    item_height: int = 0
+    items: tuple
 
     @classmethod
     def create_for_images(cls, images, internalformat=GL_RGBA, blank_data=True):
         item_width = images[0].width
         item_height = images[0].height
-        for image in images:
-            if image.width != item_width or image.height != item_height:
-                raise ImageException('Images do not have same dimensions.')
 
-        depth = len(images)
+        if not all(img.width == item_width and img.height == item_height for img in images):
+            raise ImageException('Images do not have same dimensions.')
 
         texture = cls.create(item_width, item_height, GL_TEXTURE_3D, None)
         if images[0].anchor_x or images[0].anchor_y:
             texture.anchor_x = images[0].anchor_x
             texture.anchor_y = images[0].anchor_y
 
-        texture.images = depth
+        texture.images = len(images)
 
         blank = (GLubyte * (texture.width * texture.height * texture.images * 4))() if blank_data else None
         glBindTexture(texture.target, texture.id)
@@ -1491,7 +1535,7 @@ class Texture3D(Texture, UniformTextureSequence):
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, i)
+            image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, z=i)
 
         glFlush()
 
@@ -1524,8 +1568,7 @@ class Texture3D(Texture, UniformTextureSequence):
 
 
 class TextureArrayRegion(TextureRegion):
-    """A region of a TextureArray, presented as if it were a separate texture.
-    """
+    """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
@@ -1538,27 +1581,26 @@ class TextureArray(Texture, UniformTextureSequence):
         self.items = []
 
     @classmethod
-    def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
+    def create(cls, width: int, height: int, internalformat: int = GL_RGBA,
+               min_filter: int | None = None, mag_filter: int | None = None, max_depth: int = 256) -> TextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
         to 256, but will be hardware and driver dependent.
 
-        :Parameters:
-            `width` : int
+        Args:
+            width:
                 Width of the texture.
-            `height` : int
+            height:
                 Height of the texture.
-            `internalformat` : int
+            internalformat:
                 GL constant giving the internal format of the texture array; for example, ``GL_RGBA``.
-            `min_filter` : int
+            min_filter:
                 The minifaction filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `mag_filter` : int
+            mag_filter:
                 The magnification filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `max_depth` : int
+            max_depth:
                 The number of layers in the texture array.
-
-        :rtype: :py:class:`~pyglet.image.TextureArray`
 
         .. versionadded:: 2.0
         """
@@ -1588,13 +1630,13 @@ class TextureArray(Texture, UniformTextureSequence):
 
         return texture
 
-    def _verify_size(self, image):
+    def _verify_size(self, image: AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(
                 f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
                 f'{self.height})')
 
-    def add(self, image: pyglet.image.ImageData):
+    def add(self, image: pyglet.image.ImageData) -> TextureArrayRegion:
         if len(self.items) >= self.max_depth:
             raise TextureArrayDepthExceeded("TextureArray is full.")
 
@@ -1606,7 +1648,7 @@ class TextureArray(Texture, UniformTextureSequence):
         self.items.append(item)
         return item
 
-    def allocate(self, *images):
+    def allocate(self, *images: AbstractImage) -> list[TextureArrayRegion]:
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
@@ -1623,18 +1665,18 @@ class TextureArray(Texture, UniformTextureSequence):
         return self.items[start_length:]
 
     @classmethod
-    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+    def create_for_image_grid(cls, grid, internalformat: int = GL_RGBA) -> TextureArray:
         texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
         texture_array.allocate(*grid[:])
         return texture_array
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.items)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> TextureArrayRegion:
         return self.items[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index, value) -> None:
         if type(index) is slice:
             glBindTexture(self.target, self.id)
 
@@ -1663,10 +1705,10 @@ class TileableTexture(Texture):
     Use :py:class:`~pyglet.image.create_for_image` classmethod to construct.
     """
 
-    def get_region(self, x, y, width, height):
-        raise ImageException('Cannot get region of %r' % self)
+    def get_region(self, x: int, y: int, width: int, height: int):
+        raise ImageException(f"Cannot get region of {self}")
 
-    def blit_tiled(self, x, y, z, width, height):
+    def blit_tiled(self, x: int, y: int, z: int, width: int, height: int) -> None:
         """Blit this texture tiled over the given area.
 
         The image will be tiled with the bottom-left corner of the destination
@@ -1697,7 +1739,7 @@ class TileableTexture(Texture):
         glBindTexture(self.target, 0)
 
     @classmethod
-    def create_for_image(cls, image):
+    def create_for_image(cls, image: AbstractImage) -> Texture:
         image = image.get_image_data()
         return image.create_texture(cls)
 
@@ -1707,7 +1749,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     regular regions of that image.
 
     The grid can be accessed either as a complete image, or as a sequence
-    of images.  The most useful applications are to access the grid
+    of images. The most useful applications are to access the grid
     as a :py:class:`~pyglet.image.TextureGrid`::
 
         image_grid = ImageGrid(...)
@@ -1720,33 +1762,34 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     """
 
-    _items = ()
-    _texture_grid = None
+    _items: list
+    _texture_grid: TextureGrid
 
-    def __init__(self, image, rows, columns, item_width=None, item_height=None, row_padding=0, column_padding=0):
+    def __init__(self, image: AbstractImage, rows: int, columns: int, item_width: int | None = None,
+                 item_height: int | None = None, row_padding: int = 0, column_padding: int = 0) -> None:
         """Construct a grid for the given image.
 
         You can specify parameters for the grid, for example setting
         the padding between cells.  Grids are always aligned to the
         bottom-left corner of the image.
 
-        :Parameters:
-            `image` : AbstractImage
+        Args:
+            image:
                 Image over which to construct the grid.
-            `rows` : int
+            rows:
                 Number of rows in the grid.
-            `columns` : int
+            columns:
                 Number of columns in the grid.
-            `item_width` : int
+            item_width:
                 Width of each column.  If unspecified, is calculated such
                 that the entire image width is used.
-            `item_height` : int
+            item_height:
                 Height of each row.  If unspecified, is calculated such that
                 the entire image height is used.
-            `row_padding` : int
+            row_padding:
                 Pixels separating adjacent rows.  The padding is only
                 inserted between rows, not at the edges of the grid.
-            `column_padding` : int
+            column_padding:
                 Pixels separating adjacent columns.  The padding is only
                 inserted between columns, not at the edges of the grid.
         """
@@ -1759,18 +1802,33 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self, rectangle: bool = False) -> Texture:
         return self.image.get_texture(rectangle)
 
-    def get_image_data(self):
+    def get_image_data(self) -> ImageData:
         return self.image.get_image_data()
 
-    def get_texture_sequence(self):
+    def get_texture_sequence(self) -> TextureGrid:
         if not self._texture_grid:
             self._texture_grid = TextureGrid(self)
         return self._texture_grid
 
-    def _update_items(self):
+    def get_mipmapped_texture(self) -> Texture:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def blit(self, x: int, y: int, z: int = 0) -> None:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def blit_into(self, source, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}.")
+
+    def _update_items(self) -> None:
         if not self._items:
             self._items = []
             y = 0
@@ -1781,7 +1839,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                     x += self.item_width + self.column_padding
                 y += self.item_height + self.row_padding
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> ImageDataRegion:
         self._update_items()
         if type(index) is tuple:
             row, column = index
@@ -1790,10 +1848,10 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         else:
             return self._items[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: int, value: AbstractImage):
         raise NotImplementedError
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.rows * self.columns
 
     def __iter__(self):
