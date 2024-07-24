@@ -802,10 +802,21 @@ class Sprite(event.EventDispatcher):
 
     @frame_index.setter
     def frame_index(self, index: int) -> None:
+        """Set the current Animation frame.
+
+        Args:
+            index:
+                The desired frame index.
+
+        Updates the currently displayed frame of an animation immediately even if
+        the animation is paused.  If not an Animation, this has no effect.
+        """
         # Bound to available number of frames
         if self._animation is None:
             return
         self._frame_index = max(0, min(index, len(self._animation.frames) - 1))
+        frame = self._animation.frames[self._frame_index]
+        self._set_texture(frame.image.get_texture())
 
     def draw(self) -> None:
         """Draw the sprite at its current position.
