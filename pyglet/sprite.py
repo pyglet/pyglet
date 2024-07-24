@@ -806,6 +806,8 @@ class Sprite(event.EventDispatcher):
         if self._animation is None:
             return
         self._frame_index = max(0, min(index, len(self._animation.frames) - 1))
+        frame = self._animation.frames[self._frame_index]
+        self._set_texture(frame.image.get_texture())
 
     def draw(self) -> None:
         """Draw the sprite at its current position.
