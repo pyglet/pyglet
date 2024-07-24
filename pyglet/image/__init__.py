@@ -125,7 +125,6 @@ from pyglet.util import asbytes
 from . import atlas
 from .animation import Animation, AnimationFrame
 from .buffer import Framebuffer, Renderbuffer, get_max_color_attachments
-from .codecs import ImageEncodeException
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
 
@@ -351,18 +350,7 @@ class AbstractImage(ABC):
         if encoder is not None:
             encoder.encode(self, filename, file)
         else:
-            first_exception = None
-            for encoder in _codec_registry.get_encoders(filename):
-                try:
-                    return encoder.encode(self, filename, file)
-                except ImageEncodeException as e:
-                    first_exception = first_exception or e
-                    file.seek(0)
-
-            if not first_exception:
-                msg = 'No image encoders are available'
-                raise ImageEncodeException(msg)
-            raise first_exception
+            _codec_registry.encode(self, filename, file)
 
     @abstractmethod
     def blit(self, x: int, y: int, z: int = 0) -> None:
@@ -2003,10 +1991,6 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         return iter(self.items)
 
 
-# Initialise default codecs
-_add_default_codecs()
-
-
 # Default Framebuffer classes:
 ###############################################################
 
@@ -2195,3 +2179,7 @@ class BufferImageMask(BufferImage):
     format = 'R'
 
     # TODO mask methods
+
+
+# Initialise default codecs
+_add_default_codecs()
