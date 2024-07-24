@@ -288,7 +288,7 @@ class CheckerImagePattern(ImagePattern):
         return ImageData(width, height, 'RGBA', data)
 
 
-class AbstractImage:
+class AbstractImage(ABC):
     """Abstract class representing an image."""
 
     anchor_x: int = 0
@@ -542,15 +542,33 @@ class ImageData(AbstractImage):
         self._desired_format = fmt.upper()
         self._current_texture = None
 
-    def get_data(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
-        """Get the byte data of the image.
+    def get_bytes(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
+        """Get the byte data of the image
+
+        This method returns the raw byte data of the image, with optional conversion.
+        To convert the data into another format, you can provide ``fmt`` and ``pitch``
+        arguments. For example, if the image format is ``RGBA``, and you wish to get
+        the byte data in ``RGB`` format::
+
+            rgb_pitch = my_image.width // len('RGB')
+            rgb_img_bytes = my_image.get_bytes(fmt='RGB', pitch=rgb_pitch)
+
+        The image ``pitch`` may be negative, so be sure to check that when converting
+        to another format. Switching the sign of the ``pitch`` will cause the image
+        to appear "upside-down".
 
         Args:
             fmt:
                 If provided, get the data in another format.
             pitch:
-                Number of bytes per row. Negative values indicate a
-                top-to-bottom arrangement.
+                The number of bytes per row. This generally means the length
+                of the format string * the number of pixels per row.
+                Negative values indicate a top-to-bottom arrangement.
+
+        Note:
+             Conversion to another format is done on the CPU, and can be
+             somewhat costly for larger images. Consider performing conversion
+             at load time for framerate sensitive applictions.
         """
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
@@ -559,15 +577,17 @@ class ImageData(AbstractImage):
             return self._current_data
         return self._convert(fmt, pitch)
 
-    def set_data(self, fmt: str, pitch: int, data: bytes) -> None:
+    def set_bytes(self, fmt: str, pitch: int, data: bytes) -> None:
         """Set the byte data of the image.
 
         Args:
             fmt:
                 The format string of the supplied data.
+                For example: "RGB" or "RGBA"
             pitch:
-                Number of bytes per row.  Negative values indicate a
-                top-to-bottom arrangement.
+                The number of bytes per row. This generally means the length
+                of the format string * the number of pixels per row.
+                Negative values indicate a top-to-bottom arrangement.
             data:
                 Image data as bytes.
         """
@@ -576,6 +596,24 @@ class ImageData(AbstractImage):
         self._current_data = data
         self._current_texture = None
         self._current_mipmap_texture = None
+
+    def get_data(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
+        """Get the byte data of the image.
+
+        Warning:
+            This method is deprecated and will be removed in the next version.
+            Use :py:meth:`~get_bytes` instead.
+        """
+        return self.get_bytes(fmt, pitch)
+
+    def set_data(self, fmt: str, pitch: int, data: bytes) -> None:
+        """Set the byte data of the image.
+
+        Warning:
+            This method is deprecated and will be removed in the next version.
+            Use :py:meth:`~set_bytes` instead.
+        """
+        self.set_bytes(fmt, pitch, data)
 
     def set_mipmap_image(self, level: int, image: AbstractImage) -> None:
         """Set a user-defined mipmap image for a particular level.
@@ -757,8 +795,6 @@ class ImageData(AbstractImage):
         This method does not alter this instance's current format or pitch.
         """
         if fmt == self._current_format and pitch == self._current_pitch:
-            if type(self._current_data) is str:
-                return asbytes(self._current_data)
             return self._current_data
 
         self._ensure_bytes()

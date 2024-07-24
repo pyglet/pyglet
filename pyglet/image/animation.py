@@ -99,8 +99,8 @@ class Animation:
         """Get the maximum image frame width.
 
         This method is useful for determining texture space requirements: due
-        to the use of ``anchor_x`` the actual required playback area may be
-        larger.
+        to the use of ``anchor_x`` the actual required viewing area during
+         playback may be larger.
         """
         return max([frame.image.width for frame in self.frames])
 
@@ -108,8 +108,8 @@ class Animation:
         """Get the maximum image frame height.
 
         This method is useful for determining texture space requirements: due
-        to the use of ``anchor_y`` the actual required playback area may be
-        larger.
+        to the use of ``anchor_y`` the actual required viewing area during
+        playback may be larger.
         """
         return max([frame.image.height for frame in self.frames])
 
@@ -130,7 +130,7 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image: AbstractImage, duration: float) -> None:
+    def __init__(self, image: AbstractImage, duration: float | None) -> None:
         """Create an animation frame from an image."""
         self.image = image
         self.duration = duration
