@@ -5,8 +5,6 @@ mouse focus.
 """
 
 import pyglet
-import pyglet.text.caret
-import pyglet.text.layout
 
 
 class TextWidget:
