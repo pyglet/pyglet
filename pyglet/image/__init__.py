@@ -1785,7 +1785,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     """
 
-    _items: list = []
+    _items: list
     _texture_grid: TextureGrid = None
 
     def __init__(self, image: AbstractImage, rows: int, columns: int, item_width: int | None = None,
@@ -1817,6 +1817,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                 inserted between columns, not at the edges of the grid.
         """
         super().__init__(image.width, image.height)
+        self._items = []
         self.image = image
         self.rows = rows
         self.columns = columns
@@ -1853,7 +1854,6 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     def _update_items(self) -> None:
         if not self._items:
-            self._items = []
             y = 0
             for row in range(self.rows):
                 x = 0
