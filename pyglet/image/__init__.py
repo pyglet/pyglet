@@ -312,13 +312,8 @@ class AbstractImage(ABC):
         """
 
     @abstractmethod
-    def get_texture(self, rectangle: bool = False) -> Texture:
-        """A :py:class:`~pyglet.image.Texture` view of this image.
-
-        Args:
-            rectangle:
-                Unused. Kept for backwards compatibility.
-        """
+    def get_texture(self) -> Texture:
+        """Create a :py:class:`~pyglet.image.Texture` from this image."""
 
     @abstractmethod
     def get_mipmapped_texture(self) -> Texture:
@@ -633,7 +628,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls: type[Texture], rectangle: bool = False) -> Texture:
+    def create_texture(self, cls: type[Texture]) -> Texture:
         """Given a texture class, create a texture containing this image."""
         internalformat = self._get_internalformat(self._desired_format)
         texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, blank_data=False)
@@ -645,9 +640,9 @@ class ImageData(AbstractImage):
 
         return texture
 
-    def get_texture(self, rectangle: bool = False) -> Texture:
+    def get_texture(self) -> Texture:
         if not self._current_texture:
-            self._current_texture = self.create_texture(Texture, rectangle)
+            self._current_texture = self.create_texture(Texture)
         return self._current_texture
 
     def get_mipmapped_texture(self) -> Texture:
@@ -1011,12 +1006,9 @@ class CompressedImageData(AbstractImage):
     def _have_extension(self) -> bool:
         return self.extension is None or gl_info.have_extension(self.extension)
 
-    def get_texture(self, rectangle=False) -> Texture:
+    def get_texture(self) -> Texture:
         if self._current_texture:
             return self._current_texture
-
-        if rectangle:
-            raise ImageException('Compressed texture rectangles not supported')
 
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
 
@@ -1168,10 +1160,13 @@ class Texture(AbstractImage):
     default will be used. 
     """
 
-    def __init__(self, width: int, height: int, target: int, tex_id: int) -> None:
+    def __init__(self, width: int, height: int, target: int, tex_id: int,
+                 min_filter: int | None = None, mag_filter: int | None = None) -> None:
         super().__init__(width, height)
         self.target = target
         self.id = tex_id
+        self.min_filter = min_filter or self.default_min_filter
+        self.mag_filter = mag_filter or self.default_mag_filter
         self._context = pyglet.gl.current_context
 
     def delete(self) -> None:
@@ -1254,12 +1249,7 @@ class Texture(AbstractImage):
                          blank)
             glFlush()
 
-        texture = cls(width, height, target, tex_id.value)
-        texture.min_filter = min_filter
-        texture.mag_filter = mag_filter
-        texture.tex_coords = cls.tex_coords
-
-        return texture
+        return cls(width, height, target, tex_id.value, min_filter, mag_filter)
 
     def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
@@ -1304,7 +1294,7 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def get_texture(self, rectangle: bool = False) -> Texture:
+    def get_texture(self) -> Texture:
         return self
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
@@ -1815,8 +1805,8 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self, rectangle: bool = False) -> Texture:
-        return self.image.get_texture(rectangle)
+    def get_texture(self) -> Texture:
+        return self.image.get_texture()
 
     def get_image_data(self) -> ImageData:
         return self.image.get_image_data()
@@ -2124,7 +2114,7 @@ class BufferImage(AbstractImage):
         region.owner = self
         return region
 
-    def get_texture(self, rectangle: bool = False) -> Texture:
+    def get_texture(self) -> Texture:
         raise NotImplementedError(f"Not implemented for {self}")
 
     def get_mipmapped_texture(self) -> Texture:
@@ -2149,7 +2139,7 @@ class ColorBufferImage(BufferImage):
     gl_format = GL_RGBA
     format = 'RGBA'
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self):
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, GL_RGBA, blank_data=False)
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
@@ -2166,9 +2156,9 @@ class DepthBufferImage(BufferImage):
     gl_format = GL_DEPTH_COMPONENT
     format = 'R'
 
-    def get_texture(self, rectangle=False):
+    def get_texture(self):
         image_data = self.get_image_data()
-        return image_data.get_texture(rectangle)
+        return image_data.get_texture()
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         # TODO: use glCopyTexImage2D if `internalformat` is specified.
