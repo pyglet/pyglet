@@ -112,7 +112,7 @@ from pyglet.gl import (
     GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TRIANGLES, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH,
     GL_UNPACK_SKIP_PIXELS, GL_UNPACK_SKIP_ROWS, GL_UNSIGNED_BYTE, GL_VIEWPORT, GLint, GLubyte, GLuint, glActiveTexture,
     glBindFramebuffer, glBindImageTexture, glBindTexture, glBindVertexArray, glCheckFramebufferStatus,
-    glCompressedTexImage2D, glCompressedTexSubImage2D, glCompressedTexSubImage3D, glCopyTexSubImage2D,
+    glCompressedTexImage2D, glCompressedTexSubImage2D, glCompressedTexSubImage3D, glCopyTexSubImage2D, glCopyTexImage2D,
     glDeleteFramebuffers, glDeleteTextures, glDeleteVertexArrays, glDrawElements, glFlush, glFramebufferTexture2D,
     glGenFramebuffers, glGenTextures, glGenVertexArrays, glGenerateMipmap, glGetFramebufferAttachmentParameteriv,
     glGetIntegerv, glGetTexImage, glPixelStorei, glReadBuffer, glReadPixels, glTexImage2D, glTexImage3D,
@@ -380,7 +380,7 @@ class AbstractImage(ABC):
         """
 
     @abstractmethod
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None) -> None:
         """Draw this image on the currently bound texture at ``target``.
 
         This image is copied into the texture such that this image's anchor
@@ -693,10 +693,9 @@ class ImageData(AbstractImage):
         self.get_texture().blit(x, y, z, width, height)
 
     def blit_into(self, source, x: int, y: int, z: int) -> None:
-        # TODO: Implement this
-        pass
+        raise NotImplementedError(f"Not implemented for {self}")
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat=None):
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         """Draw this image to the currently bound texture at ``target``.
 
         This image's anchor point will be aligned to the given ``x`` and ``y``
@@ -1087,9 +1086,11 @@ class CompressedImageData(AbstractImage):
         self._current_mipmap_texture = texture
         return texture
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         if not self._have_extension():
             raise ImageException(f"{self.extension} is required to decode {self}")
+
+        # TODO: use glCompressedTexImage2D/3D if `internalformat` is specified.
 
         if target == GL_TEXTURE_3D:
             glCompressedTexSubImage3D(target, level,
@@ -1380,7 +1381,7 @@ class Texture(AbstractImage):
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.target, self.level, x, y, z)
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         raise NotImplementedError(f"Not implemented for {self}")
 
     def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
@@ -1837,7 +1838,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     def blit_into(self, source, x: int, y: int, z: int) -> None:
         raise NotImplementedError(f"Not implemented for {self}.")
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         raise NotImplementedError(f"Not implemented for {self}.")
 
     def _update_items(self) -> None:
@@ -2135,7 +2136,7 @@ class BufferImage(AbstractImage):
     def blit_into(self, source, x: int, y: int, z: int) -> None:
         raise NotImplementedError(f"Not implemented for {self}")
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         raise NotImplementedError(f"Not implemented for {self}")
 
 
@@ -2153,7 +2154,8 @@ class ColorBufferImage(BufferImage):
         self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
         return texture
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+        # TODO: use glCopyTexImage2D if `internalformat` is specified.
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
@@ -2168,7 +2170,8 @@ class DepthBufferImage(BufferImage):
         image_data = self.get_image_data()
         return image_data.get_texture(rectangle)
 
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int) -> None:
+    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+        # TODO: use glCopyTexImage2D if `internalformat` is specified.
         glReadBuffer(self.gl_buffer)
         glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
 
