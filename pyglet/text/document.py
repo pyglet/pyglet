@@ -247,7 +247,7 @@ class AbstractDocument(event.EventDispatcher):
         self._text = ""
         self._elements: list[InlineElement] = []
         if text:
-            self.insert_text(0, text)
+            self.append_text(text)
 
     @property
     def text(self) -> str:
@@ -383,6 +383,24 @@ class AbstractDocument(event.EventDispatcher):
             assert element._position is not None  # noqa: SLF001
             if element._position >= start:  # noqa: SLF001
                 element._position += len_text  # noqa: SLF001
+
+    def append_text(self, text: str, attributes: dict[str, Any] | None = None) -> None:
+        """Append text into the end of document.
+
+        Dispatches an :py:meth:`~pyglet.text.document.AbstractDocument.on_insert_text` event.
+
+        Args:
+            text:
+                Text to append.
+            attributes:
+                Optional dictionary giving named style attributes of the appended text.
+        """  # noqa: D411, D405, D214, D410
+        start = len(self._text)
+        self._append_text(text, attributes)
+        self.dispatch_event("on_insert_text", start, text)
+
+    def _append_text(self, text: str, attributes: dict[str, Any] | None) -> None:
+        self._text += text
 
     def delete_text(self, start: int, end: int) -> None:
         """Delete text from the document.
@@ -642,6 +660,25 @@ class FormattedDocument(AbstractDocument):
                     runs = self._style_runs[attribute] = runlist.RunList(0, None)
                     runs.insert(0, len(self.text))
                 runs.set_run(start, start + len_text, value)
+
+    def _append_text(self, text: str, attributes: dict[str, Any]) -> None:
+        super()._append_text(text, attributes)
+
+        len_text = len(text)
+        if attributes is None:
+            for runs in self._style_runs.values():
+                runs.append(len_text)
+        else:
+            for name, runs in self._style_runs.items():
+                if name not in attributes:
+                    runs.append(len_text)
+
+            for attribute, value in attributes.items():
+                try:
+                    runs = self._style_runs[attribute]
+                except KeyError:
+                    runs = self._style_runs[attribute] = runlist.RunList(len(self.text) - len_text, None)
+                runs.append_run(len_text, value)
 
     def _delete_text(self, start: int, end: int) -> None:
         super()._delete_text(start, end)

@@ -155,6 +155,34 @@ class RunList:
         # Delete collapsed runs
         self.runs = [r for r in self.runs if r.count > 0]
 
+    def append(self, length: int):
+        """Append characters into end of the run list.
+
+        The appended characters will take on the value immediately preceding
+        the end of run list.
+
+        Args:
+            length:
+                Number of characters to insert.
+
+        """
+        self.runs[-1].count += length
+
+    def append_run(self, count: int, value: Any) -> None:
+        """
+        Append a run to the end of the run list.
+
+        Args:
+            count:
+                Number of characters to append.
+            value:
+                Value to append.
+        """
+        if self.runs[-1].value == value:
+            self.runs[-1].count += count
+            return
+        self.runs.append(_Run(value, count))
+
     def __iter__(self) -> Generator[tuple[int, int, Any], Any, None]:
         i = 0
         for run in self.runs:
