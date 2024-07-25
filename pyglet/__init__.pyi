@@ -1,6 +1,6 @@
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, ItemsView, Sequence
 
 from . import app as app
 from . import canvas as canvas
@@ -63,5 +63,14 @@ class Options:
     com_mta: bool
     osx_alt_loop: bool
     shader_bind_management: bool
+
+    def get(self, item: str, default: Any = None) -> Any:
+        ...
+
+    def items(self) -> ItemsView[str, Any]:
+        ...
+
+    def __getitem__(self, item: str) -> Any:
+        ...
 
 options: Options

@@ -410,7 +410,15 @@ class Sprite(event.EventDispatcher):
             return
         self._program = program
         self._group = self.get_sprite_group()
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+
+        if (self._batch and
+                self._batch.update_shader(self._vertex_list, GL_TRIANGLES, self._group, program)):
+            # Exit early if changing domain is not needed.
+            return
+
+        # Recreate vertex list.
+        self._vertex_list.delete()
+        self._create_vertex_list()
 
     @property
     def batch(self) -> Batch:

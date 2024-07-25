@@ -3,7 +3,6 @@ import sys
 
 import pytest
 import pyglet
-from pyglet.gl import gl_info
 
 
 # Platform identifiers
@@ -50,8 +49,10 @@ def require_gl_extension(extension):
 
     :param str extension: Name of the extension required.
     """
+
+    from pyglet.gl import gl_info
     return pytest.mark.skipif(not gl_info.have_extension(extension),
-                              reason='Tests requires GL extension {0}'.format(extension))
+                              reason=f'Tests requires GL extension {extension}')
 
 
 def require_python_version(version):
@@ -61,7 +62,7 @@ def require_python_version(version):
     :param tuple version: The major, minor Python version as a tuple.
     """
     return pytest.mark.skipif(sys.version_info < version,
-                              reason="Test require at least Python version {0}".format(version))
+                              reason=f"Test require at least Python version {version}")
 
 
 def skip_if_continuous_integration():

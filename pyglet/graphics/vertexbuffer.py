@@ -210,7 +210,7 @@ class BufferObject(AbstractBuffer):
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
 
 
-class AttributeBufferObject(BufferObject):
+class BackedBufferObject(BufferObject):
     """A buffer with system-memory backed store.
 
     Updates to the data via `set_data` and `set_data_region` will be held
@@ -223,24 +223,26 @@ class AttributeBufferObject(BufferObject):
     _dirty_min: int
     _dirty_max: int
     _dirty: bool
-    attribute_stride: int
-    attribute_count: int
-    attribute_ctype: CTypesDataType
+    stride: int
+    count: int
+    ctype: CTypesDataType
 
-    def __init__(self, size: int, attribute: Attribute, usage: int = GL_DYNAMIC_DRAW) -> None:  # noqa: D107
-        # size is the allocator size * attribute.stride
+    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,
+                 usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(size, usage)
-        number = size // attribute.element_size
-        self.data = (attribute.c_type * number)()
+
+        self.c_type = c_type
+        self._ctypes_size = ctypes.sizeof(c_type)
+        number = size // self._ctypes_size
+        self.data = (c_type * number)()
         self.data_ptr = ctypes.addressof(self.data)
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
         self._dirty = False
 
-        self.attribute_stride = attribute.stride
-        self.attribute_count = attribute.count
-        self.attribute_ctype = attribute.c_type
+        self.stride = stride
+        self.count = count
 
     def sub_data(self) -> None:
         """Updates the buffer if any data has been changed or invalidated.
@@ -264,20 +266,20 @@ class AttributeBufferObject(BufferObject):
 
     @lru_cache(maxsize=None)  # noqa: B019
     def get_region(self, start: int, count: int) -> Array[CTypesDataType]:
-        byte_start = self.attribute_stride * start  # byte offset
-        array_count = self.attribute_count * count  # number of values
-        ptr_type = ctypes.POINTER(self.attribute_ctype * array_count)
+        byte_start = self.stride * start  # byte offset
+        array_count = self.count * count  # number of values
+        ptr_type = ctypes.POINTER(self.c_type * array_count)
         return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float]) -> None:
-        array_start = self.attribute_count * start
-        array_end = self.attribute_count * count + array_start
+        array_start = self.count * start
+        array_end = self.count * count + array_start
 
         self.data[array_start:array_end] = data
 
         # replicated from self.invalidate_region
-        byte_start = self.attribute_stride * start
-        byte_end = byte_start + self.attribute_stride * count
+        byte_start = self.stride * start
+        byte_end = byte_start + self.stride * count
         # As of Python 3.11, this is faster than min/max:
         if byte_start < self._dirty_min:
             self._dirty_min = byte_start
@@ -287,8 +289,8 @@ class AttributeBufferObject(BufferObject):
 
     def resize(self, size: int) -> None:
         # size is the allocator size * attribute.stride
-        number = size // ctypes.sizeof(self.attribute_ctype)
-        data = (self.attribute_ctype * number)()
+        number = size // ctypes.sizeof(self.c_type)
+        data = (self.c_type * number)()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
         self.data_ptr = ctypes.addressof(data)
@@ -308,11 +310,27 @@ class AttributeBufferObject(BufferObject):
         self._dirty = True
 
     def invalidate_region(self, start: int, count: int) -> None:
-        byte_start = self.attribute_stride * start
-        byte_end = byte_start + self.attribute_stride * count
+        byte_start = self.stride * start
+        byte_end = byte_start + self.stride * count
         # As of Python 3.11, this is faster than min/max:
         if byte_start < self._dirty_min:
             self._dirty_min = byte_start
         if byte_end > self._dirty_max:
             self._dirty_max = byte_end
         self._dirty = True
+
+
+class AttributeBufferObject(BackedBufferObject):
+    """A backed buffer used for Shader Program attributes."""
+
+    def __init__(self, size: int, attribute: Attribute) -> None:  # noqa: D107
+        # size is the allocator size * attribute.stride (buffer size)
+        super().__init__(size, attribute.c_type, attribute.stride, attribute.count)
+
+
+class IndexedBufferObject(BackedBufferObject):
+    """A backed buffer used for indices."""
+
+    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,
+                 usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(size, c_type, stride, count, usage)

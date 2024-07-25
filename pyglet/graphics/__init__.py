@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import ctypes
 import weakref
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence, Tuple
 
 import pyglet
 from pyglet.gl.gl import (
@@ -272,6 +272,7 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
+DomainKey = Tuple[bool, int, int, str]
 
 class Batch:
     """Manage a collection of drawables for batched rendering.
@@ -300,6 +301,10 @@ class Batch:
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
+    _draw_list: list[Callable]
+    top_groups: list[Group]
+    group_children: dict[Group, list[Group]]
+    group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
 
     def __init__(self) -> None:
         """Create a graphics batch."""
@@ -330,6 +335,46 @@ class Batch:
         """
         self._draw_list_dirty = True
 
+    def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: int, group: Group,
+                      program: ShaderProgram) -> bool:
+        """Migrate a vertex list to another domain that has the specified shader attributes.
+
+        The results are undefined if `mode` is not correct or if `vertex_list`
+        does not belong to this batch (they are not checked and will not
+        necessarily throw an exception immediately).
+
+        Args:
+            vertex_list:
+                A vertex list currently belonging to this batch.
+            mode:
+                The current GL drawing mode of the vertex list.
+            group:
+                The new group to migrate to.
+            program:
+                The new shader program to migrate to.
+
+        Returns:
+            False if the domain's no longer match. The caller should handle this scenario.
+        """
+        # No new attributes.
+        attributes = program.attributes.copy()
+
+        # Formats may differ (normalization) than what is declared in the shader.
+        # Make those adjustments and attempt to get a domain.
+        for a_name in attributes:
+            if (a_name in vertex_list.initial_attribs and
+                    vertex_list.initial_attribs[a_name]['format'] != attributes[a_name]['format']):
+                attributes[a_name]['format'] = vertex_list.initial_attribs[a_name]['format']
+
+        domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
+
+        # TODO: Allow migration if we can restore original vertices somehow. Much faster.
+        # If the domain's don't match, we need to re-create the vertex list. Tell caller no match.
+        if domain != vertex_list.domain:
+            return False
+
+        return True
+
     def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: int, group: Group, batch: Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
@@ -353,12 +398,8 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
-        program = vertex_list.domain.program
         attributes = vertex_list.domain.attribute_meta
-        if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch.get_domain(True, False, mode, group, program, attributes)
-        else:
-            domain = batch.get_domain(False, False, mode, group, program, attributes)
+        domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
         vertex_list.migrate(domain)
 
     def _convert_to_instanced(self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain,
@@ -375,15 +416,15 @@ class Batch:
                     for name, attribute_dict in new_attributes.items():
                         if name in instance_attributes:
                             attribute_dict['instance'] = True
-                    dindexed, dinstanced, dmode, dprogram, _ = key
+                    dindexed, dinstanced, dmode, _ = key
 
                     assert dinstanced == 0, "Cannot convert an instanced domain."
-                    return self.get_domain(dindexed, True, dmode, group, dprogram, new_attributes)
+                    return self.get_domain(dindexed, True, dmode, group, new_attributes)
 
         msg = "Domain was not found and could not be converted."
         raise Exception(msg)
 
-    def get_domain(self, indexed: bool, instanced: bool, mode: int, group: Group, program: ShaderProgram,
+    def get_domain(self, indexed: bool, instanced: bool, mode: int, group: Group,
                    attributes: dict[str, Any]) -> (
             vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain |
             vertexdomain.InstancedIndexedVertexDomain):
@@ -391,9 +432,6 @@ class Batch:
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
         """
-        if group is None:
-            group = ShaderGroup(program=program)
-
         # Batch group
         if group not in self.group_map:
             self._add_group(group)
@@ -403,16 +441,16 @@ class Batch:
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         if instanced:
             self._instance_count += 1
-            key = (indexed, self._instance_count, mode, program, str(attributes))
+            key = (indexed, self._instance_count, mode, str(attributes))
         else:
             # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, program, str(attributes))
+            key = (indexed, 0, mode, str(attributes))
 
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = _domain_class_map[(indexed, instanced)](program, attributes)
+            domain = _domain_class_map[(indexed, instanced)](attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 
@@ -442,10 +480,10 @@ class Batch:
             domain_map = self.group_map[group]
 
             # indexed, instanced, mode, program, str(attributes))
-            for (indexed, instanced, mode, program_id, formats), domain in list(domain_map.items()):
+            for (indexed, instanced, mode, formats), domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(indexed, instanced, mode, program_id, formats)]
+                    del domain_map[(indexed, instanced, mode, formats)]
                     continue
                 draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))  # noqa: PLC3002
 
@@ -496,10 +534,10 @@ class Batch:
                 print(indent, '  ', domain)
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
                     print(indent, '    ', 'Region %d size %d:' % (start, size))
-                    for key, attribute in domain.attribute_names.items():
+                    for key, buffer in domain.attrib_name_buffers.items():
                         print(indent, '      ', end=' ')
                         try:
-                            region = attribute.get_region(attribute.buffer, start, size)
+                            region = buffer.get_region(start, size)
                             print(key, region.array[:])
                         except:  # noqa: E722
                             print(key, '(unmappable)')

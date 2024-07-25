@@ -50,20 +50,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-
-from pyglet import gl
-from pyglet import graphics
+from pyglet import gl, graphics
 from pyglet.math import Mat4
 
-from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
+from .codecs import registry as _codec_registry
 
 if TYPE_CHECKING:
     from typing import BinaryIO, Iterable
-    from pyglet.image import Texture
+
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
+    from pyglet.image import Texture
     from pyglet.model.codecs import ModelDecoder
 
 
