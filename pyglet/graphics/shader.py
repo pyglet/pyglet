@@ -1336,15 +1336,15 @@ class ShaderProgram:
                     msg = (f"The attribute `{name}` was not found in the Shader Program.\n"
                            f"Please check the spelling, or it may have been optimized out by the OpenGL driver.\n"
                            f"Valid names: {list(attributes)}")
-                    print(msg)
+                    warnings.warn(msg)
                 continue
 
         if _debug_gl_shaders:
-            if missing_data := [key for key in data if key not in attributes]:
+            if missing_data := [key for key in attributes if key not in data]:
                 msg = (
                     f"No data was supplied for the following found attributes: `{missing_data}`.\n"
                 )
-                print(msg)
+                warnings.warn(msg)
 
         batch = batch or pyglet.graphics.get_default_batch()
         group = group or pyglet.graphics.ShaderGroup(program=self)
