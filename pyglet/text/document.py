@@ -645,29 +645,37 @@ class FormattedDocument(AbstractDocument):
     def get_element_runs(self) -> _ElementIterator:
         return _ElementIterator(self._elements, len(self._text))
 
-    def _insert_text(self, start: int, text: str, attributes: dict[str, Any]) -> None:
+    def _insert_text(self, start: int, text: str, attributes: dict[str, Any] | None) -> None:
         super()._insert_text(start, text, attributes)
 
         len_text = len(text)
-        for runs in self._style_runs.values():
-            runs.insert(start, len_text)
+        if attributes is None:
+            for runs in self._style_runs.values():
+                runs.insert(start, len_text)
 
-        if attributes is not None:
+        else:
+            for name, runs in self._style_runs.items():
+                if name not in attributes:
+                    runs.insert(start, len_text)
+
             for attribute, value in attributes.items():
                 try:
                     runs = self._style_runs[attribute]
                 except KeyError:
                     runs = self._style_runs[attribute] = runlist.RunList(0, None)
-                    runs.insert(0, len(self.text))
-                runs.set_run(start, start + len_text, value)
+                    runs.append(len(self.text))
+                    runs.set_run(start, start+len_text, value)
+                else:
+                    runs.insert_run(start, len_text, value)
 
-    def _append_text(self, text: str, attributes: dict[str, Any]) -> None:
+    def _append_text(self, text: str, attributes: dict[str, Any] | None) -> None:
         super()._append_text(text, attributes)
 
         len_text = len(text)
         if attributes is None:
             for runs in self._style_runs.values():
                 runs.append(len_text)
+
         else:
             for name, runs in self._style_runs.items():
                 if name not in attributes:
@@ -677,7 +685,8 @@ class FormattedDocument(AbstractDocument):
                 try:
                     runs = self._style_runs[attribute]
                 except KeyError:
-                    runs = self._style_runs[attribute] = runlist.RunList(len(self.text) - len_text, None)
+                    runs = self._style_runs[attribute] = runlist.RunList(0, None)
+                    runs.append(len(self.text) - len_text)
                 runs.append_run(len_text, value)
 
     def _delete_text(self, start: int, end: int) -> None:

@@ -64,6 +64,7 @@ class RunList:
         for run in self.runs:
             if i <= pos <= i + run.count:
                 run.count += length
+                break
             i += run.count
 
     def delete(self, start: int, end: int) -> None:
@@ -182,6 +183,30 @@ class RunList:
             self.runs[-1].count += count
             return
         self.runs.append(_Run(value, count))
+
+    def insert_run(self, pos: int, length: int, value: Any) -> None:
+        """
+        Insert a run into the run list.
+
+        Args:
+            pos:
+                Position to insert run.
+            length:
+                Number of characters to insert.
+            value:
+                Value to insert.
+        """
+        i = 0
+        for run_i, run in enumerate(self.runs):
+            if i <= pos <= i + run.count:
+                if run.value == value:
+                    run.count += length
+                else:
+                    self.runs.insert(run_i + 1, _Run(value, length))
+                    self.runs.insert(run_i + 2, _Run(run.value, run.count - (pos - i)))
+                    run.count = pos - i
+                break
+            i += run.count
 
     def __iter__(self) -> Generator[tuple[int, int, Any], Any, None]:
         i = 0
