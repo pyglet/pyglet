@@ -147,7 +147,6 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            # TODO: This should have a program to migrate to?
             self._batch.migrate(vlist, gl.GL_TRIANGLES, group, batch)
 
         self._batch = batch

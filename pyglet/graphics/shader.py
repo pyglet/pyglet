@@ -1414,8 +1414,6 @@ class ShaderProgram:
                 Using a Batch is strongly recommended.
             group:
                 Group to add the VertexList to, or ``None`` if no group is required.
-            strict:
-                Enforces that the attributes of the vertex list matches those found in the shader.
             data:
                 Attribute formats and initial data for the vertex list.
         """
