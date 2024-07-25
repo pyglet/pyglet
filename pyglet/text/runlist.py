@@ -205,6 +205,8 @@ class RunList:
                     self.runs.insert(run_i + 1, _Run(value, length))
                     self.runs.insert(run_i + 2, _Run(run.value, run.count - (pos - i)))
                     run.count = pos - i
+                    # Delete collapsed runs
+                    self.runs[run_i: run_i+2] = [r for r in self.runs[run_i: run_i+2] if r.count > 0]
                 break
             i += run.count
 
@@ -250,6 +252,9 @@ class RunList:
         Returns:
             A new `RunList` object.
         """
+        if start - end <= 0:
+            return RunList(0, None)
+
         range = RunList(0, None)
         # Find runs that need to be split
         i = 0
