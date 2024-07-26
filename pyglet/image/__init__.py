@@ -72,11 +72,11 @@ To access raw pixel data of an image::
 
 (If the image has just been loaded this will be a very quick operation;
 however if the image is a texture a relatively expensive readback operation
-will occur).  The pixels can be accessed as a string::
+will occur).  The pixels can be accessed as bytes::
 
     format = 'RGBA'
     pitch = rawimage.width * len(format)
-    pixels = rawimage.get_data(format, pitch)
+    pixels = rawimage.get_bytes(format, pitch)
 
 "format" strings consist of characters that give the byte order of each color
 component.  For example, if rawimage.format is 'RGBA', there are four color
@@ -112,7 +112,7 @@ from pyglet.gl import (
     GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TRIANGLES, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH,
     GL_UNPACK_SKIP_PIXELS, GL_UNPACK_SKIP_ROWS, GL_UNSIGNED_BYTE, GL_VIEWPORT, GLint, GLubyte, GLuint, glActiveTexture,
     glBindFramebuffer, glBindImageTexture, glBindTexture, glBindVertexArray, glCheckFramebufferStatus,
-    glCompressedTexImage2D, glCompressedTexSubImage2D, glCompressedTexSubImage3D, glCopyTexSubImage2D, glCopyTexImage2D,
+    glCompressedTexImage2D, glCompressedTexSubImage2D, glCompressedTexSubImage3D, glCopyTexSubImage2D,
     glDeleteFramebuffers, glDeleteTextures, glDeleteVertexArrays, glDrawElements, glFlush, glFramebufferTexture2D,
     glGenFramebuffers, glGenTextures, glGenVertexArrays, glGenerateMipmap, glGetFramebufferAttachmentParameteriv,
     glGetIntegerv, glGetTexImage, glPixelStorei, glReadBuffer, glReadPixels, glTexImage2D, glTexImage3D,
@@ -509,7 +509,7 @@ class ImageData(AbstractImage):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -910,7 +910,7 @@ class ImageDataRegion(ImageData):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -920,7 +920,7 @@ class ImageDataRegion(ImageData):
             'y': self.y,
         }
 
-    def get_data(self, fmt=None, pitch=None):
+    def get_bytes(self, fmt=None, pitch=None):
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
@@ -937,13 +937,12 @@ class ImageDataRegion(ImageData):
 
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
-        return super().get_data(fmt, pitch)
+        return super().get_bytes(fmt, pitch)
 
-    def set_data(self, fmt, pitch, data):
-        # TODO: Why does this override the parent ImageData?
+    def set_bytes(self, fmt, pitch, data):
         self.x = 0
         self.y = 0
-        super().set_data(fmt, pitch, data)
+        super().set_bytes(fmt, pitch, data)
 
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
