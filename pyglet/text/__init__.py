@@ -43,7 +43,7 @@ from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
-from pyglet.text import layout, document
+from pyglet.text import layout, document, caret
 
 
 if TYPE_CHECKING:
