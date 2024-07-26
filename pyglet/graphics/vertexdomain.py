@@ -54,6 +54,7 @@ CTypesDataType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 if TYPE_CHECKING:
+    from pyglet.graphics import Group
     from pyglet.graphics.allocation import Allocator
     from pyglet.graphics.shader import Attribute
     from pyglet.graphics.vertexarray import VertexArray
@@ -157,6 +158,11 @@ class VertexList:
     def delete(self) -> None:
         """Delete this group."""
         self.domain.allocator.dealloc(self.start, self.count)
+        group = self.domain.group_vlists[self]
+        self.domain.group_vertex_ranges[group].remove((self.start, self.count))
+        del self.domain.group_vlists[self]
+        #if not self.domain.group_vertex_ranges[group]:
+       #     del self.domain.group_vertex_ranges[group]
 
     def set_instance_source(self, domain: InstancedVertexDomain, instance_attributes: Sequence[str]) -> None:
         assert self.instanced is False, "Vertex list is already an instance."
@@ -179,6 +185,17 @@ class VertexList:
         self.domain = domain
         self.start = new_start
         self.instanced = True
+
+    def update_group(self, group: Group):
+        current_group = self.domain.group_vlists[self]
+        assert current_group != group, "Changing group to same group."
+        self.domain.group_vertex_ranges[current_group].remove((self.start, self.count))
+
+        # Set new group
+        self.domain.group_vlists[self] = group
+        if group not in self.domain.group_vertex_ranges:
+            self.domain.group_vertex_ranges[group] = []
+        self.domain.group_vertex_ranges[group].append((self.start, self.count))
 
     def migrate(self, domain: VertexDomain | InstancedVertexDomain) -> None:
         """Move this group from its current domain and add to the specified one.
@@ -263,8 +280,22 @@ class IndexedVertexList(VertexList):
 
     def delete(self) -> None:
         """Delete this group."""
+        group = self.domain.group_vlists[self]
         super().delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
+
+        self.domain.group_index_ranges[group].remove((self.index_start, self.index_count))
+
+    def update_group(self, group: Group):
+        current_group = self.domain.group_vlists[self]
+        super().update_group(group)
+        self.domain.group_index_ranges[current_group].remove((self.index_start, self.index_count))
+
+        # Set new group
+        self.domain.group_vlists[self] = group
+        if group not in self.domain.group_index_ranges:
+            self.domain.group_index_ranges[group] = []
+        self.domain.group_index_ranges[group].append((self.index_start, self.index_count))
 
     def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain) -> None:
         """Move this group from its current indexed domain and add to the specified one.
@@ -276,6 +307,9 @@ class IndexedVertexList(VertexList):
             domain:
                 Indexed domain to migrate this vertex list to.
         """
+        if domain == self.domain:
+            return
+
         old_start = self.start
         old_domain = self.domain
         super().migrate(domain)
@@ -354,6 +388,7 @@ class VertexInstance:
         self._vertex_list.delete_instance(self)
         self._vertex_list = None
 
+CULL_TIME = 10
 
 class VertexDomain:
     """Management of a set of vertex lists.
@@ -382,6 +417,10 @@ class VertexDomain:
         self.attribute_names = {}  # name: attribute
         self.buffer_attributes = []  # list of (buffer, attribute)
         self.attrib_name_buffers = {}  # dict of AttributeName: AttributeBufferObject (for VertexLists)
+
+        # This maps groups to the specific start/size regions.
+        self.group_vertex_ranges = {}  # New attribute to store vertex ranges by group
+        self.group_vlists = {}
 
         self._property_dict = {}  # name: property(_getter, _setter)
 
@@ -440,17 +479,15 @@ class VertexDomain:
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
-    def create(self, count: int, index_count: int | None = None) -> VertexList:  # noqa: ARG002
-        """Create a :py:class:`VertexList` in this domain.
-
-        Args:
-            count:
-                Number of vertices to create.
-            index_count:
-                Ignored for non indexed VertexDomains
-        """
+    def create(self, count: int, group: Group, index_count: int | None = None) -> VertexList:
+        assert type(group) != int, "Wrong type"
         start = self.safe_alloc(count)
-        return self._vertexlist_class(self, start, count)
+        vertex_list = self._vertexlist_class(self, start, count)
+        if group not in self.group_vertex_ranges:
+            self.group_vertex_ranges[group] = []
+        self.group_vertex_ranges[group].append((start, count))
+        self.group_vlists[vertex_list] = group
+        return vertex_list
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
@@ -479,6 +516,44 @@ class VertexDomain:
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawArrays(mode, starts, sizes, primcount)
 
+    def draw_groups(self, mode: int, groups: list[Group]) -> None:
+        """Draw all vertices associated with the specified groups.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g., ``GL_POINTS``, ``GL_LINES``, etc.
+            groups:
+                The groups whose vertices should be drawn.
+        """
+        self.vao.bind()
+        for buffer, _ in self.buffer_attributes:
+            buffer.sub_data()
+
+        for group in groups:
+            group.set_state()
+            for start, size in self.group_vertex_ranges[group]:
+                glDrawArrays(mode, start, size)
+            group.unset_state()
+
+    def draw_group(self, mode: int, group: Group) -> None:
+        """Draw all vertices associated with the specified group.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            group:
+                The group whose vertices should be drawn.
+        """
+        self.vao.bind()
+        for buffer, _ in self.buffer_attributes:
+            buffer.sub_data()
+
+        group.set_state()
+        if group in self.group_vertex_ranges:
+            for start, size in self.group_vertex_ranges[group]:
+                glDrawArrays(mode, start, size)
+        group.unset_state()
+
     def draw_subset(self, mode: int, vertex_list: VertexList) -> None:
         """Draw a specific VertexList in the domain.
 
@@ -500,7 +575,11 @@ class VertexDomain:
 
     @property
     def is_empty(self) -> bool:
-        return not self.allocator.starts
+        return not self.allocator.starts and not self.group_vertex_ranges
+
+    @property
+    def has_vertices(self) -> bool:
+        return all(not values for values in self.group_vertex_ranges.values())
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}@{id(self):x} {self.allocator}>'
@@ -661,6 +740,8 @@ class IndexedVertexDomain(VertexDomain):
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,),
                                       self._property_dict)
+        # Dictionary to store index ranges by group
+        self.group_index_ranges = {}
 
     def safe_index_alloc(self, count: int) -> int:
         """Allocate indices, resizing the buffers if necessary."""
@@ -682,7 +763,7 @@ class IndexedVertexDomain(VertexDomain):
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.realloc(start, count, new_count)
 
-    def create(self, count: int, index_count: int) -> IndexedVertexList:
+    def create(self, count: int, group: Group, index_count: int) -> IndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
@@ -690,11 +771,22 @@ class IndexedVertexDomain(VertexDomain):
                 Number of vertices to create
             index_count:
                 Number of indices to create
-
+            group:
+                The group to which this vertex list belongs
         """
         start = self.safe_alloc(count)
         index_start = self.safe_index_alloc(index_count)
-        return self._vertexlist_class(self, start, count, index_start, index_count)
+
+        vertex_list = self._vertexlist_class(self, start, count, index_start, index_count)
+        if group not in self.group_vertex_ranges:
+            self.group_vertex_ranges[group] = []
+        if group not in self.group_index_ranges:
+            self.group_index_ranges[group] = []
+        self.group_vertex_ranges[group].append((start, count))
+        self.group_index_ranges[group].append((index_start, index_count))
+        self.group_vlists[vertex_list] = group
+
+        return vertex_list
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
@@ -714,6 +806,9 @@ class IndexedVertexDomain(VertexDomain):
         self.index_buffer.sub_data()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
+
+        #print(starts, sizes)
+
         primcount = len(starts)
         if primcount == 0:
             pass
@@ -727,6 +822,127 @@ class IndexedVertexDomain(VertexDomain):
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
+    def bind(self) -> None:
+        """Bind the domain.
+
+        This binds the VAO and all of its buffers.
+        """
+        self.vao.bind()
+
+        for buffer, _ in self.buffer_attributes:
+           buffer.sub_data()
+
+        self.index_buffer.sub_data()
+
+    def draw_groups(self, mode: int, groups: list[Group]) -> None:
+        """Draw all vertices associated with the specified groups.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g., ``GL_POINTS``, ``GL_LINES``, etc.
+            groups:
+                The groups whose vertices should be drawn.
+        """
+        # Optimize, don't call if empty.
+        if not groups:
+            return
+
+        combined = []
+        for group in groups:
+            combined.extend(self.group_index_ranges[group])
+
+        if not combined:
+            return
+
+        starts, sizes = zip(*combined)
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawElements(mode, sizes[0], self.index_gl_type,
+                           self.index_buffer.ptr + starts[0] * self.index_element_size)
+        else:
+            starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+
+    def draw_groups_shared(self, mode: int, groups: list[Group]) -> None:
+        """Draw all vertices associated with the specified groups.
+
+        This differs from draw_groups in that it renders all groups within the shared state.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g., ``GL_POINTS``, ``GL_LINES``, etc.
+            groups:
+                The groups whose vertices should be drawn.
+        """
+        if not groups:
+            return
+
+        combined = []
+        for group in groups:
+            combined.extend(self.group_index_ranges[group])
+
+        if not combined:
+            return
+
+        self.vao.bind()
+
+        for buffer, _ in self.buffer_attributes:
+            buffer.sub_data()
+
+        self.index_buffer.sub_data()
+
+        group = groups[0]
+
+        group.set_state()
+
+        #print("self.group_index_ranges[group]", self.group_index_ranges[group])
+        starts, sizes = zip(*combined)
+        primcount = len(starts)
+
+        #print(len(starts), len(groups))
+
+        #print(primcount)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawElements(mode, sizes[0], self.index_gl_type,
+                           self.index_buffer.ptr + starts[0] * self.index_element_size)
+        else:
+            starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+
+        group.unset_state()
+
+    def draw_group(self, mode: int, group: Group) -> None:
+        """Draw all vertices associated with the specified group.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            group:
+                The group whose vertices should be drawn.
+        """
+        self.vao.bind()
+        for buffer, _ in self.buffer_attributes:
+            buffer.sub_data()
+        self.index_buffer.sub_data()
+
+        print("RENDERING GROUP", group)
+
+        group.set_state()
+        if group in self.group_index_ranges:
+            for index_start, index_count in self.group_index_ranges[group]:
+                glDrawElements(mode, index_count, self.index_gl_type,
+                               self.index_buffer.ptr + index_start * self.index_element_size)
+        group.unset_state()
     def draw_subset(self, mode: int, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
 
@@ -747,6 +963,9 @@ class IndexedVertexDomain(VertexDomain):
                        self.index_buffer.ptr +
                        vertex_list.index_start * self.index_element_size)
 
+    @property
+    def has_vertices(self) -> bool:
+        return all(not values for values in self.group_index_ranges.values())
 
 class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
     """Management of a set of indexed vertex lists.
