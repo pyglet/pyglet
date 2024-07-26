@@ -1622,7 +1622,7 @@ class TextLayout:
     def _get_owner_runs(self, glyphs: list[_InlineElementBox | Glyph]) -> runlist.RunList:
         owner = glyphs[0].owner
         run_start = 0
-        owner_runs = runlist.RunList(0, None)
+        owner_runs = runlist.RunList(0, owner)
 
         for i, glyph in enumerate(glyphs):
             if owner != glyph.owner:

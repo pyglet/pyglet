@@ -240,54 +240,65 @@ class RunList:
 
         raise IndexError
 
-    def get_range(self, start: int, end: int) -> RunList:
-        """Get a subrange of the run list.
+    def set_runs(self, start: int, end: int, runs: RunList) -> None:
+        """Set a range of runs.
 
         Args:
             start:
                 Start index of range.
             end:
                 End index of range, exclusive.
-
-        Returns:
-            A new `RunList` object.
+            runs:
+                Runs to set.
         """
-        if start - end <= 0:
-            return RunList(0, None)
+        if end - start < 0:
+            return
 
-        range = RunList(0, None)
         # Find runs that need to be split
         i = 0
         start_i = None
-        start_count = 0
+        start_trim = 0
         end_i = None
-        end_count = 0
+        end_trim = 0
         for run_i, run in enumerate(self.runs):
             count = run.count
             if i < start < i + count:
                 start_i = run_i
-                start_count = count - (start - i)
+                start_trim = start - i
             if i < end < i + count:
                 end_i = run_i
-                end_count = count - (end - i)
+                end_trim = end - i
             i += count
 
-        range.runs = self.runs[start_i:end_i]
-        range.runs[0] = _Run(range.runs[0].value, start_count)
-        range.runs[-1] = _Run(range.runs[-1].value, end_count)
-        return range
+        # Split runs
+        if start_i is not None:
+            run = self.runs[start_i]
+            self.runs.insert(start_i, _Run(run.value, start_trim))
+            run.count -= start_trim
+            if end_i is not None:
+                if end_i == start_i:
+                    end_trim -= start_trim
+                end_i += 1
+        if end_i is not None:
+            run = self.runs[end_i]
+            self.runs.insert(end_i, _Run(run.value, end_trim))
+            run.count -= end_trim
 
-    def __add__(self, value: RunList) -> RunList:
-        """Concatenate two run lists."""
-
-        run_list = RunList(0, None)
-        if self.runs[-1].value == value.runs[0].value:
-            run_list.runs = self.runs
-            run_list.runs[-1] = _Run(value.runs[0].value, self.runs[-1].count + value.runs[0].count)
-            run_list.runs += value.runs[1:]
+        if start_i is None:
+            self.runs[:end_i] = runs.runs
         else:
-            run_list.runs = self.runs + value.runs
-        return run_list
+            self.runs[start_i+1: end_i] = runs.runs
+
+        # Merge adjacent runs
+        last_run = self.runs[0]
+        for run in self.runs[1:]:
+            if run.value == last_run.value:
+                run.count += last_run.count
+                last_run.count = 0
+            last_run = run
+
+        # Delete collapsed runs
+        self.runs = [r for r in self.runs if r.count > 0]
 
     def __repr__(self) -> str:
         return str(list(self))
