@@ -510,12 +510,12 @@ class Sprite(event.EventDispatcher):
         y1 = -img.anchor_y
         x2 = x1 + img.width
         y2 = y1 + img.height
-        vertices = x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0
 
         if not self._subpixel:
-            return tuple(map(int, vertices))
+            return (int(x1), int(y1), 0, int(x2), int(y1), 0,
+                    int(x2), int(y2), 0, int(x1), int(y2), 0)
 
-        return vertices
+        return x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0
 
     def _update_position(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
