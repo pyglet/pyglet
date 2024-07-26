@@ -1352,11 +1352,11 @@ class ShaderProgram:
 
         # Create vertex list and initialize
         if indexed:
-            vlist = domain.create(count, len(indices))
+            vlist = domain.create(count, group, len(indices))
             start = vlist.start
             vlist.indices = [i + start for i in indices]
         else:
-            vlist = domain.create(count)
+            vlist = domain.create(count, group)
 
         for name, array in initial_arrays:
             try:

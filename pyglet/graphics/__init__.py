@@ -274,6 +274,12 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
 
 DomainKey = Tuple[bool, int, int, str]
 
+
+class _InternalGroup:
+    def __init__(self):
+        self.starts = []
+        self.sizes = []
+
 class Batch:
     """Manage a collection of drawables for batched rendering.
 
@@ -305,6 +311,7 @@ class Batch:
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
+    domain_map: dict[DomainKey: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain]
 
     def __init__(self) -> None:
         """Create a graphics batch."""
@@ -314,6 +321,9 @@ class Batch:
 
         # Mapping of group to list of children.
         self.group_children = {}
+
+        # All domains associated with the batch..
+        self.domain_map = {}
 
         # List of top-level groups
         self.top_groups = []
@@ -428,36 +438,30 @@ class Batch:
                    attributes: dict[str, Any]) -> (
             vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain |
             vertexdomain.InstancedIndexedVertexDomain):
-        """Get, or create, the vertex domain corresponding to the given arguments.
+        """Get, or create, the vertex domain corresponding to the given arguments."""
+        key = (indexed, instanced, mode, str(attributes))
 
-        mode is the render mode such as GL_LINES or GL_TRIANGLES
-        """
-        # Batch group
+        # Check for existing domain
+        if key in self.domain_map:
+            domain = self.domain_map[key]
+        else:
+            # Create a new domain if none exists
+            domain = _domain_class_map[(indexed, instanced)](attributes)
+            self.domain_map[key] = domain
+            self._draw_list_dirty = True
+
+        # Ensure the group association is kept.
         if group not in self.group_map:
             self._add_group(group)
 
         domain_map = self.group_map[group]
-
-        # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        if instanced:
-            self._instance_count += 1
-            key = (indexed, self._instance_count, mode, str(attributes))
-        else:
-            # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, str(attributes))
-
-        try:
-            domain = domain_map[key]
-        except KeyError:
-            # Create domain
-            domain = _domain_class_map[(indexed, instanced)](attributes)
-            domain_map[key] = domain
-            self._draw_list_dirty = True
+        domain_map[key] = domain
 
         return domain
 
     def _add_group(self, group: Group) -> None:
-        self.group_map[group] = {}
+        if group not in self.group_map:
+            self.group_map[group] = {}
         if group.parent is None:
             self.top_groups.append(group)
         else:
@@ -471,83 +475,145 @@ class Batch:
         self._draw_list_dirty = True
 
     def _update_draw_list(self) -> None:
-        """Visit group tree in preorder and create a list of bound methods to call."""
+        domain_draw_calls = {}
 
-        def visit(group: Group) -> list:
-            draw_list = []
+        def visit(current_group: Group) -> None:
+            # Visit the current group
+            current_domain_map = self.group_map.get(current_group, {})
+            #if current_domain_map:
+                #print(f"Visiting group: {current_group}, domain map: {current_domain_map.values()}")
 
-            # Draw domains using this group
-            domain_map = self.group_map[group]
+            verts = False
 
-            # indexed, instanced, mode, program, str(attributes))
-            for (indexed, instanced, mode, formats), domain in list(domain_map.items()):
-                # Remove unused domains from batch
-                if domain.is_empty:
-                    del domain_map[(indexed, instanced, mode, formats)]
+            # Iterate over the domains associated with the current group
+            for (indexed, instanced, mode, formats), current_domain in list(current_domain_map.items()):
+                if current_domain.is_empty:
+                    del current_domain_map[(indexed, instanced, mode, formats)]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))  # noqa: PLC3002
+
+                # If this group exists, has no vertices in the domain, skip it.
+                if current_group in current_domain.group_vertex_ranges:
+                    if not current_domain.group_vertex_ranges[current_group]:
+                        continue
+                else:
+                    continue
+
+                # If group exists, and has vertices, add a draw call.
+                if current_domain not in domain_draw_calls:
+                    domain_draw_calls[current_domain] = []
+
+                domain_draw_calls[current_domain].append((current_group.order, current_domain, mode, current_group))
+                verts = True
 
             # Sort and visit child groups of this group
-            children = self.group_children.get(group)
+            children = self.group_children.get(current_group)
             if children:
                 children.sort()
                 for child in list(children):
                     if child.visible:
-                        draw_list.extend(visit(child))
+                        visit(child)
 
-            if children or domain_map:
-                return [group.set_state, *draw_list, group.unset_state]
+            if not children and not verts:
+                #print("NO VERTICES", current_group)
 
-            # Remove unused group from batch
-            del self.group_map[group]
-            group._assigned_batches.remove(self)  # noqa: SLF001
-            if group.parent:
-                self.group_children[group.parent].remove(group)
-            try:
-                del self.group_children[group]
-            except KeyError:
-                pass
-            try:
-                self.top_groups.remove(group)
-            except ValueError:
-                pass
-
-            return []
+                # Clean up if the group is empty and has no children
+                # Remove unused group from batch
+                del self.group_map[current_group]
+                current_group._assigned_batches.remove(self)  # noqa: SLF001
+                if current_group.parent:
+                    self.group_children[current_group.parent].remove(current_group)
+                try:
+                    del self.group_children[current_group]
+                except KeyError:
+                    pass
+                try:
+                    self.top_groups.remove(current_group)
+                except ValueError:
+                    pass
 
         self._draw_list = []
 
         self.top_groups.sort()
         for top_group in list(self.top_groups):
             if top_group.visible:
-                self._draw_list.extend(visit(top_group))
+                visit(top_group)
+
+        # Collapse draw calls into contiguous render calls.
+        for calls in domain_draw_calls.values():
+            contiguous_groups = []
+            last_mode = None
+            last_domain = None
+            shared_state = True
+
+            for _, draw_domain, mode, group in calls:
+                # Check if draw mode and domain are similar to current iteration.
+                if last_domain is None or (draw_domain == last_domain and mode == last_mode):
+                    # Check if the state of this group is compatible with the previous.
+                    if contiguous_groups and not group.contiguous_same(contiguous_groups[-1]):
+                        shared_state = False
+                    contiguous_groups.append(group)
+                else:
+                    # Previous domain/mode is not compatible with current.
+                    if contiguous_groups:
+                        # If we have contiguous groups, we need to now combine those based on shared state.
+                        if shared_state:
+                            self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups_shared(m, gs))(last_domain, last_mode, contiguous_groups))
+                        else:
+                            self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
+
+                        shared_state = True
+
+                    # Reset contiguous groups for share state checks.
+                    contiguous_groups = [group]
+
+                last_mode = mode
+                last_domain = draw_domain
+
+            # Draw the remaining contiguous groups
+            if contiguous_groups:
+                if shared_state:
+                    self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups_shared(m, gs))(last_domain, last_mode, contiguous_groups))
+                else:
+                    self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
 
         self._draw_list_dirty = False
-
         if _debug_graphics_batch:
             self._dump_draw_list()
 
-    def _dump_draw_list(self) -> None:
-        def dump(group: Group, indent: str = '') -> None:
-            print(indent, 'Begin group', group)
-            domain_map = self.group_map[group]
-            for domain in domain_map.values():
-                print(indent, '  ', domain)
-                for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size))
-                    for key, buffer in domain.attrib_name_buffers.items():
+    def _dump_draw_list(self, regions: bool=False) -> None:
+        total_domains = 0
+
+        def dump(current_group: Group, indent: str = '') -> None:
+            nonlocal total_domains
+            print(indent, 'Begin group', current_group, f"(order: {current_group.order})")
+            current_domain_map = self.group_map[current_group]
+            total_domains += len(current_domain_map)
+            for current_domain in current_domain_map.values():
+                print(indent, '  ', current_domain)
+                for start, size in zip(*current_domain.allocator.get_allocated_regions()):
+                    print(indent, '    ', f'Region [start: {start}, size: {size}, groups: {len(current_domain.group_vertex_ranges)}]:')
+                    for key, buffer in current_domain.attrib_name_buffers.items():
                         print(indent, '      ', end=' ')
                         try:
                             region = buffer.get_region(start, size)
                             print(key, region.array[:])
-                        except:  # noqa: E722
+                        except Exception:
                             print(key, '(unmappable)')
-            for child in self.group_children.get(group, ()):
+                # for group, ranges in current_domain.group_vertex_ranges.items():
+                #     parent_info = f" (parent: {group.parent})" if group.parent else ""
+                #     print(indent, f'  Group {group}-{hex(id(group))}:{parent_info}')
+                #     if regions:
+                #         for range_start, range_size in ranges:
+                #             print(indent, f'    Start: {range_start}, Size: {range_size}')
+            for child in self.group_children.get(current_group, ()):
                 dump(child, indent + '  ')
-            print(indent, 'End group', group)
+            print(indent, 'End group', current_group)
 
         print(f'Draw list for {self!r}:')
-        for group in self.top_groups:
-            dump(group)
+        for top_group in self.top_groups:
+            dump(top_group)
+        print(f'Total domains used: {total_domains}')
+        print(f'Total draw list: {len(self._draw_list)}')
 
     def draw(self) -> None:
         """Draw the batch."""
@@ -699,6 +765,27 @@ class Group:
         :see: ``__eq__`` function, both must be implemented.
         """
         return hash((self._order, self.parent))
+
+    def contiguous_same(self, other: Group) -> bool:
+        """Determines if Group state can be merged with those in the same domain with the same parent.
+
+        For example:
+            group0 = Group(0)
+            group1 = Group(1)
+            image = one_image
+            a = Sprite(image, ..., group=group0)
+            b = Sprite(image, ..., group=group1)
+
+        In this pseudocode scenario, both sprites have the same internal group, but different parental groups.
+        Normally this means each group must set/unset each of their states before drawing one by one.
+        However, the internal SpriteGroup is the same between both, the states are essentially the same without the
+        parent. This allows the child states to be merged and drawn with setting just one state..
+
+        Essentially this means we need to check if this Group has the same state as destination group without the
+        parent.
+        """
+        #return False
+        #return self.__class__ is other.__class__
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(order={self._order})"
