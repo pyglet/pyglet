@@ -368,7 +368,7 @@ class Source:
 
         If this method is overridden to return ``True`` although the source
         does not comply with the requirements above, audio playback may be
-        negatively impacted at best and memory access violations occurr at
+        negatively impacted at best and memory access violations occur at
         worst.
 
         :Returns:
