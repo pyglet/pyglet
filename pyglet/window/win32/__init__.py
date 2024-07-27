@@ -602,7 +602,7 @@ class Win32Window(BaseWindow):
         # of any size, so no scaling necessary.
 
         def best_image(width: int, height: int) -> pyglet.image.ImageData:
-            # A heuristic for finding closest sized image to required size.
+            # A heuristic for finding the closest sized image to required size.
             b_image = images[0]
             for img in images:
                 if img.width == width and img.height == height:
@@ -612,7 +612,7 @@ class Win32Window(BaseWindow):
                         img.width * img.height > b_image.width * b_image.height:
                     # At least wide enough, and largest area
                     b_image = img
-            return image
+            return b_image
 
         def get_icon(img: pyglet.image.ImageData) -> HICON:
             # Alpha-blended icon: see http://support.microsoft.com/kb/318876

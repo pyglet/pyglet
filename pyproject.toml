@@ -110,3 +110,4 @@ indent-style = "space"
     "ERA001",
     "F405",
 ]
+"tests/*" = ["I", "E", "F", "D", "B", "W", "S", "ANN", "ARG"]
