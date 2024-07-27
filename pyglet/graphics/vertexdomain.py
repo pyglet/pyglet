@@ -85,8 +85,8 @@ _c_types = {
 _gl_types = {
     'b': GL_BYTE,
     'B': GL_UNSIGNED_BYTE,
-    's': GL_SHORT,
-    'S': GL_UNSIGNED_SHORT,
+    'h': GL_SHORT,
+    'H': GL_UNSIGNED_SHORT,
     'i': GL_INT,
     'I': GL_UNSIGNED_INT,
     'f': GL_FLOAT,
