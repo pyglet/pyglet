@@ -24,11 +24,14 @@ from pyglet.gl.gl import (
     GL_ELEMENT_ARRAY_BUFFER,
     GL_MAP_READ_BIT,
     GL_MAP_WRITE_BIT,
+    GL_MAP_COHERENT_BIT,
+    GL_MAP_PERSISTENT_BIT,
     GL_WRITE_ONLY,
     GLubyte,
     GLuint,
     glBindBuffer,
     glBufferData,
+    glBufferStorage,
     glBufferSubData,
     glDeleteBuffers,
     glGenBuffers,
@@ -351,7 +354,7 @@ class PersistentBufferObject(AbstractBuffer):
         buffer_id = GLuint()
         glGenBuffers(1, buffer_id)
         self.id = buffer_id.value
-        self.bind()
+        glBindBuffer(GL_ARRAY_BUFFER, self.id)
 
         self.flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
         data = (GLubyte * size)()
@@ -359,8 +362,14 @@ class PersistentBufferObject(AbstractBuffer):
 
         # size is the allocator size * attribute.stride
         number = size // attribute.element_size
-        ptr_type = attribute.c_type * number
-        self.data = self.map_range(0, size, ctypes.POINTER(ptr_type), self.flags)
+        ptr = ctypes.POINTER(attribute.c_type * number)
+        self.data = ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, 0, size, self.flags), ptr).contents
+
+    def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
+        raise NotImplementedError("Not yet implemented")
+
+    def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
+        raise NotImplementedError("Not yet implemented")
 
     def bind(self, target=GL_ARRAY_BUFFER):
         glBindBuffer(target, self.id)
@@ -368,10 +377,18 @@ class PersistentBufferObject(AbstractBuffer):
     def unbind(self):
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
+    def map(self) -> CTypesPointer[ctypes.c_ubyte]:
+        raise NotImplementedError("PersistentBufferObjects are always mapped.")
+
     def map_range(self, start, size, ptr_type, flags=GL_MAP_WRITE_BIT):
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        ptr = ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, start, size, flags), ptr_type).contents
-        return ptr
+        raise NotImplementedError("PersistentBufferObjects are always mapped.")
+
+    def unmap(self) -> None:
+        raise NotImplementedError("PersistentBufferObjects cannot be unmapped.")
+
+    def delete(self) -> None:
+        glDeleteBuffers(1, GLuint(self.id))
+        self.id = None
 
     @lru_cache(maxsize=None)
     def get_region(self, start, count):
