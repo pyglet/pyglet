@@ -340,8 +340,19 @@ class IndexedBufferObject(BackedBufferObject):
 
 
 class PersistentBufferObject(AbstractBuffer):
+    """A persistently mapped buffer.
+
+    Available in OpenGL 4.3+ contexts. Persistently mapped buffers
+    are mapped one time on creation, and can be updated at any time
+    without the need to map or unmap.
+    """
 
     def __init__(self, size, attribute, vao):
+        # TODO: Persistent buffers cannot be resized. A new buffer is created, and the
+        #       data is copied over. Therefore, unlike other buffers, they currently
+        #       require s reference to an attribute so the attribute pointer can be reset
+        #       on resize calls. This can be reevaluated for a better solution.
+
         self.size = size
         self.attribute = attribute
         self.attribute_stride = attribute.stride
