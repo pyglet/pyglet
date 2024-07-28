@@ -1,6 +1,5 @@
 from collections import deque
 import ctypes
-from typing import Any
 import weakref
 from abc import ABCMeta, abstractmethod
 
