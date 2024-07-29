@@ -60,12 +60,12 @@ from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 if TYPE_CHECKING:
-    from pyglet.canvas import Display
+    from pyglet.display import Display
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-def get_apple_remote(display: None | Display = None) -> AppleRemote | None:
+def get_apple_remote(display: Display | None = None) -> AppleRemote | None:
     """Get the Apple remote control device, if it exists.
 
     The Apple remote is the small white 6-button remote control that
@@ -80,7 +80,7 @@ def get_apple_remote(display: None | Display = None) -> AppleRemote | None:
 
 
 if _is_pyglet_doc_run:
-    def get_devices(display: None | Display = None) -> list[Device]:
+    def get_devices(display: Display | None = None) -> list[Device]:
         """Get a list of all attached input devices.
 
         Args:
@@ -90,7 +90,7 @@ if _is_pyglet_doc_run:
         """
 
 
-    def get_joysticks(display: None | Display = None) -> list[Joystick]:
+    def get_joysticks(display: Display | None = None) -> list[Joystick]:
         """Get a list of attached joysticks.
 
         Args:
@@ -100,7 +100,7 @@ if _is_pyglet_doc_run:
         """
 
 
-    def get_controllers(display: None | Display = None) -> list[Controller]:
+    def get_controllers(display: Display | None = None) -> list[Controller]:
         """Get a list of attached controllers.
 
         Args:
@@ -109,7 +109,7 @@ if _is_pyglet_doc_run:
                 OS X and Windows.  On Linux, defaults to the default display device.
         """
 
-    def get_tablets(display: None | Display = None) -> list[Tablet]:
+    def get_tablets(display: Display | None = None) -> list[Tablet]:
         """Get a list of tablets.
 
         This function may return a valid tablet device even if one is not

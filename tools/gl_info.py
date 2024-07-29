@@ -19,7 +19,7 @@ print('Pyglet:     %s' % pyglet.version)
 print('Platform:   %s' % sys.platform)
 print('Event loop: %s' % pyglet.app.PlatformEventLoop.__name__)
 
-display = pyglet.canvas.get_display()
+display = pyglet.display.get_display()
 print('Display:    %s' % display.__class__.__name__)
 print('Screens:')
 for screen in display.get_screens():

@@ -44,10 +44,12 @@ ways to control the context that is created:
       window = pyglet.window.Window(context=context)
 
 * Supply a complete :py:class:`~pyglet.gl.Config` obtained from a
-  :py:class:`~pyglet.canvas.Screen` using the ``config``
+  :py:class:`~pyglet.display.Screen` using the ``config``
   argument.  The context will be created from this config and will share object
   space with the most recently created existing context::
 
+      display = pyglet.display.get_display()
+      screen = display.get_default_screen()
       config = screen.get_best_config(template)
       window = pyglet.window.Window(config=config)
 
@@ -58,14 +60,15 @@ ways to control the context that is created:
       config = gl.Config(double_buffer=True)
       window = pyglet.window.Window(config=config)
 
-* Specify a :py:class:`~pyglet.canvas.Screen` using the ``screen`` argument.
+* Specify a :py:class:`~pyglet.display.Screen` using the ``screen`` argument.
   The context will use a config created from default template configuration
   and this screen::
 
+      display = pyglet.display.get_display()
       screen = display.get_screens()[screen_number]
       window = pyglet.window.Window(screen=screen)
 
-* Specify a :py:class:`~pyglet.canvas.Display` using the ``display`` argument.
+* Specify a :py:class:`~pyglet.display.Display` using the ``display`` argument.
   The default screen on this display will be used to obtain a context using
   the default template configuration::
 
@@ -73,7 +76,7 @@ ways to control the context that is created:
       window = pyglet.window.Window(display=display)
 
 If a template :py:class:`~pyglet.gl.Config` is given, a
-:py:class:`~pyglet.canvas.Screen` or :py:class:`~pyglet.canvas.Display`
+:py:class:`~pyglet.display.Screen` or :py:class:`~pyglet.display.Display`
 may also be specified; however any other combination of parameters
 overconstrains the configuration and some parameters will be ignored.
 

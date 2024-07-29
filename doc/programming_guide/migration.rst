@@ -43,14 +43,14 @@ Shapes
 For consistency with the rest of the library, it was decided to represent
 all angles in degrees instead of radians. Previously we had a mix of both,
 which lead to some confusion. Using degrees also makes the API consistent
-with Sprites and other rotatable objects.
+with Sprites and other rotatable objects, which have long used degrees.
 
 The arguments for :py:class:`~pyglet.shapes.Line` have changed slightly.
 Instead of "width", we now use "thickness". This matches with other shapes
 that are made up of line segments. For example the :py:class:`~pyglet.shapes.Box`
 shape, which already uses "width" (and height) to mean it's overall size.
 Going forward, any shape that is made up of lines should use `thickness`
-for the width of those lines.
+for the thickness/width of those lines.
 
 Controllers
 -----------
@@ -77,12 +77,15 @@ You now get a Vec2 instead of booleans that can be used directly::
         # Easily normalize for diagonal values:
         player_position += vector.normalize() * PLAYER_SPEED
 
+You can of course
+
+
 Vectors can also be useful for analog sticks, because it gives an easy way to
-calculate dead-zones using `abs`. For example::
+calculate dead-zones using `.length()`. For example::
 
     @controller.event
     def on_stick_motion(controller, name, vector):
-        if abs(vector) <= DEADZONE:
+        if vector.length() <= DEADZONE:
             return
         elif name == "leftstick":
             # Do something with the 2D vector
@@ -101,7 +104,6 @@ attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
 
 Gui
 ---
-
 All widget events now dispatch the widget instance itself as the first argument.
 This is similar to how Controller/Joystick events are implemented. In cases where
 the same handler function is set to multiple widgets, this gives a way to determine
@@ -115,19 +117,33 @@ Math module
 -----------
 In the :py:mod:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
 :py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
-immutable; all operations will return a new object. In addition, all vector
-objects are now hashable. This has performance benefits, and matches how the Matrix
-types are implemented. For all intents and purposes, the Vec types can be treated
-as tuples.
+immutable; all operations will return a new object. In addition, all vector objects
+are now hashable. This has performance and usability benefits. For most purposes,
+the Vec types can be treated as (named) tuples.
+
+The :py:class:`~pyglet.math.Mat3` & :py:class:`~pyglet.math.Mat4` class have been
+changed to be ``NamedTuple`` subclasses instead of ``tuple`` subclasses. This is
+consistent with the vector types, and makes for a cleaner code base. There is one
+small change due to this. Previously, creating a matrix from values required
+passing in a list or tuple of values. Now, you simply provide the values (the same
+way as vectors). For example:
+
+    # old way:
+    my_mat4 = pyglet.math.Mat4([1, 2, 3, 4, 5, ...])
+    # new way:
+    my_mat4 = pyglet.math.Mat4(1, 2, 3, 4, 5, ...)
+
+Matrix objects are generally created via their helper methods, so this change should
+hopefully not require any code updates for most users.
 
 Canvas module
 -------------
-The `pyglet.canvas` module has been renamed to `pyglet.display`, as the canvas
-concept was never fully fleshed out. The canvas concept appears to have been
-meant to allow arbitrary renderable areas. This can now be easily accomplished
-with Framebuffers. The name `display` is a more accurate representation of what
-the code in the module actually relates to. The usage is the same, minus the
-name change::
+The `pyglet.canvas` module has been renamed to `pyglet.display`. The "canvas"
+concept was a work-in-progress in legacy pyglet, and was never fully fleshed out.
+It appears to have been meant to allow arbitrary renderable areas, but this type
+of functionality can now be easily accomplished with Framebuffers. The name `display`
+is a more accurate representation of what the code in the module actually relates to.
+The usage is the same, with just the name change::
 
     my_display = pyglet.canvas.get_display()     # old pyglet 2.0
     my_display = pyglet.display.get_display()    # new pyglet 2.1

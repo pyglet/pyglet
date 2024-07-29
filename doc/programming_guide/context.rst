@@ -11,7 +11,7 @@ Displays, screens, configs and contexts
 
 .. figure:: img/context_flow.png
 
-    Flow of construction, from the abstract Canvas to a newly
+    Flow of construction, from the abstract Display to a newly
     created Window with its Context.
 
 Contexts and configs
@@ -65,32 +65,32 @@ X11 remotely: the display device will support different configurations than the
 local driver.  Even a single video card on the local computer may support
 different configs for two monitors plugged in.
 
-In pyglet, a :class:`~pyglet.canvas.Display` is a collection of "screens"
+In pyglet, a :class:`~pyglet.display.Display` is a collection of "screens"
 attached to a single display device.  On Linux, the display device corresponds
 to the X11 display being used.  On Windows and Mac OS X, there is only one
 display (as these operating systems present multiple video cards as a single
 virtual device).
 
-The :mod:`pyglet.canvas` module provides access to the display(s). Use the
-:func:`~pyglet.canvas.get_display` function to get the default display::
+The :mod:`pyglet.display` module provides access to the display(s). Use the
+:func:`~pyglet.display.get_display` function to get the default display::
 
-    >>> display = pyglet.canvas.get_display()
+    >>> display = pyglet.display.get_display()
 
 .. note::
 
-    On X11, you can use the :class:`~pyglet.canvas.Display` class directly to
+    On X11, you can use the :class:`~pyglet.display.Display` class directly to
     specify the display string to use, for example to use a remotely connected
     display.  The name string is in the same format as used by the ``DISPLAY``
     environment variable::
 
-        >>> display = pyglet.canvas.Display(name=':1')
+        >>> display = pyglet.display.Display(name=':1')
 
     If you have multiple physical screens and you're using Xinerama, see
     :ref:`guide_screens` to select the desired screen as you would for Windows
     and Mac OS X. Otherwise, you can specify the screen number via the
     ``x_screen`` argument::
 
-        >>> display = pyglet.canvas.Display(name=':1', x_screen=1)
+        >>> display = pyglet.display.Display(name=':1', x_screen=1)
 
 .. _guide_screens:
 
@@ -112,11 +112,11 @@ In the following example the screens of a dual-head workstation are listed::
     XlibScreen(screen=0, x=0, y=0, width=1280, height=1024, xinerama=1)
 
 Because this workstation is running Linux, the returned screens are
-``XlibScreen``, a subclass of :class:`~pyglet.canvas.Screen`. The
+``XlibScreen``, a subclass of :class:`~pyglet.display.Screen`. The
 ``screen`` and ``xinerama`` attributes are specific to Linux, but the
-:attr:`~pyglet.canvas.Screen.x`, :attr:`~pyglet.canvas.Screen.y`,
-:attr:`~pyglet.canvas.Screen.width` and
-:attr:`~pyglet.canvas.Screen.height` attributes are present on all screens,
+:attr:`~pyglet.display.Screen.x`, :attr:`~pyglet.display.Screen.y`,
+:attr:`~pyglet.display.Screen.width` and
+:attr:`~pyglet.display.Screen.height` attributes are present on all screens,
 and describe the screen's geometry, as shown below.
 
 .. figure:: img/screens.png
@@ -126,11 +126,11 @@ and describe the screen's geometry, as shown below.
     particular user's preference.
 
 There is always a "default" screen, which is the first screen returned by
-:meth:`~pyglet.canvas.Display.get_screens`.  Depending on the operating system,
+:meth:`~pyglet.display.Display.get_screens`.  Depending on the operating system,
 the default screen is usually the one that contains the taskbar (on Windows) or
 menu bar (on OS X).
 You can access this screen directly using
-:meth:`~pyglet.canvas.Display.get_default_screen`.
+:meth:`~pyglet.display.Display.get_default_screen`.
 
 
 .. _guide_glconfig:
@@ -291,10 +291,10 @@ For example, to create a window with an alpha channel::
 
 It is sometimes necessary to create the context yourself, rather than letting
 the :class:`~pyglet.window.Window` constructor do this for you.  In this case
-use :meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
+use :meth:`~pyglet.display.Screen.get_best_config` to obtain a "complete"
 config, which you can then use to create the context::
 
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     screen = display.get_default_screen()
 
     template = pyglet.gl.Config(alpha_size=8)
@@ -308,7 +308,7 @@ Note that you cannot create a context directly from a template (any
 above to create the context if a template config is given.
 
 Not all configs will be possible on all machines.  The call to
-:meth:`~pyglet.canvas.Screen.get_best_config` will raise
+:meth:`~pyglet.display.Screen.get_best_config` will raise
 :class:`~pyglet.window.NoSuchConfigException` if the hardware does not
 support the requested attributes.  It will never return a config that does not
 meet or exceed the attributes you specify in the template.
@@ -333,7 +333,7 @@ sufficient for most applications, however some complex programs may want to
 specify their own algorithm for selecting a set of OpenGL attributes.
 
 You can enumerate a screen's configs using the
-:meth:`~pyglet.canvas.Screen.get_matching_configs` method. You must supply a
+:meth:`~pyglet.display.Screen.get_matching_configs` method. You must supply a
 template as a minimum specification, but you can supply an "empty" template
 (one with no attributes set) to get a list of all configurations supported by
 the screen.
@@ -341,7 +341,7 @@ the screen.
 In the following example, all configurations with either an auxiliary buffer
 or an accumulation buffer are printed::
 
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     screen = display.get_default_screen()
 
     for config in screen.get_matching_configs(gl.Config()):
