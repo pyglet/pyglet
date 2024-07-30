@@ -45,15 +45,16 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 if _is_pyglet_doc_run:
     from pyglet.app.base import PlatformEventLoop
 else:
-    if compat_platform == 'darwin':
+    if compat_platform == 'darwin' and (platform.machine() == 'arm64' or pyglet.options.osx_alt_loop):
+        from pyglet.app.cocoa import ArmPlatformEventLoop as PlatformEventLoop
+    elif compat_platform == 'darwin':
         from pyglet.app.cocoa import CocoaPlatformEventLoop as PlatformEventLoop
-
-        if platform.machine() == 'arm64' or pyglet.options["osx_alt_loop"]:
-            from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
-    else:
+    elif compat_platform == 'linux':
         from pyglet.app.xlib import XlibEventLoop as PlatformEventLoop
+    else:
+        raise NotImplementedError(f"PlatformEventLoop not yet implemented for '{compat_platform}'")
 
 
 class AppException(Exception):
