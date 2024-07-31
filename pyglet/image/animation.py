@@ -46,8 +46,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Literal
-    from collections.abc import Iterable
-    from pyglet.image import AbstractImage, ImageData
+    from pyglet.image import AbstractImage, AbstractImageSequence
     from pyglet.image.atlas import TextureBin
 
 
@@ -100,8 +99,8 @@ class Animation:
         """Get the maximum image frame width.
 
         This method is useful for determining texture space requirements: due
-        to the use of ``anchor_x`` the actual required playback area may be
-        larger.
+        to the use of ``anchor_x`` the actual required viewing area during
+         playback may be larger.
         """
         return max([frame.image.width for frame in self.frames])
 
@@ -109,13 +108,13 @@ class Animation:
         """Get the maximum image frame height.
 
         This method is useful for determining texture space requirements: due
-        to the use of ``anchor_y`` the actual required playback area may be
-        larger.
+        to the use of ``anchor_y`` the actual required viewing area during
+        playback may be larger.
         """
         return max([frame.image.height for frame in self.frames])
 
     @classmethod
-    def from_image_sequence(cls, sequence: Iterable[ImageData], duration: float, loop: bool = True) -> Animation:
+    def from_image_sequence(cls, sequence: AbstractImageSequence, duration: float, loop: bool = True) -> Animation:
         """Create an animation from a list of images and a per-frame duration."""
         frames = [AnimationFrame(image, duration) for image in sequence]
         if not loop:
@@ -131,7 +130,7 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image: AbstractImage | ImageData, duration: float) -> None:
+    def __init__(self, image: AbstractImage, duration: float | None) -> None:
         """Create an animation frame from an image."""
         self.image = image
         self.duration = duration

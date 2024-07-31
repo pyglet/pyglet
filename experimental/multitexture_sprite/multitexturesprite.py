@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pyglet
-import pyglet.experimental
+from pyglet.experimental import multitexture_sprite
 
 window = pyglet.window.Window()
 window.set_size(400, 400)
@@ -21,11 +21,11 @@ crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"),1,
 crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, None, False)
 shader_images = {'brick': brick_animation, 'crack': crack_animation}
 
-sprite = pyglet.experimental.MultiTextureSprite(shader_images,
+sprite = multitexture_sprite.MultiTextureSprite(shader_images,
                                                 x=0,
                                                 y=0,
                                                 batch=batch)
-sprite2 = pyglet.experimental.MultiTextureSprite({'brick': brick_animation, 'crack': crack_animation},
+sprite2 = multitexture_sprite.MultiTextureSprite({'brick': brick_animation, 'crack': crack_animation},
                                                  x=100,
                                                  y=100,
                                                  batch=batch)
@@ -108,7 +108,7 @@ kitten = pyglet.resource.image("kitten.jpg")
 multi_vert_shader = pyglet.graphics.shader.Shader(custom_vertex_source, 'vertex')
 multi_frag_shader = pyglet.graphics.shader.Shader(custom_fragment_source, 'fragment')
 multitex_shader_program = pyglet.graphics.shader.ShaderProgram(multi_vert_shader, multi_frag_shader)
-sprite3 = pyglet.experimental.MultiTextureSprite({'kitten': kitten, 'logo': logo},
+sprite3 = multitexture_sprite.MultiTextureSprite({'kitten': kitten, 'logo': logo},
                                                  x=150,
                                                  y=150,
                                                  batch=batch,
