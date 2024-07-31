@@ -251,7 +251,7 @@ class RunList:
             runs:
                 Runs to set.
         """
-        if end - start < 0:
+        if end - start <= 0:
             return
 
         # Find runs that need to be split
@@ -279,15 +279,14 @@ class RunList:
                 if end_i == start_i:
                     end_trim -= start_trim
                 end_i += 1
+            start_i += 1
         if end_i is not None:
             run = self.runs[end_i]
             self.runs.insert(end_i, _Run(run.value, end_trim))
             run.count -= end_trim
+            end_i += 1
 
-        if start_i is None:
-            self.runs[:end_i] = runs.runs
-        else:
-            self.runs[start_i+1: end_i] = runs.runs
+        self.runs[start_i: end_i] = runs.runs
 
         # Merge adjacent runs
         last_run = self.runs[0]
