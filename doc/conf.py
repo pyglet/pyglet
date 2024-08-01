@@ -119,7 +119,7 @@ skip_modules = {"pyglet": {
                      "pyglet.lib": None,
                      "pyglet.libs": None,
                      "pyglet.app": implementations,
-                     "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
+                     "pyglet.display": implementations + ["xlib_vidmoderestore"],
                      "pyglet.extlibs": None,
                      "pyglet.font": ["quartz",
                                      "win32",

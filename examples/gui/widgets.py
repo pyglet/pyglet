@@ -34,12 +34,12 @@ def toggle_button_handler(widget, value):
     toggle_label.text = f"Toggle Button: {value}"
 
 
-def push_button_handler(widget):
-    push_label.text = f"Push Button: True"
+def push_button_handler():
+    push_label.text = "Push Button: True"
 
 
-def release_button_handler(widget):
-    push_label.text = f"Push Button: False"
+def release_button_handler():
+    push_label.text = "Push Button: False"
 
 
 def text_entry_handler(widget, text):

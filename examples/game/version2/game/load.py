@@ -1,4 +1,6 @@
-import pyglet, math, random
+import pyglet
+import math
+import random
 from . import physicalobject, resources
 
 

@@ -1,9 +1,9 @@
 # Note: The display mode API used here is Mac OS 10.6 only.
+from __future__ import annotations
 
-from ctypes import *
+from ctypes import c_uint32, c_void_p, byref
 
-from .base import Display, Screen, ScreenMode, Canvas
-
+from .base import Canvas, Display, Screen, ScreenMode
 from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf, ObjCClass, get_NSString
 from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
 from pyglet.libs.darwin import NSDeviceResolution
@@ -142,6 +142,6 @@ class CocoaScreenMode(ScreenMode):
 class CocoaCanvas(Canvas):
 
     def __init__(self, display, screen, nsview):
-        super(CocoaCanvas, self).__init__(display)
+        super().__init__(display)
         self.screen = screen
         self.nsview = nsview

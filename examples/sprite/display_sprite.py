@@ -26,5 +26,5 @@ def on_resize(width, height):
 def on_draw():
     window.clear()
     sprite.draw()
-    
+
 pyglet.app.run()

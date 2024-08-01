@@ -1,7 +1,7 @@
-pyglet.canvas
-=============
+pyglet.display
+==============
 
-.. automodule:: pyglet.canvas
+.. automodule:: pyglet.display
   :members:
   :undoc-members:
 

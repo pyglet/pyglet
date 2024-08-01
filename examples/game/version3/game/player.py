@@ -1,4 +1,5 @@
-import pyglet, math
+import pyglet
+import math
 from pyglet.window import key
 from . import physicalobject, resources
 

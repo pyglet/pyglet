@@ -409,7 +409,15 @@ class Sprite(event.EventDispatcher):
             return
         self._program = program
         self._group = self.get_sprite_group()
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+
+        if (self._batch and
+                self._batch.update_shader(self._vertex_list, GL_TRIANGLES, self._group, program)):
+            # Exit early if changing domain is not needed.
+            return
+
+        # Recreate vertex list.
+        self._vertex_list.delete()
+        self._create_vertex_list()
 
     @property
     def batch(self) -> Batch:
@@ -510,12 +518,12 @@ class Sprite(event.EventDispatcher):
         y1 = -img.anchor_y
         x2 = x1 + img.width
         y2 = y1 + img.height
-        vertices = x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0
 
         if not self._subpixel:
-            return tuple(map(int, vertices))
+            return (int(x1), int(y1), 0, int(x2), int(y1), 0,
+                    int(x2), int(y2), 0, int(x1), int(y2), 0)
 
-        return vertices
+        return x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0
 
     def _update_position(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
@@ -814,10 +822,21 @@ class Sprite(event.EventDispatcher):
 
     @frame_index.setter
     def frame_index(self, index: int) -> None:
+        """Set the current Animation frame.
+
+        Args:
+            index:
+                The desired frame index.
+
+        Updates the currently displayed frame of an animation immediately even if
+        the animation is paused.  If not an Animation, this has no effect.
+        """
         # Bound to available number of frames
         if self._animation is None:
             return
         self._frame_index = max(0, min(index, len(self._animation.frames) - 1))
+        frame = self._animation.frames[self._frame_index]
+        self._set_texture(frame.image.get_texture())
 
     def draw(self) -> None:
         """Draw the sprite at its current position.

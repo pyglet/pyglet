@@ -36,7 +36,15 @@ class PygletTextView_Implementation:
         # Interpret tab and return as raw characters
         self.setFieldEditor_(False)
         self.empty_string = CFSTR('')
+
+        # Prevent a blinking cursor in bottom left corner
+        self.setEditable_(False)
         return self
+
+    @PygletTextView.method("v@")
+    def mouseMoved_(self, event):
+        # prevent cursor from being set to I-beam
+        self.nextResponder().mouseMoved_(event)
 
     @PygletTextView.method('v')
     def dealloc(self) -> None:

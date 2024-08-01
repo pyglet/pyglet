@@ -5,7 +5,6 @@ mouse focus.
 """
 
 import pyglet
-import pyglet.text.layout
 
 
 class TextWidget:
@@ -38,12 +37,12 @@ class Window(pyglet.window.Window):
                               color=(0, 0, 0, 255), batch=self.batch),
             pyglet.text.Label('Special abilities', x=10, y=20,
                               anchor_y='bottom', color=(0, 0, 0, 255),
-                              batch=self.batch)
+                              batch=self.batch),
         ]
         self.widgets = [
             TextWidget('This is a test', 200, 100, self.width - 210, self.batch),
             TextWidget('This is a test', 200, 60, self.width - 210, self.batch),
-            TextWidget('This is a test', 200, 20, self.width - 210, self.batch)
+            TextWidget('This is a test', 200, 20, self.width - 210, self.batch),
         ]
         self.text_cursor = self.get_system_mouse_cursor('text')
 

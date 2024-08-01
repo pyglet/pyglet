@@ -41,7 +41,7 @@ def create_alarm(dt):
 @register_event_type('on_wake_up')
 class Alarms(EventDispatcher):
     def on_wake_up(self, dt):
-        print('Yet another {} seconds wasted! Wake up!'.format(dt))
+        print(f'Yet another {dt} seconds wasted! Wake up!')
 
 
 alarms = Alarms()

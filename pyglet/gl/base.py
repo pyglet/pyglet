@@ -1,23 +1,24 @@
 from __future__ import annotations
 
-import weakref
+import abc
 import threading
-
+import weakref
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import pyglet
-
 from pyglet import gl
 from pyglet.gl import gl_info
 
 if TYPE_CHECKING:
+    from _ctypes import Array
     from pyglet.display import Canvas
     from pyglet.gl.gl_info import GLInfo
     from pyglet.graphics.shader import ShaderProgram
 
 
 class OpenGLAPI(Enum):
+    """The OpenGL API backend to use."""
     OPENGL = 1
     OPENGL_ES = 2
 
@@ -66,7 +67,7 @@ class Config:
     #: Bits per pixel devoted to the alpha component in the accumulation buffer.
     accum_alpha_size: int
 
-    _attribute_names = [
+    _attribute_names = (
         'double_buffer',
         'stereo',
         'buffer_size',
@@ -87,8 +88,8 @@ class Config:
         'minor_version',
         'forward_compatible',
         'opengl_api',
-        'debug'
-    ]
+        'debug',
+    )
 
     #: The OpenGL major version.
     major_version: int
@@ -101,7 +102,7 @@ class Config:
     #: Debug mode.
     debug: bool
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: float) -> None:
         """Create a template config with the given attributes.
 
         Specify attributes as keyword arguments, for example::
@@ -118,7 +119,7 @@ class Config:
         self.opengl_api = self.opengl_api or "gl"
 
     def get_gl_attributes(self) -> list[tuple[str, bool | int | str]]:
-        """Return a list of attributes set on this config
+        """Return a list of attributes set on this config.
 
         The attributes are returned as a list of tuples, containing
         the name and values. Any unset attributes will have a value
@@ -126,11 +127,11 @@ class Config:
         """
         return [(name, getattr(self, name)) for name in self._attribute_names]
 
+    @abc.abstractmethod
     def match(self, canvas: Canvas) -> list[DisplayConfig]:
         """Return a list of matching complete configs for the given canvas."""
-        raise NotImplementedError('abstract')
 
-    def create_context(self, share: Context | None) -> Context:
+    def create_context(self, share: Context | None) -> Context:  # noqa: ARG002
         """Create a GL context that satisifies this configuration.
 
         Args:
@@ -139,8 +140,11 @@ class Config:
 
         :deprecated: Use `DisplayConfig.create_context`.
         """
-        raise gl.ConfigException('This config cannot be used to create contexts. '
-                                 'Use Config.match to created a CanvasConfig')
+        msg = (
+            'This config cannot be used to create contexts. '
+            'Use Config.match to created a CanvasConfig'
+        )
+        raise gl.ConfigException(msg)
 
     def is_complete(self) -> bool:
         """Determine if this config is complete and able to create a context.
@@ -154,7 +158,7 @@ class Config:
         """
         return isinstance(self, DisplayConfig)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
@@ -165,8 +169,9 @@ class DisplayConfig(Config):
 
     .. versionadded:: 1.2
     """
+    canvas: Canvas
 
-    def __init__(self, canvas: Canvas, base_config: Config):
+    def __init__(self, canvas: Canvas, base_config: Config) -> None:
         #: The canvas this config is valid on.
         self.canvas: Canvas = canvas
 
@@ -176,24 +181,28 @@ class DisplayConfig(Config):
         self.opengl_api = base_config.opengl_api or self.opengl_api
         self.debug = base_config.debug
 
+    @abc.abstractmethod
     def compatible(self, canvas: Canvas) -> bool:
-        raise NotImplementedError('abstract')
+        """Determine compatability with the canvas."""
 
+    @abc.abstractmethod
     def create_context(self, share: Context) -> Context:
-        """Create a GL context that satisifies this configuration.
+        """Create a GL context that satisfies this configuration.
 
         Args:
             share:
                 If not ``None``, a Context with which to share objects with.
         """
-        raise NotImplementedError('abstract')
 
     def is_complete(self) -> bool:
         return True
 
 
 class ObjectSpace:
-    def __init__(self):
+    """A container to store shared objects that are to be removed."""
+
+    def __init__(self) -> None:
+        """Initialize the context object space."""
         # Objects scheduled for deletion the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
@@ -203,17 +212,29 @@ class ObjectSpace:
 
 
 class Context:
-    """An OpenGL context for drawing.
+    """A base OpenGL context for drawing.
 
     Use ``CanvasConfig.create_context`` to create a context.
     """
     #: gl_info.GLInfo instance, filled in on first set_current
-    _info = None
+    _info: GLInfo | None = None
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
+    config: CanvasConfig
+    context_share: Context | None
 
-    def __init__(self, config: Config, context_share: Context | None = None):
+    def __init__(self, config: CanvasConfig, context_share: Context | None = None) -> None:
+        """Initialize a context.
+
+        This should only be created through the ``CanvasConfig.create_context`` method.
+
+        Args:
+            config:
+                An operating system specific config.
+            context_share:
+                A context to share objects with. Use ``None`` to disable sharing.
+        """
         self.config = config
         self.context_share = context_share
         self.canvas = None
@@ -231,15 +252,18 @@ class Context:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.set_current()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_args) -> None:  # noqa: ANN002
         return
 
-    def attach(self, canvas: Canvas):
+    def attach(self, canvas: Canvas) -> None:
         if self.canvas is not None:
             self.detach()
+        if not self.config.compatible(canvas):
+            msg = f'Cannot attach {canvas} to {self}'
+            raise RuntimeError(msg)
         self.canvas = canvas
 
     def detach(self) -> None:
@@ -254,12 +278,13 @@ class Context:
         deletion while another Context was active.
         """
         if not self.canvas:
-            raise RuntimeError('Canvas has not been attached')
+            msg = 'Canvas has not been attached'
+            raise RuntimeError(msg)
 
-        # XXX not per-thread
+        # Not per-thread
         gl.current_context = self
 
-        # XXX
+        # Set active context.
         gl_info.set_active_context()
 
         if not self._info:
@@ -283,15 +308,16 @@ class Context:
         if self.doomed_framebuffers:
             self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
 
-    # For the functions below:
+    # For the static functions below:
     # The garbage collector introduces a race condition.
     # The provided list might be appended to (and only appended to) while this
     # method runs, as it's a `doomed_*` list either on the context or its bject
     # space. If `count` wasn't stored in a local, this method might leak objects.
     @staticmethod
-    def _delete_objects(list_, deletion_func) -> None:
-        """Release all OpenGL objects in the given list using the supplied
-        deletion function with the signature ``(GLuint count, GLuint *names)``.
+    def _delete_objects(list_: list, deletion_func: Callable[[int, Array[gl.GLuint]], None]) -> None:
+        """Release all OpenGL objects in the given list.
+
+        Uses the supplied deletion function with the signature ``(GLuint count, GLuint *names)``.
         """
         count = len(list_)
         to_delete = list_[:count]
@@ -300,9 +326,12 @@ class Context:
         deletion_func(count, (gl.GLuint * count)(*to_delete))
 
     @staticmethod
-    def _delete_objects_one_by_one(list_, deletion_func) -> None:
-        """Similar to ``_delete_objects``, but assumes the deletion function's
-        signature to be ``(GLuint name)``, calling it once for each object.
+    def _delete_objects_one_by_one(list_: list, deletion_func: Callable[[gl.GLuint], None]) -> None:
+        """Release all OpenGL objects in the given list.
+
+        Similar to ``_delete_objects``, but assumes the deletion function's signature to be ``(GLuint name)``.
+
+        The function is called for each object.
         """
         count = len(list_)
         to_delete = list_[:count]
@@ -326,8 +355,8 @@ class Context:
             gl_info.remove_active_context()
 
             # Switch back to shadow context.
-            if gl._shadow_window is not None:
-                gl._shadow_window.switch_to()
+            if gl._shadow_window is not None:  # noqa: SLF001
+                gl._shadow_window.switch_to()  # noqa: SLF001
 
     def _safe_to_operate_on_object_space(self) -> bool:
         """Check if it's safe to interact with this context's object space.

@@ -69,7 +69,7 @@ class Caret:
     _mark: int | None = None
     _next_attributes: dict[str, Any]
 
-    def __init__(self, layout: IncrementalTextLayout, batch: Batch = None,
+    def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
                  color: tuple[int, int, int, int] = (0, 0, 0, 255)) -> None:
         """Create a caret for a layout.
 
@@ -89,7 +89,7 @@ class Caret:
         from pyglet import gl
         self._layout = layout
 
-        self._custom_batch = True if batch else False
+        self._custom_batch = batch is not None
         self._batch = batch or layout.batch
         self._group = layout.foreground_decoration_group
 
@@ -121,11 +121,11 @@ class Caret:
         if self._layout == layout and self._group == layout.group:
             return
 
-        from pyglet import gl
+        from pyglet.gl import GL_LINES
         self._layout = layout
         batch = self._batch if self._custom_batch else layout.batch
         self._group = layout.foreground_decoration_group
-        self._batch.migrate(self._list, gl.GL_LINES, self._group, batch)
+        self._batch.migrate(self._list, GL_LINES, self._group, batch)
 
     def delete(self) -> None:
         """Remove the caret from its batch.

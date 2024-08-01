@@ -78,7 +78,8 @@ class SpaceReader:
     def read(self, file):
         if not hasattr(file, 'read'):
             self.basedir = os.path.dirname(file)
-            file = open(file, 'rt')
+            with open(file) as f:
+                file = f.readlines()
         elif hasattr(file, 'name'):
             self.basedir = os.path.dirname(file.name)
         reader = None

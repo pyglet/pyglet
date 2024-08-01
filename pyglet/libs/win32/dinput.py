@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ctypes
 
 from pyglet.libs.win32 import com
@@ -208,7 +210,7 @@ DISCL_BACKGROUND = 0x00000008
 DISCL_NOWINKEY = 0x00000010
 
 DIPROP_BUFFERSIZE = 1
-DIPROP_GUIDANDPATH = com.GUID(12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+DIPROP_GUIDANDPATH = 12
 
 GUID_XAxis = \
     com.GUID(0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00)
@@ -224,13 +226,13 @@ class DIDEVICEINSTANCE(ctypes.Structure):
         ('tszProductName', WCHAR * MAX_PATH),
         ('guidFFDriver', com.GUID),
         ('wUsagePage', WORD),
-        ('wUsage', WORD)
+        ('wUsage', WORD),
     )
 LPDIDEVICEINSTANCE = ctypes.POINTER(DIDEVICEINSTANCE)
 LPDIENUMDEVICESCALLBACK = ctypes.WINFUNCTYPE(BOOL, LPDIDEVICEINSTANCE, LPVOID)
 
 class DIDEVICEOBJECTINSTANCE(ctypes.Structure):
-    _fields_ = (    
+    _fields_ = (
         ('dwSize', DWORD),
         ('guidType', com.GUID),
         ('dwOfs', DWORD),
@@ -245,7 +247,7 @@ class DIDEVICEOBJECTINSTANCE(ctypes.Structure):
         ('wUsage', WORD),
         ('dwDimension', DWORD),
         ('wExponent', WORD),
-        ('wReportId', WORD)
+        ('wReportId', WORD),
     )
 LPDIDEVICEOBJECTINSTANCE = ctypes.POINTER(DIDEVICEOBJECTINSTANCE)
 LPDIENUMDEVICEOBJECTSCALLBACK = \
@@ -256,7 +258,7 @@ class DIOBJECTDATAFORMAT(ctypes.Structure):
         ('pguid', ctypes.POINTER(com.GUID)),
         ('dwOfs', DWORD),
         ('dwType', DWORD),
-        ('dwFlags', DWORD)
+        ('dwFlags', DWORD),
     )
     __slots__ = [n for n, t in _fields_]
 LPDIOBJECTDATAFORMAT = ctypes.POINTER(DIOBJECTDATAFORMAT)
@@ -268,7 +270,7 @@ class DIDATAFORMAT(ctypes.Structure):
         ('dwFlags', DWORD),
         ('dwDataSize', DWORD),
         ('dwNumObjs', DWORD),
-        ('rgodf', LPDIOBJECTDATAFORMAT)
+        ('rgodf', LPDIOBJECTDATAFORMAT),
     )
     __slots__ = [n for n, t in _fields_]
 LPDIDATAFORMAT = ctypes.POINTER(DIDATAFORMAT)
@@ -279,7 +281,7 @@ class DIDEVICEOBJECTDATA(ctypes.Structure):
         ('dwData', DWORD),
         ('dwTimeStamp', DWORD),
         ('dwSequence', DWORD),
-        ('uAppData', ctypes.POINTER(UINT))
+        ('uAppData', ctypes.POINTER(UINT)),
     )
 LPDIDEVICEOBJECTDATA = ctypes.POINTER(DIDEVICEOBJECTDATA)
 
@@ -288,14 +290,14 @@ class DIPROPHEADER(ctypes.Structure):
         ('dwSize', DWORD),
         ('dwHeaderSize', DWORD),
         ('dwObj', DWORD),
-        ('dwHow', DWORD)
+        ('dwHow', DWORD),
     )
 LPDIPROPHEADER = ctypes.POINTER(DIPROPHEADER)
 
 class DIPROPDWORD(ctypes.Structure):
     _fields_ = (
         ('diph', DIPROPHEADER),
-        ('dwData', DWORD)
+        ('dwData', DWORD),
     )
 
 # All method names in the interfaces are filled in, but unused (so far)
@@ -369,7 +371,7 @@ class IDirectInputDevice8(com.pIUnknown):
 class IDirectInput8(com.pIUnknown):
     _methods_ = [
         ('CreateDevice',
-         com.STDMETHOD(ctypes.POINTER(com.GUID), 
+         com.STDMETHOD(ctypes.POINTER(com.GUID),
                        ctypes.POINTER(IDirectInputDevice8),
                        ctypes.c_void_p)),
         ('EnumDevices',

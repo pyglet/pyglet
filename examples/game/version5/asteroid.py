@@ -56,7 +56,7 @@ def reset_level(num_lives=2):
     # Make three sprites to represent remaining lives
     player_lives = load.player_lives(num_lives, main_batch)
 
-    # Make some asteroids so we have something to shoot at 
+    # Make some asteroids so we have something to shoot at
     asteroids = load.asteroids(num_asteroids, player_ship.position, main_batch)
 
     # Store all objects that update each frame in a list
@@ -120,7 +120,7 @@ def update(dt):
     for to_remove in [obj for obj in game_objects if obj.dead]:
         if to_remove == player_ship:
             player_dead = True
-        # If the dying object spawned any new objects, add those to the 
+        # If the dying object spawned any new objects, add those to the
         # game_objects list later
         to_add.extend(to_remove.new_objects)
 

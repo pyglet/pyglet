@@ -151,12 +151,12 @@ Then you can set (or get) the value using the uniform name as a key::
     program['time'] = delta_time
 
 
-Uniform Buffer Objects (Uniform Blocks)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Uniform Blocks and Uniform Buffer Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Pyglet also offers access to Uniform Buffer Objects or Uniform Blocks. These are special objects that can be used to
-share uniforms between different programs. For example, by default, Pyglet's ``projection`` and ``view`` matrix
-are both contained in the ``WindowBlock`` uniform block. Which looks like this in the vertex shader::
+Pyglet also introspects and makes Uniform Blocks (or Interface Blocks) available, including ways to manage and use Uniform Buffer Objects.
+
+By default, Pyglet's ``projection`` and ``view`` matrix are both contained in the ``WindowBlock`` uniform block. Which looks like this in the vertex shader::
 
     uniform WindowBlock
     {
@@ -166,8 +166,11 @@ are both contained in the ``WindowBlock`` uniform block. Which looks like this i
 
 You can view what uniform blocks exist in a :py:class:`~pyglet.graphics.shader.ShaderProgram` using the `uniform_blocks`
 property. This is a dictionary containing a Uniform Block name key to a :py:class:`~pyglet.graphics.shader.UniformBlock`
-object value. In the above example, the name would be ``WindowBlock`` while the ``window`` identifier is used in the GLSL
-shader itself.
+object value. In the above example, the name would be ``WindowBlock`` while the ``window`` instance identifier is used in the GLSL shader itself.
+
+Normally with OpenGL, you would have to manually assign a global binding point value to each Uniform Block for each Shader Program, as they are created. With Pyglet, the global binding values and assignments are all taken care of internally.
+
+Uniform Blocks can be a convenient way to update uniforms of multiple Shader Programs at once, as their data is shared. This allows you to access the same information from multiple Shader Programs without having to bind every program using it, just to modify the uniform values. This can be achieved through a :py:class:`~pyglet.graphics.shader.UniformBufferObject`.
 
 To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, you must first create a
 :py:class:`~pyglet.graphics.shader.UniformBufferObject` using the
@@ -175,11 +178,22 @@ To modify the uniforms in a :py:class:`~pyglet.graphics.shader.UniformBlock`, yo
 
     ubo = program.uniform_blocks['WindowBlock'].create_ubo()
 
-The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used, and acts as a context manager for easy
-access to its uniforms::
+The :py:class:`~pyglet.graphics.shader.UniformBufferObject` can then be used as a context manager for easy
+access to update its uniforms::
 
         with ubo as window_block:
             window_block.projection[:] = new_matrix
+
+You can also create multiple :py:class:`~pyglet.graphics.shader.UniformBufferObject` instances if you need to swap between different sets of data. Calling :py:meth:`~pyglet.graphics.shader.UniformBufferObject.bind` will bind the buffers data to the associated binding point.
+
+There may come a point where you don't want a specific :py:class:`~pyglet.graphics.shader.ShaderProgram`, or a group of them, to use the same uniform data set as the rest of your shaders. At this point, you will have to modify the binding point of those Uniform Blocks to one that is unused. This can be done through :py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`. Once the binding has been set, you will have to create a new :py:class:`~pyglet.graphics.shader.UniformBufferObject` using the :py:meth:`~pyglet.graphics.shader.UniformBlock.create_ubo` method again and supply it with your new data set.
+
+.. warning:: When assigning custom binding points through py:meth:`~pyglet.graphics.shader.UniformBlock.set_binding`, it is recommended to use an unassigned binding point, as unexpected behavior may occur. A warning will be output if such a collision occurs.
+
+             The maximum binding point value is determined by the hardware. This can be retrieved by calling :py:func:`~pyglet.graphics.shader.get_maximum_binding_count`. It is recommended to use a number
+             higher than the amount of Uniform Blocks in your application to prevent collisions.
+
+.. note:: Binding point 0 cannot be set, as it is used internally for ``WindowBlock``.
 
 
 Creating Vertex Lists

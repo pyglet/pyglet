@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import ctypes
+from typing import Any, Callable, NoReturn, Sequence
 
 import pyglet
 
@@ -10,18 +13,18 @@ _debug_gl_trace = pyglet.options['debug_gl_trace']
 _debug_gl_trace_args = pyglet.options['debug_gl_trace_args']
 
 
-class MissingFunctionException(Exception):
-    def __init__(self, name, requires=None, suggestions=None):
-        msg = '%s is not exported by the available OpenGL driver.' % name
+class MissingFunctionException(Exception):  # noqa: N818
+    def __init__(self, name: str, requires: str | None = None, suggestions: Sequence[str] | None=None) -> None:
+        msg = f'{name} is not exported by the available OpenGL driver.'
         if requires:
-            msg += '  %s is required for this functionality.' % requires
+            msg += f'  {requires} is required for this functionality.'
         if suggestions:
-            msg += '  Consider alternative(s) %s.' % ', '.join(suggestions)
+            msg += '  Consider alternative(s) {}.'.format(', '.join(suggestions))
         Exception.__init__(self, msg)
 
 
-def missing_function(name, requires=None, suggestions=None):
-    def MissingFunction(*args, **kwargs):
+def missing_function(name: str, requires: str | None =None, suggestions: Sequence[str] | None=None) -> Callable:  # noqa: D103
+    def MissingFunction(*_args, **_kwargs) -> NoReturn:  # noqa: ANN002, ANN003, N802
         raise MissingFunctionException(name, requires, suggestions)
 
     return MissingFunction
@@ -49,7 +52,7 @@ class GLException(Exception):
     pass
 
 
-def errcheck(result, func, arguments):
+def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
     if _debug_gl_trace:
         try:
             name = func.__name__
@@ -71,19 +74,20 @@ def errcheck(result, func, arguments):
             gl.GL_INVALID_ENUM: "Invalid enum. An unacceptable value is specified for an enumerated argument.",
             gl.GL_INVALID_VALUE: "Invalid value. A numeric argument is out of range.",
             gl.GL_INVALID_OPERATION: "Invalid operation. The specified operation is not allowed in the current state.",
-            gl.GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operation. The framebuffer object is not complete.",
+            gl.GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operation. The framebuffer object is not "
+                                                 "complete.",
             gl.GL_OUT_OF_MEMORY: "Out of memory. There is not enough memory left to execute the command.",
         }
-        msg = error_types.get(error, "Unknown error")
-        raise GLException(f'(0x{error}): {msg}')
+        error_msg = error_types.get(error, "Unknown error")
+        msg = f'(0x{error}): {error_msg}'
+        raise GLException(msg)
     return result
 
 
-def decorate_function(func, name):
-    if _debug_gl:
-        if name not in ('glGetError',) and name[:3] not in ('glX', 'agl', 'wgl'):
-            func.errcheck = errcheck
-            func.__name__ = name
+def decorate_function(func: Callable, name: str) -> None:  # noqa: D103
+    if _debug_gl and name not in ('glGetError',) and name[:3] not in ('glX', 'agl', 'wgl'):
+        func.errcheck = errcheck
+        func.__name__ = name
 
 
 link_AGL = None
@@ -93,6 +97,6 @@ link_WGL = None
 if pyglet.compat_platform in ('win32', 'cygwin'):
     from pyglet.gl.lib_wgl import link_GL, link_WGL
 elif pyglet.compat_platform == 'darwin':
-    from pyglet.gl.lib_agl import link_GL, link_AGL
+    from pyglet.gl.lib_agl import link_AGL, link_GL
 else:
     from pyglet.gl.lib_glx import link_GL, link_GLX

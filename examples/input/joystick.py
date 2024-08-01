@@ -1,5 +1,4 @@
 import pyglet
-from pyglet.gl import *
 
 joysticks = pyglet.input.get_joysticks()
 assert joysticks, 'No joystick device is connected'

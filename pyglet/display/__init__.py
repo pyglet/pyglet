@@ -20,7 +20,7 @@ The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
 .. versionadded:: 1.2
-"""
+"""  # noqa: I002
 
 import sys
 import weakref
@@ -44,10 +44,13 @@ else:
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
         from pyglet.display.win32 import Win32Canvas as Canvas
-    else:
+    elif compat_platform == 'linux':
         from pyglet.display.xlib import XlibDisplay as Display
         from pyglet.display.xlib import XlibScreen as Screen
         from pyglet.display.xlib import XlibCanvas as Canvas
+    else:
+        msg = f"A display interface for '{compat_platform}' is not yet implemented."
+        raise NotImplementedError(msg)
 
 
 _displays: weakref.WeakSet = weakref.WeakSet()
@@ -72,3 +75,6 @@ def get_display() -> Display:
 
     # Otherwise, create a new display and return it.
     return Display()
+
+
+__all__ = ['Display', 'Screen', 'Canvas', 'ScreenMode', 'get_display']

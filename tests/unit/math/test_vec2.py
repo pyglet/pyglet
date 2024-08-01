@@ -45,6 +45,10 @@ def test_swizzle():
     assert v.yx == (2, 1)
     assert v.xx == (1, 1)
     assert v.yy == (2, 2)
+    assert v.xyxy == (1, 2, 1, 2)
+
+    with pytest.raises(AttributeError):
+        v.xxxxx
 
 
 def test_mutability():
@@ -55,6 +59,18 @@ def test_mutability():
         v.y = 1
     with pytest.raises(TypeError):
         v[0] = 1  # __setitem__ is not supported
+
+    # Swizzle is an output-only operation
+    with pytest.raises(AttributeError):
+        v.xy = (1, 2)
+    with pytest.raises(AttributeError):
+        v.yx = (2, 1)
+    with pytest.raises(AttributeError):
+        v.xx = (1, 1)
+    with pytest.raises(AttributeError):
+        v.yy = (2, 2)
+    with pytest.raises(AttributeError):
+        v.xyxy = (1, 2, 1, 2)
 
 
 def test_len():
@@ -90,6 +106,29 @@ def test_add():
     v = Vec2(1, 2)
     v += (3, 4)
     assert v == Vec2(4, 6)
+
+
+def test_radd():
+    # These should be distinct and  unreachable through
+    # simple mis-addition of the mirrored values below.
+    goal_x = -1901.0
+    goal_y = 7919.0
+    pairs = [
+        # A few (+even, -odd) Vec2s + tuples
+        Vec2( -8.0,     7.0),
+        ( -6.0,     5.0),
+        Vec2( -4.0,     3.0),
+        ( -2.0,     1.0),
+
+        Vec2(goal_x, goal_y),
+
+        # Negatives of the block above the marker line
+        (  2.0, -    1.0),
+        Vec2(  4.0, -    3.0),
+        (  6.0, -    5.0),
+        Vec2(  8.0, -    7.0),
+    ]
+    assert sum(pairs) == Vec2(goal_x, goal_y)
 
 
 def test_sub():
@@ -356,6 +395,10 @@ def test_clamp():
 
     assert Vec2(-10, 10).clamp(Vec2(-20, -20), Vec2(20, 20)) == Vec2(-10, 10)
     assert Vec2(-10, 10).clamp(Vec2(-5, 5), Vec2(5, 5)) == Vec2(-5, 5)
+
+    # Revert if necessary for perf
+    assert Vec2(-1, 50).clamp(Vec2(0, 0), 10) == Vec2(0, 10)
+    assert Vec2(-1,  50).clamp(0, Vec2(10, 10)) == Vec2(0, 10)
 
 
 def test_dot():

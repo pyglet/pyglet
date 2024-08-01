@@ -103,7 +103,7 @@ from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
-    from pyglet.canvas import Display, Screen, ScreenMode
+    from pyglet.display import Display, Screen, ScreenMode
     from pyglet.gl import CanvasConfig, Config, Context
     from pyglet.text import Label
 
@@ -453,7 +453,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         ``config`` is a special case; it can be a template created by the
         user specifying the attributes desired, or it can be a complete
-        ``config`` as returned from :py:meth:`~pyglet.canvas.Screen.get_matching_configs`` or similar.
+        ``config`` as returned from :py:meth:`~pyglet.display.Screen.get_matching_configs`` or similar.
 
         The context will be active as soon as the window is created, as if
         :py:meth:`~pyglet.window.Window.switch_to`` was just called.
@@ -868,7 +868,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 the window.
             mode:
                 The screen will be switched to the given mode.  The mode must
-                have been obtained by enumerating :py:meth:`~pyglet.canvas.Screen.get_modes`.  If
+                have been obtained by enumerating :py:meth:`~pyglet.display.Screen.get_modes`.  If
                 None, an appropriate mode will be selected from the given
                 ``width`` and ``height``.
             width: int
@@ -1821,3 +1821,24 @@ else:
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()  # noqa: SLF001
+
+
+__all__ = (
+    # imported  # noqa: ERA001
+    "event",
+    "key",
+    # classes  # noqa: ERA001
+    "BaseWindow",
+    "Window",
+    "MouseCursor",
+    "DefaultMouseCursor",
+    "ImageMouseCursor",
+    "FPSDisplay",
+    # errors  # noqa: ERA001
+    "WindowException",
+    "NoSuchScreenModeException",
+    "NoSuchDisplayException",
+    "NoSuchConfigException",
+    "MouseCursorException",
+
+)

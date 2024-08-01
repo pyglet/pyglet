@@ -1,9 +1,10 @@
-from ctypes import *
-from typing import Any, Callable
+from __future__ import annotations
+
+from ctypes import CFUNCTYPE, POINTER, c_ubyte, cast, create_string_buffer, pointer
+from typing import Any, Callable, Sequence
 
 import pyglet.lib
-from pyglet.gl.lib import missing_function, decorate_function
-
+from pyglet.gl.lib import decorate_function, missing_function
 from pyglet.util import asbytes
 
 __all__ = ['link_GL', 'link_GLX']
@@ -12,7 +13,7 @@ gl_lib = pyglet.lib.load_library('GL')
 
 # Look for glXGetProcAddressARB extension, use it as fallback (for ATI fglrx and DRI drivers).
 try:
-    glXGetProcAddressARB = getattr(gl_lib, 'glXGetProcAddressARB')
+    glXGetProcAddressARB = getattr(gl_lib, 'glXGetProcAddressARB')  # noqa: B009, N816
     glXGetProcAddressARB.restype = POINTER(CFUNCTYPE(None))
     glXGetProcAddressARB.argtypes = [POINTER(c_ubyte)]
     _have_getprocaddress = True
@@ -20,7 +21,14 @@ except AttributeError:
     _have_getprocaddress = False
 
 
-def link_GL(name, restype, argtypes, requires=None, suggestions=None) -> Callable[..., Any]:
+def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802
+            suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
+    """Attempt to retrieve the GL function from the loaded library.
+
+    If the function is not found, an attempt will be made via glXGetProcAddressARB.
+
+    If both are unsuccessful, a dummy function will be returned that raises a MissingFunctionException.
+    """
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
@@ -33,7 +41,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None) -> Callabl
             bname = cast(pointer(create_string_buffer(asbytes(name))), POINTER(c_ubyte))
             addr = glXGetProcAddressARB(bname)
             if addr:
-                ftype = CFUNCTYPE(*((restype,) + tuple(argtypes)))
+                ftype = CFUNCTYPE(*((restype, *tuple(argtypes))))
                 func = cast(addr, ftype)
                 decorate_function(func, name)
                 return func
@@ -41,4 +49,4 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None) -> Callabl
     return missing_function(name, requires, suggestions)
 
 
-link_GLX = link_GL
+link_GLX = link_GL  # noqa: N816

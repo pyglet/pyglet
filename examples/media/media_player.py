@@ -15,7 +15,6 @@ The raw data captured in the .dbg can be rendered as human readable
 using the script report.py
 """
 
-from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -24,7 +23,14 @@ import os
 import sys
 import weakref
 
-from pyglet.gl import *
+from pyglet.gl import (
+    glEnable,
+    glBlendFunc,
+    GL_BLEND,
+    GL_LINE_LOOP,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+)
 import pyglet
 from pyglet.window import key
 
@@ -41,9 +47,9 @@ def draw_rect(x, y, width, height, color=(1, 1, 1, 1)):
                         x + width, y, 0,
                         x + width, y + height, 0,
                         x, y + height, 0,
-                        )
+                        ),
                   ),
-        colors=('f', color * 4)
+        colors=('f', color * 4),
     )
 
 
@@ -141,8 +147,8 @@ class Slider(Control):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         # On some platforms, on_mouse_drag is triggered with a high frequency.
-        # Seeking takes some time (~200ms). Asking for a seek at every 
-        # on_mouse_drag event would starve the event loop. 
+        # Seeking takes some time (~200ms). Asking for a seek at every
+        # on_mouse_drag event would starve the event loop.
         # Instead we only record the last mouse position and we
         # schedule seek_request to dispatch the on_change event in the future.
         # This will allow subsequent on_mouse_drag to change the seek_value

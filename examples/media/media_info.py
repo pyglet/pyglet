@@ -14,7 +14,7 @@ def print_ffmpeg_info():
 
     if have_ffmpeg():
         from pyglet.media.codecs import ffmpeg
-        print('Using FFmpeg version {0}'.format(ffmpeg.get_version()))
+        print(f'Using FFmpeg version {ffmpeg.get_version()}')
     else:
         print('FFmpeg not available')
         print('https://www.ffmpeg.org/download.html\n')
