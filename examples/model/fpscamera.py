@@ -12,23 +12,6 @@ from pyglet.math import Vec2, Vec3, Mat4, clamp
 MODULE_PATH = Path(__file__).parent
 
 
-def from_pitch_yaw(pitch: float, yaw: float) -> Vec3:
-    """Create a unit vector from pitch and yaw in radians.
-
-    The the returned vector is normalized.
-    """
-    return Vec3(
-        cos(yaw) * cos(pitch),
-        sin(pitch),
-        sin(yaw) * cos(pitch),
-    ).normalize()
-
-
-def get_pitch_yaw(vector: Vec3) -> tuple[float, float]:
-    """Get the pitch and yaw angles from a unit vector in radians."""
-    return asin(vector.y), atan2(vector.z, vector.x)
-
-
 class FPSCamera:
     """A 3D projection "first person" camera example.
 
@@ -75,8 +58,8 @@ class FPSCamera:
         self.field_of_view = field_of_view
 
         # Camera speed
-        self.walk_speed = 10.0  # Speed of translation
-        self.look_speed = 0.35  # Speed of rotation
+        self.walk_speed = 5.0  # Speed of translation
+        self.look_speed = 0.2  # Speed of rotation
 
         # Pitch, yaw in degrees. We update the camera based on these values.
         self.pitch = 0
@@ -84,9 +67,9 @@ class FPSCamera:
 
         # Keyboard states
         # Tack what axis the player is moving on (local space)
-        self._x_state = self.STILL
-        # self._y_state = self.STILL
-        self._z_state = self.STILL
+        self._x_state = self.STILL  # left/right
+        self._z_state = self.STILL  # forward/backwards
+        self._y_state = self.STILL  # up/down
 
         # Mouse states
         self._exclusive_mouse = False
@@ -96,8 +79,8 @@ class FPSCamera:
             target = Vec3(0.0, 0.0, -1.0)
 
         # Point the camera in the configured initial direction
-        initial_direction = target - self.position
-        pitch, yaw = get_pitch_yaw(initial_direction)
+        initial_direction = (target - self.position).normalize()
+        pitch, yaw = initial_direction.get_pitch_yaw()
         self.yaw = degrees(yaw)
         self.pitch = degrees(pitch)
 
@@ -121,13 +104,14 @@ class FPSCamera:
     def on_refresh(self, delta_time: float) -> None:
         """Called before the window content is drawn."""
         # Calculate the forward and right vectors from the pitch and yaw
-        forward = from_pitch_yaw(radians(self.pitch), radians(self.yaw))
+        forward = Vec3.from_pitch_yaw(radians(self.pitch), radians(self.yaw))
         right = forward.cross(self.UP).normalize()
         up = right.cross(forward).normalize()
 
         # Calculate movement
         offset = forward * (self._z_state * self.walk_speed * delta_time)
         offset += right * (self._x_state * self.walk_speed * delta_time)
+        offset += up * (self._y_state * self.walk_speed * delta_time)
         self.position += offset
 
         # We could construct our own matrix from the vectors, but it's
@@ -161,17 +145,23 @@ class FPSCamera:
             self._window.set_exclusive_mouse(False)
             return pyglet.event.EVENT_HANDLED
 
-        if symbol == pyglet.window.key.W:  # Forward
+        if symbol == _key.W:  # Forward
             self._z_state = self.POSITIVE
             return True
-        if symbol == pyglet.window.key.S:  # Backward
+        if symbol == _key.S:  # Backward
             self._z_state = self.NEGATIVE
             return True
-        if symbol == pyglet.window.key.A:  # Left
+        if symbol == _key.A:  # Left
             self._x_state = self.NEGATIVE
             return True
-        if symbol == pyglet.window.key.D:  # Right
+        if symbol == _key.D:  # Right
             self._x_state = self.POSITIVE
+            return True
+        if symbol == _key.E:  # up
+            self._y_state = self.POSITIVE
+            return True
+        if symbol == _key.Q:  # down
+            self._y_state = self.NEGATIVE
             return True
 
         return False
@@ -185,7 +175,10 @@ class FPSCamera:
         if symbol in (_key.A, _key.D):
             self._x_state = self.STILL
             return True
-
+        if symbol in (_key.E, _key.Q):
+            self._y_state = self.STILL
+            return True
+ 
         return False
 
     def on_stick_motion(self, _controller, stick, vector):
