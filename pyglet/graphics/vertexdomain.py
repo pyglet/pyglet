@@ -186,6 +186,17 @@ class VertexList:
         self.start = new_start
         self.instanced = True
 
+    def update_group(self, group: Group):
+        current_group = self.domain.group_vlists[self]
+        assert current_group != group, "Changing group to same group."
+        self.domain.group_vertex_ranges[current_group].remove((self.start, self.count))
+
+        # Set new group
+        self.domain.group_vlists[self] = group
+        if group not in self.domain.group_vertex_ranges:
+            self.domain.group_vertex_ranges[group] = []
+        self.domain.group_vertex_ranges[group].append((self.start, self.count))
+
     def migrate(self, domain: VertexDomain | InstancedVertexDomain) -> None:
         """Move this group from its current domain and add to the specified one.
 
@@ -275,6 +286,17 @@ class IndexedVertexList(VertexList):
 
         self.domain.group_index_ranges[group].remove((self.index_start, self.index_count))
 
+    def update_group(self, group: Group):
+        current_group = self.domain.group_vlists[self]
+        super().update_group(group)
+        self.domain.group_index_ranges[current_group].remove((self.index_start, self.index_count))
+
+        # Set new group
+        self.domain.group_vlists[self] = group
+        if group not in self.domain.group_index_ranges:
+            self.domain.group_index_ranges[group] = []
+        self.domain.group_index_ranges[group].append((self.index_start, self.index_count))
+
     def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain) -> None:
         """Move this group from its current indexed domain and add to the specified one.
 
@@ -285,6 +307,9 @@ class IndexedVertexList(VertexList):
             domain:
                 Indexed domain to migrate this vertex list to.
         """
+        if domain == self.domain:
+            return
+
         old_start = self.start
         old_domain = self.domain
         super().migrate(domain)
@@ -781,6 +806,9 @@ class IndexedVertexDomain(VertexDomain):
         self.index_buffer.sub_data()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
+
+        print(starts, sizes)
+
         primcount = len(starts)
         if primcount == 0:
             pass

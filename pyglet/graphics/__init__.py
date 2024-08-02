@@ -410,7 +410,13 @@ class Batch:
         """
         attributes = vertex_list.domain.attribute_meta
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
-        vertex_list.migrate(domain)
+
+        # If it's the same domain, no need to dealloc it...
+        if domain != vertex_list.domain:
+            vertex_list.migrate(domain)
+        else:
+            # Update the group.
+            vertex_list.update_group(group)
 
     def _convert_to_instanced(self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain,
                               instance_attributes: Sequence[
@@ -475,20 +481,18 @@ class Batch:
         self._draw_list_dirty = True
 
     def _update_draw_list(self) -> None:
-        domain_draw_calls = {}
+        def visit(current_group: Group) -> list:
+            draw_list = []
 
-        def visit(current_group: Group) -> None:
-            # Visit the current group
-            current_domain_map = self.group_map.get(current_group, {})
-            #if current_domain_map:
-                #print(f"Visiting group: {current_group}, domain map: {current_domain_map.values()}")
+            # Draw domains using this group
+            domain_map = self.group_map.get(current_group, {})
 
             verts = False
-
             # Iterate over the domains associated with the current group
-            for (indexed, instanced, mode, formats), current_domain in list(current_domain_map.items()):
+            for (indexed, instanced, mode, formats), current_domain in list(domain_map.items()):
+                # Remove unused domains from batch
                 if current_domain.is_empty:
-                    del current_domain_map[(indexed, instanced, mode, formats)]
+                    del domain_map[(indexed, instanced, mode, formats)]
                     continue
 
                 # If this group exists, has no vertices in the domain, skip it.
@@ -499,10 +503,7 @@ class Batch:
                     continue
 
                 # If group exists, and has vertices, add a draw call.
-                if current_domain not in domain_draw_calls:
-                    domain_draw_calls[current_domain] = []
-
-                domain_draw_calls[current_domain].append((current_group.order, current_domain, mode, current_group))
+                draw_list.append((current_group.order, current_domain, mode, current_group))
                 verts = True
 
             # Sort and visit child groups of this group
@@ -511,63 +512,69 @@ class Batch:
                 children.sort()
                 for child in list(children):
                     if child.visible:
-                        visit(child)
+                        draw_list.extend(visit(child))
 
-            if not children and not verts:
-                #print("NO VERTICES", current_group)
+            if children or verts:
+                return draw_list
 
-                # Clean up if the group is empty and has no children
-                # Remove unused group from batch
-                del self.group_map[current_group]
-                current_group._assigned_batches.remove(self)  # noqa: SLF001
-                if current_group.parent:
-                    self.group_children[current_group.parent].remove(current_group)
-                try:
-                    del self.group_children[current_group]
-                except KeyError:
-                    pass
-                try:
-                    self.top_groups.remove(current_group)
-                except ValueError:
-                    pass
+            # Clean up if the group is empty and has no children
+            # Remove unused group from batch
+            del self.group_map[current_group]
+            current_group._assigned_batches.remove(self)  # noqa: SLF001
+            if current_group.parent:
+                self.group_children[current_group.parent].remove(current_group)
+            try:
+                del self.group_children[current_group]
+            except KeyError:
+                pass
+            try:
+                self.top_groups.remove(current_group)
+            except ValueError:
+                pass
 
-        self._draw_list = []
+            return []
+
+        full_draw_list = []
+
+        self._draw_list.clear()
 
         self.top_groups.sort()
+
         for top_group in list(self.top_groups):
             if top_group.visible:
-                visit(top_group)
+                full_draw_list.extend(visit(top_group))
+
+        self._draw_list_dirty = False
 
         # Collapse draw calls into contiguous render calls.
-        for calls in domain_draw_calls.values():
+        for _, draw_domain, mode, group in full_draw_list:
             contiguous_groups = []
             last_mode = None
             last_domain = None
             shared_state = True
 
-            for _, draw_domain, mode, group in calls:
-                # Check if draw mode and domain are similar to current iteration.
-                if last_domain is None or (draw_domain == last_domain and mode == last_mode):
-                    # Check if the state of this group is compatible with the previous.
-                    if contiguous_groups and not group.contiguous_same(contiguous_groups[-1]):
-                        shared_state = False
-                    contiguous_groups.append(group)
-                else:
-                    # Previous domain/mode is not compatible with current.
-                    if contiguous_groups:
-                        # If we have contiguous groups, we need to now combine those based on shared state.
-                        if shared_state:
-                            self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups_shared(m, gs))(last_domain, last_mode, contiguous_groups))
-                        else:
-                            self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
+            # Check if draw mode and domain are similar to current iteration.
+            if last_domain is None or (draw_domain == last_domain and mode == last_mode):
+                # Check if the state of this group is compatible with the previous.
+                if contiguous_groups and not group.contiguous_same(contiguous_groups[-1]):
+                    shared_state = False
+                contiguous_groups.append(group)
+            else:
+                # Previous domain/mode is not compatible with current.
+                if contiguous_groups:
+                    # If we have contiguous groups, we need to now combine those based on shared state.
+                    if shared_state:
+                        self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups_shared(m, gs))(last_domain, last_mode, contiguous_groups))
+                    else:
+                        self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
 
-                        shared_state = True
+                    shared_state = True
 
-                    # Reset contiguous groups for share state checks.
-                    contiguous_groups = [group]
+                # Reset contiguous groups for share state checks.
+                contiguous_groups = [group]
 
-                last_mode = mode
-                last_domain = draw_domain
+            last_mode = mode
+            last_domain = draw_domain
 
             # Draw the remaining contiguous groups
             if contiguous_groups:
@@ -576,7 +583,7 @@ class Batch:
                 else:
                     self._draw_list.append((lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
 
-        self._draw_list_dirty = False
+
         if _debug_graphics_batch:
             self._dump_draw_list()
 
@@ -784,7 +791,7 @@ class Group:
         Essentially this means we need to check if this Group has the same state as destination group without the
         parent.
         """
-        #return False
+        return False
         #return self.__class__ is other.__class__
 
     def __repr__(self) -> str:
