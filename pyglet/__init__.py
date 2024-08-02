@@ -290,11 +290,16 @@ class Options:
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
 options: Options = Options()
 
+_OPTION_TYPE_REMAPS = {
+    "audio": "sequence",
+    "vsync": "bool",
+}
 
 for _key, _type in options.__annotations__.items():
     """Check Environment Variables for pyglet options"""
     if _value := os.environ.get(f"PYGLET_{_key.upper()}"):
-        if _type == 'tuple':
+        _type = _OPTION_TYPE_REMAPS.get(_key, _type)
+        if _type == 'sequence':
             options[_key] = _value.split(",")
         elif _type == 'bool':
             options[_key] = _value in ("true", "TRUE", "True", "1")

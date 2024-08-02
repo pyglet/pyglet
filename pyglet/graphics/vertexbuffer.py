@@ -230,7 +230,7 @@ class BackedBufferObject(BufferObject):
     count: int
     ctype: CTypesDataType
 
-    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,
+    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,  # noqa: D107
                  usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(size, usage)
 
@@ -247,8 +247,8 @@ class BackedBufferObject(BufferObject):
         self.stride = stride
         self.count = count
 
-    def sub_data(self) -> None:
-        """Updates the buffer if any data has been changed or invalidated.
+    def commit(self) -> None:
+        """Commits all saved changes to the underlying buffer before drawing.
 
         Allows submitting multiple changes at once, rather than having to call glBufferSubData for every change.
         """
@@ -299,12 +299,10 @@ class BackedBufferObject(BufferObject):
         self.data_ptr = ctypes.addressof(data)
         self.size = size
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
-        glBufferData(GL_ARRAY_BUFFER, self.size, self.data, self.usage)
-
-        self._dirty_min = sys.maxsize
-        self._dirty_max = 0
-        self._dirty = False
+        # Set the dirty range to be the entire buffer.
+        self._dirty_min = 0
+        self._dirty_max = self.size
+        self._dirty = True
 
         self.get_region.cache_clear()
 
@@ -334,7 +332,7 @@ class AttributeBufferObject(BackedBufferObject):
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,
+    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,  # noqa: D107
                  usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(size, c_type, stride, count, usage)
 

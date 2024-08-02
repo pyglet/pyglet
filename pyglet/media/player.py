@@ -11,7 +11,7 @@ import pyglet
 from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.codecs.base import PreciseStreamingSource, Source, SourceGroup
+from pyglet.media.codecs.base import Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
 
@@ -162,14 +162,7 @@ class Player(pyglet.event.EventDispatcher):
         if new_source is None:
             self._source = None
         else:
-            qs = new_source.get_queue_source()
-            # HACK: for 2.0.x, players perform additional PreciseStreamingSource wrapping.
-            # Existing sources might not use `super().get_queue_source()`, leading to an
-            # imprecise source on here, which may not happen.
-            if not isinstance(qs, PreciseStreamingSource) and not qs.is_precise():
-                self._source = PreciseStreamingSource(qs)
-            else:
-                self._source = qs
+            self._source = new_source.get_queue_source()
 
     def _set_playing(self, playing: bool) -> None:
         # stopping = self._playing and not playing
