@@ -234,9 +234,10 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
     void main()
     {
-        vec4 pos = window.view * model * vec4(position, 1.0);
+        mat4 mv = window.view * model;
+        vec4 pos = mv * vec4(position, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(model)));
+        mat3 normal_matrix = transpose(inverse(mat3(mv)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -304,9 +305,10 @@ class MaterialGroup(BaseMaterialGroup):
 
     void main()
     {
-        vec4 pos = window.view * model * vec4(position, 1.0);
+        mat4 mv = window.view * model;
+        vec4 pos = mv * vec4(position, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(model)));
+        mat3 normal_matrix = transpose(inverse(mat3(mv)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
