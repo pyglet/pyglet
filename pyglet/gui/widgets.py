@@ -16,7 +16,8 @@ if TYPE_CHECKING:
 
 
 class WidgetBase(EventDispatcher):
-    def __init__(self, x: int, y: int, width: int, height: int) -> None:
+    """The base of all widgets."""
+    def __init__(self, x: int, y: int, width: int, height: int) -> None:  # noqa: D107
         self._x = x
         self._y = y
         self._width = width
@@ -150,6 +151,12 @@ class WidgetBase(EventDispatcher):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         pass
 
+    def on_mouse_enter(self, x: int, y: int) -> None:
+        pass
+
+    def on_mouse_leave(self, x: int, y: int) -> None:
+        pass
+
     def on_text(self, text: str) -> None:
         pass
 
@@ -176,7 +183,7 @@ class PushButton(WidgetBase):
         """Create a push button.
 
         Args:
-            x
+            x:
                 X coordinate of the push button.
             y:
                 Y coordinate of the push button.
@@ -230,6 +237,13 @@ class PushButton(WidgetBase):
         if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._pressed = False
+        self.dispatch_event('on_release')
+
+    def on_mouse_leave(self, x: int, y: int) -> None:
+        if not self.enabled or not self._pressed:
+            return
+        self._sprite.image = self._depressed_img
         self._pressed = False
         self.dispatch_event('on_release')
 
@@ -320,7 +334,7 @@ class Slider(WidgetBase):
         self._knob_img = knob
         self._half_knob_width = knob.width / 2
         self._half_knob_height = knob.height / 2
-        self._knob_img.anchor_y = knob.height / 2
+        self._knob_img.anchor_y = int(knob.height / 2)
 
         self._min_knob_x = x + edge
         self._max_knob_x = x + base.width - knob.width - edge
@@ -363,11 +377,11 @@ class Slider(WidgetBase):
 
     @property
     def _min_y(self) -> int:
-        return self._y - self._half_knob_height
+        return int(self._y - self._half_knob_height)
 
     @property
     def _max_y(self) -> int:
-        return self._y + self._half_knob_height + self._base_img.height / 2
+        return int(self._y + self._half_knob_height + self._base_img.height / 2)
 
     def _check_hit(self, x: int, y: int) -> bool:
         return self._min_x < x < self._max_x and self._min_y < y < self._max_y
@@ -394,7 +408,7 @@ class Slider(WidgetBase):
         if not self.enabled:
             return
         if self._check_hit(x, y):
-            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
+            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)  # type: ignore reportArgumentType
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
