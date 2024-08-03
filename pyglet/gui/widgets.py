@@ -53,7 +53,7 @@ class WidgetBase(EventDispatcher):
         self._enabled = new_enabled
         self._set_enabled(new_enabled)
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         pass
 
     @property
@@ -216,7 +216,7 @@ class PushButton(WidgetBase):
         self._pressed = value
         self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._sprite.group = Group(order=order + 1, parent=self._user_group)
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
@@ -349,7 +349,7 @@ class Slider(WidgetBase):
         x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._base_spr.group = Group(order=order + 1, parent=self._user_group)
         self._knob_spr.group = Group(order=order + 2, parent=self._user_group)
 
@@ -517,7 +517,7 @@ class TextEntry(WidgetBase):
         self._caret.visible = value
         self._caret.layout = self._layout
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._outline.group = Group(order=order + 1, parent=self._user_group)
         self._layout.group = Group(order=order + 2, parent=self._user_group)
 
