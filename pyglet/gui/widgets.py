@@ -11,7 +11,7 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch
     from pyglet.image import AbstractImage
 
 
