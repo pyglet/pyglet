@@ -521,6 +521,24 @@ class Vec3(_typing.NamedTuple):
     def __lt__(self, other: tuple[float, float, float]) -> bool:
         return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
 
+    @classmethod
+    def from_pitch_yaw(cls, pitch: float, yaw: float) -> Vec3:
+        """Create a unit vector from pitch and yaw in radians.
+
+        Args:
+            pitch: The pitch value in radians
+            yaw: The yaw value in radians
+        """
+        return Vec3(
+            _math.cos(yaw) * _math.cos(pitch),
+            _math.sin(pitch),
+            _math.sin(yaw) * _math.cos(pitch),
+        ).normalize()
+
+    def get_pitch_yaw(self) -> tuple[float, float]:
+        """Get the pitch and yaw angles from a unit vector in radians."""
+        return _math.asin(self.y),_math.atan2(self.z, self.x)
+
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2)``."""
         return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
