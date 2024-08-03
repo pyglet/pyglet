@@ -311,7 +311,7 @@ class FPSCamera:
         # Translation
         if stick == "leftstick":
             if vector.length() < self.dead_zone:
-                self.controller_move = self.ZERO
+                self.controller_move = Vec3(0.0, self.controller_move.y, 0.0)
             else:
                 self.controller_move = Vec3(vector.x, self.controller_move.y, vector.y)
 
