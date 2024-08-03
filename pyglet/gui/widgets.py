@@ -118,7 +118,7 @@ class WidgetBase(EventDispatcher):
         raise NotImplementedError('Value depends on control type!')
 
     @value.setter
-    def value(self, value: int | float | bool):
+    def value(self, value: int | float | bool) -> None:
         raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
@@ -199,7 +199,7 @@ class PushButton(WidgetBase):
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
+        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x=x, y=y, batch=batch, group=bg_group)
 
         self._pressed = False
 
@@ -207,7 +207,7 @@ class PushButton(WidgetBase):
         self._sprite.position = self._x, self._y, 0
 
     @property
-    def value(self):
+    def value(self) -> bool:
         return self._pressed
 
     @value.setter
@@ -260,7 +260,7 @@ class ToggleButton(PushButton):
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
-    def _get_release_image(self, x: int, y: int):
+    def _get_release_image(self, x: int, y: int) -> AbstractImage:
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
@@ -445,7 +445,7 @@ class TextEntry(WidgetBase):
                 Optional parent group of text entry widget.
         """
         self._doc = pyglet.text.document.UnformattedDocument(text)
-        self._doc.set_style(0, len(self._doc.text), dict(color=text_color))
+        self._doc.set_style(0, len(self._doc.text), {'color': text_color})
         font = self._doc.get_font()
         height = font.ascent - font.descent
 
@@ -455,7 +455,7 @@ class TextEntry(WidgetBase):
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch, bg_group)
+        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch=batch, group=bg_group)
 
         # Text and Caret:
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
