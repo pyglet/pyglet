@@ -1,11 +1,24 @@
-import weakref
+"""
+A basic first-person camera example.
 
-from math import cos, sin, radians
+* Supports mouse and keyboard input with AWSD + QE for up/down.
+* Supports controller input for movement and rotation.
+
+This can be copied and adapted to your own project.
+"""
+
+from __future__ import annotations
+import weakref
+from pathlib import Path
+from math import cos, sin, radians, degrees, atan2, sqrt, asin
 
 import pyglet
+from pyglet.window import key as _key
 
 from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Vec2, Vec3, Mat4, clamp
+
+MODULE_PATH = Path(__file__).parent
 
 
 class FPSCamera:
@@ -19,100 +32,138 @@ class FPSCamera:
     Note:  mouse input will be captured once you click on the Window,
     which sets the mouse as exclusive. Pressing ESC once will set
     the mouse as non-exclusive.
+
+    Args:
+        window (pyglet.window.Window): The window to attach the camera to.
+
+    Keyword Args:
+        position (Vec3, optional): The position of the camera. Defaults to Vec3(0, 0, 0).
+        target (Vec3, optional): The target of the camera. Defaults to Vec3(0, 0, -1).
+        near (float, optional): The near plane of the camera. Defaults to 0.1.
+        far (float, optional): The far plane of the camera. Defaults to 1000.
+        field_of_view (float, optional): The field of view of the camera. Defaults to 45.0 degrees.
     """
-    def __init__(self, window, position=Vec3(0, 0, 0), target=Vec3(0, 0, -1), up=Vec3(0, 1, 0)):
-        self.position = position
-        self.target = target
-        self.up = up
+    STILL = 0
+    POSITIVE = 1
+    NEGATIVE = -1
+    UP = Vec3(0.0, 1.0, 0.0)
 
-        self.walk_speed = 10.0
-        self.look_speed = 10.0
-        self.deadzone = 0.1
-
-        # TODO: calculate these values from the passed Vectors
-        self.pitch = 0
-        self.yaw = 270
-        self.roll = 0
-
-        self.input_map = {pyglet.window.key.W: "forward",
-                          pyglet.window.key.S: "backward",
-                          pyglet.window.key.A: "left",
-                          pyglet.window.key.D: "right"}
-
-        self.inputs = {direction: False for direction in self.input_map.values()}
-
-        self.mouse_look = Vec2()
-        self.keybord_move = Vec2()
-        self.controller_look = Vec2()
-        self.controller_move = Vec2()
-
+    def __init__(
+        self,
+        window: pyglet.window.Window,
+        position: Vec3 | None = None,
+        target: Vec3 | None = None,
+        near: float = 0.1,
+        far: float = 1000,
+        field_of_view: float = 60.0,
+    ) -> None:
+        """Initialize the camera."""
         self._window = weakref.proxy(window)
-        self._window.view = Mat4.look_at(position, target, up)
-        self._window.push_handlers(self)
+        self.position = position or Vec3(0.0, 0.0, 0.0)
 
+        # Frustum
+        self.near = near
+        self.far = far
+        self.field_of_view = field_of_view
+
+        # Camera speed
+        self.walk_speed = 5.0  # Speed of translation
+        self.look_speed = 0.2  # Speed of rotation
+        self.controller_look_speed = 1.0  # Speed of controller rotation
+
+        # Pitch, yaw in degrees. We update the camera based on these values.
+        self.pitch = 0
+        self.yaw = -90
+        # Controller rotation input
+        self.controller_look = Vec2()
+
+        # Movement states
+        # Tack what axis the player is moving on (local space)
+        self._x_state = self.STILL  # left/right
+        self._z_state = self.STILL  # forward/backwards
+        self._y_state = self.STILL  # up/down
+
+        # Mouse states
         self._exclusive_mouse = False
 
-    def on_deactivate(self):
-        # Prevent input from getting "stuck"
-        self.keybord_move = Vec2()
+        # Make the camera point and the initial target
+        if target is None:
+            target = Vec3(0.0, 0.0, -1.0)
 
-    def on_resize(self, width, height):
-        self._window.viewport = (0, 0, width, height)
-        self._window.projection = Mat4.perspective_projection(self._window.aspect_ratio, z_near=0.1, z_far=1000, fov=45)
+        # Point the camera in the configured initial direction
+        initial_direction = (target - self.position).normalize()
+        pitch, yaw = initial_direction.get_pitch_yaw()
+        self.yaw = degrees(yaw)
+        self.pitch = degrees(pitch)
+
+        self._window.push_handlers(self)
+
+    def on_resize(self, width: int, height: int) -> bool:
+        """Update the viewport and projection matrix on window resize."""
+        self._window.viewport = (0, 0, *self._window.get_framebuffer_size())
+        self._window.projection = Mat4.perspective_projection(
+            self._window.aspect_ratio,
+            z_near=self.near,
+            z_far=self.far,
+            fov=self.field_of_view,
+        )
         return pyglet.event.EVENT_HANDLED
 
-    def on_refresh(self, dt):
-        walk_speed = self.walk_speed * dt
-        norm_target = self.target.normalize()
+    def on_refresh(self, delta_time: float) -> None:
+        """Called before the window content is drawn.
 
-        # Look
+        Runs every frame applying the camera movement.,
+        """
+        # If the controller look is not zero, we update the camera rotation.
+        # The right stick only pushes events when the stick is moved so we
+        # need to apply the rotation here. We also need the delta_time to
+        # make the rotation speed consistent.
+        if self.controller_look != Vec2():
+            self.yaw += self.controller_look.x * self.controller_look_speed
+            self.pitch = clamp(self.pitch + self.controller_look.y * self.controller_look_speed, -89.0, 89.0)
 
-        if self.controller_look.length() > self.deadzone:
-            # Don't reset the vector to 0,0 because new events don't come
-            # in when the analoge stick is held in a steady position.
-            look_speed = self.look_speed ** 2 * dt
-            self.yaw += self.controller_look.x * look_speed
-            self.pitch = clamp(self.pitch + self.controller_look.y * look_speed, -89.0, 89.0)
+        # Calculate the forward and right vectors from the pitch and yaw
+        forward = Vec3.from_pitch_yaw(radians(self.pitch), radians(self.yaw))
+        right = forward.cross(self.UP).normalize()
+        up = right.cross(forward).normalize()
 
-        if self.mouse_look.length() > 0.0:
-            # Reset the vector back to 0 each time, because there is no event
-            # for when the mouse stops moving. It will get "stuck" otherwise.
-            look_speed = self.look_speed * dt
-            self.yaw += self.mouse_look.x * look_speed
-            self.pitch = clamp(self.pitch + self.mouse_look.y * look_speed, -89.0, 89.0)
-            self.mouse_look = Vec2()
+        # Calculate movement
+        offset = forward * (self._z_state * self.walk_speed * delta_time)
+        offset += right * (self._x_state * self.walk_speed * delta_time)
+        offset += up * (self._y_state * self.walk_speed * delta_time)
+        self.position += offset
 
-        self.target = Vec3(cos(radians(self.yaw)) * cos(radians(self.pitch)),
-                           sin(radians(self.pitch)),
-                           sin(radians(self.yaw)) * cos(radians(self.pitch))).normalize()
+        # We could construct our own matrix from the vectors, but it's
+        # easier to use the look_at function.
+        self._window.view = Mat4.look_at(self.position, self.position + forward, self.UP)
 
-        # Movement
+    def on_deactivate(self) -> None:
+        """Reset the movement states when the window loses focus."""
+        self.controller_look = Vec2()
+        self._x_state = self.STILL
+        self._z_state = self.STILL
+        self._y_state = self.STILL
 
-        if self.controller_move.length() > self.deadzone:
-            self.position += (norm_target * self.controller_move.y +
-                              norm_target.cross(self.up).normalize() * self.controller_move.x) * walk_speed
+    # --- Mouse input ---
 
-        if self.keybord_move.length() > 0:
-            self.position += (norm_target * self.keybord_move.y +
-                              norm_target.cross(self.up).normalize() * self.keybord_move.x) * walk_speed
-
-        self._window.view = Mat4.look_at(self.position, self.position + self.target, self.up)
-
-    # Mouse input
-
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
+        """Read the mouse input and update the camera's yaw and pitch."""
         if not self._exclusive_mouse:
             return
-        self.mouse_look = Vec2(dx, dy)
 
-    def on_mouse_press(self, x, y, button, modifiers):
+        self.pitch = clamp(self.pitch + dy * self.look_speed, -85.0, 85.0)
+        self.yaw += dx * self.look_speed
+
+    def on_mouse_press(self, x: int, y: int, button, modifiers) -> None:
+        """Capture the mouse input when the window is clicked."""
         if not self._exclusive_mouse:
             self._exclusive_mouse = True
             self._window.set_exclusive_mouse(True)
 
-    # Keyboard input
+    # --- Keyboard input ---
 
-    def on_key_press(self, symbol, mod):
+    def on_key_press(self, symbol: int, mod: int) -> bool:
+        """Handle keyboard input."""
         if symbol == pyglet.window.key.ESCAPE:
             if not self._exclusive_mouse:
                 pyglet.app.exit()
@@ -120,24 +171,56 @@ class FPSCamera:
             self._window.set_exclusive_mouse(False)
             return pyglet.event.EVENT_HANDLED
 
-        if direction := self.input_map.get(symbol):
-            self.inputs[direction] = True
-            f, b, l, r = self.inputs.values()
-            self.keybord_move = Vec2(-float(l) + float(r), float(f) + -float(b)).normalize()
+        # Update movement states
+        if symbol == _key.W:  # Forward
+            self._z_state = self.POSITIVE
+            return True
+        if symbol == _key.S:  # Backward
+            self._z_state = self.NEGATIVE
+            return True
+        if symbol == _key.A:  # Left
+            self._x_state = self.NEGATIVE
+            return True
+        if symbol == _key.D:  # Right
+            self._x_state = self.POSITIVE
+            return True
+        if symbol == _key.E:  # up
+            self._y_state = self.POSITIVE
+            return True
+        if symbol == _key.Q:  # down
+            self._y_state = self.NEGATIVE
+            return True
 
-    def on_key_release(self, symbol, mod):
-        if direction := self.input_map.get(symbol):
-            self.inputs[direction] = False
-            f, b, l, r = self.inputs.values()
-            self.keybord_move = Vec2(-float(l) + float(r), float(f) + -float(b)).normalize()
+        return False
 
-    # Controller input
+    def on_key_release(self, symbol: int, mod: int) -> bool:
+        """Handle keyboard input release."""
+        # Reset movement states
+        if symbol in (_key.W, _key.S):
+            self._z_state = self.STILL
+            return True
+        if symbol in (_key.A, _key.D):
+            self._x_state = self.STILL
+            return True
+        if symbol in (_key.E, _key.Q):
+            self._y_state = self.STILL
+            return True
+ 
+        return False
+
+    # --- Controller input ---
 
     def on_stick_motion(self, _controller, stick, vector):
-        if stick == "leftstick":
-            self.controller_move = vector
+        """Handle controller input.
 
-        elif stick == "rightstick":
+        The left stick controls the camera position, and the right stick
+        controls the camera rotation.
+        """
+        if stick == "leftstick":
+            self._x_state = vector.x
+            self._z_state = vector.y
+
+        if stick == "rightstick":
             self.controller_look = vector
 
 
@@ -153,11 +236,11 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    model_logo = pyglet.model.load("logo3d.obj", batch=batch)
-    model_box = pyglet.model.load("box.obj", batch=batch)
+    model_logo = pyglet.model.load(MODULE_PATH / "logo3d.obj", batch=batch)
+    model_box = pyglet.model.load(MODULE_PATH / "box.obj", batch=batch)
 
     # Camera controls the global projection & view matrixes:
-    camera = FPSCamera(window, position=Vec3(0, 0, 5))
+    camera = FPSCamera(window, position=Vec3(0.0, 0.0, 5.0))
 
     # If a controller is connected, use it:
     if controllers := pyglet.input.get_controllers():

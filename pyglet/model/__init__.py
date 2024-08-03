@@ -257,7 +257,9 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     void main()
     {
         float l = dot(normalize(-vertex_position), normalize(vertex_normals));
-        final_colors = (texture(our_texture, texture_coords) * vertex_colors) * l * 1.2;
+        vec4 tex_color = texture(our_texture, texture_coords) * vertex_colors;
+        // 75/25 light ambient
+        final_colors = tex_color * l * 0.75 + tex_color * vec4(0.25);
     }
     """
 
@@ -324,7 +326,8 @@ class MaterialGroup(BaseMaterialGroup):
     void main()
     {
         float l = dot(normalize(-vertex_position), normalize(vertex_normals));
-        final_colors = vertex_colors * l * 1.2;
+        // 75/25 light ambient
+        final_colors = vertex_colors * l * 0.75 + vertex_colors * vec4(0.25);
     }
     """
 
