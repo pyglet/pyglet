@@ -375,3 +375,10 @@ def test_clamp():
 def test_index():
     with pytest.raises(NotImplementedError):
         Vec3(0).index(0)
+
+
+def test_bool():
+    v = Vec3()
+    assert not v
+    v = Vec3(0.1, 2.0, 33.3)
+    assert v

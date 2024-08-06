@@ -395,3 +395,10 @@ def test_dot():
 def test_index():
     with pytest.raises(NotImplementedError):
         Vec4(0).index(None)
+
+
+def test_bool():
+    v = Vec4()
+    assert not v
+    v = Vec4(0.1, 2.0, 33.3, 0.04)
+    assert v

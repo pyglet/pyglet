@@ -196,14 +196,14 @@ class FPSCamera:
         look_speed = self.look_speed * delta_time
 
         # Rotation - mouse
-        if self.mouse_look.length() > 0:
+        if self.mouse_look:
             self.yaw += self.mouse_look.x * look_speed
             self.pitch += self.mouse_look.y * look_speed
             # Reset the relative mouse movement when done.
             self.mouse_look = Vec2()
 
         # Rotation - controller
-        if self.controller_look.length() > 0:
+        if self.controller_look:
             accelerated_speed = self.look_speed ** 2 * delta_time
             self.yaw += self.controller_look.x * accelerated_speed
             self.pitch += self.controller_look.y * accelerated_speed
@@ -215,11 +215,11 @@ class FPSCamera:
         translation = Vec3()
 
         # Translation - keyboard
-        if self.keyboard_move.length() > 0:
+        if self.keyboard_move:
             translation += forward * self.keyboard_move.y + right * self.keyboard_move.x
 
         # Translation - controller
-        if self.controller_move.length() > 0:
+        if self.controller_move:
             translation += forward * self.controller_move.y + right * self.controller_move.x
 
         self.position += translation.normalize() * walk_speed + up * self._elevation * walk_speed
