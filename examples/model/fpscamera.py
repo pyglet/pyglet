@@ -80,12 +80,13 @@ class FPSCamera:
         self._pitch = 0.0
         self._yaw = -90.0
         self._roll = 0.0
+        self._elevation = 0.0
 
         # Input from keyboard and controller
-        self.keyboard_move = Vec3()
+        self.keyboard_move = Vec2()
         self.mouse_look = Vec2()
 
-        self.controller_move = Vec3()
+        self.controller_move = Vec2()
         self.controller_look = Vec2()
         self.dead_zone = 0.1
 
@@ -211,20 +212,17 @@ class FPSCamera:
         forward = Vec3.from_pitch_yaw(radians(self.pitch), radians(self.yaw))
         right = forward.cross(self.UP).normalize()
         up = right.cross(forward).normalize()
+        translation = Vec3()
 
         # Translation - keyboard
         if self.keyboard_move.length() > 0:
-            translation = forward * self.keyboard_move.z * walk_speed
-            translation += right * self.keyboard_move.x * walk_speed
-            translation += up * self.keyboard_move.y * walk_speed
-            self.position += translation
+            translation += forward * self.keyboard_move.y + right * self.keyboard_move.x
 
         # Translation - controller
         if self.controller_move.length() > 0:
-            translation = forward * self.controller_move.z * walk_speed
-            translation += right * self.controller_move.x * walk_speed
-            translation += up * self.controller_move.y * walk_speed
-            self.position += translation
+            translation += forward * self.controller_move.y + right * self.controller_move.x
+
+        self.position += translation.normalize() * walk_speed + up * self._elevation * walk_speed
 
         # Look forward from the new position
         self._window.view = Mat4.look_at(self.position, self.position + forward, self.UP)
@@ -232,7 +230,7 @@ class FPSCamera:
     def on_deactivate(self) -> None:
         """Reset the movement states when the window loses focus."""
         self.controller_look = Vec2()
-        self.controller_move = Vec3()
+        self.controller_move = Vec2()
 
     def teleport(self, position: Vec3, target: Vec3 | None = None) -> None:
         """Teleport the camera to a new position.
@@ -277,11 +275,8 @@ class FPSCamera:
         if direction := self.input_map.get(symbol):
             self.inputs[direction] = True
             forward, backward, left, right, up, down = self.inputs.values()
-            self.keyboard_move = Vec3(
-                -float(left) + float(right),
-                float(up) + -float(down),
-                float(forward) + -float(backward),
-            ).normalize()
+            self.keyboard_move = Vec2(-float(left) + float(right), float(forward) + -float(backward)).normalize()
+            self._elevation = float(up) + -float(down)
             return pyglet.event.EVENT_HANDLED
 
         return False
@@ -291,11 +286,8 @@ class FPSCamera:
         if direction := self.input_map.get(symbol):
             self.inputs[direction] = False
             forward, backward, left, right, up, down = self.inputs.values()
-            self.keyboard_move = Vec3(
-                -float(left) + float(right),
-                float(up) + -float(down),
-                float(forward) + -float(backward),
-            ).normalize()
+            self.keyboard_move = Vec2(-float(left) + float(right), float(forward) + -float(backward)).normalize()
+            self._elevation = float(up) + -float(down)
             return pyglet.event.EVENT_HANDLED
 
         return False
@@ -311,9 +303,9 @@ class FPSCamera:
         # Translation
         if stick == "leftstick":
             if vector.length() < self.dead_zone:
-                self.controller_move = Vec3(0.0, self.controller_move.y, 0.0)
+                self.controller_move = Vec2()
             else:
-                self.controller_move = Vec3(vector.x, self.controller_move.y, vector.y)
+                self.controller_move = vector
 
         # Camera rotation
         if stick == "rightstick":
@@ -325,9 +317,9 @@ class FPSCamera:
     def on_trigger_motion(self, controller, trigger: str, value: float):
         """Handle the controller trigger input."""
         if trigger == "lefttrigger":
-            self.controller_move = Vec3(self.controller_move.x, -value, self.controller_move.z)
+            self._elevation = -value
         if trigger == "righttrigger":
-            self.controller_move = Vec3(self.controller_move.x, value, self.controller_move.z)
+            self._elevation = value
 
     # -- Private methods --
 
