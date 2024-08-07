@@ -222,7 +222,8 @@ class FPSCamera:
         if self.controller_move:
             translation += forward * self.controller_move.y + right * self.controller_move.x
 
-        self.position += translation.normalize() * walk_speed + up * self._elevation * walk_speed
+        # self.position += translation.normalize() * walk_speed + up * self._elevation * walk_speed
+        self.position += (translation + up * self._elevation).normalize() * walk_speed
 
         # Look forward from the new position
         self._window.view = Mat4.look_at(self.position, self.position + forward, self.UP)
@@ -265,18 +266,18 @@ class FPSCamera:
 
     def on_key_press(self, symbol: int, mod: int) -> bool:
         """Handle keyboard input."""
-        if symbol == pyglet.window.key.ESCAPE:
-            if not self._exclusive_mouse:
-                pyglet.app.exit()
-            self._exclusive_mouse = False
-            self._window.set_exclusive_mouse(False)
-            return pyglet.event.EVENT_HANDLED
-
         if direction := self.input_map.get(symbol):
             self.inputs[direction] = True
             forward, backward, left, right, up, down = self.inputs.values()
             self.keyboard_move = Vec2(-float(left) + float(right), float(forward) + -float(backward)).normalize()
             self._elevation = float(up) + -float(down)
+            return pyglet.event.EVENT_HANDLED
+
+        if symbol == pyglet.window.key.ESCAPE:
+            if not self._exclusive_mouse:
+                pyglet.app.exit()
+            self._exclusive_mouse = False
+            self._window.set_exclusive_mouse(False)
             return pyglet.event.EVENT_HANDLED
 
         return False
