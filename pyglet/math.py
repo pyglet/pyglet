@@ -54,7 +54,7 @@ class Vec2(_typing.NamedTuple):
     __match_args__ = 'x', 'y'
 
     def __bool__(self):
-        return bool(self.x + self.y)
+        return self.x != 0.0 or self.y != 0.0
 
     def __add__(self, other: Vec2 | tuple[float, float] | float) -> Vec2:
         try:
@@ -386,7 +386,7 @@ class Vec3(_typing.NamedTuple):
     __match_args__ = 'x', 'y', 'z'
 
     def __bool__(self):
-        return bool(self.x + self.y + self.z)
+        return self.x != 0.0 or self.y != 0.0 or self.z != 0.0
 
     def __add__(self, other: Vec3 | tuple[float, float, float] | float) -> Vec3:
         try:
@@ -690,7 +690,7 @@ class Vec4(_typing.NamedTuple):
     __match_args__ = 'x', 'y', 'z', 'w'
 
     def __bool__(self):
-        return bool(self.x + self.y + self.z + self.w)
+        return self.x != 0.0 or self.y != 0.0 or self.z != 0.0 or self.w != 0.0
 
     def __add__(self, other: Vec4 | tuple[float, float, float, float] | float) -> Vec4:
         try:
