@@ -1,3 +1,30 @@
+pyglet 2.0.17
+
+Changes and Improvements
+------------------------
+- image: Use dedicated shader for blitting to fix blending issues. (#1170)
+- shapes: Add a way to set blend mode on initialization and after.
+- shapes: Add a get_shape_group function.
+- shapes: Add a way to change shape shader program.
+- pyglet.experimental: Add multi-texture sprite support. (#1166)
+- graphics.vertexbuffer: (internal) Rename buffer object `sub_data` to `commit` to better reflect it's usage. (#1186)
+- gui: Add on_mouse_enter/leave event handler to WidgetBase and use it in Buttons (#1190)
+- graphics.vertexdomain: Update program migration to its own function: update_shader.
+- graphics.vertexdomain: Changing programs no longer requires batch, as that doesn't change with a program change.
+- graphics.vertexdomain: Allow migration of shaders through deleting vertex lists.
+- graphics.vertexdomain: Remove `isinstance` check for VertexList and go off the class variable that is set.
+
+Bugfixes
+--------
+- image: Fix Texture3D.create_for_images method.
+- typing: Fix pyglet.options type checking.
+- shader: Fix UBO arrays. (#1168)
+- sprite: Fix paused animation frame index. (#1180)
+- window: win32: Fix Window.set_icon.best_icon. (#1183)
+- options: Fix audio and vsync env vars. (#1185)
+- audio: Remove `PreciseStreamingSource`; Move audio buffering back into Players. (#1175)
+
+
 pyglet 2.0.16
 
 Changes and Improvements
