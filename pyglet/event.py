@@ -126,12 +126,7 @@ from typing import TYPE_CHECKING
 from weakref import WeakMethod
 
 if TYPE_CHECKING:
-    import sys
     from typing import Any, Callable, Generator
-    if sys.version_info >= (3, 11):
-        from typing import Self
-    else:
-        Self = Any
 
 
 EVENT_HANDLED = True
@@ -152,7 +147,7 @@ class EventDispatcher:
     _event_stack: tuple | list = ()
 
     @classmethod
-    def register_event_type(cls: type[Self], name: str) -> str:
+    def register_event_type(cls: type[object], name: str) -> str:
         """Register an event type with the dispatcher.
 
         Before dispatching events, they must first be registered by name.
@@ -161,8 +156,8 @@ class EventDispatcher:
         for suitable handlers.
         """
         if not hasattr(cls, 'event_types'):
-            cls.event_types = []
-        cls.event_types.append(name)
+            cls.event_types = []  # type: ignore reportAttributeAccessIssue
+        cls.event_types.append(name)  # type: ignore reportAttributeAccessIssue
         return name
 
     def push_handlers(self, *args: Any, **kwargs: Any) -> None:
@@ -181,15 +176,15 @@ class EventDispatcher:
             self._event_stack = []
 
         # Place dict full of new handlers at beginning of stack
-        self._event_stack.insert(0, {})
+        self._event_stack.insert(0, {})  # type: ignore reportAttributeAccessIssue
         self.set_handlers(*args, **kwargs)
 
-    def _get_handlers(self, args: list, kwargs: dict) -> Generator[str, Callable]:
+    def _get_handlers(self, args: list, kwargs: dict) -> Generator[tuple[str, Callable], None, None]:
         """Implement handler matching on arguments for set_handlers and remove_handlers."""
         for obj in args:
             if inspect.isroutine(obj):
                 # Single magically named function
-                name = obj.__name__
+                name: str = obj.__name__
                 if name not in self.event_types:
                     msg = f'Unknown event "{name}"'
                     raise EventException(msg)
