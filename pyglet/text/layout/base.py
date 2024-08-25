@@ -757,9 +757,23 @@ class TextLayoutGroup(graphics.Group):
 
     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: graphics.Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
         self.texture = texture
         self.program = program
+        super().__init__(order=order, parent=parent)
+
+    def initialize(self) -> None:
+        self.set_states = [
+            graphics.GLState(self.program.use),
+            graphics.GLState(self.program, ('scissor', False)),
+            graphics.GLState(glActiveTexture, (GL_TEXTURE0,)),
+            graphics.GLState(glBindTexture, (self.texture.target, self.texture.id)),
+            graphics.GLState(glEnable, (GL_BLEND,)),
+            graphics.GLState(glBlendFunc, (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)),
+        ]
+        self.unset_states = [
+            graphics.GLState(glDisable, (GL_BLEND,)),
+            graphics.GLState(self.program.stop),
+        ]
 
     def set_state(self) -> None:
         self.program.use()
@@ -799,8 +813,19 @@ class TextDecorationGroup(Group):
 
     def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
                  parent: graphics.Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
         self.program = program
+        super().__init__(order=order, parent=parent)
+    def initialize(self) -> None:
+        self.set_states = [
+            graphics.GLState(self.program.use),
+            graphics.GLState(self.program, ('scissor', False)),
+            graphics.GLState(glEnable, (GL_BLEND,)),
+            graphics.GLState(glBlendFunc, (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)),
+        ]
+        self.unset_states = [
+            graphics.GLState(glDisable, (GL_BLEND,)),
+            graphics.GLState(self.program.stop),
+        ]
 
     def set_state(self) -> None:
         self.program.use()

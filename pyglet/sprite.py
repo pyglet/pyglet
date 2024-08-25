@@ -206,11 +206,25 @@ class SpriteGroup(graphics.Group):
             parent:
                 Optional parent group.
         """
-        super().__init__(parent=parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
         self.program = program
+
+        super().__init__(parent=parent)
+
+    def initialize(self) -> None:
+        self.set_states = [
+            graphics.GLState(self.program.use),
+            graphics.GLState(glActiveTexture, (GL_TEXTURE0,)),
+            graphics.GLState(glEnable, (GL_BLEND,)),
+            graphics.GLState(glBlendFunc, (self.blend_src, self.blend_dest)),
+        ]
+
+        self.unset_states = [
+            graphics.GLState(glDisable, (GL_BLEND,)),
+            graphics.GLState(self.program.stop),
+        ]
 
     def set_state(self) -> None:
         self.program.use()
@@ -226,7 +240,8 @@ class SpriteGroup(graphics.Group):
         self.program.stop()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture} id={hex(id(self))})"
+        #return f"{self.__class__.__name__}({self.texture} id={hex(id(self))})"
+        return f"{self.__class__.__name__}"
 
     def __eq__(self, other: SpriteGroup) -> bool:
         return (other.__class__ is self.__class__ and
@@ -242,28 +257,7 @@ class SpriteGroup(graphics.Group):
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
     def contiguous_same(self, other: SpriteGroup) -> bool:
-        return False
-        # print("SELF", self.__class__,
-        #         self.program,
-        #         self.texture.target,
-        #         self.texture.id,
-        #         self.blend_src,
-        #         self.blend_dest,
-        #       )
-        #
-        # print("OTHER", other.__class__,
-        #         other.program,
-        #         other.texture.target,
-        #         other.texture.id,
-        #         other.blend_src,
-        #         other.blend_dest,
-        #       )
-        # print(
-        #         self.program is other.program and
-        #         self.texture.target == other.texture.target and
-        #         self.texture.id == other.texture.id and
-        #         self.blend_src == other.blend_src and
-        #         self.blend_dest == other.blend_dest)
+        #return False
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
                 self.texture.target == other.texture.target and

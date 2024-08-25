@@ -807,7 +807,7 @@ class IndexedVertexDomain(VertexDomain):
 
         starts, sizes = self.index_allocator.get_allocated_regions()
 
-        print(starts, sizes)
+        #print(starts, sizes)
 
         primcount = len(starts)
         if primcount == 0:
@@ -822,6 +822,18 @@ class IndexedVertexDomain(VertexDomain):
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
+    def bind(self) -> None:
+        """Bind the domain.
+
+        This binds the VAO and all of its buffers.
+        """
+        self.vao.bind()
+
+        for buffer, _ in self.buffer_attributes:
+           buffer.sub_data()
+
+        self.index_buffer.sub_data()
+
     def draw_groups(self, mode: int, groups: list[Group]) -> None:
         """Draw all vertices associated with the specified groups.
 
@@ -832,34 +844,29 @@ class IndexedVertexDomain(VertexDomain):
                 The groups whose vertices should be drawn.
         """
         # Optimize, don't call if empty.
-        self.vao.bind()
+        if not groups:
+            return
 
-        for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
-
-        self.index_buffer.sub_data()
-
+        combined = []
         for group in groups:
-            group.set_state()
+            combined.extend(self.group_index_ranges[group])
 
-            if not self.group_index_ranges[group]:
-                continue
+        if not combined:
+            return
 
-            starts, sizes = zip(*self.group_index_ranges[group])
-            primcount = len(starts)
-            if primcount == 0:
-                pass
-            elif primcount == 1:
-                # Common case
-                glDrawElements(mode, sizes[0], self.index_gl_type,
-                               self.index_buffer.ptr + starts[0] * self.index_element_size)
-            else:
-                starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
-                starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-                sizes = (GLsizei * primcount)(*sizes)
-                glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
-
-            group.unset_state()
+        starts, sizes = zip(*combined)
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawElements(mode, sizes[0], self.index_gl_type,
+                           self.index_buffer.ptr + starts[0] * self.index_element_size)
+        else:
+            starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
     def draw_groups_shared(self, mode: int, groups: list[Group]) -> None:
         """Draw all vertices associated with the specified groups.
@@ -872,6 +879,9 @@ class IndexedVertexDomain(VertexDomain):
             groups:
                 The groups whose vertices should be drawn.
         """
+        if not groups:
+            return
+
         combined = []
         for group in groups:
             combined.extend(self.group_index_ranges[group])
@@ -893,6 +903,9 @@ class IndexedVertexDomain(VertexDomain):
         #print("self.group_index_ranges[group]", self.group_index_ranges[group])
         starts, sizes = zip(*combined)
         primcount = len(starts)
+
+        #print(len(starts), len(groups))
+
         #print(primcount)
         if primcount == 0:
             pass
@@ -922,7 +935,7 @@ class IndexedVertexDomain(VertexDomain):
             buffer.sub_data()
         self.index_buffer.sub_data()
 
-        #print("RENDERING GROUP", group)
+        print("RENDERING GROUP", group)
 
         group.set_state()
         if group in self.group_index_ranges:
