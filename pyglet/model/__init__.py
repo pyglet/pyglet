@@ -55,6 +55,7 @@ from pyglet.math import Mat4
 
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
+from .codecs.base import Material
 
 if TYPE_CHECKING:
     from typing import BinaryIO
@@ -169,36 +170,6 @@ class Model:
         """
         gl.current_context.window_block.bind(0)
         self._batch.draw_subset(self.vertex_lists)
-
-
-class Material:
-    __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
-
-    def __init__(self, name: str = "default",
-                 diffuse: tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1.0),
-                 ambient: tuple[float, float, float, float] = (0.2, 0.2, 0.2, 1.0),
-                 specular: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
-                 emission: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0),
-                 shininess: float = 20,
-                 texture_name: str = ""):
-
-        self.name = name
-        self.diffuse = diffuse
-        self.ambient = ambient
-        self.specular = specular
-        self.emission = emission
-        self.shininess = shininess
-        self.texture_name = texture_name
-
-    def __eq__(self, other: Material) -> bool:
-        return (self.name == other.name and self.diffuse == other.diffuse and
-                self.ambient == other.ambient and self.specular == other.specular and
-                self.emission == other.emission and self.shininess == other.shininess and
-                self.texture_name == other.texture_name)
-
-    def __hash__(self) -> int:
-        return hash((self.name, self.texture_name, tuple(self.diffuse), tuple(self.specular),
-                     tuple(self.ambient), tuple(self.emission), self.shininess, self.texture_name))
 
 
 class BaseMaterialGroup(graphics.Group):
