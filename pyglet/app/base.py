@@ -112,7 +112,7 @@ class EventLoop(event.EventDispatcher):
         for window in app.windows:
             window.draw(dt)
 
-    def run(self, interval: None | float = 1/60) -> None:
+    def run(self, interval: float | None = 1/60) -> None:
         """Begin processing events, scheduled functions and window updates.
 
         This method enters into the main event loop and, if the ``interval``

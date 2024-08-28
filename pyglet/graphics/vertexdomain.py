@@ -502,7 +502,7 @@ class VertexDomain:
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         starts, sizes = self.allocator.get_allocated_regions()
         primcount = len(starts)
@@ -569,7 +569,7 @@ class VertexDomain:
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         glDrawArrays(mode, vertex_list.start, vertex_list.count)
 
@@ -677,7 +677,7 @@ class InstancedVertexDomain(VertexDomain):  # noqa: D101
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         starts, sizes = self.allocator.get_allocated_regions()
         glDrawArraysInstanced(mode, starts[0], sizes[0], self._instances)
@@ -696,7 +696,7 @@ class InstancedVertexDomain(VertexDomain):  # noqa: D101
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         glDrawArraysInstanced(mode, vertex_list.start, vertex_list.count, self._instances)
 
@@ -801,9 +801,9 @@ class IndexedVertexDomain(VertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
-        self.index_buffer.sub_data()
+        self.index_buffer.commit()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
 
@@ -957,7 +957,9 @@ class IndexedVertexDomain(VertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
+
+        self.index_buffer.commit()
 
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +
@@ -1030,7 +1032,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
         glDrawElementsInstanced(mode, sizes[0], self.index_gl_type,
@@ -1051,7 +1053,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
         """
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
-            buffer.sub_data()
+            buffer.commit()
 
         glDrawElementsInstanced(mode, vertex_list.index_count, self.index_gl_type,
                                 self.index_buffer.ptr +
