@@ -60,6 +60,7 @@ from typing import TYPE_CHECKING, IO
 import pyglet
 
 if TYPE_CHECKING:
+    from typing import Literal
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import Shader
     from pyglet.image import AbstractImage, Texture, TextureRegion
@@ -439,10 +440,6 @@ class Loader:
             else:
                 return None
 
-    def _index_file(self, name: str, locationobj: Location) -> None:
-        if name not in self._index:
-            self._index[name] = locationobj
-
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
 
@@ -532,8 +529,8 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name: str, flip_x: bool = False, flip_y: bool = False,
-              rotate: int = 0, atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
+    def image(self, name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+              atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -574,8 +571,8 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name: str, flip_x: bool = False,
-                  flip_y: bool = False, rotate: int = 0, border: int = 1) -> Animation:
+    def animation(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                  rotate: Literal[0, 90, 180, 270, 360] = 0, border: int = 1) -> Animation:
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -744,7 +741,7 @@ class Loader:
         if not shader_type:
             try:
                 _, extension = os.path.splitext(name)
-                shader_type = shader_extensions.get(extension.strip("."))
+                shader_type = shader_extensions[extension.strip(".")]
             except KeyError:
                 raise UndetectableShaderType(name=name)
 
