@@ -5,20 +5,15 @@ import pyglet
 from pyglet.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
-from .. import Model, Material, MaterialGroup, TexturedMaterialGroup
+from .. import Model, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
+from .base import Material, Mesh, Primitive
 
 
-class Mesh:
-    def __init__(self, name):
-        self.name = name
-        self.material = None
-
-        self.indices = []
-        self.vertices = []
-        self.normals = []
-        self.tex_coords = []
-        self.colors = []
+def _new_mesh(name, material):
+    primitive = Primitive(attributes={'normals': [], 'tex_coords': [], 'vertices': []}, material=material)
+    mesh = Mesh(primitives=[primitive], name=name)
+    return mesh
 
 
 def load_material_library(filename):
@@ -101,9 +96,9 @@ def parse_obj_file(filename, file=None):
     material = None
     mesh = None
 
-    vertices = [[0., 0., 0.]]
     normals = [[0., 0., 0.]]
     tex_coords = [[0., 0.]]
+    vertices = [[0., 0., 0.]]
 
     diffuse = [1.0, 1.0, 1.0, 1.0]
     ambient = [1.0, 1.0, 1.0, 1.0]
@@ -135,21 +130,21 @@ def parse_obj_file(filename, file=None):
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])
             if mesh is not None:
-                mesh.material = material
+                mesh.primitives[0].material = material
+                # mesh.material = material
 
         elif values[0] == 'o':
-            mesh = Mesh(name=values[1])
-            mesh.material = default_material
+            mesh = _new_mesh(name=values[1], material=default_material)
             mesh_list.append(mesh)
 
         elif values[0] == 'f':
-            if mesh is None:
-                mesh = Mesh(name='')
-                mesh_list.append(mesh)
             if material is None:
-                material = default_material
-            if mesh.material is None:
-                mesh.material = material
+                material = Material()
+            if mesh is None:
+                mesh = _new_mesh(name='unknown', material=material)
+                mesh_list.append(mesh)
+            # if mesh.material is None:
+            #     mesh.material = material
 
             # For fan triangulation, remember first and latest vertices
             n1 = None
@@ -168,15 +163,21 @@ def parse_obj_file(filename, file=None):
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                mesh.normals += normals[n_i]
-                mesh.tex_coords += tex_coords[t_i]
-                mesh.vertices += vertices[v_i]
+                # mesh.normals += normals[n_i]
+                # mesh.tex_coords += tex_coords[t_i]
+                # mesh.vertices += vertices[v_i]
+                mesh.primitives[0].attributes['normals'] += normals[n_i]
+                mesh.primitives[0].attributes['tex_coords'] += tex_coords[t_i]
+                mesh.primitives[0].attributes['vertices'] += vertices[v_i]
 
                 if i >= 3:
                     # Triangulate
-                    mesh.normals += n1 + nlast
-                    mesh.tex_coords += t1 + tlast
-                    mesh.vertices += v1 + vlast
+                    # mesh.normals += n1 + nlast
+                    # mesh.tex_coords += t1 + tlast
+                    # mesh.vertices += v1 + vlast
+                    mesh.primitives[0].attributes['normals'] += n1 + nlast
+                    mesh.primitives[0].attributes['tex_coords'] += t1 + tlast
+                    mesh.primitives[0].attributes['vertices'] += v1 + vlast
 
                 if i == 0:
                     n1 = normals[n_i]
@@ -202,29 +203,33 @@ class OBJModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
+        # TODO: return a new style Scene object instead of creating vertex lists directly:
+        # scene = base.Scene()
+        # node = base.Node()
+
         mesh_list = parse_obj_file(filename=filename, file=file)
 
         vertex_lists = []
         groups = []
 
         for mesh in mesh_list:
-            material = mesh.material
-            count = len(mesh.vertices) // 3
+            material = mesh.primitives[0].material
+            count = len(mesh.primitives[0].attributes['vertices']) // 3
             if material.texture_name:
                 program = pyglet.model.get_default_textured_shader()
                 texture = pyglet.resource.texture(material.texture_name)
                 matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.vertices),
-                                                        normals=('f', mesh.normals),
-                                                        tex_coords=('f', mesh.tex_coords),
+                                                        position=('f', mesh.primitives[0].attributes['vertices']),
+                                                        normals=('f', mesh.primitives[0].attributes['normals']),
+                                                        tex_coords=('f', mesh.primitives[0].attributes['tex_coords']),
                                                         colors=('f', material.diffuse * count)))
             else:
                 program = pyglet.model.get_default_shader()
                 matgroup = MaterialGroup(material, program, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.vertices),
-                                                        normals=('f', mesh.normals),
+                                                        position=('f', mesh.primitives[0].attributes['vertices']),
+                                                        normals=('f', mesh.primitives[0].attributes['normals']),
                                                         colors=('f', material.diffuse * count)))
             groups.append(matgroup)
 

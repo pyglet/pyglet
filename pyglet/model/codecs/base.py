@@ -27,12 +27,19 @@ class Node:
         self.skins = skins
         self.cameras = cameras
 
+    def __repr__(self):
+        return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"
+                f"skins={len(self.skins)}, cameras={len(self.cameras)})")
+
 
 class Mesh:
     """Object containing vertex and related data."""
     def __init__(self, primitives: list[Primitive], name: str):
         self.primitives = primitives
         self.name = name
+
+    def __repr__(self):
+        return f"Mesh(name='{self.name}', primitive_count={len(self.primitives)})"
 
 
 class Primitive:
@@ -44,6 +51,9 @@ class Primitive:
         self.material = material
         self.mode = mode
 
+    def __repr__(self):
+        return f"Primitive(attributes={list(self.attributes)}, mode={self.mode})"
+
 
 class Material:
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
@@ -54,7 +64,7 @@ class Material:
                  specular: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  emission: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  shininess: float = 20,
-                 texture_name: str = ""):
+                 texture_name: None | str = None):
 
         self.name = name
         self.diffuse = diffuse
