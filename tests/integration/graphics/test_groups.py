@@ -54,7 +54,7 @@ def _validate_group(batch, no_state_groups, state_groups, expected_sets, expecte
 
 def test_group_parent_no_state():
     # Make sure a parent state is optimized out if it has no state. 
-    batch = pyglet.graphics.Batch()
+    batch = pyglet.experimental.graphics.Batch()
 
     group = GroupNoState()
 
@@ -71,7 +71,7 @@ def test_group_parent_no_state():
 
 def test_group_parent_with_state():
     """State should be kept of parent."""
-    batch = pyglet.graphics.Batch()
+    batch = pyglet.experimental.graphics.Batch()
 
     group = GroupWithUniqueGLState()
 
@@ -89,7 +89,7 @@ def test_group_parent_with_state():
 
 def test_group_no_parent():
     # Make sure parent state exists if a child changes it
-    batch = pyglet.graphics.Batch()
+    batch = pyglet.experimental.graphics.Batch()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
 
@@ -110,7 +110,7 @@ def test_group_ordering():
 
 def test_group_consolidation():
     # Make sure the same groups consolidate.
-    batch = pyglet.graphics.Batch()
+    batch = pyglet.experimental.graphics.Batch()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
     sprite2 = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)

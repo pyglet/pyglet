@@ -153,23 +153,11 @@ class SourceTestCase(unittest.TestCase):
         with self.assertRaises(MediaException):
             ret.get_queue_source()
 
-    def test_precise_queue_source(self):
-        source = StreamingSource()
-        with mock.patch.object(source, "is_precise", lambda: True):
-            qsource = source.get_queue_source()
-            self.assertIs(qsource, source)
-            self.assertTrue(qsource.is_player_source)
-
-    def test_nonprecise_queue_source(self):
-        source = Source()
-        qsource = source.get_queue_source()
-        self.assertIsNot(qsource, source)
-        self.assertIsInstance(qsource, PreciseStreamingSource)
-
+    def test_queue_source(self):
         source = StreamingSource()
         qsource = source.get_queue_source()
-        self.assertIsNot(qsource, source)
-        self.assertIsInstance(qsource, PreciseStreamingSource)
+        self.assertIs(qsource, source)
+        self.assertTrue(qsource.is_player_source)
 
 
 class StaticSourceTestCase(unittest.TestCase):

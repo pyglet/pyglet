@@ -28,6 +28,7 @@ default policy is to wait until all windows are closed)::
 
 .. versionadded:: 1.1
 """
+from __future__ import annotations
 
 import platform
 import sys
@@ -65,7 +66,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval: float = 1/60) -> None:
+def run(interval: float | None = 1/60) -> None:
     """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
