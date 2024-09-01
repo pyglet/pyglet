@@ -791,7 +791,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.realloc(start, count, new_count)
 
-    def create(self, count: int, index_count: int) -> IndexedVertexList:
+    def create(self, count: int, group: Group, index_count: int) -> IndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:

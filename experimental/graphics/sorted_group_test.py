@@ -22,19 +22,14 @@ sprites = []
 
 group = pyglet.experimental.graphics.SortedGroup()
 
-
-def make_sprite(zvalue):
+sprite_count = 100
+for i in range(sprite_count):
     sprite = pyglet.sprite.Sprite(image, x=0, y=0, batch=batch, group=group)
     # Random color multiplier.
     sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     # Add sprites to keep in memory, like a list. Otherwise, they will get GC'd when out of scope.
     sprite.scale = 0.25
     sprites.append(sprite)
-
-
-sprite_count = 100
-for i in range(sprite_count):
-    make_sprite(i)
 
 group.link_objects(sprites)
 

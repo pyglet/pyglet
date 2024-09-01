@@ -1356,7 +1356,7 @@ class ShaderProgram:
             start = vlist.start
             vlist.indices = [i + start for i in indices]
         else:
-            vlist = domain.create(count, group)
+            vlist = domain.create(count, group, 0)
 
         for name, array in initial_arrays:
             try:

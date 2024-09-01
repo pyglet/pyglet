@@ -159,11 +159,11 @@ class VertexList:
         group = self.domain.group_vlists[self]
         self.domain.group_vertex_ranges[group].remove((self.start, self.count))
         del self.domain.group_vlists[self]
-        # if not self.domain.group_vertex_ranges[group]:
 
-    #     del self.domain.group_vertex_ranges[group]
+        if not self.domain.group_vertex_ranges[group]:
+            del self.domain.group_vertex_ranges[group]
 
-    def update_group(self, group: Group):
+    def update_group(self, group: Group) -> None:
         current_group = self.domain.group_vlists[self]
         assert current_group != group, "Changing group to same group."
         self.domain.group_vertex_ranges[current_group].remove((self.start, self.count))
@@ -237,7 +237,10 @@ class IndexedVertexList(VertexList):
 
         self.domain.group_index_ranges[group].remove((self.index_start, self.index_count))
 
-    def update_group(self, group: Group):
+        if not self.domain.group_index_ranges[group]:
+            del self.domain.group_index_ranges[group]
+
+    def update_group(self, group: Group) -> None:
         current_group = self.domain.group_vlists[self]
         super().update_group(group)
         self.domain.group_index_ranges[current_group].remove((self.index_start, self.index_count))
@@ -394,6 +397,16 @@ class VertexDomain:
         self.group_vlists[vertex_list] = group
         return vertex_list
 
+    def bind(self) -> None:
+        """Bind the domain.
+
+        This binds the VAO and all of its buffers.
+        """
+        self.vao.bind()
+
+        for buffer, _ in self.buffer_attributes:
+            buffer.commit()
+
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
 
@@ -423,6 +436,8 @@ class VertexDomain:
 
     def draw_groups(self, mode: int, groups: list[Group]) -> None:
         """Draw all vertices associated with the specified groups.
+
+        .. note: This relies on the optimization to set the group states.
 
         Args:
             mode:
@@ -600,12 +615,21 @@ class IndexedVertexDomain(VertexDomain):
 
         This binds the VAO and all of its buffers.
         """
-        self.vao.bind()
-
-        for buffer, _ in self.buffer_attributes:
-            buffer.commit()
+        super().bind()
 
         self.index_buffer.commit()
+
+    def draw_groups_with_state(self, mode: int, groups: list[Group]):
+        """Draw all vertices associated with the specified groups.
+
+        This relies on the optimization of the batch call to set the state of the groups.
+
+        Args:
+            mode:
+                OpenGL drawing mode, e.g., ``GL_POINTS``, ``GL_LINES``, etc.
+            groups:
+                The groups whose vertices should be drawn.
+        """
 
     def draw_groups(self, mode: int, groups: list[Group]) -> None:
         """Draw all vertices associated with the specified groups.
@@ -660,6 +684,9 @@ class IndexedVertexDomain(VertexDomain):
         glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
                        self.index_buffer.ptr +
                        vertex_list.index_start * self.index_element_size)
+    @property
+    def is_empty(self) -> bool:
+        return not self.allocator.starts and not self.group_index_ranges
 
     @property
     def has_vertices(self) -> bool:

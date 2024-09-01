@@ -61,10 +61,16 @@ class Batch:
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
-    domain_map: dict[DomainKey: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain]
+    domain_map: dict[DomainKey, vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain]
 
-    def __init__(self) -> None:
-        """Create a graphics batch."""
+    def __init__(self, group_draw: bool=False) -> None:
+        """Create a graphics batch.
+
+        Args:
+            group_draw:
+                Allow being able to call `draw_groups`. There is a small performance penalty as the optimization process
+                has to be run on each individual groups draw list instead of all at once.
+        """
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
@@ -80,6 +86,8 @@ class Batch:
 
         self._draw_list = []
         self._draw_list_dirty = False
+        self._allow_group_draw = group_draw
+        self._draw_list_groups = {}
 
         self._context = pyglet.gl.current_context
 
@@ -135,7 +143,8 @@ class Batch:
 
         return True
 
-    def migrate(self, vertex_list: vertexdomain.VertexList | vertexdomain.IndexedVertexList, mode: int, group: Group, batch: Batch) -> None:
+    def migrate(self, vertex_list: vertexdomain.VertexList | vertexdomain.IndexedVertexList, mode: int, group: Group,
+                batch: Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -210,27 +219,7 @@ class Batch:
         group._assigned_batches.add(self)  # noqa: SLF001
         self._draw_list_dirty = True
 
-    def _check_gl_state(self, group: Group) -> bool:
-        """Return if the group state needs updating."""
-        return any(gl_state not in self.current_states for gl_state in group.set_states)
-
-    def pop_states(self, group: Group) -> None:
-        for state in group.set_states:
-            if state in self.current_states:
-                self.current_states.remove(state)
-
-    def add_states(self, group: Group) -> bool:
-        requires_change = False
-        for state in group.set_states:
-            if state not in self.current_states:
-                self.current_states.append(state)
-                requires_change = True
-
-        return requires_change
-
-    def _create_draw_list(self) -> list:
-        # print("-----------")
-
+    def _create_draw_list(self) -> tuple[list, dict]:
         def visit(current_group: Group) -> list:
             draw_list = []
 
@@ -241,6 +230,7 @@ class Batch:
             for (indexed, instanced, mode, formats), current_domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if current_domain.is_empty:
+                    del self.domain_map[(indexed, instanced, mode, formats)]
                     del domain_map[(indexed, instanced, mode, formats)]
                     continue
 
@@ -263,10 +253,6 @@ class Batch:
                         draw_list.extend(visit(child))
 
             if children or domain_map:
-                # if not domain_map:
-                #     return [(None, 'set', current_group), *draw_list, (None, 'unset', current_group)]
-                #
-                # return draw_list
                 return [(None, 'set', current_group), *draw_list, (None, 'unset', current_group)]
 
             # Clean up if the group is empty and has no children
@@ -287,28 +273,33 @@ class Batch:
             return []
 
         full_draw_list = []
+        group_draw_list = {}
 
         self.top_groups.sort()
 
         for top_group in list(self.top_groups):
             if top_group.visible:
-                full_draw_list.extend(visit(top_group))
+                tg_draw_list = visit(top_group)
+                full_draw_list.extend(tg_draw_list)
+                group_draw_list[top_group] = tg_draw_list
 
-        return full_draw_list
+        return full_draw_list, group_draw_list
 
     def _optimize_draw_list(self, draw_list: list) -> list[Callable]:
+        """Optimizes the draw list to reduce draw calls.
+
+        Some optimizations done:
+            1) Determine if parent groups have a state. If not discard them.
+            2) See if vertex data is contiguous, if so, batch them together by domain.
+            3) Attempt to bind the domain only once per contiguous draws.
+        """
         draw_call_list = []
         contiguous_groups = []
         last_mode = None
         last_domain = None
-        # print("draw list to optimize:", draw_list)
-        # print("======")
 
         set_states = []
         set_groups = []
-        # test_draw_stuff = []
-
-        # Iterate through all calls to condense group calls.
 
         # Draw calls should be: bind vao -> state -> draw -> unset_state
         new_list = []
@@ -318,7 +309,6 @@ class Batch:
         ready_to_unset = set()
 
         for domain, mode, group in draw_list:
-            # print("----START", domain, mode, group)
             # Data: Group if no domain. If domain, mode.
             if not domain:
                 # Mode is set/unset literal when domain is None
@@ -338,39 +328,25 @@ class Batch:
                     if state_added:
                         # Add all the new states.
                         set_states.extend(group.set_states)
-                        # print("group set state:", group)
-                        # print("group states", group.set_states)
-                        # print("current states", set_states)
-                        # print("old states", old_states)
                         groups_to_unset = []
                         # If the state gets added, check if the previous set group states needs to be unset.
                         for set_group in set_groups:
-                            # print("CHECK GROUP", set_group)
                             for gl_state in set_group.set_states:
                                 # If a previously set group state is not in any of the new ones, unset those.
-                                if gl_state not in group.set_states:
-                                    # print(gl_state, group.set_states)
-                                    if set_group not in groups_to_unset and set_group in ready_to_unset:
-                                        groups_to_unset.append(set_group)
+                                if gl_state not in group.set_states and (set_group not in groups_to_unset
+                                                                         and set_group in ready_to_unset):
+                                    groups_to_unset.append(set_group)
 
                         for remove_group in reversed(groups_to_unset):
-                            # print("-removing group", remove_group)
                             set_groups.remove(remove_group)
                             ready_to_unset.remove(remove_group)
                             new_list.append((None, 'unset', remove_group))
                             for gl_state in remove_group.set_states:
-                                # print("Removing state", gl_state)
                                 set_states.remove(gl_state)
-
-                        # print("Groups removed", groups_to_unset)
-
-                        # print("States after", set_states)
-                        # print("State count after", len(set_states), len(group.set_states), len(set_states) == len(group.set_states))
 
                         set_groups.append(group)
                         was_added.append(group)
                         new_list.append((None, 'set', group))
-                        # print("set groups total:", set_groups)
 
                 elif mode == 'unset':
                     ready_to_unset.add(group)
@@ -396,14 +372,10 @@ class Batch:
         # We don't need to clean up since it's local, but doing it for a sanity check. TODO: Move to test?
         assert len(set_states) == 0, f"Leftover states were found. Optimization failed. States: {set_states}"
 
-        # print("---------", "States!", set_states)
-        # print("Test list groups", new_list)
-
         draw_list = new_list
 
         # Collapse draw calls into contiguous render calls.
         for draw_domain, mode, group in draw_list:
-            # print("<<<<<<<<< start consolidation", group, draw_domain, mode)
             # If the mode, domain are None, it's a group/parent with no draws.
             # However, it still may have a state that needs setting.
             if draw_domain is None:
@@ -419,7 +391,6 @@ class Batch:
                         contiguous_groups = []
 
                     draw_call_list.append(group.unset_state)
-                    # test_draw_stuff.extend([f"UNset state of {group}"])
                 continue
 
             # If the domain or draw mode has changed, we need to break up the draw.
@@ -436,8 +407,6 @@ class Batch:
                     draw_call_list.append(
                         (lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
 
-                    # test_draw_stuff.extend(["draw", contiguous_groups])
-
                 # Reset contiguous groups for share state checks.
                 contiguous_groups = [group]
 
@@ -446,27 +415,25 @@ class Batch:
 
         # Draw the remaining contiguous groups
         if contiguous_groups:
-            # test_draw_stuff.extend(["draw", contiguous_groups])
             draw_call_list.append(
                 (lambda d, m, gs: lambda: d.draw_groups(m, gs))(last_domain, last_mode, contiguous_groups))
-
-        # print("**** Optimized list:\n", test_draw_stuff)
 
         return draw_call_list
 
     def _update_draw_list(self) -> None:
         self._draw_list_dirty = False
 
-        draw_list = self._create_draw_list()
+        draw_list, group_draw_list = self._create_draw_list()
 
         self._draw_list = self._optimize_draw_list(draw_list)
 
+        if self._allow_group_draw:
+            self._draw_list_groups.clear()
+            for group, dl in group_draw_list.items():
+                self._draw_list_groups[group] = self._optimize_draw_list(dl)
+
         if _debug_graphics_batch:
             self._dump_draw_list()
-
-        # print("FINAL", [f"{func!s}" for func in self._draw_list])
-
-        # print("GROUPS", draw_list)
 
     def _dump_draw_list(self, regions: bool = False) -> None:
         total_domains = 0
@@ -512,6 +479,23 @@ class Batch:
         for func in self._draw_list:
             func()
 
+    def draw_groups(self, *groups: Group) -> None:
+        """Draw specific groups within the batch.
+
+        .. note: This only applies to a top level group; groups within groups not supported and will produce
+                 a KeyError.
+
+        .. note: Draw calls are not optimized like the Batch is.
+        """
+        assert self._allow_group_draw, "Enable the draw_group parameter on initialization to use this."
+
+        if self._draw_list_dirty:
+            self._update_draw_list()
+
+        for group in groups:
+            for func in self._draw_list_groups[group]:
+                func()
+
     def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.
 
@@ -556,7 +540,7 @@ class Batch:
 
 
 class SortedGroup(pyglet.graphics.Group):
-    """Allows maintaining draw order of sprite list."""
+    """Allows maintaining draw order of a list of sprites."""
     _domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | None
 
     def __init__(self, order: int = 0, parent: pyglet.graphics.Group | None = None) -> None:  # noqa: D107

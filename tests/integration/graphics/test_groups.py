@@ -24,7 +24,7 @@ test_image = pyglet.image.ImageData(1, 1, 'RGBA', (ctypes.c_byte * 4)(0, 0, 0, 0
 
 def _validate_group(batch, no_state_groups, state_groups, expected_sets, expected_unsets, expected_optimized_sets,
                     expected_optimized_unsets, expected_binds, expected_draws):
-    draw_list = batch._create_draw_list()  # noqa: SLF001
+    draw_list, _ = batch._create_draw_list()  # noqa: SLF001
 
     assert len([domain for domain, mode, draw_group in draw_list if mode == 'set']) == expected_sets
     assert len([domain for domain, mode, draw_group in draw_list if mode == 'unset']) == expected_unsets
@@ -131,8 +131,27 @@ def test_group_comparison():
 
 
 def test_group_deletion():
-    # Make sure groups are freed from the domain and batch when GC'd.
-    pass
+    # Make sure groups are freed from the domain and batch when removed.
+    batch = pyglet.experimental.graphics.Batch()
+
+    sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
+    
+    domain = sprite._vertex_list.domain
+    group = sprite._group
+    
+    sprite.delete()
+    
+    assert group not in domain.group_vertex_ranges
+    assert group not in domain.group_index_ranges
+    
+    # Domain should actually still exist, until the draw list is recreated.
+    assert domain in list(batch.domain_map.values())
+    
+    batch._update_draw_list()
+    
+    # Ensure an empty domain is removed and the group is removed.
+    assert domain not in list(batch.domain_map.values())
+    assert group not in batch.top_groups
 
 
 def test_group_buildup():
