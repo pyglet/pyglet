@@ -404,10 +404,16 @@ class _UniformArray:
             size = self._uniform.size
 
         if self._dsa:
-            self._gl_setter(self._uniform.program, self._uniform.location + offset, size, data)
+            if self._is_matrix:
+                self._gl_setter(self._uniform.program, self._uniform.location + offset, size, GL_FALSE, data)
+            else:
+                self._gl_setter(self._uniform.program, self._uniform.location + offset, size, data)
         else:
             glUseProgram(self._uniform.program)
-            self._gl_setter(self._uniform.location + offset, size, data)
+            if self._is_matrix:
+                self._gl_setter(self._uniform.location + offset, size, GL_FALSE, data)
+            else:
+                self._gl_setter(self._uniform.location + offset, size, data)
 
     def __repr__(self) -> str:
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
