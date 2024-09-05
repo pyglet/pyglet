@@ -119,9 +119,9 @@ Making the labels
 
 To make a text label in pyglet, just initialize a :class:`pyglet.text.Label` object::
 
-    score_label = pyglet.text.Label(text="Score: 0", x=10, y=460)
+    score_label = pyglet.text.Label(text="Score: 0", x=10, y=575)
     level_label = pyglet.text.Label(text="My Amazing Game",
-                                x=game_window.width//2, y=game_window.height//2, anchor_x='center')
+                                x=game_window.width//2, y=575, anchor_x='center')
 
 Notice that the second label is centered using the anchor_x attribute.
 
