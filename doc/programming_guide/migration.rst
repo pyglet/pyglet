@@ -77,7 +77,10 @@ You now get a Vec2 instead of booleans that can be used directly::
         # Easily normalize for diagonal values:
         player_position += vector.normalize() * PLAYER_SPEED
 
-You can of course
+This should be more efficient in most cases. If you want to access the values
+as booleans for a quick workaround when migrating, you can do something like this::
+
+    dpleft, dpright, dpup, dpdown = vector.x < 0, vector.x > 0, vector.y > 0 vector.y < 0
 
 
 Vectors can also be useful for analog sticks, because it gives an easy way to
