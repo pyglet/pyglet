@@ -8,7 +8,7 @@ import os
 import sys
 from collections.abc import ItemsView, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -249,9 +249,9 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    scale_with_dpi: bool = False
+    dpi_scaling: None | Literal["window_only", "window_and_content"] = None
     """For 'HiDPI' ('Retina') displays, scale Window creation size with desktop scaling. Defaults to ``False``. 
-        
+
     For high pixel density displays, it is common for the desktop to have some form of application window scaling.
     Setting this option to ``True`` will make pyglet aware of these settings when Windows are created. For instance,
     if the desktop scaling factor is set to 150%, a Window created with a resolution of 1000x1000 will have an actual
@@ -282,7 +282,7 @@ class Options:
 
     def __setitem__(self, key: str, value: Any) -> None:
         assert key in self.__annotations__, f"Invalid option name: '{key}'"
-        assert (_SPECIAL_OPTION_VALIDATORS.get(key, None) or _OPTION_TYPE_VALIDATORS[self.__annotations__[key]])(value), \
+        assert (_SPECIAL_OPTION_VALIDATORS.get(key) or _OPTION_TYPE_VALIDATORS[self.__annotations__[key]])(value), \
             f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
 

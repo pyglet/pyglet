@@ -152,7 +152,8 @@ class CocoaWindow(BaseWindow):
 
             # Then create a view and set it as our NSWindow's content view.
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
-            self._nsview.setWantsBestResolutionOpenGLSurface_(1 if pyglet.options["scale_with_dpi"] else 0)
+            best_resolution_value = 1 if pyglet.options.dpi_scaling in ("window_only", "window_and_content") else 0
+            self._nsview.setWantsBestResolutionOpenGLSurface_(best_resolution_value)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 
@@ -187,22 +188,21 @@ class CocoaWindow(BaseWindow):
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
 
-    def _get_dpi_desc(self):
-        if pyglet.options["scale_with_dpi"] and self._nswindow:
+    def _get_dpi_desc(self) -> int:
+        if pyglet.options.dpi_scaling in ("window_only", "window_and_content") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
-            dpi = int(rsize.width)
-            return dpi
+            return int(rsize.width)
 
         return 72
 
     @property
-    def scale(self):
-        """The scale of the window factoring in DPI.  Read only.
+    def scale(self) -> float:
+        """The scale of the window factoring in DPI.
 
-        :type: float
+        Read only.
         """
-        if pyglet.options["scale_with_dpi"] and self._nswindow:
+        if pyglet.options.dpi_scaling in ("window_only", "window_and_content") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
@@ -384,7 +384,7 @@ class CocoaWindow(BaseWindow):
     def get_framebuffer_size(self) -> tuple[int, int]:
         view = self.context._nscontext.view()
         bounds = view.bounds()
-        if pyglet.options["scale_with_dpi"]:
+        if pyglet.options.dpi_scaling == 'window_and_content':
             bounds = view.convertRectToBacking_(bounds)
         return int(bounds.size.width), int(bounds.size.height)
 

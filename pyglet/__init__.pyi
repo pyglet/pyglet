@@ -1,6 +1,6 @@
 
 from dataclasses import dataclass
-from typing import Any, ItemsView, Sequence
+from typing import Any, ItemsView, Literal, Sequence
 
 from . import app as app
 from . import clock as clock
@@ -62,6 +62,7 @@ class Options:
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool
+    dpi_scaling: None | Literal["window_only", "window_and_content"]
     scale_with_dpi: bool
     shader_bind_management: bool
 
@@ -72,6 +73,9 @@ class Options:
         ...
 
     def __getitem__(self, item: str) -> Any:
+        ...
+
+    def __setitem__(self, key: str, item: Any) -> None:
         ...
 
 options: Options

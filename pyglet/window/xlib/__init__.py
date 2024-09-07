@@ -266,7 +266,7 @@ class XlibWindow(BaseWindow):
             else:
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
-                if pyglet.options["scale_with_dpi"]:
+                if pyglet.options.dpi_scaling in ("window_only", "window_and_content"):
                     if self.scale != 1.0:
                         self._width = width = int(self._width * self.scale)
                         self._height = height = int(self._height * self.scale)
@@ -596,6 +596,12 @@ class XlibWindow(BaseWindow):
                                    byref(y),
                                    byref(child))
         return x.value, y.value
+
+    def get_size(self) -> tuple[int, int]:
+        if pyglet.options.dpi_scaling == "window_and_content":
+            return int(self._width / self.scale), int(self._height / self.scale)
+
+        return self._width, self._height
 
     def activate(self) -> None:
         # Issue 218
@@ -931,7 +937,7 @@ class XlibWindow(BaseWindow):
                 raise XlibException(msg)
         xlib.XSetTextProperty(self._x_display, self._window, byref(text_property), atom)
         # XXX <rj> Xlib doesn't like us freeing this
-        # xlib.XFree(text_property.value)  # noqa: ERA001
+        # xlib.XFree(text_property.value)
 
     def _set_atoms_property(self, name: str, values: list[str], mode: int = xlib.PropModeReplace) -> None:
         name_atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
@@ -1661,7 +1667,7 @@ class XlibWindow(BaseWindow):
         xlib.XSendEvent(self._x_display, request.requestor, 0, 0, byref(out_event))
 
         # Seems to work find without it. May add later.
-        # xlib.XSync(self._x_display, False)  # noqa: ERA001
+        # xlib.XSync(self._x_display, False)
 
 
 __all__ = ['XlibEventHandler', 'XlibWindow']

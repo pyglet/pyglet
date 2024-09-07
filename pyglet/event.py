@@ -120,9 +120,8 @@ from __future__ import annotations
 
 import inspect
 import os.path
-
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from weakref import WeakMethod
 
 if TYPE_CHECKING:
@@ -131,6 +130,8 @@ if TYPE_CHECKING:
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
+
+EVENT_HANDLE_STATE = Union[True, None]
 
 
 class EventException(Exception):  # noqa: N818
@@ -433,10 +434,10 @@ class EventDispatcher:
     def _dump_handlers(self) -> None:
 
         for level, handlers in enumerate(self._event_stack):
-            print(f"level: {level}") 
+            print(f"level: {level}")
 
             for event_type, handler in handlers.items():
-                print(f" - '{event_type}': {handler}") 
+                print(f" - '{event_type}': {handler}")
 
     # Decorator
 

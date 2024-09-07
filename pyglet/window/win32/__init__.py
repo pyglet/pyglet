@@ -24,7 +24,7 @@ from pyglet.libs.win32.types import (
 from pyglet.libs.win32.winkey import chmap, keymap
 
 if compat_platform not in ('cygwin', 'win32'):
-    raise ImportError('Not a win32 platform.')  # noqa: EM101
+    raise ImportError('Not a win32 platform.')
 
 from ctypes import (
     POINTER,
@@ -189,7 +189,7 @@ class Win32Window(BaseWindow):
             width = self.screen.width
             height = self.screen.height
         else:
-            if pyglet.options["scale_with_dpi"]:
+            if pyglet.options.dpi_scaling in ("window_only", "window_and_content"):
                 if self.scale != 1.0:
                     self._width = int(self._width * self.scale)
                     self._height = int(self._height * self.scale)
@@ -320,7 +320,7 @@ class Win32Window(BaseWindow):
         if self._visible:
             self.set_visible()
             # Might need resize event if going from fullscreen to fullscreen
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_expose')
 
     def _update_view_location(self, width: int, height: int) -> None:
@@ -417,10 +417,7 @@ class Win32Window(BaseWindow):
         width, height = self._client_to_window_size_dpi(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
                              (constants.SWP_NOZORDER | constants.SWP_NOMOVE | constants.SWP_NOOWNERZORDER))
-        self.dispatch_event('on_resize', self._width, self._height)
-
-    def get_size(self) -> tuple[int, int]:
-        return self._width, self._height
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         self._minimum_size = width, height
@@ -436,7 +433,7 @@ class Win32Window(BaseWindow):
             insertAfter = constants.HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
                                  constants.SWP_NOMOVE | constants.SWP_NOSIZE | constants.SWP_SHOWWINDOW)
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.activate()
             self.dispatch_event('on_show')
         else:
@@ -487,6 +484,15 @@ class Win32Window(BaseWindow):
         self._set_cursor_visibility(platform_visible)
 
         self._mouse_platform_visible = platform_visible
+
+    def get_size(self) -> tuple[int, int]:
+        if pyglet.options.dpi_scaling == "window_and_content":
+            return int(self._width / self.scale), int(self._height / self.scale)
+
+        return self._width, self._height
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        return self._width, self._height
 
     def _set_cursor_visibility(self, platform_visible: bool) -> None:
         # Avoid calling ShowCursor with the current visibility (which would
@@ -1195,7 +1201,7 @@ class Win32Window(BaseWindow):
             self._update_clipped_cursor()
 
         self.switch_to()
-        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
         return 0
 
     @Win32EventHandler(constants.WM_SYSCOMMAND)
@@ -1333,8 +1339,9 @@ class Win32Window(BaseWindow):
         return 0
 
     @Win32EventHandler(constants.WM_GETDPISCALEDSIZE)
-    def _event_dpi_scaled_size(self, msg, wParam, lParam):
-        if pyglet.options["scale_with_dpi"]:
+    def _event_dpi_scaled_size(self, msg: int, wParam: int, lParam: int) -> int | None:
+        print("SCALED SIZE")
+        if pyglet.options.dpi_scaling in ("window_only", "window_and_content"):
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1357,13 +1364,15 @@ class Win32Window(BaseWindow):
             size.cy += (result.bottom - result.top) - (current.bottom - current.top)
             return 1
 
+        return None
+
     @Win32EventHandler(constants.WM_DPICHANGED)
-    def _event_dpi_change(self, msg, wParam, lParam):
+    def _event_dpi_change(self, msg: int, wParam: int, lParam: int) -> int:
         y_dpi, x_dpi = self._get_location(wParam)
 
         scale = x_dpi / constants.USER_DEFAULT_SCREEN_DPI
         if not self._fullscreen and\
-                (pyglet.options["scale_with_dpi"] or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+                (pyglet.options.dpi_scaling != "none" or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left
@@ -1377,7 +1386,7 @@ class Win32Window(BaseWindow):
         self._dpi = x_dpi
 
         self.switch_to()
-        self.dispatch_event('on_scale', scale, x_dpi)
+        self.dispatch_event('_on_internal_scale', scale, x_dpi)
         return 1
 
 
