@@ -30,7 +30,6 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
 
     def __init__(self) -> None:  # noqa: D107
         self.doc = pyglet.text.document.FormattedDocument()
-        self.length = 0
         self.attributes = {}
 
     def decode(self, text: str, location: Location | None=None) -> pyglet.text.document.FormattedDocument:  # noqa: ARG002
@@ -78,6 +77,5 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
         return self.doc
 
     def append(self, text: str) -> None:
-        self.doc.insert_text(self.length, text, self.attributes)
-        self.length += len(text)
+        self.doc.append_text(text, self.attributes)
         self.attributes.clear()

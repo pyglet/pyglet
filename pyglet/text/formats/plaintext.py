@@ -13,5 +13,5 @@ if TYPE_CHECKING:
 class PlainTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
     def decode(self, text: str, location: Location | None=None) -> UnformattedDocument:  # noqa: ARG002
         document = pyglet.text.document.UnformattedDocument()
-        document.insert_text(0, text)
+        document.append_text(text)
         return document
