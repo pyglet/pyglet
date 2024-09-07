@@ -162,16 +162,18 @@ def _create_shadow_window() -> None:
     from pyglet.window import Window
 
     class ShadowWindow(Window):
+        _shadow = True
         def __init__(self) -> None:
             super().__init__(width=1, height=1, visible=False)
 
         def _create_projection(self) -> None:
             """Shadow window does not need a projection."""
-            pass
 
-        def on_resize(self, width, height):
+        def _on_internal_resize(self, width, height):
             """No projection and not required."""
-            pass
+
+        def _on_internal_scale(self, width, height):
+            """No projection and not required."""
 
     _shadow_window = ShadowWindow()
     _shadow_window.switch_to()

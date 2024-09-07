@@ -385,6 +385,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     _keyboard_exclusive: bool = False
 
+    _shadow: bool = False
+
     # Subclasses should update these after relevant events
     _mouse_cursor: MouseCursor | ImageMouseCursor = DefaultMouseCursor()
     _mouse_x: int = 0
