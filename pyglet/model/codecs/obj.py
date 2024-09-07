@@ -7,10 +7,11 @@ from pyglet.util import asstr
 
 from .. import Model, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
-from .base import Material, Mesh, Primitive
+from .base import Material, Mesh, Primitive, Node, Scene
 
 
 def _new_mesh(name, material):
+    # The three primitive types used in .obj files:
     primitive = Primitive(attributes={'normals': [], 'tex_coords': [], 'vertices': []}, material=material)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
@@ -80,7 +81,8 @@ def load_material_library(filename):
 
 def parse_obj_file(filename, file=None):
     materials = {}
-    mesh_list = []
+
+    node = Node()
 
     location = os.path.dirname(filename)
 
@@ -131,20 +133,17 @@ def parse_obj_file(filename, file=None):
             material = materials.get(values[1])
             if mesh is not None:
                 mesh.primitives[0].material = material
-                # mesh.material = material
 
         elif values[0] == 'o':
             mesh = _new_mesh(name=values[1], material=default_material)
-            mesh_list.append(mesh)
+            node.meshes.append(mesh)
 
         elif values[0] == 'f':
             if material is None:
                 material = Material()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
-                mesh_list.append(mesh)
-            # if mesh.material is None:
-            #     mesh.material = material
+                node.meshes.append(mesh)
 
             # For fan triangulation, remember first and latest vertices
             n1 = None
@@ -163,18 +162,11 @@ def parse_obj_file(filename, file=None):
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                # mesh.normals += normals[n_i]
-                # mesh.tex_coords += tex_coords[t_i]
-                # mesh.vertices += vertices[v_i]
                 mesh.primitives[0].attributes['normals'] += normals[n_i]
                 mesh.primitives[0].attributes['tex_coords'] += tex_coords[t_i]
                 mesh.primitives[0].attributes['vertices'] += vertices[v_i]
 
                 if i >= 3:
-                    # Triangulate
-                    # mesh.normals += n1 + nlast
-                    # mesh.tex_coords += t1 + tlast
-                    # mesh.vertices += v1 + vlast
                     mesh.primitives[0].attributes['normals'] += n1 + nlast
                     mesh.primitives[0].attributes['tex_coords'] += t1 + tlast
                     mesh.primitives[0].attributes['vertices'] += v1 + vlast
@@ -187,7 +179,7 @@ def parse_obj_file(filename, file=None):
                 tlast = tex_coords[t_i]
                 vlast = vertices[v_i]
 
-    return mesh_list
+    return Scene(nodes=[node])
 
 
 ###################################################
@@ -203,16 +195,12 @@ class OBJModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        # TODO: return a new style Scene object instead of creating vertex lists directly:
-        # scene = base.Scene()
-        # node = base.Node()
-
-        mesh_list = parse_obj_file(filename=filename, file=file)
+        scene = parse_obj_file(filename=filename, file=file)
 
         vertex_lists = []
         groups = []
 
-        for mesh in mesh_list:
+        for mesh in scene.node.meshes:
             material = mesh.primitives[0].material
             count = len(mesh.primitives[0].attributes['vertices']) // 3
             if material.texture_name:

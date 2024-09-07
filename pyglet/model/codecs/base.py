@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 class Scene:
     """Container for one or more Node objects."""
 
-    nodes: list[Node]
+    def __init__(self, nodes: list[Node] | None = None) -> None:
+        self.nodes = nodes or []
 
     @property
     def node(self) -> Node:
@@ -21,11 +22,12 @@ class Scene:
 
 class Node:
     """Container for one or more sub-objects, such as Meshes."""
-    def __init__(self, nodes: list[Node], meshes: list[Mesh], skins: list[Skin], cameras: list[Camera]):
-        self.nodes = nodes
-        self.meshes = meshes
-        self.skins = skins
-        self.cameras = cameras
+    def __init__(self, nodes: list[Node] | None = None, meshes: list[Mesh] | None = None,
+                 skins: list[Skin] | None = None, cameras: list[Camera] | None = None) -> None:
+        self.nodes = nodes or []
+        self.meshes = meshes or []
+        self.skins = skins or []
+        self.cameras = cameras or []
 
     def __repr__(self):
         return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"
@@ -34,8 +36,8 @@ class Node:
 
 class Mesh:
     """Object containing vertex and related data."""
-    def __init__(self, primitives: list[Primitive], name: str):
-        self.primitives = primitives
+    def __init__(self, primitives: list[Primitive] | None = None, name: str = "unknown") -> None:
+        self.primitives = primitives or []
         self.name = name
 
     def __repr__(self):
@@ -64,7 +66,7 @@ class Material:
                  specular: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  emission: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  shininess: float = 20,
-                 texture_name: None | str = None):
+                 texture_name: str | None = None):
 
         self.name = name
         self.diffuse = diffuse
