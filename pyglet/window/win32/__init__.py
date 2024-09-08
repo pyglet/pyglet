@@ -1371,7 +1371,10 @@ class Win32Window(BaseWindow):
         y_dpi, x_dpi = self._get_location(wParam)
 
         scale = x_dpi / constants.USER_DEFAULT_SCREEN_DPI
-        if not self._fullscreen and\
+
+        self._dpi = x_dpi
+
+        if not self._fullscreen and \
                 (pyglet.options.dpi_scaling is not False or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
@@ -1382,8 +1385,6 @@ class Win32Window(BaseWindow):
 
             _user32.SetWindowPos(self._hwnd, 0, x, y, width, height,
                                  constants.SWP_NOZORDER | constants.SWP_NOOWNERZORDER | constants.SWP_NOACTIVATE)
-
-        self._dpi = x_dpi
 
         self.switch_to()
         self.dispatch_event('_on_internal_scale', scale, x_dpi)
