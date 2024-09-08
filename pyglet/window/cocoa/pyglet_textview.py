@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')
-
+NSColor = ObjCClass('NSColor')
 
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
@@ -37,8 +37,8 @@ class PygletTextView_Implementation:
         self.setFieldEditor_(False)
         self.empty_string = CFSTR('')
 
-        # Prevent a blinking cursor in bottom left corner
-        self.setEditable_(False)
+        # Prevent a blinking cursor in bottom left corner Python 3.9 w/ ARM mac.
+        self.setInsertionPointColor_(NSColor.clearColor())
         return self
 
     @PygletTextView.method("v@")
