@@ -7,6 +7,7 @@ from ctypes import c_void_p
 from pyglet.libs.darwin.cocoapy import (
     NSApplicationDidHideNotification,
     NSApplicationDidUnhideNotification,
+    NSMakeRect,
     ObjCClass,
     ObjCInstance,
     ObjCSubclass,
@@ -147,12 +148,26 @@ class PygletDelegate_Implementation:
 
     @PygletDelegate.method('v@')
     def windowDidChangeBackingProperties_(self, notification):
-        user_info = notification.userInfo()
-        old_scale = user_info.objectForKey_(NSBackingPropertyOldScaleFactorKey)
+        if not self._window._shadow:
+            user_info = notification.userInfo()
+            old_scale_value = user_info.objectForKey_(NSBackingPropertyOldScaleFactorKey)
 
-        new_scale = self._window._nswindow.backingScaleFactor()
-        if old_scale.doubleValue() != new_scale:
-            self._window.dispatch_event("on_scale", new_scale, self._window._get_dpi_desc())
+            old_scale = old_scale_value.doubleValue()
+            new_scale = self._window._nswindow.backingScaleFactor()
+            if old_scale != new_scale:
+                self._window.switch_to()
+                self._window.dispatch_event("_on_internal_scale", new_scale, self._window._get_dpi_desc())
+
+                # MacOS seems to cache the same sizes even between different DPI scales.
+                # Force a refresh by setting a temporary frame, then forcing it back.
+                currentFrame = self._window._nswindow.frame()
+
+                tempRect = NSMakeRect(currentFrame.origin.x, currentFrame.origin.y,
+                                      currentFrame.size.width + 1, currentFrame.size.height + 1)
+                self._window._nswindow.setFrame_display_(tempRect, True)
+                self._window._nswindow.setFrame_display_(currentFrame, True)
+
+                self._window.context.update_geometry()
 
 
 PygletDelegate = ObjCClass('PygletDelegate')

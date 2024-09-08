@@ -121,7 +121,7 @@ from __future__ import annotations
 import inspect
 import os.path
 from functools import partial
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Literal, Union
 from weakref import WeakMethod
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ if TYPE_CHECKING:
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
-EVENT_HANDLE_STATE = Union[True, None]
+EVENT_HANDLE_STATE = Union[Literal[True], None]
 
 
 class EventException(Exception):  # noqa: N818

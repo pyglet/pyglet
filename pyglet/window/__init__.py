@@ -403,6 +403,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _default_width: int = 1280
     _default_height: int = 720
 
+    _requested_width: int
+    _requested_height: int
+
     # Create a default ShaderProgram, so the Window instance can
     # update the `WindowBlock` UBO shared by all default shaders.
     _default_vertex_source = """#version 150 core
@@ -554,6 +557,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         self._width = width
         self._height = height
+        self._requested_width = width
+        self._requested_height = height
+
         self._resizable = resizable
         self._fullscreen = fullscreen
         self._style = style
@@ -585,8 +591,6 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
         self._viewport = (0, 0, *self.get_framebuffer_size())
-
-        print("CREATE PROJ", self.get_framebuffer_size())
 
         width, height = self.get_size()
         self.view = Mat4()
@@ -773,6 +777,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             The width and height of the window, in pixels.
         """
         return self._width, self._height
+
+    def get_requested_size(self) -> tuple[int, int]:
+        """Return the size of the window without any scaling taken into effect.
+
+        This does not include the windows' border or title bar.
+
+        Returns:
+            The width and height of the window, in pixels.
+        """
+        return self._requested_width, self._requested_height
 
     def get_system_mouse_cursor(self, name: str) -> MouseCursor:
         """Obtain a system mouse cursor.
@@ -1026,6 +1040,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             raise ValueError(msg)
 
         self._width, self._height = width, height
+        self._requested_width, self._requested_height = width, height
 
     @abstractmethod
     def set_location(self, x: int, y: int) -> None:

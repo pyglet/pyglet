@@ -1372,7 +1372,7 @@ class Win32Window(BaseWindow):
 
         scale = x_dpi / constants.USER_DEFAULT_SCREEN_DPI
         if not self._fullscreen and\
-                (pyglet.options.dpi_scaling != "none" or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+                (pyglet.options.dpi_scaling is not False or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left

@@ -456,7 +456,7 @@ class XlibWindow(BaseWindow):
 
         self._update_view_size()
 
-        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
         self.dispatch_event('on_show')
         self.dispatch_event('on_expose')
 
@@ -566,7 +566,7 @@ class XlibWindow(BaseWindow):
             self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
         self._update_view_size()
-        self.dispatch_event('on_resize', width, height)
+        self.dispatch_event('_on_internal_resize', width, height)
 
     def _update_view_size(self) -> None:
         xlib.XResizeWindow(self._x_display, self._view, self._width, self._height)
@@ -1580,7 +1580,7 @@ class XlibWindow(BaseWindow):
             self._width = w
             self._height = h
             self._update_view_size()
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
         if self._x != x or self._y != y:
             self.dispatch_event('on_move', x, y)
             self._x = x

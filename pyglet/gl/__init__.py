@@ -169,10 +169,10 @@ def _create_shadow_window() -> None:
         def _create_projection(self) -> None:
             """Shadow window does not need a projection."""
 
-        def _on_internal_resize(self, width, height):
+        def _on_internal_resize(self, width: int, height: int) -> None:
             """No projection and not required."""
 
-        def _on_internal_scale(self, width, height):
+        def _on_internal_scale(self, scale: float, dpi: int) -> None:
             """No projection and not required."""
 
     _shadow_window = ShadowWindow()

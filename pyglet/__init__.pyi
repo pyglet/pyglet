@@ -62,7 +62,7 @@ class Options:
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool
-    dpi_scaling: None | Literal["window_only", "window_and_content"]
+    dpi_scaling: False | Literal["window_only", "window_and_content"]
     scale_with_dpi: bool
     shader_bind_management: bool
 

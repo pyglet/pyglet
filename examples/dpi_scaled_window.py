@@ -1,11 +1,15 @@
 import pyglet
 
 pyglet.options["debug_gl"] = False
-pyglet.options.dpi_scaling = "window_only"
+pyglet.options.dpi_scaling = "window_and_content"
+#pyglet.options.dpi_scaling = False
+#pyglet.options.dpi_scaling = "window_only"
 
-# This is what I have for my notes right now for the different modes:
 # DPI_SCALING
-# `'none'` = 1:1 pixel ratio for Window size and framebuffer.
+# `False` = 1:1 pixel ratio for Window frame size and framebuffer.
+# Note: In MacOS, this is not allowed as the frame size is tied to the resolution, and the resolution determines the DPI.
+# As such, to allow 1:1 frame to buffer, it must be in a non-HiDPI resolution.
+# However, you can expect the full framebuffer.
 #
 # `'window_only'` = Window is scaled based on the DPI ratio. Window size and content (projection) size matches the full frame buffer. 
 # You must rescale and reposition your content to take advantage of the larger framebuffer. 
@@ -17,7 +21,7 @@ pyglet.options.dpi_scaling = "window_only"
 
 window = pyglet.window.Window(800, 600, caption="DPI Test", resizable=True)
 
-print(window.dpi, window.scale)
+print("Window DPI", window.dpi, "Window Scale", window.scale)
 
 label = pyglet.text.Label('Hello, world',
                           font_name='Times New Roman',
@@ -36,6 +40,10 @@ def on_draw():
     sprite.draw()
     label.draw()
 
+#@window.event
+#def on_mouse_motion(x, y, dx, dy):
+#    print("Mouse Motion", x, y, dx, dy)
+
 @window.event
 def on_mouse_press(x, y, button, modifier):
     print("Window Size:", window.get_size())
@@ -44,7 +52,13 @@ def on_mouse_press(x, y, button, modifier):
 @window.event
 def on_resize(width, height):
     #window.on_resize(width, height)
-    print("RESIZED", width, height)
+    print("RESIZED", width, height, window.width, window.height)
+    label.position = (window.width // 2, window.height // 2, 0)
+
+@window.event
+def on_key_press(symbol, modifiers):
+    if symbol == pyglet.window.key.SPACE:
+        window.set_size(500, 300)
 
 @window.event
 def on_scale(scale, dpi):
@@ -53,6 +67,7 @@ def on_scale(scale, dpi):
     print("Window Size:", window.get_size())
     print("Window Scale Ratio:", window.scale)
     print("Window Frame Buffer Size:", window.get_framebuffer_size())
-    window.on_resize(*window.get_size())
+    #label.dpi = dpi
+
 
 pyglet.app.run()

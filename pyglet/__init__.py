@@ -249,7 +249,7 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: None | Literal["window_only", "window_and_content"] = None
+    dpi_scaling: False | Literal["window_only", "window_and_content"] = False
     """For 'HiDPI' ('Retina') displays, scale Window creation size with desktop scaling. Defaults to ``False``. 
 
     For high pixel density displays, it is common for the desktop to have some form of application window scaling.
