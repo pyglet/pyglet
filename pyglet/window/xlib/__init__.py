@@ -597,6 +597,9 @@ class XlibWindow(BaseWindow):
                                    byref(child))
         return x.value, y.value
 
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        return self._width, self._height
+
     def get_size(self) -> tuple[int, int]:
         if pyglet.options.dpi_scaling == "window_and_content":
             return int(self._width / self.scale), int(self._height / self.scale)
