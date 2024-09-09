@@ -168,7 +168,8 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 self.timer.invalidate()
                 self.timer = None
 
-            self.nsapp_stop()
+            if self.NSApp:
+                self.NSApp.terminate_(None)
 
         # Force NSApp to close if Python receives sig events.
         signal.signal(signal.SIGINT, term_received)
@@ -194,7 +195,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def nsapp_stop(self):
         """Used only for CocoaAlternateEventLoop"""
-        self.NSApp.terminate_(None)
+        self.NSApp.stop_(None)
 
     def step(self, timeout=None):
         with AutoReleasePool():
