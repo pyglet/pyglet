@@ -253,6 +253,7 @@ class XlibWindow(BaseWindow):
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
             self._dpi = self._screen.get_dpi()
+            self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "window_and_content" else 1.0
 
             if self.style in ('transparent', 'overlay'):
                 mask |= xlib.CWBorderPixel
@@ -1229,8 +1230,8 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev: xlib.XEvent) -> None:
-        x = ev.xmotion.x
-        y = self.height - ev.xmotion.y - 1
+        x = ev.xmotion.x / self._scale
+        y = self.height - 1 - ev.xmotion.y / self._scale
 
         if self._mouse_in_window:
             dx = x - self._mouse_x
@@ -1290,8 +1291,8 @@ class XlibWindow(BaseWindow):
 
         if buttons:
             # Drag event
-            x = ev.xmotion.x - self._view_x
-            y = self._height - (ev.xmotion.y - self._view_y - 1)
+            x = (ev.xmotion.x - self._view_x) / self._scale
+            y = self._height - 1 - self._view_y - ev.xmotion.y / self._scale
 
             if self._mouse_in_window:
                 dx = x - self._mouse_x
@@ -1516,8 +1517,8 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
     def _event_button(self, ev: xlib.XEvent) -> None:
-        x = ev.xbutton.x
-        y = self.height - ev.xbutton.y
+        x = ev.xbutton.x / self._scale
+        y = self.height - 1 - ev.xbutton.y / self._scale
 
         button = ev.xbutton.button - 1
         if button == 7 or button == 8:
@@ -1552,8 +1553,8 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.EnterNotify)
     def _event_enternotify(self, ev: xlib.XEvent) -> None:
         # mouse position
-        x = self._mouse_x = ev.xcrossing.x
-        y = self._mouse_y = self.height - ev.xcrossing.y
+        x = self._mouse_x = ev.xcrossing.x / self._scale
+        y = self._mouse_y = self.height - 1 - ev.xcrossing.y / self._scale
         self._mouse_in_window = True
 
         # XXX there may be more we could do here
@@ -1562,8 +1563,8 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.LeaveNotify)
     def _event_leavenotify(self, ev: xlib.XEvent) -> None:
-        x = self._mouse_x = ev.xcrossing.x
-        y = self._mouse_y = self.height - ev.xcrossing.y
+        x = self._mouse_x = ev.xcrossing.x / self._scale
+        y = self._mouse_y = self.height - 1 - ev.xcrossing.y / self._scale
         self._mouse_in_window = False
         self.dispatch_event('on_mouse_leave', x, y)
 
