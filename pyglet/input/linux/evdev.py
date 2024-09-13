@@ -1,16 +1,16 @@
+from __future__ import annotations
+
 import os
 import time
 import ctypes
 import warnings
+import threading
 
 from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
 from ctypes import c_int32 as _s32
 from ctypes import c_int64 as _s64
-from concurrent.futures import ThreadPoolExecutor
-
-from typing import List
 
 import pyglet
 
@@ -311,20 +311,23 @@ class EvdevDevice(XlibSelectDevice, Device):
 
         super().__init__(display, name)
 
+    @property
+    def connected(self):
+        return os.path.exists(self._filename)
+
     def get_guid(self):
         """Get the device's SDL2 style GUID string"""
         _id = self._id
         return create_guid(_id.bustype, _id.vendor, _id.product, _id.version, self.name, 0, 0)
 
     def open(self, window=None, exclusive=False):
-        super().open(window, exclusive)
-
         try:
             self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
         except OSError as e:
             raise DeviceOpenException(e)
 
         pyglet.app.platform_event_loop.select_devices.add(self)
+        super().open(window, exclusive)
 
     def close(self):
         super().close()
@@ -431,16 +434,14 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
         self._devices_file = open('/proc/bus/input/devices')
         self._device_names = self._get_device_names()
         self._controllers = {}
-        self._thread_pool = ThreadPoolExecutor(max_workers=1)
 
         for name in self._device_names:
-            path = os.path.join('/dev/input', name)
             try:
+                path = os.path.join('/dev/input', name)
                 device = EvdevDevice(self._display, path)
             except OSError:
                 continue
-            controller = _create_controller(device)
-            if controller:
+            if controller := _create_controller(device):
                 self._controllers[name] = controller
 
         pyglet.app.platform_event_loop.select_devices.add(self)
@@ -456,31 +457,23 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
     def _get_device_names():
         return {name for name in os.listdir('/dev/input') if name.startswith('event')}
 
-    def _make_device_callback(self, future):
-        name, device = future.result()
-        if not device:
-            return
-
-        if name in self._controllers:
-            controller = self._controllers.get(name)
+    def _make_controller_thread(self, name: str, retries: int) -> None:
+        # Try to create a Device:
+        for _ in range(retries):
+            try:
+                path = os.path.join('/dev/input', name)
+                device = EvdevDevice(self._display, path)
+                break
+            except OSError:
+                time.sleep(0.1)
         else:
-            controller = _create_controller(device)
-            self._controllers[name] = controller
+            return  # No device could be created
 
-        if controller:
+        # Reuse existing controller instance if it exists, or create a new one:
+        if controller := self._controllers.get(name, _create_controller(device)):
+            self._controllers[name] = controller
             # Dispatch event in main thread:
             pyglet.app.platform_event_loop.post_event(self, 'on_connect', controller)
-
-    def _make_device(self, name, count=1):
-        path = os.path.join('/dev/input', name)
-        while count > 0:
-            try:
-                return name, EvdevDevice(self._display, path)
-            except OSError:
-                if count > 0:
-                    time.sleep(0.1)
-                count -= 1
-        return None, None
 
     def select(self):
         """Triggered whenever the devices_file changes."""
@@ -490,18 +483,15 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
         self._device_names = new_device_files
 
         for name in appeared:
-            # The endpoints can take a moment to become readable after they
-            # appear, so set a retry count of '10' rather than arbitray wait time
-            future = self._thread_pool.submit(self._make_device, name, count=10)
-            future.add_done_callback(self._make_device_callback)
+            t = threading.Thread(target=self._make_controller_thread, args=(name, 10), daemon=True)
+            t.start()
 
         for name in disappeared:
-            controller = self._controllers.get(name)
-            if controller:
+            if controller := self._controllers.get(name):
                 self.dispatch_event('on_disconnect', controller)
 
-    def get_controllers(self) -> List[Controller]:
-        return list(self._controllers.values())
+    def get_controllers(self) -> list[Controller]:
+        return [_c for _c in self._controllers.values() if _c.device.connected is True]
 
 
 def get_devices(display=None):
@@ -588,7 +578,7 @@ def _detect_controller_mapping(device):
     return mapping
 
 
-def _create_controller(device):
+def _create_controller(device) -> Controller | None:
     for control in device.controls:
         if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
             break
