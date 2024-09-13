@@ -253,7 +253,7 @@ class XlibWindow(BaseWindow):
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
             self._dpi = self._screen.get_dpi()
-            self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "window_and_content" else 1.0
+            self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "stretch" else 1.0
 
             if self.style in ('transparent', 'overlay'):
                 mask |= xlib.CWBorderPixel
@@ -267,7 +267,7 @@ class XlibWindow(BaseWindow):
             else:
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
-                if pyglet.options.dpi_scaling in ("window_only", "window_and_content"):
+                if pyglet.options.dpi_scaling in ("scaled", "stretch"):
                     if self.scale != 1.0:
                         self._width = width = int(self._width * self.scale)
                         self._height = height = int(self._height * self.scale)
@@ -602,7 +602,7 @@ class XlibWindow(BaseWindow):
         return self._width, self._height
 
     def get_size(self) -> tuple[int, int]:
-        if pyglet.options.dpi_scaling == "window_and_content":
+        if pyglet.options.dpi_scaling == "stretch":
             return int(self._width / self.scale), int(self._height / self.scale)
 
         return self._width, self._height

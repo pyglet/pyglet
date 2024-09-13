@@ -101,7 +101,7 @@ class CocoaWindow(BaseWindow):
                 self._delegate = None
 
             # Determine window parameters.
-            if not pyglet.options.dpi_scaling:
+            if pyglet.options.dpi_scaling != "real":
                 screen_scale = self.screen.get_scale()
                 width, height = self._width / screen_scale, self._height / screen_scale
             else:
@@ -194,7 +194,7 @@ class CocoaWindow(BaseWindow):
             self.set_visible(self._visible)
 
     def _get_dpi_desc(self) -> int:
-        if pyglet.options.dpi_scaling in ("window_only", "window_and_content") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
             return int(rsize.width)
@@ -207,7 +207,7 @@ class CocoaWindow(BaseWindow):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling in ("window_only", "window_and_content") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
@@ -387,7 +387,7 @@ class CocoaWindow(BaseWindow):
         self._nswindow.setFrameOrigin_(origin)
 
     def get_size(self) -> tuple[int, int]:
-        if pyglet.options.dpi_scaling != "window_and_content":
+        if pyglet.options.dpi_scaling != "stretch":
             return self.get_framebuffer_size()
 
         return self._width, self._height
@@ -395,14 +395,14 @@ class CocoaWindow(BaseWindow):
     def get_framebuffer_size(self) -> tuple[int, int]:
         view = self.context._nscontext.view()
         bounds = view.bounds()
-        #if pyglet.options.dpi_scaling == "window_and_content":
-        bounds = view.convertRectToBacking_(bounds)
+        if pyglet.options.dpi_scaling == "stretch":
+            bounds = view.convertRectToBacking_(bounds)
         return int(bounds.size.width), int(bounds.size.height)
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
 
-        if not pyglet.options.dpi_scaling:
+        if pyglet.options.dpi_scaling != "real":
             screen_scale = self._nswindow.backingScaleFactor()
             frame_width, frame_height = width // screen_scale, height // screen_scale
         else:

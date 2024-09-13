@@ -77,6 +77,9 @@ class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
     def on_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
+    def _on_internal_resize(self, width, height):
+        self.check_sequence(1, 'on_resize')
+
     def on_show(self):
         self.check_sequence(2, 'on_show')
 
@@ -105,6 +108,9 @@ class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
     def on_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
+    def _on_internal_resize(self, width, height):
+        self.check_sequence(1, 'on_resize')
+
     def on_show(self):
         self.check_sequence(2, 'on_show')
 
@@ -129,6 +135,9 @@ class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCa
     last_sequence = 3
 
     def on_resize(self, width, height):
+        self.check_sequence(1, 'on_resize')
+
+    def _on_internal_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
     def on_show(self):
@@ -157,6 +166,9 @@ class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase)
     def on_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
+    def _on_internal_resize(self, width, height):
+        self.check_sequence(1, 'on_resize')
+
     def on_expose(self):
         self.check_sequence(2, 'on_expose')
 
@@ -181,6 +193,9 @@ class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCas
     last_sequence = 2
 
     def on_resize(self, width, height):
+        self.check_sequence(1, 'on_resize')
+
+    def _on_internal_resize(self, width, height):
         self.check_sequence(1, 'on_resize')
 
     def on_expose(self):

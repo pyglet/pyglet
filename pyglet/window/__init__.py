@@ -763,7 +763,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         window of size 500 x 500 would have a framebuffer of 1000 x 1000.
         Fractional values between 1.0 and 2.0, as well as values above
         2.0 may also be encountered.
-        
+
         :deprecated: Use `Window.scale`.
         """
         return self.scale
@@ -1239,7 +1239,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         Read only.
         """
-        return self._dpi / 96
+        if pyglet.options.dpi_scaling != "real":
+            return self._dpi / 96
+
+        return 1.0
 
     @property
     def dpi(self) -> int:

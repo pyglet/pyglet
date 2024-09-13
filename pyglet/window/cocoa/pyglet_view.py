@@ -61,7 +61,7 @@ def getMousePosition(self: PygletView_Implementation | cocoapy.ObjCInstance, nse
         -> tuple[int, int]:
     in_window = nsevent.locationInWindow()
     in_window = self.convertPoint_fromView_(in_window, None)
-    if pyglet.options.dpi_scaling != "window_and_content":
+    if pyglet.options.dpi_scaling != "stretch":
         _mouseViewRect.origin.x = in_window.x
         _mouseViewRect.origin.y = in_window.y
         converted = self.convertRectToBacking_(_mouseViewRect)

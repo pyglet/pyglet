@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ctypes import c_void_p
+from typing import TYPE_CHECKING
 
 import pyglet
 from pyglet.libs.darwin.cocoapy import (
@@ -13,10 +12,10 @@ from pyglet.libs.darwin.cocoapy import (
     ObjCInstance,
     ObjCSubclass,
     PyObjectEncoding,
+    appkit,
     get_selector,
     quartz,
     send_super,
-    appkit,
 )
 
 from .systemcursor import SystemCursor
@@ -161,7 +160,7 @@ class PygletDelegate_Implementation:
 
                 currentFrame = self._window._nswindow.frame()
 
-                if not pyglet.options.dpi_scaling:
+                if pyglet.options.dpi_scaling != "real":
                     screen_scale = new_scale
                     w, h = self._window.get_requested_size()
                     width, height = int(w / screen_scale), int(h / screen_scale)
@@ -172,7 +171,7 @@ class PygletDelegate_Implementation:
                     # MacOS seems to cache the state of the window size, even between different DPI scales/monitors.
                     # This means that the screen will refuse to refresh until we resize the window to a different size.
                     # Force a refresh by setting a temporary frame, then forcing it back.
-                    if pyglet.options.dpi_scaling == "window_only":
+                    if pyglet.options.dpi_scaling == "scaled":
                         tempRect = NSMakeRect(currentFrame.origin.x, currentFrame.origin.y,
                                               currentFrame.size.width + 1, currentFrame.size.height + 1)
                         # TODO: Add variable to ignore the next two on-resize events?

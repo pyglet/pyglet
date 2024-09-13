@@ -249,16 +249,29 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: False | Literal["window_only", "window_and_content"] = False
-    """For 'HiDPI' ('Retina') displays, scale Window creation size with desktop scaling. Defaults to ``False``. 
+    dpi_scaling: Literal["real", "scaled", "stretch"] = "real"
+    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'real'`.
 
-    For high pixel density displays, it is common for the desktop to have some form of application window scaling.
-    Setting this option to ``True`` will make pyglet aware of these settings when Windows are created. For instance,
-    if the desktop scaling factor is set to 150%, a Window created with a resolution of 1000x1000 will have an actual
-    framebuffer size of 1500x1500. Keep in mind that pyglet objects may not be scaled proportionately, so this is left
-    up to the developer. The :py:attr:`~pyglet.window.Window.scale` & :py:attr:`~pyglet.window.Window.dpi` attributes
-    can be queried as a reference when determining object creation. By default, windows are created with the actual
-    number of pixels requested.
+    The current options are an attempt to create consistent behavior across all of the operating systems.
+
+    `'real'` (default): Provides a 1:1 pixel for Window frame size and framebuffer. Primarily used for game applications
+    to ensure you are getting the exact pixels for the resolution. If you provide an 800x600 window, you can ensure it
+    will be 800x600 pixels when the user chooses it.
+
+    `'scaled'`: Window size is scaled based on the DPI ratio. Window size and content (projection) size matches the full
+    framebuffer. Primarily used for any applications that wish to become DPI aware. You must rescale and reposition your
+    content to take advantage of the larger framebuffer. An 800x600 with a 150% DPI scaling would be changed to
+    1200x900 for both `window.get_size` and `window.get_framebuffer_size()`.
+
+    Keep in mind that pyglet objects may not be scaled proportionately, so this is left up to the developer.
+    The :py:attr:`~pyglet.window.Window.scale` & :py:attr:`~pyglet.window.Window.dpi` attributes can be queried as a
+    reference when determining object creation.
+
+    `'stretch'`:  Window is scaled based on the DPI ratio. However, content size matches original requested size of the
+    window, and is stretched to fit the full framebuffer. This mimics behavior of having no DPI scaling at all. No
+    rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
+    of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
+    `window.get_framebuffer_size()`.
     """
 
     shader_bind_management: bool = True
