@@ -50,27 +50,27 @@ def on_draw():
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
-    mouse_motion_label.text = f"motion: x={x}, y={y} dx={dx}, dy={dy}"
+    mouse_motion_label.text = f"motion: x={x:.2f}, y={y:.2f} dx={dx:.2f}, dy={dy:.2f}"
 
 
 @window.event
 def on_mouse_press(x, y, button, modifier):
-    mouse_press_label.text = f"press: x={x}, y={y}"
+    mouse_press_label.text = f"press: x={x:.2f}, y={y:.2f}"
 
 
 @window.event
 def on_mouse_enter(x, y):
-    mouse_enter_label.text = f"enter: x={x}, y={y}"
+    mouse_enter_label.text = f"enter: x={x:.2f}, y={y:.2f}"
 
 
 @window.event
 def on_mouse_leave(x, y):
-    mouse_leave_label.text = f"leave: x={x}, y={y}"
+    mouse_leave_label.text = f"leave: x={x:.2f}, y={y:.2f}"
 
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, button, modifier):
-    mouse_drag_label.text = f"drag: x={x}, y={y} dx={dx}, dy={dy}"
+    mouse_drag_label.text = f"drag: x={x:.2f}, y={y:.2f} dx={dx:.2f}, dy={dy:.2f}"
 
 
 @window.event
