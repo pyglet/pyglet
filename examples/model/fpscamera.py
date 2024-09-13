@@ -110,6 +110,7 @@ class FPSCamera:
         self.teleport(position, target)
 
         self._window.push_handlers(self)
+        self.on_refresh(0.0)
 
     @property
     def pitch(self) -> float:
@@ -204,9 +205,8 @@ class FPSCamera:
 
         # Rotation - controller
         if self.controller_look:
-            accelerated_speed = self.look_speed ** 2 * delta_time
-            self.yaw += self.controller_look.x * accelerated_speed
-            self.pitch += self.controller_look.y * accelerated_speed
+            self.yaw += self.controller_look.x * look_speed * 20
+            self.pitch += self.controller_look.y * look_speed * 20
 
         # Calculate the local forward, right and up vectors from pitch and yaw
         forward = Vec3.from_pitch_yaw(radians(self.pitch), radians(self.yaw))
