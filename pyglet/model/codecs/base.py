@@ -14,10 +14,14 @@ class Scene:
     def __init__(self, nodes: list[Node] | None = None) -> None:
         self.nodes = nodes or []
 
-    @property
-    def node(self) -> Node:
-        """The first Node"""
-        return self.nodes[0]
+    def __iter__(self):
+        """Iterate over all Nodes and their children (if existing)."""
+        for top_node in self.nodes:
+            for node in top_node:
+                yield node
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(nodes={self.nodes})"
 
 
 class Node:
@@ -28,6 +32,11 @@ class Node:
         self.meshes = meshes or []
         self.skins = skins or []
         self.cameras = cameras or []
+
+    def __iter__(self):
+        yield self
+        for child_node in self.nodes:
+            yield child_node
 
     def __repr__(self):
         return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"

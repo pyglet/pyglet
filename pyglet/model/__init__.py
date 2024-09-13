@@ -47,15 +47,16 @@ instance when loading the Model::
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from math import pi, sin, cos
+from typing import TYPE_CHECKING
+
 import pyglet
 from pyglet import gl, graphics
 from pyglet.math import Mat4
 
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
-from .codecs.base import Material
+from .codecs.base import Material, Scene
 
 if TYPE_CHECKING:
     from typing import BinaryIO
@@ -90,6 +91,23 @@ def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | No
         return decoder.decode(filename, file, batch=batch, group=group)
     else:
         return _codec_registry.decode(filename, file, batch=batch, group=group)
+
+
+def load_scene(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None) -> Scene:
+    """Load a 3D scene from a file.
+
+    Args:
+        filename:
+            Used to guess the scene format, and to load the file if ``file`` is
+            unspecified.
+        file:
+            An open file containing the source of the scene data in any supported format.
+        decoder:
+            If unspecified, all decoders that are registered for the filename
+            extension are tried in order. An exception is raised if no codecs are
+            registered for the file extension, or if decoding fails.
+    """
+    pass
 
 
 def get_default_shader() -> ShaderProgram:

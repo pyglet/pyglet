@@ -79,10 +79,9 @@ def load_material_library(filename):
     return matlib
 
 
-def parse_obj_file(filename, file=None):
+def parse_obj_file(filename, file=None) -> list[Mesh]:
     materials = {}
-
-    node = Node()
+    meshes = []
 
     location = os.path.dirname(filename)
 
@@ -136,14 +135,14 @@ def parse_obj_file(filename, file=None):
 
         elif values[0] == 'o':
             mesh = _new_mesh(name=values[1], material=default_material)
-            node.meshes.append(mesh)
+            meshes.append(mesh)
 
         elif values[0] == 'f':
             if material is None:
                 material = Material()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
-                node.meshes.append(mesh)
+                meshes.append(mesh)
 
             # For fan triangulation, remember first and latest vertices
             n1 = None
@@ -179,7 +178,7 @@ def parse_obj_file(filename, file=None):
                 tlast = tex_coords[t_i]
                 vlast = vertices[v_i]
 
-    return Scene(nodes=[node])
+    return meshes
 
 
 ###################################################
@@ -195,12 +194,12 @@ class OBJModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        scene = parse_obj_file(filename=filename, file=file)
+        mesh_list = parse_obj_file(filename=filename, file=file)
 
         vertex_lists = []
         groups = []
 
-        for mesh in scene.node.meshes:
+        for mesh in mesh_list:
             material = mesh.primitives[0].material
             count = len(mesh.primitives[0].attributes['vertices']) // 3
             if material.texture_name:

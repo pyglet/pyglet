@@ -10,6 +10,7 @@ from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY
 from pyglet.gl import GL_REPEAT
 
 from . import ModelDecodeException, ModelDecoder
+from .base import Scene
 
 
 _array_types = {
@@ -300,19 +301,6 @@ class Node:
         return f"{self.__class__.__name__}(mesh={self.mesh}, children={self._child_indices})"
 
 
-class Scene:
-    def __init__(self, data, owner):
-        self._nodes = [owner.nodes[i] for i in data['nodes']]
-
-    def __iter__(self):
-        for parent_node in self._nodes:
-            for node in parent_node:
-                yield node
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(parent_nodes={self._nodes})"
-
-
 class GLTF:
     def __init__(self, gltf_data: dict):
         self._gltf_data = gltf_data
@@ -332,7 +320,7 @@ class GLTF:
         self.textures = [Texture(data=data, owner=self) for data in gltf_data.get('textures', [])]
         self.materials = [Material(data) for data in gltf_data.get('materials')]
 
-        self.scenes = [Scene(data=data, owner=self) for data in gltf_data['scenes']]
+        self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
 
     def __repr__(self):
@@ -359,7 +347,6 @@ def load_gltf(filename, file=None):
     else:
         if float(gltf_data['asset'].get('version', 0)) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
-
 
     return GLTF(gltf_data=gltf_data)
 
