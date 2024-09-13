@@ -63,6 +63,10 @@ class Device:
     def is_open(self) -> bool:
         return self._is_open
 
+    @property
+    def connected(self) -> bool:
+        return True
+
     def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
         """Open the device to begin receiving input from it.
 
