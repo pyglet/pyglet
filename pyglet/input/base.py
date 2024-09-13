@@ -43,6 +43,8 @@ class Sign(enum.Enum):
 class Device:
     """Low level input device."""
 
+    connected: bool
+
     def __init__(self, display: Display, name: str) -> None:
         """Create a Device to receive input from.
 
@@ -62,10 +64,6 @@ class Device:
     @property
     def is_open(self) -> bool:
         return self._is_open
-
-    @property
-    def connected(self) -> bool:
-        return True
 
     def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
         """Open the device to begin receiving input from it.
