@@ -71,6 +71,14 @@ class _AppDelegate_Implementation:
     def applicationDidFinishLaunching_(self, notification):
         self._pyglet_loop._finished_launching = True
 
+    @_AppDelegate.method('v@')
+    def applicationWillFinishLaunching_(self, notification):
+        pass
+
+    @_AppDelegate.method('B')
+    def applicationSupportsSecureRestorableState_(self):
+        return True
+
 _AppDelegate = ObjCClass('_AppDelegate')  # the actual class
 
 class CocoaAlternateEventLoop(EventLoop):
@@ -147,6 +155,9 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
             if not defaults.objectForKey_(holdEnabled):
                 defaults.setBool_forKey_(False, holdEnabled)
 
+            self.appdelegate = _AppDelegate.alloc().init(self)
+            self.NSApp.setDelegate_(self.appdelegate)
+
             self._finished_launching = False
 
     def start(self):
@@ -175,23 +186,21 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
         signal.signal(signal.SIGINT, term_received)
         signal.signal(signal.SIGTERM, term_received)
 
-        self.appdelegate = _AppDelegate.alloc().init(self)
-        self.NSApp.setDelegate_(self.appdelegate)
-
         self.timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
-             interval,  # Clamped internally to 0.0001 (including 0)
-             self.appdelegate,
-             get_selector('updatePyglet:'),
-             False,
-             True
-         )
+            interval,  # Clamped internally to 0.0001 (including 0)
+            self.appdelegate,
+            get_selector('updatePyglet:'),
+            False,
+            True
+        )
 
         self.NSApp.run()
 
     def nsapp_step(self):
         """Used only for CocoaAlternateEventLoop"""
         self._event_loop.idle()
-        self.dispatch_posted_events()
+        with AutoReleasePool():
+            self.dispatch_posted_events()
 
     def nsapp_stop(self):
         """Used only for CocoaAlternateEventLoop"""
@@ -207,7 +216,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 # will wait until the next event comes along.
                 timeout_date = NSDate.distantFuture()
             elif timeout == 0.0:
-                timeout_date = NSDate.distantPast()
+                timeout_date = None
             else:
                 timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 
