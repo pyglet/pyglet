@@ -109,7 +109,7 @@ class HeadlessWindow(BaseWindow):
 
             self.context.attach(self.canvas)
 
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
 
 
 __all__ = ['HeadlessWindow']

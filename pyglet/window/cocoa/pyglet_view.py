@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pyglet
 from pyglet.libs.darwin import (
     NSAlphaShiftKeyMask,
     NSFunctionKeyMask,
@@ -14,7 +15,7 @@ from pyglet.libs.darwin import (
     NSRightCommandKeyMask,
     NSRightControlKeyMask,
     NSRightShiftKeyMask,
-    cocoapy,
+    cocoapy, NSMakeRect,
 )
 from pyglet.libs.darwin.quartzkey import charmap, keymap
 from pyglet.window import key, mouse
@@ -48,6 +49,8 @@ maskForKey: dict[int, int] = {
 # Event data helper functions.
 
 
+_mouseViewRect = NSMakeRect(0, 0, 0, 0)
+
 def getMouseDelta(nsevent: cocoapy.ObjCInstance) -> tuple[int, int]:
     dx = nsevent.deltaX()
     dy = -nsevent.deltaY()
@@ -58,6 +61,11 @@ def getMousePosition(self: PygletView_Implementation | cocoapy.ObjCInstance, nse
         -> tuple[int, int]:
     in_window = nsevent.locationInWindow()
     in_window = self.convertPoint_fromView_(in_window, None)
+    if pyglet.options.dpi_scaling != "window_and_content":
+        _mouseViewRect.origin.x = in_window.x
+        _mouseViewRect.origin.y = in_window.y
+        converted = self.convertRectToBacking_(_mouseViewRect)
+        in_window = converted.origin
     x = int(in_window.x)
     y = int(in_window.y)
     # Must record mouse position for BaseWindow.draw_mouse_cursor to work.
@@ -179,14 +187,14 @@ class PygletView_Implementation:
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
         # This also helps ensure correct window creation event ordering.
-        if not self._window.context.canvas:
+        if not self._window.context.canvas or self._window._shadow:
             return
 
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
         self._window.context.update_geometry()
         self._window._width, self._window._height = width, height  # noqa: SLF001
-        self._window.dispatch_event('on_resize', width, height)
+        self._window.dispatch_event('_on_internal_resize', width, height)
         self._window.dispatch_event('on_expose')
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
         # when mouse clicks on the window's resize control, Cocoa enters into a
@@ -262,7 +270,8 @@ class PygletView_Implementation:
             return
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
-        self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
+        factor = self._window._nswindow.backingScaleFactor()
+        self._window.dispatch_event('on_mouse_motion', x, y, dx * factor, dy * factor)
 
     @PygletView.method('v@')
     def scrollWheel_(self, nsevent: cocoapy.ObjCInstance) -> None:

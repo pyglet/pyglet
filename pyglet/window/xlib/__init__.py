@@ -253,6 +253,7 @@ class XlibWindow(BaseWindow):
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
             self._dpi = self._screen.get_dpi()
+            self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "window_and_content" else 1.0
 
             if self.style in ('transparent', 'overlay'):
                 mask |= xlib.CWBorderPixel
@@ -266,7 +267,7 @@ class XlibWindow(BaseWindow):
             else:
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
-                if pyglet.options["scale_with_dpi"]:
+                if pyglet.options.dpi_scaling in ("window_only", "window_and_content"):
                     if self.scale != 1.0:
                         self._width = width = int(self._width * self.scale)
                         self._height = height = int(self._height * self.scale)
@@ -456,7 +457,7 @@ class XlibWindow(BaseWindow):
 
         self._update_view_size()
 
-        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
         self.dispatch_event('on_show')
         self.dispatch_event('on_expose')
 
@@ -566,7 +567,7 @@ class XlibWindow(BaseWindow):
             self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
         self._update_view_size()
-        self.dispatch_event('on_resize', width, height)
+        self.dispatch_event('_on_internal_resize', width, height)
 
     def _update_view_size(self) -> None:
         xlib.XResizeWindow(self._x_display, self._view, self._width, self._height)
@@ -596,6 +597,15 @@ class XlibWindow(BaseWindow):
                                    byref(y),
                                    byref(child))
         return x.value, y.value
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        return self._width, self._height
+
+    def get_size(self) -> tuple[int, int]:
+        if pyglet.options.dpi_scaling == "window_and_content":
+            return int(self._width / self.scale), int(self._height / self.scale)
+
+        return self._width, self._height
 
     def activate(self) -> None:
         # Issue 218
@@ -931,7 +941,7 @@ class XlibWindow(BaseWindow):
                 raise XlibException(msg)
         xlib.XSetTextProperty(self._x_display, self._window, byref(text_property), atom)
         # XXX <rj> Xlib doesn't like us freeing this
-        # xlib.XFree(text_property.value)  # noqa: ERA001
+        # xlib.XFree(text_property.value)
 
     def _set_atoms_property(self, name: str, values: list[str], mode: int = xlib.PropModeReplace) -> None:
         name_atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
@@ -1220,8 +1230,8 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev: xlib.XEvent) -> None:
-        x = ev.xmotion.x
-        y = self.height - ev.xmotion.y - 1
+        x = ev.xmotion.x / self._scale
+        y = self.height - 1 - ev.xmotion.y / self._scale
 
         if self._mouse_in_window:
             dx = x - self._mouse_x
@@ -1281,8 +1291,8 @@ class XlibWindow(BaseWindow):
 
         if buttons:
             # Drag event
-            x = ev.xmotion.x - self._view_x
-            y = self._height - (ev.xmotion.y - self._view_y - 1)
+            x = (ev.xmotion.x - self._view_x) / self._scale
+            y = self._height - 1 - self._view_y - ev.xmotion.y / self._scale
 
             if self._mouse_in_window:
                 dx = x - self._mouse_x
@@ -1507,8 +1517,8 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
     def _event_button(self, ev: xlib.XEvent) -> None:
-        x = ev.xbutton.x
-        y = self.height - ev.xbutton.y
+        x = ev.xbutton.x / self._scale
+        y = self.height - 1 - ev.xbutton.y / self._scale
 
         button = ev.xbutton.button - 1
         if button == 7 or button == 8:
@@ -1543,8 +1553,8 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.EnterNotify)
     def _event_enternotify(self, ev: xlib.XEvent) -> None:
         # mouse position
-        x = self._mouse_x = ev.xcrossing.x
-        y = self._mouse_y = self.height - ev.xcrossing.y
+        x = self._mouse_x = ev.xcrossing.x / self._scale
+        y = self._mouse_y = self.height - 1 - ev.xcrossing.y / self._scale
         self._mouse_in_window = True
 
         # XXX there may be more we could do here
@@ -1553,8 +1563,8 @@ class XlibWindow(BaseWindow):
     @ViewEventHandler
     @XlibEventHandler(xlib.LeaveNotify)
     def _event_leavenotify(self, ev: xlib.XEvent) -> None:
-        x = self._mouse_x = ev.xcrossing.x
-        y = self._mouse_y = self.height - ev.xcrossing.y
+        x = self._mouse_x = ev.xcrossing.x / self._scale
+        y = self._mouse_y = self.height - 1 - ev.xcrossing.y / self._scale
         self._mouse_in_window = False
         self.dispatch_event('on_mouse_leave', x, y)
 
@@ -1574,7 +1584,7 @@ class XlibWindow(BaseWindow):
             self._width = w
             self._height = h
             self._update_view_size()
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
         if self._x != x or self._y != y:
             self.dispatch_event('on_move', x, y)
             self._x = x
@@ -1661,7 +1671,7 @@ class XlibWindow(BaseWindow):
         xlib.XSendEvent(self._x_display, request.requestor, 0, 0, byref(out_event))
 
         # Seems to work find without it. May add later.
-        # xlib.XSync(self._x_display, False)  # noqa: ERA001
+        # xlib.XSync(self._x_display, False)
 
 
 __all__ = ['XlibEventHandler', 'XlibWindow']
