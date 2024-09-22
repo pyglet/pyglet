@@ -24,7 +24,7 @@ class ObjCIntegrationTest(unittest.TestCase):
 
         gc.collect()
 
-        self.assertEquals(len(get_cached_instances()), start_count)
+        self.assertEqual(len(get_cached_instances()), start_count)
 
     def test_objc_leak_cache_release_manual_delete(self):
         start_count = len(get_cached_instances())
@@ -38,7 +38,7 @@ class ObjCIntegrationTest(unittest.TestCase):
 
         del test_object
 
-        self.assertEquals(len(get_cached_instances()), start_count)
+        self.assertEqual(len(get_cached_instances()), start_count)
 
     def test_objc_subclass_dealloc_release(self):
         start_count = len(get_cached_instances())
@@ -59,11 +59,11 @@ class ObjCIntegrationTest(unittest.TestCase):
         instance = MyCustomObjectTestRelease.alloc().init()
         instance.release()
 
-        self.assertEquals(allocated, False)
+        self.assertEqual(allocated, False)
 
         del instance
 
-        self.assertEquals(len(get_cached_instances()), start_count)
+        self.assertEqual(len(get_cached_instances()), start_count)
 
     def test_objc_subclass_dealloc_autorelease(self):
         """Pytest doesn't like re-using an ObjCClass in the setUpClass. Just make a new one for testing."""
@@ -85,8 +85,8 @@ class ObjCIntegrationTest(unittest.TestCase):
         with AutoReleasePool():
             MyCustomObjectTestAutorelease.alloc().init().autorelease()
 
-        self.assertEquals(allocated, False)
-        self.assertEquals(len(get_cached_instances()), start_count)
+        self.assertEqual(allocated, False)
+        self.assertEqual(len(get_cached_instances()), start_count)
 
     def test_objc_association(self):
         """Make sure associated Python objects don't get GC'd until the ObjC instance does."""
