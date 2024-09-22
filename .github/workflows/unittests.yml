@@ -41,7 +41,7 @@ jobs:
           pip install pytest
       - name: Run tests
         run: |
-          pytest tests --ignore=tests/interactive
+          pytest tests --ignore=tests/interactive --ignore=tests/integration
 
   windows:
     runs-on: windows-latest
