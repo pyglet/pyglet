@@ -8,6 +8,7 @@ from pyglet.canvas.cocoa import CocoaCanvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
+from .pyglet_textview import PygletTextView
 
 from ...libs import darwin
 from .pyglet_delegate import PygletDelegate
@@ -161,6 +162,8 @@ class CocoaWindow(BaseWindow):
 
             # Configure the window.
             self._nswindow.setAcceptsMouseMovedEvents_(True)
+
+            # Required as it may cause a segfault after closing a Window, mostly due to NSTextView use.
             self._nswindow.setReleasedWhenClosed_(False)
             self._nswindow.useOptimizedDrawing_(True)
             self._nswindow.setPreservesContentDuringLiveResize_(False)
@@ -216,27 +219,34 @@ class CocoaWindow(BaseWindow):
             self.set_exclusive_mouse(False)
             self.set_exclusive_keyboard(False)
 
+            # Remove window from display and remove its view.
+            self._nswindow.orderOut_(None)
+
+            # Restore screen mode. This also releases the display
+            # if it was captured for fullscreen mode.
+            self.screen.restore_mode()
+
             # Remove the delegate object
             if self._delegate:
                 self._nswindow.setDelegate_(None)
                 self._delegate.release()
                 self._delegate = None
 
-            # Remove window from display and remove its view.
-            if self._nswindow:
-                self._nswindow.orderOut_(None)
-                self._nswindow.setContentView_(None)
-                self._nswindow.close()
-
-            # Restore screen mode. This also releases the display
-            # if it was captured for fullscreen mode.
-            self.screen.restore_mode()
-
             # Remove view from canvas and then remove canvas.
             if self.canvas:
-                self.canvas.nsview.release()
                 self.canvas.nsview = None
                 self.canvas = None
+
+            if self._nsview:
+                self._nswindow.setContentView_(None)
+                self._nsview.release()
+                self._nsview = None
+
+            self._nswindow.close()
+            self._nswindow = None
+
+            # Dispatch any events that may be queued up, which includes deallocations.
+            self._poll_app_events()
 
             # Do this last, so that we don't see white flash
             # when exiting application from fullscreen mode.
@@ -252,6 +262,19 @@ class CocoaWindow(BaseWindow):
         self.draw_mouse_cursor()
         if self.context:
             self.context.flip()
+
+    def _poll_app_events(self):
+        with AutoReleasePool():
+            while True:
+                NSApp = NSApplication.sharedApplication()
+
+                event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
+                    cocoapy.NSAnyEventMask, None, cocoapy.NSDefaultRunLoopMode, True)
+
+                if event is None:
+                    break
+
+                NSApp.sendEvent_(event)
 
     def dispatch_events(self) -> None:
         self._allow_dispatch_event = True
