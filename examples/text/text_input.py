@@ -14,11 +14,13 @@ class TextWidget:
         font = self.document.get_font()
         height = font.ascent - font.descent
 
-        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, x, y, 0, width, height, batch=batch)
+        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, x, y, 0, width, height,
+                                                               batch=batch)
         self.caret = pyglet.text.caret.Caret(self.layout)
         # Rectangular outline
         pad = 2
-        self.rectangle = pyglet.shapes.Rectangle(x - pad, y - pad, width + pad, height + pad, (200, 200, 220), batch)
+        self.rectangle = pyglet.shapes.Rectangle(x - pad, y - pad, width + pad, height + pad,
+                                                 color=(200, 200, 220), batch=batch)
 
     def hit_test(self, x, y):
         return (0 < x - self.layout.x < self.layout.width and

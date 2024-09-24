@@ -71,6 +71,10 @@ class _AppDelegate_Implementation:
     def applicationDidFinishLaunching_(self, notification):
         self._pyglet_loop._finished_launching = True
 
+    @_AppDelegate.method('B')
+    def applicationSupportsSecureRestorableState_(self):
+        return True
+
 _AppDelegate = ObjCClass('_AppDelegate')  # the actual class
 
 class CocoaAlternateEventLoop(EventLoop):

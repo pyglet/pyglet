@@ -97,7 +97,7 @@ import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
 from pyglet import gl
-from pyglet.event import EventDispatcher
+from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 from pyglet.graphics import shader
 from pyglet.math import Mat4
 from pyglet.window import event, key
@@ -359,6 +359,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     invalid: bool = True
 
     # Instance variables accessible only via properties
+    _dpi: int = 96
     _width: int | None = None
     _height: int | None = None
     _caption: str | None = None
@@ -384,6 +385,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     _keyboard_exclusive: bool = False
 
+    _shadow: bool = False
+
     # Subclasses should update these after relevant events
     _mouse_cursor: MouseCursor | ImageMouseCursor = DefaultMouseCursor()
     _mouse_x: int = 0
@@ -399,6 +402,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     # Class attributes
     _default_width: int = 1280
     _default_height: int = 720
+
+    _requested_width: int
+    _requested_height: int
 
     # Create a default ShaderProgram, so the Window instance can
     # update the `WindowBlock` UBO shared by all default shaders.
@@ -551,6 +557,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         self._width = width
         self._height = height
+        self._requested_width = width
+        self._requested_height = height
+
         self._resizable = resizable
         self._fullscreen = fullscreen
         self._style = style
@@ -583,8 +592,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         self._viewport = (0, 0, *self.get_framebuffer_size())
 
+        width, height = self.get_size()
         self.view = Mat4()
-        self.projection = Mat4.orthogonal_projection(0, self._width, 0, self._height, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -753,8 +763,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         window of size 500 x 500 would have a framebuffer of 1000 x 1000.
         Fractional values between 1.0 and 2.0, as well as values above
         2.0 may also be encountered.
+
+        :deprecated: Use `Window.scale`.
         """
-        return self.get_framebuffer_size()[0] / self.width
+        return self.scale
 
     def get_size(self) -> tuple[int, int]:
         """Return the current size of the window.
@@ -765,6 +777,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             The width and height of the window, in pixels.
         """
         return self._width, self._height
+
+    def get_requested_size(self) -> tuple[int, int]:
+        """Return the size of the window without any scaling taken into effect.
+
+        This does not include the windows' border or title bar.
+
+        Returns:
+            The width and height of the window, in pixels.
+        """
+        return self._requested_width, self._requested_height
 
     def get_system_mouse_cursor(self, name: str) -> MouseCursor:
         """Obtain a system mouse cursor.
@@ -810,14 +832,26 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if app.event_loop.is_running:
             self.close()
 
-    def on_key_press(self, symbol: int, modifiers: int) -> None:
+    def on_key_press(self, symbol: int, modifiers: int) -> EVENT_HANDLE_STATE:
         """Default on_key_press handler."""
         if symbol == key.ESCAPE and not (modifiers & ~(key.MOD_NUMLOCK |
                                                        key.MOD_CAPSLOCK |
                                                        key.MOD_SCROLLLOCK)):
             self.dispatch_event('on_close')
 
-    def on_resize(self, width: int, height: int) -> None:
+    def _on_internal_resize(self, width: int, height: int) -> None:
+        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        w, h = self.get_size()
+        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        self.dispatch_event('on_resize', w, h)
+
+    def _on_internal_scale(self, scale: float, dpi: int) -> None:
+        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        w, h = self.get_size()
+        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        self.dispatch_event('on_scale', scale, dpi)
+
+    def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
         """A default resize event handler.
 
         This default handler updates the GL viewport to cover the entire
@@ -826,10 +860,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         In addition, the projection matrix is set to an orthogonal
         projection based on the same dimensions.
         """
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
-        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
-    def on_scale(self, scale, dpi):
+    def on_scale(self, scale: float, dpi: int) -> EVENT_HANDLE_STATE:
         """A default scale event handler.
 
         This default handler is called if the screen or system's DPI changes
@@ -1008,9 +1040,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             raise ValueError(msg)
 
         self._width, self._height = width, height
+        self._requested_width, self._requested_height = width, height
 
     @abstractmethod
-    def set_location(self, x: int, y: int):
+    def set_location(self, x: int, y: int) -> None:
         """Set the position of the window.
 
         Args:
@@ -1201,18 +1234,21 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self.set_size(self.width, new_height)
 
     @property
-    def scale(self):
-        """The scale of the window factoring in DPI.  Read only.
+    def scale(self) -> float:
+        """The scale of the window factoring in DPI.
 
-        :type: float
+        Read only.
         """
-        return self._dpi / 96
+        if pyglet.options.dpi_scaling != "real":
+            return self._dpi / 96
+
+        return 1.0
 
     @property
-    def dpi(self):
-        """DPI values of the Window.  Read only.
+    def dpi(self) -> int:
+        """DPI values of the Window.
 
-        :type: int
+        Read only.
         """
         return self._dpi
 
@@ -1288,14 +1324,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     @viewport.setter
     def viewport(self, values: tuple[int, int, int, int]) -> None:
         self._viewport = values
-        pr = self.get_pixel_ratio()
+        pr = self.scale
         x, y, w, h = values
         pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
     if _is_pyglet_doc_run:
-        def on_activate(self) -> None:
+        def on_activate(self) -> EVENT_HANDLE_STATE:
             """The window was activated.
 
             This event can be triggered by clicking on the title bar, bringing
@@ -1306,7 +1342,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_close(self) -> None:
+        def on_close(self) -> EVENT_HANDLE_STATE:
             """The user attempted to close the window.
 
             This event can be triggered by clicking on the "X" control box in
@@ -1319,7 +1355,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_context_lost(self) -> None:
+        def on_context_lost(self) -> EVENT_HANDLE_STATE:
             """The window's GL context was lost.
 
             When the context is lost no more GL methods can be called until it
@@ -1331,7 +1367,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_context_state_lost(self) -> None:
+        def on_context_state_lost(self) -> EVENT_HANDLE_STATE:
             """The state of the window's GL context was lost.
 
             pyglet may sometimes need to recreate the window's GL context if
@@ -1344,7 +1380,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_deactivate(self) -> None:
+        def on_deactivate(self) -> EVENT_HANDLE_STATE:
             """The window was deactivated.
 
             This event can be triggered by clicking on another application
@@ -1354,7 +1390,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_draw(self) -> None:
+        def on_draw(self) -> EVENT_HANDLE_STATE:
             """The window contents should be redrawn.
 
             The `EventLoop` will dispatch this event when the `draw`
@@ -1370,7 +1406,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_expose(self) -> None:
+        def on_expose(self) -> EVENT_HANDLE_STATE:
             """A portion of the window needs to be redrawn.
 
             This event is triggered when the window first appears, and any time
@@ -1385,7 +1421,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_file_drop(self, x: int, y: int, paths: list[str]) -> None:
+        def on_file_drop(self, x: int, y: int, paths: list[str]) -> EVENT_HANDLE_STATE:
             """File(s) were dropped into the window.
 
             Args:
@@ -1401,7 +1437,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_hide(self) -> None:
+        def on_hide(self) -> EVENT_HANDLE_STATE:
             """The window was hidden.
 
             This event is triggered when a window is minimised
@@ -1410,7 +1446,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_key_press(self, symbol: int, modifiers: int) -> None:
+        def on_key_press(self, symbol: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """A key on the keyboard was pressed (and held down).
 
             Since pyglet 1.1 the default handler dispatches the :py:meth:`~pyglet.window.Window.on_close`
@@ -1425,7 +1461,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_key_release(self, symbol: int, modifiers: int) -> None:
+        def on_key_release(self, symbol: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """A key on the keyboard was released.
 
             Args:
@@ -1437,7 +1473,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
+        def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
             """The mouse was moved with no buttons held down.
 
             Args:
@@ -1453,7 +1489,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
+        def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """The mouse was moved with one or more mouse buttons pressed.
 
             This event will continue to be fired even if the mouse leaves
@@ -1476,7 +1512,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
+        def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """A mouse button was pressed (and held down).
 
             Args:
@@ -1492,7 +1528,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> None:
+        def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
             """A mouse button was released.
 
             Args:
@@ -1508,7 +1544,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> None:
+        def on_mouse_scroll(self, x: int, y: int, scroll_x: float, scroll_y: float) -> EVENT_HANDLE_STATE:
             """The mouse wheel was scrolled.
 
             Note that most mice have only a vertical scroll wheel, so
@@ -1529,7 +1565,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_enter(self, x: int, y: int) -> None:
+        def on_mouse_enter(self, x: int, y: int) -> EVENT_HANDLE_STATE:
             """The mouse was moved into the window.
 
             This event will not be triggered if the mouse is currently being
@@ -1538,7 +1574,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_mouse_leave(self, x: int, y: int) -> None:
+        def on_mouse_leave(self, x: int, y: int) -> EVENT_HANDLE_STATE:
             """The mouse was moved outside the window.
 
             This event will not be triggered if the mouse is currently being dragged.
@@ -1548,7 +1584,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_move(self, x: int, y: int) -> None:
+        def on_move(self, x: int, y: int) -> EVENT_HANDLE_STATE:
             """The window was moved.
 
             Args:
@@ -1562,7 +1598,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_refresh(self, dt: float) -> None:
+        def on_refresh(self, dt: float) -> EVENT_HANDLE_STATE:
             """The window contents should be redrawn.
 
             The ``EventLoop`` will dispatch this event when the ``draw``
@@ -1580,7 +1616,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_resize(self, width: int, height: int) -> None:
+        def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
             """The window was resized.
 
             The window will have the GL context when this event is dispatched;
@@ -1589,14 +1625,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_scale(self, scale, dpi):
+        def on_scale(self, scale: float, dpi: int) -> EVENT_HANDLE_STATE:
             """A default scale event handler.
 
             This default handler is called if the screen or system's DPI changes
             during runtime.
             """
 
-        def on_show(self) -> None:
+        def on_show(self) -> EVENT_HANDLE_STATE:
             """The window was shown.
 
             This event is triggered when a window is restored after being
@@ -1605,7 +1641,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_text(self, text: str) -> None:
+        def on_text(self, text: str) -> EVENT_HANDLE_STATE:
             """The user input some text.
 
             Typically, this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
@@ -1620,7 +1656,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_text_motion(self, motion: int) -> None:
+        def on_text_motion(self, motion: int) -> EVENT_HANDLE_STATE:
             """The user moved the text input cursor.
 
             Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
@@ -1652,7 +1688,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             :event:
             """
 
-        def on_text_motion_select(self, motion: int) -> None:
+        def on_text_motion_select(self, motion: int) -> EVENT_HANDLE_STATE:
             """The user moved the text input cursor while extending the selection.
 
             Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
@@ -1697,6 +1733,8 @@ BaseWindow.register_event_type('on_mouse_enter')
 BaseWindow.register_event_type('on_mouse_leave')
 BaseWindow.register_event_type('on_close')
 BaseWindow.register_event_type('on_expose')
+BaseWindow.register_event_type('_on_internal_resize')
+BaseWindow.register_event_type('_on_internal_scale')
 BaseWindow.register_event_type('on_resize')
 BaseWindow.register_event_type('on_scale')
 BaseWindow.register_event_type('on_move')
@@ -1824,17 +1862,17 @@ if not _is_pyglet_doc_run:
 
 
 __all__ = (
-    # imported  # noqa: ERA001
+    # imported
     "event",
     "key",
-    # classes  # noqa: ERA001
+    # classes
     "BaseWindow",
     "Window",
     "MouseCursor",
     "DefaultMouseCursor",
     "ImageMouseCursor",
     "FPSDisplay",
-    # errors  # noqa: ERA001
+    # errors
     "WindowException",
     "NoSuchScreenModeException",
     "NoSuchDisplayException",

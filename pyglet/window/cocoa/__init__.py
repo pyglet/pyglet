@@ -101,7 +101,13 @@ class CocoaWindow(BaseWindow):
                 self._delegate = None
 
             # Determine window parameters.
-            content_rect = cocoapy.NSMakeRect(0, 0, self._width, self._height)
+            if pyglet.options.dpi_scaling != "real":
+                screen_scale = self.screen.get_scale()
+                width, height = self._width / screen_scale, self._height / screen_scale
+            else:
+                width, height = self._width, self._height
+
+            content_rect = cocoapy.NSMakeRect(0, 0, width, height)
             WindowClass = PygletWindow
             if self._fullscreen:
                 style_mask = cocoapy.NSBorderlessWindowMask
@@ -152,7 +158,7 @@ class CocoaWindow(BaseWindow):
 
             # Then create a view and set it as our NSWindow's content view.
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
-            self._nsview.setWantsBestResolutionOpenGLSurface_(1 if pyglet.options["scale_with_dpi"] else 0)
+            self._nsview.setWantsBestResolutionOpenGLSurface_(True)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 
@@ -187,22 +193,21 @@ class CocoaWindow(BaseWindow):
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
 
-    def _get_dpi_desc(self):
-        if pyglet.options["scale_with_dpi"] and self._nswindow:
+    def _get_dpi_desc(self) -> int:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
-            dpi = int(rsize.width)
-            return dpi
+            return int(rsize.width)
 
         return 72
 
     @property
-    def scale(self):
-        """The scale of the window factoring in DPI.  Read only.
+    def scale(self) -> float:
+        """The scale of the window factoring in DPI.
 
-        :type: float
+        Read only.
         """
-        if pyglet.options["scale_with_dpi"] and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
@@ -381,15 +386,32 @@ class CocoaWindow(BaseWindow):
         origin = cocoapy.NSPoint(x, screen_height - y - rect.size.height)
         self._nswindow.setFrameOrigin_(origin)
 
+    def get_size(self) -> tuple[int, int]:
+        if pyglet.options.dpi_scaling != "stretch":
+            return self.get_framebuffer_size()
+
+        return self._width, self._height
+
     def get_framebuffer_size(self) -> tuple[int, int]:
         view = self.context._nscontext.view()
         bounds = view.bounds()
-        if pyglet.options["scale_with_dpi"]:
+        if pyglet.options.dpi_scaling == "stretch":
             bounds = view.convertRectToBacking_(bounds)
         return int(bounds.size.width), int(bounds.size.height)
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
+
+        if pyglet.options.dpi_scaling != "real":
+            screen_scale = self._nswindow.backingScaleFactor()
+            frame_width, frame_height = width // screen_scale, height // screen_scale
+        else:
+            frame_width, frame_height = width, height
+
+        self._set_frame_size(frame_width, frame_height)
+        self.dispatch_event('_on_internal_resize', width, height)
+
+    def _set_frame_size(self, width: int, height: int) -> None:
         # Move frame origin down so that top-left corner of window doesn't move.
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
@@ -401,7 +423,7 @@ class CocoaWindow(BaseWindow):
         # animated, but we can set the window's animationResizeTime to zero.
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
-        self.dispatch_event('on_resize', width, height)
+        print("ACTUAL RECT SIZE", rect.size.width, rect.size.height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         super().set_minimum_size(width, height)
@@ -428,7 +450,7 @@ class CocoaWindow(BaseWindow):
 
         if self._nswindow is not None:
             if visible:
-                self.dispatch_event('on_resize', self._width, self._height)
+                self.dispatch_event('_on_internal_resize', self._width, self._height)
                 self.dispatch_event('on_show')
                 self.dispatch_event('on_expose')
                 self._nswindow.makeKeyAndOrderFront_(None)

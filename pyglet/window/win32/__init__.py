@@ -24,7 +24,7 @@ from pyglet.libs.win32.types import (
 from pyglet.libs.win32.winkey import chmap, keymap
 
 if compat_platform not in ('cygwin', 'win32'):
-    raise ImportError('Not a win32 platform.')  # noqa: EM101
+    raise ImportError('Not a win32 platform.')
 
 from ctypes import (
     POINTER,
@@ -126,6 +126,8 @@ class Win32Window(BaseWindow):
     _pending_click: bool = False
     _in_title_bar: bool = False
 
+    _mouse_scale: float = 1
+
     _keyboard_state: dict[int, bool] = {0x02A: False, 0x036: False}  # For shift keys.
 
     _ws_style: int = 0
@@ -189,10 +191,12 @@ class Win32Window(BaseWindow):
             width = self.screen.width
             height = self.screen.height
         else:
-            if pyglet.options["scale_with_dpi"]:
-                if self.scale != 1.0:
-                    self._width = int(self._width * self.scale)
-                    self._height = int(self._height * self.scale)
+            if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+                self._width = int(self._width * self.scale)
+                self._height = int(self._height * self.scale)
+
+                if pyglet.options.dpi_scaling == "stretch":
+                    self._mouse_scale = self.scale
 
             width, height = \
                 self._client_to_window_size(self._width, self._height, self._dpi)
@@ -320,7 +324,7 @@ class Win32Window(BaseWindow):
         if self._visible:
             self.set_visible()
             # Might need resize event if going from fullscreen to fullscreen
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_expose')
 
     def _update_view_location(self, width: int, height: int) -> None:
@@ -413,14 +417,15 @@ class Win32Window(BaseWindow):
         return point.x, point.y
 
     def set_size(self, width: int, height: int) -> None:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+            width = int(width * self.scale)
+            height = int(height * self.scale)
+
         super().set_size(width, height)
         width, height = self._client_to_window_size_dpi(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
                              (constants.SWP_NOZORDER | constants.SWP_NOMOVE | constants.SWP_NOOWNERZORDER))
-        self.dispatch_event('on_resize', self._width, self._height)
-
-    def get_size(self) -> tuple[int, int]:
-        return self._width, self._height
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         self._minimum_size = width, height
@@ -436,7 +441,7 @@ class Win32Window(BaseWindow):
             insertAfter = constants.HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
                                  constants.SWP_NOMOVE | constants.SWP_NOSIZE | constants.SWP_SHOWWINDOW)
-            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.activate()
             self.dispatch_event('on_show')
         else:
@@ -487,6 +492,15 @@ class Win32Window(BaseWindow):
         self._set_cursor_visibility(platform_visible)
 
         self._mouse_platform_visible = platform_visible
+
+    def get_size(self) -> tuple[int, int]:
+        if pyglet.options.dpi_scaling == "stretch":
+            return int(self._width / self.scale), int(self._height / self.scale)
+
+        return self._width, self._height
+
+    def get_framebuffer_size(self) -> tuple[int, int]:
+        return self._width, self._height
 
     def _set_cursor_visibility(self, platform_visible: bool) -> None:
         # Avoid calling ShowCursor with the current visibility (which would
@@ -949,12 +963,13 @@ class Win32Window(BaseWindow):
 
             if rmouse.usFlags & 0x01 == constants.MOUSE_MOVE_RELATIVE:
                 if rmouse.lLastX != 0 or rmouse.lLastY != 0:
+                    scale = self.scale
                     # Motion event
                     # In relative motion, Y axis is positive for below.
                     # We invert it for Pyglet so positive is motion up.
                     if self._exclusive_mouse_buttons:
                         self.dispatch_event('on_mouse_drag', 0, 0,
-                                            rmouse.lLastX, -rmouse.lLastY,
+                                            rmouse.lLastX * scale, -rmouse.lLastY * scale,
                                             self._exclusive_mouse_buttons,
                                             self._get_modifiers())
                     else:
@@ -1023,7 +1038,7 @@ class Win32Window(BaseWindow):
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
             self.set_mouse_platform_visible()
-            self.dispatch_event('on_mouse_enter', x, y)
+            self.dispatch_event('on_mouse_enter', x / self._mouse_scale, y / self._mouse_scale)
             self._tracking = True
             track = TRACKMOUSEEVENT()
             track.cbSize = sizeof(track)
@@ -1055,10 +1070,10 @@ class Win32Window(BaseWindow):
             # Drag event
             modifiers = self._get_modifiers()
             self.dispatch_event('on_mouse_drag',
-                                x, y, dx, dy, buttons, modifiers)
+                                x / self._mouse_scale, y / self._mouse_scale, dx / self._mouse_scale, dy / self._mouse_scale, buttons, modifiers)
         else:
             # Motion event
-            self.dispatch_event('on_mouse_motion', x, y, dx, dy)
+            self.dispatch_event('on_mouse_motion', x / self._mouse_scale, y / self._mouse_scale, dx * self._mouse_scale, dy * self._mouse_scale)
         return 0
 
     @ViewEventHandler
@@ -1072,7 +1087,7 @@ class Win32Window(BaseWindow):
         self._tracking = False
         self._mouse_in_window = False
         self.set_mouse_platform_visible()
-        self.dispatch_event('on_mouse_leave', x, y)
+        self.dispatch_event('on_mouse_leave', x / self._mouse_scale, y / self._mouse_scale)
         return 0
 
     def _event_mousebutton(self, ev: str, button: int, lParam: int) -> int:
@@ -1082,7 +1097,7 @@ class Win32Window(BaseWindow):
             _user32.ReleaseCapture()
         x, y = self._get_location(lParam)
         y = self._height - y
-        self.dispatch_event(ev, x, y, button, self._get_modifiers())
+        self.dispatch_event(ev, x / self._mouse_scale, y / self._mouse_scale, button, self._get_modifiers())
         return 0
 
     @ViewEventHandler
@@ -1195,7 +1210,7 @@ class Win32Window(BaseWindow):
             self._update_clipped_cursor()
 
         self.switch_to()
-        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
         return 0
 
     @Win32EventHandler(constants.WM_SYSCOMMAND)
@@ -1210,7 +1225,7 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(constants.WM_MOVE)
     def _event_move(self, msg: int, wParam: int, lParam: int) -> int:
         x, y = self._get_location(lParam)
-        self.dispatch_event('on_move', x, y)
+        self.dispatch_event('on_move', x / self._mouse_scale, y / self._mouse_scale)
         return 0
 
     @Win32EventHandler(constants.WM_SETCURSOR)
@@ -1333,8 +1348,9 @@ class Win32Window(BaseWindow):
         return 0
 
     @Win32EventHandler(constants.WM_GETDPISCALEDSIZE)
-    def _event_dpi_scaled_size(self, msg, wParam, lParam):
-        if pyglet.options["scale_with_dpi"]:
+    def _event_dpi_scaled_size(self, msg: int, wParam: int, lParam: int) -> int | None:
+        print("SCALED SIZE")
+        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1357,13 +1373,18 @@ class Win32Window(BaseWindow):
             size.cy += (result.bottom - result.top) - (current.bottom - current.top)
             return 1
 
+        return None
+
     @Win32EventHandler(constants.WM_DPICHANGED)
-    def _event_dpi_change(self, msg, wParam, lParam):
+    def _event_dpi_change(self, msg: int, wParam: int, lParam: int) -> int:
         y_dpi, x_dpi = self._get_location(wParam)
 
         scale = x_dpi / constants.USER_DEFAULT_SCREEN_DPI
-        if not self._fullscreen and\
-                (pyglet.options["scale_with_dpi"] or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+
+        self._dpi = x_dpi
+
+        if not self._fullscreen and \
+                (pyglet.options.dpi_scaling != "real" or constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left
@@ -1374,10 +1395,11 @@ class Win32Window(BaseWindow):
             _user32.SetWindowPos(self._hwnd, 0, x, y, width, height,
                                  constants.SWP_NOZORDER | constants.SWP_NOOWNERZORDER | constants.SWP_NOACTIVATE)
 
-        self._dpi = x_dpi
+        if pyglet.options.dpi_scaling == "stretch":
+            self._mouse_scale = scale
 
         self.switch_to()
-        self.dispatch_event('on_scale', scale, x_dpi)
+        self.dispatch_event('_on_internal_scale', scale, x_dpi)
         return 1
 
 
