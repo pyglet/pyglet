@@ -240,8 +240,7 @@ class SpriteGroup(graphics.Group):
         self.program.stop()
 
     def __repr__(self) -> str:
-        #return f"{self.__class__.__name__}({self.texture} id={hex(id(self))})"
-        return f"{self.__class__.__name__}"
+        return f"{self.__class__.__name__}(texture={self.texture}, program={self.program})"
 
     def __eq__(self, other: SpriteGroup) -> bool:
         return (other.__class__ is self.__class__ and
@@ -256,14 +255,6 @@ class SpriteGroup(graphics.Group):
         return hash((self.program, self.parent,
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
-    def contiguous_same(self, other: SpriteGroup) -> bool:
-        #return False
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
 
 class Sprite(event.EventDispatcher):
     """Manipulate an on-screen image.
