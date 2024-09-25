@@ -815,6 +815,7 @@ class TextDecorationGroup(Group):
                  parent: graphics.Group | None = None) -> None:
         self.program = program
         super().__init__(order=order, parent=parent)
+
     def initialize(self) -> None:
         self.set_states = [
             graphics.GLState(self.program.use),

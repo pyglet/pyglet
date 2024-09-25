@@ -605,7 +605,7 @@ class Batch:
                 visit(top_group)
 
 
-@dataclass(slots=True)
+@dataclass
 class GLState:  # noqa: D101
     func: Union[Callable, Any]  # noqa: UP007
     args: tuple = ()
