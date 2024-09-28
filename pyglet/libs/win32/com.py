@@ -146,14 +146,16 @@ class _InterfaceMeta(_StructMeta):
 
         dct['_fields_'] = (('vtbl_ptr', ctypes.POINTER(vtbl_struct_type)),)
 
-        res_type = super().__new__(cls, name, bases, dct)
-        if create_pointer_type:
-            # If we're not being created from a pInterface subclass as helper Interface (so likely
-            # being explicitly defined from user code for later use), create the special
-            # pInterface pointer subclass so it registers itself into the pointer cache
-            _pInterfaceMeta(f"p{name}", (ctypes.POINTER(bases[0]),), {'_type_': res_type})
+        return super().__new__(cls, name, bases, dct)
 
-        return res_type
+    def __init__(self, name, bases, dct, /, create_pointer_type=True):
+        super().__init__(name, bases, dct)
+
+        if create_pointer_type:
+            # Unless this is the construction of `Interface` or we're already being created
+            # from a pInterface subclass as a helper interface, create a special
+            # _pInterfaceMeta-based subclass so a link is created in the ctypes pointer cache
+            _pInterfaceMeta(f"p{name}", (ctypes.POINTER(bases[0]),), {'_type_': self})
 
 
 class _pInterfaceMeta(_PointerMeta):

@@ -23,8 +23,16 @@ from pyglet.libs.egl.eglext import *
 
 assert eglBindAPI(EGL_OPENGL_API) == EGL_TRUE
 
-# Open the GBM device, and create a surface
-fd = os.open("/dev/dri/card0", os.O_RDWR | os.MFD_CLOEXEC)
+try:
+    cards = [f for f in os.listdir('/dev/dri/') if f.startswith('card')]
+    cards = [os.path.join('/dev/dri/', name) for name in cards]
+    assert cards
+except (OSError, AssertionError):
+    print("unable to find DRI device")
+    exit()
+
+# Open the first GBM device, and create a surface
+fd = os.open(cards[0], os.O_RDWR | os.MFD_CLOEXEC)
 gbm_device = gbm_create_device(fd)
 gbm_surface = gbm_surface_create(gbm_device, 256, 256, GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING)
 

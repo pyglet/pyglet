@@ -11,12 +11,13 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch
     from pyglet.image import AbstractImage
 
 
 class WidgetBase(EventDispatcher):
-    def __init__(self, x: int, y: int, width: int, height: int) -> None:
+    """The base of all widgets."""
+    def __init__(self, x: int, y: int, width: int, height: int) -> None:  # noqa: D107
         self._x = x
         self._y = y
         self._width = width
@@ -53,7 +54,7 @@ class WidgetBase(EventDispatcher):
         self._enabled = new_enabled
         self._set_enabled(new_enabled)
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         pass
 
     @property
@@ -118,7 +119,7 @@ class WidgetBase(EventDispatcher):
         raise NotImplementedError('Value depends on control type!')
 
     @value.setter
-    def value(self, value: int | float | bool):
+    def value(self, value: int | float | bool) -> None:
         raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
@@ -150,6 +151,12 @@ class WidgetBase(EventDispatcher):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         pass
 
+    def on_mouse_enter(self, x: int, y: int) -> None:
+        pass
+
+    def on_mouse_leave(self, x: int, y: int) -> None:
+        pass
+
     def on_text(self, text: str) -> None:
         pass
 
@@ -176,7 +183,7 @@ class PushButton(WidgetBase):
         """Create a push button.
 
         Args:
-            x
+            x:
                 X coordinate of the push button.
             y:
                 Y coordinate of the push button.
@@ -199,7 +206,7 @@ class PushButton(WidgetBase):
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
         bg_group = Group(order=0, parent=group)
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
+        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x=x, y=y, batch=batch, group=bg_group)
 
         self._pressed = False
 
@@ -207,7 +214,7 @@ class PushButton(WidgetBase):
         self._sprite.position = self._x, self._y, 0
 
     @property
-    def value(self):
+    def value(self) -> bool:
         return self._pressed
 
     @value.setter
@@ -216,7 +223,7 @@ class PushButton(WidgetBase):
         self._pressed = value
         self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._sprite.group = Group(order=order + 1, parent=self._user_group)
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
@@ -230,6 +237,13 @@ class PushButton(WidgetBase):
         if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+        self._pressed = False
+        self.dispatch_event('on_release')
+
+    def on_mouse_leave(self, x: int, y: int) -> None:
+        if not self.enabled or not self._pressed:
+            return
+        self._sprite.image = self._depressed_img
         self._pressed = False
         self.dispatch_event('on_release')
 
@@ -260,7 +274,7 @@ class ToggleButton(PushButton):
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
-    def _get_release_image(self, x: int, y: int):
+    def _get_release_image(self, x: int, y: int) -> AbstractImage:
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
@@ -320,7 +334,7 @@ class Slider(WidgetBase):
         self._knob_img = knob
         self._half_knob_width = knob.width / 2
         self._half_knob_height = knob.height / 2
-        self._knob_img.anchor_y = knob.height / 2
+        self._knob_img.anchor_y = int(knob.height / 2)
 
         self._min_knob_x = x + edge
         self._max_knob_x = x + base.width - knob.width - edge
@@ -349,7 +363,7 @@ class Slider(WidgetBase):
         x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._base_spr.group = Group(order=order + 1, parent=self._user_group)
         self._knob_spr.group = Group(order=order + 2, parent=self._user_group)
 
@@ -363,11 +377,11 @@ class Slider(WidgetBase):
 
     @property
     def _min_y(self) -> int:
-        return self._y - self._half_knob_height
+        return int(self._y - self._half_knob_height)
 
     @property
     def _max_y(self) -> int:
-        return self._y + self._half_knob_height + self._base_img.height / 2
+        return int(self._y + self._half_knob_height + self._base_img.height / 2)
 
     def _check_hit(self, x: int, y: int) -> bool:
         return self._min_x < x < self._max_x and self._min_y < y < self._max_y
@@ -394,7 +408,7 @@ class Slider(WidgetBase):
         if not self.enabled:
             return
         if self._check_hit(x, y):
-            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)
+            self._update_knob(self._knob_spr.x + self._half_knob_width + scroll_y)  # type: ignore reportArgumentType
 
     def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         if not self.enabled:
@@ -445,7 +459,7 @@ class TextEntry(WidgetBase):
                 Optional parent group of text entry widget.
         """
         self._doc = pyglet.text.document.UnformattedDocument(text)
-        self._doc.set_style(0, len(self._doc.text), dict(color=text_color))
+        self._doc.set_style(0, len(self._doc.text), {'color': text_color})
         font = self._doc.get_font()
         height = font.ascent - font.descent
 
@@ -455,7 +469,7 @@ class TextEntry(WidgetBase):
 
         # Rectangular outline with 2-pixel pad:
         self._pad = p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch, bg_group)
+        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color, batch=batch, group=bg_group)
 
         # Text and Caret:
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
@@ -517,7 +531,7 @@ class TextEntry(WidgetBase):
         self._caret.visible = value
         self._caret.layout = self._layout
 
-    def update_groups(self, order: float) -> None:
+    def update_groups(self, order: int) -> None:
         self._outline.group = Group(order=order + 1, parent=self._user_group)
         self._layout.group = Group(order=order + 2, parent=self._user_group)
 

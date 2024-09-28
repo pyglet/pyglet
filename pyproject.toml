@@ -78,6 +78,7 @@ inline-quotes = 'single'
 "pyglet/window/headless/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/win32/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/window/xlib/*" = ["RUF012", "D", "N", "ARG"]
+"pyglet/gui/*" = ["ARG002"]
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/lib.py" = ["ANN", "ARG002", "T201"]
 "pyglet/gl/*" = ["N816", "I001", "N801", "E501", "D"]

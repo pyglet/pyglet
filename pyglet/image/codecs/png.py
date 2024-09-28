@@ -4,8 +4,8 @@
 import array
 import itertools
 
-from pyglet.image import ImageData, ImageDecodeException
-from pyglet.image.codecs import ImageDecoder, ImageEncoder
+from pyglet.image import ImageData
+from pyglet.image.codecs import ImageDecoder, ImageEncoder, ImageDecodeException
 
 import pyglet.extlibs.png as pypng
 

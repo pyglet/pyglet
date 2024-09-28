@@ -5,10 +5,78 @@ from abc import ABCMeta, abstractmethod
 
 import pyglet
 from pyglet.media.codecs import AudioData
-from pyglet.util import debug_print
+from pyglet.util import debug_print, next_or_equal_power_of_two
 
 
 _debug = debug_print('debug_media')
+
+
+class SourcePrecisionBuffer:
+    """Wrap non-precise sources that may over- or undershoot.
+
+    This class's purpose is to always return data whose length is equal or
+    less than the requested size, where less hints at definite source
+    exhaustion.
+
+    This class erases AudioData-contained timestamp/duration information and
+    events.
+    """
+
+    def __init__(self, source):
+        self._source = weakref.proxy(source)
+        self._buffer = bytearray()
+        self._exhausted = False
+
+    def get_audio_data(self, requested_size):
+        if self._exhausted:
+            return None
+
+        if len(self._buffer) < requested_size:
+            # Buffer is incapable of fulfilling request, get more
+
+            # Reduce amount of required bytes by buffer length
+            required_bytes = requested_size - len(self._buffer)
+
+            # Don't bother with super-small requests to something that likely does some form of I/O
+            # Also, intentionally overshoot since some sources may just barely undercut.
+            base_attempt = next_or_equal_power_of_two(max(4096, required_bytes + 16))
+            attempts = (base_attempt, base_attempt, base_attempt * 2, base_attempt * 8)
+            cur_attempt_idx = 0
+            # A malicious decoder could technically trap us by delivering empty AudioData, though
+            # the argument that this is unnecessarily defensive programming is definitely valid.
+            empty_bailout = 4
+
+            while True:
+                if cur_attempt_idx + 1 < 4: # len(attempts)
+                    cur_attempt_idx += 1
+                res = self._source.get_audio_data(attempts[cur_attempt_idx])
+
+                if res is None:
+                    self._exhausted = True
+                elif res.length == 0:
+                    empty_bailout -= 1
+                    if empty_bailout <= 0:
+                        self._exhausted = True
+                else:
+                    empty_bailout = 4
+                    self._buffer += res.data
+
+                if len(self._buffer) >= requested_size or self._exhausted:
+                    break
+
+        res = self._buffer[:requested_size]
+        if not res:
+            return None
+
+        del self._buffer[:requested_size]
+        return AudioData(res, len(res))
+
+    def set_source(self, source):
+        self._source = weakref.proxy(source)
+
+    def reset(self):
+        self._buffer.clear()
+        self._exhausted = False
 
 
 class AbstractAudioPlayer(metaclass=ABCMeta):
@@ -39,6 +107,8 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         # the audio_player
         self.source = weakref.proxy(source)
         self.player = weakref.proxy(player)
+
+        self._precision_buffer = None if source.is_precise() else SourcePrecisionBuffer(source)
 
         afmt = source.audio_format
         # How much data should ideally be in memory ready to be played.
@@ -87,6 +157,13 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         self.clear()
         self.source = weakref.proxy(source)
 
+        if source.is_precise():
+            self._precision_buffer = None
+        elif self._precision_buffer is None:
+            self._precision_buffer = SourcePrecisionBuffer(source)
+        else:
+            self._precision_buffer.set_source(source)
+
     @abstractmethod
     def prefill_audio(self):
         """Prefill the audio buffer with audio data.
@@ -123,6 +200,8 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         self._compensated_bytes = 0
         self.audio_sync_measurements.clear()
         self.audio_sync_cumul_measurements = 0
+        if self._precision_buffer is not None:
+            self._precision_buffer.reset()
 
     @abstractmethod
     def delete(self):
@@ -251,6 +330,11 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
 
         return 0, False
 
+    def _get_audio_data(self, requested_size):
+        if self._precision_buffer is None:
+            return self.source.get_audio_data(requested_size)
+        return self._precision_buffer.get_audio_data(requested_size)
+
     def _get_and_compensate_audio_data(self, requested_size, audio_position=None):
         """
         Retrieve a packet of `AudioData` of the given size.
@@ -259,7 +343,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         desync_bytes, extreme_desync = self.get_audio_time_diff(audio_time)
 
         if desync_bytes == 0:
-            return self.source.get_audio_data(requested_size)
+            return self._get_audio_data(requested_size)
 
         compensated_bytes = 0
         afmt = self.source.audio_format
@@ -278,7 +362,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
                 self.desync_correction_bytes_minor,
             )
 
-            audio_data = self.source.get_audio_data(requested_size - compensated_bytes)
+            audio_data = self._get_audio_data(requested_size - compensated_bytes)
             if audio_data is not None:
                 if audio_data.length < afmt.bytes_per_frame:
                     raise RuntimeError("Partial audio frame returned?")
@@ -299,7 +383,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
                                  if extreme_desync
                                  else min(-desync_bytes, self.desync_correction_bytes_minor))
 
-            audio_data = self.source.get_audio_data(requested_size + compensated_bytes)
+            audio_data = self._get_audio_data(requested_size + compensated_bytes)
             if audio_data is not None:
                 if audio_data.length <= compensated_bytes:
                     compensated_bytes = -audio_data.length

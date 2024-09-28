@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')
-
+NSColor = ObjCClass('NSColor')
 
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
@@ -28,17 +28,18 @@ class PygletTextView_Implementation:
     PygletTextView = ObjCSubclass('NSTextView', 'PygletTextView')
 
     @PygletTextView.method(b'@' + PyObjectEncoding)
-    def initWithCocoaWindow_(self, window: CocoaWindow) ->  ObjCInstance | None:
+    def initWithCocoaWindow_(self, window: CocoaWindow) -> ObjCInstance | None:
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
             return None
         self._window = window
         # Interpret tab and return as raw characters
         self.setFieldEditor_(False)
-        self.empty_string = CFSTR('')
+        empty_string = CFSTR('')
+        self.associate("empty_string", empty_string)
 
-        # Prevent a blinking cursor in bottom left corner
-        self.setEditable_(False)
+        # Prevent a blinking cursor in bottom left corner Python 3.9 w/ ARM mac.
+        self.setInsertionPointColor_(NSColor.clearColor())
         return self
 
     @PygletTextView.method("v@")
@@ -48,7 +49,9 @@ class PygletTextView_Implementation:
 
     @PygletTextView.method('v')
     def dealloc(self) -> None:
+        self._window = None
         cf.CFRelease(self.empty_string)
+        send_super(self, 'dealloc')
 
     # Other functions still seem to work?
     @PygletTextView.method('v@')
