@@ -449,7 +449,6 @@ class _GlyphBox(_AbstractBox):
         # everytime we move this layout, we bake those into the vertices. This way the translate can be moved directly.
         assert self.glyphs
         assert not self.vertex_lists
-
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
@@ -1138,10 +1137,12 @@ class TextLayout:
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
 
-        anchor = (self._anchor_left, self._get_top_anchor())
+        anchor_y = self._get_top_anchor()
 
+        acc_anchor_x = self._anchor_left
         for box in self._boxes:
-            box.update_anchor(*anchor)
+            box.update_anchor(acc_anchor_x, anchor_y)
+            acc_anchor_x += box.advance
 
     @property
     def visible(self) -> bool:
