@@ -360,6 +360,7 @@ NSApplicationPresentationDisableHideApplication = 1 << 8
 NSApplicationActivationPolicyRegular = 0
 NSApplicationActivationPolicyAccessory = 1
 NSApplicationActivationPolicyProhibited = 2
+NSApplicationActivateIgnoringOtherApps = 1 << 1
 
 ######################################################################
 
