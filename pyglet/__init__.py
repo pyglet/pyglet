@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '2.1.dev5'
+version = '2.1.dev6'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -47,6 +47,7 @@ _OPTION_TYPE_VALIDATORS = {
     "bool": lambda x: isinstance(x, bool),
     "int": lambda x: isinstance(x, int),
 }
+
 
 @dataclass
 class Options:
