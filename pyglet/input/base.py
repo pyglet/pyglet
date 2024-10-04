@@ -424,7 +424,7 @@ class Joystick(EventDispatcher):
             elif isinstance(ctrl, Button):
                 add_button(ctrl)
 
-    def open(self, window: None | BaseWindow, exclusive: bool = False) -> None:
+    def open(self, window: BaseWindow | None = None, exclusive: bool = False) -> None:
         """Open the joystick device.  See `Device.open`. """
         self.device.open(window, exclusive)
 
