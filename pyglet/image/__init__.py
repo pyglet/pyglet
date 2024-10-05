@@ -1167,7 +1167,8 @@ class Texture(AbstractImage):
     default will be used. 
     """
 
-    def __init__(self, width: int, height: int, target: int, tex_id: int) -> None:
+    def __init__(self, width: int, height: int, target: int, tex_id: int,
+                 min_filter: int | None = None, mag_filter: int | None = None) -> None:
         super().__init__(width, height)
         self.target = target
         self.id = tex_id
