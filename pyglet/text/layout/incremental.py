@@ -290,7 +290,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self.glyphs[start:end] = font.get_glyphs(text)
 
         # Update owner runs
-        self._get_owner_runs(self._owner_runs, self.glyphs, invalid_start, invalid_end)
+        owner_runs = self._get_owner_runs(self.glyphs[invalid_start:invalid_end])
+        self._owner_runs.set_runs(invalid_start, invalid_end, owner_runs)
 
         # Updated glyphs need flowing
         self._invalid_flow.invalidate(invalid_start, invalid_end)

@@ -239,6 +239,11 @@ class CocoaDisplayConfig(DisplayConfig):  # noqa: D101
             self._pixel_format,
             share_context)
 
+        # No longer needed after context creation.
+        if self._pixel_format:
+            self._pixel_format.release()
+            self._pixel_format = None
+
         return CocoaContext(self, nscontext, share)
 
     def compatible(self, canvas: CocoaCanvas) -> bool:

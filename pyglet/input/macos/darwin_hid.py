@@ -482,7 +482,9 @@ _axis_names = {
     (0x01, 0x31): 'y',
     (0x01, 0x32): 'z',
     (0x01, 0x33): 'rx',
+    (0x02, 0xc4): 'rx',
     (0x01, 0x34): 'ry',
+    (0x02, 0xc5): 'ry',
     (0x01, 0x35): 'rz',
     (0x01, 0x38): 'wheel',
     (0x01, 0x39): 'hat',
@@ -621,7 +623,7 @@ def get_apple_remote(display=None):
 
 def _create_controller(device, display):
 
-    if not device.transport or not device.transport.upper() in ('USB', 'BLUETOOTH'):
+    if not device.transport or not device.transport.upper() in ('USB', 'BLUETOOTH', 'BLUETOOTH LOW ENERGY'):
         return
 
     if device.is_joystick() or device.is_gamepad() or device.is_multi_axis():

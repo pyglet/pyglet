@@ -280,6 +280,7 @@ NSTrackingMouseEnteredAndExited  = 0x01
 NSTrackingMouseMoved             = 0x02
 NSTrackingCursorUpdate 		 = 0x04
 NSTrackingActiveInActiveApp 	 = 0x40
+NSTrackingInVisibleRect             = 0x200    # If set, tracking occurs in visibleRect of view and rect is ignored
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSOpenGL.h
 NSOpenGLPFAAllRenderers       =   1   # choose from all available renderers
@@ -362,6 +363,7 @@ NSApplicationPresentationDisableHideApplication = 1 << 8
 NSApplicationActivationPolicyRegular = 0
 NSApplicationActivationPolicyAccessory = 1
 NSApplicationActivationPolicyProhibited = 2
+NSApplicationActivateIgnoringOtherApps = 1 << 1
 
 ######################################################################
 

@@ -14,7 +14,7 @@ else:
 HorizontalAlign = Literal["left", "center", "right"]
 AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
-ContentVAlign = Literal["left", "center", "top"]
+ContentVAlign = Literal["bottom", "center", "top"]
 
 
 

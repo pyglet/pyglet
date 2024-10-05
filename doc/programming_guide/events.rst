@@ -14,7 +14,7 @@ base class. Many of pyglet's built-in modules, such as :py:mod:`pyglet.window`,
 :py:mod:`pyglet.gui` and others make use of this pattern. You can also reuse this in
 your own classes easily.
 
-Even handlers are simply functions or methods that are written to accept the same
+Event handlers are simply functions or methods that are written to accept the same
 arguments as the dispatched event. Event handlers can be registered or unregistered
 during runtime. More than one handler can be registered to receive the same events,
 which is described in the following sections. Event dispatchers can *optionally* have
@@ -27,7 +27,7 @@ Setting event handlers
 
 For an example, lets look at the :py:class:`~pyglet.window.Window` class.
 :py:class:`~pyglet.window.Window` subclasses :py:class:`~pyglet.event.EventDispatcher`
-and, being an Window, has a variety of different events which it dispatches.
+and, being a Window, has a variety of different events which it dispatches.
 For instance, the :py:meth:`pyglet.window.Window.on_resize` event. Every time a
 resizeable Window is resized (and once when first created), this event is dispatched
 with two parameters: ``(width, height)``. Therefore, an event handler for this event

@@ -1,4 +1,6 @@
 import signal
+import time
+
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop, EventLoop
 from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
@@ -11,7 +13,7 @@ NSDate = cocoapy.ObjCClass('NSDate')
 NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
 NSTimer = cocoapy.ObjCClass('NSTimer')
-
+NSRunningApplication = cocoapy.ObjCClass('NSRunningApplication')
 
 
 def add_menu_item(menu, title, action, key):
@@ -70,6 +72,30 @@ class _AppDelegate_Implementation:
     @_AppDelegate.method('v@')
     def applicationDidFinishLaunching_(self, notification):
         self._pyglet_loop._finished_launching = True
+
+        # Force App to activate to the foreground due to being an unbundled CLI program.
+        # This prevents an issue where if you move the mouse when launching the program, it's focus can be stolen
+        # by an app under/behind it leading to a weird state of input and the menu bar being greyed out until
+        # reactivating it.
+        NSApp = NSApplication.sharedApplication()
+
+        # Activate dock to ensure all other apps are deactivated.
+        dock_str = cocoapy.get_NSString("com.apple.dock")
+        running_apps = NSRunningApplication.runningApplicationsWithBundleIdentifier_(dock_str)
+        app_count = running_apps.count()
+        for i in range(app_count):
+            running_app = running_apps.objectAtIndex_(i)
+            running_app.activateWithOptions_(cocoapy.NSApplicationActivateIgnoringOtherApps)
+            break
+
+        # Doesn't seem to work unless we add a small sleep for some reason...
+        time.sleep(0.01)
+
+        NSApp.activateIgnoringOtherApps_(True)
+
+    @_AppDelegate.method('v@')
+    def applicationWillFinishLaunching_(self, notification):
+        pass
 
     @_AppDelegate.method('B')
     def applicationSupportsSecureRestorableState_(self):
@@ -151,6 +177,9 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
             if not defaults.objectForKey_(holdEnabled):
                 defaults.setBool_forKey_(False, holdEnabled)
 
+            self.appdelegate = _AppDelegate.alloc().init(self)
+            self.NSApp.setDelegate_(self.appdelegate)
+
             self._finished_launching = False
 
     def start(self):
@@ -172,33 +201,32 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 self.timer.invalidate()
                 self.timer = None
 
-            self.nsapp_stop()
+            if self.NSApp:
+                self.NSApp.terminate_(None)
 
         # Force NSApp to close if Python receives sig events.
         signal.signal(signal.SIGINT, term_received)
         signal.signal(signal.SIGTERM, term_received)
 
-        self.appdelegate = _AppDelegate.alloc().init(self)
-        self.NSApp.setDelegate_(self.appdelegate)
-
         self.timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
-             interval,  # Clamped internally to 0.0001 (including 0)
-             self.appdelegate,
-             get_selector('updatePyglet:'),
-             False,
-             True
-         )
+            interval,  # Clamped internally to 0.0001 (including 0)
+            self.appdelegate,
+            get_selector('updatePyglet:'),
+            False,
+            True
+        )
 
         self.NSApp.run()
 
     def nsapp_step(self):
         """Used only for CocoaAlternateEventLoop"""
         self._event_loop.idle()
-        self.dispatch_posted_events()
+        with AutoReleasePool():
+            self.dispatch_posted_events()
 
     def nsapp_stop(self):
         """Used only for CocoaAlternateEventLoop"""
-        self.NSApp.terminate_(None)
+        self.NSApp.stop_(None)
 
     def step(self, timeout=None):
         with AutoReleasePool():
@@ -210,7 +238,7 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
                 # will wait until the next event comes along.
                 timeout_date = NSDate.distantFuture()
             elif timeout == 0.0:
-                timeout_date = NSDate.distantPast()
+                timeout_date = None
             else:
                 timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 

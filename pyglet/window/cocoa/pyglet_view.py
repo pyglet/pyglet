@@ -30,6 +30,7 @@ NSURL = cocoapy.ObjCClass('NSURL')
 NSArray = cocoapy.ObjCClass('NSArray')
 NSDictionary = cocoapy.ObjCClass('NSDictionary')
 NSNumber = cocoapy.ObjCClass('NSNumber')
+NSNotificationCenter = cocoapy.ObjCClass('NSNotificationCenter')
 
 # Key to mask mapping.
 maskForKey: dict[int, int] = {
@@ -113,7 +114,7 @@ class PygletView_Implementation:
 
         # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate
         # events so that we can custom set the mouse cursor within the view.
-        self._tracking_area = None
+        # self._tracking_area = None
 
         self = cocoapy.ObjCInstance(cocoapy.send_super(self, 'initWithFrame:', frame, argtypes=[cocoapy.NSRect]))
 
@@ -122,6 +123,9 @@ class PygletView_Implementation:
 
         # CocoaWindow object.
         self._window = window
+
+        self.associate("_tracking_area", None)
+
         self.updateTrackingAreas()
 
         # Create an instance of PygletTextView to handle text events.
@@ -131,7 +135,8 @@ class PygletView_Implementation:
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
+        textview = PygletTextView.alloc().initWithCocoaWindow_(window)
+        self.associate("_textview", textview)
         # Add text view to the responder chain.
         self.addSubview_(self._textview)
         return self
@@ -139,11 +144,9 @@ class PygletView_Implementation:
     @PygletView.method('v')
     def dealloc(self) -> None:
         self._window = None
-        # cocoapy.end_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
+        self._textview.removeFromSuperviewWithoutNeedingDisplay()
         self._textview.release()
-        self._textview = None
         self._tracking_area.release()
-        self._tracking_area = None
         cocoapy.send_super(self, 'dealloc')
 
     @PygletView.method('v')
@@ -153,19 +156,21 @@ class PygletView_Implementation:
         if self._tracking_area:
             self.removeTrackingArea_(self._tracking_area)
             self._tracking_area.release()
-            self._tracking_area = None
+            self.associate("_tracking_area", None)
 
         tracking_options = (cocoapy.NSTrackingMouseEnteredAndExited | cocoapy.NSTrackingActiveInActiveApp |
-                            cocoapy.NSTrackingCursorUpdate)
+                            cocoapy.NSTrackingCursorUpdate | cocoapy.NSTrackingInVisibleRect)
         frame = self.frame()
-
-        self._tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
+        tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
             frame,  # rect
             tracking_options,  # options
             self,  # owner
             None)  # userInfo
 
+        self.associate("_tracking_area", tracking_area)
+
         self.addTrackingArea_(self._tracking_area)
+        send_super(self, 'updateTrackingAreas')
 
     @PygletView.method('B')
     def canBecomeKeyView(self) -> bool:

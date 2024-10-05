@@ -72,11 +72,11 @@ To access raw pixel data of an image::
 
 (If the image has just been loaded this will be a very quick operation;
 however if the image is a texture a relatively expensive readback operation
-will occur).  The pixels can be accessed as a string::
+will occur).  The pixels can be accessed as bytes::
 
     format = 'RGBA'
     pitch = rawimage.width * len(format)
-    pixels = rawimage.get_data(format, pitch)
+    pixels = rawimage.get_bytes(format, pitch)
 
 "format" strings consist of characters that give the byte order of each color
 component.  For example, if rawimage.format is 'RGBA', there are four color
@@ -312,8 +312,13 @@ class AbstractImage(ABC):
         """
 
     @abstractmethod
-    def get_texture(self) -> Texture:
-        """Create a :py:class:`~pyglet.image.Texture` from this image."""
+    def get_texture(self, rectangle: bool = False) -> Texture:
+        """A :py:class:`~pyglet.image.Texture` view of this image.
+
+        Args:
+            rectangle:
+                Unused. Kept for backwards compatibility.
+        """
 
     @abstractmethod
     def get_mipmapped_texture(self) -> Texture:
@@ -504,7 +509,7 @@ class ImageData(AbstractImage):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -628,7 +633,7 @@ class ImageData(AbstractImage):
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls: type[Texture]) -> Texture:
+    def create_texture(self, cls: type[Texture], rectangle: bool = False) -> Texture:
         """Given a texture class, create a texture containing this image."""
         internalformat = self._get_internalformat(self._desired_format)
         texture = cls.create(self.width, self.height, GL_TEXTURE_2D, internalformat, blank_data=False)
@@ -640,7 +645,7 @@ class ImageData(AbstractImage):
 
         return texture
 
-    def get_texture(self) -> Texture:
+    def get_texture(self, rectangle: bool = False) -> Texture:
         if not self._current_texture:
             self._current_texture = self.create_texture(Texture)
         return self._current_texture
@@ -905,7 +910,7 @@ class ImageDataRegion(ImageData):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data': self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_bytes(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -915,7 +920,7 @@ class ImageDataRegion(ImageData):
             'y': self.y,
         }
 
-    def get_data(self, fmt=None, pitch=None):
+    def get_bytes(self, fmt=None, pitch=None):
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
@@ -932,13 +937,12 @@ class ImageDataRegion(ImageData):
 
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
-        return super().get_data(fmt, pitch)
+        return super().get_bytes(fmt, pitch)
 
-    def set_data(self, fmt, pitch, data):
-        # TODO: Why does this override the parent ImageData?
+    def set_bytes(self, fmt, pitch, data):
         self.x = 0
         self.y = 0
-        super().set_data(fmt, pitch, data)
+        super().set_bytes(fmt, pitch, data)
 
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
@@ -1006,9 +1010,12 @@ class CompressedImageData(AbstractImage):
     def _have_extension(self) -> bool:
         return self.extension is None or gl_info.have_extension(self.extension)
 
-    def get_texture(self) -> Texture:
+    def get_texture(self, rectangle=False) -> Texture:
         if self._current_texture:
             return self._current_texture
+
+        if rectangle:
+            raise ImageException('Compressed texture rectangles not supported')
 
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
 
@@ -1160,8 +1167,7 @@ class Texture(AbstractImage):
     default will be used. 
     """
 
-    def __init__(self, width: int, height: int, target: int, tex_id: int,
-                 min_filter: int | None = None, mag_filter: int | None = None) -> None:
+    def __init__(self, width: int, height: int, target: int, tex_id: int) -> None:
         super().__init__(width, height)
         self.target = target
         self.id = tex_id
@@ -1251,6 +1257,8 @@ class Texture(AbstractImage):
 
         return cls(width, height, target, tex_id.value, min_filter, mag_filter)
 
+        return texture
+
     def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
 
@@ -1294,7 +1302,7 @@ class Texture(AbstractImage):
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def get_texture(self) -> Texture:
+    def get_texture(self, rectangle: bool = False) -> Texture:
         return self
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
@@ -1805,8 +1813,8 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self) -> Texture:
-        return self.image.get_texture()
+    def get_texture(self, rectangle: bool = False) -> Texture:
+        return self.image.get_texture(rectangle)
 
     def get_image_data(self) -> ImageData:
         return self.image.get_image_data()

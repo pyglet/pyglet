@@ -68,7 +68,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run(interval: float | None = 1/60) -> None:
+def run(interval: float | None = 1 / 60) -> None:
     """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
