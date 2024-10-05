@@ -707,6 +707,8 @@ class UniformBlock:
         dynamic_structs = {}
         p_count = 0
 
+        rep_func = lambda s: str(dict(s._fields_))
+
         def build_ctypes_struct(name: str, struct_dict: dict) -> type:
             fields = []
             for field_name, field_type in struct_dict.items():
@@ -722,7 +724,7 @@ class UniformBlock:
                     continue
                 fields.append((field_name, field_type))
 
-            return type(name.title(), (Structure,), {"_fields_": fields})
+            return type(name.title(), (Structure,), {"_fields_": fields, "__repr__": rep_func})
 
         # Build a ctypes Structure of the uniforms including arrays and nested structures.
         for i in range(active_count):
