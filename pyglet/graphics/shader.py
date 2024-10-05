@@ -944,7 +944,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
     for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORMS)):
         u_name, u_type, u_size = _query_uniform(program_id, index)
 
-        # Multidimensional arrays cannot be fully inspected via OpenGL calls.
+        # Multidimensional arrays cannot be fully inspected via OpenGL calls and compile errors with 3.3.
         array_count = u_name.count("[0]")
         if array_count > 1 and u_name.count("[0][0]") != 0:
             msg = "Multidimensional arrays are not currently supported."
