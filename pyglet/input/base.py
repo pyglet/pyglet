@@ -402,7 +402,7 @@ class Joystick(EventDispatcher):
 
             @control.event
             def on_change(value):
-                self.hat_x, self.hat_y = _input_map.get(value, (0.0, 0.0))
+                self.hat_x, self.hat_y = _input_map.get(value, Vec2(0.0, 0.0))
                 self.dispatch_event('on_joyhat_motion', self, self.hat_x, self.hat_y)
 
         for ctrl in device.get_controls():
