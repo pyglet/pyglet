@@ -170,7 +170,7 @@ class PygletView_Implementation:
         self.associate("_tracking_area", tracking_area)
 
         self.addTrackingArea_(self._tracking_area)
-        send_super(self, 'updateTrackingAreas')
+        cocoapy.send_super(self, 'updateTrackingAreas')
 
     @PygletView.method('B')
     def canBecomeKeyView(self) -> bool:
