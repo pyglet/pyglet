@@ -74,22 +74,42 @@ class NinePatch(Sprite):
                              img: AbstractImage | Animation,
                              layout: TextLayout,
                              border: int = 0,
-                             z: int = 0,
                              blend_src: int = GL_SRC_ALPHA,
                              blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
                              batch: Batch | None = None,
                              group: Group | None = None):
-        x, y, _ = layout.position
-        width = layout.width or layout.content_width
-        height = layout.height or layout.content_height
+        """Given a Label, create a NinePatch instance sized to surround it.
 
-        width += border * 2
-        height += border * 2
-        x -= border
-        y -= border
+        A NinePatch instance will be created that is sized to the Layout's left, bottom,
+        right, and top attributes. This happens at the time of creation, and is not dynamic.
 
-        # TODO: confirm the boundaries
+        The NinePatch's ``z`` position will be set to the Layout's ``z`` position - 1. This
+        will help ensure the NinePatch renders below the label *if* OpenGL depth testing is
+        enabled. If not, you should provide a Group with a proper ordering to ensure the
+        correct rendering order.
 
+        Args:
+            img:
+                The Image to split into segments.
+            layout:
+                A pyglet Label or Layout instance to query the size from.
+            border:
+                Additional padding, in pixels, to place around the label.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            batch:
+                Optional batch to add the NinePatch to.
+            group:
+                Optional parent group of the NinePatch.
+        """
+
+        x = layout.left - border
+        y = layout.bottom - border
+        z = layout.z - 1
+        width = int(layout.right - x + border)
+        height = int(layout.top - y + border)
         return cls(img, x, y, z, width, height, blend_src, blend_dest, batch, group)
 
     def _create_vertex_list(self) -> None:
