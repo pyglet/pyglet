@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 import weakref
 from collections import defaultdict
@@ -615,6 +616,8 @@ class _UBOBindingManager:
             msg = f"Uniform binding point: {index} is not in use."
             raise ValueError(msg)
 
+# Regular expression to detect array indices like [0], [1], etc.
+array_regex = re.compile(r"(\w+)\[(\d+)\]")
 
 class UniformBlock:
     program: CallableProxyType[Callable[..., Any] | Any] | Any
@@ -622,12 +625,12 @@ class UniformBlock:
     index: int
     size: int
     binding: int
-    uniforms: dict[int, tuple[str, GLDataType, int, int, bool]]
+    uniforms: dict[int, tuple[str, GLDataType, int, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls'
+    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls', 'uniform_count'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
-                 uniforms: dict[int, tuple[str, GLDataType, int, int, bool]]) -> None:
+                 uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self.program = weakref.proxy(program)
         self.name = name
@@ -635,6 +638,7 @@ class UniformBlock:
         self.size = size
         self.binding = binding
         self.uniforms = uniforms
+        self.uniform_count = uniform_count
         self.view_cls = None
 
     def create_ubo(self) -> UniformBufferObject:
@@ -676,7 +680,7 @@ class UniformBlock:
         p_id = self.program.id
         index = self.index
 
-        active_count = len(self.uniforms)
+        active_count = self.uniform_count
 
         # Query the uniform index order and each uniform's offset:
         indices = (gl.GLuint * active_count)()
@@ -699,50 +703,84 @@ class UniformBlock:
         # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_TYPE, gl_types_ptr)
         # gl.glGetActiveUniformsiv(p_id, active_count, indices, gl.GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
-        view_fields = []
+        array_sizes = {}
+        dynamic_structs = {}
+        p_count = 0
 
+        def build_ctypes_struct(name: str, struct_dict: dict) -> type:
+            fields = []
+            for field_name, field_type in struct_dict.items():
+                if isinstance(field_type, dict):
+                    # Recursive call for nested structures
+                    element_struct = build_ctypes_struct(field_name, field_type)
+                    field_type = element_struct  # noqa: PLW2901
+                    if field_name in array_sizes and array_sizes[field_name] > 1:
+                        field_type = element_struct * array_sizes[field_name]  # noqa: PLW2901
+                else:
+                    # This handles base types like c_float_Array_2, which isn't a dict.
+                    fields.append((field_name, field_type))
+                    continue
+                fields.append((field_name, field_type))
+
+            return type(name.title(), (Structure,), {"_fields_": fields})
+
+        # Build a ctypes Structure of the uniforms including arrays and nested structures.
         for i in range(active_count):
-            u_name, gl_type, length, u_size, is_array = self.uniforms[indices[i]]
+            u_name, gl_type, length, u_size = self.uniforms[indices[i]]
 
-            # Is something like a vec2,3,4.
-            if length > 1:
-                # If it's an array, further divide it.
-                if is_array:
-                    final_gl_type = gl_type * length * u_size
+            parts = u_name.split(".")
+
+            current_structure = dynamic_structs
+            for part_idx, part in enumerate(parts):
+                part_name = part
+                match = array_regex.match(part_name)
+                if match:  # It's an array
+                    arr_name, index = match.groups()
+                    part_name = arr_name
+
+                    if part_idx != len(parts) - 1:
+                        index = int(index)  # Convert the index to an integer
+
+                        # Track array sizes for the current array name
+                        array_sizes[arr_name] = max(array_sizes.get(arr_name, 0), index + 1)
+                        if array_sizes[arr_name] > 1:
+                            break
+
+                        if arr_name not in current_structure:
+                            current_structure[arr_name] = {}
+
+                        current_structure = current_structure[arr_name]  # Move to the correct index of the array
+                        continue
+
+                # The end should be a regular attribute
+                if part_idx == len(parts) - 1:  # The last part is the actual type
+                    if u_size > 1:
+                        # If size > 1, treat as an array of type
+                        current_structure[part_name] = gl_type * length * u_size
+                    else:
+                        current_structure[part_name] = gl_type * length
+
+                    offset_size = offsets[i + 1] - offsets[i]
+                    c_type_size = sizeof(current_structure[part_name])
+                    padding = offset_size - c_type_size
+
+                    # TODO: Cannot get a different stride on my hardware. Needs testing.
+                    # is_matrix = gl_types[i] in _gl_matrices
+                    # if is_matrix:
+                    #     stride_padding = (mat_stride[i] // 4) * 4 - offset_size
+                    #     if stride_padding > 0:
+                    #         view_fields.append((f'_matrix_stride{i}', c_byte * stride_padding))
+
+                    if padding > 0:
+                        current_structure[f'_padding{p_count}'] = c_byte * padding
+                        p_count += 1
                 else:
-                    final_gl_type = gl_type * length
-            else:
-                # A single length, but may be an array.
-                if is_array:
-                    final_gl_type = gl_type * u_size
-                else:
-                    final_gl_type = gl_type
-
-            offset_size = offsets[i + 1] - offsets[i]
-            c_type_size = sizeof(final_gl_type)
-            padding = offset_size - c_type_size
-
-            arg = (u_name, final_gl_type)
-            view_fields.append(arg)
-
-            if padding > 0:
-                view_fields.append((f'_padding{i}', c_byte * padding))
-
-            # TODO: Cannot get a different stride on my hardware. Needs testing.
-            # is_matrix = gl_types[i] in _gl_matrices
-            # if is_matrix:
-            #     stride_padding = (mat_stride[i] // 4) * 4 - offset_size
-            #     if stride_padding > 0:
-            #         view_fields.append((f'_matrix_stride{i}', c_byte * stride_padding))
+                    if part_name not in current_structure:
+                        current_structure[part_name] = {}
+                    current_structure = current_structure[part_name]  # Drill down into nested structures
 
         # Custom ctypes Structure for Uniform access:
-        class View(Structure):
-            _fields_ = view_fields
-
-            def __repr__(self) -> str:
-                return str(dict(self._fields_))
-
-        return View
+        return build_ctypes_struct('View', dynamic_structs)
 
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
@@ -906,9 +944,9 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
     for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORMS)):
         u_name, u_type, u_size = _query_uniform(program_id, index)
 
-        # Multidimensional arrays cannot be fully inspected via OpenGL calls.
+        # Multidimensional arrays cannot be fully inspected via OpenGL calls and compile errors with 3.3.
         array_count = u_name.count("[0]")
-        if array_count > 1:
+        if array_count > 1 and u_name.count("[0][0]") != 0:
             msg = "Multidimensional arrays are not currently supported."
             raise ShaderException(msg)
 
@@ -917,7 +955,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
             continue
 
         # Strip [0] from array name for a more user-friendly name.
-        if array_count == 1:
+        if array_count != 0:
             u_name = u_name.strip('[0]')
 
         assert u_name not in uniforms, f"{u_name} exists twice in the shader. Possible name clash with an array."
@@ -962,7 +1000,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         indices_ptr = cast(addressof(indices), POINTER(gl.GLint))
         gl.glGetActiveUniformBlockiv(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
-        uniforms: dict[int, tuple[str, GLDataType, int, int, bool]] = {}
+        uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
 
         if not hasattr(pyglet.gl.current_context, "ubo_manager"):
             pyglet.gl.current_context.ubo_manager = _UBOBindingManager()
@@ -972,26 +1010,16 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         for block_uniform_index in indices:
             uniform_name, u_type, u_size = _query_uniform(program_id, block_uniform_index)
 
-            is_array = False
-            array_count = uniform_name.count("[0]")
-            if array_count > 0:
-                is_array = True
+            # Remove block name.
+            if uniform_name.startswith(f"{name}."):
+                uniform_name = uniform_name[len(name) + 1:]  # Strip 'block_name.' part
 
-                # Strip [0] from array name for a more user-friendly name.
-                if array_count == 1:
-                    uniform_name = uniform_name.strip('[0]')
-                else:
-                    msg = "Multidimensional arrays are not currently supported."
-                    raise ShaderException(msg)
-
-            # Separate uniform name from block name (Only if instance name is provided on the Uniform Block)
-            try:
-                _, uniform_name = uniform_name.split(".")
-            except ValueError:
-                pass
+            if uniform_name.count("[0][0]") > 0:
+                msg = "Multidimensional arrays are not currently supported."
+                raise ShaderException(msg)
 
             gl_type, _, _, length = _uniform_setters[u_type]
-            uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size, is_array)
+            uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size)
 
         binding_index = binding.value
         if pyglet.options.shader_bind_management:
@@ -1011,7 +1039,8 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
                     warnings.warn(msg)
                 manager.add_explicit_binding(program, name, binding.value)
 
-        uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, binding_index, uniforms)
+        uniform_blocks[name] = UniformBlock(program, name, index, block_data_size.value, binding_index, uniforms,
+                                            len(indices))
 
         if _debug_gl_shaders:
             for block in uniform_blocks.values():
