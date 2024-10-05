@@ -684,7 +684,7 @@ class Controller(EventDispatcher):
 
         @control.event
         def on_change(value):
-            vector = _input_map.get(value, (0.0, 0.0))
+            vector = _input_map.get(value, Vec2(0.0, 0.0))
             self.dpadx, self.dpady = vector
             self.dispatch_event('on_dpad_motion', self, vector)
 
