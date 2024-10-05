@@ -102,7 +102,7 @@ class CocoaWindow(BaseWindow):
                 self._delegate = None
 
             # Determine window parameters.
-            if pyglet.options.dpi_scaling != "real":
+            if pyglet.options.dpi_scaling == "real":
                 screen_scale = self.screen.get_scale()
                 width, height = self._width / screen_scale, self._height / screen_scale
             else:
@@ -418,14 +418,13 @@ class CocoaWindow(BaseWindow):
     def get_framebuffer_size(self) -> tuple[int, int]:
         view = self.context._nscontext.view()
         bounds = view.bounds()
-        if pyglet.options.dpi_scaling == "stretch":
-            bounds = view.convertRectToBacking_(bounds)
+        bounds = view.convertRectToBacking_(bounds)
         return int(bounds.size.width), int(bounds.size.height)
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
 
-        if pyglet.options.dpi_scaling != "real":
+        if pyglet.options.dpi_scaling == "real":
             screen_scale = self._nswindow.backingScaleFactor()
             frame_width, frame_height = width // screen_scale, height // screen_scale
         else:
