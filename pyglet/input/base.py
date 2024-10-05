@@ -690,24 +690,31 @@ class Controller(EventDispatcher):
 
     def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
+
+        print(control, relation)
+
+        _vecs = ((0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (1.0, -1.0), (0.0, -1.0), (-1.0, -1.0), (-1.0, 0.0), (-1.0, 1.0))
+        _input_map = {key: val for key, val in zip(range(control.min, control.max + 1), _vecs)}
+
         @control.event
         def on_change(value):
-            if value & 0xffff == 0xffff:
-                self.dpadx = self.dpady = 0.0
-            else:
-                if control.max > 8:  # DirectInput: scale value
-                    value //= 0xfff
-
-                self.dpadx, self.dpady = {
-                    0: (0.0, 1.0),          # north
-                    1: (1.0, 1.0),          # north-east
-                    2: (1.0, 0.0),          # east
-                    3: (1.0, -1.0),         # south-east
-                    4: (0.0, -1.0),         # south
-                    5: (-1.0, -1.0),        # south-west
-                    6: (-1.0, 0.0),         # west
-                    7: (-1.0, 1.0)          # north-west
-                }.get(value, (0.0, 0.0))    # out of range
+            self.dpadx, self.dpady = _input_map.get(value, (0.0, 0.0))
+            # if value & 0xffff == 0xffff:
+            #     self.dpadx = self.dpady = 0.0
+            # else:
+            #     if control.max > 8:  # DirectInput: scale value
+            #         value //= 0xfff
+            #
+            #     self.dpadx, self.dpady = {
+            #         0: (0.0, 1.0),          # north
+            #         1: (1.0, 1.0),          # north-east
+            #         2: (1.0, 0.0),          # east
+            #         3: (1.0, -1.0),         # south-east
+            #         4: (0.0, -1.0),         # south
+            #         5: (-1.0, -1.0),        # south-west
+            #         6: (-1.0, 0.0),         # west
+            #         7: (-1.0, 1.0)          # north-west
+            #     }.get(value, (0.0, 0.0))    # out of range
 
             self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
