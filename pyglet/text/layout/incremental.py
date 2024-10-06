@@ -887,10 +887,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         msg = '`anchor_x` must be either "left", "center", or "right".'
         raise Exception(msg)
 
-    def get_line_count(self) -> int:
-        """Get the number of lines in the text layout."""
-        return self._line_count
-
     def ensure_line_visible(self, line_idx: int) -> None:
         """Adjust `view_y` so that the line with the given index is visible."""
         line = self.lines[line_idx]

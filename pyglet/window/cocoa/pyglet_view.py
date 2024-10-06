@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 from typing import TYPE_CHECKING
 
 import pyglet
@@ -246,24 +247,9 @@ class PygletView_Implementation:
         else:
             self._window.dispatch_event('on_key_release', symbol, modifiers)
 
-    # Overriding this method helps prevent system beeps for unhandled events.
-    @PygletView.method('B@')
-    def performKeyEquivalent_(self, nsevent: cocoapy.ObjCInstance) -> bool:
-        # Let arrow keys and certain function keys pass through the responder
-        # chain so that the textview can handle on_text_motion events.
-        modifierFlags = nsevent.modifierFlags()
-        if modifierFlags & cocoapy.NSNumericPadKeyMask:
-            return False
-        if modifierFlags & cocoapy.NSFunctionKeyMask:
-            ch = cocoapy.cfstring_to_string(nsevent.charactersIgnoringModifiers())
-            if ch in (cocoapy.NSHomeFunctionKey, cocoapy.NSEndFunctionKey,
-                      cocoapy.NSPageUpFunctionKey, cocoapy.NSPageDownFunctionKey):
-                return False
-        # Send the key equivalent to the main menu to perform menu items.
-        NSApp = cocoapy.ObjCClass('NSApplication').sharedApplication()
-        NSApp.mainMenu().performKeyEquivalent_(nsevent)
-        # Indicate that we've handled the event so system won't beep.
-        return True
+    @PygletView.method('v:')
+    def doCommandBySelector_(self, selector: ctypes.c_void_p) -> None:
+        """Prevent system beeps when an event or key is not handled."""
 
     @PygletView.method('v@')
     def mouseMoved_(self, nsevent: cocoapy.ObjCInstance) -> None:

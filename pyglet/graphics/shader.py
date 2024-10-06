@@ -330,9 +330,10 @@ class _UniformArray:
     _dsa: bool
     _c_array: Array[GLDataType]
     _ptr: CTypesPointer[GLDataType]
-    _uniform: _Uniform
+    _idx_to_loc: dict[int, int]
 
-    __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr')
+    __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr',
+                 '_idx_to_loc')
 
     def __init__(self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
                  dsa: bool) -> None:
@@ -341,6 +342,7 @@ class _UniformArray:
         self._gl_getter = gl_getter
         self._gl_setter = gl_setter
         self._is_matrix = is_matrix
+        self._idx_to_loc = {}  # Array index to uniform location mapping.
         self._dsa = dsa
 
         if self._uniform.length > 1:
@@ -349,6 +351,31 @@ class _UniformArray:
             self._c_array = (gl_type * self._uniform.size)()
 
         self._ptr = cast(self._c_array, POINTER(gl_type))
+
+    def _get_location_for_index(self, index: int) -> int:
+        """Get the location for the array name.
+
+        It is not guaranteed that the location ID's of the uniform in the shader program will be a contiguous offset.
+
+        On MacOS, the location ID of index 0 may be 1, and then index 2 might be 5. Whereas on Windows it may be a 1:1
+        offset from 0 to index. Here, we store the location ID's of each index to ensure we are setting data on the
+        right location.
+        """
+        loc = gl.glGetUniformLocation(self._uniform.program,
+                                create_string_buffer(f"{self._uniform.name}[{index}]".encode('utf-8')))
+        return loc
+
+    def _get_array_loc(self, index: int) -> int:
+        try:
+            return self._idx_to_loc[index]
+        except KeyError:
+            loc = self._idx_to_loc[index] = self._get_location_for_index(index)
+
+        if loc == -1:
+            msg = f"{self._uniform.name}[{index}] not found.\nThis may have been optimized out by the OpenGL driver if unused."
+            raise ShaderException(msg)
+
+        return loc
 
     def __len__(self) -> int:
         return self._uniform.size
@@ -366,8 +393,12 @@ class _UniformArray:
 
             return tuple([data for data in sliced_data])  # noqa: C416
 
-        value = self._c_array[key]
-        return tuple(value) if self._uniform.length > 1 else value
+        try:
+            value = self._c_array[key]
+            return tuple(value) if self._uniform.length > 1 else value
+        except IndexError:
+            msg = f"{self._uniform.name}[{key}] not found. This may have been optimized out by the OpenGL driver if unused."
+            raise ShaderException(msg)
 
     def __setitem__(self, key: slice | int, value: Sequence) -> None:
         if isinstance(key, slice):
@@ -404,17 +435,19 @@ class _UniformArray:
         else:
             size = self._uniform.size
 
+        location = self._get_location_for_index(offset)
+
         if self._dsa:
             if self._is_matrix:
-                self._gl_setter(self._uniform.program, self._uniform.location + offset, size, GL_FALSE, data)
+                self._gl_setter(self._uniform.program, location, size, GL_FALSE, data)
             else:
-                self._gl_setter(self._uniform.program, self._uniform.location + offset, size, data)
+                self._gl_setter(self._uniform.program, location, size, data)
         else:
             glUseProgram(self._uniform.program)
             if self._is_matrix:
-                self._gl_setter(self._uniform.location + offset, size, GL_FALSE, data)
+                self._gl_setter(location, size, GL_FALSE, data)
             else:
-                self._gl_setter(self._uniform.location + offset, size, data)
+                self._gl_setter(location, size, data)
 
     def __repr__(self) -> str:
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
@@ -433,13 +466,15 @@ class _Uniform:
     size: int
     location: int
     program: int
+    name: str
     length: int
     get: Callable[[], Array[GLDataType] | GLDataType]
     set: Callable[[float], None] | Callable[[Sequence], None]
 
-    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program'
+    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program', 'name'
 
-    def __init__(self, program: int, uniform_type: int, size: int, location: int, dsa: bool) -> None:
+    def __init__(self, program: int, name: str, uniform_type: int, size: int, location: int, dsa: bool) -> None:
+        self.name = name
         self.type = uniform_type
         self.size = size
         self.location = location
@@ -707,6 +742,8 @@ class UniformBlock:
         dynamic_structs = {}
         p_count = 0
 
+        rep_func = lambda s: str(dict(s._fields_))
+
         def build_ctypes_struct(name: str, struct_dict: dict) -> type:
             fields = []
             for field_name, field_type in struct_dict.items():
@@ -722,7 +759,7 @@ class UniformBlock:
                     continue
                 fields.append((field_name, field_type))
 
-            return type(name.title(), (Structure,), {"_fields_": fields})
+            return type(name.title(), (Structure,), {"_fields_": fields, "__repr__": rep_func})
 
         # Build a ctypes Structure of the uniforms including arrays and nested structures.
         for i in range(active_count):
@@ -959,7 +996,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
             u_name = u_name.strip('[0]')
 
         assert u_name not in uniforms, f"{u_name} exists twice in the shader. Possible name clash with an array."
-        uniforms[u_name] = _Uniform(program_id, u_type, u_size, loc, have_dsa)
+        uniforms[u_name] = _Uniform(program_id, u_name, u_type, u_size, loc, have_dsa)
 
     if _debug_gl_shaders:
         for uniform in uniforms.values():
