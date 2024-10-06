@@ -160,7 +160,7 @@ class PygletDelegate_Implementation:
 
                 currentFrame = self._window._nswindow.frame()
 
-                if pyglet.options.dpi_scaling != "real":
+                if pyglet.options.dpi_scaling == "real":
                     screen_scale = new_scale
                     w, h = self._window.get_requested_size()
                     width, height = int(w / screen_scale), int(h / screen_scale)
