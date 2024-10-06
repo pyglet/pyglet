@@ -155,7 +155,9 @@ class CocoaAlternateEventLoop(EventLoop):
 class CocoaPlatformEventLoop(PlatformEventLoop):
 
     def __init__(self):
-        super(CocoaPlatformEventLoop, self).__init__()
+        super().__init__()
+        self._timer = None
+
         with AutoReleasePool():
             # Prepare the default application.
             self.NSApp = NSApplication.sharedApplication()
@@ -182,6 +184,18 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
 
             self._finished_launching = False
 
+        def term_received(*args):
+            if self._timer:
+                self._timer.invalidate()
+                self._timer = None
+
+            if self.NSApp:
+                self.NSApp.terminate_(None)
+
+        # Force NSApp to close if Python receives sig events.
+        signal.signal(signal.SIGINT, term_received)
+        signal.signal(signal.SIGTERM, term_received)
+
     def start(self):
         with AutoReleasePool():
             if not self.NSApp.isRunning() and not self._finished_launching:
@@ -196,19 +210,9 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
         from pyglet.app import event_loop
         self._event_loop = event_loop
 
-        def term_received(*args):
-            if self.timer:
-                self.timer.invalidate()
-                self.timer = None
+        assert self._timer is None
 
-            if self.NSApp:
-                self.NSApp.terminate_(None)
-
-        # Force NSApp to close if Python receives sig events.
-        signal.signal(signal.SIGINT, term_received)
-        signal.signal(signal.SIGTERM, term_received)
-
-        self.timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+        self._timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
             interval,  # Clamped internally to 0.0001 (including 0)
             self.appdelegate,
             get_selector('updatePyglet:'),
@@ -227,6 +231,10 @@ class CocoaPlatformEventLoop(PlatformEventLoop):
     def nsapp_stop(self):
         """Used only for CocoaAlternateEventLoop"""
         self.NSApp.stop_(None)
+
+        if self._timer:
+            self._timer.invalidate()
+            self._timer = None
 
     def step(self, timeout=None):
         with AutoReleasePool():
