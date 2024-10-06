@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyglet.gl import GL_TRIANGLES, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from pyglet.gl import GL_TRIANGLE_STRIP, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
     from pyglet.image import AbstractImage, Animation
     from pyglet.graphics import Batch, Group
+    from pyglet.text.layout import TextLayout
 
 
 class NinePatch(Sprite):
@@ -18,7 +19,9 @@ class NinePatch(Sprite):
     the aspect of the edges. This is not a "real" nine-patch, as it
     does not look for any embedded markers in the image data. Instead,
     it simply splits the source image into 9 equally sized segments,
-    and stretches the center segments to allow dynamic sizing.
+    and stretches the center segments to allow dynamic sizing. Make
+    sure your input images do not have any transparent borders, as
+    this can affect the final size.
 
     NinePatch is a subclass of :py:class:`~pyglet.sprite.Sprite`,
     and shares most of the same API. The exception is that scaling
@@ -66,6 +69,49 @@ class NinePatch(Sprite):
         self._height = max(height, img.height)
         super().__init__(img, x, y, z, blend_src, blend_dest, batch, group)
 
+    @classmethod
+    def create_around_layout(cls,
+                             img: AbstractImage | Animation,
+                             layout: TextLayout,
+                             border: int = 0,
+                             blend_src: int = GL_SRC_ALPHA,
+                             blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                             batch: Batch | None = None,
+                             group: Group | None = None):
+        """Given a Label, create a NinePatch instance sized to surround it.
+
+        A NinePatch instance will be created that is sized to the Layout's left, bottom,
+        right, and top attributes. This happens at the time of creation, and is not dynamic.
+
+        The NinePatch's ``z`` position will be set to the Layout's ``z`` position - 1. This
+        will help ensure the NinePatch renders below the label *if* OpenGL depth testing is
+        enabled. If not, you should provide a Group with a proper ordering to ensure the
+        correct rendering order.
+
+        Args:
+            img:
+                The Image to split into segments.
+            layout:
+                A pyglet Label or Layout instance to query the size from.
+            border:
+                Additional padding, in pixels, to place around the label.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            batch:
+                Optional batch to add the NinePatch to.
+            group:
+                Optional parent group of the NinePatch.
+        """
+
+        x = layout.left - border
+        y = layout.bottom - border
+        z = layout.z - 1
+        width = int(layout.right - x + border)
+        height = int(layout.top - y + border)
+        return cls(img, x, y, z, width, height, blend_src, blend_dest, batch, group)
+
     def _create_vertex_list(self) -> None:
         # Vertex layout for 9 quads:
         #
@@ -77,6 +123,11 @@ class NinePatch(Sprite):
         #   |  /  |  /  |  /  |
         #   0-----1-----2-----3
 
+        # Triangle strip indices, including degenerates (duplicates)
+        indices = (0, 0, 4, 1, 5, 2, 6, 3, 7,       # bottom row -->
+                   11, 6, 10, 5, 9, 4, 8,           # center row <--
+                   12, 9, 13, 10, 14, 11, 15, 15)   # upper row  -->
+
         # Get the 1/3 size of texture width & height:
         uv_x, uv_y, uv_w, uv_h = self._texture.uv
         seg_w = (uv_w - uv_x) / 3
@@ -85,13 +136,8 @@ class NinePatch(Sprite):
         # Create new UV coordinates for each of the 9 quads:
         uvs = [i for v in range(4) for h in range(4) for i in (uv_x + seg_w * h, uv_y + seg_h * v, 0)]
 
-        # Indices for 18 triangles, to make 9 quads:
-        indices = (0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6,
-                   4, 5, 9, 4, 9, 8, 5, 6, 10, 5, 10, 9, 6, 7, 11, 6, 11, 10,
-                   8, 9, 13, 8, 13, 12, 9, 10, 14, 9, 14, 13, 10, 11, 15, 10, 15, 14)
-
         self._vertex_list = self.program.vertex_list_indexed(
-            16, GL_TRIANGLES, indices, self._batch, self._group,
+            16, GL_TRIANGLE_STRIP, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', (*self._rgb, int(self._opacity)) * 16),
             translate=('f', (self._x, self._y, self._z) * 16),
@@ -106,23 +152,23 @@ class NinePatch(Sprite):
             img = self._texture
             edge_width = img.width / 3
             edge_height = img.height / 3
-            center_width = self._width - edge_width * 2
-            center_height = self._height - edge_height * 2
+            center_width = self._width - edge_width - edge_width
+            center_height = self._height - edge_height - edge_height
 
             x0 = -img.anchor_x
-            y0 = -img.anchor_y
             x1 = x0 + edge_width
             x2 = x1 + center_width
             x3 = x2 + edge_width
-            y4 = y0 + edge_height
-            y8 = y4 + center_height
-            y12 = y8 + edge_height
+            y0 = -img.anchor_y
+            y1 = y0 + edge_height
+            y2 = y1 + center_height
+            y3 = y2 + edge_height
             z = 0   # handled by translate attribute
 
             return (x0, y0, z, x1, y0, z, x2, y0, z, x3, y0, z,
-                    x0, y4, z, x1, y4, z, x2, y4, z, x3, y4, z,
-                    x0, y8, z, x1, y8, z, x2, y8, z, x3, y8, z,
-                    x0, y12, z, x1, y12, z, x2, y12, z, x3, y12, z)
+                    x0, y1, z, x1, y1, z, x2, y1, z, x3, y1, z,
+                    x0, y2, z, x1, y2, z, x2, y2, z, x3, y2, z,
+                    x0, y3, z, x1, y3, z, x2, y3, z, x3, y3, z)
 
     @property
     def position(self) -> tuple[float, float, float]:
