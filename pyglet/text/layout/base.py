@@ -1981,3 +1981,7 @@ class TextLayout:
                       anchor_y, context)
             i += box.length
             acc_anchor_x += box.advance
+
+    def get_line_count(self) -> int:
+        """Get the number of lines in the text layout."""
+        return self._line_count
