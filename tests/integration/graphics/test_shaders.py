@@ -364,13 +364,86 @@ def test_shader_uniform_matrix():
         in vec3 texture_coords;
         out vec4 final_colors;
 
-        uniform mat4 matrice_array[5];
+        uniform mat4 matrix_uniform;
 
         uniform sampler2D sprite_texture;
 
         void main()
         {
-            final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors + matrice_array[1][0];
+            final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors + matrix_uniform[1];
+        }
+    """
+
+    program = pyglet.graphics.shader.ShaderProgram(
+        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
+        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    )
+    test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
+
+    with program:
+        program['matrix_uniform'] = tuple(test_data)
+        
+    with program:
+        fetched_data = program['matrix_uniform']
+
+    # Float imprecision's will become apparent, use approx instead...
+    for a, b in zip(fetched_data, tuple(test_data)):
+        assert a == pytest.approx(b)
+
+
+def test_shader_uniform_matrix_array():
+    vertex_source: str = """#version 150 core
+        in vec3 translate;
+        in vec4 colors;
+        in vec3 tex_coords;
+        in vec2 scale;
+        in vec3 position;
+        in float rotation;
+
+        out vec4 vertex_colors;
+        out vec3 texture_coords;
+
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
+
+        mat4 m_scale = mat4(1.0);
+        mat4 m_rotation = mat4(1.0);
+        mat4 m_translate = mat4(1.0);
+
+        void main()
+        {
+            m_scale[0][0] = scale.x;
+            m_scale[1][1] = scale.y;
+            m_translate[3][0] = translate.x;
+            m_translate[3][1] = translate.y;
+            m_translate[3][2] = translate.z;
+            m_rotation[0][0] =  cos(-radians(rotation)); 
+            m_rotation[0][1] =  sin(-radians(rotation));
+            m_rotation[1][0] = -sin(-radians(rotation));
+            m_rotation[1][1] =  cos(-radians(rotation));
+
+            gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
+
+            vertex_colors = colors;
+            texture_coords = tex_coords;
+        }
+    """
+
+    fragment_source: str = """#version 150 core
+        in vec4 vertex_colors;
+        in vec3 texture_coords;
+        out vec4 final_colors;
+
+        uniform mat4 matrice_array[25];
+
+        uniform sampler2D sprite_texture;
+
+        void main()
+        {
+            final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors + matrice_array[18][0];
         }
     """
 
@@ -382,13 +455,85 @@ def test_shader_uniform_matrix():
 
     with program:
         # Set test data
-        program['matrice_array'][1] = test_data
-        
+        program['matrice_array'][18] = tuple(test_data)
+
     with program:
         # fetch from uniform itself.
         fetched_data = program['matrice_array'].get()
 
     # Float imprecision's will become apparent, use approx instead...
-    for a, b in zip(fetched_data[1], tuple(test_data)):
+    for a, b in zip(fetched_data[18], tuple(test_data)):
         assert a == pytest.approx(b)
+
+def test_shader_uniform_float_array():
+    vertex_source: str = """#version 150 core
+        in vec3 translate;
+        in vec4 colors;
+        in vec3 tex_coords;
+        in vec2 scale;
+        in vec3 position;
+        in float rotation;
+
+        out vec4 vertex_colors;
+        out vec3 texture_coords;
+
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
+
+        mat4 m_scale = mat4(1.0);
+        mat4 m_rotation = mat4(1.0);
+        mat4 m_translate = mat4(1.0);
+
+        void main()
+        {
+            m_scale[0][0] = scale.x;
+            m_scale[1][1] = scale.y;
+            m_translate[3][0] = translate.x;
+            m_translate[3][1] = translate.y;
+            m_translate[3][2] = translate.z;
+            m_rotation[0][0] =  cos(-radians(rotation)); 
+            m_rotation[0][1] =  sin(-radians(rotation));
+            m_rotation[1][0] = -sin(-radians(rotation));
+            m_rotation[1][1] =  cos(-radians(rotation));
+
+            gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
+
+            vertex_colors = colors;
+            texture_coords = tex_coords;
+        }
+    """
+
+    fragment_source: str = """#version 150 core
+        in vec4 vertex_colors;
+        in vec3 texture_coords;
+        out vec4 final_colors;
+
+        uniform float float_array[15];
+
+        uniform sampler2D sprite_texture;
+
+        void main()
+        {
+            final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors + float_array[11];
+        }
+    """
+
+    program = pyglet.graphics.shader.ShaderProgram(
+        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
+        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    )
+    test_data = 25.5
+
+    with program:
+        # Set test data
+        program['float_array'][11] = test_data
+
+    with program:
+        # fetch from uniform itself.
+        fetched_data = program['float_array'][11]
+
+    assert test_data == fetched_data
 
