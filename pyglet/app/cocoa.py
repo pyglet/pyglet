@@ -6,25 +6,7 @@ from pyglet.app.base import PlatformEventLoop, EventLoop
 from pyglet.libs.darwin import cocoapy, AutoReleasePool, ObjCSubclass, PyObjectEncoding, ObjCInstance, send_super, \
     ObjCClass, get_selector
 
-
-class PygletNSApplication_Implementation:
-
-    _F_KEYS = (cocoapy.NSF1, cocoapy.NSF2, cocoapy.NSF3, cocoapy.NSF4, cocoapy.NSF5, cocoapy.NSF6, cocoapy.NSF7,
-               cocoapy.NSF8, cocoapy.NSF9, cocoapy.NSF10, cocoapy.NSF11, cocoapy.NSF12, cocoapy.NSF13, cocoapy.NSF14,
-               cocoapy.NSF15, cocoapy.NSF16, cocoapy.NSF17, cocoapy.NSF18, cocoapy.NSF19, cocoapy.NSF20)
-
-    PygletNSApplication = ObjCSubclass('NSApplication', 'PygletNSApplication')
-
-    @PygletNSApplication.method('v@')
-    def sendEvent_(self, nsevent):
-        if nsevent.type() == cocoapy.NSKeyDown:
-            key_code = nsevent.keyCode()
-            if key_code in PygletNSApplication_Implementation._F_KEYS:
-                self.keyWindow().sendEvent_(nsevent)
-                return
-        ObjCInstance(send_super(self, 'sendEvent:', nsevent, superclass_name='NSApplication'))
-
-NSApplication = cocoapy.ObjCClass('PygletNSApplication')
+NSApplication = cocoapy.ObjCClass('NSApplication')
 NSMenu = cocoapy.ObjCClass('NSMenu')
 NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
 NSDate = cocoapy.ObjCClass('NSDate')

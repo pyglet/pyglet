@@ -229,28 +229,6 @@ NSKeyUp              = 11
 NSFlagsChanged       = 12
 NSApplicationDefined = 15
 
-# Function keys codes
-NSF1 = 122
-NSF2 = 120
-NSF3 = 99
-NSF4 = 118
-NSF5 = 96
-NSF6 = 97
-NSF7 = 98
-NSF8 = 100
-NSF9 = 101
-NSF10 = 109
-NSF11 = 103
-NSF12 = 111
-NSF13 = 105
-NSF14 = 107
-NSF15 = 113
-NSF16 = 106
-NSF17 = 64
-NSF18 = 79
-NSF19 = 80
-NSF20 = 90
-
 # Undocumented left/right modifier masks found by experimentation:
 NSLeftShiftKeyMask = 1 << 1
 NSRightShiftKeyMask = 1 << 2
