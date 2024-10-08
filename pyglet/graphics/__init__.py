@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import ctypes
 import weakref
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence, Tuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import pyglet
 from pyglet.gl.gl import (
@@ -233,6 +234,7 @@ _blit_fragment_source: str = """#version 330 core
     }
 """
 
+
 def get_default_batch() -> Batch:
     """Batch used globally for objects that have no Batch specified."""
     try:
@@ -253,6 +255,7 @@ def get_default_shader() -> ShaderProgram:
         pyglet.gl.current_context.object_space.pyglet_graphics_default_shader = _shader_program
         return pyglet.gl.current_context.object_space.pyglet_graphics_default_shader
 
+
 def get_default_blit_shader() -> ShaderProgram:
     """A default basic shader for blitting, provides no blending."""
     try:
@@ -264,6 +267,7 @@ def get_default_blit_shader() -> ShaderProgram:
         pyglet.gl.current_context.object_space.pyglet_graphics_default_blit_shader = _shader_program
         return pyglet.gl.current_context.object_space.pyglet_graphics_default_blit_shader
 
+
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     # Indexed, Instanced : Domain
     (False, False): vertexdomain.VertexDomain,
@@ -273,6 +277,7 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
 }
 
 DomainKey = Tuple[bool, int, int, str]
+
 
 class Batch:
     """Manage a collection of drawables for batched rendering.
@@ -600,6 +605,12 @@ class Batch:
                 visit(top_group)
 
 
+@dataclass
+class GLState:  # noqa: D101
+    func: Union[Callable, Any]  # noqa: UP007
+    args: tuple = ()
+
+
 class Group:
     """Group of common OpenGL state.
 
@@ -637,6 +648,12 @@ class Group:
         self.parent = parent
         self._visible = True
         self._assigned_batches = weakref.WeakSet()
+        self.set_states = []
+        self.unset_states = []
+        self.initialize()
+
+    def initialize(self) -> None:
+        """Assign any states to set_states and unset_states."""
 
     @property
     def order(self) -> int:

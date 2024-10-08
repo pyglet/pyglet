@@ -7,6 +7,7 @@ from . import canvas as canvas
 from . import clock as clock
 from . import customtypes as customtypes
 from . import event as event
+from . import experimental as experimental
 from . import font as font
 from . import gl as gl
 from . import graphics as graphics
