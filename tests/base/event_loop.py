@@ -6,7 +6,7 @@ import pytest
 
 import pyglet
 from pyglet import clock
-from pyglet import gl
+from pyglet.graphics.api import gl
 from pyglet.graphics import Batch
 from pyglet.text.document import FormattedDocument
 from pyglet.text.layout import TextLayout

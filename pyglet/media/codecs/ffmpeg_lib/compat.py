@@ -17,6 +17,7 @@ release_versions = {
     4: {'avcodec': 58, 'avformat': 58, 'avutil': 56, 'swresample': 3, 'swscale': 5},  # 4.x
     5: {'avcodec': 59, 'avformat': 59, 'avutil': 57, 'swresample': 4, 'swscale': 6},  # 5.x
     6: {'avcodec': 60, 'avformat': 60, 'avutil': 58, 'swresample': 4, 'swscale': 7},  # 6.x
+    7: {'avcodec': 61, 'avformat': 61, 'avutil': 59, 'swresample': 5, 'swscale': 8},  # 7.x
 }
 
 # Removals done per library and version.

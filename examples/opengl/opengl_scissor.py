@@ -8,7 +8,7 @@ outside the specified area. Drag the mouse to move the position.
 import pyglet
 
 from pyglet.sprite import Sprite
-from pyglet.gl import glEnable, glScissor, glDisable, GL_SCISSOR_TEST
+from pyglet.graphics.api.gl import glEnable, glScissor, glDisable, GL_SCISSOR_TEST
 
 
 window = pyglet.window.Window(width=500, height=500)
@@ -63,7 +63,7 @@ class ScissorGroup(pyglet.graphics.Group):
 
     def set_state(self):
         glEnable(GL_SCISSOR_TEST)
-        glScissor(self.x, self.y, self.width, self.height)
+        glScissor(int(self.x), int(self.y), self.width, self.height)
 
     def unset_state(self):
         glDisable(GL_SCISSOR_TEST)

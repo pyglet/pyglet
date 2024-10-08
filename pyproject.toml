@@ -60,6 +60,7 @@ ignore = [
     "FIX002",  # Fixme
     "TD003",  # Missing issue link on the line following this TODO"
     "T201",   # allow writing print
+    "I001",  # remove after refactors.
 ]
 
 [tool.ruff.lint.isort]
@@ -92,7 +93,6 @@ indent-style = "space"
 "pyglet/gui/*" = ["ARG002"]
 "pyglet/libs/*" = ["RUF012", "D", "N", "ARG"]
 "pyglet/lib.py" = ["ANN", "ARG002", "T201"]
-"pyglet/gl/*" = ["N816", "I001", "N801", "E501", "D"]
 "pyglet/__init__.py" = ["PGH003"]
 "examples/*" = [
     "I",
@@ -112,3 +112,5 @@ indent-style = "space"
     "F405",
 ]
 "tests/*" = ["I", "E", "F", "D", "B", "W", "S", "ANN", "ARG"]
+#"vulkan/*" =
+"pyglet/graphics/api/vulkan/vulkan_lib/vulkan_core.py" = ["ALL"]

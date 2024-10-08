@@ -3,7 +3,7 @@ import pytest
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import window
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 
 
 @pytest.mark.requires_user_validation

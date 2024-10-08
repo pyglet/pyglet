@@ -51,16 +51,16 @@ from __future__ import annotations
 
 import os
 import sys
-import zipfile
 import weakref
-
+import zipfile
 from io import BytesIO, StringIO
-from typing import TYPE_CHECKING, IO
+from typing import IO, TYPE_CHECKING
 
 import pyglet
 
 if TYPE_CHECKING:
     from typing import Literal
+
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import Shader
     from pyglet.image import AbstractImage, Texture, TextureRegion
@@ -428,8 +428,8 @@ class Loader:
                 bytes_ = bytes(volume.read())
 
             volume_index = 2
-            while os.path.exists(pathname + '.{0:0>3}'.format(volume_index)):
-                with open(pathname + '.{0:0>3}'.format(volume_index), 'rb') as volume:
+            while os.path.exists(pathname + f'.{volume_index:0>3}'):
+                with open(pathname + f'.{volume_index:0>3}', 'rb') as volume:
                     bytes_ += bytes(volume.read())
 
                 volume_index += 1

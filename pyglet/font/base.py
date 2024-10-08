@@ -8,10 +8,18 @@ from __future__ import annotations
 
 import abc
 import unicodedata
-from typing import BinaryIO, ClassVar
+from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
-from pyglet import image
-from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
+from pyglet.image import Texture, TextureRegion, atlas
+from pyglet.image.base import (
+    ComponentFormat,
+    TextureDescriptor,
+    TextureFilter,
+    TextureInternalFormat,
+)
+
+if TYPE_CHECKING:
+    from pyglet.image import AbstractImage
 
 _other_grapheme_extend = list(map(chr, [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
                                         0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
@@ -101,7 +109,7 @@ def get_grapheme_clusters(text: str) -> list[str]:
     return clusters
 
 
-class Glyph(image.TextureRegion):
+class Glyph(TextureRegion):
     """A single glyph located within a larger texture.
 
     Glyphs are drawn most efficiently using the higher level APIs.
@@ -143,42 +151,40 @@ class Glyph(image.TextureRegion):
             -baseline + self.height + y_offset)
 
 
-class GlyphTexture(image.Texture):
+class GlyphTexture(Texture):
     """A texture containing a glyph."""
     region_class = Glyph
 
 
-class GlyphTextureAtlas(image.atlas.TextureAtlas):
+class GlyphTextureAtlas(atlas.TextureAtlas):
     """A texture atlas containing many glyphs."""
     texture_class = GlyphTexture
 
-    def __init__(self, width: int = 2048, height: int = 2048, fmt: int = GL_RGBA, min_filter: int = GL_LINEAR,  # noqa: D107
-                 mag_filter: int = GL_LINEAR) -> None:
+    def __init__(self, width: int = 2048, height: int = 2048, descriptor: TextureDescriptor | None = None) -> None:
         super().__init__(width, height)
-        self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter, fmt=fmt)
-        self.allocator = image.atlas.Allocator(width, height)
+        self.texture = self.texture_class.create(width, height, descriptor)
+        self.allocator = atlas.Allocator(width, height)
 
-    def add(self, img: image.AbstractImage, border: int = 0) -> Glyph:
+    def add(self, img: AbstractImage, border: int = 0) -> Glyph:
         return super().add(img, border)
 
 
-class GlyphTextureBin(image.atlas.TextureBin):
+class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: image.AbstractImage, fmt: int = GL_RGBA, min_filter: int = GL_LINEAR,
-            mag_filter: int = GL_LINEAR, border: int = 0) -> Glyph:
-        for atlas in list(self.atlases):
+    def add(self, img: AbstractImage, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
+        for glyph_atlas in list(self.atlases):
             try:
-                return atlas.add(img, border)
-            except image.atlas.AllocatorException:  # noqa: PERF203
+                return glyph_atlas.add(img, border)
+            except atlas.AllocatorException:  # noqa: PERF203
                 # Remove atlases that are no longer useful (so that their textures
                 # can later be freed if the images inside them get collected).
                 if img.width < 64 and img.height < 64:
-                    self.atlases.remove(atlas)
+                    self.atlases.remove(glyph_atlas)
 
-        atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, fmt, min_filter, mag_filter)
-        self.atlases.append(atlas)
-        return atlas.add(img, border)
+        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, descriptor)
+        self.atlases.append(glyph_atlas)
+        return glyph_atlas.add(img, border)
 
 
 class GlyphRenderer(abc.ABC):
@@ -230,14 +236,8 @@ class Font:
              pre-calculate how many glyphs can be saved into a single texture atlas. Increase this if you plan to
              support more than this standard scenario. Performance is increased the less textures are used. However,
              it does consume more video memory.
-        texture_internalformat:
-            Determines how textures are stored in internal format. By default, ``GL_RGBA``.
-        texture_min_filter:
-            The default minification filter for glyph textures. By default, ``GL_LINEAR``. Can be changed to
-            ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
-        texture_mag_filter:
-            The default magnification filter for glyph textures. By default, ``GL_LINEAR``. Can be changed to
-            ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
+        default_descriptor:
+            The default Texture description of the atlas and font.
     """
     #: :meta private:
     glyphs: dict[str, Glyph]
@@ -248,9 +248,11 @@ class Font:
     optimize_fit: int = True
     glyph_fit: int = 100
 
-    texture_internalformat: int = GL_RGBA
-    texture_min_filter: int = GL_LINEAR
-    texture_mag_filter: int = GL_LINEAR
+    default_descriptor = TextureDescriptor(
+        min_filter=TextureFilter.LINEAR,
+        mag_filter=TextureFilter.LINEAR,
+        internal_format=TextureInternalFormat(ComponentFormat.RGBA),
+    )
 
     # These should also be set by subclass when known
     ascent: int = 0
@@ -297,7 +299,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, img: image.AbstractImage, fmt: int | None = None) -> Glyph:
+    def create_glyph(self, img: AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -309,18 +311,17 @@ class Font:
         Args:
             img:
                 The image to write to the font texture.
-            fmt:
-                Override for the format and internalformat of the atlas texture. None will use default.
+            descriptor:
+                Override for the atlas texture's descriptor. None will use default.
         """
         if self.texture_bin is None:
             if self.optimize_fit:
                 self.texture_width, self.texture_height = self._get_optimal_atlas_size(img)
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
-        return self.texture_bin.add(
-            img, fmt or self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
+        return self.texture_bin.add(img, descriptor or self.default_descriptor, border=1)
 
-    def _get_optimal_atlas_size(self, image_data: image.AbstractImage) -> tuple[int, int]:
+    def _get_optimal_atlas_size(self, image_data: AbstractImage) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
         # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
         # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)

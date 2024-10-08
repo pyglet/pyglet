@@ -523,6 +523,12 @@ quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
 quartz.CGContextSetShouldAntialias.restype = None
 quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
 
+quartz.CGContextTranslateCTM.argtypes = [c_void_p, CGFloat, CGFloat]
+quartz.CGContextTranslateCTM.restype = None
+
+quartz.CGContextScaleCTM.argtypes = [c_void_p, CGFloat, CGFloat]
+quartz.CGContextScaleCTM.restype = None
+
 ######################################################################
 
 # CORETEXT

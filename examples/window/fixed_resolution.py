@@ -13,7 +13,7 @@ The method used in this example is:
 
 import pyglet
 
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 
 
 class FixedResolution:

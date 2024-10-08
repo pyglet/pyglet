@@ -213,7 +213,6 @@ charmap = {
     '!': key.EXCLAMATION,
     '"': key.DOUBLEQUOTE,
     '#': key.HASH,
-    '#': key.POUND,
     '$': key.DOLLAR,
     '%': key.PERCENT,
     '&': key.AMPERSAND,
@@ -248,7 +247,6 @@ charmap = {
     ']': key.BRACKETRIGHT,
     '^': key.ASCIICIRCUM,
     '_': key.UNDERSCORE,
-    '`': key.GRAVE,
     '`': key.QUOTELEFT,
     'A': key.A,
     'B': key.B,
@@ -279,5 +277,5 @@ charmap = {
     '{': key.BRACELEFT,
     '|': key.BAR,
     '}': key.BRACERIGHT,
-    '~': key.ASCIITILDE
+    '~': key.ASCIITILDE,
 }

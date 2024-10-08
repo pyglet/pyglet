@@ -1,24 +1,30 @@
 from __future__ import annotations
 
-from pyglet.gl import GL_TRIANGLES
-
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Sequence
+    from pyglet.model import Model
+    from pyglet.graphics import Batch, Group
 
 
-class Scene:
-    """Container for one or more Node objects."""
+class Scene(ABC):
+    """A high level container for one or more Node objects."""
 
     def __init__(self, nodes: list[Node] | None = None) -> None:
         self.nodes = nodes or []
 
-    def __iter__(self):
-        """Iterate over all Nodes and their children (if existing)."""
-        for top_node in self.nodes:
-            for node in top_node:
-                yield node
+    # TODO: test and implement:
+    # def __iter__(self):
+    #     """Iterate over all Nodes and their children (if existing)."""
+    #     for top_node in self.nodes:
+    #         for node in top_node:
+    #             yield node
+
+    def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
+        """TBD"""
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement this method.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(nodes={self.nodes})"
@@ -33,10 +39,11 @@ class Node:
         self.skins = skins or []
         self.cameras = cameras or []
 
-    def __iter__(self):
-        yield self
-        for child_node in self.nodes:
-            yield child_node
+    # TODO: test and implement:
+    # def __iter__(self):
+    #     yield self
+    #     for child_node in self.nodes:
+    #         yield child_node
 
     def __repr__(self):
         return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"
@@ -53,29 +60,43 @@ class Mesh:
         return f"Mesh(name='{self.name}', primitive_count={len(self.primitives)})"
 
 
+class Attribute:
+    def __init__(self, name: str, fmt: str, attr_type, count, array):
+        self.name = name
+        self.fmt = fmt
+        self.type = attr_type
+        self.count = count
+        self.array = array
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name='{self.name}', fmt={self.fmt}, type={self.type}, count={self.count})"
+
+
 class Primitive:
-    """Geometry information for a Mesh."""
-    def __init__(self, attributes: dict[str, Sequence[float]], indices: Sequence[int] | None = None,
-                 material: Material | None = None, mode: int = GL_TRIANGLES) -> None:
+    """Geometry to be rendered, with optional material."""
+    def __init__(self, attributes: list[Attribute], indices: Sequence[int] | None,
+                 mode: int, material: Material | None = None) -> None:
         self.attributes = attributes
         self.indices = indices
-        self.material = material
         self.mode = mode
+        self.material = material
 
     def __repr__(self):
         return f"Primitive(attributes={list(self.attributes)}, mode={self.mode})"
 
 
-class Material:
-    __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
+class Material(ABC):
+    """Base class for Material types"""
 
+
+class SimpleMaterial(Material):
     def __init__(self, name: str = "default",
                  diffuse: Sequence[float] = (0.8, 0.8, 0.8, 1.0),
                  ambient: Sequence[float] = (0.2, 0.2, 0.2, 1.0),
                  specular: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  emission: Sequence[float] = (0.0, 0.0, 0.0, 1.0),
                  shininess: float = 20,
-                 texture_name: str | None = None):
+                 texture_name: str | None = None) -> None:
 
         self.name = name
         self.diffuse = diffuse
@@ -85,20 +106,35 @@ class Material:
         self.shininess = shininess
         self.texture_name = texture_name
 
-    def __eq__(self, other: Material) -> bool:
-        return (self.name == other.name and self.diffuse == other.diffuse and
-                self.ambient == other.ambient and self.specular == other.specular and
-                self.emission == other.emission and self.shininess == other.shininess and
-                self.texture_name == other.texture_name)
-
-    def __hash__(self) -> int:
-        return hash((self.name, self.texture_name, tuple(self.diffuse), tuple(self.specular),
-                     tuple(self.ambient), tuple(self.emission), self.shininess, self.texture_name))
+    def __repr__(self):
+        return f"Material(name='{self.name}', texture='{self.texture_name}'"
 
 
-class Skin:
-    pass
+class PBRMaterial(Material):
+    def __init__(self):
+        # TODO: implement this class
+        pass
 
 
 class Camera:
-    pass
+    def __init__(self, camera_type: str, aspect: float, yfov: float,
+                 xmag: float, ymag: float, zfar: float, znear: float) -> None:
+        self.type = camera_type
+        # Perspective
+        self.aspect_ratio = aspect
+        self.yfov = yfov
+        # Orthographic
+        self.xmag = xmag
+        self.ymag = ymag
+        # Shared
+        self.zfar = zfar
+        self.znear = znear
+
+    def __repr__(self):
+        return f"Camera(type='{self.type}')"
+
+
+class Skin:
+    def __init__(self) -> None:
+        # TODO: implement this class
+        pass

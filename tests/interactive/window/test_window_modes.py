@@ -6,7 +6,7 @@ from tests.base.interactive import InteractiveTestCase
 from tests.interactive.window import window_util
 
 from pyglet import window
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 from pyglet.window.event import WindowEventLogger
 
 @pytest.mark.requires_user_validation

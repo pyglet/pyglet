@@ -72,60 +72,22 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 import pyglet
 from pyglet.extlibs import earcut
-from pyglet.gl import GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES, glBlendFunc, glDisable, glEnable
+from pyglet.graphics import GeometryMode
+
 from pyglet.graphics import Batch, Group
+from pyglet.enums import BlendFactor
 from pyglet.math import Vec2
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
-vertex_source = """#version 150 core
-    in vec2 position;
-    in vec2 translation;
-    in vec4 colors;
-    in float rotation;
 
-
-    out vec4 vertex_colors;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    mat4 m_rotation = mat4(1.0);
-    mat4 m_translate = mat4(1.0);
-
-    void main()
-    {
-        m_translate[3][0] = translation.x;
-        m_translate[3][1] = translation.y;
-        m_rotation[0][0] =  cos(-radians(rotation));
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
-        vertex_colors = colors;
-    }
-"""
-
-fragment_source = """#version 150 core
-    in vec4 vertex_colors;
-    out vec4 final_color;
-
-    void main()
-    {
-        final_color = vertex_colors;
-    }
-"""
-
-
-def get_default_shader() -> ShaderProgram:
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (fragment_source, 'fragment'))
-
+if pyglet.options.backend == "opengl":
+    from pyglet.graphics.api.gl.shapes import _ShapeGroup, get_default_shader
+elif pyglet.options.backend in ("gl2", "gles2"):
+    from pyglet.graphics.api.gl2.shapes import _ShapeGroup, get_default_shader
+elif pyglet.options.backend == "vulkan":
+    from pyglet.graphics.api.vulkan.shapes import _ShapeGroup, get_default_shader
 
 def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
     prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])
@@ -237,52 +199,7 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
     return v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1]
 
 
-class _ShapeGroup(Group):
-    """Shared Shape rendering Group.
 
-    The group is automatically coalesced with other shape groups
-    sharing the same parent group and blend parameters.
-    """
-
-    def __init__(self, blend_src: int, blend_dest: int, program: ShaderProgram, parent: Group | None = None) -> None:
-        """Create a Shape group.
-
-        The group is created internally. Usually you do not
-        need to explicitly create it.
-
-        Args:
-            blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
-            blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
-            program:
-                The ShaderProgram to use.
-            parent:
-                Optional parent group.
-        """
-        super().__init__(parent=parent)
-        self.program = program
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
-
-    def set_state(self) -> None:
-        self.program.bind()
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.unbind()
-
-    def __eq__(self, other: Group | _ShapeGroup) -> None:
-        return (other.__class__ is self.__class__ and
-                self.program == other.program and
-                self.parent == other.parent and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self) -> int:
-        return hash((self.program, self.parent, self.blend_src, self.blend_dest))
 
 
 class ShapeBase(ABC):
@@ -303,6 +220,7 @@ class ShapeBase(ABC):
     _visible: bool = True
     _x: float = 0.0
     _y: float = 0.0
+    _z: float = 0.0
     _anchor_x: float = 0.0
     _anchor_y: float = 0.0
     _batch: Batch | None = None
@@ -310,13 +228,13 @@ class ShapeBase(ABC):
     _num_verts: int = 0
     _user_group: Group | None = None
     _vertex_list = None
-    _draw_mode: int = GL_TRIANGLES
+    _draw_mode: GeometryMode = GeometryMode.TRIANGLES
     group_class: Group = _ShapeGroup
 
     def __init__(self,
                  vertex_count: int,
-                 blend_src: int = GL_SRC_ALPHA,
-                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
                  program: ShaderProgram | None = None,
@@ -329,7 +247,7 @@ class ShapeBase(ABC):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch object.
             group:
@@ -378,7 +296,7 @@ class ShapeBase(ABC):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
 
     def _update_translation(self) -> None:
-        self._vertex_list.translation[:] = (self._x, self._y) * self._num_verts
+        self._vertex_list.translation[:] = (self._x, self._y, self._z) * self._num_verts
 
     def _create_vertex_list(self) -> None:
         """Build internal vertex list.
@@ -406,7 +324,7 @@ class ShapeBase(ABC):
         raise NotImplementedError("_update_vertices must be defined for every ShapeBase subclass")
 
     @property
-    def blend_mode(self) -> tuple[int, int]:
+    def blend_mode(self) -> tuple[BlendFactor, BlendFactor]:
         """The current blend mode applied to this shape.
 
         .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
@@ -445,7 +363,7 @@ class ShapeBase(ABC):
         self._group = self.get_shape_group()
 
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_TRIANGLES, self._group, program)):
+                self._batch.update_shader(self._vertex_list, self._draw_mode, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -667,7 +585,7 @@ class ShapeBase(ABC):
 
         Opacity is implemented as the alpha component of a shape's
         :py:attr:`.color`. When part of a group with a default blend
-        mode of ``(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)``, opacities
+        mode of ``(GL_SRC_ALPHA, ONE_MINUS_SRC_ALPHA)``, opacities
         below ``255`` draw with fractional opacity over the background:
 
         .. list-table:: Example Values & Effects
@@ -766,8 +684,8 @@ class Arc(ShapeBase):
             closed: bool = False,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -805,7 +723,7 @@ class Arc(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -840,7 +758,9 @@ class Arc(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -946,8 +866,8 @@ class BezierCurve(ShapeBase):
             segments: int = 100,
             thickness: int = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -975,7 +895,7 @@ class BezierCurve(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1010,7 +930,9 @@ class BezierCurve(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1088,8 +1010,8 @@ class Circle(ShapeBase):
             radius: float,
             segments: int | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1117,7 +1039,7 @@ class Circle(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1142,11 +1064,14 @@ class Circle(ShapeBase):
         return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
 
     def _create_vertex_list(self) -> None:
+        vert_count = self._segments * 3
         self._vertex_list = self._program.vertex_list(
-            self._segments * 3, self._draw_mode, self._batch, self._group,
+            vert_count, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
-            colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            colors=('Bn', self._rgba * vert_count),
+            translation=('f', (self._x, self._y, self._z) * vert_count),
+            rotation=('f', (self._rotation,) * vert_count),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1191,8 +1116,8 @@ class Ellipse(ShapeBase):
             a: float, b: float,
             segments: int | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1223,7 +1148,7 @@ class Ellipse(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1263,7 +1188,9 @@ class Ellipse(ShapeBase):
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1319,8 +1246,8 @@ class Sector(ShapeBase):
             angle: float = 360.0,
             start_angle: float = 0.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1355,7 +1282,7 @@ class Sector(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1395,7 +1322,9 @@ class Sector(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1464,8 +1393,8 @@ class Line(ShapeBase):
             x: float, y: float, x2: float, y2: float,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1493,7 +1422,7 @@ class Line(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1536,7 +1465,9 @@ class Line(ShapeBase):
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1604,8 +1535,8 @@ class Rectangle(ShapeBase):
             x: float, y: float,
             width: float, height: float,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1631,7 +1562,7 @@ class Rectangle(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1661,7 +1592,9 @@ class Rectangle(ShapeBase):
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation = ('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1714,8 +1647,8 @@ class BorderedRectangle(ShapeBase):
             border: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255),
             border_color: tuple[int, int, int, int] | tuple[int, int, int] = (100, 100, 100),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1752,7 +1685,7 @@ class BorderedRectangle(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -1803,7 +1736,9 @@ class BorderedRectangle(ShapeBase):
             8, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _update_color(self) -> None:
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
@@ -1950,8 +1885,8 @@ class Box(ShapeBase):
             width: float, height: float,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -1981,7 +1916,7 @@ class Box(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2016,7 +1951,9 @@ class Box(ShapeBase):
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation = ('f', (self._rotation,) * self._num_verts),
+        )
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
@@ -2096,8 +2033,8 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT],
             segments: int | tuple[int, int, int, int] | None = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -2135,7 +2072,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2194,7 +2131,9 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2282,8 +2221,8 @@ class Triangle(ShapeBase):
             x2: float, y2: float,
             x3: float, y3: float,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -2312,7 +2251,7 @@ class Triangle(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2344,7 +2283,9 @@ class Triangle(ShapeBase):
             3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2411,8 +2352,8 @@ class Star(ShapeBase):
             num_spikes: int,
             rotation: float = 0.0,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -2444,7 +2385,7 @@ class Star(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2480,7 +2421,8 @@ class Star(ShapeBase):
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             rotation=('f', (self._rotation,) * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2549,8 +2491,8 @@ class Polygon(ShapeBase):
             self,
             *coordinates: tuple[float, float] | Sequence[float],
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -2571,7 +2513,7 @@ class Polygon(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2604,7 +2546,9 @@ class Polygon(ShapeBase):
             self._batch, self._group,
             position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2631,8 +2575,8 @@ class MultiLine(ShapeBase):
             closed: bool = False,
             thickness: float = 1.0,
             color: tuple[int, int, int, int] = (255, 255, 255, 255),
-            blend_src: int = GL_SRC_ALPHA,
-            blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: Batch | None = None,
             group: Group | None = None,
             program: ShaderProgram | None = None,
@@ -2658,7 +2602,7 @@ class MultiLine(ShapeBase):
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+                OpenGL blend destination mode; for example, ``ONE_MINUS_SRC_ALPHA``.
             batch:
                 Optional batch to add the shape to.
             group:
@@ -2689,7 +2633,9 @@ class MultiLine(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y, self._z) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts),
+        )
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:

@@ -1,7 +1,9 @@
-import pyglet
-
 # Import the new codec
+from __future__ import annotations
+
 import aseprite
+
+import pyglet
 
 
 window = pyglet.window.Window()

@@ -152,7 +152,7 @@ class EventLoop(event.EventDispatcher):
 
         # Dispatch pending events
         for window in app.windows:
-            window.switch_to()
+            #window.switch_to()
             window.dispatch_pending_events()
 
         platform_event_loop = app.platform_event_loop

@@ -10,26 +10,27 @@ the next line segment.
 Note: when working with a single buffer it is always a good idea to
 glFlush() when you've finished your rendering.
 """
+from __future__ import annotations
 
-
-import sys
 import random
+import sys
 
 import pyglet
-from pyglet.gl import (
-    glEnable,
-    glBlendFunc,
-    glFlush,
-    Config,
+
+from pyglet.graphics.api.gl import (
     GL_BLEND,
     GL_LINE_SMOOTH,
     GL_LINES,
-    GL_SRC_ALPHA,
     GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    OpenGLConfig,
+    glBlendFunc,
+    glEnable,
+    glFlush,
 )
 
 # open a single-buffered window so we can do cheap accumulation
-config = Config(double_buffer=False)
+config = OpenGLConfig(double_buffer=False)
 window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 
 

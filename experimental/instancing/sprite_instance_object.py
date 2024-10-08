@@ -1,7 +1,10 @@
-import pyglet
+from __future__ import annotations
+
 import random
 
-from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES
+import pyglet
+
+from pyglet.graphics.api.gl import GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES
 from pyglet.graphics.instance import InstanceSourceMixin
 
 window = pyglet.window.Window(1920, 1080, vsync=False)

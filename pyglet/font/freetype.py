@@ -28,6 +28,7 @@ from pyglet.font.freetype_lib import (
     float_to_f26p6,
     ft_get_library,
 )
+from pyglet.image.base import TextureDescriptor, TextureInternalFormat
 from pyglet.util import asbytes, asstr
 
 
@@ -63,7 +64,12 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self._mode = self._glyph_slot.bitmap.pixel_mode
         self._pitch = self._glyph_slot.bitmap.pitch
 
-        self._baseline = self._height - self._glyph_slot.bitmap_top
+        # Hack! Adjust baseline position depending backends for now.
+        if pyglet.options.backend == "vulkan":
+            self._baseline = self._glyph_slot.bitmap_top - self.font.descent - self.font.ascent
+        else:
+            self._baseline = self._height - self._glyph_slot.bitmap_top
+
         self._lsb = self._glyph_slot.bitmap_left
         self._advance_x = int(f26p6_to_float(self._glyph_slot.advance.x))
 
@@ -99,32 +105,68 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self._data = data
         self._pitch <<= 3
 
+    def _expand_to_rgba(self, data: bytes, src_format: str, dst_format: str) -> bytes:
+        """Expands data type to RGBA with putting values into A.
+
+        Will re-evaluate on a better system later.
+        """
+        src_len = len(src_format)
+        dst_len = len(dst_format)
+
+        if src_len >= dst_len:
+            return data
+
+        expanded_data = bytearray(len(data) // src_len * dst_len)
+        mapping = {c: i for i, c in enumerate(src_format)}
+
+        for i in range(len(data) // src_len):
+            default_value = data[i * src_len + 0] if src_len > 0 else 0
+
+            for j, c in enumerate(dst_format):
+                if c in mapping:
+                    expanded_data[i * dst_len + j] = 255
+                elif c == 'A':
+                    # Default alpha to fully opaque
+                    expanded_data[i * dst_len + j] = default_value
+                else:
+                    expanded_data[i * dst_len + j] = 255
+
+        return bytes(expanded_data)
+
     def _create_glyph(self) -> base.Glyph:
-        # In FT positive pitch means `down` flow, in Pyglet ImageData
-        # negative values indicate a top-to-bottom arrangement. So pitch must be inverted.
-        # Using negative pitch causes conversions, so much faster to just swap tex_coords
-        img = image.ImageData(self._width,
-                              self._height,
-                              "A",
-                              self._data,
-                              abs(self._pitch))
+        # Spaces may appear with 0 width and 0 height for metrics and bitmap. We need a minimum of 1x1 for textures.
+        if self._width == 0 and self._height == 0:
+            img = image.ImageData(1, 1, "RGBA", bytes(bytearray([0, 0, 0, 0])))
+        else:
+            size = self._width * self._height
+            ptr = cast(self._data, POINTER(c_ubyte * size))
+            img = image.ImageData(self._width,
+                                  self._height,
+                                  "RGBA",
+                                  self._expand_to_rgba(ptr.contents, 'R', 'RGBA'),
+                                  -self._pitch * 4)
 
         # HACK: Get text working in GLES until image data can be converted properly
         #       GLES don't support coversion during pixel transfer so we have to
         #       force specify the glyph format to be GL_ALPHA. This format is not
         #       supported in 3.3+ core, but are present in ES because of pixel transfer
         #       limitations.
-        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
-            GL_ALPHA = 0x1906
-            glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
-        else:
-            glyph = self.font.create_glyph(img)
+        # if pyglet.graphics.api.global_backend.current_context.get_info().get_opengl_api() == "gles":
+        #     GL_ALPHA = 0x1906
+        #     glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
+        # else:
 
+        # Understand why a R texture doesn't work later.
+        # glyph = self.font.create_glyph(img,
+        #                                descriptor=TextureDescriptor(min_filter=TextureFilter.NEAREST,
+        #                                                             mag_filter=TextureFilter.NEAREST,
+        #                                                             internal_format=TextureInternalFormat(
+        #                                                                 ComponentFormat.R)
+        #                                                             ,
+        #                                                             pixel_format=ComponentFormat.R)
+        #                                 )
+        glyph = self.font.create_glyph(img)
         glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
-        if self._pitch > 0:
-            t = list(glyph.tex_coords)
-            glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
-
         return glyph
 
     def render(self, text: str) -> base.Glyph:
@@ -168,7 +210,7 @@ class FreeTypeFont(base.Font):
                  dpi: int | None = None) -> None:
 
         if stretch:
-            warnings.warn("The current font render does not support stretching.")  # noqa: B028
+            warnings.warn("The current font render does not support stretching.")
 
         super().__init__()
         self._name = name

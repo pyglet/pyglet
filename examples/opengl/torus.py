@@ -16,10 +16,11 @@ This example demonstrates:
 from math import pi, sin, cos
 
 import pyglet
-from pyglet.gl import (
+
+from pyglet.graphics.api.gl import (
     glEnable,
     glClearColor,
-    Config,
+    OpenGLConfig,
     GL_DEPTH_TEST,
     GL_CULL_FACE,
     GL_TRIANGLES,
@@ -28,10 +29,10 @@ from pyglet.math import Mat4, Vec3
 
 try:
     # Try and create a window with multisampling (antialiasing)
-    config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
+    config = OpenGLConfig(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
     window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
-    # Fall back to no multisampling if not supported
+    # Fall back to no multisampling ifR not supported
     window = pyglet.window.Window(width=960, height=540, resizable=True)
 
 

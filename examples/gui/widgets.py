@@ -2,7 +2,7 @@ import pyglet
 
 window = pyglet.window.Window(540, 500, caption="Widget Example")
 batch = pyglet.graphics.Batch()
-pyglet.gl.glClearColor(0.8, 0.8, 0.8, 1.0)
+window.context.set_clear_color(0.8, 0.8, 0.8, 1.0)
 
 
 @window.event
@@ -34,11 +34,11 @@ def toggle_button_handler(widget, value):
     toggle_label.text = f"Toggle Button: {value}"
 
 
-def push_button_handler():
+def push_button_handler(widget):
     push_label.text = "Push Button: True"
 
 
-def release_button_handler():
+def release_button_handler(widget):
     push_label.text = "Push Button: False"
 
 

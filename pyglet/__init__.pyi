@@ -8,7 +8,6 @@ from . import customtypes as customtypes
 from . import display as display
 from . import event as event
 from . import font as font
-from . import gl as gl
 from . import graphics as graphics
 from . import gui as gui
 from . import image as image
@@ -34,10 +33,10 @@ value: str
 class Options:
     audio: Sequence[str]
     debug_font: bool
-    debug_gl: bool
-    debug_gl_trace: bool
-    debug_gl_trace_args: bool
-    debug_gl_shaders: bool
+    debug_api: bool
+    debug_api_trace: bool
+    debug_api_trace_args: bool
+    debug_api_shaders: bool
     debug_graphics_batch: bool
     debug_lib: bool
     debug_media: bool
@@ -49,6 +48,7 @@ class Options:
     debug_win32: bool
     debug_input: bool
     debug_x11: bool
+    debug_com: bool
     shadow_window: bool
     vsync: bool | None
     xsync: bool
@@ -63,8 +63,8 @@ class Options:
     com_mta: bool
     osx_alt_loop: bool
     dpi_scaling: Literal["real", "scaled", "stretch"]
-    scale_with_dpi: bool
     shader_bind_management: bool
+    backend: str | None
 
     def get(self, item: str, default: Any = None) -> Any:
         ...

@@ -413,7 +413,7 @@ Before drawing in OpenGL, it's necessary to set certain state. You might need
 to activate a :py:class:`~pyglet.graphics.shader.ShaderProgram`, or bind a Texture. For example, to enable and bind
 a texture requires the following before drawing::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(texture.target, texture.id)
 

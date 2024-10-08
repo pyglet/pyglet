@@ -5,18 +5,8 @@ import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import pyglet
-import pyglet.text.layout
-from pyglet.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet.enums import BlendFactor
+from pyglet.graphics import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group
@@ -33,31 +23,9 @@ class _InlineElementGroup(pyglet.graphics.Group):
         super().__init__(order, parent)
         self.texture = texture
         self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __eq__(self, other: _InlineElementGroup) -> bool:
-        return (self.__class__ is other.__class__ and
-                self._order == other.order and
-                self.program == other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
-
-    def __hash__(self) -> int:
-        return hash((self._order, self.program, self.parent,
-                     self.texture.target, self.texture.id))
+        self.set_shader_program(program)
+        self.set_texture(texture, 0)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
 
 
 class ImageElement(pyglet.text.document.InlineElement):
@@ -85,7 +53,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         x2 = line_x + self.width
         y2 = line_y + self.height + self.descent
 
-        vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+        vertex_list = program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=("f", (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)),
                                                   translation=("f", (x, y, z) * 4),
@@ -93,6 +61,8 @@ class ImageElement(pyglet.text.document.InlineElement):
                                                   visible=("f", (visible,) * 4),
                                                   rotation=("f", (rotation,) * 4),
                                                   anchor=("f", (anchor_x, anchor_y) * 4),
+                                                  view_translation=("f", (0, 0, 0) * 4),
+                                                  #colors=("Bn", (128, 128, 128, 255) * 4),
                                                   )
 
         self.vertex_lists[layout] = vertex_list

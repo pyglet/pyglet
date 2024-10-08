@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ctypes
 from typing import TYPE_CHECKING
 
 import pyglet
@@ -11,12 +10,13 @@ from pyglet.libs.darwin import (
     NSLeftCommandKeyMask,
     NSLeftControlKeyMask,
     NSLeftShiftKeyMask,
+    NSMakeRect,
     NSPasteboardURLReadingFileURLsOnlyKey,
     NSRightAlternateKeyMask,
     NSRightCommandKeyMask,
     NSRightControlKeyMask,
     NSRightShiftKeyMask,
-    cocoapy, NSMakeRect,
+    cocoapy,
 )
 from pyglet.libs.darwin.quartzkey import charmap, keymap
 from pyglet.window import key, mouse
@@ -24,6 +24,7 @@ from pyglet.window import key, mouse
 from .pyglet_textview import PygletTextView
 
 if TYPE_CHECKING:
+    import ctypes
     from . import CocoaWindow
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
@@ -193,18 +194,18 @@ class PygletView_Implementation:
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
         # This also helps ensure correct window creation event ordering.
-        if not self._window.context.canvas or self._window._shadow:
+        if not self._window.context.window or self._window._shadow:  # noqa: SLF001
             return
 
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
-        self._window.context.update_geometry()
+        self._window._update_geometry()
         self._window._width, self._window._height = width, height  # noqa: SLF001
         self._window.dispatch_event('_on_internal_resize', width, height)
         self._window.dispatch_event('on_expose')
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
         # when mouse clicks on the window's resize control, Cocoa enters into a
-        # mini-event loop that only responds to mouseDragged and mouseUp events.
+        # mini-event loop that only responds to mouseDragged and  mouseUp events.
         # This means that using NSTimer to call idle() won't work.  Our kludge
         # is to override NSWindow's nextEventMatchingMask_etc method and call
         # idle() from there.

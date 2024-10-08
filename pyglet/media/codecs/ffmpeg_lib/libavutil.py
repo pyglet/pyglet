@@ -1,6 +1,6 @@
 """Wrapper for include/libavutil/avutil.h
 """
-from ctypes import c_char_p, c_void_p, POINTER, Structure
+from ctypes import c_char_p, c_void_p, POINTER, Structure, c_double, c_char, Union
 from ctypes import c_int, c_int64, c_uint64
 from ctypes import c_uint8, c_int8, c_uint, c_size_t
 
@@ -12,12 +12,15 @@ _debug = debug_print('debug_media')
 
 avutil = pyglet.lib.load_library(
     'avutil',
-    win32=('avutil-58', 'avutil-57', 'avutil-56'),
-    darwin=('avutil.58', 'avutil.57', 'avutil.56')
+    win32=('avutil-59', 'avutil-58', 'avutil-57', 'avutil-56'),
+    darwin=('avutil.59', 'avutil.58', 'avutil.57', 'avutil.56')
 )
 
 avutil.avutil_version.restype = c_int
-compat.set_version('avutil', avutil.avutil_version() >> 16)
+
+avutil_version = avutil.avutil_version() >> 16
+
+compat.set_version('avutil', avutil_version)
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0
@@ -46,13 +49,33 @@ AV_PIX_FMT_RGB24 = 2
 AV_PIX_FMT_ARGB = 25
 AV_PIX_FMT_RGBA = 26
 
+AVChannel = c_int
 AVChannelOrder = c_int
+
+class AVChannelCustom(Structure):
+    _fields_ = [
+        ('id', AVChannel),
+        ('name', c_char * 16),
+        ('opaque', c_void_p)
+    ]
+
+class _AVChannelLayoutUnion(Union):
+    _fields_ = [
+        ('mask', c_uint64),
+        ('map', POINTER(AVChannelCustom)),
+    ]
+
 class AVChannelLayout(Structure):
     _fields_ = [
         ('order', c_int),
         ('nb_channels', c_int),
-        # .. more
+        ('u', _AVChannelLayoutUnion),
+        ('opaque', c_void_p)
     ]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(order={self.order}, nb_channels={self.nb_channels})"
+
 class AVBuffer(Structure):
     _fields_ = [
         ('data', POINTER(c_uint8)),
@@ -112,25 +135,25 @@ AVFrame_Fields = [
     ('height', c_int),
     ('nb_samples', c_int),
     ('format', c_int),
-    ('key_frame', c_int),
+    ('key_frame', c_int),  # Deprecated in 59
     ('pict_type', c_int),
     ('sample_aspect_ratio', AVRational),
     ('pts', c_int64),
     ('pkt_pts', c_int64),  # Deprecated. Removed in 57.
     ('pkt_dts', c_int64),
-    ('time_base', AVRational),  # (5.x)
-    ('coded_picture_number', c_int),
-    ('display_picture_number', c_int),
+    ('time_base', AVRational),  # Added (5.x)+
+    ('coded_picture_number', c_int),  # removed in 59
+    ('display_picture_number', c_int),  # removed in 59
     ('quality', c_int),
     ('opaque', c_void_p),
     ('error', c_uint64 * AV_NUM_DATA_POINTERS),  # Deprecated. Removed in 57.
     ('repeat_pict', c_int),
-    ('interlaced_frame', c_int),
-    ('top_field_first', c_int),
-    ('palette_has_changed', c_int),
-    ('reordered_opaque', c_int64),
+    ('interlaced_frame', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_INTERLACED
+    ('top_field_first', c_int),  # deprecated in 59. Targeted for removal. Use AV_FRAME_FLAG_TOP_FIELD_FIRST
+    ('palette_has_changed', c_int),  # deprecated in 59. Targeted for removal.
+    ('reordered_opaque', c_int64),  # removed in 59.
     ('sample_rate', c_int),
-    ('channel_layout', c_uint64),
+    ('channel_layout', c_uint64),  # removed in 59.
     ('buf', POINTER(AVBufferRef) * AV_NUM_DATA_POINTERS),
     ('extended_buf', POINTER(POINTER(AVBufferRef))),
     ('nb_extended_buf', c_int),
@@ -143,13 +166,12 @@ AVFrame_Fields = [
     ('colorspace', c_int),
     ('chroma_location', c_int),
     ('best_effort_timestamp', c_int64),
-    ('pkt_pos', c_int64),
-    ('pkt_duration', c_int64),
-    # !
+    ('pkt_pos', c_int64),  # deprecated in 59. Use AV_CODEC_FLAG_COPY_OPAQUE
+    ('pkt_duration', c_int64),  # removed in 59?
     ('metadata', POINTER(AVDictionary)),
     ('decode_error_flags', c_int),
     ('channels', c_int),
-    ('pkt_size', c_int),
+    ('pkt_size', c_int),  # deprecated in 59.  use AV_CODEC_FLAG_COPY_OPAQUE to pass through arbitrary user data from packets to frames
     ('qscale_table', POINTER(c_int8)),  # Deprecated. Removed in 57.
     ('qstride', c_int),  # Deprecated. Removed in 57.
     ('qscale_type', c_int),  # Deprecated. Removed in 57.
@@ -161,16 +183,24 @@ AVFrame_Fields = [
     ('crop_left', c_size_t),  # video frames only
     ('crop_right', c_size_t),  # video frames only
     ('private_ref', POINTER(AVBufferRef)),
+    ('ch_layout', AVChannelLayout),
+    ('duration', c_int64)
 ]
 
 compat.add_version_changes('avutil', 56, AVFrame, AVFrame_Fields,
-                           removals=('time_base',))
+                           removals=('time_base', 'ch_layout', 'duration'))
 
-compat.add_version_changes('avutil', 57, AVFrame, AVFrame_Fields,
-                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf'))
+for compat_ver in (57, 58):
+    compat.add_version_changes('avutil', compat_ver, AVFrame, AVFrame_Fields,
+                               removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
+                                         'ch_layout', 'duration'))
 
-compat.add_version_changes('avutil', 58, AVFrame, AVFrame_Fields,
-                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf'))
+compat.add_version_changes('avutil', 59, AVFrame, AVFrame_Fields,
+                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf',
+                                     'channels', 'channel_layout',
+                                     'coded_picture_number', 'display_picture_number', 'reordered_opaque', 'pkt_duration'
+                                     ))
+
 
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
@@ -188,8 +218,33 @@ avutil.av_samples_get_buffer_size.argtypes = [POINTER(c_int),
                                               c_int, c_int, c_int]
 avutil.av_frame_alloc.restype = POINTER(AVFrame)
 avutil.av_frame_free.argtypes = [POINTER(POINTER(AVFrame))]
-avutil.av_get_default_channel_layout.restype = c_int64
-avutil.av_get_default_channel_layout.argtypes = [c_int]
+
+AVSampleFormat = c_int
+
+if avutil_version <= 57:
+    # Removed in 7.x (avutil 58)
+    avutil.av_get_default_channel_layout.restype = c_int64
+    avutil.av_get_default_channel_layout.argtypes = [c_int]
+else:
+    # Available in 6.x  (avutil 58, 57)
+    avutil.av_channel_layout_default.restype = None
+    avutil.av_channel_layout_default.argtypes = [POINTER(AVChannelLayout), c_int]
+
+    avutil.av_channel_layout_uninit.restype = None
+    avutil.av_channel_layout_uninit.argtypes = [POINTER(AVChannelLayout)]
+
+    avutil.av_opt_set.restype = c_int
+    avutil.av_opt_set.argtypes = [c_void_p, c_char_p, c_char_p, c_int]
+
+    avutil.av_opt_set_int.restype = c_int
+    avutil.av_opt_set_int.argtypes = [c_void_p, c_char_p, c_int64, c_int]
+
+    avutil.av_opt_set_double.restype = c_int
+    avutil.av_opt_set_double.argtypes = [c_void_p, c_char_p, c_double, c_int]
+
+    avutil.av_opt_set_sample_fmt.restype = c_int
+    avutil.av_opt_set_sample_fmt.argtypes = [c_void_p, c_char_p, AVSampleFormat, c_int]
+
 avutil.av_get_bytes_per_sample.restype = c_int
 avutil.av_get_bytes_per_sample.argtypes = [c_int]
 avutil.av_strerror.restype = c_int
@@ -240,4 +295,5 @@ __all__ = [
     'AVFrame',
     'AVRational',
     'AVDictionary',
+    'AVChannelLayout',
 ]

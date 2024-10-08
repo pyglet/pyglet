@@ -211,7 +211,7 @@ _rel_names = {
 
 def _create_control(fileno, event_type, event_code):
     if event_type == EV_ABS:
-        raw_name = abs_raw_names.get(event_code, 'EV_ABS(%x)' % event_code)
+        raw_name = abs_raw_names.get(event_code, f'EV_ABS({event_code:x})')
         name = _abs_names.get(event_code)
         absinfo = EVIOCGABS(fileno, event_code)
         value = absinfo.value
@@ -222,19 +222,17 @@ def _create_control(fileno, event_type, event_code):
         if name == 'hat_y':
             control.inverted = True
     elif event_type == EV_REL:
-        raw_name = rel_raw_names.get(event_code, 'EV_REL(%x)' % event_code)
+        raw_name = rel_raw_names.get(event_code, f'EV_REL({event_code:x})')
         name = _rel_names.get(event_code)
-        # TODO min/max?
         control = RelativeAxis(name, raw_name)
     elif event_type == EV_KEY:
-        raw_name = key_raw_names.get(event_code, 'EV_KEY(%x)' % event_code)
+        raw_name = key_raw_names.get(event_code, f'EV_KEY({event_code:x})')
         name = None
         control = Button(name, raw_name)
     else:
-        value = minimum = maximum = 0  # TODO
         return None
-    control._event_type = event_type
-    control._event_code = event_code
+    control.event_type = event_type
+    control.event_code = event_code
     return control
 
 
@@ -303,7 +301,7 @@ class EvdevDevice(XlibSelectDevice, Device):
                         self.control_map[(event_type, event_code)] = control
                         self.controls.append(control)
 
-        self.controls.sort(key=lambda c: c._event_code)
+        self.controls.sort(key=lambda c: c.event_code)
         os.close(fileno)
 
         self._event_size = ctypes.sizeof(InputEvent)
@@ -517,11 +515,11 @@ def _create_joystick(device):
     have_y = False
     have_button = False
     for control in device.controls:
-        if control._event_type == EV_ABS and control._event_code == ABS_X:
+        if control.event_type == EV_ABS and control.event_code == ABS_X:
             have_x = True
-        elif control._event_type == EV_ABS and control._event_code == ABS_Y:
+        elif control.event_type == EV_ABS and control.event_code == ABS_Y:
             have_y = True
-        elif control._event_type == EV_KEY and control._event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
+        elif control.event_type == EV_KEY and control.event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
             have_button = True
     if not (have_x and have_y and have_button):
         return
@@ -530,15 +528,13 @@ def _create_joystick(device):
 
 
 def get_joysticks(display=None):
-    return [joystick for joystick in
-            [_create_joystick(device) for device in get_devices(display)]
-            if joystick is not None]
+    return [joystick for joystick in [_create_joystick(device) for device in get_devices(display)] if joystick]
 
 
 def _detect_controller_mapping(device):
     # If no explicit mapping is available, we can
     # detect it from the Linux gamepad specification:
-    # https://www.kernel.org/doc/html/v4.13/input/gamepad.html
+    # https://www.kernel.org/doc/html/latest/input/gamepad.html
     # Note: legacy device drivers don't always adhere to this.
     mapping = dict(guid=device.get_guid(), name=device.name)
 
@@ -550,8 +546,8 @@ def _detect_controller_mapping(device):
                 BTN_DPAD_UP: 'dpup', BTN_DPAD_DOWN: 'dpdown',
                 BTN_DPAD_LEFT: 'dpleft', BTN_DPAD_RIGHT: 'dpright',
 
-                ABS_HAT0X: 'dpleft',  # 'dpright',
-                ABS_HAT0Y: 'dpup',    # 'dpdown',
+                ABS_HAT0X: 'dpleft',  # and 'dpright',
+                ABS_HAT0Y: 'dpup',    # and 'dpdown',
                 ABS_Z: 'lefttrigger', ABS_RZ: 'righttrigger',
                 ABS_X: 'leftx', ABS_Y: 'lefty', ABS_RX: 'rightx', ABS_RY: 'righty'}
 
@@ -560,18 +556,15 @@ def _detect_controller_mapping(device):
     hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
 
     for i, control in enumerate(button_controls):
-        name = _aliases.get(control._event_code)
-        if name:
+        if name := _aliases.get(control.event_code):
             mapping[name] = Relation('button', i)
 
     for i, control in enumerate(axis_controls):
-        name = _aliases.get(control._event_code)
-        if name:
+        if name := _aliases.get(control.event_code):
             mapping[name] = Relation('axis', i)
 
     for i, control in enumerate(hat_controls):
-        name = _aliases.get(control._event_code)
-        if name:
+        if name := _aliases.get(control.event_code):
             index = 1 + i << 1
             mapping[name] = Relation('hat0', index)
 
@@ -580,7 +573,7 @@ def _detect_controller_mapping(device):
 
 def _create_controller(device) -> Controller | None:
     for control in device.controls:
-        if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
+        if control.event_type == EV_KEY and control.event_code == BTN_GAMEPAD:
             break
     else:
         return None     # Game Controllers must have a BTN_GAMEPAD
@@ -599,5 +592,4 @@ def _create_controller(device) -> Controller | None:
 
 
 def get_controllers(display=None):
-    return [controller for controller in
-            [_create_controller(device) for device in get_devices(display)] if controller]
+    return [controller for controller in [_create_controller(device) for device in get_devices(display)] if controller]

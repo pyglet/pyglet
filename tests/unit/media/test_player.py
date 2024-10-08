@@ -2,7 +2,7 @@ from tests import mock
 import random
 import unittest
 
-from pyglet.gl import GL_TEXTURE_2D
+from pyglet.graphics.api.gl import GL_TEXTURE_2D
 from pyglet.media.player import Player, PlayerGroup
 from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
 

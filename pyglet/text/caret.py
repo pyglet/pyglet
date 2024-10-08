@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Pattern
 
 from pyglet import clock, event
 from pyglet.window import key
+from pyglet.graphics import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch
@@ -86,7 +87,6 @@ class Caret:
                 RGB colors will be treated as having an opacity of 255.
 
         """
-        from pyglet import gl
         self._layout = layout
 
         self._custom_batch = batch is not None
@@ -101,9 +101,15 @@ class Caret:
 
         colors = r, g, b, self._visible_alpha, r, g, b, self._visible_alpha
 
-        self._list = self._group.program.vertex_list(2, gl.GL_LINES, self._batch, self._group,
-                                                     colors=("Bn", colors),
-                                                     visible=("f", (1, 1)))
+        self._list = self._group.program.vertex_list(2, GeometryMode.LINES, self._batch, self._group,
+                                                        position=('f', (0, 0, 0) * 2),
+                                                        translation=('f', (0, 0, 0) * 2),
+                                                        view_translation=('f', (0, 0, 0) * 2),
+                                                        anchor=('f', (0, 0) * 2),
+                                                        rotation=('f', (0, 0)),
+                                                        visible=('f', (1, 1)),
+                                                        colors=("Bn", colors))
+
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -121,11 +127,10 @@ class Caret:
         if self._layout == layout and self._group == layout.group:
             return
 
-        from pyglet.gl import GL_LINES
         self._layout = layout
         batch = self._batch if self._custom_batch else layout.batch
         self._group = layout.foreground_decoration_group
-        self._batch.migrate(self._list, GL_LINES, self._group, batch)
+        self._batch.migrate(self._list, GeometryMode.LINES, self._group, batch)
 
     def delete(self) -> None:
         """Remove the caret from its batch.
@@ -377,6 +382,7 @@ class Caret:
 
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
+        print("POS", self._list.position[:])
 
     def on_translation_update(self) -> None:
         self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2

@@ -62,6 +62,8 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, Mapping
 
+
+
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
 
@@ -159,7 +161,7 @@ else:  # Handle import edge cases
 
 # Import the other constants after the UI libraries to avoid
 # cluttering the symbol table when debugging import problems.
-from pyglet.gl import (
+from pyglet.graphics.api.gl import (
    GL_BLEND,
    GL_COLOR_BUFFER_BIT,
    GL_DEPTH_BUFFER_BIT,
@@ -238,7 +240,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
             textures: Mapping[str, pyglet.image.Texture],
             blend_src: int,
             blend_dest: int,
-            program: pyglet.graphics.shader.ShaderProgram | None = None,
+            program: pyglet.graphics.ShaderProgram | None = None,
             parent: pyglet.graphics.Group | None = None,
     ) -> None:
         """Create a sprite group for multiple textures and samplers.
@@ -266,7 +268,7 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         for idx, name in enumerate(self.images):
             try:
                 self.program[name] = idx
-            except pyglet.graphics.shader.ShaderException as e:
+            except pyglet.graphics.ShaderException as e:
                 print(e)
 
         self.program.stop()
@@ -313,7 +315,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             batch: pyglet.graphics.Batch | None = None,
             group: MultiTextureSpriteGroup | None = None,
             subpixel: bool = False,
-            program: pyglet.graphics.shader.ShaderProgram = None,
+            program: pyglet.graphics.ShaderProgram = None,
     ) -> None:
 
         self._x = x
@@ -483,10 +485,10 @@ class Ui_MainWindow:
             self.program = None
 
         try:
-            vertex_ = pyglet.graphics.shader.Shader(self.vertex_source_edit.toPlainText(), 'vertex')
-            fragment_ = pyglet.graphics.shader.Shader(self.fragSourceEdit.toPlainText(), 'fragment')
+            vertex_ = pyglet.graphics.Shader(self.vertex_source_edit.toPlainText(), 'vertex')
+            fragment_ = pyglet.graphics.Shader(self.fragSourceEdit.toPlainText(), 'fragment')
 
-            self.program = pyglet.graphics.shader.ShaderProgram(vertex_, fragment_)
+            self.program = pyglet.graphics.ShaderProgram(vertex_, fragment_)
 
             if len(self.images) == 1:
                 self.sprite = pyglet.sprite.Sprite(
@@ -695,9 +697,9 @@ class PygletWidget(QOpenGLWidget):
 
         self.batch = pyglet.graphics.Batch()
 
-        self._default_program = pyglet.graphics.shader.ShaderProgram(
-            pyglet.graphics.shader.Shader(self._default_vertex_source, 'vertex'),
-            pyglet.graphics.shader.Shader(self._default_fragment_source, 'fragment'))
+        self._default_program = pyglet.graphics.ShaderProgram(
+            pyglet.graphics.Shader(self._default_vertex_source, 'vertex'),
+            pyglet.graphics.Shader(self._default_fragment_source, 'fragment'))
 
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 

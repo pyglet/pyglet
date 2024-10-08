@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
+from pyglet.graphics.api.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
     glClearColor, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 
 if TYPE_CHECKING:

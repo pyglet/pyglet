@@ -5,7 +5,6 @@ import time
 from tests.base.interactive import InteractiveTestCase
 from tests.interactive.window import window_util
 
-from pyglet.gl import *
 from pyglet import image
 from pyglet.window import key, Window, ImageMouseCursor
 from pyglet.window.event import WindowEventLogger

@@ -4,17 +4,21 @@ import os
 
 import pyglet
 
-from pyglet.gl import GL_TRIANGLES
+from pyglet.graphics.api.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
-from .. import Model, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
-from .base import Material, Mesh, Primitive, Node, Scene
+from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
+from .. import Model, MaterialGroup, TexturedMaterialGroup
+from ...graphics import Batch, Group
 
 
 def _new_mesh(name, material):
     # The three primitive types used in .obj files:
-    primitive = Primitive(attributes={'normals': [], 'tex_coords': [], 'vertices': []}, material=material)
+    attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
+                  Attribute('NORMAL', 'f', 'VEC3', 0, []),
+                  Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
+    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
 
@@ -45,7 +49,7 @@ def load_material_library(filename):
                 # save previous material
                 for item in (diffuse, ambient, specular, emission):
                     item.append(opacity)
-                matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+                matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
             name = values[1]
 
         elif name is None:
@@ -76,7 +80,7 @@ def load_material_library(filename):
     for item in (diffuse, ambient, specular, emission):
         item.append(opacity)
 
-    matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
 
     return matlib
 
@@ -109,7 +113,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
     emission = [0.0, 0.0, 0.0, 1.0]
     shininess = 100.0
 
-    default_material = Material("Default", diffuse, ambient, specular, emission, shininess)
+    default_material = SimpleMaterial("Default", diffuse, ambient, specular, emission, shininess)
 
     for line in file_contents.splitlines():
 
@@ -141,7 +145,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
         elif values[0] == 'f':
             if material is None:
-                material = Material()
+                material = SimpleMaterial()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
                 meshes.append(mesh)
@@ -163,14 +167,14 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                mesh.primitives[0].attributes['normals'] += normals[n_i]
-                mesh.primitives[0].attributes['tex_coords'] += tex_coords[t_i]
-                mesh.primitives[0].attributes['vertices'] += vertices[v_i]
+                mesh.primitives[0].attributes[0].array += vertices[v_i]
+                mesh.primitives[0].attributes[1].array += normals[n_i]
+                mesh.primitives[0].attributes[2].array += tex_coords[t_i]
 
                 if i >= 3:
-                    mesh.primitives[0].attributes['normals'] += n1 + nlast
-                    mesh.primitives[0].attributes['tex_coords'] += t1 + tlast
-                    mesh.primitives[0].attributes['vertices'] += v1 + vlast
+                    mesh.primitives[0].attributes[0].array += v1 + vlast
+                    mesh.primitives[0].attributes[1].array += n1 + nlast
+                    mesh.primitives[0].attributes[2].array += t1 + tlast
 
                 if i == 0:
                     n1 = normals[n_i]
@@ -180,7 +184,40 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 tlast = tex_coords[t_i]
                 vlast = vertices[v_i]
 
+        for mesh in meshes:
+            for primitive in mesh.primitives:
+                for attribute in primitive.attributes:
+                    attribute.count = len(attribute.array) // 3
+
     return meshes
+
+
+class OBJScene(Scene):
+
+    def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
+        vertex_lists = []
+        groups = []
+        for node in self.nodes:
+            for mesh in node.meshes:
+                material = mesh.primitives[0].material
+                count = mesh.primitives[0].attributes[0].count
+
+                if material.texture_name:
+                    program = pyglet.model.get_default_textured_shader()
+                    texture = pyglet.resource.texture(material.texture_name)
+                    matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+                else:
+                    program = pyglet.model.get_default_shader()
+                    matgroup = MaterialGroup(material, program, parent=group)
+
+                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes}
+                # Add additional material data:
+                data['COLOR_0'] = 'f', material.diffuse * count
+
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
+                groups.append(matgroup)
+
+        return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
 
 
 ###################################################
@@ -191,38 +228,10 @@ class OBJModelDecoder(ModelDecoder):
     def get_file_extensions(self):
         return ['.obj']
 
-    def decode(self, filename, file, batch, group=None):
-
-        if not batch:
-            batch = pyglet.graphics.Batch()
+    def decode(self, filename, file):
 
         mesh_list = parse_obj_file(filename=filename, file=file)
-
-        vertex_lists = []
-        groups = []
-
-        for mesh in mesh_list:
-            material = mesh.primitives[0].material
-            count = len(mesh.primitives[0].attributes['vertices']) // 3
-            if material.texture_name:
-                program = pyglet.model.get_default_textured_shader()
-                texture = pyglet.resource.texture(material.texture_name)
-                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.primitives[0].attributes['vertices']),
-                                                        normals=('f', mesh.primitives[0].attributes['normals']),
-                                                        tex_coords=('f', mesh.primitives[0].attributes['tex_coords']),
-                                                        colors=('f', material.diffuse * count)))
-            else:
-                program = pyglet.model.get_default_shader()
-                matgroup = MaterialGroup(material, program, parent=group)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.primitives[0].attributes['vertices']),
-                                                        normals=('f', mesh.primitives[0].attributes['normals']),
-                                                        colors=('f', material.diffuse * count)))
-            groups.append(matgroup)
-
-        return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
+        return OBJScene(nodes=[Node(meshes=mesh_list)])
 
 
 def get_decoders():

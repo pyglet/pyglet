@@ -7,7 +7,7 @@ import time
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -176,7 +176,7 @@ fragment_source = """#version 150
 
 
 def get_default_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
                                                     (geometry_source, 'geometry'),
                                                     (fragment_source, 'fragment'))
 

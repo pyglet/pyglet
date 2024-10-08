@@ -70,7 +70,7 @@ def test_context_make_current(context):
 
 @pytest.fixture
 def buffer_pool(context):
-    return context.device.buffer_pool
+    return context.vk_queue.buffer_pool
 
 
 @pytest.fixture

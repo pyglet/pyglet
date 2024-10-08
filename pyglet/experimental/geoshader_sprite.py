@@ -4,7 +4,8 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.gl import *
+from pyglet.graphics import GeometryMode
+from pyglet.graphics.api.gl import *
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -147,13 +148,13 @@ fragment_array_source = """#version 150 core
 
 
 def get_default_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
                                                     (geometry_source, 'geometry'),
                                                     (fragment_source, 'fragment'))
 
 
 def get_default_array_shader():
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
+    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
                                                     (geometry_source, 'geometry'),
                                                     (fragment_array_source, 'fragment'))
 
@@ -771,7 +772,7 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         self._group.set_state_recursive()
-        self._vertex_list.draw(GL_POINTS)
+        self._vertex_list.draw(GeometryMode.POINTS)
         self._group.unset_state_recursive()
 
     def __del__(self):

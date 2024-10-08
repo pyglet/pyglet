@@ -138,9 +138,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
-            group.scissor_area = area
-        self.background_decoration_group.scissor_area = area
-        self.foreground_decoration_group.scissor_area = area
+            group.update_data("scissor_area", area)
+        self.background_decoration_group.update_data("scissor_area", area)
+        self.foreground_decoration_group.update_data("scissor_area", area)
 
     def _init_document(self) -> None:
         assert self._document, "Cannot remove document from IncrementalTextLayout"
@@ -229,6 +229,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                                 self._invalid_lines.is_invalid())
 
         len_groups = len(self.group_cache)
+        print("GROUPS?", len_groups)
         # Special care if there is no text:
         if not self.glyphs:
             for line in self.lines:
@@ -253,8 +254,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         # Update group cache areas if the count has changed. Usually if it starts with no text.
         # Group cache is only cleared in a regular TextLayout. May need revisiting if that changes.
-        if len_groups != len(self.group_cache):
-            self._update_scissor_area()
+        #if len_groups != len(self.group_cache):
+        self._update_scissor_area()
 
         if trigger_update_event:
             self.dispatch_event("on_layout_update")

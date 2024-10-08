@@ -89,6 +89,10 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
             colorSpace,
             cocoapy.kCGImageAlphaPremultipliedLast))
 
+        # Transform the context to a top-left origin.
+        #quartz.CGContextTranslateCTM(bitmap, 0, height)  # Move origin to top-left.
+        #quartz.CGContextScaleCTM(bitmap, 1.0, -1.0)  # Flip Y-axis.
+
         # Draw text to bitmap context.
         quartz.CGContextSetShouldAntialias(bitmap, True)
         quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
@@ -111,12 +115,16 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         cf.CFRelease(bitmap)
         cf.CFRelease(colorSpace)
 
-        glyph_image = pyglet.image.ImageData(width, height, "RGBA", buffer, bytesPerRow)
+        glyph_image = pyglet.image.ImageData(width, height, "RGBA", buffer, -bytesPerRow)
 
         glyph = self.font.create_glyph(glyph_image)
-        glyph.set_bearings(baseline, lsb, advance)
-        t = list(glyph.tex_coords)
-        glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
+
+        # Flip baseline if it's vulkan since it's top left based.
+        # TODO: Revisit when flipping OpenGL coordinates.
+        if pyglet.options.backend == "vulkan":
+            glyph.set_bearings(height - baseline - self.font.descent - self.font.ascent, lsb, advance)
+        else:
+            glyph.set_bearings(baseline, lsb, advance)
 
         return glyph
 

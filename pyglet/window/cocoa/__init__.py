@@ -4,20 +4,19 @@ from ctypes import c_void_p
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.display.cocoa import CocoaCanvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
-from .pyglet_textview import PygletTextView
 
 from ...libs import darwin
 from .pyglet_delegate import PygletDelegate
+from .pyglet_textview import PygletTextView
 from .pyglet_view import PygletView
 from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
 
 if TYPE_CHECKING:
-    from pyglet.gl.cocoa import CocoaContext
+    from pyglet.graphics.api.gl import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSCursor = cocoapy.ObjCClass('NSCursor')
@@ -29,6 +28,8 @@ NSPasteboard = cocoapy.ObjCClass('NSPasteboard')
 
 quartz = cocoapy.quartz
 cf = cocoapy.cf
+
+CAMetalLayer = cocoapy.ObjCClass('CAMetalLayer')
 
 
 class CocoaMouseCursor(MouseCursor):
@@ -90,14 +91,13 @@ class CocoaWindow(BaseWindow):
             if self._nswindow:
                 # The window is about the be recreated so destroy everything
                 # associated with the old window, then destroy the window itself.
-                nsview = self.canvas.nsview
-                self.canvas = None
                 self._nswindow.orderOut_(None)
                 self._nswindow.close()
                 self.context.detach()
                 self._nswindow.release()
                 self._nswindow = None
-                nsview.release()
+                self._nsview.release()
+                self._nsview = None
                 self._delegate.release()
                 self._delegate = None
 
@@ -159,13 +159,29 @@ class CocoaWindow(BaseWindow):
 
             # Then create a view and set it as our NSWindow's content view.
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
-            self._nsview.setWantsBestResolutionOpenGLSurface_(True)
+            self._metal_layer = None
+            if "gl" in pyglet.options.backend:
+                self._nsview.setWantsBestResolutionOpenGLSurface_(True)
+            elif pyglet.options.backend == "vulkan":
+                self._metal_layer = CAMetalLayer.alloc().init()
+                #self._metal_layer.setFramebufferOnly_(True)  # Layer can only be used as a FB. More performant?
+                transparent = self.style == 'transparent' or self.style == 'overlay'
+                self._metal_layer.setOpaque_(not transparent)
+
+                # Attach the CAMetalLayer to the NSView
+                self._nsview.setLayer_(self._metal_layer)
+                self._nsview.setWantsLayer_(True)
+            else:
+                print(f"Unsupported backend found. '{pyglet.options.backend}'")
+
+            self._assign_config()
+            self.context.attach(self)
+            print("ATTACH!")
+            if self._metal_layer:
+                self.context._nscontext = self._metal_layer
+            print("CONTEXT!", self.context._nscontext)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
-
-            # Create a canvas with the view as its drawable and attach context to it.
-            self.canvas = CocoaCanvas(self.display, self.screen, self._nsview)
-            self.context.attach(self.canvas)
 
             # Configure the window.
             self._nswindow.setAcceptsMouseMovedEvents_(True)
@@ -191,10 +207,16 @@ class CocoaWindow(BaseWindow):
                 array = NSArray.arrayWithObject_(cocoapy.NSPasteboardTypeURL)
                 self._nsview.registerForDraggedTypes_(array)
 
-            self.context.update_geometry()
+            self._update_geometry()
             self.switch_to()
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
+
+    def _update_geometry(self):
+        if self._metal_layer:
+            pass
+        else:
+            self.context.update_geometry()
 
     def _get_dpi_desc(self) -> int:
         if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
@@ -260,11 +282,7 @@ class CocoaWindow(BaseWindow):
                 self._delegate.release()
                 self._delegate = None
 
-            # Remove view from canvas and then remove canvas.
-            if self.canvas:
-                self.canvas.nsview = None
-                self.canvas = None
-
+            # Remove view.
             if self._nsview:
                 self._nswindow.setContentView_(None)
                 self._nsview.release()
@@ -285,6 +303,10 @@ class CocoaWindow(BaseWindow):
     def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
+
+    def before_draw(self) -> None:
+        if self.context:
+            self.context.before_draw()
 
     def flip(self) -> None:
         self.draw_mouse_cursor()
@@ -416,7 +438,7 @@ class CocoaWindow(BaseWindow):
         return self._width, self._height
 
     def get_framebuffer_size(self) -> tuple[int, int]:
-        view = self.context._nscontext.view()
+        view = self._nsview
         bounds = view.bounds()
         bounds = view.convertRectToBacking_(bounds)
         return int(bounds.size.width), int(bounds.size.height)
