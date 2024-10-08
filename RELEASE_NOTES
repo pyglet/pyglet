@@ -1,3 +1,33 @@
+pyglet 2.0.18
+
+Changes and Improvements
+------------------------
+- shader: add support for OpenGL structures in UBO's (#1212)
+- win32.com: get libs/win32/com.py ready for incoming 3.13 changes #1199
+- docs: fix various typos, and example code to align with docs #1200, #1201
+- text.document: add new AbstractDocument.append_text method for more efficient end-of-text additions #1182
+- tests: fix issues with broken tests on macOS.
+- input.macos: add missing axis alias for modern controllers (Stadia, newer XBOX One)
+- gui.NinePatch: Add a new NinePatch.create_around_layout class method
+- typing: add py.typed file #1205
+
+Bugfixes
+--------
+- shader: fix matrix uniform assignment #1194
+- text: fix missing caret top level import
+- text.layout: fix updating anchor on the X axis #1213
+- text.layout: move get_line_count function into the base TextLayout class
+- window.macos: fix blinking cursor in bottom left of window #1204
+- examples: fix rectangle not appearing in text_input example
+- macos: fix missing dealloc for text view.
+- macos: fix some deallocation issues when creating multiple windows.
+- macos: fix event loop termination exiting the entire app.
+- macos: fix focus being stolen by other apps during launch. (#1211)
+- macos: fix error about pygletUpdate when closing a window. (#1219)
+- macos: fix function keys not registering. (#1220)
+- docs: move check for `sys.modules['sphinx']` into doc/conf.py to prevent conflicts with jupyter #1215
+
+
 pyglet 2.0.17
 
 Changes and Improvements
