@@ -9,11 +9,13 @@ Changes and Improvements
 - tests: fix issues with broken tests on macOS.
 - input.macos: add missing axis alias for modern controllers (Stadia, newer XBOX One)
 - gui.NinePatch: Add a new NinePatch.create_around_layout class method
+- typing: add py.typed file #1205
 
 Bugfixes
 --------
 - shader: fix matrix uniform assignment #1194
 - text: fix missing caret top level import
+- text.layout: fix updating anchor on the X axis #1213
 - text.layout: move get_line_count function into the base TextLayout class
 - window.macos: fix blinking cursor in bottom left of window #1204
 - examples: fix rectangle not appearing in text_input example
