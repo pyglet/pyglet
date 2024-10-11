@@ -240,8 +240,7 @@ class ZIPLocation(Location):
     """Location within a ZIP file."""
 
     def __init__(self, zipfileobj: zipfile.ZipFile, directory: str | None):
-        """Create a location given an open ZIP file and a path within that
-        file.
+        """Create a location given an open ZIP file and a path within that file.
 
         Args:
             zipfileobj:
@@ -268,6 +267,9 @@ class ZIPLocation(Location):
         if mode == 'r':
             return StringIO(_bytes.decode())
         return BytesIO(_bytes)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(dir='{self.dir}')"
 
 
 class URLLocation(Location):
@@ -373,7 +375,7 @@ class Loader:
             # A filesystem directory:
             if os.path.isdir(_path_name):
                 _path_name = _path_name.rstrip(os.path.sep)
-                file_location = FileLocation(_path_name)
+                # os.walk will pass silently if the path is not found:
                 for dirpath, dirnames, filenames in os.walk(_path_name):
                     dirpath = dirpath[len(_path_name) + 1:]
                     # Force forward slashes for index
@@ -385,13 +387,17 @@ class Loader:
                             index_name = dirpath + '/' + filename
                         else:
                             index_name = filename
+                        file_location = FileLocation(_path_name)
                         self._index_file(index_name, file_location)
 
             else:
-                # Find path component that looks like the ZIP file.
+                # The path is not a valid directory. See if it's a
+                # ZIP file, or a nested ZIP file with internal paths.
+                # Ex:  path/to/file.zip
+                #      path/to/file.zip/internal/path
                 zip_directory = ''
                 old_path = None
-                while _path_name and not (os.path.isfile(_path_name) or os.path.isfile(_path_name + '.001')):
+                while _path_name and not (os.path.isfile(_path_name)):
                     old_path = _path_name
                     _path_name, tail_dir = os.path.split(_path_name)
                     if _path_name == old_path:
@@ -399,46 +405,23 @@ class Loader:
                     zip_directory = '/'.join((tail_dir, zip_directory))
                 if _path_name == old_path:
                     continue
+
                 zip_directory = zip_directory.rstrip('/')
 
-                # path looks like a ZIP file, zip_directory resides within ZIP
-                if not _path_name:
-                    continue
+                if zipfile.is_zipfile(_path_name):
+                    zipfileobj = zipfile.ZipFile(_path_name, 'r')
+                    # Returns zipfile.ZipInfo objects:
+                    for fileinfo in zipfileobj.infolist():
+                        if fileinfo.is_dir():
+                            continue
+                        if zip_directory not in fileinfo.filename:
+                            continue
 
-                if zip_stream := self._get_stream(_path_name):
-                    zipfileobj = zipfile.ZipFile(zip_stream, 'r')
-                    file_location = ZIPLocation(zipfileobj, zip_directory)
-                    for zip_name in zipfileobj.namelist():
-                        # zip_name_dir, zip_name = os.path.split(zip_name)
-                        # assert '\\' not in name_dir
-                        # assert not name_dir.endswith('/')
-                        if zip_name.startswith(zip_directory):
-                            if zip_directory:
-                                zip_name = zip_name[len(zip_directory) + 1:]
-                            self._index_file(zip_name, file_location)
+                        filename = fileinfo.filename.lstrip(zip_directory)
+                        filename = filename.lstrip('/')
 
-    @staticmethod
-    def _get_stream(pathname: str) -> IO | str | None:
-        if zipfile.is_zipfile(pathname):
-            return pathname
-        elif not os.path.exists(pathname + '.001'):
-            return None
-        else:
-            with open(pathname + '.001', 'rb') as volume:
-                bytes_ = bytes(volume.read())
-
-            volume_index = 2
-            while os.path.exists(pathname + '.{0:0>3}'.format(volume_index)):
-                with open(pathname + '.{0:0>3}'.format(volume_index), 'rb') as volume:
-                    bytes_ += bytes(volume.read())
-
-                volume_index += 1
-
-            zip_stream = BytesIO(bytes_)
-            if zipfile.is_zipfile(zip_stream):
-                return zip_stream
-            else:
-                return None
+                        file_location = ZIPLocation(zipfileobj, zip_directory)
+                        self._index_file(filename, file_location)
 
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
