@@ -192,8 +192,9 @@ class Win32Window(BaseWindow):
             height = self.screen.height
         else:
             if pyglet.options.dpi_scaling in ("scaled", "stretch"):
-                self._width = int(self._width * self.scale)
-                self._height = int(self._height * self.scale)
+                w, h = self.get_requested_size()
+                self._width = int(w * self.scale)
+                self._height = int(h * self.scale)
 
                 if pyglet.options.dpi_scaling == "stretch":
                     self._mouse_scale = self.scale
@@ -417,7 +418,7 @@ class Win32Window(BaseWindow):
         return point.x, point.y
 
     def set_size(self, width: int, height: int) -> None:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+        if not self._fullscreen and pyglet.options.dpi_scaling in ("scaled", "stretch"):
             width = int(width * self.scale)
             height = int(height * self.scale)
 

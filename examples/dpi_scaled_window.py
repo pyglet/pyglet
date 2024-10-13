@@ -71,10 +71,25 @@ def on_resize(width, height):
     hello_label.position = (window.width // 2, window.height // 2, 0)
 
 
+screens = pyglet.display.get_display().get_screens()
+selected_screen = screens[0]
+
 @window.event
 def on_key_press(symbol, modifiers):
+    global selected_screen
+    if len(screens) > 1:
+        if symbol == pyglet.window.key._1:
+            selected_screen = screens[1]
+        elif symbol == pyglet.window.key._0:
+            selected_screen = screens[0]
+    
     if symbol == pyglet.window.key.SPACE:
         window.set_size(500, 300)
+    elif symbol == pyglet.window.key.F:
+        window.set_fullscreen(False, screen=selected_screen)
+    elif symbol == pyglet.window.key.G:
+        window.set_fullscreen(True, screen=selected_screen)
+        
 
 
 @window.event
