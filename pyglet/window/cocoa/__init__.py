@@ -8,10 +8,10 @@ from pyglet.display.cocoa import CocoaCanvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.darwin import AutoReleasePool, CGPoint, cocoapy
 from pyglet.window import BaseWindow, DefaultMouseCursor, MouseCursor
-from .pyglet_textview import PygletTextView
 
 from ...libs import darwin
 from .pyglet_delegate import PygletDelegate
+from .pyglet_textview import PygletTextView
 from .pyglet_view import PygletView
 from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
@@ -104,7 +104,8 @@ class CocoaWindow(BaseWindow):
             # Determine window parameters.
             if pyglet.options.dpi_scaling == "real":
                 screen_scale = self.screen.get_scale()
-                width, height = self._width / screen_scale, self._height / screen_scale
+                w, h = self.get_requested_size()
+                width, height = w / screen_scale, h / screen_scale
             else:
                 width, height = self._width, self._height
 
@@ -197,7 +198,7 @@ class CocoaWindow(BaseWindow):
             self.set_visible(self._visible)
 
     def _get_dpi_desc(self) -> int:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
             return int(rsize.width)
@@ -210,7 +211,7 @@ class CocoaWindow(BaseWindow):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
