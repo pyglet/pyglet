@@ -268,9 +268,9 @@ class XlibWindow(BaseWindow):
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
                 if pyglet.options.dpi_scaling in ("scaled", "stretch"):
-                    if self.scale != 1.0:
-                        self._width = width = int(self._width * self.scale)
-                        self._height = height = int(self._height * self.scale)
+                    w, h = self.get_requested_size()
+                    self._width = width = int(w * self.scale)
+                    self._height = height = int(h * self.scale)
 
             self._window = xlib.XCreateWindow(self._x_display, root,
                                               0, 0, width, height, 0, visual_info.depth,
