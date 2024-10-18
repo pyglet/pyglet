@@ -63,7 +63,6 @@ class Options:
     com_mta: bool
     osx_alt_loop: bool
     dpi_scaling: Literal["real", "scaled", "stretch"]
-    scale_with_dpi: bool
     shader_bind_management: bool
 
     def get(self, item: str, default: Any = None) -> Any:
