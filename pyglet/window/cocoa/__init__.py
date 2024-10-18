@@ -198,7 +198,7 @@ class CocoaWindow(BaseWindow):
             self.set_visible(self._visible)
 
     def _get_dpi_desc(self) -> int:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
             return int(rsize.width)
@@ -211,7 +211,7 @@ class CocoaWindow(BaseWindow):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0

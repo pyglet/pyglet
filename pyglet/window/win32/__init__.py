@@ -418,7 +418,7 @@ class Win32Window(BaseWindow):
         return point.x, point.y
 
     def set_size(self, width: int, height: int) -> None:
-        if not self._fullscreen and pyglet.options.dpi_scaling in ("scaled", "stretch"):
+        if pyglet.options.dpi_scaling in ("scaled", "stretch"):
             width = int(width * self.scale)
             height = int(height * self.scale)
 
@@ -1350,7 +1350,6 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(constants.WM_GETDPISCALEDSIZE)
     def _event_dpi_scaled_size(self, msg: int, wParam: int, lParam: int) -> int | None:
-        print("SCALED SIZE")
         if pyglet.options.dpi_scaling in ("scaled", "stretch"):
             return None
 
