@@ -329,11 +329,15 @@ class IndexedVertexList(VertexList):
     @property
     def indices(self) -> list[int]:
         """Array of index data."""
-        return self.domain.index_buffer.get_region(self.index_start, self.index_count)
+        start = self.start
+        return [i - start for i in self.domain.index_buffer.get_region(self.index_start, self.index_count)]
 
     @indices.setter
     def indices(self, data: Sequence[int]) -> None:
-        self.domain.index_buffer.set_region(self.index_start, self.index_count, data)
+        start = self.start
+        # The vertex data is offset in the buffer, so offset the index values to match. Ex:
+        # vertex_buffer: [_, _, _, _, 1, 2, 3, 4]
+        self.domain.index_buffer.set_region(self.index_start, self.index_count, tuple(i + start for i in data))
 
 
 class VertexInstance:
