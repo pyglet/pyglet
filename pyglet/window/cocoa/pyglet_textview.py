@@ -56,8 +56,12 @@ class PygletTextView_Implementation:
     # Other functions still seem to work?
     @PygletTextView.method('v@')
     def keyDown_(self, nsevent: ObjCInstance) -> None:
-        array = NSArray.arrayWithObject_(nsevent)
-        self.interpretKeyEvents_(array)
+
+        # Ignore F5 key text editing action
+        # to prevent showing autocomplete suggestions
+        if nsevent.keyCode() != 96:
+            array = NSArray.arrayWithObject_(nsevent)
+            self.interpretKeyEvents_(array)
 
         if not self.performKeyEquivalent_(nsevent):
             self.nextResponder().keyDown_(nsevent)
