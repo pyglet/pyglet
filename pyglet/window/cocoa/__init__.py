@@ -446,7 +446,6 @@ class CocoaWindow(BaseWindow):
         # animated, but we can set the window's animationResizeTime to zero.
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
-        print("ACTUAL RECT SIZE", rect.size.width, rect.size.height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         super().set_minimum_size(width, height)
