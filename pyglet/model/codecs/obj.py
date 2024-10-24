@@ -14,7 +14,7 @@ from .base import Material, Mesh, Primitive, Node, Scene
 
 def _new_mesh(name, material):
     # The three primitive types used in .obj files:
-    primitive = Primitive(attributes={'normals': [], 'tex_coords': [], 'vertices': []}, material=material)
+    primitive = Primitive(attributes={'POSITION': [], 'NORMAL': [], 'TEXCOORD_0': []}, material=material)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
 
@@ -163,14 +163,14 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                mesh.primitives[0].attributes['normals'] += normals[n_i]
-                mesh.primitives[0].attributes['tex_coords'] += tex_coords[t_i]
-                mesh.primitives[0].attributes['vertices'] += vertices[v_i]
+                mesh.primitives[0].attributes['POSITION'] += vertices[v_i]
+                mesh.primitives[0].attributes['NORMAL'] += normals[n_i]
+                mesh.primitives[0].attributes['TEXCOORD_0'] += tex_coords[t_i]
 
                 if i >= 3:
-                    mesh.primitives[0].attributes['normals'] += n1 + nlast
-                    mesh.primitives[0].attributes['tex_coords'] += t1 + tlast
-                    mesh.primitives[0].attributes['vertices'] += v1 + vlast
+                    mesh.primitives[0].attributes['POSITION'] += v1 + vlast
+                    mesh.primitives[0].attributes['NORMAL'] += n1 + nlast
+                    mesh.primitives[0].attributes['TEXCOORD_0'] += t1 + tlast
 
                 if i == 0:
                     n1 = normals[n_i]
@@ -203,23 +203,23 @@ class OBJModelDecoder(ModelDecoder):
 
         for mesh in mesh_list:
             material = mesh.primitives[0].material
-            count = len(mesh.primitives[0].attributes['vertices']) // 3
+            count = len(mesh.primitives[0].attributes['POSITION']) // 3
             if material.texture_name:
                 program = pyglet.model.get_default_textured_shader()
                 texture = pyglet.resource.texture(material.texture_name)
                 matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.primitives[0].attributes['vertices']),
-                                                        normals=('f', mesh.primitives[0].attributes['normals']),
-                                                        tex_coords=('f', mesh.primitives[0].attributes['tex_coords']),
-                                                        colors=('f', material.diffuse * count)))
+                                                        POSITION=('f', mesh.primitives[0].attributes['POSITION']),
+                                                        NORMAL=('f', mesh.primitives[0].attributes['NORMAL']),
+                                                        TEXCOORD_0=('f', mesh.primitives[0].attributes['TEXCOORD_0']),
+                                                        COLOR_0=('f', material.diffuse * count)))
             else:
                 program = pyglet.model.get_default_shader()
                 matgroup = MaterialGroup(material, program, parent=group)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        position=('f', mesh.primitives[0].attributes['vertices']),
-                                                        normals=('f', mesh.primitives[0].attributes['normals']),
-                                                        colors=('f', material.diffuse * count)))
+                                                        POSITION=('f', mesh.primitives[0].attributes['POSITION']),
+                                                        NORMAL=('f', mesh.primitives[0].attributes['NORMAL']),
+                                                        COLOR_0=('f', material.diffuse * count)))
             groups.append(matgroup)
 
         return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)

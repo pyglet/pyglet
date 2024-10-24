@@ -10,17 +10,16 @@ to your needs for first person games.
 """
 
 from __future__ import annotations
+
 import weakref
-from pathlib import Path
+
 from math import radians, degrees
 
 import pyglet
-from pyglet.window import key as _key
 
 from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Vec2, Vec3, Mat4, clamp
-
-MODULE_PATH = Path(__file__).parent
+from pyglet.window import key as _key
 
 
 class FPSCamera:
@@ -346,8 +345,8 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    model_logo = pyglet.model.load(MODULE_PATH / "logo3d.obj", batch=batch)
-    model_box = pyglet.model.load(MODULE_PATH / "box.obj", batch=batch)
+    model_logo = pyglet.resource.model("logo3d.obj", batch=batch)
+    model_box = pyglet.resource.model("box.obj", batch=batch)
 
     # Camera controls the global projection & view matrixes:
     camera = FPSCamera(window, position=Vec3(0.0, 0.0, 5.0))

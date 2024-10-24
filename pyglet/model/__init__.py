@@ -107,7 +107,10 @@ def load_scene(filename: str, file: BinaryIO | None = None, decoder: ModelDecode
             extension are tried in order. An exception is raised if no codecs are
             registered for the file extension, or if decoding fails.
     """
-    pass
+    if decoder:
+        return decoder.decode(filename, file)
+    else:
+        return _codec_registry.decode(filename, file)
 
 
 def get_default_shader() -> ShaderProgram:
@@ -203,15 +206,15 @@ class BaseMaterialGroup(graphics.Group):
 
 class TexturedMaterialGroup(BaseMaterialGroup):
     default_vert_src = """#version 330 core
-    in vec3 position;
-    in vec3 normals;
-    in vec2 tex_coords;
-    in vec4 colors;
+    in vec3 POSITION;
+    in vec3 NORMAL;
+    in vec2 TEXCOORD_0;
+    in vec4 COLOR_0;
 
-    out vec4 vertex_colors;
-    out vec3 vertex_normals;
-    out vec2 texture_coords;
-    out vec3 vertex_position;
+    out vec3 position;
+    out vec3 normal;
+    out vec2 texcoord_0;
+    out vec4 color_0;    
 
     uniform WindowBlock
     {
@@ -224,29 +227,29 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     void main()
     {
         mat4 mv = window.view * model;
-        vec4 pos = mv * vec4(position, 1.0);
+        vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
 
-        vertex_position = pos.xyz;
-        vertex_colors = colors;
-        texture_coords = tex_coords;
-        vertex_normals = normal_matrix * normals;
+        position = pos.xyz;
+        normal = normal_matrix * NORMAL;
+        texcoord_0 = TEXCOORD_0;
+        color_0 = COLOR_0;
     }
     """
     default_frag_src = """#version 330 core
-    in vec4 vertex_colors;
-    in vec3 vertex_normals;
-    in vec2 texture_coords;
-    in vec3 vertex_position;
+    in vec4 color_0;
+    in vec3 normal;
+    in vec2 texcoord_0;
+    in vec3 position;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
-        vec4 tex_color = texture(our_texture, texture_coords) * vertex_colors;
+        float l = dot(normalize(-position), normalize(normal));
+        vec4 tex_color = texture(our_texture, texcoord_0) * color_0;
         // 75/25 light ambient
         final_colors = tex_color * l * 0.75 + tex_color * vec4(0.25);
     }
@@ -278,13 +281,13 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
 class MaterialGroup(BaseMaterialGroup):
     default_vert_src = """#version 330 core
-    in vec3 position;
-    in vec3 normals;
-    in vec4 colors;
+    in vec3 POSITION;
+    in vec3 NORMAL;
+    in vec4 COLOR_0;
 
-    out vec4 vertex_colors;
-    out vec3 vertex_normals;
-    out vec3 vertex_position;
+    out vec4 color_0;
+    out vec3 normal;
+    out vec3 position;
 
     uniform WindowBlock
     {
@@ -297,26 +300,26 @@ class MaterialGroup(BaseMaterialGroup):
     void main()
     {
         mat4 mv = window.view * model;
-        vec4 pos = mv * vec4(position, 1.0);
+        vec4 pos = mv * vec4(POSITION, 1.0);
         gl_Position = window.projection * pos;
         mat3 normal_matrix = transpose(inverse(mat3(mv)));
 
-        vertex_position = pos.xyz;
-        vertex_colors = colors;
-        vertex_normals = normal_matrix * normals;
+        position = pos.xyz;
+        color_0 = COLOR_0;
+        normal = normal_matrix * NORMAL;
     }
     """
     default_frag_src = """#version 330 core
-    in vec4 vertex_colors;
-    in vec3 vertex_normals;
-    in vec3 vertex_position;
+    in vec4 color_0;
+    in vec3 normal;
+    in vec3 position;
     out vec4 final_colors;
 
     void main()
     {
-        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        float l = dot(normalize(-position), normalize(normal));
         // 75/25 light ambient
-        final_colors = vertex_colors * l * 0.75 + vertex_colors * vec4(0.25);
+        final_colors = color_0 * l * 0.75 + color_0 * vec4(0.25);
     }
     """
 
@@ -387,9 +390,9 @@ class Cube(Model):
 
         return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
-                                                 position=('f', vertices),
-                                                 normals=('f', normals),
-                                                 colors=('f', self._color * (len(vertices) // 3)))
+                                                 POSITION=('f', vertices),
+                                                 NORMAL=('f', normals),
+                                                 COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
 class Sphere(Model):
@@ -436,9 +439,9 @@ class Sphere(Model):
 
         return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
-                                                 position=('f', vertices),
-                                                 normals=('f', normals),
-                                                 colors=('f', self._color * (len(vertices) // 3)))
+                                                 POSITION=('f', vertices),
+                                                 NORMAL=('f', normals),
+                                                 COLOR_0=('f', self._color * (len(vertices) // 3)))
 
 
 _add_default_codecs()

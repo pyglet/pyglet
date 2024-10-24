@@ -87,7 +87,7 @@ class BufferView:
         self.length = data.get('byteLength')
         self.stride = data.get('byteStride', 0)
         self.target = data.get('target')
-        self.target_name = _targets[self.target]
+        self.target_name = _targets.get(self.target)
 
     def read(self, read_offset: int, byte_length: int, count: int) -> bytes:
         offset = self.offset + read_offset
@@ -108,7 +108,7 @@ class Accessor:
         self._buffer_view_index = data.get('bufferView')
         self.buffer_view = owner.buffer_views[self._buffer_view_index]
 
-        self.byte_offset = data.get('byteOffset')
+        self.byte_offset = data.get('byteOffset', 0)
         self.component_type = data.get('componentType')     # GL_FLOAT, GL_INT, etc
         self.type = data.get('type')                        # VEC3, MAT4, etc.
         self.count = data.get('count')                      # count of self.type
@@ -318,7 +318,7 @@ class GLTF:
 
         self.samplers = [Sampler(data=data) for data in gltf_data.get('samplers', [])]
         self.textures = [Texture(data=data, owner=self) for data in gltf_data.get('textures', [])]
-        self.materials = [Material(data) for data in gltf_data.get('materials')]
+        self.materials = [Material(data) for data in gltf_data.get('materials', [])]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
