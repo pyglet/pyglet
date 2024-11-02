@@ -88,9 +88,39 @@ def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | No
             An optional top level Group.
     """
     if decoder:
-        return decoder.decode(filename, file, batch=batch, group=group)
+        scene = decoder.decode(filename, file)
     else:
-        return _codec_registry.decode(filename, file, batch=batch, group=group)
+        scene = _codec_registry.decode(filename, file)
+
+    vertex_lists = []
+    groups = []
+
+    for node in scene:
+        for mesh in node.meshes:
+            material = mesh.primitives[0].material
+            count = mesh.primitives[0].attributes[0].count
+
+            if material.texture_name:
+                program = pyglet.model.get_default_textured_shader()
+                texture = pyglet.resource.texture(material.texture_name)
+                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+
+                vertex_lists.append(program.vertex_list(count, gl.GL_TRIANGLES, batch, matgroup,
+                                                        POSITION=('f', mesh.primitives[0].attributes[0].array),
+                                                        NORMAL=('f', mesh.primitives[0].attributes[1].array),
+                                                        TEXCOORD_0=('f', mesh.primitives[0].attributes[2].array),
+                                                        COLOR_0=('f', material.diffuse * count)))
+            else:
+                program = pyglet.model.get_default_shader()
+                matgroup = MaterialGroup(material, program, parent=group)
+
+                vertex_lists.append(program.vertex_list(count, gl.GL_TRIANGLES, batch, matgroup,
+                                                        POSITION=('f', mesh.primitives[0].attributes[0].array),
+                                                        NORMAL=('f', mesh.primitives[0].attributes[1].array),
+                                                        COLOR_0=('f', material.diffuse * count)))
+            groups.append(matgroup)
+
+    return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
 
 
 def load_scene(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None) -> Scene:

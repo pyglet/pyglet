@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import os
 
-import pyglet
-
 from pyglet.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
-from .. import Model, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
-from .base import SimpleMaterial, Mesh, Primitive, Node, Scene
+from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 
 
 def _new_mesh(name, material):
     # The three primitive types used in .obj files:
-    primitive = Primitive(attributes={'POSITION': [], 'NORMAL': [], 'TEXCOORD_0': []}, indices=None, material=material, mode=GL_TRIANGLES)
+    attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
+                  Attribute('NORMAL', 'f', 'VEC3', 0, []),
+                  Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
+    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
 
@@ -163,14 +163,14 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 if n_i < 0:
                     n_i += len(normals) - 1
 
-                mesh.primitives[0].attributes['POSITION'] += vertices[v_i]
-                mesh.primitives[0].attributes['NORMAL'] += normals[n_i]
-                mesh.primitives[0].attributes['TEXCOORD_0'] += tex_coords[t_i]
+                mesh.primitives[0].attributes[0].array += vertices[v_i]
+                mesh.primitives[0].attributes[1].array += normals[n_i]
+                mesh.primitives[0].attributes[2].array += tex_coords[t_i]
 
                 if i >= 3:
-                    mesh.primitives[0].attributes['POSITION'] += v1 + vlast
-                    mesh.primitives[0].attributes['NORMAL'] += n1 + nlast
-                    mesh.primitives[0].attributes['TEXCOORD_0'] += t1 + tlast
+                    mesh.primitives[0].attributes[0].array += v1 + vlast
+                    mesh.primitives[0].attributes[1].array += n1 + nlast
+                    mesh.primitives[0].attributes[2].array += t1 + tlast
 
                 if i == 0:
                     n1 = normals[n_i]
@@ -179,6 +179,11 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 nlast = normals[n_i]
                 tlast = tex_coords[t_i]
                 vlast = vertices[v_i]
+
+        for mesh in meshes:
+            for primitive in mesh.primitives:
+                for attribute in primitive.attributes:
+                    attribute.count = len(attribute.array) // 3
 
     return meshes
 
@@ -191,38 +196,10 @@ class OBJModelDecoder(ModelDecoder):
     def get_file_extensions(self):
         return ['.obj']
 
-    def decode(self, filename, file, batch, group=None):
-
-        if not batch:
-            batch = pyglet.graphics.Batch()
+    def decode(self, filename, file):
 
         mesh_list = parse_obj_file(filename=filename, file=file)
-
-        vertex_lists = []
-        groups = []
-
-        for mesh in mesh_list:
-            material = mesh.primitives[0].material
-            count = len(mesh.primitives[0].attributes['POSITION']) // 3
-            if material.texture_name:
-                program = pyglet.model.get_default_textured_shader()
-                texture = pyglet.resource.texture(material.texture_name)
-                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        POSITION=('f', mesh.primitives[0].attributes['POSITION']),
-                                                        NORMAL=('f', mesh.primitives[0].attributes['NORMAL']),
-                                                        TEXCOORD_0=('f', mesh.primitives[0].attributes['TEXCOORD_0']),
-                                                        COLOR_0=('f', material.diffuse * count)))
-            else:
-                program = pyglet.model.get_default_shader()
-                matgroup = MaterialGroup(material, program, parent=group)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
-                                                        POSITION=('f', mesh.primitives[0].attributes['POSITION']),
-                                                        NORMAL=('f', mesh.primitives[0].attributes['NORMAL']),
-                                                        COLOR_0=('f', material.diffuse * count)))
-            groups.append(matgroup)
-
-        return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
+        return Scene(nodes=[Node(meshes=mesh_list)])
 
 
 def get_decoders():
