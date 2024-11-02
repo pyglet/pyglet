@@ -9,12 +9,12 @@ from pyglet.util import asstr
 
 from .. import Model, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
-from .base import Material, Mesh, Primitive, Node, Scene
+from .base import SimpleMaterial, Mesh, Primitive, Node, Scene
 
 
 def _new_mesh(name, material):
     # The three primitive types used in .obj files:
-    primitive = Primitive(attributes={'POSITION': [], 'NORMAL': [], 'TEXCOORD_0': []}, material=material)
+    primitive = Primitive(attributes={'POSITION': [], 'NORMAL': [], 'TEXCOORD_0': []}, indices=None, material=material, mode=GL_TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
 
@@ -45,7 +45,7 @@ def load_material_library(filename):
                 # save previous material
                 for item in (diffuse, ambient, specular, emission):
                     item.append(opacity)
-                matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+                matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
             name = values[1]
 
         elif name is None:
@@ -76,7 +76,7 @@ def load_material_library(filename):
     for item in (diffuse, ambient, specular, emission):
         item.append(opacity)
 
-    matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
 
     return matlib
 
@@ -109,7 +109,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
     emission = [0.0, 0.0, 0.0, 1.0]
     shininess = 100.0
 
-    default_material = Material("Default", diffuse, ambient, specular, emission, shininess)
+    default_material = SimpleMaterial("Default", diffuse, ambient, specular, emission, shininess)
 
     for line in file_contents.splitlines():
 
@@ -141,7 +141,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
         elif values[0] == 'f':
             if material is None:
-                material = Material()
+                material = SimpleMaterial()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
                 meshes.append(mesh)

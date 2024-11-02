@@ -98,19 +98,17 @@ def load_scene(filename: str, file: BinaryIO | None = None, decoder: ModelDecode
 
     Args:
         filename:
-            Used to guess the scene format, and to load the file if ``file`` is
-            unspecified.
+            Used to guess the scene format, or to load the file if ``file`` is unspecified.
         file:
             An open file containing the source of the scene data in any supported format.
         decoder:
-            If unspecified, all decoders that are registered for the filename
-            extension are tried in order. An exception is raised if no codecs are
-            registered for the file extension, or if decoding fails.
+            The specific decoder to use to load the Scene. If None, use default decoders
+            that match the filename extension.
     """
     if decoder:
         return decoder.decode(filename, file)
-    else:
-        return _codec_registry.decode(filename, file)
+
+    return _codec_registry.decode(filename, file)
 
 
 def get_default_shader() -> ShaderProgram:
