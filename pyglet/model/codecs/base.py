@@ -1,24 +1,30 @@
 from __future__ import annotations
 
-from pyglet.gl import GL_TRIANGLES
-
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Sequence
+    from pyglet.model import Model
+    from pyglet.graphics import Batch, Group
 
 
-class Scene:
-    """Container for one or more Node objects."""
+class Scene(ABC):
+    """A high level container for one or more Node objects."""
 
     def __init__(self, nodes: list[Node] | None = None) -> None:
         self.nodes = nodes or []
 
-    def __iter__(self):
-        """Iterate over all Nodes and their children (if existing)."""
-        for top_node in self.nodes:
-            for node in top_node:
-                yield node
+    # TODO: test and implement:
+    # def __iter__(self):
+    #     """Iterate over all Nodes and their children (if existing)."""
+    #     for top_node in self.nodes:
+    #         for node in top_node:
+    #             yield node
+
+    def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
+        """TBD"""
+        raise NotImplementedError(f"{self.__class__.__name__} does not implement this method.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(nodes={self.nodes})"
@@ -33,10 +39,11 @@ class Node:
         self.skins = skins or []
         self.cameras = cameras or []
 
-    def __iter__(self):
-        yield self
-        for child_node in self.nodes:
-            yield child_node
+    # TODO: test and implement:
+    # def __iter__(self):
+    #     yield self
+    #     for child_node in self.nodes:
+    #         yield child_node
 
     def __repr__(self):
         return (f"Node(nested_nodes={len(self.nodes)}, meshes={len(self.meshes)},"
@@ -78,7 +85,7 @@ class Primitive:
         return f"Primitive(attributes={list(self.attributes)}, mode={self.mode})"
 
 
-class Material:
+class Material(ABC):
     """Base class for Material types"""
 
 
@@ -99,12 +106,13 @@ class SimpleMaterial(Material):
         self.shininess = shininess
         self.texture_name = texture_name
 
-    # def __repr__(self):
-    #     return f"Material(name='{self.name}', texture='{self.texture_name}'"
+    def __repr__(self):
+        return f"Material(name='{self.name}', texture='{self.texture_name}'"
 
 
 class PBRMaterial(Material):
     def __init__(self):
+        # TODO: implement this class
         pass
 
 
@@ -128,4 +136,5 @@ class Camera:
 
 class Skin:
     def __init__(self) -> None:
+        # TODO: implement this class
         pass

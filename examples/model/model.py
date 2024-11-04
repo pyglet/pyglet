@@ -44,8 +44,10 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    model_logo = pyglet.resource.model("logo3d.obj", batch=batch)
-    model_box = pyglet.resource.model("box.obj", batch=batch)
+    logo_scene = pyglet.resource.scene('logo3d.obj')
+    box_scene = pyglet.resource.scene('box.obj')
+    model_logo = logo_scene.create_models(batch=batch)[0]   # only one model in this scene
+    model_box = box_scene.create_models(batch=batch)[0]     # only one model in this scene
 
     # Set the application wide view matrix (camera):
     window.view = Mat4.look_at(position=Vec3(0, 0, 5), target=Vec3(0, 0, 0), up=Vec3(0, 1, 0))

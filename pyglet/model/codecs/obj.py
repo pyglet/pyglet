@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import os
 
+import pyglet
+
 from pyglet.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
+from .. import Model, MaterialGroup, TexturedMaterialGroup
+from ...graphics import Batch, Group
 
 
 def _new_mesh(name, material):
@@ -188,6 +192,34 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
     return meshes
 
 
+class OBJScene(Scene):
+
+    def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
+        vertex_lists = []
+        groups = []
+        for node in self.nodes:
+            for mesh in node.meshes:
+                material = mesh.primitives[0].material
+                count = mesh.primitives[0].attributes[0].count
+
+                if material.texture_name:
+                    program = pyglet.model.get_default_textured_shader()
+                    texture = pyglet.resource.texture(material.texture_name)
+                    matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+                else:
+                    program = pyglet.model.get_default_shader()
+                    matgroup = MaterialGroup(material, program, parent=group)
+
+                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes}
+                # Add additional material data:
+                data['COLOR_0'] = 'f', material.diffuse * count
+
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
+                groups.append(matgroup)
+
+        return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
+
+
 ###################################################
 #   Decoder definitions start here:
 ###################################################
@@ -199,7 +231,7 @@ class OBJModelDecoder(ModelDecoder):
     def decode(self, filename, file):
 
         mesh_list = parse_obj_file(filename=filename, file=file)
-        return Scene(nodes=[Node(meshes=mesh_list)])
+        return OBJScene(nodes=[Node(meshes=mesh_list)])
 
 
 def get_decoders():

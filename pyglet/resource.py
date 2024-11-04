@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from pyglet.image.animation import Animation
     from pyglet.image.atlas import TextureBin
     from pyglet.media.codecs import Source
-    from pyglet.model import Model
+    from pyglet.model import Scene
     from pyglet.text.document import AbstractDocument
 
 
@@ -665,18 +665,10 @@ class Loader:
         self._cached_textures[name] = textureobj
         return textureobj
 
-    def model(self, name: str, batch: Batch | None = None) -> Model:
-        """Load a 3D model.
-
-        Args:
-            name:
-                Filename of the 3D model to load.
-            batch:
-                An optional Batch instance to add this model to.
-        """
+    def scene(self, name: str) -> Scene:
+        """Load a 3D Scene."""
         self._ensure_index()
-        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
-        return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
+        return pyglet.model.load(filename=name, file=self.file(name))
 
     def html(self, name: str) -> AbstractDocument:
         """Load an HTML document."""
@@ -764,12 +756,12 @@ location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
-model = _default_loader.model
 media = _default_loader.media
 texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
+scene = _default_loader.scene
 shader = _default_loader.shader
 get_cached_texture_names = _default_loader.get_cached_texture_names
 get_cached_image_names = _default_loader.get_cached_image_names

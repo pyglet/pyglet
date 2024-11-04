@@ -1,41 +1,20 @@
-"""Loading of 3D models.
+"""Loading of 3D scenes and models.
 
-A :py:class:`~pyglet.model.Model` is an instance of a 3D object.
+The :py:mod:`~pyglet.model` module provides an interface for loading 3D "scenes"
+and models. A :py:class:`~pyglet.model.Scene` is a logical container that can
+contain the data of one or more models, and is closely based on the design
+of the glTF format.
 
-The following example loads a ``"teapot.obj"`` model::
-
-    import pyglet
-
-    window = pyglet.window.Window()
-
-    teapot = pyglet.model.load('teapot.obj')
-
-    @window.event
-    def on_draw():
-        teapot.draw()
-
-    pyglet.app.run()
-
-
-You can also load models with :py:meth:`~pyglet.resource.model`.
-See :py:mod:`~pyglet.resource` for more information.
-
-
-Efficient Drawing
-=================
-
-As with Sprites or Text, Models can be added to a
-:py:class:`~pyglet.graphics.Batch` for efficient drawing. This is
-preferred to calling their ``draw`` methods individually.  To do this,
-simply pass in a reference to the :py:class:`~pyglet.graphics.Batch`
-instance when loading the Model::
+The following example loads a ``"teapot.obj"`` file. The wavefront format
+only contains a single model (mesh)::
 
     import pyglet
 
     window = pyglet.window.Window()
     batch = pyglet.graphics.Batch()
 
-    teapot = pyglet.model.load('teapot.obj', batch=batch)
+    scene = pyglet.model.load('teapot.obj')
+    models = scene.create_models(batch=batch)
 
     @window.event
     def on_draw():
@@ -44,6 +23,8 @@ instance when loading the Model::
     pyglet.app.run()
 
 
+You can also load scenes with :py:meth:`~pyglet.resource.scene`.
+See :py:mod:`~pyglet.resource` for more information.
 """
 from __future__ import annotations
 
@@ -68,62 +49,7 @@ if TYPE_CHECKING:
     from pyglet.model.codecs import ModelDecoder
 
 
-def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None,
-         batch: Batch | None = None, group: Group | None = None) -> Model:
-    """Load a 3D model from a file.
-
-    Args:
-        filename:
-            Used to guess the model format, and to load the file if ``file`` is
-            unspecified.
-        file:
-            An open file containing the source of model data in any supported format.
-        decoder:
-            If unspecified, all decoders that are registered for the filename
-            extension are tried. An exception is raised if no codecs are
-            registered for the file extension, or if decoding fails.
-        batch:
-            An optional Batch instance to add this model to.
-        group:
-            An optional top level Group.
-    """
-    if decoder:
-        scene = decoder.decode(filename, file)
-    else:
-        scene = _codec_registry.decode(filename, file)
-
-    vertex_lists = []
-    groups = []
-
-    for node in scene:
-        for mesh in node.meshes:
-            material = mesh.primitives[0].material
-            count = mesh.primitives[0].attributes[0].count
-
-            if material.texture_name:
-                program = pyglet.model.get_default_textured_shader()
-                texture = pyglet.resource.texture(material.texture_name)
-                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-
-                vertex_lists.append(program.vertex_list(count, gl.GL_TRIANGLES, batch, matgroup,
-                                                        POSITION=('f', mesh.primitives[0].attributes[0].array),
-                                                        NORMAL=('f', mesh.primitives[0].attributes[1].array),
-                                                        TEXCOORD_0=('f', mesh.primitives[0].attributes[2].array),
-                                                        COLOR_0=('f', material.diffuse * count)))
-            else:
-                program = pyglet.model.get_default_shader()
-                matgroup = MaterialGroup(material, program, parent=group)
-
-                vertex_lists.append(program.vertex_list(count, gl.GL_TRIANGLES, batch, matgroup,
-                                                        POSITION=('f', mesh.primitives[0].attributes[0].array),
-                                                        NORMAL=('f', mesh.primitives[0].attributes[1].array),
-                                                        COLOR_0=('f', material.diffuse * count)))
-            groups.append(matgroup)
-
-    return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
-
-
-def load_scene(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None) -> Scene:
+def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None) -> Scene:
     """Load a 3D scene from a file.
 
     Args:
