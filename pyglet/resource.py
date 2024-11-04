@@ -668,7 +668,8 @@ class Loader:
     def scene(self, name: str) -> Scene:
         """Load a 3D Scene."""
         self._ensure_index()
-        return pyglet.model.load(filename=name, file=self.file(name))
+        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
+        return pyglet.model.load(filename=abspathname, file=self.file(name))
 
     def html(self, name: str) -> AbstractDocument:
         """Load an HTML document."""

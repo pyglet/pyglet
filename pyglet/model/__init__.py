@@ -40,7 +40,7 @@ from .codecs import registry as _codec_registry
 from .codecs.base import Material, Scene
 
 if TYPE_CHECKING:
-    from typing import BinaryIO
+    from typing import BinaryIO, TextIO
     from pyglet.image import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from pyglet.model.codecs import ModelDecoder
 
 
-def load(filename: str, file: BinaryIO | None = None, decoder: ModelDecoder | None = None) -> Scene:
+def load(filename: str, file: BinaryIO | TextIO | None = None, decoder: ModelDecoder | None = None) -> Scene:
     """Load a 3D scene from a file.
 
     Args:
