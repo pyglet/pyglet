@@ -162,7 +162,7 @@ class Config:
         return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
-class DisplayConfig(Config):
+class DisplayConfig(Config, abc.ABC):
     """An OpenGL configuration for a particular display.
 
     Use ``Config.match`` to obtain an instance of this class.

@@ -53,8 +53,7 @@ class HeadlessConfig(Config):  # noqa: D101
         egl.eglChooseConfig(display_connection, attrs_list, configs,
                             num_config.value, byref(num_config))
 
-        result = [HeadlessDisplayConfig(canvas, c, self) for c in configs]
-        return result
+        return [HeadlessDisplayConfig(canvas, c, self) for c in configs]
 
 
 class HeadlessDisplayConfig(DisplayConfig):  # noqa: D101
@@ -91,6 +90,9 @@ class HeadlessDisplayConfig(DisplayConfig):  # noqa: D101
 
         for name, value in _fake_gl_attributes.items():
             setattr(self, name, value)
+
+    def compatible(self, canvas: HeadlessCanvas) -> bool:
+        return isinstance(canvas, HeadlessCanvas)
 
     def create_context(self, share: HeadlessContext | None) -> HeadlessContext:
         return HeadlessContext(self, share)
