@@ -12,7 +12,7 @@ from pyglet.gl import gl_info
 
 if TYPE_CHECKING:
     from _ctypes import Array
-    from pyglet.display import Canvas
+    from pyglet.display.base import Canvas
     from pyglet.gl.gl_info import GLInfo
     from pyglet.graphics.shader import ShaderProgram
 
@@ -142,7 +142,7 @@ class Config:
         """
         msg = (
             'This config cannot be used to create contexts. '
-            'Use Config.match to created a CanvasConfig'
+            'Use Config.match to created a DisplayConfig'
         )
         raise gl.ConfigException(msg)
 
@@ -154,7 +154,7 @@ class Config:
         For example, `pyglet.window.Screen.get_matching_configs` returns
         complete configs.
 
-        :deprecated: Use ``isinstance(config, CanvasConfig)``.
+        :deprecated: Use ``isinstance(config, DisplayConfig)``.
         """
         return isinstance(self, DisplayConfig)
 
@@ -214,20 +214,20 @@ class ObjectSpace:
 class Context:
     """A base OpenGL context for drawing.
 
-    Use ``CanvasConfig.create_context`` to create a context.
+    Use ``DisplayConfig.create_context`` to create a context.
     """
     #: gl_info.GLInfo instance, filled in on first set_current
     _info: GLInfo | None = None
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
-    config: CanvasConfig
+    config: DisplayConfig
     context_share: Context | None
 
-    def __init__(self, config: CanvasConfig, context_share: Context | None = None) -> None:
+    def __init__(self, config: DisplayConfig, context_share: Context | None = None) -> None:
         """Initialize a context.
 
-        This should only be created through the ``CanvasConfig.create_context`` method.
+        This should only be created through the ``DisplayConfig.create_context`` method.
 
         Args:
             config:

@@ -103,8 +103,8 @@ from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
-    from pyglet.display import Display, Screen, ScreenMode
-    from pyglet.gl import CanvasConfig, Config, Context
+    from pyglet.display.base import Display, Screen, ScreenMode
+    from pyglet.gl import DisplayConfig, Config, Context
     from pyglet.text import Label
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
@@ -370,7 +370,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: CanvasConfig | None = None
+    _config: DisplayConfig | None = None
     _context: Context | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
@@ -1205,7 +1205,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._screen
 
     @property
-    def config(self) -> CanvasConfig:
+    def config(self) -> DisplayConfig:
         """A GL config describing the context of this window.  Read-only."""
         return self._config
 

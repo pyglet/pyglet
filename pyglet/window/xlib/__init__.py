@@ -47,8 +47,7 @@ from pyglet.window import (
 
 if TYPE_CHECKING:
     from _ctypes import _Pointer
-
-    from pyglet.gl.xlib import XlibCanvasConfig
+    from pyglet.gl.xlib import XlibDisplayConfig
 
 try:
     from pyglet.libs.x11 import xsync
@@ -125,7 +124,7 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow):
-    config: XlibCanvasConfig
+    config: XlibDisplayConfig
     _x_display: xlib.Display | None = None  # X display connection
     _x_screen_id: int | None = None  # X screen index
     _x_ic: xlib.XIC | None = None  # X input context
