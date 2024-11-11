@@ -540,17 +540,12 @@ class Controller(EventDispatcher):
         self.righty: float = 0.0
         self.dpadx: float = 0.0
         self.dpady: float = 0.0
-        # Default signs if bound to axis:
-        self._dpup_sign = Sign.POSITIVE
-        self._dpdown_sign = Sign.NEGATIVE
-        self._dpleft_sign = Sign.NEGATIVE
-        self._dpright_sign = Sign.POSITIVE
 
-        self._button_controls = []
-        self._axis_controls = []
-        self._hat_control = None
-        self._hat_x_control = None
-        self._hat_y_control = None
+        self._button_controls: list = []
+        self._axis_controls: list = []
+        self._hat_control: Control | None = None
+        self._hat_x_control: Control | None = None
+        self._hat_y_control: Control | None = None
 
         self._initialize_controls()
 
@@ -702,14 +697,14 @@ class Controller(EventDispatcher):
                 self._button_controls.append(ctrl)
 
             elif isinstance(ctrl, AbsoluteAxis):
-                if ctrl.name in ('x', 'y', 'z', 'rx', 'ry', 'rz'):
-                    self._axis_controls.append(ctrl)
-                elif ctrl.name == "hat_x":
+                if ctrl.name == "hat_x":
                     self._hat_x_control = ctrl
                 elif ctrl.name == "hat_y":
                     self._hat_y_control = ctrl
                 elif ctrl.name == "hat":
                     self._hat_control = ctrl
+                else:
+                    self._axis_controls.append(ctrl)
 
         for name, relation in self._mapping.items():
 
@@ -735,7 +730,7 @@ class Controller(EventDispatcher):
                         self._bind_axis_control(relation, control, dpname)
 
             except IndexError:
-                warnings.warn(f"Could not find control '{name}' with index '{relation.index}'.")
+                warnings.warn(f"Could not map '{relation}' to '{name}'")
                 continue
 
     def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
