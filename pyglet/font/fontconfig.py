@@ -29,7 +29,7 @@ FC_WEIGHT = asbytes("weight")
 FC_FT_FACE = asbytes("ftface")
 FC_FILE = asbytes("file")
 
-FC_WEIGHT_THIN = 0
+FC_WEIGHT_THIN = 10
 FC_WEIGHT_EXTRALIGHT = 40
 FC_WEIGHT_ULTRALIGHT = FC_WEIGHT_EXTRALIGHT
 FC_WEIGHT_LIGHT = 50
@@ -48,6 +48,41 @@ FC_WEIGHT_BLACK = 210
 FC_WEIGHT_HEAVY = FC_WEIGHT_BLACK
 FC_WEIGHT_EXTRABLACK = 215
 FC_WEIGHT_ULTRABLACK = FC_WEIGHT_EXTRABLACK
+
+
+name_to_weight = {
+    "thin": FC_WEIGHT_THIN,
+    "extralight": FC_WEIGHT_EXTRALIGHT,
+    "ultralight": FC_WEIGHT_ULTRALIGHT,
+    "light": FC_WEIGHT_LIGHT,
+    "semilight": FC_WEIGHT_SEMILIGHT,
+    "normal": FC_WEIGHT_REGULAR,
+    "regular": FC_WEIGHT_NORMAL,
+    "medium": FC_WEIGHT_MEDIUM,
+    "demibold": FC_WEIGHT_DEMIBOLD,
+    "semibold": FC_WEIGHT_SEMIBOLD,
+    "bold": FC_WEIGHT_BOLD,
+    "extrabold": FC_WEIGHT_EXTRABOLD,
+    "ultrabold": FC_WEIGHT_ULTRABOLD,
+    "black": FC_WEIGHT_BLACK,
+    "heavy": FC_WEIGHT_HEAVY,
+    "extrablack": FC_WEIGHT_EXTRABLACK,
+}
+
+weight_to_name = {
+    0: 'thin',
+    40: 'extralight',
+    50: 'light',
+    55: 'semilight',
+    80: 'normal',
+    100: 'medium',
+    180: 'semibold',
+    200: 'bold',
+    205: 'extrabold',
+    210: 'black',
+    215: 'ultrabold',
+}
+
 
 FC_SLANT_ROMAN = 0
 FC_SLANT_ITALIC = 100
@@ -93,7 +128,7 @@ class FcValue(Structure):
 
 
 class FontConfig:
-    _search_cache: OrderedDict[tuple[str, float, bool, bool], FontConfigSearchResult]
+    _search_cache: OrderedDict[tuple[str, float, str, bool], FontConfigSearchResult]
     _fontconfig: CDLL | None
 
     def __init__(self) -> None:
@@ -113,16 +148,14 @@ class FontConfig:
     def create_search_pattern(self) -> FontConfigSearchPattern:
         return FontConfigSearchPattern(self._fontconfig)
 
-    def find_font(self, name: str, size: float = 12, bold: bool = False,
-                  italic: bool = False) -> FontConfigSearchResult:
-        result = self._get_from_search_cache(name, size, bold, italic)
-        if result:
+    def find_font(self, name: str, size: float = 12, weight: str = "regular", italic: bool = False) -> FontConfigSearchResult:
+        if result := self._get_from_search_cache(name, size, weight, italic):
             return result
 
         search_pattern = self.create_search_pattern()
         search_pattern.name = name
         search_pattern.size = size
-        search_pattern.bold = bold
+        search_pattern.weight = weight
         search_pattern.italic = italic
 
         result = search_pattern.match()
@@ -131,8 +164,7 @@ class FontConfig:
         return result
 
     def have_font(self, name: str) -> bool:
-        result = self.find_font(name)
-        if result:
+        if result := self.find_font(name):
             # Check the name matches, fontconfig can return a default
             if name and result.name and result.name.lower() != name.lower():
                 return False
@@ -147,13 +179,13 @@ class FontConfig:
                              result_pattern: FontConfigSearchResult) -> None:
         self._search_cache[(search_pattern.name,
                             search_pattern.size,
-                            search_pattern.bold,
+                            search_pattern.weight,
                             search_pattern.italic)] = result_pattern
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 
-    def _get_from_search_cache(self, name: str, size: float, bold: bool, italic: bool) -> FontConfigSearchResult | None:
-        result = self._search_cache.get((name, size, bold, italic), None)
+    def _get_from_search_cache(self, name: str, size: float, weight: str, italic: bool) -> FontConfigSearchResult | None:
+        result = self._search_cache.get((name, size, weight, italic), None)
 
         if result and result.is_valid:
             return result
@@ -203,10 +235,6 @@ class FontConfigPattern:
         assert self._fontconfig
         self._fontconfig.FcPatternDestroy(self._pattern)
         self._pattern = None
-
-    @staticmethod
-    def _bold_to_weight(bold: bool) -> int:
-        return FC_WEIGHT_BOLD if bold else FC_WEIGHT_REGULAR
 
     @staticmethod
     def _italic_to_slant(italic: bool) -> int:
@@ -292,14 +320,14 @@ class FontConfigPattern:
 class FontConfigSearchPattern(FontConfigPattern):
     size: int | None
     italic: bool
-    bold: bool
+    weight: str
     name: str | None
 
     def __init__(self, fontconfig: CDLL) -> None:
         super().__init__(fontconfig)
 
         self.name = None
-        self.bold = False
+        self.weight = "regular"
         self.italic = False
         self.size = None
 
@@ -316,7 +344,7 @@ class FontConfigSearchPattern(FontConfigPattern):
         self._create()
         self._set_string(FC_FAMILY, self.name)
         self._set_double(FC_SIZE, self.size)
-        self._set_integer(FC_WEIGHT, self._bold_to_weight(self.bold))
+        self._set_double(FC_WEIGHT, name_to_weight[self.weight])
         self._set_integer(FC_SLANT, self._italic_to_slant(self.italic))
 
         self._substitute_defaults()
@@ -357,8 +385,8 @@ class FontConfigSearchResult(FontConfigPattern):
         return self._get_double(FC_SIZE)
 
     @property
-    def bold(self) -> bool:
-        return self._get_integer(FC_WEIGHT) == FC_WEIGHT_BOLD
+    def weight(self) -> str:
+        return weight_to_name[self._get_double(FC_WEIGHT)]
 
     @property
     def italic(self) -> bool:

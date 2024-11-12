@@ -140,31 +140,31 @@ class FreeTypeFontMetrics(NamedTuple):
 
 
 class MemoryFaceStore:
-    _dict: dict[tuple[str, bool, bool], FreeTypeMemoryFace]
+    _dict: dict[tuple[str, str, bool], FreeTypeMemoryFace]
 
     def __init__(self) -> None:
         self._dict = {}
 
     def add(self, face: FreeTypeMemoryFace) -> None:
-        self._dict[face.name.lower(), face.bold, face.italic] = face
+        self._dict[face.name.lower(), face.weight, face.italic] = face
 
     def contains(self, name: str) -> bool:
         lname = name and name.lower() or ""
         return len([name for name, _, _ in self._dict if name == lname]) > 0
 
-    def get(self, name: str, bold: bool, italic: bool) -> FreeTypeMemoryFace | None:
+    def get(self, name: str, weight: str, italic: bool) -> FreeTypeMemoryFace | None:
         lname = name and name.lower() or ""
-        return self._dict.get((lname, bold, italic), None)
+        return self._dict.get((lname, weight, italic), None)
 
 
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
-    # Map font (name, bold, italic) to FreeTypeMemoryFace
+    # Map font (name, weight, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
     face: FreeTypeFace
 
-    def __init__(self, name: str, size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
+    def __init__(self, name: str, size: float, weight: str = "regular", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
 
         if stretch:
@@ -173,7 +173,7 @@ class FreeTypeFont(base.Font):
         super().__init__()
         self._name = name
         self.size = size
-        self.bold = bold
+        self.weight = weight
         self.italic = italic
         self.dpi = dpi or 96
 
@@ -198,12 +198,12 @@ class FreeTypeFont(base.Font):
         return self.face.get_glyph_slot(glyph_index)
 
     def _load_font_face(self) -> None:
-        self.face = self._memory_faces.get(self._name, self.bold, self.italic)
+        self.face = self._memory_faces.get(self._name, self.weight, self.italic)
         if self.face is None:
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self) -> None:
-        match = get_fontconfig().find_font(self._name, self.size, self.bold, self.italic)
+        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.italic)
         if not match:
             msg = f"Could not match font '{self._name}'"
             raise base.FontException(msg)

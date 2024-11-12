@@ -38,11 +38,13 @@ creating scrollable layouts.
 from __future__ import annotations
 
 from abc import abstractmethod
+from enum import Enum
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
+
 from pyglet.text import caret, document, layout  # noqa: F401
 
 
@@ -75,6 +77,23 @@ class DocumentDecoder:
 
 
 SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attributed"]
+
+
+class Weight(str, Enum):
+    """Valid font weights."""
+
+    THIN = 'thin'
+    EXTRALIGHT = 'extralight'
+    LIGHT = 'light'
+    NORMAL = 'normal'
+    MEDIUM = 'medium'
+    SEMIBOLD = 'semibold'
+    BOLD = 'bold'
+    EXTRABOLD = 'extrabold'
+    ULTRABOLD = 'ultrabold'
+
+    def __str__(self) -> str:
+        return self.value
 
 
 def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None) -> DocumentDecoder:
@@ -296,13 +315,13 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {"font_size": font_size})
 
     @property
-    def bold(self) -> bool | str:
-        """Bold font style."""
-        return self.document.get_style("bold")
+    def weight(self) -> str:
+        """The font weight (boldness), as a string."""
+        return self.document.get_style("weight")
 
-    @bold.setter
-    def bold(self, bold: bool | str) -> None:
-        self.document.set_style(0, len(self.document.text), {"bold": bold})
+    @weight.setter
+    def weight(self, weight: str | Weight) -> None:
+        self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
     def italic(self) -> bool | str:
@@ -351,7 +370,7 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            bold: bool | str = False, italic: bool | str = False, stretch: bool | str = False,
+            weight: str | Weight = "normal", italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
@@ -392,8 +411,9 @@ class Label(DocumentLabel):
                 first matching name is used.
             font_size:
                 Font size, in points.
-            bold:
-                Bold font style.
+            weight:
+                The 'weight' of the font (boldness). See the :py:class:~`Weight`
+                enum for valid weight names.
             italic:
                 Italic font style.
             stretch:
@@ -422,7 +442,7 @@ class Label(DocumentLabel):
         self.document.set_style(0, len(self.document.text), {
             "font_name": font_name,
             "font_size": font_size,
-            "bold": bold,
+            "weight": weight,
             "italic": italic,
             "stretch": stretch,
             "color": rgba,

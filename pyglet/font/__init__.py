@@ -82,7 +82,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
     font_hold = shared_object_space.pyglet_font_font_hold
 
     # Look for font name in font cache
-    descriptor = (font.name, font.size, font.bold, font.italic, font.stretch, font.dpi)
+    descriptor = (font.name, font.size, font.weight, font.italic, font.stretch, font.dpi)
     if descriptor in font_cache:
         msg = f"A font with parameters {descriptor} has already been created."
         raise Exception(msg)
@@ -105,7 +105,7 @@ def have_font(name: str) -> bool:
     return name in _user_fonts or _system_font_class.have_font(name)
 
 
-def load(name: str | Iterable[str] | None = None, size: float | None = None, bold: bool | str = False,
+def load(name: str | Iterable[str] | None = None, size: float | None = None, weight: str = "regular",
          italic: bool | str = False, stretch: bool | str = False, dpi: int | None = None) -> Font:
     """Load a font for rendering.
 
@@ -118,10 +118,9 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, bol
         size:
             Size of the font, in points.  The returned font may be an exact
             match or the closest available.
-        bold:
-            If True, a bold variant is returned, if one exists for the given
-            family and size. For some Font renderers, bold is the weight of the font, and a string
-            can be provided specifying the weight. For example, "semibold" or "light".
+        weight:
+            If set, a specific weight variant is returned if one exists for the given font
+            family and size. The weight is provided as a string. For example: "bold" or "light".
         italic:
             If True, an italic variant is returned, if one exists for the given family and size. For some Font
             renderers, italics may have an "oblique" variation which can be specified as a string.
@@ -166,16 +165,16 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, bol
             name = found_name
 
     # Look for font name in font cache
-    descriptor = (name, size, bold, italic, stretch, dpi)
+    descriptor = (name, size, weight, italic, stretch, dpi)
     if descriptor in font_cache:
         return font_cache[descriptor]
 
     # Not in cache, create from scratch
-    font = _system_font_class(name, size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
+    font = _system_font_class(name, size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
     # Save parameters for new-style layout classes to recover
     # TODO: add properties to the base Font so completion is proper:
     font.size = size
-    font.bold = bold
+    font.weight = weight
     font.italic = italic
     font.stretch = stretch
     font.dpi = dpi
