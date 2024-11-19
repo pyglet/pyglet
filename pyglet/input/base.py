@@ -682,14 +682,14 @@ class Controller(EventDispatcher):
                 self._button_controls.append(ctrl)
 
             elif isinstance(ctrl, AbsoluteAxis):
-                if ctrl.name in ('x', 'y', 'z', 'rx', 'ry', 'rz'):
-                    self._axis_controls.append(ctrl)
-                elif ctrl.name == "hat_x":
+                if ctrl.name == "hat_x":
                     self._hat_x_control = ctrl
                 elif ctrl.name == "hat_y":
                     self._hat_y_control = ctrl
                 elif ctrl.name == "hat":
                     self._hat_control = ctrl
+                else:
+                    self._axis_controls.append(ctrl)
 
         for name, relation in self._mapping.items():
 
