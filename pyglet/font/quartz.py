@@ -195,9 +195,14 @@ class QuartzFont(base.Font):
 
         # Construct traits value.
         traits = 0
-        if "bold" in weight:
-            # TODO: use kCTFontWeightTrait instead
+
+        # TODO: Use kCTFontWeightTrait instead, and
+        #       translate to the correct weight values.
+        if isinstance(weight, str) and "bold" in weight:
             traits |= cocoapy.kCTFontBoldTrait
+        elif weight is True:
+            traits |= cocoapy.kCTFontBoldTrait
+
         if italic:
             traits |= cocoapy.kCTFontItalicTrait
 
