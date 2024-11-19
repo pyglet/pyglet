@@ -51,6 +51,9 @@ FC_WEIGHT_ULTRABLACK = FC_WEIGHT_EXTRABLACK
 
 
 name_to_weight = {
+    True: FC_WEIGHT_BOLD,
+    False: FC_WEIGHT_NORMAL,
+    None: FC_WEIGHT_NORMAL,
     "thin": FC_WEIGHT_THIN,
     "extralight": FC_WEIGHT_EXTRALIGHT,
     "ultralight": FC_WEIGHT_ULTRALIGHT,

@@ -211,7 +211,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update()
 
     def on_style_text(self, start: int, end: int, attributes: dict[str, Any]) -> None:
-        if "font_name" in attributes or "font_size" in attributes or "bold" in attributes or "italic" in attributes:
+        if "font_name" in attributes or "font_size" in attributes or "weight" in attributes or "italic" in attributes:
             self._invalid_glyphs.invalidate(start, end)
         elif "color" in attributes or "background_color" in attributes:
             self._invalid_style.invalidate(start, end)

@@ -164,7 +164,7 @@ class FreeTypeFont(base.Font):
     _memory_faces = MemoryFaceStore()
     face: FreeTypeFace
 
-    def __init__(self, name: str, size: float, weight: str = "regular", italic: bool = False, stretch: bool = False,
+    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
 
         if stretch:
@@ -273,6 +273,10 @@ class FreeTypeFace:
 
     @property
     def bold(self) -> bool:
+        return self.style_flags & FT_STYLE_FLAG_BOLD != 0
+
+    @property
+    def weight(self) -> str:
         return self.style_flags & FT_STYLE_FLAG_BOLD != 0
 
     @property
