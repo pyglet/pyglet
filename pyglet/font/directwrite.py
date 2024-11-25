@@ -95,9 +95,9 @@ DWRITE_FONT_WEIGHT_HEAVY = 900
 DWRITE_FONT_WEIGHT_EXTRA_BLACK = 950
 
 name_to_weight = {
-    True: DWRITE_FONT_WEIGHT_BOLD,
-    False: DWRITE_FONT_WEIGHT_NORMAL,
-    None: DWRITE_FONT_WEIGHT_NORMAL,
+    True: DWRITE_FONT_WEIGHT_BOLD,      # Temporary alias for attributed text
+    False: DWRITE_FONT_WEIGHT_NORMAL,   # Temporary alias for attributed text
+    None: DWRITE_FONT_WEIGHT_NORMAL,    # Temporary alias for attributed text
     "thin": DWRITE_FONT_WEIGHT_THIN,
     "extralight": DWRITE_FONT_WEIGHT_EXTRA_LIGHT,
     "ultralight": DWRITE_FONT_WEIGHT_ULTRA_LIGHT,
