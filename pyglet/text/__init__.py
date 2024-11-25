@@ -320,7 +320,7 @@ class DocumentLabel(layout.TextLayout):
         return self.document.get_style("weight")
 
     @weight.setter
-    def weight(self, weight: str | Weight) -> None:
+    def weight(self, weight: str) -> None:
         self.document.set_style(0, len(self.document.text), {"weight": str(weight)})
 
     @property
@@ -370,7 +370,7 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            weight: str | Weight = "normal", italic: bool | str = False, stretch: bool | str = False,
+            weight: str = "normal", italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
