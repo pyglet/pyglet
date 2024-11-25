@@ -262,10 +262,12 @@ class Win32Font(base.Font):
     def __init__(
             self,
             name: str, size: float,
-            bold: bool = False, italic: bool = False, stretch: bool = False,
+            weight: str = "normal", italic: bool = False, stretch: bool = False,
             dpi: int | None = None,
     ) -> None:
         super().__init__()
+
+        bold = weight if weight in (None, True, False) else "bold" in weight
 
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
         self.hfont = gdi32.CreateFontIndirectW(ctypes.byref(self.logfont))
@@ -349,13 +351,15 @@ class GDIPlusFont(Win32Font):
 
     _default_name = "Arial"
 
-    def __init__(self, name: str, size: float, bold: bool=False, italic: bool=False, stretch: bool=False,
+    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool=False, stretch: bool=False,
                  dpi: int | None=None) -> None:
         if not name:
             name = self._default_name
 
         if stretch:
             warnings.warn("The current font render does not support stretching.")  # noqa: B028
+
+        bold = weight if weight in (None, True, False) else "bold" in weight
 
         super().__init__(name, size, bold, italic, stretch, dpi)
 

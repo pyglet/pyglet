@@ -105,7 +105,7 @@ def have_font(name: str) -> bool:
     return name in _user_fonts or _system_font_class.have_font(name)
 
 
-def load(name: str | Iterable[str] | None = None, size: float | None = None, weight: str = "regular",
+def load(name: str | Iterable[str] | None = None, size: float | None = None, weight: str = "normal",
          italic: bool | str = False, stretch: bool | str = False, dpi: int | None = None) -> Font:
     """Load a font for rendering.
 
@@ -169,8 +169,13 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, wei
     if descriptor in font_cache:
         return font_cache[descriptor]
 
+    print("Not in cache?")
+
     # Not in cache, create from scratch
     font = _system_font_class(name, size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
+
+    print("Created:", font)
+
     # Save parameters for new-style layout classes to recover
     # TODO: add properties to the base Font so completion is proper:
     font.size = size

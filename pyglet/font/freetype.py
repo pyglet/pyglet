@@ -277,7 +277,7 @@ class FreeTypeFace:
 
     @property
     def weight(self) -> str:
-        return self.style_flags & FT_STYLE_FLAG_BOLD != 0
+        return "normal"
 
     @property
     def italic(self) -> bool:

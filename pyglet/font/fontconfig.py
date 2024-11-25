@@ -51,16 +51,16 @@ FC_WEIGHT_ULTRABLACK = FC_WEIGHT_EXTRABLACK
 
 
 name_to_weight = {
-    True: FC_WEIGHT_BOLD,
-    False: FC_WEIGHT_NORMAL,
-    None: FC_WEIGHT_NORMAL,
+    True: FC_WEIGHT_BOLD,       # Temporary alias for attributed text
+    False: FC_WEIGHT_NORMAL,    # Temporary alias for attributed text
+    None: FC_WEIGHT_NORMAL,     # Temporary alias for attributed text
     "thin": FC_WEIGHT_THIN,
     "extralight": FC_WEIGHT_EXTRALIGHT,
     "ultralight": FC_WEIGHT_ULTRALIGHT,
     "light": FC_WEIGHT_LIGHT,
     "semilight": FC_WEIGHT_SEMILIGHT,
-    "normal": FC_WEIGHT_REGULAR,
-    "regular": FC_WEIGHT_NORMAL,
+    "normal": FC_WEIGHT_NORMAL,
+    "regular": FC_WEIGHT_REGULAR,
     "medium": FC_WEIGHT_MEDIUM,
     "demibold": FC_WEIGHT_DEMIBOLD,
     "semibold": FC_WEIGHT_SEMIBOLD,
@@ -151,7 +151,7 @@ class FontConfig:
     def create_search_pattern(self) -> FontConfigSearchPattern:
         return FontConfigSearchPattern(self._fontconfig)
 
-    def find_font(self, name: str, size: float = 12, weight: str = "regular", italic: bool = False) -> FontConfigSearchResult:
+    def find_font(self, name: str, size: float = 12, weight: str = "normal", italic: bool = False) -> FontConfigSearchResult:
         if result := self._get_from_search_cache(name, size, weight, italic):
             return result
 
@@ -330,7 +330,7 @@ class FontConfigSearchPattern(FontConfigPattern):
         super().__init__(fontconfig)
 
         self.name = None
-        self.weight = "regular"
+        self.weight = "normal"
         self.italic = False
         self.size = None
 
