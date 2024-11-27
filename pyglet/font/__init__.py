@@ -169,12 +169,8 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, wei
     if descriptor in font_cache:
         return font_cache[descriptor]
 
-    print("Not in cache?")
-
     # Not in cache, create from scratch
     font = _system_font_class(name, size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
-
-    print("Created:", font)
 
     # Save parameters for new-style layout classes to recover
     # TODO: add properties to the base Font so completion is proper:
