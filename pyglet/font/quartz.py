@@ -179,7 +179,7 @@ class QuartzFont(base.Font):
         cf.CFRelease(attributes)
         return descriptor
 
-    def __init__(self, name: str, size: float, bold: bool = False, italic: bool = False, stretch: bool = False,
+    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
 
         if stretch:
@@ -195,8 +195,14 @@ class QuartzFont(base.Font):
 
         # Construct traits value.
         traits = 0
-        if bold:
+
+        # TODO: Use kCTFontWeightTrait instead, and
+        #       translate to the correct weight values.
+        if isinstance(weight, str) and "bold" in weight:
             traits |= cocoapy.kCTFontBoldTrait
+        elif weight is True:
+            traits |= cocoapy.kCTFontBoldTrait
+
         if italic:
             traits |= cocoapy.kCTFontItalicTrait
 

@@ -24,7 +24,7 @@ class RunList:
 
     Run lists are used to represent formatted character data in pyglet.  A
     separate run list is maintained for each style attribute, for example,
-    bold, italic, font size, and so on.  Unless you are overriding the
+    weight, italic, font size, and so on.  Unless you are overriding the
     document interfaces, the only interaction with run lists is via
     `RunIterator`.
 

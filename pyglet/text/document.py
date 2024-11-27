@@ -13,21 +13,21 @@ example::
 
     0    5   10   15   20
     The cat sat on the mat.
-    +++++++        +++++++    "bold"
+    +++++++        +++++++    "weight"
                 ++++++      "italic"
 
-If this example were to be rendered, "The cat" and "the mat" would be in bold,
-and "on the" in italics.  Note that the second "the" is both bold and italic.
+If this example were to be rendered, "The cat" and "the mat" would have a weight
+set ("bold", "thin", etc.), and "on the" would be in italics.  Note that the second
+"the" is both weighted and italic.
 
-The document styles recorded for this example would be ``"bold"`` over ranges
-(0-7, 15-22) and ``"italic"`` over range (12-18).  Overlapping styles are
-permitted; unlike HTML and other structured markup, the ranges need not be
-nested.
+The document styles recorded for this example would be a specific ``"weight"`` over
+ranges (0-7) & (15-22) and ``"italic"`` over range (12-18).  Overlapping styles are
+permitted; unlike HTML and other structured markup, the ranges need not be nested.
 
-The document has no knowledge of the semantics of ``"bold"`` or ``"italic"``,
-it stores only the style names.  The pyglet layout classes give meaning to
-these style names in the way they are rendered; but you are also free to
-invent your own style names (which will be ignored by the layout classes).
+The document has no knowledge of the semantics of ``"weight"`` names or
+``"italic"``, it stores only the style names.  The pyglet layout classes give
+meaning to these style names in the way they are rendered; but you are also free
+to invent your own style names (which will be ignored by the layout classes).
 This can be useful to tag areas of interest in a document, or maintain
 references back to the source material.
 
@@ -55,7 +55,7 @@ HTML or XML could export this model, though the classes provided by pyglet
 implement only unstructured documents.
 
 The :py:class:`~pyglet.text.document.UnformattedDocument` class assumes any styles set are set over the entire
-document.  So, regardless of the range specified when setting a ``"bold"``
+document.  So, regardless of the range specified when setting a ``"weight"``
 style attribute, for example, the entire document will receive that style.
 
 The :py:class:`~pyglet.text.document.FormattedDocument` class implements the document model directly, using
@@ -70,8 +70,8 @@ The following character style attribute names are recognised by pyglet:
     Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
-``bold``
-    Boolean.
+``weight``
+    String.
 ``italic``
     Boolean.
 ``underline``
@@ -337,7 +337,7 @@ class AbstractDocument(event.EventDispatcher):
         """Get a style iterator over the `pyglet.font.Font` instances used in the document.
 
         The font instances are created on-demand by inspection of the
-        ``font_name``, ``font_size``, ``bold`` and ``italic`` style
+        ``font_name``, ``font_size``, ``weight`` and ``italic`` style
         attributes.
 
         Args:
@@ -588,10 +588,10 @@ class UnformattedDocument(AbstractDocument):
         from pyglet import font
         font_name = self.styles.get("font_name")
         font_size = self.styles.get("font_size")
-        bold = self.styles.get("bold", False)
+        weight = self.styles.get("weight", "normal")
         italic = self.styles.get("italic", False)
         stretch = self.styles.get("stretch", False)
-        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
+        return font.load(font_name, font_size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self) -> runlist.ConstRunIterator:
         return runlist.ConstRunIterator(len(self._text), None)
@@ -633,7 +633,7 @@ class FormattedDocument(AbstractDocument):
         return _FontStyleRunsRangeIterator(
             self.get_style_runs("font_name"),
             self.get_style_runs("font_size"),
-            self.get_style_runs("bold"),
+            self.get_style_runs("weight"),
             self.get_style_runs("italic"),
             self.get_style_runs("stretch"),
             dpi)
@@ -715,22 +715,22 @@ class _ElementIterator(runlist.RunIterator):
 
 class _FontStyleRunsRangeIterator(runlist.RunIterator):
     # XXX subclass runlist
-    def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, bolds: runlist.RunIterator,
+    def __init__(self, font_names: runlist.RunIterator, font_sizes: runlist.RunIterator, weights: runlist.RunIterator,
                  italics: runlist.RunIterator, stretch: runlist.RunIterator, dpi: int | None) -> None:
-        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
+        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, weights, italics, stretch))
         self.dpi = dpi
 
     def ranges(self, start: int, end: int) -> Generator[tuple[int, int, Font], None, None]:
         from pyglet import font
         for start_, end_, styles in self.zip_iter.ranges(start, end):
-            font_name, font_size, bold, italic, stretch = styles
-            ft = font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
+            font_name, font_size, weight, italic, stretch = styles
+            ft = font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
             yield start_, end_, ft
 
     def __getitem__(self, index: int) -> Font:
         from pyglet import font
-        font_name, font_size, bold, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
+        font_name, font_size, weight, italic, stretch = self.zip_iter[index]
+        return font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator(runlist.RunIterator):
