@@ -1,0 +1,105 @@
+
+```python
+import pygame
+import random
+
+# Initialisation de Pygame
+pygame.init()
+
+# Paramètres de la fenêtre
+WIDTH, HEIGHT = 800, 600
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jeu d'Évitement")
+
+# Couleurs
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+# Classe pour le joueur
+class Player:
+    def __init__(self):
+        # Création du rectangle représentant le joueur
+        self.rect = pygame.Rect(50, HEIGHT // 2, 50, 50)
+        self.speed = 5
+        self.protected = False  # Indique si le joueur est protégé
+
+    def draw(self):
+        # Dessine le joueur avec une couleur différente s'il est protégé
+        color = GREEN if self.protected else BLACK
+        pygame.draw.rect(win, color, self.rect)
+
+    def move(self):
+        # Gère les mouvements du joueur avec les touches fléchées
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] and self.rect.top > 0:
+            self.rect.y -= self.speed
+        if keys[pygame.K_DOWN] and self.rect.bottom < HEIGHT:
+            self.rect.y += self.speed
+
+# Classe pour les obstacles
+class Obstacle:
+    def __init__(self):
+        # Création d'un obstacle à une position aléatoire en hauteur
+        self.rect = pygame.Rect(WIDTH, random.randint(0, HEIGHT - 50), 50, 50)
+
+    def move(self):
+        # Déplace l'obstacle vers la gauche
+        self.rect.x -= 5
+
+    def draw(self):
+        # Dessine l'obstacle en rouge
+        pygame.draw.rect(win, RED, self.rect)
+
+# Fonction principale du jeu
+def main():
+    clock = pygame.time.Clock()
+    player = Player()  # Création d'une instance de joueur
+    obstacles = []     # Liste pour stocker les obstacles
+    score = 0         # Initialisation du score
+    run = True
+
+    while run:
+        clock.tick(30)  # Limite de la boucle à 30 FPS
+        win.fill(WHITE)  # Remplit l'écran de blanc
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+        player.move()  # Gère le mouvement du joueur
+
+        # Ajoute un nouvel obstacle aléatoirement
+        if random.randint(1, 30) == 1:
+            obstacles.append(Obstacle())
+
+        for obstacle in list(obstacles):
+            obstacle.move()   # Déplace chaque obstacle
+            obstacle.draw()   # Dessine chaque obstacle
+            
+            # Vérifie la collision entre le joueur et l'obstacle
+            if obstacle.rect.colliderect(player.rect):
+                if not player.protected:
+                    print("Game Over!")  # Affiche "Game Over" si le joueur n'est pas protégé
+                    run = False
+                else:
+                    obstacles.remove(obstacle)  # Si protégé, l'obstacle est retiré
+            
+            if obstacle.rect.x < -50:  
+                obstacles.remove(obstacle)  # Retire l'obstacle hors écran et augmente le score 
+                score += 1
+
+        player.draw()   # Dessine le joueur
+        
+        font = pygame.font.SysFont('Arial', 30) 
+        score_text = font.render(f'Score: {score}', True, BLACK) 
+        win.blit(score_text, (10, 10))   # Affiche le score à l'écran
+
+        pygame.display.update()   # Met à jour l'affichage
+
+    pygame.quit()   # Quitte Pygame à la fin du jeu
+
+if __name__ == "__main__":
+    main()   # Appelle la fonction principale pour démarrer le jeu
+```
