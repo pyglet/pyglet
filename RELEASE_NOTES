@@ -1,3 +1,16 @@
+pyglet 2.0.19
+
+Changes and Improvements
+------------------------
+docs: update vertexbuffer.py module docstrings
+
+Bugfixes
+--------
+- macos: stop F5 from autocompleting (#1229)
+- input.base: Don't skip Axis Controls without names
+- window.xlib: don't send on_mouse_release events for scrolling (#1235)
+
+
 pyglet 2.0.18
 
 Changes and Improvements
