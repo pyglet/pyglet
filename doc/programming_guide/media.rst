@@ -13,7 +13,7 @@ following are available:
 #. The built-in pyglet WAV file decoder (always available)
 #. Platform-specific APIs and libraries
 #. PyOgg
-#. :ref:`guide-supportedmedia-ffmpeg` version 4, 5, or 6
+#. :ref:`guide-supportedmedia-ffmpeg` version 4, 5, 6, or 7.
 
 Video is played into OpenGL textures, allowing real-time manipulation
 by applications. Examples include use in 3D environments or shader-based
@@ -304,7 +304,7 @@ FFmpeg
 ^^^^^^
 .. _FFmpeg's license overview: https://www.ffmpeg.org/legal.html
 
-.. note:: The most recent pyglet release can use FFmpeg 4.X, 5.X, or 6.X
+.. note:: The most recent pyglet release can use FFmpeg versions 4.X, 5.X, 6.X, and 7.X
 
           See :ref:`guide-media-ffmpeginstall` to learn more.
 
@@ -389,6 +389,7 @@ See the following to learn more:
   * `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
   * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
   * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
+  * `The FFmpeg 7.0 license breakdown <https://ffmpeg.org/doxygen/7.1/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
@@ -400,8 +401,11 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-All recent pyglet versions support FFmpeg 4.x and 5.x. To use FFmpeg 6.X,
-you must use pyglet 2.0.8 or later.
+All recent pyglet versions support FFmpeg 4.x.
+
+* Support for version 5.X requires at least: 1.5.28.
+* Support for version 6.X requires at least: 2.0.8.
+* Support for version 7.X requires at least: 2.0.20.
 
 Choose the correct architecture depending on the targeted
 **Python interpreter**. If you're shipping your project with a 32 bits
@@ -450,6 +454,8 @@ For Linux and Mac OS::
          * Exiting gracefully after the the user clicks OK on a dialog
          * Limiting the formats your project will attempt to load
 
+If you still have issues with the FFmpeg not being recognized, try enabling the debug flags to see if any relevant
+information is output: ``pyglet.options.debug_lib`` and/or ``pyglet.options.debug_media``.
 
 .. _guide-media-loading:
 
