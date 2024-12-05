@@ -389,7 +389,7 @@ See the following to learn more:
   * `The FFmpeg 4.4 license breakdown <https://ffmpeg.org/doxygen/4.4/md_LICENSE.html>`_
   * `The FFmpeg 5.1 license breakdown <https://ffmpeg.org/doxygen/5.1/md_LICENSE.html>`_
   * `The FFmpeg 6.0 license breakdown <https://ffmpeg.org/doxygen/6.0/md_LICENSE.html>`_
-  * `The FFmpeg 7.0 license breakdown <https://ffmpeg.org/doxygen/7.1/md_LICENSE.html>`_
+  * `The FFmpeg 7.0 license breakdown <https://ffmpeg.org/doxygen/7.0/md_LICENSE.html>`_
 
 .. _guide-media-ffmpeginstall:
 
