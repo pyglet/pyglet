@@ -1,11 +1,10 @@
-"""Byte abstractions of OpenGL Buffer Objects.
+"""OpenGL Buffer Objects.
 
-Use `create_buffer` to create a Buffer Object.
-
-Buffers can optionally be created "mappable" (incorporating the
-`AbstractMappable` mix-in).  In this case the buffer provides a ``get_region``
-method which provides the most efficient path for updating partial data within
-the buffer.
+:py:class:`~BufferObject` and a :py:class:`~BackedBufferObject` are provied.
+The first is a lightweight abstraction over an OpenGL buffer, as created
+with ``glGenBuffers``. The backed buffer object is similar, but provides a
+full mirror of the data in CPU memory. This allows for delayed uploading of
+changes to GPU memory, which can improve performance is some cases.
 """
 from __future__ import annotations
 
@@ -126,8 +125,8 @@ class BufferObject(AbstractBuffer):
     """Lightweight representation of an OpenGL Buffer Object.
 
     The data in the buffer is not replicated in any system memory (unless it
-    is done so by the video driver).  While this can improve memory usage and
-    possibly performance, updates to the buffer are relatively slow.
+    is done so by the video driver).  While this can reduce system memory usage,
+    performing multiple small updates to the buffer can be relatively slow.
     The target of the buffer is ``GL_ARRAY_BUFFER`` internally to avoid
     accidentally overriding other states when altering the buffer contents.
     The intended target can be set when binding the buffer.
@@ -139,7 +138,10 @@ class BufferObject(AbstractBuffer):
     _context: Context | None
 
     def __init__(self, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
-        """Initialize the BufferObject with the given size and draw usage."""
+        """Initialize the BufferObject with the given size and draw usage.
+
+        Buffer data is cleared on creation.
+        """
         self.size = size
         self.usage = usage
         self._context = pyglet.gl.current_context
@@ -216,10 +218,10 @@ class BufferObject(AbstractBuffer):
 class BackedBufferObject(BufferObject):
     """A buffer with system-memory backed store.
 
-    Updates to the data via `set_data` and `set_data_region` will be held
-    in local memory until `buffer_data` is called.  The advantage is that
-    fewer OpenGL calls are needed, which can increasing performance at the
-    expense of system memory.
+    Updates to the data via ``set_data`` and ``set_data_region`` will be held
+    in system memory until ``commit`` is called.  The advantage is that fewer
+    OpenGL calls are needed, which can increase performance at the expense of
+    system memory.
     """
     data: CTypesDataType
     data_ptr: int

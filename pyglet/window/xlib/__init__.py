@@ -1045,6 +1045,7 @@ class XlibWindow(BaseWindow):
             event_handler(e)
 
     @staticmethod
+    @lru_cache()
     def _translate_modifiers(state: int) -> int:
         modifiers = 0
         if state & xlib.ShiftMask:
@@ -1512,6 +1513,21 @@ class XlibWindow(BaseWindow):
             self._current_sync_value = None
             self._current_sync_valid = False
 
+    @staticmethod
+    @lru_cache()
+    def _translate_button(value: int) -> int:
+        """Translate mouse button values to match mouse constants.
+
+        Given a Xevent.xbutton.button value, convert it to the mouse
+        contants defined in :py:module:`~pyglet.window.mouse`. This
+        means shifting the value, and also skipping over values of
+        4~7, which are used for boolean scrolling.
+        """
+        new_value = value - 1
+        if value > 7:
+            new_value -= 4
+        return 1 << new_value
+
     @ViewEventHandler
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
@@ -1519,12 +1535,13 @@ class XlibWindow(BaseWindow):
         x = ev.xbutton.x / self._scale
         y = self.height - 1 - ev.xbutton.y / self._scale
 
-        button = ev.xbutton.button - 1
-        if button == 7 or button == 8:
-            button -= 4
-
         modifiers = self._translate_modifiers(ev.xbutton.state)
+
         if ev.type == xlib.ButtonPress:
+            # override_redirect issue: manually activate this window if fullscreen.
+            if self._override_redirect and not self._active:
+                self.activate()
+
             if ev.xbutton.button == 4:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:
@@ -1533,10 +1550,13 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_scroll', x, y, -1, 0)
             elif ev.xbutton.button == 7:
                 self.dispatch_event('on_mouse_scroll', x, y, 1, 0)
-            elif button < 5:
-                self.dispatch_event('on_mouse_press', x, y, 1 << button, modifiers)
-        elif button < 5:
-            self.dispatch_event('on_mouse_release', x, y, 1 << button, modifiers)
+            else:
+                button = self._translate_button(ev.xbutton.button)
+                self.dispatch_event('on_mouse_press', x, y, button, modifiers)
+
+        elif ev.xbutton.button not in (4, 5, 6, 7):
+            button = self._translate_button(ev.xbutton.button)
+            self.dispatch_event('on_mouse_release', x, y, button, modifiers)
 
     @ViewEventHandler
     @XlibEventHandler(xlib.Expose)
