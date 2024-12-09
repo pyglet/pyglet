@@ -197,21 +197,21 @@ class COMInterfaceMeta(type):
        cache so it can recognize the type arguments.
     """
 
-    def __init__(cls, name, bases, dct, /, create_pointer_type=True) -> None:
+    def __init__(self, name, bases, dct, /, create_pointer_type=True) -> None:
         super().__init__(name, bases, dct)
 
         if create_pointer_type:
             if not bases:
-                _ptr_bases = (cls, COMPointer)
+                _ptr_bases = (self, COMPointer)
             else:
-                _ptr_bases = (cls, ctypes.POINTER(bases[0]))
+                _ptr_bases = (self, ctypes.POINTER(bases[0]))
 
             # Class type is dynamically created inside __new__ based on metaclass inheritence; update ctypes cache manually.
             from ctypes import _pointer_type_cache
-            _pointer_type_cache[cls] = COMPointerMeta("POINTER({})".format(cls.__name__),
-                                                      _ptr_bases,
-                                                      {"__interface__": cls},
-                                                      create_pointer_type=False)
+            _pointer_type_cache[self] = COMPointerMeta("POINTER({})".format(self.__name__),
+                                                       _ptr_bases,
+                                                       {"__interface__": self},
+                                                       create_pointer_type=False)
 
     def __get_subclassed_methodcount(self):
         """Returns the amount of COM methods in all subclasses to determine offset of methods.
