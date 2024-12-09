@@ -13,16 +13,16 @@ are having an issue that is not covered here, please open up an issue ticket on
 Window "HiDPI" support
 ----------------------
 The v2.1 release now provides a lot more control over how modern 'HiDPI' displays
-are treated. This includes "retina" displays, or any display that has a non-0% zoom
-or scale (such as 4K displays). This is exposed as new pyglet options. See
+are treated. This includes "retina" displays, or any display that has a non-100%
+zoom or scale (such as 4K displays). This is exposed as new pyglet options. See
 ``pyglet.options.dpi_scaling`` for more information.
 
 Labels & Text Layouts
 ---------------------
 The positional argument order for text Labels and Layouts was not consistent
 in previous pyglet releases. This has been refactored to make things more
-consistent, with the goal of making it easier to switch between Layouts or
-create custom subclasses. All layouts now start with the same positional
+uniform, with the goal of making it easier to switch between Layouts or
+create custom subclasses. All layouts now _start_ with the same positional
 argument ordering::
 
     TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
@@ -40,6 +40,14 @@ of "document". Other than that, the rest of the positional arguments line up::
 The layouts and lables don't share all of the same argument, so the rest of the
 arguments will need to be provided as usual, where they differ. Please see the
 API documents for full details.
+
+In addition to argument ordering, the ``bold`` argument has been replaced with
+``weight``. Rather than a single True/False boolean, you can now pass a string
+for the desired font weight. An enum (:py:class:`~pyglet.text.Weight`) exists
+to provide a reference to all valid cross platform weights (though individual
+font backends _can_ support more names that what is provided there). The valid
+weight names mimic those in CSS, such as "thin", "normal", "bold", "extrabold",
+etc..
 
 Shapes
 ------
