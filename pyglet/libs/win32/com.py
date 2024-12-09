@@ -197,18 +197,6 @@ class COMInterfaceMeta(type):
        cache so it can recognize the type arguments.
     """
 
-    def __new__(mcs, name, bases, dct, /, create_pointer_type=True):
-        if not create_pointer_type:
-            return super().__new__(mcs, name, bases, dct)
-
-        methods = dct.pop("_methods_", None)
-        cls = type.__new__(mcs, name, bases, dct)
-
-        if methods is not None:
-            cls._methods_ = methods
-
-        return cls
-
     def __init__(cls, name, bases, dct, /, create_pointer_type=True) -> None:
         super().__init__(name, bases, dct)
 
@@ -245,8 +233,12 @@ class COMPointerMeta(type(ctypes.c_void_p), COMInterfaceMeta):
     """Required to prevent metaclass conflicts with inheritance."""
 
     # The `create_pointer_type` arg is needed in Python version 3.13 due to changes in the
-    # PyCSimpleType (metatype of c_void_p) initialization process.
-    # It fails on 3.12 and lower unless it's filtered out in this method.
+    # PyCSimpleType (metatype of c_void_p) initialization process, which caused issues on earlier
+    # versions due to requiring a move from some initialization login to
+    # `COMInterfaceMeta.__init__`. Specifically, this argument needs to reach
+    # `COMInterfaceMeta.__init__`, but does cause an error when passed through `__new__`, as `COMInterfaceMeta.__new__`
+    # is not run prior to 3.13 and has no chance to consume it.
+    # For this reason, it is caught and discarded by this method.
     def __new__(cls, name, bases, dct, /, create_pointer_type=True):
         return super().__new__(cls, name, bases, dct)
 
