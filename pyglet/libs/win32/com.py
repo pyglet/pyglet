@@ -197,25 +197,21 @@ class COMInterfaceMeta(type):
        cache so it can recognize the type arguments.
     """
 
-    def __new__(mcs, name, bases, dct):
-        methods = dct.pop("_methods_", None)
-        cls = type.__new__(mcs, name, bases, dct)
+    def __init__(self, name, bases, dct, /, create_pointer_type=True) -> None:
+        super().__init__(name, bases, dct)
 
-        if methods is not None:
-            cls._methods_ = methods
+        if create_pointer_type:
+            if not bases:
+                _ptr_bases = (self, COMPointer)
+            else:
+                _ptr_bases = (self, ctypes.POINTER(bases[0]))
 
-        if not bases:
-            _ptr_bases = (cls, COMPointer)
-        else:
-            _ptr_bases = (cls, ctypes.POINTER(bases[0]))
-
-        # Class type is dynamically created inside __new__ based on metaclass inheritence; update ctypes cache manually.
-        from ctypes import _pointer_type_cache
-        _pointer_type_cache[cls] = type(COMPointer)("POINTER({})".format(cls.__name__),
-                                                    _ptr_bases,
-                                                    {"__interface__": cls})
-
-        return cls
+            # Class type is dynamically created inside __new__ based on metaclass inheritence; update ctypes cache manually.
+            from ctypes import _pointer_type_cache
+            _pointer_type_cache[self] = COMPointerMeta("POINTER({})".format(self.__name__),
+                                                       _ptr_bases,
+                                                       {"__interface__": self},
+                                                       create_pointer_type=False)
 
     def __get_subclassed_methodcount(self):
         """Returns the amount of COM methods in all subclasses to determine offset of methods.
@@ -236,8 +232,18 @@ class COMInterfaceMeta(type):
 class COMPointerMeta(type(ctypes.c_void_p), COMInterfaceMeta):
     """Required to prevent metaclass conflicts with inheritance."""
 
+    # The `create_pointer_type` arg is needed in Python version 3.13 due to changes in the
+    # PyCSimpleType (metatype of c_void_p) initialization process, which caused issues on earlier
+    # versions due to requiring a move from some initialization login to
+    # `COMInterfaceMeta.__init__`. Specifically, this argument needs to reach
+    # `COMInterfaceMeta.__init__`, but does cause an error when passed through `__new__`, as `COMInterfaceMeta.__new__`
+    # is not run prior to 3.13 and has no chance to consume it.
+    # For this reason, it is caught and discarded by this method.
+    def __new__(cls, name, bases, dct, /, create_pointer_type=True):
+        return super().__new__(cls, name, bases, dct)
 
-class COMPointer(ctypes.c_void_p, metaclass=COMPointerMeta):
+
+class COMPointer(ctypes.c_void_p, metaclass=COMPointerMeta, create_pointer_type=False):
     """COM Pointer base, could use c_void_p but need to override from_param ."""
 
     @classmethod
@@ -257,7 +263,6 @@ class COMPointer(ctypes.c_void_p, metaclass=COMPointerMeta):
                 return ptr_dct[cls.__interface__]
             except KeyError:
                 raise TypeError("Interface {} doesn't have a pointer in this class.".format(cls.__name__))
-
 
 def _missing_impl(interface_name, method_name):
     """Functions that are not implemented use this to prevent errors when called."""
