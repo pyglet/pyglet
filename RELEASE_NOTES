@@ -1,3 +1,10 @@
+pyglet 1.5.30
+
+Bugfixes
+--------
+- libs.win32.com: fix COMPointer/COMInterfaceMeta for compatibility up to Python 3.13+
+
+
 pyglet 1.5.29
 
 Bugfixes
