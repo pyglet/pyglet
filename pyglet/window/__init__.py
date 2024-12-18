@@ -1802,7 +1802,7 @@ class FPSDisplay:
 
         # Hook into the Window.flip method:
         self._window_flip, window.flip = window.flip, self._hook_flip
-        self.label = Label('', x=10, y=10, font_size=24, bold=True, color=color)
+        self.label = Label('', x=10, y=10, font_size=24, weight='bold', color=color)
 
         self._elapsed = 0.0
         self._last_time = time()
