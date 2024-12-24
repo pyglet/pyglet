@@ -412,7 +412,7 @@ class XA2SourceVoice:
                 self._voice.Stop(0, 0)
                 self._voice.FlushSourceBuffers()
                 self._voice.DestroyVoice()
-            except TypeError:
+            except (TypeError, OSError):
                 pass
 
             self._voice = None
