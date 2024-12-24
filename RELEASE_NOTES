@@ -1,9 +1,15 @@
+pyglet 1.5.31
+
+Bugfixes
+--------
+- media.drivers.xaudio2: prevent spurious warning messages on interpreter shutdown.
+
+
 pyglet 1.5.30
 
 Bugfixes
 --------
 - libs.win32.com: fix COMPointer/COMInterfaceMeta for compatibility up to Python 3.13+
-- media.drivers.xaudio2: prevent spurious warning messages on interpreter shutdown.
 
 
 pyglet 1.5.29

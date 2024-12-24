@@ -18,7 +18,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
 #: (i.e. not cloned from Git).
-version = '1.5.30'
+version = '1.5.31'
 
 
 if sys.version_info < (3, 6):
