@@ -73,6 +73,7 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 import pyglet
 from pyglet.extlibs import earcut
 from pyglet.gl import GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES, glBlendFunc, glDisable, glEnable
+from pyglet.gl import GL_LESS, GL_DEPTH_TEST, glDepthFunc
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
 
@@ -83,6 +84,7 @@ vertex_source = """#version 150 core
     in vec2 position;
     in vec2 translation;
     in vec4 color;
+    in float zposition;
     in float rotation;
 
 
@@ -106,7 +108,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
+        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, zposition, 1.0);
         vertex_color = color;
     }
 """
@@ -274,8 +276,12 @@ class _ShapeGroup(Group):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+
     def unset_state(self) -> None:
         glDisable(GL_BLEND)
+        glDisable(GL_DEPTH_TEST)
         self.program.unbind()
 
     def __eq__(self, other: Group | _ShapeGroup) -> None:
@@ -307,6 +313,7 @@ class ShapeBase(ABC):
     _visible: bool = True
     _x: float = 0.0
     _y: float = 0.0
+    _z: float = 0.0
     _anchor_x: float = 0.0
     _anchor_y: float = 0.0
     _batch: Batch | None = None
@@ -554,6 +561,16 @@ class ShapeBase(ABC):
     def y(self, value: float) -> None:
         self._y = value
         self._update_translation()
+
+    @property
+    def z(self) -> float:
+        """Get/set the Z coordinate of the shape."""
+        return self._z
+
+    @z.setter
+    def z(self, value: float) -> None:
+        self._z = value
+        self._vertex_list.zposition = (value,) * self._num_verts
 
     @property
     def position(self) -> tuple[float, float]:
@@ -819,6 +836,7 @@ class Arc(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
 
@@ -1131,6 +1149,7 @@ class Circle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
         r, g, b, *a = color
@@ -1237,6 +1256,7 @@ class Ellipse(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._a = a
         self._b = b
 
@@ -1369,6 +1389,7 @@ class Sector(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
 
@@ -1507,6 +1528,7 @@ class Line(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._x2 = x2
         self._y2 = y2
 
@@ -1645,6 +1667,7 @@ class Rectangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._rotation = 0
@@ -1766,6 +1789,7 @@ class BorderedRectangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._rotation = 0
@@ -1995,6 +2019,7 @@ class Box(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._thickness = thickness
@@ -2149,6 +2174,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._set_radius(radius)
@@ -2326,6 +2352,7 @@ class Triangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._x2 = x2
         self._y2 = y2
         self._x3 = x3
@@ -2458,6 +2485,7 @@ class Star(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._outer_radius = outer_radius
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes
