@@ -509,7 +509,7 @@ class HTMLLabel(DocumentLabel):
         self._location = location
         doc = decode_html(text, location)
         super().__init__(doc, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=False)
+                         multiline, dpi, batch, group, program, init_document=True)
 
     @property
     def text(self) -> str:
