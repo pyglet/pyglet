@@ -29,7 +29,7 @@ program = pyglet.graphics.shader.ComputeShaderProgram(compute_src)
 
 # Create a Texture, and bind it to the shader
 out_texture = pyglet.image.Texture.create(540, 540, internalformat=GL_RGBA32F)
-out_texture.bind_image_texture(unit=program.uniforms['img_output'].location)
+out_texture.bind_image_texture(unit=program.uniforms['img_output']['location'])
 
 
 with program:
