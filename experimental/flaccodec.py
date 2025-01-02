@@ -3,7 +3,7 @@ import struct
 
 from concurrent.futures import ProcessPoolExecutor
 
-from pyglet.media.exceptions import MediaDecodeException
+from pyglet.util import DecodeException
 from pyglet.media.codecs.base import StreamingSource, AudioData, AudioFormat, StaticSource
 from pyglet.media.codecs import MediaDecoder
 
@@ -12,7 +12,7 @@ from pyglet.media.codecs import MediaDecoder
 # https://www.nayuki.io/page/simple-flac-implementation
 
 
-class FLACDecodeException(MediaDecodeException):
+class FLACDecodeException(DecodeException):
     pass
 
 
