@@ -345,8 +345,9 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    model_logo = pyglet.resource.model("logo3d.obj", batch=batch)
-    model_box = pyglet.resource.model("box.obj", batch=batch)
+    # These .obj files only have a single model in the scene:
+    model_logo = pyglet.resource.scene("logo3d.obj").create_models(batch=batch)[0]
+    model_box = pyglet.resource.scene("box.obj").create_models(batch=batch)[0]
 
     # Camera controls the global projection & view matrixes:
     camera = FPSCamera(window, position=Vec3(0.0, 0.0, 5.0))

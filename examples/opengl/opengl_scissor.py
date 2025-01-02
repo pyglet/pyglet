@@ -63,7 +63,7 @@ class ScissorGroup(pyglet.graphics.Group):
 
     def set_state(self):
         glEnable(GL_SCISSOR_TEST)
-        glScissor(self.x, self.y, self.width, self.height)
+        glScissor(int(self.x), int(self.y), self.width, self.height)
 
     def unset_state(self):
         glDisable(GL_SCISSOR_TEST)

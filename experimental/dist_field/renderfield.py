@@ -40,7 +40,7 @@ class DistFieldGroup(pyglet.sprite.SpriteGroup):  # noqa: D101
         self.program.stop()
 
 
-class DistFieldSprite(pyglet.sprite.AdvancedSprite):
+class DistFieldSprite(pyglet.sprite.Sprite):
     """Override sprite to use DistFieldTextureGroup."""
     group_class = DistFieldGroup
 
