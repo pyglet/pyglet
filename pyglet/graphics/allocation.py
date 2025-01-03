@@ -343,3 +343,151 @@ class Allocator:
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self!s}>'
+
+
+class VertexAllocator:
+    """Buffer space allocation implementation.
+
+    This differs from regular allocator in that it just keeps track of contiguous starts/sizes from locations
+    that were already allocated.
+    """
+    __slots__ = 'capacity', 'starts', 'sizes'
+
+    def __init__(self, capacity: int) -> None:
+        """Create an allocator for a buffer of the specified maximum capacity size."""
+        self.capacity = capacity
+        self.starts = []
+        self.sizes = []
+
+    def set_capacity(self, size: int) -> None:
+        """Resize the maximum buffer size.
+
+        The capacity cannot be reduced.
+        """
+        assert size > self.capacity
+        self.capacity = size
+
+    def alloc(self, start: int, size: int) -> int:
+        """Allocate memory in the buffer.
+
+        Raises `AllocatorMemoryException` if the allocation cannot be
+        fulfilled.
+
+        Args:
+            start:
+                Starting index of the region.
+            size:
+                Size of region to allocate.
+
+        Returns:
+            Starting index of the allocated region.
+        """
+        assert size >= 0
+
+        if size == 0:
+            return start
+
+        if start + size > self.capacity:
+            self.set_capacity(start + size)
+
+        for alloc_start, alloc_size in zip(self.starts, self.sizes):
+            if start < alloc_start + alloc_size and start + size > alloc_start:
+                #print(start, alloc_start, alloc_size, self.starts, self.sizes)
+                # Range already exists?
+                return None
+                raise AllocatorMemoryException(
+                    f"Region starting at {start} with size {size} overlaps with existing allocation.")
+
+        # Find the position to insert the new allocation
+        insert_pos = len(self.starts)
+        for i, (alloc_start, alloc_size) in enumerate(zip(self.starts, self.sizes)):
+            if start < alloc_start:
+                insert_pos = i
+                break
+
+        # Check for merging with previous block
+        if insert_pos > 0 and self.starts[insert_pos - 1] + self.sizes[insert_pos - 1] == start:
+            self.sizes[insert_pos - 1] += size
+            start = self.starts[insert_pos - 1]
+        else:
+            self.starts.insert(insert_pos, start)
+            self.sizes.insert(insert_pos, size)
+
+        # Check for merging with next block
+        if insert_pos < len(self.starts) - 1 and start + size == self.starts[insert_pos + 1]:
+            self.sizes[insert_pos] += self.sizes[insert_pos + 1]
+            del self.starts[insert_pos + 1]
+            del self.sizes[insert_pos + 1]
+
+        return start
+
+    def realloc(self, start: int, size: int, new_size: int) -> int:
+        """Reallocate a region of the buffer.
+
+        This is more efficient than separate `dealloc` and `alloc` calls, as
+        the region can often be resized in-place.
+
+        Raises `AllocatorMemoryException` if the allocation cannot be
+        fulfilled.
+
+        Args:
+            start:
+                Current starting index of the region.
+            size:
+                Current size of the region.
+            new_size: int
+                New size of the region.
+
+        Returns:
+            Starting index of the re-allocated region.
+        """
+        assert size >= 0 and new_size >= 0
+
+        if new_size == 0:
+            if size != 0:
+                self.dealloc(start, size)
+            return 0
+        if size == 0:
+            return self.alloc(start, new_size)
+
+        self.dealloc(start, size)
+        return self.alloc(start, new_size)
+
+    def dealloc(self, start: int, size: int) -> None:
+        """Free a region of the buffer.
+
+        Args:
+            start:
+                Starting index of the region.
+            size:
+                Size of the region.
+        """
+        assert size >= 0
+
+        if size == 0:
+            return
+
+        if start in self.starts:
+            index = self.starts.index(start)
+            if self.sizes[index] == size:
+                del self.starts[index]
+                del self.sizes[index]
+            else:
+                raise AllocatorMemoryException(f"Size mismatch for deallocation at start {start}.")
+        else:
+            raise AllocatorMemoryException(f"Region starting at {start} not allocated.")
+
+    def get_allocated_regions(self) -> tuple[list, list]:
+        """Get a list of (aggregate) allocated regions.
+
+        The result of this method is ``(starts, sizes)``, where ``starts`` is
+        a list of starting indices of the regions and ``sizes`` their
+        corresponding lengths.
+        """
+        return list(self.starts), list(self.sizes)
+
+    def __str__(self) -> str:
+        return 'allocs=' + repr(list(zip(self.starts, self.sizes)))
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} {self!s}>'
