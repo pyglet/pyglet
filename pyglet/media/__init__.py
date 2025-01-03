@@ -89,6 +89,12 @@ _add_default_codecs()
 
 
 __all__ = [
-    'Player', 'PlayerGroup', 'Source', 'StaticSource', 'StreamingSource',
-    'load', 'synthesis', 'get_audio_driver'
+    'Player', 
+    'PlayerGroup', 
+    'Source', 
+    'StaticSource', 
+    'StreamingSource',
+    'load', 
+    'synthesis', 
+    'get_audio_driver',
 ]
