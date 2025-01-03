@@ -202,3 +202,14 @@ if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.op
     # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window  # noqa: F401
+
+__all__ = ['current_context', 
+           'gl_info',
+           'ContextException', 
+           'ConfigException', 
+           'Config', 
+           'DisplayConfig', 
+           'Context', 
+           'GLException',
+           'ObjectSpace',
+           ]
