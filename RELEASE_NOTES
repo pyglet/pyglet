@@ -1,3 +1,20 @@
+pyglet 2.1.0
+Major Release
+
+Changes
+-------
+- Changed default argument order to bring consistencty to text Labels and Layouts.
+- For API consistency with other modules, Shapes now use degrees for all applicable objects.
+- Controller events dispatch `Vec2`s for analog sticks and directional-pad movement.
+- The `pyglet.canvas` module has been renamed to `pyglet.display`.
+
+Features
+--------
+- More control over DPI scaling for Hi-DPI displays (see pyglet.options.dpi_scaling).
+- Objects in the math module (Vec2/3/4, Mat3/4, Quaternion) are now all immutable and hashable.
+- Shapes now offer a Z property for basic depth sorting.
+
+
 pyglet 2.0.20
 
 Changes and Improvements
