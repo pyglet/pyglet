@@ -51,8 +51,6 @@ class Vec2(_typing.NamedTuple):
     x: float = 0.0
     y: float = 0.0
 
-    __match_args__ = 'x', 'y'
-
     def __bool__(self):
         return self.x != 0.0 or self.y != 0.0
 
@@ -383,8 +381,6 @@ class Vec3(_typing.NamedTuple):
     y: float = 0.0
     z: float = 0.0
 
-    __match_args__ = 'x', 'y', 'z'
-
     def __bool__(self):
         return self.x != 0.0 or self.y != 0.0 or self.z != 0.0
 
@@ -686,8 +682,6 @@ class Vec4(_typing.NamedTuple):
     y: float = 0.0
     z: float = 0.0
     w: float = 0.0
-
-    __match_args__ = 'x', 'y', 'z', 'w'
 
     def __bool__(self):
         return self.x != 0.0 or self.y != 0.0 or self.z != 0.0 or self.w != 0.0

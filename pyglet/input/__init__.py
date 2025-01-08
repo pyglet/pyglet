@@ -149,3 +149,24 @@ else:
         from .macos import get_controllers
         from .macos import get_tablets
         from .macos import ControllerManager
+
+__all__ = [
+    'get_devices',
+    'get_joysticks',
+    'get_controllers',
+    'get_tablets',
+    'get_apple_remote',
+    'ControllerManager',
+    'Device',
+    'Control',
+    'RelativeAxis',
+    'AbsoluteAxis',
+    'Button',
+    'Joystick',
+    'AppleRemote',
+    'Tablet',
+    'Controller',
+    'DeviceException',
+    'DeviceOpenException',
+    'DeviceExclusiveException',
+]
