@@ -55,6 +55,7 @@ from pyglet.gl import gl_info  # noqa: F401
 
 from pyglet.gl.gl_compat import GL_INTENSITY, GL_LUMINANCE
 from pyglet.gl.lib import GLException  # noqa: F401
+from .gl import __all__ as _gl_all
 
 from .base import DisplayConfig, Context, ObjectSpace  # noqa: F401, TCH001
 from typing import TYPE_CHECKING
@@ -202,3 +203,6 @@ if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.op
     # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window  # noqa: F401
+
+__all__ = ['Config', 'GLException', 'gl_info']
+__all__.extend(_gl_all)
