@@ -180,7 +180,7 @@ class _pInterfaceMeta(_PointerMeta):
         for i, (method_name, method) in enumerate(target._methods_):
             m = method.get_com_proxy(i + target.vtbl_own_offset, method_name)
             def pinterface_method_forward(self, *args, _m=m, _i=i):
-                assert _debug_com(f'Calling COM {_i} of {target.__name__} ({_m}) through '
+                assert _debug_com(f'Calling COM {_i} of {target.__name__} ({_m})[{method_name}] through '
                                   f'pointer: ({", ".join(map(repr, (self, *args)))})')
                 return _m(self, *args)
             dct[method_name] = pinterface_method_forward
