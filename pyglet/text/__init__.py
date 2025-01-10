@@ -341,7 +341,11 @@ class DocumentLabel(layout.TextLayout):
 
     @property
     def weight(self) -> str:
-        """The font weight (boldness), as a string."""
+        """The font weight (boldness or thickness), as a string.
+
+        See the :py:class:`~Weight` enum for valid cross-platform
+        string values.
+        """
         return self.document.get_style("weight")
 
     @weight.setter
