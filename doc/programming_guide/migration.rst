@@ -37,7 +37,7 @@ of "document". Other than that, the rest of the positional arguments line up::
     Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     HTMLLabel(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The layouts and lables don't share all of the same argument, so the rest of the
+The layouts and labels don't share all of the same argument, so the rest of the
 arguments will need to be provided as usual, where they differ. Please see the
 API documents for full details.
 
