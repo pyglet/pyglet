@@ -61,6 +61,7 @@ LONG_PTR = HANDLE
 HDROP = HANDLE
 LPTSTR = LPWSTR
 LPSTREAM = c_void_p
+CLSID = com.GUID
 
 # Fixed in python 3.12. Is c_byte on other versions.
 # Ensure it's the same across all versions.
@@ -557,7 +558,7 @@ class STATSTG(Structure):
         ('atime', FILETIME),
         ('grfMode', DWORD),
         ('grfLocksSupported', DWORD),
-        ('clsid', DWORD),
+        ('clsid', CLSID),
         ('grfStateBits', DWORD),
         ('reserved', DWORD),
     ]

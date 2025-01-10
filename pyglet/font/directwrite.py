@@ -280,6 +280,11 @@ class DWRITE_GLYPH_METRICS(Structure):
         ("verticalOriginY", INT32),
     )
 
+    def __repr__(self):
+        return (f"DWRITE_GLYPH_METRICS(leftSideBearing={self.leftSideBearing}, advanceWidth={self.advanceWidth}, "
+                f"rightSideBearing={self.rightSideBearing}, topSideBearing={self.topSideBearing}, advanceHeight={self.advanceHeight}, "
+                f"bottomSideBearing={self.bottomSideBearing}, verticalOriginY={self.verticalOriginY})")
+
 
 class DWRITE_GLYPH_OFFSET(Structure):
     _fields_ = (
@@ -1804,16 +1809,10 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         metrics_out = []
         for metric in glyph_metrics:
-            glyph_width = (metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing)
-
-            # width must have a minimum of 1. For example, spaces are actually 0 width, still need glyph bitmap size.
-            if glyph_width == 0:
-                glyph_width = 1
-
+            glyph_width = (metric.advanceWidth + abs(metric.leftSideBearing) + abs(metric.rightSideBearing))
             glyph_height = (metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing)
 
             lsb = metric.leftSideBearing
-
             bsb = metric.bottomSideBearing
 
             advance_width = metric.advanceWidth
@@ -1877,8 +1876,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
     def render_single_glyph(self, font_face: IDWriteFontFace, indice: int, advance: float, offset: DWRITE_GLYPH_OFFSET,
                             metrics: tuple[float, float, float, float, float]):
         """Renders a single glyph using D2D DrawGlyphRun"""
-        glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics  # We use a shaped advance instead
-        # of the fonts.
+        glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics
 
         # Slicing an array turns it into a python object. Maybe a better way to keep it a ctypes value?
         new_indice = (UINT16 * 1)(indice)
@@ -1899,27 +1897,26 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
             return None
 
         # Use the glyph's advance as a width as bitmap width.
-        # Some characters such as diacritics (̃) may have 0 advance width. In that case, just use glyph_width
-        if glyph_advance:
-            render_width = int(math.ceil(glyph_advance * self.font.font_scale_ratio))
+        # Some characters have no glyph width at all, just use a 1x1
+        if glyph_width == 0 and glyph_height == 0:
+            render_width = 1
+            render_height = 1
         else:
-            render_width = int(math.ceil(glyph_width * self.font.font_scale_ratio))
+            # Use the glyph width, or if the advance is larger, use that instead.
+            # Diacritics usually have no proper sizing, but instead have an advance.
+            render_width = int(math.ceil(max(glyph_width, glyph_advance) * self.font.font_scale_ratio))
+            render_height = int(math.ceil(self.font.max_glyph_height))
 
         render_offset_x = 0
         if glyph_lsb < 0:
             # Negative LSB: we shift the offset, otherwise the glyph will be cut off.
             render_offset_x = glyph_lsb * self.font.font_scale_ratio
 
-        # Increase width by arbitrary amount to accommodate size of italic.
-        # No way to get actual size of italics outside of rendering to larger texture and checking pixels.
-        if self.font.italic:
-            render_width += (render_width // 2)
-
         # Create new bitmap.
         # TODO: We can probably adjust bitmap/baseline to reduce the whitespace and save a lot of texture space.
         # Note: Floating point precision makes this a giant headache, will need to be solved for this approach.
         self._create_bitmap(render_width + 1,  # Add 1, sometimes AA can add an extra pixel or so.
-                            int(math.ceil(self.font.max_glyph_height)))
+                            render_height + 1)
 
         # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
         baseline_offset = D2D_POINT_2F(-render_offset_x - offset.advanceOffset,

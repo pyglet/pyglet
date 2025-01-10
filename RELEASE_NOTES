@@ -15,6 +15,13 @@ Features
 - Shapes now offer a Z property for basic depth sorting.
 
 
+pyglet 2.0.21
+
+Bugfixes
+--------
+- font: Fix DirectWrite bitmap width being cut off for some fonts. (#1253)
+
+
 pyglet 2.0.20
 
 Changes and Improvements
