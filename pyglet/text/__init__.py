@@ -437,8 +437,8 @@ class Label(DocumentLabel):
             font_size:
                 Font size, in points.
             weight:
-                The 'weight' of the font (boldness). See the :py:class:~`Weight`
-                enum for valid weight names.
+                The 'weight' of the font (boldness). See the :py:class:`~Weight`
+                enum for valid cross-platform weight names.
             italic:
                 Italic font style.
             stretch:
