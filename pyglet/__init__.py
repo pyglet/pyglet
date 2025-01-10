@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = "2.0.20"
+version = "2.0.21"
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
