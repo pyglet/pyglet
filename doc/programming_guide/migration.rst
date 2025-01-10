@@ -8,7 +8,7 @@ of the code base. If you are upgrading from pyglet 2.0 and your game or project
 has suddenly stopped working, this is the place for you. The following sections
 should hopefully get you up and running again without too much effort. If you
 are having an issue that is not covered here, please open up an issue ticket on
-`Github <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
+`GitHub <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
 
 Window "HiDPI" support
 ----------------------
