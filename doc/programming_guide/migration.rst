@@ -75,13 +75,14 @@ to learn more:
 Replace Bold With Weight
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In addition to argument ordering, the ``bold`` argument has been replaced with
-``weight``. Rather than a single True/False boolean, you can now pass a string
-for the desired font weight. An enum (:py:class:`~pyglet.text.Weight`) exists
-to provide a reference to all valid cross platform weights (though individual
-font backends _can_ support more names that what is provided there). The valid
-weight names mimic those in CSS, such as "thin", "normal", "bold", "extrabold",
-etc..
+The string ``weight`` argument is more flexible than the ``bold`` argument it replaces.
+
+The ``weight`` argument now allows you too choose a desired font weight from
+those your specific font and rendering back-end support. For known cross-platform
+``weight`` strings, please see :py:class:`pyglet.text.Weight`.
+
+* The names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``extrabold``, etc)
+* Some rendering back-ends *may* support more names than listed there
 
 Shapes
 ------
