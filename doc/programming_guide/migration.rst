@@ -23,29 +23,54 @@ Labels & Text Layouts
 Argument Consistency
 ^^^^^^^^^^^^^^^^^^^^
 
-The positional argument order for text Labels and Layouts was not consistent
-in previous pyglet releases. This has been refactored to make things more
-uniform, with the goal of making it easier to switch between Layouts or
-create custom subclasses. All layouts now _start_ with the same positional
-argument ordering::
+The positional arguments for creating :py:class:`pyglet.text` layouts
+and labels now all *start* with similar argument orders. This helps
+you:
+
+* switch between labels and layouts
+* create custom subclasses
+
+The order *after* the initial arguments may differ. Please see any
+relevant API documentation to learn more.
+
+Layout Arguments
+""""""""""""""""
+All :py:mod:`pyglet.text.layout` types now *start* with the same positional
+argument order::
 
     TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     ScrollableTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     IncrementalTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The label classes also follow a similar default argument ordering, with one
-small exception: :py:class:`~Label` and :py:class:`~HTMLLabel` take a string as
-their first ``text`` argument instead of a :py:class:`~Document` instance.
+These types all take a concrete instance of an
+:py:class:`~pyglet.text.layout.AbstractDocument` subclass as their
+first argument. Subsequent arguments may differ.
 
-Other than that, the rest of the positional arguments line up::
+Please see the following to learn more:
+
+* :py:class:`pyglet.text.layout.TextLayout`
+* :py:class:`pyglet.text.layout.ScrollableTextLayout`
+* :py:class:`pyglet.text.layout.IncrementalTextLayout`
+
+Label Arguments
+"""""""""""""""
+The label classes now also share similar early argument orders.
+
+Only :py:class:`~pyglet.text.DocumentLabel` is identical to layouts in
+its initial arguments. The others both take a string ``text`` argument
+as their first argument::
 
     DocumentLabel(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     HTMLLabel(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The layouts and labels don't share all of the same argument, so the rest of the
-arguments will need to be provided as usual, where they differ. Please see the
-API documents for full details.
+As with layouts, the subsequent arguments may vary. Please see the following
+to learn more:
+
+* :py:class:`pyglet.text.DocumentLabel`
+* :py:class:`pyglet.text.Label`
+* :py:class:`pyglet.text.HTMLLabel`
+
 
 Replace Bold With Weight
 ^^^^^^^^^^^^^^^^^^^^^^^^
