@@ -19,6 +19,10 @@ zoom or scale (such as 4K displays). This is exposed as new pyglet options. See
 
 Labels & Text Layouts
 ---------------------
+
+Argument Consistency
+^^^^^^^^^^^^^^^^^^^^
+
 The positional argument order for text Labels and Layouts was not consistent
 in previous pyglet releases. This has been refactored to make things more
 uniform, with the goal of making it easier to switch between Layouts or
@@ -29,9 +33,11 @@ argument ordering::
     ScrollableTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     IncrementalTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The Label classes also follow a similar default argument ordering, with one
-small exception: Label and HTMLLabel take "text" as the first argument instead
-of "document". Other than that, the rest of the positional arguments line up::
+The label classes also follow a similar default argument ordering, with one
+small exception: :py:class:`~Label` and :py:class:`~HTMLLabel` take a string as
+their first ``text`` argument instead of a :py:class:`~Document` instance.
+
+Other than that, the rest of the positional arguments line up::
 
     DocumentLabel(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
@@ -40,6 +46,9 @@ of "document". Other than that, the rest of the positional arguments line up::
 The layouts and labels don't share all of the same argument, so the rest of the
 arguments will need to be provided as usual, where they differ. Please see the
 API documents for full details.
+
+Replace Bold With Weight
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to argument ordering, the ``bold`` argument has been replaced with
 ``weight``. Rather than a single True/False boolean, you can now pass a string
