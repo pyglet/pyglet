@@ -10,12 +10,32 @@ should hopefully get you up and running again without too much effort. If you
 are having an issue that is not covered here, please open up an issue ticket on
 `GitHub <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
 
-Window "HiDPI" support
+Setting pyglet Options
 ----------------------
+
+The :py:attr:`pyglet.options` attribute now uses a dedicated class with new features.
+
+The Options Object
+^^^^^^^^^^^^^^^^^^
+The :py:attr:`pyglet.options` attribute now uses a :py:class:`pyglet.Options` class.
+
+Although it is now a :py:class:`dataclass <dataclasses.dataclass>` instead of a
+:py:class:`dict`, it supports both of the following access approaches:
+
+* attribute style (:py:attr:`pyglet.debug_gl <pyglet.Options.debug_gl>`)
+* subscript / :py:class:`dict` style (``pyglet.options['debug_gl'`)
+
+
+Window "HiDPI" support
+^^^^^^^^^^^^^^^^^^^^^^
 The v2.1 release now provides a lot more control over how modern 'HiDPI' displays
 are treated. This includes "retina" displays, or any display that has a non-100%
-zoom or scale (such as 4K displays). This is exposed as new pyglet options. See
-``pyglet.options.dpi_scaling`` for more information.
+zoom or scale (such as 4K displays). This is exposed as new pyglet option. Please
+see the following to learn more:
+
+* :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
+* :py:attr:`pyglet.Options`
+
 
 Labels & Text Layouts
 ---------------------
