@@ -15,6 +15,5 @@ build:
     python: "3.8"
 
 python:
-  version: 3.8
   install:
     - requirements: doc/requirements.txt
