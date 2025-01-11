@@ -8,46 +8,101 @@ of the code base. If you are upgrading from pyglet 2.0 and your game or project
 has suddenly stopped working, this is the place for you. The following sections
 should hopefully get you up and running again without too much effort. If you
 are having an issue that is not covered here, please open up an issue ticket on
-`Github <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
+`GitHub <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
+
+Setting pyglet Options
+----------------------
+
+The :py:attr:`pyglet.options` attribute now uses a dedicated class with new features.
+
+The Options Object
+^^^^^^^^^^^^^^^^^^
+The :py:attr:`pyglet.options` attribute now uses a :py:class:`pyglet.Options` class.
+
+Although it is now a :py:class:`dataclass <dataclasses.dataclass>` instead of a
+:py:class:`dict`, it supports both of the following access approaches:
+
+* attribute style (:py:attr:`pyglet.debug_gl <pyglet.Options.debug_gl>`)
+* subscript / :py:class:`dict` style (``pyglet.options['debug_gl'`)
+
 
 Window "HiDPI" support
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 The v2.1 release now provides a lot more control over how modern 'HiDPI' displays
 are treated. This includes "retina" displays, or any display that has a non-100%
-zoom or scale (such as 4K displays). This is exposed as new pyglet options. See
-``pyglet.options.dpi_scaling`` for more information.
+zoom or scale (such as 4K displays). This is exposed as new pyglet option. Please
+see the following to learn more:
+
+* :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
+* :py:attr:`pyglet.Options`
+
 
 Labels & Text Layouts
 ---------------------
-The positional argument order for text Labels and Layouts was not consistent
-in previous pyglet releases. This has been refactored to make things more
-uniform, with the goal of making it easier to switch between Layouts or
-create custom subclasses. All layouts now _start_ with the same positional
-argument ordering::
+
+Argument Consistency
+^^^^^^^^^^^^^^^^^^^^
+
+The positional arguments for creating :py:class:`pyglet.text` layouts
+and labels now all *start* with similar argument orders. This helps
+you:
+
+* switch between labels and layouts
+* create custom subclasses
+
+The order *after* the initial arguments may differ. Please see any
+relevant API documentation to learn more.
+
+Layout Arguments
+""""""""""""""""
+All :py:mod:`pyglet.text.layout` types now *start* with the same positional
+argument order::
 
     TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     ScrollableTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     IncrementalTextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The Label classes also follow a similar default argument ordering, with one
-small exception: Label and HTMLLabel take "text" as the first argument instead
-of "document". Other than that, the rest of the positional arguments line up::
+These types all take a concrete instance of an
+:py:class:`~pyglet.text.layout.AbstractDocument` subclass as their
+first argument. Subsequent arguments may differ.
+
+Please see the following to learn more:
+
+* :py:class:`pyglet.text.layout.TextLayout`
+* :py:class:`pyglet.text.layout.ScrollableTextLayout`
+* :py:class:`pyglet.text.layout.IncrementalTextLayout`
+
+Label Arguments
+"""""""""""""""
+The label classes now also share similar early argument orders.
+
+Only :py:class:`~pyglet.text.DocumentLabel` is identical to layouts in
+its initial arguments. The others both take a string ``text`` argument
+as their first argument::
 
     DocumentLabel(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     Label(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
     HTMLLabel(text, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
 
-The layouts and lables don't share all of the same argument, so the rest of the
-arguments will need to be provided as usual, where they differ. Please see the
-API documents for full details.
+As with layouts, the subsequent arguments may vary. Please see the following
+to learn more:
 
-In addition to argument ordering, the ``bold`` argument has been replaced with
-``weight``. Rather than a single True/False boolean, you can now pass a string
-for the desired font weight. An enum (:py:class:`~pyglet.text.Weight`) exists
-to provide a reference to all valid cross platform weights (though individual
-font backends _can_ support more names that what is provided there). The valid
-weight names mimic those in CSS, such as "thin", "normal", "bold", "extrabold",
-etc..
+* :py:class:`pyglet.text.DocumentLabel`
+* :py:class:`pyglet.text.Label`
+* :py:class:`pyglet.text.HTMLLabel`
+
+
+Replace Bold With Weight
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The string ``weight`` argument is more flexible than the ``bold`` argument it replaces.
+
+The ``weight`` argument now allows you too choose a desired font weight from
+those your specific font and rendering back-end support. For known cross-platform
+``weight`` strings, please see :py:class:`pyglet.text.Weight`.
+
+* The names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``extrabold``, etc)
+* Some rendering back-ends *may* support more names than listed there
 
 Shapes
 ------
