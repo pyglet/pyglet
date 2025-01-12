@@ -205,7 +205,7 @@ changed to be ``NamedTuple`` subclasses instead of ``tuple`` subclasses. This is
 consistent with the vector types, and makes for a cleaner code base. There is one
 small change due to this. Previously, creating a matrix from values required
 passing in a list or tuple of values. Now, you simply provide the values (the same
-way as vectors). For example:
+way as vectors). For example::
 
     # old way:
     my_mat4 = pyglet.math.Mat4([1, 2, 3, 4, 5, ...])
