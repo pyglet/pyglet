@@ -2,13 +2,23 @@
 
 Migrating from pyglet 2.0
 =========================
-pyglet 2.1 contains several small, but breaking changes. Some of these are
-usibility improvements, and some are in the interest of improving the quality
-of the code base. If you are upgrading from pyglet 2.0 and your game or project
-has suddenly stopped working, this is the place for you. The following sections
-should hopefully get you up and running again without too much effort. If you
-are having an issue that is not covered here, please open up an issue ticket on
-`GitHub <https://github.com/pyglet/pyglet/issues>`_ so that we can add it.
+pyglet 2.1 contains several small breaking changes.
+
+This page helps projects upgrade from pyglet 2.0. If your code
+suddenly stopped working after an upgrade, this page is the best
+place to start.
+
+Improvements include:
+
+* Usability improvements to text and other areas
+* Type checking and annotations
+* General code quality improvements
+
+If you encounter an issue not covered while upgrading your project, please
+let us know. The best place to report a bug or omission is via `GitHub Issues`_.
+
+_GitHub Issues: https://github.com/pyglet/pyglet/issues
+
 
 Setting pyglet Options
 ----------------------
