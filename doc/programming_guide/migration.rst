@@ -190,7 +190,7 @@ This is similar to how Controller/Joystick events are implemented. In cases wher
 the same handler function is set to multiple widgets, this gives a way to determine
 which widget has dispatched the event.
 
-The :py:class:`~pyglet.gui.widget.ToggleButton` and :py:class:`~pyglet.gui.widget.PushButton`
+The :py:class:`~pyglet.gui.widgets.ToggleButton` and :py:class:`~pyglet.gui.widgets.PushButton`
 widgets have a small change. Instead of the image arguments being named "pressed"
 and "depressed", they has been renamed to the correct "pressed" and "unpressed".
 
