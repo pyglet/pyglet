@@ -158,11 +158,11 @@ You now get a Vec2 instead of booleans that can be used directly::
 This should be more efficient in most cases. If you want to access the values
 as booleans for a quick workaround when migrating, you can do something like this::
 
-    dpleft, dpright, dpup, dpdown = vector.x < 0, vector.x > 0, vector.y > 0 vector.y < 0
+    dpleft, dpright, dpup, dpdown = vector.x < 0, vector.x > 0, vector.y > 0, vector.y < 0
 
 
 Vectors can also be useful for analog sticks, because it gives an easy way to
-calculate dead-zones using ``.length()``. For example::
+calculate dead-zones using :py:meth:`~pyglet.math.Vec2.length`. For example::
 
     @controller.event
     def on_stick_motion(controller, name, vector):
@@ -175,13 +175,27 @@ calculate dead-zones using ``.length()``. For example::
 
 Normalization of vectors can also be useful for some analog sticks. When dealing
 with Controllers that have non-circular gates, the The absolute values of their
-combined x and y axis can sometimes exceed 1.0. Vector normalization can ensure
+combined x and y axis can sometimes exceed ``1.0``. Vector normalization can ensure
 that the maximum value stays within range. For example::
 
             vector = min(vector, vector.normalize())
 
-You can also of course directly access the individual ``Vec2.x`` & ``Vec2.y`` attributes,
-if you want to . See :py:class:`~pyglet.math.Vec2` for more details on vector types.
+You can also directly access the individual :py:attr:`~pyglet.math.Vec2.x` and
+:py:attr:`~pyglet.math.Vec2.y` attributes or unpack a vector:
+
+.. code-block:: python
+
+   # Direct access
+   x = vector2.x
+   y = vector2.y
+
+   # Unpacking-style access
+   x, y = vector2
+
+Please see the following to learn more about vectors in pyglet 2.1:
+
+* The :ref:`migration-math` section of this page
+* :py:class:`pyglet.math.Vec2`
 
 Gui
 ---
@@ -193,6 +207,8 @@ which widget has dispatched the event.
 The :py:class:`~pyglet.gui.widgets.ToggleButton` and :py:class:`~pyglet.gui.widgets.PushButton`
 widgets have a small change. Instead of the image arguments being named "pressed"
 and "depressed", they has been renamed to the correct "pressed" and "unpressed".
+
+.. _migration-math:
 
 Math
 ----
