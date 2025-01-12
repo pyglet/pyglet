@@ -199,14 +199,20 @@ Please see the following to learn more about vectors in pyglet 2.1:
 
 Gui
 ---
+
+Widget Event Dispatching
+^^^^^^^^^^^^^^^^^^^^^^^^
 All widget events now dispatch the widget instance itself as the first argument.
-This is similar to how Controller/Joystick events are implemented. In cases where
-the same handler function is set to multiple widgets, this gives a way to determine
-which widget has dispatched the event.
+
+This is similar to how Controller/Joystick events are implemented. It allows
+handler functions re-used across multiple widgets to determine which specific
+widget dispatched an event.
+
+Button Argument Names
+^^^^^^^^^^^^^^^^^^^^^
 
 The :py:class:`~pyglet.gui.widgets.ToggleButton` and :py:class:`~pyglet.gui.widgets.PushButton`
-widgets have a small change. Instead of the image arguments being named "pressed"
-and "depressed", they has been renamed to the correct "pressed" and "unpressed".
+widgets now use ``pressed`` and ``unpressed`` for their image arguments.
 
 .. _migration-math:
 
