@@ -29,7 +29,7 @@ The Options Object
 ^^^^^^^^^^^^^^^^^^
 The :py:attr:`pyglet.options` attribute now uses a :py:class:`pyglet.Options` class.
 
-Although it is now a :py:class:`dataclass <dataclasses.dataclass>` instead of a
+Although it is now a :py:func:`dataclass <dataclasses.dataclass>` instead of a
 :py:class:`dict`, it supports both of the following access approaches:
 
 * attribute style (:py:attr:`pyglet.debug_gl <pyglet.Options.debug_gl>`)
