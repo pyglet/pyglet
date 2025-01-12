@@ -111,7 +111,7 @@ The ``weight`` argument now allows you too choose a desired font weight from
 those your specific font and rendering back-end support. For known cross-platform
 ``weight`` strings, please see :py:class:`pyglet.text.Weight`.
 
-* The names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``extrabold``, etc)
+* The names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``"extrabold"``, etc)
 * Some rendering back-ends *may* support more names than listed there
 
 Shapes
