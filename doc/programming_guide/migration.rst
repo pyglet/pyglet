@@ -33,7 +33,7 @@ Although it is now a :py:class:`dataclass <dataclasses.dataclass>` instead of a
 :py:class:`dict`, it supports both of the following access approaches:
 
 * attribute style (:py:attr:`pyglet.debug_gl <pyglet.Options.debug_gl>`)
-* subscript / :py:class:`dict` style (``pyglet.options['debug_gl'`)
+* subscript / :py:class:`dict` style (``pyglet.options['debug_gl']``)
 
 
 Window "HiDPI" support
