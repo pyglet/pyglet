@@ -128,6 +128,8 @@ shape, which already uses "width" (and height) to mean it's overall size.
 Going forward, any shape that is made up of lines should use `thickness`
 for the thickness/width of those lines.
 
+.. _migration-controllers:
+
 Controllers
 -----------
 The Controller interface has been changed slightly. Analog sticks and dpad
@@ -194,26 +196,56 @@ and "depressed", they has been renamed to the correct "pressed" and "unpressed".
 
 Math
 ----
-In the :py:mod:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
-:py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
-immutable; all operations will return a new object. In addition, all vector objects
-are now hashable. This has performance and usability benefits. For most purposes,
-the Vec types can be treated as (named) tuples.
+The :py:mod:`~pyglet.math` module includes a number of performance and
+usability changes.
 
-The :py:class:`~pyglet.math.Mat3` & :py:class:`~pyglet.math.Mat4` class have been
-changed to be ``NamedTuple`` subclasses instead of ``tuple`` subclasses. This is
-consistent with the vector types, and makes for a cleaner code base. There is one
-small change due to this. Previously, creating a matrix from values required
-passing in a list or tuple of values. Now, you simply provide the values (the same
-way as vectors). For example::
+Immutable Vectors and Matrices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    # old way:
-    my_mat4 = pyglet.math.Mat4([1, 2, 3, 4, 5, ...])
-    # new way:
+All :py:mod:`~pyglet.math` datatypes are now :py:class:`typing.NamedTuple`
+subclasses. This provides multiple benefits:
+
+* More consistent creation syntax
+* Vectors and matrices are now hashable
+
+  * They can be :py:class:`dict` keys or :py:class:`set` members
+  * Combine with ``/``, ``//``, :py:func:`round` or :py:func:`math.floor` for easy spatial hashing
+
+* Cleaner controller code (see :ref:`migration-controllers`)
+
+.. important:: The mypy typechecker is incompatible with :py:mod:`pyglet.math`.
+
+               When typechecking, it is a good idea to:
+
+               1. exclude :py:mod:`pyglet.math` from mypy checks
+               2. use pyright instead (pylance in VS Code)
+
+
+Matrix Creation Syntax
+^^^^^^^^^^^^^^^^^^^^^^
+
+:py:class:`~pyglet.math.Mat3` and :py:mod:`pyglet.math.Mat4` now accept arguments
+directly instead of an iterable.
+
+If you create your matrices via the helper methods, nothing changes. If you
+create matrices directly, pyglet 2.1 allows more efficient code:
+
+.. code-block:: python
+
+    # pyglet 2.1 requires passing the elements directly
     my_mat4 = pyglet.math.Mat4(1, 2, 3, 4, 5, ...)
 
-Matrix objects are generally created via their helper methods, so this change should
-hopefully not require any code updates for most users.
+    # pyglet 2.0 required an intermediate iterable like a list
+    my_mat4 = pyglet.math.Mat4([1, 2, 3, 4, 5, ...])
+
+If your pre-existing code has an ``intermediate_iterable``, you can use
+``*`` unpacking as a quick fix:
+
+.. code-block:: python
+
+    # Use * unpacking to unpack the pre-allocated intermediate_iterable
+    my_mat4 = pyglet.math.Mat4(*intermediate_iterable)
+
 
 Models
 ------
