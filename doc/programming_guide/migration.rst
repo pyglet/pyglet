@@ -271,8 +271,8 @@ Widget Event Dispatching
 All widget events now dispatch the widget instance itself as the first argument.
 
 This is similar to how Controller/Joystick events are implemented. It allows
-handler functions re-used across multiple widgets to determine which specific
-widget dispatched an event.
+you to re-use a single handler functions across multiple widgets without "forgetting"
+which widget dispatched an event.
 
 Button Argument Names
 ^^^^^^^^^^^^^^^^^^^^^
