@@ -136,7 +136,7 @@ Replace Bold With Weight
 
 The string ``weight`` argument is more flexible than the ``bold`` argument it replaces.
 
-The ``weight`` argument now allows you too choose a desired font weight from
+The ``weight`` argument now allows you to choose a desired font weight from
 those your specific font and rendering back-end support. For known cross-platform
 ``weight`` strings, please see :py:class:`pyglet.text.Weight`.
 
