@@ -2,50 +2,79 @@
 
 Migrating from pyglet 2.0
 =========================
-This page helps projects upgrade from pyglet 2.0.
+This page helps upgrade code from pyglet 2.0.
 
-Several improvements required small breaking changes in pyglet
-2.1. These include improvements to:
+Some of pyglet 2.1's improvements required small breaking changes,
+including:
 
-* Usability in text and other areas
-* Type checking and annotations
-* Code quality and organization
+* Arguments for text, UI, and game controller handling
+* Locations and names for features
+* Data types and annotations
 
-If your project stops working after upgrading, this page
-will help you start updating. To report a missing change
-or a bug, please use `GitHub Issues`_ or reach out via one
-of the :ref:`contributor communication <contributor-communication>`
-channels.
+To report a missing change or a bug, please use `GitHub Issues`_ or
+another :ref:`contributor communication <contributor-communication>`
+channel.
 
 .. _GitHub Issues: https://github.com/pyglet/pyglet/issues
 
+.. _migration-options:
 
 Setting pyglet Options
 ----------------------
 
-The :py:attr:`pyglet.options` attribute now uses a dedicated class with new features.
+The :py:attr:`pyglet.options` attribute is now a :py:class:`pyglet.Options` instance.
 
 The Options Object
 ^^^^^^^^^^^^^^^^^^
-The :py:attr:`pyglet.options` attribute now uses a :py:class:`pyglet.Options` class.
+Although :py:class:`~pyglet.Options` is a :py:func:`dataclass <dataclasses.dataclass>`,
+you can get and set its attribute values directly via either approach below::
 
-Although it is now a :py:func:`dataclass <dataclasses.dataclass>` instead of a
-:py:class:`dict`, it supports both of the following access approaches:
+    # "New" 2.1 attribute-style works with type checkers
+    pyglet.options.dpi_scaling = 'real'
 
-* attribute style (:py:attr:`pyglet.debug_gl <pyglet.Options.debug_gl>`)
-* subscript / :py:class:`dict` style (``pyglet.options['debug_gl']``)
+    # "Old" dict-style access is backward-compatible to helpe with porting
+    pyglet.options['dpi_scaling'] = 'real'
 
 
 Window "HiDPI" support
 ^^^^^^^^^^^^^^^^^^^^^^
-The v2.1 release now provides a lot more control over how modern 'HiDPI' displays
-are treated. This includes "retina" displays, or any display that has a non-100%
-zoom or scale (such as 4K displays). This is exposed as new pyglet option. Please
-see the following to learn more:
+In 2.1, :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
+accepts strings to configure fine-grained 'HiDPI' behavior.
+
+What's HiDPI?
+"""""""""""""
+Some systems require scaled drawing due to pixel density, settings, or both.
+
+.. note:: HiDPI stands for High Dots Per *(Square)* Inch.
+
+In practice, this usually means:
+
+* Apple's "retina" displays on Macs
+* Non-Mac displays branded as 4K, 8K, etc
+* Other displays with non-100% zoom or scaling
+
+Scaling Modes
+"""""""""""""
+The pyglet :py:attr:`~pyglet.Options.dpi_scaling` option supports multiple
+scaling modes.
+
+Each has pros and cons for different platforms and hardware. For example,
+the default ``"real"`` mode matches the window, rendering, and input to a
+computer display's "real" physical pixels.
+
+On a HiDPI screen, this could mean:
+
+* projects with the right art styles can look crisply detailed
+* other projects may look tiny or poorly-scaled
+
+In the latter case, other scaling modes may help. You will need to
+experiment to find the best one(s) for your specific needs. Please
+see the following to get started:
 
 * :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
 * :py:attr:`pyglet.Options`
-
+* :py:attr:`Window.dpi <pyglet.window.Window.dpi>`
+* :py:attr:`Window.scale <pyglet.window.Window.scale>`
 
 Labels & Text Layouts
 ---------------------
@@ -132,11 +161,31 @@ for the thickness/width of those lines.
 
 Controllers
 -----------
-The Controller interface has been changed slightly. Analog sticks and dpad
-events now dispatch :py:class:`~pyglet.math.Vec2`, instead of individual float
-or boolean values. This can potentially save a few lines of code, and gives
-easy access to several helper methods found on the Vec classes. For instance,
-where you had to do this in the past::
+
+Events from analog sticks and directional pads (d-pads) now pass
+:py:class:`~pyglet.math.Vec2` instances to handler functions.
+
+Vectors offer helper methods in addition to common math operators (`+`, `-`, `*`,
+etc). Since this makes many tasks easier, we'll cover the most common ones below.
+
+
+Handling Diagonals with the D-Pad
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:py:class:`Vec2.normalize() <pyglet.math.Vec2.normalize>` makes it easy to
+handle diagonal movement:
+
+.. code-block:: python
+
+    # In pyglet 2.1, this handles diagonals
+    @controller.event
+    def on_dpad_motion(controller, vector):
+        # Multiplying a vector by an integer or float multiplies all components
+        player_position += vector.normalize() * PLAYER_SPEED
+
+Without vectors, pre-2.1 code was more verbose:
+
+.. code-block:: python
 
     @controller.event
     def on_dpad_motion(controller, dpleft, dpright, dpup, dpdown):
@@ -145,42 +194,51 @@ where you had to do this in the past::
         if dpright:
             # move right
         if dpright and dpdown:
-            # move diagonal, but have to normalize the values by yourself
+            # move diagonally, but you have to normalize the values by yourself
 
-You now get a Vec2 instead of booleans that can be used directly::
 
-    @controller.event
-    def on_dpad_motion(controller, vector):
-        player_position += vector * PLAYER_SPEED
-        # Easily normalize for diagonal values:
-        player_position += vector.normalize() * PLAYER_SPEED
-
-This should be more efficient in most cases. If you want to access the values
-as booleans for a quick workaround when migrating, you can do something like this::
+Getting D-Pad Booleans
+""""""""""""""""""""""
+If you need boolean data, you can quickly convert from a :py:class:`~pyglet.math.Vec2`
+like this::
 
     dpleft, dpright, dpup, dpdown = vector.x < 0, vector.x > 0, vector.y > 0, vector.y < 0
 
+Handling Analog Stick Drift
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Analog sticks can "drift" when near zero, but vectors can help.
 
-Vectors can also be useful for analog sticks, because it gives an easy way to
-calculate dead-zones using :py:meth:`~pyglet.math.Vec2.length`. For example::
+Circular Dead Zones
+"""""""""""""""""""
+The simplest approach to drift is a circular "dead zone" which ignores input
+with a :py:meth:`~pyglet.math.Vec2.length` beneath a certain threshold::
 
     @controller.event
     def on_stick_motion(controller, name, vector):
-        if vector.length() <= DEADZONE:
+        if vector.length() <= DEADZONE_RADIUS:
             return
         elif name == "leftstick":
             # Do something with the 2D vector
         elif name == "rightstick":
             # Do something with the 2D vector
 
-Normalization of vectors can also be useful for some analog sticks. When dealing
-with Controllers that have non-circular gates, the The absolute values of their
-combined x and y axis can sometimes exceed ``1.0``. Vector normalization can ensure
-that the maximum value stays within range. For example::
+Non-Circular Sticks
+"""""""""""""""""""
+:py:meth:`Vec2.normalize <pyglet.math.Vec2.normalize` can also help when
+an unusual analog stick input could exceed ``1.0`` in length.
 
+For example, a :py:class:`~pyglet.input.Controller` for a device with a non-circular
+input range could return a value with a combined :py:attr:`~pyglet.math.Vec2.length`
+greater than ``1.0``. Normalizating allows concisely clamping the input to ``1.0``::
+
+            # Avoid a "cheating" / bugged controller for movement
             vector = min(vector, vector.normalize())
+            player.position += vector * PLAYER_SPEED
 
-You can also directly access the individual :py:attr:`~pyglet.math.Vec2.x` and
+
+Accesing Vector Components
+""""""""""""""""""""""""""
+You can directly access  individual :py:attr:`~pyglet.math.Vec2.x` and
 :py:attr:`~pyglet.math.Vec2.y` attributes or unpack a vector:
 
 .. code-block:: python
