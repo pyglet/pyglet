@@ -136,12 +136,20 @@ Replace Bold With Weight
 
 The string ``weight`` argument is more flexible than the ``bold`` argument it replaces.
 
-The ``weight`` argument now allows you to choose a desired font weight from
-those your specific font and rendering back-end support. For known cross-platform
-``weight`` strings, please see :py:class:`pyglet.text.Weight`.
+.. note:: This does not apply to :py:class:`~pyglet.text.HTMLLabel`.
 
-* The names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``"extrabold"``, etc)
-* Some rendering back-ends *may* support more names than listed there
+For :py:class:`pyglet.text.Label` and :py:class:`pyglet.text.DocumentLabel`,
+their ``weight`` argument now allows choosing a desired font weight. This assumes
+your specific font and weight combination is:
+
+#. Loaded
+#. Supported by the font
+#. Supported by the rendering back-end
+
+For known cross-platform ``weight`` strings, please see :py:class:`pyglet.text.Weight`.
+
+* Constant names and values mimic OpenType and CSS (``"bold"``, ``"thin"``, ``"extrabold"``, etc)
+* Some rendering back-ends *may* support additional weight string values
 
 Shapes
 ------
