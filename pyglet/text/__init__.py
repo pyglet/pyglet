@@ -80,15 +80,40 @@ SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attribu
 
 
 class Weight(str, Enum):
-    """Valid font weights."""
+    """An :py:class:`~enum.Enum` of known cross-platform font weight strings.
+
+    Each value is both an :py:class:`~enum.Enum` and a :py:class:`str`.
+    This is not a built-in Python :py:class:`~enum.StrEnum` to ensure
+    compatibility with Python < 3.11.
+
+    .. important:: Fonts will use the closest match if they lack a weight!
+
+    The values of this enum imitate the string names for font weights
+    as used in CSS and the OpenType specification. Numerical font weights
+    are not supported because:
+
+    * Integer font weight support and behavior varies by back-end
+    * Some font renderers do not support or round :py:class:`float` values
+    * Some font renderers lack support for variable-width fonts
+
+    Additional weight strings may be supported by certain font-rendering
+    back-ends. To learn more, please see your platform's API documentation
+    and the following:
+
+    #. `The MDN article on CSS font weights <https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight>`_
+    #. `The OpenType specification <https://learn.microsoft.com/en-us/typography/opentype/spec/os2#usweightclass>`_
+
+    """
 
     THIN = 'thin'
     EXTRALIGHT = 'extralight'
     LIGHT = 'light'
     NORMAL = 'normal'
+    """The default weight for a font."""
     MEDIUM = 'medium'
     SEMIBOLD = 'semibold'
     BOLD = 'bold'
+    """The default **bold** style for a font."""
     EXTRABOLD = 'extrabold'
     ULTRABOLD = 'ultrabold'
 
@@ -316,7 +341,11 @@ class DocumentLabel(layout.TextLayout):
 
     @property
     def weight(self) -> str:
-        """The font weight (boldness), as a string."""
+        """The font weight (boldness or thickness), as a string.
+
+        See the :py:class:`~Weight` enum for valid cross-platform
+        string values.
+        """
         return self.document.get_style("weight")
 
     @weight.setter
@@ -412,8 +441,8 @@ class Label(DocumentLabel):
             font_size:
                 Font size, in points.
             weight:
-                The 'weight' of the font (boldness). See the :py:class:~`Weight`
-                enum for valid weight names.
+                The 'weight' of the font (boldness). See the :py:class:`~Weight`
+                enum for valid cross-platform weight names.
             italic:
                 Italic font style.
             stretch:

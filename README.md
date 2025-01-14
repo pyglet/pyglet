@@ -1,6 +1,6 @@
 [![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
 
-![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png)
+![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png?raw=true)
 
 # pyglet
 
