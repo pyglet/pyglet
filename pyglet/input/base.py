@@ -673,13 +673,15 @@ class Controller(EventDispatcher):
 
     def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
-        _vecs = (Vec2(0.0, 1.0), Vec2(1.0, 1.0), Vec2(1.0, 0.0), Vec2(1.0, -1.0),       # n, ne, e, se
-                 Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
-        _input_map = {key: val for key, val in zip(range(int(control.min), int(control.max + 1)), _vecs)}
+        _input_map = {0: Vec2(0.0, 1.0), 1: Vec2(1.0, 1.0), 2: Vec2(1.0, 0.0), 3: Vec2(1.0, -1.0),       # n, ne, e, se
+                      4: Vec2(0.0, -1.0), 5: Vec2(-1.0, -1.0), 6: Vec2(-1.0, 0.0), 7: Vec2(-1.0, 1.0)}   # s, sw, w, nw
+
+        # For some Directinput devices:
+        _scale = 0xfff if control.max > 0 else 1
 
         @control.event
         def on_change(value):
-            vector = _input_map.get(value, Vec2(0.0, 0.0))
+            vector = _input_map.get(value // _scale, Vec2(0.0, 0.0))
             self.dpadx, self.dpady = vector
             self.dispatch_event('on_dpad_motion', self, vector)
 
