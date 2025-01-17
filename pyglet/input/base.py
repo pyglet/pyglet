@@ -677,7 +677,7 @@ class Controller(EventDispatcher):
                       4: Vec2(0.0, -1.0), 5: Vec2(-1.0, -1.0), 6: Vec2(-1.0, 0.0), 7: Vec2(-1.0, 1.0)}   # s, sw, w, nw
 
         # For some Directinput devices:
-        _scale = 0xfff if control.max > 0 else 1
+        _scale = 0xfff if control.max > 8 else 1
 
         @control.event
         def on_change(value):
