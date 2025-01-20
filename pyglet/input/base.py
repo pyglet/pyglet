@@ -618,13 +618,13 @@ class Controller(EventDispatcher):
         if axis_name in ("dpup", "dpdown"):
             @control.event
             def on_change(value):
-                self.dpady = round(value * scale * sign + bias)     # normalized
+                self.dpady = round(value * scale + bias) * sign    # normalized
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         elif axis_name in ("dpleft", "dpright"):
             @control.event
             def on_change(value):
-                self.dpadx = round(value * scale * sign + bias)     # normalized
+                self.dpadx = round(value * scale + bias) * sign     # normalized
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         elif axis_name in ("lefttrigger", "righttrigger"):
