@@ -85,12 +85,14 @@ Classes
   .. autoattribute:: config
   .. autoattribute:: context
   .. autoattribute:: display
+  .. autoattribute:: dpi
   .. autoattribute:: fullscreen
   .. autoattribute:: has_exit
   .. autoattribute:: height
   .. autoattribute:: invalid
   .. autoattribute:: projection
   .. autoattribute:: resizeable
+  .. autoattribute:: scale
   .. autoattribute:: screen
   .. autoattribute:: size
   .. autoattribute:: style
