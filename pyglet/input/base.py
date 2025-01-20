@@ -605,13 +605,11 @@ class Controller(EventDispatcher):
             scale = -scale
             bias = -bias
 
-        # Track if any axis are reversed in the mappings
-        if relation.sign in (Sign.POSITIVE, Sign.NEGATIVE):
-            setattr(self, f"_{axis_name}_sign", relation.sign)
-
+        # Default Signs, if not explicitly defined in the mapping string:
         dpad_defaults = {'dpup': Sign.POSITIVE, 'dpdown': Sign.NEGATIVE,
                          'dpleft': Sign.NEGATIVE, 'dpright': Sign.POSITIVE}
 
+        # If the sign is not DEFAULT, it must be inverted:
         if relation.sign not in (Sign.DEFAULT, dpad_defaults.get(axis_name)):
             sign = -1.0
 
