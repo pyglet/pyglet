@@ -73,7 +73,6 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 import pyglet
 from pyglet.extlibs import earcut
 from pyglet.gl import GL_BLEND, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES, glBlendFunc, glDisable, glEnable
-from pyglet.gl import GL_LESS, GL_DEPTH_TEST, glDepthFunc
 from pyglet.graphics import Batch, Group
 from pyglet.math import Vec2
 
@@ -276,12 +275,8 @@ class _ShapeGroup(Group):
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-
     def unset_state(self) -> None:
         glDisable(GL_BLEND)
-        glDisable(GL_DEPTH_TEST)
         self.program.unbind()
 
     def __eq__(self, other: Group | _ShapeGroup) -> None:
@@ -564,7 +559,10 @@ class ShapeBase(ABC):
 
     @property
     def z(self) -> float:
-        """Get/set the Z coordinate of the shape."""
+        """Get/set the Z coordinate of the shape.
+
+        You must enable depth testing for this to take effect.
+        """
         return self._z
 
     @z.setter
