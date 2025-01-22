@@ -729,7 +729,7 @@ class ShapeBase(ABC):
         self._update_vertices()
 
     @property
-    def group(self) -> Group:
+    def group(self) -> Group | None:
         """Get/set the shape's :class:`Group`.
 
         You can migrate a shape from one group to another by setting
