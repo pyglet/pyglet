@@ -2,7 +2,7 @@
 
 Migrating from pyglet 2.0
 =========================
-This page helps upgrade code from pyglet 2.0.
+This page will help you upgrade your project from pyglet 2.0.
 
 Some of pyglet 2.1's improvements required small breaking changes,
 including:
@@ -10,6 +10,7 @@ including:
 * Arguments for text, UI, and game controller handling
 * Locations and names for features
 * Data types and annotations
+* Changes to math classes
 
 To report a missing change or a bug, please use `GitHub Issues`_ or
 another :ref:`contributor communication <contributor-communication>`
@@ -41,8 +42,8 @@ Window "HiDPI" support
 In 2.1, :py:attr:`pyglet.options.dpi_scaling <pyglet.Options.dpi_scaling>`
 accepts strings to configure fine-grained 'HiDPI' behavior.
 
-What's HiDPI?
-"""""""""""""
+What is HiDPI?
+""""""""""""""
 Some systems require scaled drawing due to pixel density, settings, or both.
 
 .. note:: HiDPI stands for High Dots Per *(Square)* Inch.
@@ -236,7 +237,7 @@ Non-Circular Sticks
 an unusual analog stick input could exceed ``1.0`` in length.
 
 For example, a :py:class:`~pyglet.input.Controller` for a device with a non-circular
-input range could return a value with a combined :py:attr:`~pyglet.math.Vec2.length`
+input range could return a value with a combined :py:meth:`~pyglet.math.Vec2.length`
 greater than ``1.0``. Normalizating allows concisely clamping the input to ``1.0``::
 
             # Avoid a "cheating" / bugged controller for movement
@@ -307,6 +308,47 @@ subclasses. This provides multiple benefits:
 
                1. exclude :py:mod:`pyglet.math` from mypy checks
                2. use pyright instead (pylance in VS Code)
+
+Vector Changes
+^^^^^^^^^^^^^^
+
+The syntax for the Vec types has changed in several ways.
+Some of these changes are due to becoming :py:class:`typing.NamedTuple` subclasses, while others
+were done for general usibility. Where possible, we adopt the behavor of GLM/GLSL for most operations,
+for a more familar experience for computer graphics programmers.
+
+* The arguments for ``Vec2.from_polar`` have been reversed for consistency. The ``length`` argument also now defaults
+  to 1.0. This will fail silently, so take care to correct this if you are using this method in your code::
+
+    Vec2.from_polar(angle: 'float', length: 'float' = 1.0)
+
+* Vector length is now obtained from the new :py:meth:`~pyglet.math.Vec2.length` method. Previously ``len`` or ``abs``
+  could be used, but this is no longer the case. The ``len`` function will now give you the number of items in the
+  vector (ie: 2, 3, or 4), not the vector length. The ``abs`` function will give you a new vector with absolute values::
+
+    >>> vec = Vec2(1, 9)
+    >>> vec.length()
+    9.055385138137417
+    >>> len(vec)
+    2
+    >>>
+    >>> vec = Vec2(-10, 5)
+    >>> abs(vec)
+    Vec2(x=10, y=5)
+
+* The vector ``heading`` property has been replace with the :py:meth:`~pyglet.math.Vec2.heading` function. This is to
+  better indicate that this is a calculation, not a static attribute. The function call is also margincally faster::
+
+* The ``mag`` property has been removed. The :py:meth:`~pyglet.math.Vec2.length` function should be used in it's place.
+
+* The ``Vec2.from_magnitude`` function has been removed. For creating a new vector of a certain magnitude, you can
+  simply multiply a normalized vector by the desired length. For example::
+
+    >>> vec = Vec2(1, 9)
+    >>> vec.normalize()
+    Vec2(x=0.11043152607484653, y=0.9938837346736188)
+    >>> vec.normalize() * 2
+    Vec2(x=0.22086305214969307, y=1.9877674693472376)
 
 
 Matrix Creation Syntax
