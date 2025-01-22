@@ -561,7 +561,10 @@ class ShapeBase(ABC):
     def z(self) -> float:
         """Get/set the Z coordinate of the shape.
 
-        You must enable depth testing for this to take effect.
+        You must enable depth testing for this to have any effect.
+        For example: create a custom parent :py:class:`~pyglet.graphics.Group`
+        that enables and disables depth testing, and use that with all of
+        your shapes that will have non-0 Z values.
         """
         return self._z
 
