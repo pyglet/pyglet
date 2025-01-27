@@ -1,6 +1,8 @@
 Contributing
 ============
 
+.. _contributor-communication:
+
 Communication
 -------------
 

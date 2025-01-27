@@ -1,3 +1,19 @@
+pyglet 2.1.2
+
+Bugfixes
+--------
+- shapes: disable depth testing by default, due to usability issues.
+
+
+
+pyglet 2.1.1
+
+Bugfixes
+--------
+- input.Controller: Fix DirectInput dpad (hat control) regressions.
+- input.Controller: Fix sign calculation bug for devices with analog axis as dpad.
+
+
 pyglet 2.1.0
 Major Release
 

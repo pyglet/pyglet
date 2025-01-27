@@ -30,9 +30,9 @@ For options requiring a tuple of values, separate each value with a comma.
 Environment settings
 --------------------
 
-Options in the :py:attr:`pyglet.options` dictionary can have defaults set
-through the operating system's environment variable.  The following table
-shows which environment variable is used for each option:
+The default :py:class:`pyglet.Options` instance (:py:attr:`pyglet.options`)
+can read default values from the operating system's environment variable. The
+following table shows which environment variable is used for each option:
 
     .. list-table::
         :header-rows: 1

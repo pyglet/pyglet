@@ -1,6 +1,6 @@
 [![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
 
-![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png)
+![logo_large.png](https://github.com/pyglet/pyglet/blob/54a8c8b7e701b1692c6a10dd80f94ec837c27bd3/examples/opengl/pyglet.png?raw=true)
 
 # pyglet
 
@@ -8,14 +8,11 @@
 and other visually rich applications. It supports Windowing, input event handling, Controllers & Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
-> :exclamation: :exclamation: A major pyglet update has just been released (v2.0). This brings many 
+> :exclamation: :exclamation: A major pyglet update has just been released (v2.1). This brings many 
 > new exciting features, but also some necessary breaking changes. If your game/application has suddenly 
 > stopped working, please read the [migration section in the documentation](https://pyglet.readthedocs.io/en/latest/programming_guide/migration.html)
-> The previous version of pyglet is tracked in the `pyglet-1.5-maintenance` branch.
+> The previous version of pyglet is tracked in the `pyglet-2.0-maintenance` branch.
 > **If you want to do a pull request for the previous release, please target the appropriate branch**. 
-
-> :exclamation: `pyglet.graphics.draw` and `pyglet.graphics.draw_indexed` will be removed
-> in pyglet v2.1. The `shapes` module is an alternative for drawing simple shapes. 
 
 * pyglet [documentation]
 * pyglet on [PyPI]
@@ -112,7 +109,7 @@ A basic outline of how to a contribution is as follows:
 
 When making a pull request, check that you have addressed its respective documentation, both within the code docstrings
 and the programming guide (if applicable). It is very important to all of us that the documentation matches the latest
-code and vice-versa.
+code and vice versa.
 
 Consequently, an error in the documentation, either because it is hard to understand or because it doesn't match the
 code, is a bug that deserves to be reported on a ticket.

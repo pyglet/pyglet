@@ -199,9 +199,6 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
     return v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1]
 
 
-
-
-
 class ShapeBase(ABC):
     """Base class for all shape objects.
 
@@ -471,7 +468,13 @@ class ShapeBase(ABC):
 
     @property
     def z(self) -> float:
-        """Get/set the Z coordinate of the shape."""
+        """Get/set the Z coordinate of the shape.
+
+        You must enable depth testing for this to have any effect.
+        For example: create a custom parent :py:class:`~pyglet.graphics.Group`
+        that enables and disables depth testing, and use that with all of
+        your shapes that will have non-0 Z values.
+        """
         return self._z
 
     @z.setter
@@ -635,7 +638,7 @@ class ShapeBase(ABC):
         self._update_vertices()
 
     @property
-    def group(self) -> Group:
+    def group(self) -> Group | None:
         """Get/set the shape's :class:`Group`.
 
         You can migrate a shape from one group to another by setting
