@@ -641,8 +641,7 @@ class ImageData(AbstractImage):
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, None)
-
+        texture.upload_data(self, self.anchor_x, self.anchor_y, 0)
         return texture
 
     def get_texture(self, rectangle: bool = False) -> Texture:
@@ -671,16 +670,19 @@ class ImageData(AbstractImage):
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
 
         if self.mipmap_images:
-            self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
+            texture.upload_data(self, self.anchor_x, self.anchor_y, 0, internalformat=internalformat)
+            # self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
             level = 0
             for image in self.mipmap_images:
                 level += 1
                 if image:
-                    image.blit_to_texture(texture.target, level, self.anchor_x, self.anchor_y, 0, internalformat)
+                    texture.upload_data(image, self.anchor_x, self.anchor_y, 0, internalformat=internalformat)
+                    # image.blit_to_texture(texture.target, level, self.anchor_x, self.anchor_y, 0, internalformat)
                     # TODO: should set base and max mipmap level if some mipmaps are missing.
         else:
             glGenerateMipmap(texture.target)
-            self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
+            texture.upload_data(self, self.anchor_x, self.anchor_y, 0, internalformat=internalformat)
+            # self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
 
         self._current_mipmap_texture = texture
         return texture
@@ -705,6 +707,9 @@ class ImageData(AbstractImage):
         If ``internalformat`` is specified, ``glTexImage`` is used to initialise
         the texture; otherwise, ``glTexSubImage`` is used to update a region.
         """
+
+        print("called blit_to_texture", self)
+
         x -= self.anchor_x
         y -= self.anchor_y
 
@@ -1256,9 +1261,9 @@ class Texture(AbstractImage):
                          blank)
             glFlush()
 
-        return cls(width, height, target, tex_id.value, min_filter, mag_filter)
+        print("created", cls)
 
-        return texture
+        return cls(width, height, target, tex_id.value, min_filter, mag_filter)
 
     def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
@@ -1305,6 +1310,90 @@ class Texture(AbstractImage):
 
     def get_texture(self, rectangle: bool = False) -> Texture:
         return self
+
+    def blit_into(self, image: ImageData, x: int, y: int, z: int):
+        glBindTexture(self.target, self.id)
+        # source.blit_to_texture(self.target, self.level, x, y, z)
+        self.upload_data(image, x, y, z)
+
+    def upload_data(self, image: ImageData, x: int, y: int, z: int, target=None, level=None, internalformat=None):
+        """Upload ImageData to the Texture.
+
+        This image's anchor point will be aligned to the given ``x`` and ``y``
+        coordinates.  If the currently bound texture is a 3D texture, the ``z``
+        parameter gives the image slice to blit into.
+
+        If ``internalformat`` is specified, ``glTexImage`` is used to initialise
+        the texture; otherwise, ``glTexSubImage`` is used to update a region.
+        """
+
+        # TODO: Should with automatically bind here?
+
+        x -= image.anchor_x
+        y -= image.anchor_y
+
+        target = target or self.target          # TODO: If 0 is not a valid target, this is OK
+        level = level or self.level             # TODO: If 0 is not a valid level, this is OK
+
+        data_format = image.format
+        data_pitch = abs(image._current_pitch)                          # TODO: localize
+
+        # Determine pixel format from format string
+        fmt, gl_type = image._get_gl_format_and_type(data_format)       # TODO: localize
+
+        if fmt is None:
+            # Need to convert data to a standard form
+            data_format = {
+                1: 'R',
+                2: 'RG',
+                3: 'RGB',
+                4: 'RGBA',
+            }.get(len(data_format))
+            fmt, gl_type = image._get_gl_format_and_type(data_format)   # TODO: localize
+
+        # Get data in required format (hopefully will be the same format it's already
+        # in, unless that's an obscure format, upside-down or the driver is old).
+        data = image._convert(data_format, data_pitch)                  # TODO: possibly localize?
+
+        if data_pitch & 0x1:
+            align = 1
+        elif data_pitch & 0x2:
+            align = 2
+        else:
+            align = 4
+        row_length = data_pitch // len(data_format)
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, align)
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        image._apply_region_unpack()                                    # TODO: localize
+
+        if target == GL_TEXTURE_3D or target == GL_TEXTURE_2D_ARRAY:
+            assert not internalformat
+            glTexSubImage3D(target, level,
+                            x, y, z,
+                            image.width, image.height, 1,
+                            fmt, gl_type,
+                            data)
+        elif internalformat:
+            glTexImage2D(target, level,
+                         internalformat,
+                         image.width, image.height,
+                         0,
+                         fmt, gl_type,
+                         data)
+        else:
+            glTexSubImage2D(target, level,
+                            x, y,
+                            image.width, image.height,
+                            fmt, gl_type,
+                            data)
+
+        # Unset GL_UNPACK_ROW_LENGTH:
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+        image._default_region_unpack()                                 # TODO: localize
+
+        # Flush image upload before data get GC'd:
+        glFlush()
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
         """Blit the texture to the screen.
@@ -1375,10 +1464,6 @@ class Texture(AbstractImage):
 
     def get_mipmapped_texture(self) -> Texture:
         raise NotImplementedError(f"Not implemented for {self}.")
-
-    def blit_into(self, source: AbstractImage, x: int, y: int, z: int):
-        glBindTexture(self.target, self.id)
-        source.blit_to_texture(self.target, self.level, x, y, z)
 
     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
         raise NotImplementedError(f"Not implemented for {self}")
@@ -1491,9 +1576,9 @@ class TextureRegion(Texture):
         region._set_tex_coords_order(*self.tex_coords_order)
         return region
 
-    def blit_into(self, source: AbstractImage, x: int, y: int, z: int) -> None:
-        assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
-        self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
+    def blit_into(self, image: ImageData, x: int, y: int, z: int) -> None:
+        assert image.width <= self._width and image.height <= self._height, f"{image} is larger than {self}"
+        self.owner.blit_into(image, x + self.x, y + self.y, z + self.z)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(id={self.id},"
@@ -1546,7 +1631,8 @@ class Texture3D(Texture, UniformTextureSequence):
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, z=i)
+            # image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, z=i)
+            texture.upload_data(image, image.anchor_x, image.anchor_y, z=i)
 
         glFlush()
 
@@ -1570,9 +1656,11 @@ class Texture3D(Texture, UniformTextureSequence):
             glBindTexture(self.target, self.id)
 
             for item, image in zip(self[index], value):
-                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, item.z)
+                # image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, item.z)
+                self.upload_data(image, image.anchor_x, image.anchor_y, item.z)
         else:
-            self.blit_into(value, value.anchor_x, value.anchor_y, self[index].z)
+            # self.blit_into(value, value.anchor_x, value.anchor_y, self[index].z)
+            self.upload_data(value, value.anchor_x, value.anchor_y, self[index].z)
 
     def __iter__(self) -> Iterator[TextureRegion]:
         return iter(self.items)
@@ -1659,7 +1747,7 @@ class TextureArray(Texture, UniformTextureSequence):
         self.items.append(item)
         return item
 
-    def allocate(self, *images: AbstractImage) -> list[TextureArrayRegion]:
+    def allocate(self, *images: ImageData) -> list[TextureArrayRegion]:
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
@@ -1671,7 +1759,8 @@ class TextureArray(Texture, UniformTextureSequence):
             self._verify_size(image)
             item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
             self.items.append(item)
-            image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
+            # image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
+            self.upload_data(image, image.anchor_x, image.anchor_y, start_length + i)
 
         return self.items[start_length:]
 
@@ -1694,12 +1783,15 @@ class TextureArray(Texture, UniformTextureSequence):
             for old_item, image in zip(self[index], value):
                 self._verify_size(image)
                 item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
-                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, old_item.z)
+                # image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, old_item.z)
+                self.upload_data(image, image.anchor_x, image.anchor_y, old_item.z)
+
                 self.items[old_item.z] = item
         else:
             self._verify_size(value)
             item = self.region_class(0, 0, index, value.width, value.height, self)
-            self.blit_into(value, value.anchor_x, value.anchor_y, index)
+            # self.blit_into(value, value.anchor_x, value.anchor_y, index)
+            self.upload_data(value, value.anchor_x, value.anchor_y, index)
             self.items[index] = item
 
     def __iter__(self) -> Iterator[TextureRegion]:

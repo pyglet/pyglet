@@ -171,7 +171,7 @@ class TextureAtlas:
         no room in the atlas for the image.
         """
         x, y = self.allocator.alloc(img.width + border * 2, img.height + border * 2)
-        self.texture.blit_into(img, x + border, y + border, 0)
+        self.texture.upload_data(img, x + border, y + border, 0)
         return self.texture.get_region(x + border, y + border, img.width, img.height)
 
 
