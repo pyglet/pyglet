@@ -104,7 +104,8 @@ class CocoaWindow(BaseWindow):
             # Determine window parameters.
             if pyglet.options.dpi_scaling == "real":
                 screen_scale = self.screen.get_scale()
-                width, height = self._width / screen_scale, self._height / screen_scale
+                w, h = self.get_requested_size()
+                width, height = w / screen_scale, h / screen_scale
             else:
                 width, height = self._width, self._height
 
@@ -219,7 +220,7 @@ class CocoaWindow(BaseWindow):
             self.context.update_geometry()
 
     def _get_dpi_desc(self) -> int:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
             return int(rsize.width)
@@ -232,7 +233,7 @@ class CocoaWindow(BaseWindow):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling in ("scaled", "stretch") and self._nswindow:
+        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
@@ -467,7 +468,6 @@ class CocoaWindow(BaseWindow):
         # animated, but we can set the window's animationResizeTime to zero.
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
-        print("ACTUAL RECT SIZE", rect.size.width, rect.size.height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         super().set_minimum_size(width, height)

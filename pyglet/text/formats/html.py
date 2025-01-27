@@ -93,7 +93,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         "font_name": "Times New Roman",
         "font_size": 12,
         "margin_bottom": "12pt",
-        "bold": False,
+        "weight": "normal",
         "italic": False,
     }
 
@@ -172,7 +172,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
 
         style = {}
         if element in ("b", "strong"):
-            style["bold"] = True
+            style["weight"] = "bold"
         elif element in ("i", "em", "var"):
             style["italic"] = True
         elif element in ("tt", "code", "samp", "kbd"):
@@ -218,20 +218,20 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             style["baseline"] = "-3pt"
         elif element == "h1":
             style["font_size"] = 24
-            style["bold"] = True
+            style["weight"] = "bold"
             style["align"] = "center"
         elif element == "h2":
             style["font_size"] = 18
-            style["bold"] = True
+            style["weight"] = "bold"
         elif element == "h3":
             style["font_size"] = 16
-            style["bold"] = True
+            style["weight"] = "bold"
         elif element == "h4":
             style["font_size"] = 14
-            style["bold"] = True
+            style["weight"] = "bold"
         elif element == "h5":
             style["font_size"] = 12
-            style["bold"] = True
+            style["weight"] = "bold"
         elif element == "h6":
             style["font_size"] = 12
             style["italic"] = True

@@ -251,7 +251,7 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["real", "scaled", "stretch"] = "real"
+    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "real"
     """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'real'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
@@ -274,6 +274,13 @@ class Options:
     rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
     of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
+    
+    `'platform'`: A DPI aware window is created, however window sizing and framebuffer sizing is not interfered with
+    by Pyglet. Final sizes are dictated by the platform the window was created on. It is up to the user to make any
+    platform adjustments themselves such as sizing on a platform, mouse coordinate adjustments, or framebuffer size
+    handling. On Windows and X11, the framebuffer and the requested window size will always match in pixels 1:1. On
+    MacOS, depending on a Hi-DPI display, you may get a different sized framebuffer than the window size. This option
+    does allow `window.dpi` and `window.scale` to return their respective values.
     """
 
     shader_bind_management: bool = True
@@ -470,7 +477,6 @@ class _ModuleProxy:
 if TYPE_CHECKING:
     from . import (
         app,
-        backend,
         clock,
         customtypes,
         display,
@@ -492,7 +498,6 @@ if TYPE_CHECKING:
     )
 else:
     app = _ModuleProxy("app")  # type: ignore
-    backend = _ModuleProxy("backend")  # type: ignore
     clock = _ModuleProxy("clock")  # type: ignore
     customtypes = _ModuleProxy("customtypes")  # type: ignore
     display = _ModuleProxy("display")  # type: ignore

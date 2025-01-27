@@ -33,8 +33,9 @@ Once your font is created, you also must register it within pyglet to use it. Th
  :py:func:`~pyglet.font.add_user_font` function.
 
 When you register a user defined font, only those parameters will used to identify the font. If you have a font, but
-want to have a ``bold`` enabled version. You must make a new instance of your font, but with the ``bold``
-parameter set as ``True``. Same applies to the ``size`` parameter.
+want to have a ``italic`` enabled version. You must make a new instance of your font, but with the ``italic``
+parameter set as ``True``. Same applies to the ``size`` parameter. The ``weight`` parameter can also be provided as
+a string.
 
 Scaling
 =======
@@ -107,7 +108,7 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            bold: bool = False, italic: bool = False, stretch: bool = False, dpi: int = 96, locale: str | None = None,
+            weight: str = "normal", italic: bool = False, stretch: bool = False, dpi: int = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -123,8 +124,8 @@ class UserDefinedFontBase(base.Font):
                 Maximum ascent above the baseline, in pixels. If None, the image height is used.
             descent:
                 Maximum descent below the baseline, in pixels. Usually negative.
-            bold:
-                If True, this font will be used when ``bold`` is enabled for the font name.
+            weight:
+                The font weight, as a string. Defaults to "normal".
             italic:
                 If True, this font will be used when ``italic`` is enabled for the font name.
             stretch:
@@ -141,7 +142,7 @@ class UserDefinedFontBase(base.Font):
         self.ascent = ascent
         self.descent = descent
         self.size = size
-        self.bold = bold
+        self.weight = weight
         self.italic = italic
         self.stretch = stretch
         self.dpi = dpi
@@ -179,7 +180,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
     """
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
-            ascent: int | None = None, descent: int | None = None, bold: bool = False, italic: bool = False,
+            ascent: int | None = None, descent: int | None = None, weight: str = "normal", italic: bool = False,
             stretch: bool = False, dpi: int = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 
@@ -198,8 +199,8 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 Maximum ascent above the baseline, in pixels. If None, the image height is used.
             descent:
                 Maximum descent below the baseline, in pixels. Usually negative.
-            bold:
-                If ``True``, this font will be used when ``bold`` is enabled for the font name.
+            weight:
+                The font weight, as a string. Defaults to "normal".
             italic:
                 If ``True``, this font will be used when ``italic`` is enabled for the font name.
             stretch:
@@ -222,7 +223,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             if descent is None:
                 descent = 0
 
-        super().__init__(name, default_char, size, ascent, descent, bold, italic, stretch, dpi, locale)
+        super().__init__(name, default_char, size, ascent, descent, weight, italic, stretch, dpi, locale)
 
     def enable_scaling(self, base_size: int) -> None:
         """Enables scaling the font size.
@@ -276,7 +277,7 @@ def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDe
             The new font size. This will be scaled based on the ratio between the base size and the new size.
     """
     new_font = UserDefinedMappingFont(font_base.name, font_base.default_char, size, font_base.mappings,
-                                      font_base.ascent, font_base.descent, font_base.bold, font_base.italic,
+                                      font_base.ascent, font_base.descent, font_base.weight, font_base.italic,
                                       font_base.stretch, font_base.dpi, font_base.locale)
 
     new_font.enable_scaling(font_base.size)

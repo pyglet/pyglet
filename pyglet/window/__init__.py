@@ -69,7 +69,7 @@ Each window has its own context which is created when the window is created.
 You can specify the properties of the context before it is created
 by creating a "template" configuration::
 
-    from pyglet.backend import gl
+    from pyglet import gl
     # Create template config
     config = gl.Config()
     config.stencil_size = 8

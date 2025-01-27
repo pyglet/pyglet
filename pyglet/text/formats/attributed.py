@@ -32,7 +32,7 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
         self.doc = pyglet.text.document.FormattedDocument()
         self.attributes = {}
 
-    def decode(self, text: str, location: Location | None=None) -> pyglet.text.document.FormattedDocument:  # noqa: ARG002
+    def decode(self, text: str, location: Location | None = None) -> pyglet.text.document.FormattedDocument:  # noqa: ARG002
         next_trailing_space = True
         trailing_newline = True
 

@@ -25,16 +25,17 @@ if TYPE_CHECKING:
 
 class _Worker(Thread):
     """A worker thread to pop and run jobs."""
-    def __init__(self, workqueue: Queue, exitevent: Event, name: str) -> None:
-        super().__init__(name=name, daemon=True)
-        self.queue = workqueue
-        self.exit = exitevent
+    def __init__(self, workqueue: Queue, exitevent: Event, index: int) -> None:
+        super().__init__(daemon=True)
+        self._queue = workqueue
+        self._exit = exitevent
+        self._index = index
         self.start()
 
     def run(self) -> None:
         """Parallel thread of execution."""
-        _exit = self.exit
-        _queue = self.queue
+        _exit = self._exit
+        _queue = self._queue
         while not _exit.is_set():
             func, args = _queue.get()
             func(*args)
@@ -51,8 +52,9 @@ class JobExecutor:
     `concurrent.futures` module, but does not share any code with those classes.
     Instead, it is a more light-weight implementation intended for execution of
     highly parallizable functions (jobs). A key difference is that JobExecutor
-    does not return `Futures`, and instead depends on the submitted jobs to
-    self-contained.
+    does not return `Futures`. Submitted jobs must be self-contained, or handle
+    returning values by other mechanisms. The :py:meth:`~sync` method can be
+    used to wait for all currently submitted jobs to complete.
     """
 
     def __init__(self, max_workers: int | None = None) -> None:
@@ -65,7 +67,7 @@ class JobExecutor:
         self._max_workers = max_workers or os.cpu_count() // 2
         self._exitevent = Event()
         self._queue = Queue()
-        self._threads = [_Worker(self._queue, self._exitevent, f"Thread{i+1}") for i in range(self._max_workers)]
+        self._threads = [_Worker(self._queue, self._exitevent, i) for i in range(self._max_workers)]
 
     def submit(self, func: Callable, *args: Any) -> None:
         """Submit a job to be executed on .

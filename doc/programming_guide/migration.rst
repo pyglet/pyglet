@@ -12,14 +12,17 @@ are having an issue that is not covered here, please open up an issue ticket on
 
 Window "HiDPI" support
 ----------------------
-TBD
+The v2.1 release now provides a lot more control over how modern 'HiDPI' displays
+are treated. This includes "retina" displays, or any display that has a non-100%
+zoom or scale (such as 4K displays). This is exposed as new pyglet options. See
+``pyglet.options.dpi_scaling`` for more information.
 
 Labels & Text Layouts
 ---------------------
 The positional argument order for text Labels and Layouts was not consistent
 in previous pyglet releases. This has been refactored to make things more
-consistent, with the goal of making it easier to switch between Layouts or
-create custom subclasses. All layouts now start with the same positional
+uniform, with the goal of making it easier to switch between Layouts or
+create custom subclasses. All layouts now _start_ with the same positional
 argument ordering::
 
     TextLayout(document, x, y, z, width, height, anchor_x, anchor_y, rotation, ...)
@@ -37,6 +40,14 @@ of "document". Other than that, the rest of the positional arguments line up::
 The layouts and lables don't share all of the same argument, so the rest of the
 arguments will need to be provided as usual, where they differ. Please see the
 API documents for full details.
+
+In addition to argument ordering, the ``bold`` argument has been replaced with
+``weight``. Rather than a single True/False boolean, you can now pass a string
+for the desired font weight. An enum (:py:class:`~pyglet.text.Weight`) exists
+to provide a reference to all valid cross platform weights (though individual
+font backends _can_ support more names that what is provided there). The valid
+weight names mimic those in CSS, such as "thin", "normal", "bold", "extrabold",
+etc..
 
 Shapes
 ------
@@ -84,7 +95,7 @@ as booleans for a quick workaround when migrating, you can do something like thi
 
 
 Vectors can also be useful for analog sticks, because it gives an easy way to
-calculate dead-zones using `.length()`. For example::
+calculate dead-zones using ``.length()``. For example::
 
     @controller.event
     def on_stick_motion(controller, name, vector):
@@ -102,8 +113,8 @@ that the maximum value stays within range. For example::
 
             vector = min(vector, vector.normalize())
 
-You can also of course directly access the individual `Vec2.x` & `Vec2.y`
-attributes. See :py:class:`~pyglet.math.Vec2` for more details on vector types.
+You can also of course directly access the individual ``Vec2.x`` & ``Vec2.y`` attributes,
+if you want to . See :py:class:`~pyglet.math.Vec2` for more details on vector types.
 
 Gui
 ---
@@ -116,8 +127,8 @@ The :py:class:`~pyglet.gui.widget.ToggleButton` and :py:class:`~pyglet.gui.widge
 widgets have a small change. Instead of the image arguments being named "pressed"
 and "depressed", they has been renamed to the correct "pressed" and "unpressed".
 
-Math module
------------
+Math
+----
 In the :py:mod:`~pyglet.math` module, vector types (:py:class:`~pyglet.math.Vec2`,
 :py:class:`~pyglet.math.Vec3`, :py:class:`~pyglet.math.Vec4`) are now
 immutable; all operations will return a new object. In addition, all vector objects
@@ -139,12 +150,23 @@ way as vectors). For example:
 Matrix objects are generally created via their helper methods, so this change should
 hopefully not require any code updates for most users.
 
+Models
+------
+The :py:mod:`~pyglet.model` module has seen some changes. This is an undocumented
+WIP module for pyglet 2.0, and it remains so pyglet 2.1. That said, it's in a more
+usable state now. The first change is that :py:meth:`~pyglet.model.load` now returns
+a ``Scene`` object instead of a ``Model`` object. The Scene is a new, "pure data"
+intermediate representation of a 3D scene, that closely mimics the layout of the glTF
+format. The :py:meth:`~pyglet.model.Scene.create_models` method can be used to create
+``Model`` instances from the Scene, but the Scene data can also be manually iterated
+over for more advanced use cases.
+
 Canvas module
 -------------
-The `pyglet.canvas` module has been renamed to `pyglet.display`. The "canvas"
+The ``pyglet.canvas`` module has been renamed to ``pyglet.display``. The "canvas"
 concept was a work-in-progress in legacy pyglet, and was never fully fleshed out.
 It appears to have been meant to allow arbitrary renderable areas, but this type
-of functionality can now be easily accomplished with Framebuffers. The name `display`
+of functionality can now be easily accomplished with Framebuffers. The name ``display``
 is a more accurate representation of what the code in the module actually relates to.
 The usage is the same, with just the name change::
 

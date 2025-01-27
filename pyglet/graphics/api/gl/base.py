@@ -143,7 +143,7 @@ class ObjectSpace:
 class OpenGLWindowContext(WindowGraphicsContext):
     """A base OpenGL context for drawing.
 
-    Use ``CanvasConfig.create_context`` to create a context.
+    Use ``DisplayConfig.create_context`` to create a context.
     """
     #: gl_info.GLInfo instance, filled in on first set_current
     _info: GLInfo | None = None
@@ -156,7 +156,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
     def __init__(self, global_ctx: OpenGLBackend, window: Window, config: OpenGLWindowConfig, context_share: OpenGLWindowContext | None = None) -> None:
         """Initialize a context.
 
-        This should only be created through the ``CanvasConfig.create_context`` method.
+        This should only be created through the ``DisplayConfig.create_context`` method.
 
         Args:
             config:

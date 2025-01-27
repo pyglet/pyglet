@@ -94,6 +94,9 @@ DWRITE_FONT_WEIGHT_HEAVY = 900
 DWRITE_FONT_WEIGHT_EXTRA_BLACK = 950
 
 name_to_weight = {
+    True: DWRITE_FONT_WEIGHT_BOLD,      # Temporary alias for attributed text
+    False: DWRITE_FONT_WEIGHT_NORMAL,   # Temporary alias for attributed text
+    None: DWRITE_FONT_WEIGHT_NORMAL,    # Temporary alias for attributed text
     "thin": DWRITE_FONT_WEIGHT_THIN,
     "extralight": DWRITE_FONT_WEIGHT_EXTRA_LIGHT,
     "ultralight": DWRITE_FONT_WEIGHT_ULTRA_LIGHT,
@@ -1943,7 +1946,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         return glyph
 
     def render_using_layout(self, text: str) -> Glyph | None:
-        """This will render text given the built in DirectWrite layout.
+        """This will render text given the built-in DirectWrite layout.
 
         This process allows us to take advantage of color glyphs and fallback handling that is built into DirectWrite.
         This can also handle shaping and many other features if you want to render directly to a texture.
@@ -2043,7 +2046,7 @@ class Win32DirectWriteFont(base.Font):
 
     glyph_renderer_class = DirectWriteGlyphRenderer
 
-    def __init__(self, name: str, size: float, bold: bool | str = False, italic: bool | str = False,
+    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool | str = False,
                  stretch: bool | str = False, dpi: int | None = None, locale: str | None = None) -> None:
         self._filename: str | None = None
         self._advance_cache = {}  # Stores glyph's by the indice and advance.
@@ -2054,7 +2057,7 @@ class Win32DirectWriteFont(base.Font):
             name = self._default_name
 
         self._name = name
-        self.bold = bold
+        self.weight = weight
         self.size = size
         self.italic = italic
         self.stretch = stretch
@@ -2072,13 +2075,7 @@ class Win32DirectWriteFont(base.Font):
         # From DPI to DIP (Device Independent Pixels) which is what the fonts rely on.
         self._real_size = (self.size * self.dpi) // 72
 
-        if self.bold:
-            if isinstance(self.bold, str):
-                self._weight = name_to_weight[self.bold]
-            else:
-                self._weight = DWRITE_FONT_WEIGHT_BOLD
-        else:
-            self._weight = DWRITE_FONT_WEIGHT_NORMAL
+        self._weight = name_to_weight[self.weight]
 
         if self.italic:
             if isinstance(self.italic, str):
@@ -2547,26 +2544,26 @@ class Win32DirectWriteFont(base.Font):
         return None, None
 
     @classmethod
-    def find_font_face(cls, font_name: str, bold: bool | str, italic: bool | str, stretch: bool | str) -> tuple[
+    def find_font_face(cls, font_name: str, weight: str, italic: bool | str, stretch: bool | str) -> tuple[
         IDWriteFont | None, IDWriteFontCollection | None]:
-        """This will search font collections for legacy RBIZ names. However, matching to bold, italic, stretch is
+        """This will search font collections for legacy RBIZ names. However, matching to weight, italic, stretch is
         problematic in that there are many values. We parse the font name looking for matches to the name database,
         and attempt to pick the closest match.
         This will search all fonts on the system and custom loaded, and all of their font faces. Returns a collection
         and IDWriteFont if successful.
         """
-        p_bold, p_italic, p_stretch = cls.parse_name(font_name, bold, italic, stretch)
+        p_weight, p_italic, p_stretch = cls.parse_name(font_name, weight, italic, stretch)
 
         _debug_print(f"directwrite: '{font_name}' not found. Attempting legacy name lookup in all collections.")
         if cls._custom_collection:
-            collection_idx = cls.find_legacy_font(cls._custom_collection, font_name, p_bold, p_italic, p_stretch)
+            collection_idx = cls.find_legacy_font(cls._custom_collection, font_name, p_weight, p_italic, p_stretch)
             if collection_idx is not None:
                 return collection_idx, cls._custom_collection
 
         sys_collection = IDWriteFontCollection()
         cls._write_factory.GetSystemFontCollection(byref(sys_collection), 1)
 
-        collection_idx = cls.find_legacy_font(sys_collection, font_name, p_bold, p_italic, p_stretch)
+        collection_idx = cls.find_legacy_font(sys_collection, font_name, p_weight, p_italic, p_stretch)
         if collection_idx is not None:
             return collection_idx, sys_collection
 
@@ -2580,7 +2577,7 @@ class Win32DirectWriteFont(base.Font):
         return False
 
     @staticmethod
-    def parse_name(font_name: str, weight: int, style: int, stretch: int) -> tuple[int, int, int]:
+    def parse_name(font_name: str, weight: str, style: int, stretch: int) -> tuple[str, int, int]:
         """Attempt at parsing any special names in a font for legacy checks. Takes the first found."""
         font_name = font_name.lower()
         split_name = font_name.split(" ")
@@ -2609,7 +2606,7 @@ class Win32DirectWriteFont(base.Font):
         return found_weight, found_style, found_stretch
 
     @staticmethod
-    def find_legacy_font(collection: IDWriteFontCollection, font_name: str, bold: bool | str, italic: bool | str, stretch: bool | str, full_debug: bool=False) -> IDWriteFont | None:
+    def find_legacy_font(collection: IDWriteFontCollection, font_name: str, weight: str, italic: bool | str, stretch: bool | str, full_debug: bool=False) -> IDWriteFont | None:
         coll_count = collection.GetFontFamilyCount()
 
         assert _debug_print(f"directwrite: Found {coll_count} fonts in collection.")
@@ -2679,7 +2676,7 @@ class Win32DirectWriteFont(base.Font):
 
             # If we have matches, we've already parsed through the proper family. Now try to match.
             if matches:
-                write_font = Win32DirectWriteFont.match_closest_font(matches, bold, italic, stretch)
+                write_font = Win32DirectWriteFont.match_closest_font(matches, weight, italic, stretch)
 
                 # Cleanup other matches not used.
                 for match in matches:
@@ -2691,7 +2688,7 @@ class Win32DirectWriteFont(base.Font):
         return None
 
     @staticmethod
-    def match_closest_font(font_list: list[tuple[int, int, int, IDWriteFont]], bold: int, italic: int, stretch: int) -> IDWriteFont | None:
+    def match_closest_font(font_list: list[tuple[int, int, int, IDWriteFont]], weight: str, italic: int, stretch: int) -> IDWriteFont | None:
         """Match the closest font to the parameters specified.
 
         If a full match is not found, a secondary match will be found based on similar features. This can probably
@@ -2702,18 +2699,18 @@ class Win32DirectWriteFont(base.Font):
             (f_weight, f_style, f_stretch, writefont) = match
 
             # Found perfect match, no need for the rest.
-            if f_weight == bold and f_style == italic and f_stretch == stretch:
+            if f_weight == weight and f_style == italic and f_stretch == stretch:
                 _debug_print(
-                    f"directwrite: full match found. (bold: {f_weight}, italic: {f_style}, stretch: {f_stretch})")
+                    f"directwrite: full match found. (weight: {f_weight}, italic: {f_style}, stretch: {f_stretch})")
                 return writefont
 
             prop_match = 0
             similar_match = 0
             # Look for a full match, otherwise look for close enough.
             # For example, Arial Black only has Oblique, not Italic, but good enough if you want slanted text.
-            if f_weight == bold:
+            if f_weight == weight:
                 prop_match += 1
-            elif bold != DWRITE_FONT_WEIGHT_NORMAL and f_weight != DWRITE_FONT_WEIGHT_NORMAL:
+            elif weight != DWRITE_FONT_WEIGHT_NORMAL and f_weight != DWRITE_FONT_WEIGHT_NORMAL:
                 similar_match += 1
 
             if f_style == italic:
@@ -2735,7 +2732,7 @@ class Win32DirectWriteFont(base.Font):
             # Take the first match after sorting.
             closest_match = closest[0]
             _debug_print(f"directwrite: falling back to partial match. "
-                         f"(bold: {closest_match[2]}, italic: {closest_match[3]}, stretch: {closest_match[4]})")
+                         f"(weight: {closest_match[2]}, italic: {closest_match[3]}, stretch: {closest_match[4]})")
             return closest_match[5]
 
         return None

@@ -86,3 +86,15 @@ def load(filename: str, file: BinaryIO | None = None,
 
 
 _add_default_codecs()
+
+
+__all__ = [
+    'Player', 
+    'PlayerGroup', 
+    'Source', 
+    'StaticSource', 
+    'StreamingSource',
+    'load', 
+    'synthesis', 
+    'get_audio_driver',
+]

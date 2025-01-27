@@ -288,7 +288,7 @@ class ShapeBase(ABC):
     def _update_color(self) -> None:
         """Send the new colors for each vertex to the GPU.
 
-        This method must set the contents of `self._vertex_list.colors`
+        This method must set the contents of `self._vertex_list.color`
         using a list or tuple that contains the RGBA color components
         for each vertex in the shape. This is usually done by repeating
         `self._rgba` for each vertex.
@@ -468,6 +468,16 @@ class ShapeBase(ABC):
     def y(self, value: float) -> None:
         self._y = value
         self._update_translation()
+
+    @property
+    def z(self) -> float:
+        """Get/set the Z coordinate of the shape."""
+        return self._z
+
+    @z.setter
+    def z(self, value: float) -> None:
+        self._z = value
+        self._vertex_list.zposition = (value,) * self._num_verts
 
     @property
     def position(self) -> tuple[float, float]:
@@ -733,6 +743,7 @@ class Arc(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
 
@@ -1049,6 +1060,7 @@ class Circle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
         r, g, b, *a = color
@@ -1158,6 +1170,7 @@ class Ellipse(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._a = a
         self._b = b
 
@@ -1292,6 +1305,7 @@ class Sector(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._radius = radius
         self._segments = segments or max(14, int(radius / 1.25))
 
@@ -1432,6 +1446,7 @@ class Line(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._x2 = x2
         self._y2 = y2
 
@@ -1572,6 +1587,7 @@ class Rectangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._rotation = 0
@@ -1695,6 +1711,7 @@ class BorderedRectangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._rotation = 0
@@ -1926,6 +1943,7 @@ class Box(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._thickness = thickness
@@ -2082,6 +2100,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._width = width
         self._height = height
         self._set_radius(radius)
@@ -2261,6 +2280,7 @@ class Triangle(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._x2 = x2
         self._y2 = y2
         self._x3 = x3
@@ -2395,6 +2415,7 @@ class Star(ShapeBase):
         """
         self._x = x
         self._y = y
+        self._z = 0.0
         self._outer_radius = outer_radius
         self._inner_radius = inner_radius
         self._num_spikes = num_spikes

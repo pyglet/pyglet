@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from pyglet.image.animation import Animation
     from pyglet.image.atlas import TextureBin
     from pyglet.media.codecs import Source
-    from pyglet.model import Model
+    from pyglet.model import Scene
     from pyglet.text.document import AbstractDocument
 
 
@@ -240,8 +240,7 @@ class ZIPLocation(Location):
     """Location within a ZIP file."""
 
     def __init__(self, zipfileobj: zipfile.ZipFile, directory: str | None):
-        """Create a location given an open ZIP file and a path within that
-        file.
+        """Create a location given an open ZIP file and a path within that file.
 
         Args:
             zipfileobj:
@@ -268,6 +267,9 @@ class ZIPLocation(Location):
         if mode == 'r':
             return StringIO(_bytes.decode())
         return BytesIO(_bytes)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(dir='{self.dir}')"
 
 
 class URLLocation(Location):
@@ -373,7 +375,7 @@ class Loader:
             # A filesystem directory:
             if os.path.isdir(_path_name):
                 _path_name = _path_name.rstrip(os.path.sep)
-                file_location = FileLocation(_path_name)
+                # os.walk will pass silently if the path is not found:
                 for dirpath, dirnames, filenames in os.walk(_path_name):
                     dirpath = dirpath[len(_path_name) + 1:]
                     # Force forward slashes for index
@@ -385,13 +387,17 @@ class Loader:
                             index_name = dirpath + '/' + filename
                         else:
                             index_name = filename
+                        file_location = FileLocation(_path_name)
                         self._index_file(index_name, file_location)
 
             else:
-                # Find path component that looks like the ZIP file.
+                # The path is not a valid directory. See if it's a
+                # ZIP file, or a nested ZIP file with internal paths.
+                # Ex:  path/to/file.zip
+                #      path/to/file.zip/internal/path
                 zip_directory = ''
                 old_path = None
-                while _path_name and not (os.path.isfile(_path_name) or os.path.isfile(_path_name + '.001')):
+                while _path_name and not (os.path.isfile(_path_name)):
                     old_path = _path_name
                     _path_name, tail_dir = os.path.split(_path_name)
                     if _path_name == old_path:
@@ -399,46 +405,23 @@ class Loader:
                     zip_directory = '/'.join((tail_dir, zip_directory))
                 if _path_name == old_path:
                     continue
+
                 zip_directory = zip_directory.rstrip('/')
 
-                # path looks like a ZIP file, zip_directory resides within ZIP
-                if not _path_name:
-                    continue
+                if zipfile.is_zipfile(_path_name):
+                    zipfileobj = zipfile.ZipFile(_path_name, 'r')
+                    # Returns zipfile.ZipInfo objects:
+                    for fileinfo in zipfileobj.infolist():
+                        if fileinfo.is_dir():
+                            continue
+                        if zip_directory not in fileinfo.filename:
+                            continue
 
-                if zip_stream := self._get_stream(_path_name):
-                    zipfileobj = zipfile.ZipFile(zip_stream, 'r')
-                    file_location = ZIPLocation(zipfileobj, zip_directory)
-                    for zip_name in zipfileobj.namelist():
-                        # zip_name_dir, zip_name = os.path.split(zip_name)
-                        # assert '\\' not in name_dir
-                        # assert not name_dir.endswith('/')
-                        if zip_name.startswith(zip_directory):
-                            if zip_directory:
-                                zip_name = zip_name[len(zip_directory) + 1:]
-                            self._index_file(zip_name, file_location)
+                        filename = fileinfo.filename.lstrip(zip_directory)
+                        filename = filename.lstrip('/')
 
-    @staticmethod
-    def _get_stream(pathname: str) -> IO | str | None:
-        if zipfile.is_zipfile(pathname):
-            return pathname
-        elif not os.path.exists(pathname + '.001'):
-            return None
-        else:
-            with open(pathname + '.001', 'rb') as volume:
-                bytes_ = bytes(volume.read())
-
-            volume_index = 2
-            while os.path.exists(pathname + f'.{volume_index:0>3}'):
-                with open(pathname + f'.{volume_index:0>3}', 'rb') as volume:
-                    bytes_ += bytes(volume.read())
-
-                volume_index += 1
-
-            zip_stream = BytesIO(bytes_)
-            if zipfile.is_zipfile(zip_stream):
-                return zip_stream
-            else:
-                return None
+                        file_location = ZIPLocation(zipfileobj, zip_directory)
+                        self._index_file(filename, file_location)
 
     def file(self, name: str, mode: str = 'rb') -> BytesIO | StringIO | IO:
         """Load a file-like object.
@@ -682,18 +665,11 @@ class Loader:
         self._cached_textures[name] = textureobj
         return textureobj
 
-    def model(self, name: str, batch: Batch | None = None) -> Model:
-        """Load a 3D model.
-
-        Args:
-            name:
-                Filename of the 3D model to load.
-            batch:
-                An optional Batch instance to add this model to.
-        """
+    def scene(self, name: str) -> Scene:
+        """Load a 3D Scene."""
         self._ensure_index()
         abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
-        return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
+        return pyglet.model.load(filename=abspathname, file=self.file(name))
 
     def html(self, name: str) -> AbstractDocument:
         """Load an HTML document."""
@@ -781,12 +757,12 @@ location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
-model = _default_loader.model
 media = _default_loader.media
 texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
+scene = _default_loader.scene
 shader = _default_loader.shader
 get_cached_texture_names = _default_loader.get_cached_texture_names
 get_cached_image_names = _default_loader.get_cached_image_names

@@ -19,24 +19,24 @@ def get_test_data_file(path, file_name):
 
 def test_load_from_disk():
     file_path = get_test_data_file('models', 'logo3d.obj')
-    model = pyglet.model.load(file_path)
-    assert isinstance(model, pyglet.model.Model)
+    scene = pyglet.model.load(file_path)
+    assert isinstance(scene, pyglet.model.Scene)
 
 
 def test_load_from_object_str():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'r') as f:
         file_obj = io.StringIO(f.read())
-    model = pyglet.model.load(file_path, file=file_obj)
-    assert isinstance(model, pyglet.model.Model)
+    scene = pyglet.model.load(file_path, file=file_obj)
+    assert isinstance(scene, pyglet.model.Scene)
 
 
 def test_load_from_object_bytes():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'rb') as f:
         file_obj = io.BytesIO(f.read())
-    model = pyglet.model.load(file_path, file=file_obj)
-    assert isinstance(model, pyglet.model.Model)
+    scene = pyglet.model.load(file_path, file=file_obj)
+    assert isinstance(scene, pyglet.model.Scene)
 
 
 def test_no_decoders_available():
@@ -44,7 +44,7 @@ def test_no_decoders_available():
     file_path = get_test_data_file('media', 'alert.wav')
 
     with pytest.raises(DecodeException) as e:
-        model = pyglet.model.load(file_path)
+        scene = pyglet.model.load(file_path)
 
 
 def test_resource_module():
@@ -52,5 +52,5 @@ def test_resource_module():
     pyglet.resource.path.append(folder_path)
     pyglet.resource.reindex()
 
-    model = pyglet.resource.model('logo3d.obj')
-    assert isinstance(model, pyglet.model.Model)
+    scene = pyglet.resource.scene('logo3d.obj')
+    assert isinstance(scene, pyglet.model.Scene)

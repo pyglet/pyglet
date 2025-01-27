@@ -25,8 +25,8 @@ def text_window(request):
             self.clear()
             self.batch.draw()
 
-        def set_bold(self):
-            self.document.set_style(0, len(self.document.text), {"bold": True})
+        def set_weight(self, weight):
+            self.document.set_style(0, len(self.document.text), {"weight": weight})
 
     return _TestWindow(request.param)
 
@@ -39,6 +39,6 @@ def test_empty_document(text_window):
 
 def test_empty_document_bold(text_window):
     """Empty text document can be rendered and attributes can be set."""
-    text_window.set_bold()
+    text_window.set_weight("bold")
     text_window.dispatch_events()
     text_window.close()

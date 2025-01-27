@@ -56,8 +56,8 @@ is 18 pixels.
     Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
-``bold``
-    Boolean.
+``weight``
+    String.
 ``italic``
     Boolean.
 ``underline``
