@@ -228,8 +228,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                                 self._invalid_flow.is_invalid() or
                                 self._invalid_lines.is_invalid())
 
-        len_groups = len(self.group_cache)
-        print("GROUPS?", len_groups)
         # Special care if there is no text:
         if not self.glyphs:
             for line in self.lines:

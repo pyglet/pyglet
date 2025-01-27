@@ -382,7 +382,6 @@ class Caret:
 
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.position[:] = [x, y + font.descent, z, x, y + font.ascent, z]
-        print("POS", self._list.position[:])
 
     def on_translation_update(self) -> None:
         self._list.translation[:] = (-self._layout.view_x, -self._layout.view_y, 0) * 2
