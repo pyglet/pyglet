@@ -20,7 +20,6 @@ vertex_source = """#version 150 core
     in vec4 colors;
     in float rotation;
 
-
     out vec4 vertex_colors;
 
     uniform WindowBlock

@@ -480,7 +480,7 @@ class ShapeBase(ABC):
     @z.setter
     def z(self, value: float) -> None:
         self._z = value
-        self._vertex_list.zposition = (value,) * self._num_verts
+        self._update_translation()
 
     @property
     def position(self) -> tuple[float, float]:
