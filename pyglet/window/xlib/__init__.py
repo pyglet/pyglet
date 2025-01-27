@@ -28,7 +28,6 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.display.xlib import XlibCanvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.x11 import cursorfont, xlib
 from pyglet.util import asbytes
@@ -47,7 +46,8 @@ from pyglet.window import (
 
 if TYPE_CHECKING:
     from _ctypes import _Pointer
-    from pyglet.gl.xlib import XlibDisplayConfig
+
+    from pyglet.graphics.api.gl import XlibOpenGLConfig
 
 try:
     from pyglet.libs.x11 import xsync
@@ -124,7 +124,7 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow):
-    config: XlibDisplayConfig
+    config: XlibOpenGLConfig
     _x_display: xlib.Display | None = None  # X display connection
     _x_screen_id: int | None = None  # X screen index
     _x_ic: xlib.XIC | None = None  # X input context
@@ -228,21 +228,28 @@ class XlibWindow(BaseWindow):
         if not self._window:
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
-            visual_info = self.config.get_visual_info()
-            if self.style in ('transparent', 'overlay'):
-                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
+            # In OpenGL, it requires you to query GLX for the visual info.
+            if "gl" in pyglet.options.backend:
+                self._assign_config()
 
-            visual = visual_info.visual
-            visual_id = xlib.XVisualIDFromVisual(visual)
-            default_visual = xlib.XDefaultVisual(self._x_display, self._x_screen_id)
-            default_visual_id = xlib.XVisualIDFromVisual(default_visual)
-            window_attributes = xlib.XSetWindowAttributes()
-            if visual_id != default_visual_id:
-                window_attributes.colormap = xlib.XCreateColormap(self._x_display, root,
-                                                                  visual, xlib.AllocNone)
+                visual_info = self.config.get_visual_info()
+                if self.style in ('transparent', 'overlay'):
+                    xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
+
+                visual = visual_info.visual
+                depth = visual_info.depth
+
+            # Vulkan just uses the default visual ID
+            elif pyglet.options.backend == "vulkan":
+                visual = xlib.XDefaultVisual(self._x_display, self._x_screen_id)
+                depth = xlib.XDefaultDepth(self._x_display, self._x_screen_id)
             else:
-                window_attributes.colormap = xlib.XDefaultColormap(self._x_display,
-                                                                   self._x_screen_id)
+                msg = f"{pyglet.options.backend} Backend not supported."
+                raise Exception(msg)
+
+            window_attributes = xlib.XSetWindowAttributes()
+            window_attributes.colormap = xlib.XCreateColormap(self._x_display, root,
+                                                              visual, xlib.AllocNone)
             window_attributes.bit_gravity = xlib.StaticGravity
 
             # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration
@@ -272,24 +279,26 @@ class XlibWindow(BaseWindow):
                     self._height = height = int(h * self.scale)
 
             self._window = xlib.XCreateWindow(self._x_display, root,
-                                              0, 0, width, height, 0, visual_info.depth,
+                                              0, 0, width, height, 0, depth,
                                               xlib.InputOutput, visual, mask,
                                               byref(window_attributes))
-            self._view = xlib.XCreateWindow(self._x_display,
-                                            self._window, self._view_x, self._view_y,
-                                            self._width, self._height, 0, visual_info.depth,
-                                            xlib.InputOutput, visual, mask,
-                                            byref(window_attributes))
-            xlib.XMapWindow(self._x_display, self._view)
-            xlib.XSelectInput(self._x_display, self._view, self._default_event_mask)
+            self._x_window = xlib.XCreateWindow(self._x_display,
+                                                self._window, self._view_x, self._view_y,
+                                                self._width, self._height, 0, depth,
+                                                xlib.InputOutput, visual, mask,
+                                                byref(window_attributes))
+            xlib.XMapWindow(self._x_display, self._x_window)
+            xlib.XSelectInput(self._x_display, self._x_window, self._default_event_mask)
 
             self.display._window_map[self._window] = self.dispatch_platform_event  # noqa: SLF001
-            self.display._window_map[self._view] = self.dispatch_platform_event_view
+            self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
 
-            self.canvas = XlibCanvas(self.display, self._view)
+            # Vulkan surface needs to be created after the window. Possibly move surface creation to context.attach.
+            if pyglet.options.backend == "vulkan":
+                self._assign_config()
 
-            self.context.attach(self.canvas)
-            self.context.set_vsync(self._vsync)  # XXX ?
+            self.context.attach(self)
+            self.context.set_vsync(self._vsync)  # XXX ?VulkanWindowConfig
 
             self._enable_xsync = self.display._enable_xsync and self.config.double_buffer
 
@@ -518,10 +527,14 @@ class XlibWindow(BaseWindow):
         if self.context:
             self.context.set_current()
 
+    def before_draw(self) -> None:
+        if self.context:
+            self.context.before_draw()
+
     def flip(self):
         self.draw_mouse_cursor()
 
-        # TODO canvas.flip?
+        # TODO window.flip?
         if self.context:
             self.context.flip()
 
@@ -994,7 +1007,7 @@ class XlibWindow(BaseWindow):
         # Cache these in case window is closed from an event handler
         _x_display = self._x_display
         _window = self._window
-        _view = self._view
+        _view = self._x_window
 
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(_x_display, _window, 0x1ffffff, byref(e)):

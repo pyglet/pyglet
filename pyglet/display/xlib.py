@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import ctypes
-from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast
-
-from pyglet.util import asbytes
+from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
+from pyglet.util import asbytes
 
-from ..libs.x11.xlib import Window
 from . import xlib_vidmoderestore
-from .base import Canvas, Display, Screen, ScreenMode
+from .base import Display, Screen, ScreenMode
 
 
 # XXX
@@ -204,14 +202,6 @@ class XlibScreen(Screen):
     def get_scale(self):
         return self.get_dpi() / 96
 
-    def get_matching_configs(self, template):
-        canvas = XlibCanvas(self.display, None)
-        configs = template.match(canvas)
-        # XXX deprecate
-        for config in configs:
-            config.screen = self
-        return configs
-
     def get_modes(self):
         if not _have_xf86vmode:
             return []
@@ -278,11 +268,3 @@ class XlibScreenMode(ScreenMode):
         self.height = info.vdisplay
         self.rate = info.dotclock
         self.depth = None
-
-
-class XlibCanvas(Canvas):  # noqa: D101
-    display: XlibDisplay
-
-    def __init__(self, display: XlibDisplay, x_window: Window) -> None:  # noqa: D107
-        super().__init__(display)
-        self.x_window = x_window

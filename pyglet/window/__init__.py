@@ -96,15 +96,16 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
-from pyglet import gl
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
-from pyglet.graphics import shader
+
+#from pyglet.graphics import shader
 from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
-    from pyglet.display.base import Display, Screen, ScreenMode
-    from pyglet.gl import DisplayConfig, Config, Context
+    from pyglet.backend.base import VerifiedGraphicsConfig
+    from pyglet.graphics.api.gl import OpenGLWindowContext, OpenGLConfig
+    from pyglet.display import Display, Screen, ScreenMode
     from pyglet.text import Label
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
@@ -196,10 +197,12 @@ class ImageMouseCursor(MouseCursor):
         self.hw_drawable = acceleration
 
     def draw(self, x: int, y: int) -> None:
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        gl.glDisable(gl.GL_BLEND)
+        pass
+        # Create agnostic version.
+        # gl.glEnable(gl.GL_BLEND)
+        # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        # self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        # gl.glDisable(gl.GL_BLEND)
 
 
 def _PlatformEventHandler(data: Any) -> Callable:  # noqa: N802
@@ -370,8 +373,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _vsync: bool = False
     _file_drops: bool = False
     _screen: Screen | None = None
-    _config: DisplayConfig | None = None
-    _context: Context | None = None
+    _config: VerifiedGraphicsConfig | None = None
+    _context: OpenGLWindowContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
@@ -406,31 +409,6 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _requested_width: int
     _requested_height: int
 
-    # Create a default ShaderProgram, so the Window instance can
-    # update the `WindowBlock` UBO shared by all default shaders.
-    _default_vertex_source = """#version 150 core
-        in vec4 position;
-
-        uniform WindowBlock
-        {
-            mat4 projection;
-            mat4 view;
-        } window;
-
-        void main()
-        {
-            gl_Position = window.projection * window.view * position;
-        }
-    """
-    _default_fragment_source = """#version 150 core
-        out vec4 color;
-
-        void main()
-        {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-    """
-
     def __init__(self,
                  width: int | None = None,
                  height: int | None = None,
@@ -443,8 +421,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: Config | None = None,
-                 context: Context | None = None,
+                 config: OpenGLConfig | None = None,
+                 context: OpenGLWindowContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
 
@@ -458,8 +436,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         created.
 
         ``config`` is a special case; it can be a template created by the
-        user specifying the attributes desired, or it can be a complete
-        ``config`` as returned from :py:meth:`~pyglet.display.Screen.get_matching_configs`` or similar.
+        user specifying the attributes desired
 
         The context will be active as soon as the window is created, as if
         :py:meth:`~pyglet.window.Window.switch_to`` was just called.
@@ -503,38 +480,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         EventDispatcher.__init__(self)
         self._event_queue = []
 
+        self._config = config
+        self._context = context
+
         if not display:
             display = pyglet.display.get_display()
 
         if not screen:
             screen = display.get_default_screen()
-
-        if not config:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-                                    None]:
-                try:
-                    config = screen.get_best_config(template_config)
-                    break
-                except NoSuchConfigException:
-                    pass
-            if not config:
-                msg = 'No standard config is available.'
-                raise NoSuchConfigException(msg)
-
-        # Necessary on Windows. More investigation needed:
-        if style in ('transparent', 'overlay'):
-            config.alpha = 8
-
-        if not config.is_complete():
-            config = screen.get_best_config(config)
-
-        if not context:
-            context = config.create_context(gl.current_context)
-
-        # Set these in reverse order as above, to ensure we get user preference
-        self._context = context
-        self._config = self._context.config
 
         # XXX deprecate config's being screen-specific
         if hasattr(self._config, 'screen'):
@@ -575,26 +528,48 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         app.windows.add(self)
         self._create()
 
-        self.switch_to()
-
-        self._create_projection()
+        if pyglet.options.backend:
+            self.switch_to()
+            self._create_projection()
 
         if visible:
             self.set_visible(True)
             self.activate()
 
-    def _create_projection(self) -> None:
-        self._default_program = shader.ShaderProgram(
-            shader.Shader(self._default_vertex_source, 'vertex'),
-            shader.Shader(self._default_fragment_source, 'fragment'))
+    def _assign_config(self) -> None:
+        if pyglet.options.backend:
+            config = self._config
+            context = self._context
 
-        self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
+            if not config:
+                for template_config in pyglet.graphics.api.get_default_configs():
+                    if config := template_config.match(self):
+                        break
+
+                if not config:
+                    msg = 'No standard config is available.'
+                    raise NoSuchConfigException(msg)
+
+            # Necessary on Windows. More investigation needed:
+            if self._style in ('transparent', 'overlay'):
+                config.alpha = 8
+
+            if not config.is_finalized:
+                config = config.match(self)
+
+            if not context:
+                from pyglet.graphics.api import global_backend
+                if global_backend:
+                    context = global_backend.get_window_backend_context(self, config)
+
+            # Set these in reverse order as above, to ensure we get user preference
+            self._context = context
+            self._config = self._context.config
+
+    def _create_projection(self) -> None:
+        self._matrices = self.context.global_ctx.initialize_matrices(self)
 
         self._viewport = (0, 0, *self.get_framebuffer_size())
-
-        width, height = self.get_size()
-        self.view = Mat4()
-        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -634,15 +609,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         window's taskbar icon will flash, indicating it requires attention.
         """
 
-    @staticmethod
-    def clear() -> None:
+    def clear(self) -> None:
         """Clear the window.
 
         This is a convenience method for clearing the color and depth
         buffer.  The window must be the active context (see
         :py:meth:`.switch_to`).
         """
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        self.context.clear()
 
     def close(self) -> None:
         """Close the window.
@@ -693,7 +667,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         events. Finally, it calls the :py:meth:`~pyglet.window.Window.flip`
         method to swap the front and back OpenGL buffers.
         """
-        self.switch_to()
+        self.before_draw()
         self.dispatch_event('on_draw')
         self.dispatch_event('on_refresh', dt)
         self.flip()
@@ -840,15 +814,18 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             self.dispatch_event('on_close')
 
     def _on_internal_resize(self, width: int, height: int) -> None:
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        if self.context:
+            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
         self.dispatch_event('on_resize', w, h)
+        #self.context.resized(w, h)
 
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        if self.context:
+            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
@@ -1158,10 +1135,14 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         sets the current window context as the active one.
 
         In most cases, you should use this method instead of directly
-        calling :py:meth:`~pyglet.gl.Context.set_current`. The latter
+        calling :py:meth:`~pyglet.backend.gl.Context.set_current`. The latter
         will not perform platform-specific state management tasks for
         you.
         """
+
+    @abstractmethod
+    def before_draw(self) -> None:
+        ...
 
     # Attributes (sort alphabetically):
     @property
@@ -1205,12 +1186,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._screen
 
     @property
-    def config(self) -> DisplayConfig:
+    def config(self) -> VerifiedGraphicsConfig:
         """A GL config describing the context of this window.  Read-only."""
         return self._config
 
     @property
-    def context(self) -> Context:
+    def context(self) -> OpenGLWindowContext:
         """The OpenGL context attached to this window.  Read-only."""
         return self._context
 
@@ -1282,15 +1263,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         (2D), but can be changed to any 4x4 matrix desired.
         :see: :py:class:`~pyglet.math.Mat4`.
         """
-        return self._projection_matrix
+        return self._matrices.projection
 
     @projection.setter
     def projection(self, matrix: Mat4) -> None:
-
-        with self.ubo as window_block:
-            window_block.projection[:] = matrix
-
-        self._projection_matrix = matrix
+        self._matrices.projection = matrix
 
     @property
     def view(self) -> Mat4:
@@ -1303,15 +1280,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         :py:class:`~pyglet.math.Mat4` instance can be set.
         Alternatively, you can supply a flat tuple of 16 values.
         """
-        return self._view_matrix
+        return self._matrices.view
 
     @view.setter
     def view(self, matrix: Mat4) -> None:
-
-        with self.ubo as window_block:
-            window_block.view[:] = matrix
-
-        self._view_matrix = matrix
+        self._matrices.view = matrix
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
@@ -1326,7 +1299,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._viewport = values
         pr = self.scale
         x, y, w, h = values
-        pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
+        if self.context:
+            self.context.global_ctx.set_viewport(self, int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
@@ -1781,7 +1755,7 @@ class FPSDisplay:
     label: Label
 
     def __init__(self, window: pyglet.window.Window, color: tuple[int, int, int, int] = (127, 127, 127, 127),
-                 samples: int = 240) -> None:
+                 batch=None, samples: int = 240) -> None:
         """Create an FPS Display.
 
         Args:
@@ -1802,7 +1776,7 @@ class FPSDisplay:
 
         # Hook into the Window.flip method:
         self._window_flip, window.flip = window.flip, self._hook_flip
-        self.label = Label('', x=10, y=10, font_size=24, weight='bold', color=color)
+        self.label = Label('', x=10, y=10, font_size=24, bold=True, color=color, batch=batch)
 
         self._elapsed = 0.0
         self._last_time = time()
@@ -1855,10 +1829,6 @@ else:
     else:
         from pyglet.window.xlib import XlibWindow as Window
 
-# Create shadow window. (trickery is for circular import)
-if not _is_pyglet_doc_run:
-    pyglet.window = sys.modules[__name__]
-    gl._create_shadow_window()  # noqa: SLF001
 
 
 __all__ = (

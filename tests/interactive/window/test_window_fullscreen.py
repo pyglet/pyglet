@@ -4,7 +4,6 @@ from tests.base.interactive import InteractiveTestCase
 from pyglet import window
 from pyglet.window.event import WindowEventLogger
 from pyglet.window import key
-from pyglet.gl import *
 
 from . import window_util
 

@@ -5,6 +5,7 @@ Intended usage is to create a file for bug reports, e.g.::
     python -m pyglet.info > info.txt
 
 """
+from __future__ import annotations
 
 _first_heading = True
 
@@ -20,7 +21,7 @@ def _heading(heading):
 
 
 def dump_platform():
-    """Dump OS specific """
+    """Dump OS specific"""
     import platform
     print('platform: ', platform.platform())
     print('release:  ', platform.release())
@@ -30,17 +31,17 @@ def dump_platform():
 def dump_python():
     """Dump Python version and environment to stdout."""
     import os
-    import sys
     import platform
+    import sys
     print('implementation:', platform.python_implementation())
     print('sys.version:', sys.version)
     print('sys.maxint:', sys.maxsize)
-    if sys.platform == 'darwin':
-        try:
-            from objc import __version__ as pyobjc_version
-            print('objc.__version__:', pyobjc_version)
-        except:
-            print('PyObjC not available')
+    # if sys.platform == 'darwin':
+    #     try:
+    #         from objc import __version__ as pyobjc_version
+    #         print('objc.__version__:', pyobjc_version)
+    #     except:
+    #         print('PyObjC not available')
     print('os.getcwd():', os.getcwd())
     for key, value in os.environ.items():
         if key.startswith('PYGLET_'):
@@ -59,9 +60,9 @@ def dump_pyglet():
 
 def dump_window():
     """Dump display, window, screen and default config info."""
-    from pyglet.gl import gl_info
-    if not gl_info.have_version(3):
-        print(f"Insufficient OpenGL version: {gl_info.get_version_string()}")
+    from pyglet.graphics.api import global_backend
+    if not global_backend.have_version(3):
+        print(f"Insufficient OpenGL version: {global_backend.get_info().get_version_string()}")
         return
     import pyglet.window
     display = pyglet.display.get_display()
@@ -70,7 +71,7 @@ def dump_window():
     for i, screen in enumerate(screens):
         print(f'screens[{i}]: {screen!r}')
     window = pyglet.window.Window(visible=False)
-    for key, value in window.config.get_gl_attributes():
+    for key, value in window.config.attributes.items():
         print(f"config['{key}'] = {value!r}")
     print('context:', repr(window.context))
 
@@ -84,16 +85,18 @@ def dump_gl(context=None):
     if context is not None:
         info = context.get_info()
     else:
-        from pyglet.gl import gl_info as info
+        from pyglet.graphics.api.gl import gl_info as info
+    print('gl_info.get_version_string()', info.get_version_string())
     print('gl_info.get_version():', info.get_version())
     print('gl_info.get_vendor():', info.get_vendor())
     print('gl_info.get_renderer():', info.get_renderer())
 
 
+
 def dump_glx():
     """Dump GLX info."""
     try:
-        from pyglet.gl import glx_info
+        from pyglet.graphics.api.gl import glx_info
     except:
         print('GLX not available.')
         return
@@ -167,9 +170,7 @@ def dump_wintab():
     impl_version = wintab.get_implementation_version()
     spec_version = wintab.get_spec_version()
 
-    print('WinTab: {0} {1}.{2} (Spec {3}.{4})'.format(interface_name,
-                                                      impl_version >> 8, impl_version & 0xff,
-                                                      spec_version >> 8, spec_version & 0xff))
+    print(f'WinTab: {interface_name} {impl_version >> 8}.{impl_version & 0xff} (Spec {spec_version >> 8}.{spec_version & 0xff})')
 
 
 def _try_dump(heading, func):
@@ -187,7 +188,7 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.gl.glx_info', dump_glx)
+    _try_dump('pyglet.backend.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)
     _try_dump('pyglet.media.drivers.openal', dump_al)

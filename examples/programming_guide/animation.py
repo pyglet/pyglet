@@ -32,7 +32,7 @@ sprite = pyglet.sprite.Sprite(animation)
 
 
 # Set window background color to white.
-pyglet.gl.glClearColor(1, 1, 1, 1)
+window.context.set_clear_color(1, 1, 1, 1)
 
 
 @window.event

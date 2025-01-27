@@ -1,7 +1,7 @@
 import pytest
 from tests.base.interactive import InteractiveTestCase
 
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 from pyglet import window
 from pyglet import clock
 from pyglet.window import key
@@ -34,19 +34,19 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
     samples = 2
 
     # This test does not work on all hardware, unless rendered to texture.
-    texture = pyglet.image.Texture.create(width, height, GL_TEXTURE_RECTANGLE)
+    texture = pyglet.image.TextureBase.create(width, height, GL_TEXTURE_RECTANGLE)
 
     def set_window(self):
         oldwindow = self.win
         try:
             if self.multisample:
                 print('Attempting samples=%d...' % self.samples, end=' ')
-                config = Config(sample_buffers=1,
-                                samples=self.samples,
-                                double_buffer=True)
+                config = OpenGLConfig(sample_buffers=1,
+                                      samples=self.samples,
+                                      double_buffer=True)
             else:
                 print('Disabling multisample...', end=' ')
-                config = Config(double_buffer=True)
+                config = OpenGLConfig(double_buffer=True)
             self.win = window.Window(self.width, self.height,
                                      vsync=True,
                                      config=config)

@@ -1,9 +1,10 @@
 import pytest
 
+
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
-from pyglet import gl
+from pyglet.graphics.api import gl
 from pyglet import graphics
 from pyglet import text
 from pyglet.text import caret
@@ -28,7 +29,7 @@ class TestWindow(window.Window):
     def __init__(self, content_valign, *args, **kwargs):
         super(TestWindow, self).__init__(*args, **kwargs)
 
-        self.batch = graphics.Batch()
+        self.batch = pyglet.graphics.Batch()
         self.document = text.decode_text(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,

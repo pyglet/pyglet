@@ -29,25 +29,21 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 if _is_pyglet_doc_run:
-    from pyglet.display.base import Display, Screen, Canvas, ScreenMode
+    from pyglet.display.base import Display, Screen, ScreenMode
 else:
     from pyglet import compat_platform, options
     if options['headless']:
         from pyglet.display.headless import HeadlessDisplay as Display
         from pyglet.display.headless import HeadlessScreen as Screen
-        from pyglet.display.headless import HeadlessCanvas as Canvas
     elif compat_platform == 'darwin':
         from pyglet.display.cocoa import CocoaDisplay as Display
         from pyglet.display.cocoa import CocoaScreen as Screen
-        from pyglet.display.cocoa import CocoaCanvas as Canvas
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
-        from pyglet.display.win32 import Win32Canvas as Canvas
     elif compat_platform == 'linux':
         from pyglet.display.xlib import XlibDisplay as Display
         from pyglet.display.xlib import XlibScreen as Screen
-        from pyglet.display.xlib import XlibCanvas as Canvas
     else:
         msg = f"A display interface for '{compat_platform}' is not yet implemented."
         raise NotImplementedError(msg)
@@ -77,4 +73,4 @@ def get_display() -> Display:
     return Display()
 
 
-__all__ = ['Display', 'Screen', 'Canvas', 'ScreenMode', 'get_display']
+__all__ = ['Display', 'Screen', 'ScreenMode', 'get_display']

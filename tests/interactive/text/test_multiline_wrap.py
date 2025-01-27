@@ -1,15 +1,15 @@
 import pytest
 
+
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet import app
-from pyglet import gl
-from pyglet import graphics
+from pyglet.graphics.api import gl
 from pyglet import text
 from pyglet.text import caret
 from pyglet.text import layout
 from pyglet import window
-from pyglet.window import key, mouse
+from pyglet.window import key
 
 nonewline_nowrap = """{font_size 24}Multiline=False\n
 {font_size 12}This paragraph contains a lots of newlines, however\n
@@ -34,7 +34,7 @@ class BaseTestWindow(window.Window):
     def __init__(self, multiline, wrap_lines, msg, *args, **kwargs):
         super(BaseTestWindow, self).__init__(*args, width=640, height=480, **kwargs)
 
-        self.batch = graphics.Batch()
+        self.batch = pyglet.graphics.Batch()
         self.document = text.decode_attributed(msg)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,

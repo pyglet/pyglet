@@ -1,6 +1,6 @@
 """An example of sorting sprites in the Z axis based on the Y axis, and a standard projection."""
 import pyglet
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 import random
 import math
 

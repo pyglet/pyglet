@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '2.1.0'
+version = '3.0.0a1'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -69,7 +69,7 @@ class Options:
     debug_font: bool = False
     """If ``True``, will print more verbose information when :py:class:`~pyglet.font.base.Font`'s are loaded."""
 
-    debug_gl: bool = True
+    debug_api: bool = True
     """If ``True``, all calls to OpenGL functions are checked afterwards for
      errors using ``glGetError``.  This will severely impact performance,
      but provides useful exceptions at the point of failure.  By default,
@@ -77,16 +77,16 @@ class Options:
      with the -O option).  It is disabled by default when pyglet is "frozen", such as
      within pyinstaller or nuitka."""
 
-    debug_gl_trace: bool = False
+    debug_api_trace: bool = False
     """If ``True``, will print the names of OpenGL calls being executed. For example, ``glBlendFunc``"""
 
-    debug_gl_trace_args: bool = False
+    debug_api_trace_args: bool = False
     """If ``True``, in addition to printing the names of OpenGL calls, it will also print the arguments passed
     into those calls. For example, ``glBlendFunc(770, 771)``
 
-    .. note:: Requires ``debug_gl_trace`` to be enabled."""
+    .. note:: Requires ``debug_api_trace`` to be enabled."""
 
-    debug_gl_shaders: bool = False
+    debug_api_shaders: bool = False
     """If ``True``, prints shader compilation information such as creation and deletion of shader's. Also includes
     information on shader ID's, attributes, and uniforms."""
 
@@ -120,6 +120,10 @@ class Options:
     debug_x11: bool = False
     """If ``True``, prints information related to Linux X11 calls. This can potentially help narrow down driver or
     operating system issues."""
+
+    debug_com: bool = False
+    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
+    that utilize COM calls. Only applies to the Windows platform."""
 
     shadow_window: bool = True
     """By default, pyglet creates a hidden window with a GL context when
@@ -288,6 +292,9 @@ class Options:
 
     .. versionadded:: 2.0.16
     """
+
+    backend: str | None = "opengl"
+    """Specify the graphics API backend."""
 
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)
@@ -475,7 +482,6 @@ if TYPE_CHECKING:
         display,
         event,
         font,
-        gl,
         graphics,
         gui,
         image,
@@ -497,7 +503,6 @@ else:
     display = _ModuleProxy("display")  # type: ignore
     event = _ModuleProxy("event")  # type: ignore
     font = _ModuleProxy("font")  # type: ignore
-    gl = _ModuleProxy("gl")  # type: ignore
     graphics = _ModuleProxy("graphics")  # type: ignore
     gui = _ModuleProxy("gui")  # type: ignore
     image = _ModuleProxy("image")  # type: ignore

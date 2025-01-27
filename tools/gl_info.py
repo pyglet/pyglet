@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-'''
-'''
+"""
+"""
+from __future__ import annotations
 
 __docformat__ = 'restructuredtext'
 __version__ = '1.2'
@@ -8,12 +9,11 @@ __version__ = '1.2'
 import sys
 import textwrap
 
-import pyglet
-import pyglet.app
-import pyglet.display
+import pyglet.graphics.api.gl.win32
+import pyglet.graphics.api.gl.win32.context
 import pyglet.window
-from pyglet.gl import *
-from pyglet.gl import gl_info
+from pyglet.graphics.api.gl import *
+from pyglet.graphics.api.gl import gl_info
 
 print('Pyglet:     %s' % pyglet.version)
 print('Platform:   %s' % sys.platform)
@@ -49,7 +49,8 @@ context = w.context
 print('Context is', context)
 
 if "xlib" in globals() and isinstance(context, xlib.BaseXlibContext):
-    from pyglet.gl import glx_info
+    from pyglet.graphics.api.gl import glx_info
+
     print('GLX %s direct'%(context.is_direct() and 'is' or 'is not'))
     if not glx_info.have_version(1, 1):
         print("GLX server version: 1.0")
@@ -67,8 +68,9 @@ if "xlib" in globals() and isinstance(context, xlib.BaseXlibContext):
         print('GLX extensions:')
         exts = glx_info.get_extensions()
         print(' ', '\n  '.join(textwrap.wrap(' '.join(exts))))
-elif "win32" in globals() and isinstance(context, win32.Win32Context):
-    from pyglet.gl import wgl_info
+elif "win32" in globals() and isinstance(context, pyglet.backend.gl.win32.context.Win32Context):
+    from pyglet.graphics.api.gl import wgl_info
+
     if wgl_info.have_extension('WGL_EXT_extensions_string'):
         wgl_extensions = wgl_info.get_extensions()
         print('WGL extensions:')

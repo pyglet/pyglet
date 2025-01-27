@@ -2,18 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from pyglet import graphics
-from pyglet.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+import pyglet
+from pyglet.graphics.draw import Group
 from pyglet.text.layout.base import TextLayout
 
 if TYPE_CHECKING:
@@ -24,81 +14,90 @@ if TYPE_CHECKING:
     from pyglet.text.document import AbstractDocument
 
 
-class ScrollableTextLayoutGroup(graphics.Group):
-    """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+# class ScrollableTextLayoutGroup(Group):
+#     """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+#
+#     The group maintains internal state for specifying the viewable
+#     area, and for scrolling. Because the group has internal state
+#     specific to the text layout, the group is never shared.
+#     """
+#     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+#
+#     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
+#                  parent: Group | None = None) -> None:
+#
+#         super().__init__(order=order, parent=parent)
+#         self.texture = texture
+#         self.program = program
+#         raise Exception
+#
+#     # def set_state(self) -> None:
+#     #     self.program.use()
+#     #     self.program["scissor"] = True
+#     #     self.program["scissor_area"] = self.scissor_area
+#     #
+#     #     glActiveTexture(GL_TEXTURE0)
+#     #     glBindTexture(self.texture.target, self.texture.id)
+#     #
+#     #     glEnable(GL_BLEND)
+#     #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+#     #
+#     # def unset_state(self) -> None:
+#     #     glDisable(GL_BLEND)
+#     #     self.program.stop()
+#
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}({self.texture})"
+#
+#     def __eq__(self, other: object) -> bool:
+#         return self is other
+#
+#     def __hash__(self) -> int:
+#         return id(self)
+#
+#
+# class ScrollableTextDecorationGroup(Group):
+#     """Create a text decoration rendering group.
+#
+#     The group is created internally when a :py:class:`~pyglet.text.Label`
+#     is created; applications usually do not need to explicitly create it.
+#     """
+#
+#     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+#
+#     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
+#         super().__init__(order=order, parent=parent)
+#         self.program = program
+#
+#     # def set_state(self) -> None:
+#     #     self.program.use()
+#     #     self.program["scissor"] = True
+#     #     self.program["scissor_area"] = self.scissor_area
+#     #
+#     #     glEnable(GL_BLEND)
+#     #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+#     #
+#     # def unset_state(self) -> None:
+#     #     glDisable(GL_BLEND)
+#     #     self.program.stop()
+#     raise Exception
+#
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}(scissor={self.scissor_area})"
+#
+#     def __eq__(self, other: object) -> bool:
+#         return self is other
+#
+#     def __hash__(self) -> int:
+#         return id(self)
 
-    The group maintains internal state for specifying the viewable
-    area, and for scrolling. Because the group has internal state
-    specific to the text layout, the group is never shared.
-    """
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 
-    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: graphics.Group | None = None) -> None:
-
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-        self.program["scissor"] = True
-        self.program["scissor_area"] = self.scissor_area
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    def __hash__(self) -> int:
-        return id(self)
-
-
-class ScrollableTextDecorationGroup(graphics.Group):
-    """Create a text decoration rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
-
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: graphics.Group | None = None) -> None:  # noqa: D107
-        super().__init__(order=order, parent=parent)
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-        self.program["scissor"] = True
-        self.program["scissor_area"] = self.scissor_area
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
-
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    def __hash__(self) -> int:
-        return id(self)
-
+if pyglet.options.backend == "opengl":
+    from pyglet.graphics.api.gl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+elif pyglet.options.backend in ("gl2", "gles2"):
+    from pyglet.graphics.api.gl2.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+elif pyglet.options.backend == "vulkan":
+    from pyglet.graphics.api.vulkan.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.
@@ -127,7 +126,7 @@ class ScrollableTextLayout(TextLayout):
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int = None, height: int = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,
-                 dpi: float | None = None, batch: Batch | None = None, group: graphics.Group | None = None,
+                 dpi: float | None = None, batch: Batch | None = None, group: Group | None = None,
                  program: ShaderProgram | None = None, wrap_lines: bool = True) -> None:
 
         if width is None or height is None:
@@ -144,10 +143,10 @@ class ScrollableTextLayout(TextLayout):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
-            group.scissor_area = area
+            group.update_data("scissor_area", area)
 
-        self.background_decoration_group.scissor_area = area
-        self.foreground_decoration_group.scissor_area = area
+        self.background_decoration_group.update_data("scissor_area", area)
+        self.foreground_decoration_group.update_data("scissor_area", area)
 
     def _update(self) -> None:
         super()._update()

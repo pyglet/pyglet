@@ -42,7 +42,6 @@ from ctypes import (
 )
 
 import pyglet
-from pyglet.display.win32 import Win32Canvas
 from pyglet.event import EventDispatcher
 from pyglet.libs.win32 import (
     BITMAPV5HEADER,
@@ -263,6 +262,16 @@ class Win32Window(BaseWindow):
 
             self._dc = _user32.GetDC(self._view_hwnd)
 
+            # Context must be created after window is created.
+            if pyglet.options.backend:
+                if "gl" in pyglet.options.backend and not self._wgl_context:
+                    self._assign_config()
+                    self.context.attach(self)
+                    self._wgl_context = self.context._context  # noqa: SLF001
+                else:
+                    self._assign_config()
+                    self.context.attach(self)
+
             # Only allow files being dropped if specified.
             if self._file_drops:
                 # Allows UAC to not block the drop files request if low permissions. All 3 must be set.
@@ -311,22 +320,21 @@ class Win32Window(BaseWindow):
 
         self._update_view_location(self._width, self._height)
 
-        # Context must be created after window is created.
-        if not self._wgl_context:
-            self.canvas = Win32Canvas(self.display, self._view_hwnd, self._dc)
-            self.context.attach(self.canvas)
-            self._wgl_context = self.context._context  # noqa: SLF001
-
-        self.switch_to()
-
         self.set_caption(self._caption)
-        self.set_vsync(self._vsync)
+
+        if pyglet.options.backend:
+            self.switch_to()
+            self.set_vsync(self._vsync)
 
         if self._visible:
             self.set_visible()
             # Might need resize event if going from fullscreen to fullscreen
             self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_expose')
+
+    @property
+    def dc(self):
+        return self._dc
 
     def _update_view_location(self, width: int, height: int) -> None:
         if self._fullscreen:
@@ -384,6 +392,10 @@ class Win32Window(BaseWindow):
     def switch_to(self) -> None:
         self.context.set_current()
 
+    def before_draw(self) -> None:
+        if self.context:
+            self.context.before_draw()
+
     def update_transparency(self) -> None:
         region = _gdi32.CreateRectRgn(0, 0, -1, -1)
         bb = DWM_BLURBEHIND()
@@ -403,7 +415,8 @@ class Win32Window(BaseWindow):
         if self.style in ('overlay', 'transparent'):
             self.update_transparency()
 
-        self.context.flip()
+        if self.context:
+            self.context.flip()
 
     def set_location(self, x: int, y: int) -> None:
         x, y = self._client_to_window_pos(x, y)

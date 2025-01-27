@@ -4,7 +4,7 @@ import os
 
 import pyglet
 
-from pyglet.gl import GL_TRIANGLES
+from pyglet.graphics.api.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
 from . import ModelDecodeException, ModelDecoder

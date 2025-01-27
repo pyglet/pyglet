@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 import pyglet
+
 from pyglet.experimental import multitexture_sprite
 
 window = pyglet.window.Window()
@@ -105,9 +107,9 @@ custom_fragment_source = """#version 150 core
 
 logo = pyglet.resource.image("pyglet.png")
 kitten = pyglet.resource.image("kitten.jpg")
-multi_vert_shader = pyglet.graphics.shader.Shader(custom_vertex_source, 'vertex')
-multi_frag_shader = pyglet.graphics.shader.Shader(custom_fragment_source, 'fragment')
-multitex_shader_program = pyglet.graphics.shader.ShaderProgram(multi_vert_shader, multi_frag_shader)
+multi_vert_shader = pyglet.graphics.Shader(custom_vertex_source, 'vertex')
+multi_frag_shader = pyglet.graphics.Shader(custom_fragment_source, 'fragment')
+multitex_shader_program = pyglet.graphics.ShaderProgram(multi_vert_shader, multi_frag_shader)
 sprite3 = multitexture_sprite.MultiTextureSprite({'kitten': kitten, 'logo': logo},
                                                  x=150,
                                                  y=150,

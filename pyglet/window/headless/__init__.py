@@ -2,20 +2,13 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from pyglet.display.headless import HeadlessCanvas
+#from pyglet.graphics.api.gl import egl
 
 # from pyglet.window import key
 # from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import egl
 from pyglet.window import (
     BaseWindow,
-    DefaultMouseCursor,  # noqa: F401
-    ImageMouseCursor,  # noqa: F401
-    MouseCursor,  # noqa: F401
-    MouseCursorException,  # noqa: F401
-    NoSuchDisplayException,  # noqa: F401
-    WindowException,  # noqa: F401
     _PlatformEventHandler,
     _ViewEventHandler,
 )
@@ -39,6 +32,10 @@ class HeadlessWindow(BaseWindow):
     def switch_to(self) -> None:
         if self.context:
             self.context.set_current()
+
+    def before_draw(self) -> None:
+        if self.context:
+            self.context.before_draw()
 
     def set_caption(self, caption: str) -> None:
         pass
@@ -105,9 +102,7 @@ class HeadlessWindow(BaseWindow):
                                                             self.config._egl_config,  # noqa: SLF001
                                                             pbuffer_attrib_array)
 
-            self.canvas = HeadlessCanvas(self.display, self._egl_surface)
-
-            self.context.attach(self.canvas)
+            self.context.attach(self)
 
             self.dispatch_event('_on_internal_resize', self._width, self._height)
 

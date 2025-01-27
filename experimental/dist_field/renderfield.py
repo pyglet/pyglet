@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 
 import pyglet
-from pyglet.gl import (
+from pyglet.graphics.api.gl import (
     GL_BLEND,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_SRC_ALPHA,
@@ -238,9 +238,9 @@ enable_glow = False
 outline_width = 0.02
 glow_width = 0.1
 
-dist_shader = pyglet.graphics.shader.ShaderProgram(
-    pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-    pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+dist_shader = pyglet.graphics.ShaderProgram(
+    pyglet.graphics.Shader(vertex_source, "vertex"),
+    pyglet.graphics.Shader(fragment_source, "fragment"),
 )
 
 if len(sys.argv) > 1:

@@ -121,24 +121,21 @@ from pyglet.text.layout.base import (
     TextDecorationGroup,
     TextLayout,
     TextLayoutGroup,
-    decoration_fragment_source,
-    decoration_vertex_source,
-    get_default_decoration_shader,
-    get_default_image_layout_shader,
     get_default_layout_shader,
-    layout_fragment_image_source,
-    layout_fragment_source,
-    layout_vertex_source,
+    get_default_image_layout_shader,
 )
 from pyglet.text.layout.incremental import (
     IncrementalTextDecorationGroup,
     IncrementalTextLayout,
     IncrementalTextLayoutGroup,
 )
-from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayout, ScrollableTextLayoutGroup
+
+from pyglet.text.layout.scrolling import (
+    ScrollableTextDecorationGroup,
+    ScrollableTextLayout,
+    ScrollableTextLayoutGroup,
+)
 
 __all__ = ["TextLayout", "IncrementalTextLayout", "ScrollableTextLayout", "TextLayoutGroup", "TextDecorationGroup",
            "IncrementalTextLayoutGroup", "IncrementalTextDecorationGroup", "ScrollableTextLayoutGroup",
-           "ScrollableTextDecorationGroup", "get_default_layout_shader", "get_default_image_layout_shader",
-           "get_default_decoration_shader", "decoration_fragment_source", "layout_fragment_image_source",
-           "layout_fragment_source", "layout_vertex_source", "decoration_vertex_source"]
+           "ScrollableTextDecorationGroup", "get_default_layout_shader", "get_default_image_layout_shader"]

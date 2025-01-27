@@ -23,7 +23,7 @@ import os
 import sys
 import weakref
 
-from pyglet.gl import (
+from pyglet.graphics.api.gl import (
     glEnable,
     glBlendFunc,
     GL_BLEND,

@@ -5,7 +5,7 @@ import pytest
 import random
 
 from pyglet import font
-from pyglet import gl
+from pyglet.graphics.api import gl
 from pyglet.window import key, Window
 from pyglet.window.event import WindowEventLogger
 

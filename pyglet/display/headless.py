@@ -1,12 +1,12 @@
-import pyglet
+from __future__ import annotations
+
 import warnings
-
-from .base import Display, Screen, ScreenMode, Canvas
-
-
 from ctypes import byref
-from pyglet.libs.egl import egl
-from pyglet.libs.egl import eglext
+
+import pyglet
+
+#from pyglet.graphics.api.gl import egl, eglext
+from .base import Display, Screen
 
 
 class HeadlessDisplay(Display):
@@ -40,23 +40,9 @@ class HeadlessDisplay(Display):
         egl.eglTerminate(self._display_connection)
 
 
-class HeadlessCanvas(Canvas):
-    def __init__(self, display, egl_surface):
-        super().__init__(display)
-        self.egl_surface = egl_surface
-
-
 class HeadlessScreen(Screen):
     def __init__(self, display, x, y, width, height):
         super().__init__(display, x, y, width, height)
-
-    def get_matching_configs(self, template):
-        canvas = HeadlessCanvas(self.display, None)
-        configs = template.match(canvas)
-        # XXX deprecate
-        for config in configs:
-            config.screen = self
-        return configs
 
     def get_modes(self):
         pass

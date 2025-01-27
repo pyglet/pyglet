@@ -3,7 +3,7 @@ from unittest.mock import Mock, NonCallableMock
 
 import pytest
 
-from pyglet.graphics.shader import ShaderProgram
+from pyglet.graphics.api import ShaderProgram
 from pyglet.graphics.vertexdomain import IndexedVertexList
 from pyglet.text import layout, caret
 

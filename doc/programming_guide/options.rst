@@ -8,14 +8,14 @@ To change an option from its default, you must import ``pyglet`` before any sub-
 For example::
 
   import pyglet
-  pyglet.options['debug_gl'] = False
+  pyglet.options['debug_api'] = False
   pyglet.options.debug_media = True
 
 The default options can be overridden from the OS environment as well.  The
 corresponding environment variable for each option key is prefaced by
-``PYGLET_``.  For example, in Bash you can set the ``debug_gl`` option with::
+``PYGLET_``.  For example, in Bash you can set the ``debug_api`` option with::
 
-  PYGLET_DEBUG_GL=True; export PYGLET_DEBUG_GL
+  PYGLET_DEBUG_API=True; export PYGLET_DEBUG_API
 
 For options requiring a tuple of values, separate each value with a comma.
 
@@ -45,10 +45,10 @@ shows which environment variable is used for each option:
           - ``audio``
           - List of strings
           - ``directsound,openal,alsa,silent``
-        * - ``PYGLET_DEBUG_GL``
-          - ``debug_gl``
+        * - ``PYGLET_DEBUG_API``
+          - ``debug_api``
           - Boolean
-          - ``1`` [#debug_gl]_
+          - ``1`` [#debug_api]_
 
-.. [#debug_gl] Defaults to ``1`` unless Python is run with ``-O`` or from a
+.. [#debug_api] Defaults to ``1`` unless Python is run with ``-O`` or from a
     frozen executable.

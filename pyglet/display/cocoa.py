@@ -1,13 +1,20 @@
 # Note: The display mode API used here is Mac OS 10.6 only.
 from __future__ import annotations
 
-from ctypes import c_uint32, c_void_p, byref
+from ctypes import byref, c_uint32, c_void_p
 
-from .base import Canvas, Display, Screen, ScreenMode
-from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf, ObjCClass, get_NSString
-from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
 from pyglet.libs.darwin import NSDeviceResolution
+from pyglet.libs.darwin.cocoapy import (
+    CGDirectDisplayID,
+    ObjCClass,
+    cf,
+    cfarray_to_list,
+    cfstring_to_string,
+    get_NSString,
+    quartz,
+)
 
+from .base import Display, Screen, ScreenMode
 
 NSScreen = ObjCClass('NSScreen')
 
@@ -67,10 +74,6 @@ class CocoaScreen(Screen):
             print("Could not initialize NSScreen to retrieve DPI. Using default.")
 
         return ratio
-
-    def get_matching_configs(self, template):
-        canvas = CocoaCanvas(self.display, self, None)
-        return template.match(canvas)
 
     def get_modes(self):
         cgmodes = c_void_p(quartz.CGDisplayCopyAllDisplayModes(self._cg_display_id, None))
@@ -137,11 +140,3 @@ class CocoaScreenMode(ScreenMode):
         if pixelEncoding == IO16BitDirectPixels: return 16
         if pixelEncoding == IO32BitDirectPixels: return 32
         return 0
-
-
-class CocoaCanvas(Canvas):
-
-    def __init__(self, display, screen, nsview):
-        super().__init__(display)
-        self.screen = screen
-        self.nsview = nsview

@@ -17,7 +17,7 @@ from math import radians, degrees
 
 import pyglet
 
-from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
+from pyglet.graphics.api.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Vec2, Vec3, Mat4, clamp
 from pyglet.window import key as _key
 

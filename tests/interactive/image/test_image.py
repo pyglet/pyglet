@@ -1,7 +1,8 @@
 from io import BytesIO
 import pytest
 
-from pyglet import gl, image
+from pyglet.backend import image
+from pyglet.graphics.api import gl
 
 from ...annotations import Platform, require_platform, require_gl_extension
 from ...base.event_loop import EventLoopFixture
@@ -34,13 +35,13 @@ class ImageTestFixture(EventLoopFixture):
     def draw_checkerboard(self):
         if self.show_checkerboard:
             gl.glPushMatrix()
-            gl.glScalef(self.window.width/float(self.checkerboard.width),
-                        self.window.height/float(self.checkerboard.height),
+            gl.glScalef(self.window.width / float(self.checkerboard.width),
+                        self.window.height / float(self.checkerboard.height),
                         1.)
             gl.glMatrixMode(gl.GL_TEXTURE)
             gl.glPushMatrix()
-            gl.glScalef(self.window.width/float(self.checkerboard.width),
-                        self.window.height/float(self.checkerboard.height),
+            gl.glScalef(self.window.width / float(self.checkerboard.width),
+                        self.window.height / float(self.checkerboard.height),
                         1.)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             self.checkerboard.blit(0, 0, 0)
@@ -98,9 +99,9 @@ class ImageTestFixture(EventLoopFixture):
             gl.glColor4f(1, 0, 0, 1)
             gl.glVertex3f(x, y, -1)
             gl.glColor4f(0, 1, 0, 1)
-            gl.glVertex3f(x+w, y, 0)
+            gl.glVertex3f(x + w, y, 0)
             gl.glColor4f(0, 0, 1, 1)
-            gl.glVertex3f(x, y+h, 1)
+            gl.glVertex3f(x, y + h, 1)
             gl.glEnd()
             gl.glDisable(gl.GL_DEPTH_TEST)
             gl.glColor4f(1, 1, 1, 1)

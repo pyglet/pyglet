@@ -1,5 +1,6 @@
 import pytest
 
+
 from pyglet import app, gl, graphics, text, window
 from pyglet.text import caret, layout
 from pyglet.window import key, mouse
@@ -164,7 +165,7 @@ class BaseTestWindow(window.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.batch = graphics.Batch()
+        self.batch = pyglet.graphics.Batch()
         self.document = text.decode_attributed(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,

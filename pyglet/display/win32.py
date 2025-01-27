@@ -1,35 +1,34 @@
-from .base import Display, Screen, ScreenMode, Canvas
+from __future__ import annotations
 
-from pyglet.libs.win32 import _user32, _shcore, _gdi32
+from pyglet.libs.win32 import _gdi32, _shcore, _user32
 from pyglet.libs.win32.constants import (
     CDS_FULLSCREEN,
     DISP_CHANGE_SUCCESSFUL,
     ENUM_CURRENT_SETTINGS,
-    WINDOWS_8_1_OR_GREATER,
-    WINDOWS_VISTA_OR_GREATER,
-    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
-    USER_DEFAULT_SCREEN_DPI,
     LOGPIXELSX,
     LOGPIXELSY,
-
+    USER_DEFAULT_SCREEN_DPI,
+    WINDOWS_8_1_OR_GREATER,
+    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
+    WINDOWS_VISTA_OR_GREATER,
 )
 from pyglet.libs.win32.types import (
     DEVMODE,
     DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
-    MONITORINFOEX,
     MONITORENUMPROC,
+    MONITORINFOEX,
     PROCESS_PER_MONITOR_DPI_AWARE,
     UINT,
+    byref,
     sizeof,
-    byref
 )
-from pyglet.libs.win32.context_managers import device_context
+
+from .base import Display, Screen, ScreenMode
 
 
 def set_dpi_awareness():
-    """
-       Setting DPI varies per Windows version.
-       Note: DPI awareness needs to be set before Window, Display, or Screens are initialized.
+    """Setting DPI varies per Windows version.
+    Note: DPI awareness needs to be set before Window, Display, or Screens are initialized.
     """
     if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
         _user32.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
@@ -63,18 +62,8 @@ class Win32Screen(Screen):
     _initial_mode = None
 
     def __init__(self, display, handle, x, y, width, height):
-        super(Win32Screen, self).__init__(display, x, y, width, height)
+        super().__init__(display, x, y, width, height)
         self._handle = handle
-
-    def get_matching_configs(self, template):
-        with device_context(None) as hdc:
-            canvas = Win32Canvas(self.display, 0, hdc)
-            configs = template.match(canvas)
-            # XXX deprecate config's being screen-specific
-            for config in configs:
-                config.screen = self
-
-        return configs
 
     def get_device_name(self):
         info = MONITORINFOEX()
@@ -156,8 +145,4 @@ class Win32ScreenMode(ScreenMode):
     def __repr__(self):
         return f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate}, scaling={self.scaling})'
 
-class Win32Canvas(Canvas):
-    def __init__(self, display, hwnd, hdc):
-        super(Win32Canvas, self).__init__(display)
-        self.hwnd = hwnd
-        self.hdc = hdc
+

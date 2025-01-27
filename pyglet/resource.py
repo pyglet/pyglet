@@ -51,16 +51,16 @@ from __future__ import annotations
 
 import os
 import sys
-import zipfile
 import weakref
-
+import zipfile
 from io import BytesIO, StringIO
-from typing import TYPE_CHECKING, IO
+from typing import IO, TYPE_CHECKING
 
 import pyglet
 
 if TYPE_CHECKING:
     from typing import Literal
+
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import Shader
     from pyglet.image import AbstractImage, Texture, TextureRegion

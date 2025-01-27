@@ -162,7 +162,7 @@ This has no effect unless you have changed the default projection
 or enabled depth testing.  In the following example, the second
 image is drawn *behind* the first, even though it is drawn after it::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
     glEnable(GL_DEPTH_TEST)
 
     kitten.blit(x, y, 0)
@@ -177,7 +177,7 @@ do this you need to supply OpenGL with a blend equation.  The following code
 fragment implements the most common form of alpha blending, however other
 techniques are also possible::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -757,7 +757,7 @@ To simplify working with framebuffers, pyglet provides the
 classes. These work as you would expect, and allow a simple way to add texture
 attachments. Attachment and target types can be specified as ::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
 
     # Prepare the buffers. One texture (for easy access), and one Renderbuffer:
     color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)

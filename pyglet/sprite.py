@@ -66,182 +66,27 @@ sprites within batches.
 """
 from __future__ import annotations
 
-import sys
-import warnings
-from typing import TYPE_CHECKING, ClassVar, Literal
-
 import pyglet
-from pyglet import clock, event, graphics, image
-from pyglet.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    GL_TRIANGLES,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet import event, clock
+import sys
+from typing import ClassVar, TYPE_CHECKING, Literal
+
+from pyglet.graphics import Group, Batch, ShaderProgram, GeometryMode
+from pyglet.enums import BlendFactor
+from pyglet.image.base import TextureBase, TextureArrayRegion
+from pyglet.image.base import AbstractImage, Animation
+
+if pyglet.options.backend == "opengl":
+    from pyglet.graphics.api.gl.sprite import SpriteGroup, get_default_array_shader, get_default_shader
+elif pyglet.options.backend in ("gl2", "gles2"):
+    from pyglet.graphics.api.gl.sprite import SpriteGroup
+    from pyglet.graphics.api.gl2.sprite import get_default_array_shader, get_default_shader
+elif pyglet.options.backend == "vulkan":
+    from pyglet.graphics.api.vulkan.sprite import SpriteGroup
+    from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-if TYPE_CHECKING:
-    from pyglet.graphics import Batch, Group
-    from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import AbstractImage, Animation, Texture
-
-vertex_source: str = """#version 150 core
-    in vec3 translate;
-    in vec4 colors;
-    in vec3 tex_coords;
-    in vec2 scale;
-    in vec3 position;
-    in float rotation;
-
-    out vec4 vertex_colors;
-    out vec3 texture_coords;
-
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
-
-    mat4 m_scale = mat4(1.0);
-    mat4 m_rotation = mat4(1.0);
-    mat4 m_translate = mat4(1.0);
-
-    void main()
-    {
-        m_scale[0][0] = scale.x;
-        m_scale[1][1] = scale.y;
-        m_translate[3][0] = translate.x;
-        m_translate[3][1] = translate.y;
-        m_translate[3][2] = translate.z;
-        m_rotation[0][0] =  cos(-radians(rotation)); 
-        m_rotation[0][1] =  sin(-radians(rotation));
-        m_rotation[1][0] = -sin(-radians(rotation));
-        m_rotation[1][1] =  cos(-radians(rotation));
-
-        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
-
-        vertex_colors = colors;
-        texture_coords = tex_coords;
-    }
-"""
-
-fragment_source: str = """#version 150 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D sprite_texture;
-
-    void main()
-    {
-        final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors;
-    }
-"""
-
-fragment_array_source: str = """#version 150 core
-    in vec4 vertex_colors;
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2DArray sprite_texture;
-
-    void main()
-    {
-        final_colors = texture(sprite_texture, texture_coords) * vertex_colors;
-    }
-"""
-
-
-def get_default_shader() -> ShaderProgram:
-    """Create and return the default sprite shader.
-
-    This method allows the module to be imported without an OpenGL Context.
-    """
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (fragment_source, 'fragment'))
-
-
-def get_default_array_shader() -> ShaderProgram:
-    """Create and return the default array sprite shader.
-
-    This method allows the module to be imported without an OpenGL Context.
-    """
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'),
-                                                    (fragment_array_source, 'fragment'))
-
-
-class SpriteGroup(graphics.Group):
-    """Shared Sprite rendering Group.
-
-    The Group defines custom ``__eq__`` ane ``__hash__`` methods, and so will
-    be automatically coalesced with other Sprite Groups sharing the same parent
-    Group, Texture and blend parameters.
-    """
-
-    def __init__(self, texture: Texture, blend_src: int, blend_dest: int,
-                 program: ShaderProgram, parent: Group | None = None) -> None:
-        """Create a sprite group.
-
-        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
-        is created; applications usually do not need to explicitly create it.
-
-        Args:
-            texture:
-                The (top-level) texture containing the sprite image.
-            blend_src:
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            blend_dest:
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            program:
-                A custom ShaderProgram.
-            parent:
-                Optional parent group.
-        """
-        super().__init__(parent=parent)
-        self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
-        self.program = program
-
-    def set_state(self) -> None:
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: SpriteGroup) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self) -> int:
-        return hash((self.program, self.parent,
-                     self.texture.id, self.texture.target,
-                     self.blend_src, self.blend_dest))
-
 
 class Sprite(event.EventDispatcher):
     """Manipulate an on-screen image.
@@ -267,8 +112,8 @@ class Sprite(event.EventDispatcher):
     def __init__(self,
                  img: AbstractImage | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
-                 blend_src: int = GL_SRC_ALPHA,
-                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
                  subpixel: bool = False,
@@ -308,7 +153,7 @@ class Sprite(event.EventDispatcher):
         self._y = y
         self._z = z
 
-        if isinstance(img, image.Animation):
+        if isinstance(img, Animation):
             self._animation = img
             self._texture = img.frames[0].image.get_texture()
             self._next_dt = img.frames[0].duration
@@ -318,7 +163,7 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         if not program:
-            if isinstance(img, image.TextureArrayRegion):
+            if isinstance(img, TextureArrayRegion):
                 program = get_default_array_shader()
             else:
                 program = get_default_shader()
@@ -393,7 +238,7 @@ class Sprite(event.EventDispatcher):
 
         self._group = self.get_sprite_group()
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
     def program(self) -> ShaderProgram:
@@ -411,7 +256,7 @@ class Sprite(event.EventDispatcher):
         self._group = self.get_sprite_group()
 
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_TRIANGLES, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.TRIANGLES, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
@@ -436,7 +281,7 @@ class Sprite(event.EventDispatcher):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
@@ -460,7 +305,7 @@ class Sprite(event.EventDispatcher):
         self._user_group = group
         self._group = self.get_sprite_group()
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+            self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
     def image(self) -> AbstractImage | Animation:
@@ -478,7 +323,7 @@ class Sprite(event.EventDispatcher):
             clock.unschedule(self._animate)
             self._animation = None
 
-        if isinstance(img, image.Animation):
+        if isinstance(img, Animation):
             self._animation = img
             self._frame_index = 0
             self._set_texture(img.frames[0].image.get_texture())
@@ -489,7 +334,7 @@ class Sprite(event.EventDispatcher):
             self._set_texture(img.get_texture())
         self._update_position()
 
-    def _set_texture(self, texture: Texture) -> None:
+    def _set_texture(self, texture: TextureBase) -> None:
         if texture.id is not self._texture.id:
             self._vertex_list.delete()
             self._texture = texture
@@ -501,7 +346,7 @@ class Sprite(event.EventDispatcher):
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self.program.vertex_list_indexed(
-            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4),
             translate=('f', (self._x, self._y, self._z) * 4),
@@ -845,7 +690,7 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         self._group.set_state_recursive()
-        self._vertex_list.draw(GL_TRIANGLES)
+        self._vertex_list.draw(GeometryMode.TRIANGLES)
         self._group.unset_state_recursive()
 
     if _is_pyglet_doc_run:

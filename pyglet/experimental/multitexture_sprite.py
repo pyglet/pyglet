@@ -7,12 +7,25 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.gl import glActiveTexture, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, glGetIntegerv, GLint
-from pyglet.gl import GL_SRC_ALPHA, GL_TEXTURE0, GL_ONE_MINUS_SRC_ALPHA, GL_TRIANGLES, GL_MAX_TEXTURE_IMAGE_UNITS
+from pyglet.graphics.api.gl import (
+    GL_BLEND,
+    GL_MAX_TEXTURE_IMAGE_UNITS,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    GL_TEXTURE0,
+    GL_TRIANGLES,
+    GLint,
+    glActiveTexture,
+    glBindTexture,
+    glBlendFunc,
+    glDisable,
+    glEnable,
+    glGetIntegerv,
+)
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture, AbstractImage, Animation
     from pyglet.graphics import Batch, Group, ShaderProgram
+    from pyglet.image import AbstractImage, Animation, Texture
 
 
 class MultiTextureSpriteGroup(pyglet.graphics.Group):
@@ -113,14 +126,14 @@ class MultiTextureSpriteGroup(pyglet.graphics.Group):
 
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
-    pyglet.gl.GL_TEXTURE_2D: "sampler2D",
-    pyglet.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray"
+    pyglet.backend.gl.GL_TEXTURE_2D: "sampler2D",
+    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray",
 }
 
 # Allows the default shader to grab the correct coords based on texture type
 _SAMPLER_COORDS = {
-    pyglet.gl.GL_TEXTURE_2D: ".xy",
-    pyglet.gl.GL_TEXTURE_2D_ARRAY: ""
+    pyglet.backend.gl.GL_TEXTURE_2D: ".xy",
+    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "",
 }
 
 
@@ -137,9 +150,9 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     assert len(images) <= max_tex.value, f"Only {max_tex.value} Texture Units are available."
 
     # Generate the default vertex shader
-    in_tex_coords = '\n'.join([f"in vec3 {name}_coords;" for name in images.keys()])
-    out_tex_coords = '\n'.join([f"out vec3 {name}_coords_frag;" for name in images.keys()])
-    tex_coords_assignments = '\n'.join([f"{name}_coords_frag = {name}_coords;" for name in images.keys()])
+    in_tex_coords = '\n'.join([f"in vec3 {name}_coords;" for name in images])
+    out_tex_coords = '\n'.join([f"out vec3 {name}_coords_frag;" for name in images])
+    tex_coords_assignments = '\n'.join([f"{name}_coords_frag = {name}_coords;" for name in images])
 
     vertex_source = f"""
     #version 150 core
@@ -182,7 +195,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     }}
     """
 
-    in_tex_coords = '\n'.join([f"in vec3 {name}_coords_frag;" for name in images.keys()])
+    in_tex_coords = '\n'.join([f"in vec3 {name}_coords_frag;" for name in images])
     uniform_samplers = '\n'.join([f"uniform {_SAMPLER_TYPES[tex.target]} {name};" for name,tex in images.items()])
     tex_operations = '\n'.join([f"  color = layer(texture({name}, {name}_coords_frag{_SAMPLER_COORDS[tex.target]}), color);" for name, tex in images.items()])
     fragment_source = f"""
@@ -206,7 +219,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     }}
     """
 
-    return pyglet.gl.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
+    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
@@ -390,8 +403,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             getattr(self._vertex_list,f"{key}_coords")[:] = self._textures[key].tex_coords
 
     def _create_vertex_list(self) -> None:
-        """
-        Override so we can send over texture coords for each texture being used.
+        """Override so we can send over texture coords for each texture being used.
         """
         tex_coords = {}
         for name, tex in self._textures.items():

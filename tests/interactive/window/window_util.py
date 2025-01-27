@@ -1,4 +1,4 @@
-from pyglet.gl import *
+from pyglet.graphics.api.gl import *
 
 
 def draw_client_border(window):

@@ -33,7 +33,6 @@ from typing import TYPE_CHECKING, BinaryIO, NoReturn
 
 import pyglet
 from pyglet.font import base
-from pyglet.image import ImageData
 from pyglet.image.codecs.wic import GUID_WICPixelFormat32bppPBGRA, IWICBitmap, WICDecoder
 from pyglet.libs.win32 import LOGFONTW, c_void, com
 from pyglet.libs.win32 import _kernel32 as kernel32
@@ -45,7 +44,7 @@ from pyglet.libs.win32.constants import (
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
-    from pyglet.font.base import Glyph
+    from pyglet.font.base import Glyph, ImageData
 
 try:
     dwrite = "dwrite"
@@ -553,7 +552,7 @@ class TextAnalysis(com.COMObject):
 
         self._script = None
         self._bidi = 0
-        # self._sideways = False  # noqa: ERA001
+        # self._sideways = False
 
     def GenerateResults(self, analyzer: IDWriteTextAnalyzer, text: c_wchar_p, text_length: int):
         self._text = text
@@ -2043,7 +2042,6 @@ class Win32DirectWriteFont(base.Font):
     _zero_glyph = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
-    texture_internalformat = pyglet.gl.GL_RGBA
 
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool | str = False,
                  stretch: bool | str = False, dpi: int | None = None, locale: str | None = None) -> None:
