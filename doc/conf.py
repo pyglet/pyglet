@@ -218,7 +218,7 @@ copyright = "2006-2008, Alex Holkner. 2008-2023 pyglet contributors"
 # built documents.
 #
 # The short X.Y version.
-version = "2.0"
+version = pyglet.version.rsplit('.', 1)[0]
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 
