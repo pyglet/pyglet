@@ -2,6 +2,7 @@ from typing import List
 
 import pytest
 
+
 import pyglet.text.layout
 from tests.base.interactive import InteractiveTestCase
 
@@ -108,7 +109,7 @@ class TestWindow(pyglet.window.Window):
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
     def on_draw(self):
-        pyglet.gl.glClearColor(1, 1, 1, 1)
+        window.context.set_clear_color(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

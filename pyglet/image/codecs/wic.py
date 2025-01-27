@@ -1,9 +1,18 @@
-from pyglet.image import *
-from pyglet.image.codecs import *
-from pyglet.libs.win32 import _kernel32 as kernel32
+from __future__ import annotations
+
+import os
+from ctypes import POINTER, c_void_p, memmove, byref
+from ctypes.wintypes import UINT, LPCWSTR, DWORD, DOUBLE, BOOL, ULONG
+
+import pyglet
+from pyglet.image import ImageData
+from pyglet.image.codecs import ImageDecoder, ImageDecodeException, ImageEncoder
+from pyglet.libs.win32 import _kernel32 as kernel32, BYTE
 from pyglet.libs.win32 import _ole32 as ole32
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32 import com
+from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER, STREAM_SEEK_SET, CLSCTX_INPROC_SERVER, GMEM_MOVEABLE, \
+    GENERIC_WRITE
+from pyglet.libs.win32.types import IStream, PROPVARIANT, STATSTG
 
 CLSID_WICImagingFactory1 = com.GUID(0xcacaf262, 0x9370, 0x4615, 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa)
 CLSID_WICImagingFactory2 = com.GUID(0x317d06e8, 0x5f24, 0x433d, 0xbd, 0xf7, 0x79, 0xce, 0x68, 0xd8, 0xab, 0xc2)
@@ -105,7 +114,7 @@ class IPropertyBag2(com.pIUnknown):
         ('GetPropertyInfo',
          com.STDMETHOD()),
         ('LoadObject',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -170,7 +179,7 @@ class IWICBitmapFrameEncode(com.pIUnknown):
         ('Commit',
          com.STDMETHOD()),
         ('GetMetadataQueryWriter',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -195,7 +204,7 @@ class IWICBitmapEncoder(com.pIUnknown):
         ('Commit',
          com.STDMETHOD()),
         ('GetMetadataQueryWriter',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -216,7 +225,7 @@ class IWICComponentInfo(com.pIUnknown):
         ('GetSpecVersion',
          com.STDMETHOD()),
         ('GetFriendlyName',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -231,7 +240,7 @@ class IWICPixelFormatInfo(IWICComponentInfo, com.pIUnknown):
         ('GetChannelCount',
          com.STDMETHOD(POINTER(UINT))),
         ('GetChannelMask',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -298,7 +307,7 @@ class IWICBitmap(IWICBitmapSource, com.pIUnknown):
         ('SetPalette',
          com.STDMETHOD()),
         ('SetResolution',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -391,7 +400,7 @@ class IWICImagingFactory(com.pIUnknown):
         ('CreateQueryWriter',
          com.STDMETHOD()),
         ('CreateQueryWriterFromReader',
-         com.STDMETHOD())
+         com.STDMETHOD()),
     ]
 
 
@@ -406,7 +415,8 @@ ole32.CoCreateInstance(CLSID_WICImagingFactory,
 
 class WICDecoder(ImageDecoder):
     """Windows Imaging Component.
-    This decoder is a replacement for GDI and GDI+ starting with Windows 7 with more features up to Windows 10."""
+    This decoder is a replacement for GDI and GDI+ starting with Windows 7 with more features up to Windows 10.
+    """
 
     def __init__(self):
         super(ImageDecoder, self).__init__()
@@ -444,6 +454,12 @@ class WICDecoder(ImageDecoder):
 
     def get_image(self, bitmap, target_fmt=GUID_WICPixelFormat32bppBGRA):
         """Get's image from bitmap, specifying target format, bitmap is released before returning."""
+        if "es" in pyglet.options.backend:
+            target_fmt = GUID_WICPixelFormat32bppRGBA
+            fmt = "RGBA"
+        else:
+            fmt = "BGRA"
+
         width = UINT()
         height = UINT()
 
@@ -456,7 +472,6 @@ class WICDecoder(ImageDecoder):
         pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         bitmap.GetPixelFormat(byref(pf))
 
-        fmt = 'BGRA'
         # If target format is not what we want (32bit BGRA) convert it.
         if pf != target_fmt:
             converter = IWICFormatConverter()
@@ -468,6 +483,8 @@ class WICDecoder(ImageDecoder):
             # 99% of the time conversion will be possible to default.
             # However, we check to be safe and fallback to 24 bit BGR if not possible.
             if not conversion_possible:
+                if "es" in pyglet.options.backend:
+                    raise Exception("Could not convert image to proper format.")
                 target_fmt = GUID_WICPixelFormat24bppBGR
                 fmt = 'BGR'
 
@@ -511,10 +528,10 @@ class WICDecoder(ImageDecoder):
 
     @staticmethod
     def get_property_value(reader, metadata_name):
-        """
-            Uses a metadata name and reader to return a single value. Can be used to get metadata from images.
-            If failure, returns 0.
-            Also handles cleanup of PROPVARIANT.
+        """Uses a metadata name and reader to return a single value. Can be used to get metadata from images.
+
+        If failure, returns 0.
+        Also handles cleanup of PROPVARIANT.
         """
         try:
             prop = PROPVARIANT()

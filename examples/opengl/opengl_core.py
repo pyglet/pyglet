@@ -1,13 +1,12 @@
 """This is a simple example that visually confirms """
 
 import pyglet
-from pyglet.gl import (
+from pyglet.graphics import GeometryMode
+from pyglet.graphics.api.gl import (
     glClearColor,
-    GL_TRIANGLES,
 )
 
 
-# pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 batch = pyglet.graphics.Batch()
@@ -20,7 +19,7 @@ program = pyglet.graphics.get_default_shader()
 ##########################################################
 label = pyglet.text.Label("Scroll the mouse wheel", x=0, y=180, dpi=200, color=(255, 25, 255, 150), batch=batch)
 
-vertex_list = program.vertex_list(3, GL_TRIANGLES,
+vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
                                   position=('f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
                                   colors=('f', (1, 0, 0, 1,  0, 1, 0, 1,  0.3, 0.3, 1, 1)))
 
@@ -29,11 +28,11 @@ def create_quad_vertex_list(x, y, z, width, height):
     return x, y, z, x + width, y, z, x + width, y + height, z, x, y + height, z
 
 
-program.vertex_list_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
+program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
                             position=('f', create_quad_vertex_list(480, 270, -11, 50, 50)),
                             colors=('f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
 
-program.vertex_list_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
+program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
                             position=('f', (400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0)),
                             colors=('f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
 
@@ -58,7 +57,7 @@ sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=300, batch=batch)
 sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=200, batch=batch)
 sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 
-standalone_sprite = pyglet.sprite.Sprite(img=white, x=600, y=0)
+standalone_sprite = pyglet.sprite.Sprite(img=white, x=400, y=0)
 
 
 ##########################################################
@@ -77,7 +76,7 @@ def on_mouse_scroll(x, y, mouse, direction):
 @window.event
 def on_draw():
     window.clear()
-    vertex_list.draw(GL_TRIANGLES)
+    vertex_list.draw(GeometryMode.TRIANGLES)
     batch.draw()
     standalone_sprite.draw()
 

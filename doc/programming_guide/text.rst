@@ -784,7 +784,7 @@ will not alter it besides changing the currently bound texture.
 
 The following blend state is used for drawing font glyphs::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glEnable(GL_BLEND)
 

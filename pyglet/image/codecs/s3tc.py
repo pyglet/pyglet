@@ -2,12 +2,13 @@
 
 http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
 """
+from __future__ import annotations
 
-import re
 import ctypes
+import re
 
-from pyglet.gl import *
-from pyglet.gl import gl_info
+import pyglet
+from pyglet.graphics.api.gl import *
 from pyglet.image import AbstractImage, Texture
 
 split_8byte = re.compile('.' * 8, flags=re.DOTALL)
@@ -44,7 +45,7 @@ class PackedImageData(AbstractImage):
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
-        if not gl_info.have_version(1, 2) or True:
+        if not pyglet.backend.have_version(1, 2) or True:
             self.unpack()
 
         glTexImage2D(texture.target, texture.level,
@@ -56,10 +57,11 @@ class PackedImageData(AbstractImage):
 
     texture = property(_get_texture)
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
+    def get_texture(self):
         """The parameters 'rectangle' and 'force_rectangle' are ignored.
-           See the documentation of the method 'AbstractImage.get_texture' for
-           a more detailed documentation of the method. """
+        See the documentation of the method 'AbstractImage.get_texture' for
+        a more detailed documentation of the method.
+        """
         return self._get_texture()
 
 
@@ -258,8 +260,8 @@ def decode_dxt5(data, width, height):
 
     # Read 16 bytes at a time
     image_offset = 0
-    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5, 
-         c0_lo, c0_hi, c1_lo, c1_hi, 
+    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5,
+         c0_lo, c0_hi, c1_lo, c1_hi,
          b0, b1, b2, b3) in split_16byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8

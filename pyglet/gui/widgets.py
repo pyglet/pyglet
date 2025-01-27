@@ -5,13 +5,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
+
 from pyglet.event import EventDispatcher
-from pyglet.graphics import Group
+from pyglet.graphics import Batch, Group
 from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Batch
     from pyglet.image import AbstractImage
 
 

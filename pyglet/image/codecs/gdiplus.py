@@ -1,11 +1,13 @@
-from pyglet.libs.win32.com import pIUnknown
-from pyglet.image import *
-from pyglet.image.codecs import *
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from __future__ import annotations
+
+from pyglet.image import ImageData
+from pyglet.image.animation import Animation, AnimationFrame
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
-
+from pyglet.libs.win32.com import pIUnknown
+from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.types import *
 
 gdiplus = windll.gdiplus
 
@@ -39,14 +41,14 @@ class GdiplusStartupInput(Structure):
         ('GdiplusVersion', c_uint32),
         ('DebugEventCallback', c_void_p),
         ('SuppressBackgroundThread', BOOL),
-        ('SuppressExternalCodecs', BOOL)
+        ('SuppressExternalCodecs', BOOL),
     ]
 
 
 class GdiplusStartupOutput(Structure):
     _fields = [
         ('NotificationHookProc', c_void_p),
-        ('NotificationUnhookProc', c_void_p)
+        ('NotificationUnhookProc', c_void_p),
     ]
 
 
@@ -57,7 +59,7 @@ class BitmapData(Structure):
         ('Stride', c_int),
         ('PixelFormat', c_int),
         ('Scan0', POINTER(c_byte)),
-        ('Reserved', POINTER(c_uint))
+        ('Reserved', POINTER(c_uint)),
     ]
 
 
@@ -66,7 +68,7 @@ class Rect(Structure):
         ('X', c_int),
         ('Y', c_int),
         ('Width', c_int),
-        ('Height', c_int)
+        ('Height', c_int),
     ]
 
 
@@ -75,7 +77,7 @@ class PropertyItem(Structure):
         ('id', c_uint),
         ('length', c_ulong),
         ('type', c_short),
-        ('value', c_void_p)
+        ('value', c_void_p),
     ]
 
 
@@ -202,9 +204,7 @@ class GDIPlusDecoder(ImageDecoder):
         fmt = 'BGRA'
         if pf == PixelFormat24bppRGB:
             fmt = 'BGR'
-        elif pf == PixelFormat32bppRGB:
-            pass
-        elif pf == PixelFormat32bppARGB:
+        elif pf == PixelFormat32bppRGB or pf == PixelFormat32bppARGB:
             pass
         elif pf in (PixelFormat16bppARGB1555, PixelFormat32bppPARGB,
                     PixelFormat64bppARGB, PixelFormat64bppPARGB):
@@ -221,11 +221,11 @@ class GDIPlusDecoder(ImageDecoder):
         rect.Height = height
         bitmap_data = BitmapData()
         gdiplus.GdipBitmapLockBits(bitmap, byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
-        
+
         # Create buffer for RawImage
         buffer = create_string_buffer(bitmap_data.Stride * height)
         memmove(buffer, bitmap_data.Scan0, len(buffer))
-        
+
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
 
@@ -248,13 +248,13 @@ class GDIPlusDecoder(ImageDecoder):
         if not file:
             file = open(filename, 'rb')
         bitmap = self._load_bitmap(filename, file)
-        
+
         dimension_count = c_uint()
         gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))
         if dimension_count.value < 1:
             self._delete_bitmap(bitmap)
             raise ImageDecodeException('Image has no frame dimensions')
-        
+
         # XXX Make sure this dimension is time?
         dimensions = (c_void_p * dimension_count.value)()
         gdiplus.GdipImageGetFrameDimensionsList(bitmap, dimensions, dimension_count.value)
@@ -267,14 +267,14 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipGetPropertyItemSize(bitmap, prop_id, byref(prop_size))
 
         prop_buffer = c_buffer(prop_size.value)
-        prop_item = cast(prop_buffer, POINTER(PropertyItem)).contents 
+        prop_item = cast(prop_buffer, POINTER(PropertyItem)).contents
         gdiplus.GdipGetPropertyItem(bitmap, prop_id, prop_size.value, prop_buffer)
 
         n_delays = prop_item.length // sizeof(c_long)
         delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
 
         frames = []
-        
+
         for i in range(frame_count.value):
             gdiplus.GdipImageSelectActiveFrame(bitmap, dimensions, i)
             image = self._get_image(bitmap)

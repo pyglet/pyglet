@@ -2,7 +2,7 @@ import pyglet
 
 window = pyglet.window.Window(540, 500, caption="Widget Example")
 batch = pyglet.graphics.Batch()
-pyglet.gl.glClearColor(0.8, 0.8, 0.8, 1.0)
+window.context.set_clear_color(0.8, 0.8, 0.8, 1.0)
 
 
 @window.event

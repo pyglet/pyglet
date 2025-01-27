@@ -3,15 +3,12 @@ from __future__ import annotations
 
 import time
 from collections import deque
-
-from typing import TYPE_CHECKING, Iterable, Generator
+from typing import TYPE_CHECKING, Generator, Iterable
 
 import pyglet
-
-from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media import buffered_logger as bl
-from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source, SourceGroup
+from pyglet.media.drivers import get_audio_driver
 
 _debug = pyglet.options['debug_media']
 
@@ -54,8 +51,7 @@ class PlaybackTimer:
         return time.perf_counter() - self._started_at + self._elapsed
 
     def set_time(self, value: float) -> None:
-        """
-        Manually set the elapsed time.
+        """Manually set the elapsed time.
 
         Args:
             value (float): the new elapsed time value
@@ -116,7 +112,7 @@ class Player(pyglet.event.EventDispatcher):
         self._playlists = deque()
         self._audio_player = None
 
-        self._context = pyglet.gl.current_context
+        self._context = pyglet.graphics.api.global_backend.current_context
         self._texture = None
 
         # Desired play state (not an indication of actual state).
@@ -150,7 +146,7 @@ class Player(pyglet.event.EventDispatcher):
                 source = iter(source)
             except TypeError:
                 raise TypeError("source must be either a Source or an iterable."
-                                " Received type {0}".format(type(source)))
+                                f" Received type {type(source)}")
         self._playlists.append(source)
 
         if self.source is None:
@@ -372,7 +368,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self) -> None:
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_2D)
+        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height)
         self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
@@ -417,7 +413,7 @@ class Player(pyglet.event.EventDispatcher):
             bl.logger.log(
                 "p.P.ut.1.0", dt, time,
                 self._audio_player.get_time() if self._audio_player else 0,
-                bl.logger.rebased_wall_time()
+                bl.logger.rebased_wall_time(),
             )
 
         frame_rate = source.video_format.frame_rate

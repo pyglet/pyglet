@@ -8,9 +8,9 @@ from urllib.request import urlopen
 
 import pyglet
 
-from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
-from pyglet.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
-from pyglet.gl import GL_REPEAT
+from pyglet.graphics.api.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
+from pyglet.graphics.api.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
+from pyglet.graphics.api.gl import GL_REPEAT
 
 from . import ModelDecodeException, ModelDecoder
 from .base import Scene

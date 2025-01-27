@@ -1,6 +1,6 @@
 import pyglet
 
-from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
+from pyglet.graphics.api.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Mat4, Vec3
 
 

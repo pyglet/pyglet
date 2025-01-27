@@ -77,9 +77,9 @@ def test_shader_ubo_data_structure():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
 
     ubo = program.uniform_blocks['EntityDataBlock'].create_ubo()
@@ -182,9 +182,9 @@ def test_shader_ubo_matrix_data_structure():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
 
     ubo = program.uniform_blocks['MatrixTest'].create_ubo()
@@ -279,9 +279,9 @@ def test_shader_uniform_block_matrix():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
 
     ubo = program.uniform_blocks['MatrixTest'].create_ubo()
@@ -374,9 +374,9 @@ def test_shader_uniform_matrix():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
     test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
 
@@ -447,9 +447,9 @@ def test_shader_uniform_matrix_array():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
     test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
 
@@ -521,9 +521,9 @@ def test_shader_uniform_float_array():
         }
     """
 
-    program = pyglet.graphics.shader.ShaderProgram(
-        pyglet.graphics.shader.Shader(vertex_source, "vertex"),
-        pyglet.graphics.shader.Shader(fragment_source, "fragment"),
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
     )
     test_data = 25.5
 

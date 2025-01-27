@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyglet import gl
-from pyglet import app
-from pyglet import window
-from pyglet import display
+from pyglet import app, display
 
 if TYPE_CHECKING:
-    from pyglet.gl import Config
     from pyglet.window import BaseWindow
 
 
@@ -84,7 +80,7 @@ class Screen:
     give the global location of the top-left corner of the screen.  This is 
     useful for determining if screens are arranged above or next to one 
     another.
-    
+
     Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
     to obtain an instance of this class.
     """
@@ -103,52 +99,6 @@ class Screen:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
-
-    def get_best_config(self, template: Config = None) -> Config:
-        """Get the best available GL config.
-
-        Any required attributes can be specified in ``template``.  If
-        no configuration matches the template,
-        :class:`~pyglet.window.NoSuchConfigException` will be raised.
-        A configuration supported by the platform that best fulfils
-        the needs described by the template.
-
-        :deprecated: Use :meth:`pyglet.gl.Config.match`.
-
-        Args:
-            template:
-                A configuration with desired attributes filled in.
-        """
-        configs = None
-        if template is None:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-                                    None]:
-                try:
-                    configs = self.get_matching_configs(template_config)
-                    break
-                except window.NoSuchConfigException:
-                    pass
-        else:
-            configs = self.get_matching_configs(template)
-        if not configs:
-            raise window.NoSuchConfigException()
-        return configs[0]
-
-    def get_matching_configs(self, template: Config) -> list[Config]:
-        """Get a list of configs that match a specification.
-
-        Any attributes specified in `template` will have values equal
-        to or greater in each returned config.  If no configs satisfy
-        the template, an empty list is returned.
-
-        :deprecated: Use :meth:`pyglet.gl.Config.match`.
-
-        Args:
-            template:
-                A configuration with desired attributes filled in.
-        """
-        raise NotImplementedError('abstract')
 
     def get_modes(self) -> list[ScreenMode]:
         """Get a list of screen modes supported by this screen.
@@ -263,16 +213,3 @@ class ScreenMode:
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
 
-
-class Canvas:
-    """Abstract drawing area.
-
-    Canvases are used internally by pyglet to represent drawing areas --
-    either within a window or full-screen.
-
-    .. versionadded:: 1.2
-    """
-
-    def __init__(self, display: Display) -> None:
-        self.display = display
-        """Display this canvas was created on."""

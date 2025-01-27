@@ -7,7 +7,7 @@ The texture is then saved to disk as a .png file.
 
 import pyglet
 
-from pyglet.gl import GL_RGBA32F, GL_ALL_BARRIER_BITS
+from pyglet.graphics.api.gl import GL_RGBA32F, GL_ALL_BARRIER_BITS
 
 
 compute_src = """#version 430 core

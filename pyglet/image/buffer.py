@@ -21,19 +21,11 @@ See the OpenGL documentation for more information on valid attachment types and 
 """
 from __future__ import annotations
 
-import pyglet
-
-from pyglet.gl import GLint, GLuint, glBindFramebuffer, glBindRenderbuffer, glCheckFramebufferStatus, glClear
-from pyglet.gl import glDeleteFramebuffers, glDeleteRenderbuffers, glFramebufferRenderbuffer, glFramebufferTexture
-from pyglet.gl import glFramebufferTextureLayer, glGenFramebuffers, glGenRenderbuffers, glGetIntegerv
-from pyglet.gl import glRenderbufferStorage, glRenderbufferStorageMultisample
-from pyglet.gl import GL_COLOR_ATTACHMENT0, GL_MAX_COLOR_ATTACHMENTS, GL_RENDERBUFFER
-from pyglet.gl import GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, GL_FRAMEBUFFER_UNSUPPORTED
-
 from typing import TYPE_CHECKING
+
+import pyglet
+from pyglet.backend import global_backend
+from pyglet.graphics.api.gl import get_max_color_attachments
 
 if TYPE_CHECKING:
     from pyglet.image import Texture
@@ -41,21 +33,18 @@ if TYPE_CHECKING:
 
 def get_max_color_attachments() -> int:
     """Get the maximum allow Framebuffer Color attachements."""
-    number = GLint()
-    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
-    return number.value
-
 
 class Renderbuffer:
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, width: int, height: int, internal_format: int, samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
-        self._context = pyglet.gl.current_context
+        self._context = global_backend.current_context
         self._id = GLuint()
         self._width = width
         self._height = height
         self._internal_format = internal_format
+        self._samples = samples
 
         glGenRenderbuffers(1, self._id)
         glBindRenderbuffer(GL_RENDERBUFFER, self._id)
@@ -107,9 +96,9 @@ class Framebuffer:
 
     .. versionadded:: 2.0
     """
-    def __init__(self, target: int = GL_FRAMEBUFFER) -> None:
+    def __init__(self, target: int) -> None:
         """Create a Framebuffer Instance."""
-        self._context = pyglet.gl.current_context
+        self._context = pyglet.graphics.api.global_backend.current_context
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
         self._attachment_types = 0

@@ -31,13 +31,13 @@ Importing the package gives access to OpenGL and all OpenGL registered
 extensions. This is sufficient for all but the most advanced uses of
 OpenGL::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
 
 All function names and constants are identical to the C counterparts. For
 example, the following code sets the GL clear color and enables depth
 testing and face culling::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
 
     # Direct OpenGL commands to this window.
     window = pyglet.window.Window()
@@ -50,7 +50,7 @@ Some OpenGL functions require an array of data.  These arrays must be
 constructed as ``ctypes`` arrays of the correct type.  The following example
 shows how to construct arrays using OpenGL types::
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
 
     # Create a new array type of length 32:
     array32f = GLfloat * 32
@@ -113,9 +113,9 @@ You can also disable this error check by setting the following option `before`
 importing ``pyglet.gl`` or ``pyglet.window``::
 
     # Disable error checking for increased performance
-    pyglet.options['debug_gl'] = False
+    pyglet.options['debug_api'] = False
 
-    from pyglet.gl import *
+    from pyglet.graphics.api.gl import *
 
 Setting the option after importing ``pyglet.gl`` will have no effect.  Once
 disabled, there is no error-checking overhead in each GL call.
@@ -176,10 +176,10 @@ The modules are named ``pyglet.gl.agl``, ``pyglet.gl.glx`` and
 operating system::
 
     if sys.platform.startswith('linux'):
-        from pyglet.gl.glx import *
+        from pyglet.graphics.api.gl.glx import *
         glxCreatePbuffer(...)
     elif sys.platform == 'darwin':
-        from pyglet.gl.agl import *
+        from pyglet.graphics.api.gl.agl import *
         aglCreatePbuffer(...)
 
 Alternativally you can use :py:attr:`pyglet.compat_platform` to support

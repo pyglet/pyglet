@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
+from pyglet.graphics import GeometryMode
+
 GL_TRIANGLES = 4
 
 # The default shader attributes.
@@ -33,7 +35,7 @@ class TestDefaultShader(unittest.TestCase):
 
         patcher_gl = patch.multiple(
             'pyglet.gl',
-            current_context=patch('pyglet.gl.current_context', create=True).start(),
+            current_context=patch('pyglet.backend.gl.current_context', create=True).start(),
             glUseProgram=patch('pyglet.gl.glUseProgram').start(),
             glDeleteProgram=patch('pyglet.gl.glDeleteProgram').start(),
             glGenVertexArrays=patch('pyglet.gl.glGenVertexArrays').start(),
@@ -64,7 +66,7 @@ class TestDefaultShader(unittest.TestCase):
         mock_shader2 = MagicMock()
 
         from pyglet.graphics import Batch
-        from pyglet.graphics.shader import ShaderProgram
+        from pyglet.graphics.api import ShaderProgram
 
         # Patch default batch.
         patch('pyglet.graphics.get_default_batch', return_value=Batch()).start()
@@ -76,7 +78,7 @@ class TestDefaultShader(unittest.TestCase):
     def test_index_vertex_list_create_no_batch_no_group(self):
         vlist = self.program._vertex_list_create(  # noqa: SLF001
             count=4,
-            mode=GL_TRIANGLES,
+            mode=GeometryMode.TRIANGLES,
             indices=[0, 1, 2, 0, 2, 3],
             instances=None,
             batch=None,
@@ -91,7 +93,7 @@ class TestDefaultShader(unittest.TestCase):
     def test_index_vertex_list_create_batch_no_group(self):
         vlist = self.program._vertex_list_create(  # noqa: SLF001
             count=4,
-            mode=GL_TRIANGLES,
+            mode=GeometryMode.TRIANGLES,
             indices=[0, 1, 2, 0, 2, 3],
             instances=None,
             batch=self.batch,
@@ -107,7 +109,7 @@ class TestDefaultShader(unittest.TestCase):
         from pyglet.graphics import Group
         vlist = self.program._vertex_list_create(  # noqa: SLF001
             count=4,
-            mode=GL_TRIANGLES,
+            mode=GeometryMode.TRIANGLES,
             indices=[0, 1, 2, 0, 2, 3],
             instances=None,
             batch=self.batch,

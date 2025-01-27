@@ -1,5 +1,8 @@
-import pyglet
+from __future__ import annotations
+
 import random
+
+import pyglet
 
 
 WIDTH = 1280

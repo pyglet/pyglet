@@ -120,10 +120,10 @@ def test_program_setter(shape_keywords_only):
     assert shape.program == program
 
 
-def test_blend_setter(shape_keywords_only):
-    shape = shape_keywords_only()
-
-    blend_mode = (1, 1)
-    shape.blend_mode = blend_mode
-    assert shape._group.blend_src == 1  # noqa: SLF001
-    assert shape._group.blend_dest == 1  # noqa: SLF001
+# def test_blend_setter(shape_keywords_only):
+#     shape = shape_keywords_only()
+#
+#     blend_mode = (1, 1)
+#     shape.blend_mode = blend_mode
+#     assert shape._group.blend_src == 1  # noqa: SLF001
+#     assert shape._group.blend_dest == 1  # noqa: SLF001

@@ -12,7 +12,7 @@ A checkerboard background is visible behind any transparent areas.
 import sys
 
 import pyglet
-from pyglet.gl import (
+from pyglet.graphics.api.gl import (
     glEnable,
     glBlendFunc,
     GL_BLEND,

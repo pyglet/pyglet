@@ -13,7 +13,7 @@ The code shown here illustrates:
 """
 import pyglet
 
-from pyglet.gl import (
+from pyglet.graphics.api.gl import (
     glActiveTexture,
     glBindTexture,
     glEnable,
