@@ -191,7 +191,7 @@ class XlibWindow(BaseWindow):
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
             del self.display._window_map[self._window]  # noqa: SLF001
-            del self.display._window_map[self._view]  # noqa: SLF001
+            del self.display._window_map[self._x_window]  # noqa: SLF001
             self._window = None
             self._mapped = False
 
@@ -511,7 +511,7 @@ class XlibWindow(BaseWindow):
             xlib.XDestroyWindow(self._x_display, self._window)
 
         del self.display._window_map[self._window]  # noqa: SLF001
-        del self.display._window_map[self._view]
+        del self.display._window_map[self._x_window]
         self._window = None
 
         self._view_event_handlers.clear()
@@ -582,7 +582,7 @@ class XlibWindow(BaseWindow):
         self.dispatch_event('_on_internal_resize', width, height)
 
     def _update_view_size(self) -> None:
-        xlib.XResizeWindow(self._x_display, self._view, self._width, self._height)
+        xlib.XResizeWindow(self._x_display, self._x_window, self._width, self._height)
 
     def set_location(self, x: int, y: int) -> None:
         if self._is_reparented():
@@ -746,11 +746,11 @@ class XlibWindow(BaseWindow):
             elif self._fullscreen and not self.screen._xinerama:  # noqa: SLF001
                 # Restrict to fullscreen area (prevent viewport scrolling)
                 self.set_mouse_position(0, 0)
-                r = xlib.XGrabPointer(self._x_display, self._view,
+                r = xlib.XGrabPointer(self._x_display, self._x_window,
                                       True, 0,
                                       xlib.GrabModeAsync,
                                       xlib.GrabModeAsync,
-                                      self._view,
+                                      self._x_window,
                                       0,
                                       xlib.CurrentTime)
                 if r:
@@ -1007,7 +1007,7 @@ class XlibWindow(BaseWindow):
         # Cache these in case window is closed from an event handler
         _x_display = self._x_display
         _window = self._window
-        _view = self._x_window
+        _x_window = self._x_window
 
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(_x_display, _window, 0x1ffffff, byref(e)):
@@ -1019,7 +1019,7 @@ class XlibWindow(BaseWindow):
             self.dispatch_platform_event(e)
 
         # Check for the events specific to this view
-        while xlib.XCheckWindowEvent(_x_display, _view, 0x1ffffff, byref(e)):
+        while xlib.XCheckWindowEvent(_x_display, _x_window, 0x1ffffff, byref(e)):
             # Key events are filtered by the xlib window event
             # handler so they get a shot at the prefiltered event.
             if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
