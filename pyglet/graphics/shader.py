@@ -4,11 +4,11 @@ import ctypes
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal, Sequence, Type, Any, TYPE_CHECKING, Callable, Protocol
+from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import DataTypes
-    from pyglet.graphics.vertexdomain import IndexedVertexList
+    from pyglet.customtypes import DataTypes, CType
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
     from pyglet.graphics import GeometryMode, Batch, Group
     from _weakref import CallableProxyType
 
@@ -232,7 +232,7 @@ class Attribute:
     """Abstract accessor for an attribute in a mapped buffer."""
     stride: int
     element_size: int
-    c_type: CTypesDataType
+    c_type: CType
     instance: bool
     normalize: bool
     count: int
@@ -310,7 +310,10 @@ class Attribute:
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 class UniformBufferObjectBase:
-    ...
+    @abstractmethod
+    def read(self) -> bytes:
+        raise NotImplementedError
+
 
 class UniformBlockBase:
     program: CallableProxyType[Callable[..., Any] | Any] | Any
@@ -320,7 +323,7 @@ class UniformBlockBase:
     binding: int
     uniforms: dict
     view_cls: type[ctypes.Structure] | None
-    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls', 'uniform_count'
+    __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgramBase, name: str, index: int, size: int, binding: int,
                  uniforms: dict, uniform_count: int) -> None:
@@ -333,6 +336,10 @@ class UniformBlockBase:
         self.uniforms = uniforms
         self.uniform_count = uniform_count
         self.view_cls = None
+
+    def bind(self, ubo: UniformBufferObjectBase) -> None:
+        """Bind the Uniform Buffer Object to the binding point of this Uniform Block."""
+        raise NotImplementedError
 
     def create_ubo(self) -> UniformBufferObjectBase:
         """Create a new UniformBufferObject from this uniform block."""

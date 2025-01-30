@@ -82,9 +82,11 @@ def test_shader_ubo_data_structure():
         pyglet.graphics.Shader(fragment_source, "fragment"),
     )
 
-    ubo = program.uniform_blocks['EntityDataBlock'].create_ubo()
+    entity_block = program.uniform_blocks['EntityDataBlock']
+    ubo = entity_block.create_ubo()
+    entity_block.bind(ubo)
 
-    cls_struct = program.uniform_blocks['EntityDataBlock'].view_cls
+    cls_struct = entity_block.view_cls
     
     test_data = (5.0, 1.0, 5125.0, 4.0)
     

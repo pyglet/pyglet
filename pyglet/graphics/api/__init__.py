@@ -7,6 +7,7 @@ from pyglet.graphics.api.base import ResourceManagement
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import GraphicsConfig
+    from pyglet.graphics.shader import ShaderType
 
 global_backend = None
 
@@ -66,4 +67,5 @@ def have_extension(extension_name: str) -> bool:
     return global_backend.have_extension(extension_name)
 
 
-
+def get_cached_shader(name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
+    return global_backend.get_cached_shader(name, *sources)

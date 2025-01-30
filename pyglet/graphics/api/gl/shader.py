@@ -25,22 +25,18 @@ from ctypes import (
     create_string_buffer,
     pointer,
     sizeof,
-    string_at,
 )
 from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 
 import pyglet
 from pyglet.graphics.api.gl import GLException, gl
 from pyglet.graphics.api.gl import (
-    GL_ARRAY_BUFFER,
     GL_FALSE,
     GL_INFO_LOG_LENGTH,
     GL_LINK_STATUS,
-    GL_MAP_READ_BIT,
     GL_TRUE,
     GL_UNIFORM_BUFFER,
     glAttachShader,
-    glBindBuffer,
     glBindBufferBase,
     glCreateProgram,
     glDeleteProgram,
@@ -52,15 +48,13 @@ from pyglet.graphics.api.gl import (
     glGetProgramInfoLog,
     glGetProgramiv,
     glLinkProgram,
-    glMapBufferRange,
     glMemoryBarrier,
-    glUnmapBuffer,
     glUseProgram,
     glVertexAttribDivisor,
     glVertexAttribPointer,
 )
 from pyglet.graphics.shader import ShaderSource, ShaderType, ShaderBase, Attribute, \
-    ShaderProgramBase
+    ShaderProgramBase, UniformBufferObjectBase
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import BufferObject
@@ -292,8 +286,17 @@ class _UniformArray:
     _ptr: CTypesPointer[GLDataType]
     _idx_to_loc: dict[int, int]
 
-    __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr',
-                 '_idx_to_loc')
+    __slots__ = (
+        '_c_array',
+        '_dsa',
+        '_gl_getter',
+        '_gl_setter',
+        '_gl_type',
+        '_idx_to_loc',
+        '_is_matrix',
+        '_ptr',
+        '_uniform',
+    )
 
     def __init__(self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
                  dsa: bool) -> None:
@@ -431,7 +434,7 @@ class _Uniform:
     get: Callable[[], Array[GLDataType] | GLDataType]
     set: Callable[[float], None] | Callable[[Sequence], None]
 
-    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program', 'name'
+    __slots__ = 'count', 'get', 'length', 'location', 'name', 'program', 'set', 'size', 'type'
 
     def __init__(self, program: int, name: str, uniform_type: int, size: int, location: int, dsa: bool) -> None:
         self.name = name
@@ -622,7 +625,7 @@ class UniformBlock:
     binding: int
     uniforms: dict[int, tuple[str, GLDataType, int, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls', 'uniform_count'
+    __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int) -> None:
@@ -634,12 +637,17 @@ class UniformBlock:
         self.binding = binding
         self.uniforms = uniforms
         self.uniform_count = uniform_count
-        self.view_cls = None
+        self.view_cls = self._create_structure()
+
+    def _create_structure(self):
+        return self._introspect_uniforms()
+
+    def bind(self, ubo: UniformBufferObject) -> None:
+        """Bind buffer to the binding point."""
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.binding, ubo.buffer.id)
 
     def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        if self.view_cls is None:
-            self.view_cls = self._introspect_uniforms()
         return UniformBufferObject(self.view_cls, self.size, self.binding)
 
     def set_binding(self, binding: int) -> None:
@@ -790,17 +798,17 @@ class UniformBlock:
                 f"binding={self.binding})")
 
 
-class UniformBufferObject:
+class UniformBufferObject(UniformBufferObjectBase):
     buffer: BufferObject
     view: Structure
     _view_ptr: CTypesPointer[Structure]
     binding: int
-    buffer: BufferObject
-    __slots__ = 'buffer', 'view', '_view_ptr', 'binding'
+
+    __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
 
     def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
         """Initialize the Uniform Buffer Object with the specified Structure."""
-        self.buffer = BufferObject(buffer_size)
+        self.buffer = BufferObject(buffer_size, target=GL_UNIFORM_BUFFER)
         self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.binding = binding
@@ -810,24 +818,14 @@ class UniformBufferObject:
         """The buffer ID associated with this UBO."""
         return self.buffer.id
 
-    def bind(self) -> None:
-        """Bind this buffer to the bind point established by the UniformBuffer parent."""
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.binding, self.buffer.id)
-
-    def read(self) -> bytes:
+    def read(self) -> Array:
         """Read the byte contents of the buffer."""
-        glBindBuffer(GL_ARRAY_BUFFER, self.buffer.id)
-        ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, self.buffer.size, GL_MAP_READ_BIT)
-        data = string_at(ptr, size=self.buffer.size)
-        glUnmapBuffer(GL_ARRAY_BUFFER)
-        return data
+        return self.buffer.get_data()
 
     def __enter__(self) -> Structure:
-        # Return the view to the user in a `with` context:
         return self.view
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
-        self.bind()
         self.buffer.set_data(self._view_ptr)
 
     def __repr__(self) -> str:
@@ -1223,7 +1221,7 @@ class ShaderProgram(ShaderProgramBase):
     _context: OpenGLWindowContext | None
     _uniforms: dict[str, _Uniform]
 
-    __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks'
+    __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
     def __init__(self, *shaders: Shader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""

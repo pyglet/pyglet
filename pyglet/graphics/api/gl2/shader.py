@@ -26,7 +26,7 @@ import pyglet
 import pyglet.graphics.api.gl.gl_compat as gl
 from pyglet.customtypes import DataTypes, CTypesPointer
 from pyglet.graphics.api.gl import GLException
-from pyglet.graphics.api.gl import (
+from pyglet.graphics.api.gl.gl_compat import (
     GL_FALSE,
     GL_INFO_LOG_LENGTH,
     GL_LINK_STATUS,
