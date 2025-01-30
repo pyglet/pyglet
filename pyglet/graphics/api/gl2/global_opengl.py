@@ -7,7 +7,7 @@ from typing import Sequence, TYPE_CHECKING
 import pyglet
 from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 from pyglet.graphics.api.base import WindowTransformations
-from pyglet.graphics.api.gl.gl_compat import glMatrixMode, GL_PROJECTION, glLoadMatrixf, GL_MODELVIEW, glViewport
+from pyglet.graphics.api.gl.gl_compat import glMatrixMode, GL_PROJECTION, glLoadMatrixf, GL_MODELVIEW
 
 from pyglet.math import Mat4
 
@@ -67,8 +67,8 @@ class OpenGL2Backend(OpenGLBackend):
         These will be used during Window creation.
         """
         return [
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=24, major_version=2, minor_version=0),
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=16, major_version=2, minor_version=0),
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0),
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0),
         ]
 
     def initialize_matrices(self, window):

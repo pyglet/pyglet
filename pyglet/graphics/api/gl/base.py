@@ -81,11 +81,6 @@ class OpenGLConfig(GraphicsConfig):
         """
         return [(name, getattr(self, name)) for name in self._attributes]
 
-    @property
-    def backend(self) -> OpenGLBackend:
-        """The backend object this config belongs to."""
-        return self._backend  # type: ignore
-
     # def create_context(self, window: Window, share: Context | None) -> Context:
     #     """Create a GL context that satisifies this configuration.
     #

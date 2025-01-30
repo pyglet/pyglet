@@ -140,7 +140,7 @@ class GraphicsConfig:
     combination of attributes together.
     """
 
-    def __init__(self, backend: BackendGlobalObject, **kwargs: float | str) -> None:
+    def __init__(self, **kwargs: float | str) -> None:
         """Create a template config with the given attributes.
 
         Specify attributes as keyword arguments, for example::
@@ -148,7 +148,6 @@ class GraphicsConfig:
             template = UserConfig(double_buffer=True)
 
         """
-        self._backend = backend
         self._finalized_config: VerifiedGraphicsConfig | None = None
         self._attributes = {}
         self._user_set_attributes = set()
@@ -173,11 +172,6 @@ class GraphicsConfig:
             else:
                 self._attributes[attr_name] = default_value
                 setattr(self, attr_name, default_value)
-
-    @property
-    def backend(self) -> BackendGlobalObject:
-        """The backend object this config belongs to."""
-        return self._backend
 
     @abstractmethod
     def match(self, window: Window) -> VerifiedGraphicsConfig | None:

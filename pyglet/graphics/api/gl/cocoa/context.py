@@ -4,11 +4,11 @@ import platform
 from ctypes import byref, c_int, c_uint32
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLWindowContext
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLWindowContext, ContextException
 from pyglet.libs.darwin import cocoapy, quartz
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl.base import OpenGLBackend
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.window.cocoa import CocoaWindow
 
 NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')

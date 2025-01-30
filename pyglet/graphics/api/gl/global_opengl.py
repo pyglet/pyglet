@@ -51,7 +51,9 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
             backend.create_shader(self._default_vertex_source, 'vertex'),
             backend.create_shader(self._default_fragment_source, 'fragment'))
 
-        self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
+        window_block = self._default_program.uniform_blocks['WindowBlock']
+        self.ubo = window_block.create_ubo()
+        window_block.bind(self.ubo)
 
         self._viewport = (0, 0, *window.get_framebuffer_size())
 
@@ -122,22 +124,26 @@ class OpenGLBackend(BackendGlobalObject):
         if pyglet.options['shadow_window'] and not _is_pyglet_doc_run:
             self._shadow_window = _create_shadow_window()
 
+    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLWindowContext | None):
+        return config.create_context(self, shared)
+
     def get_window_backend_context(self, window: Window, config: OpenGLWindowConfig) -> WindowGraphicsContext:
-        context = self.windows[window] = config.create_context(self, self.current_context)
+        context = self.windows[window] = self.create_context(config, self.current_context)
         self._have_context = True
         return context
 
     def get_default_configs(self) -> Sequence[pyglet.graphics.api.gl.OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.
 
-        These will be used during Window creation."""
+        These will be used during Window creation.
+        """
         return [
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
         ]
 
     def get_config(self, **kwargs: float | str | None) -> pyglet.graphics.api.gl.OpenGLConfig:
-        return pyglet.graphics.api.gl.OpenGLConfig(self, **kwargs)
+        return pyglet.graphics.api.gl.OpenGLConfig(**kwargs)
 
     def get_info(self):
         return self.current_context.get_info()

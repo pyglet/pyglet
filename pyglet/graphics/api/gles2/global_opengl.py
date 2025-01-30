@@ -73,9 +73,9 @@ class OpenGLES2Backend(OpenGLBackend):
         These will be used during Window creation.
         """
         return [
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=24,
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24,
                                                 major_version=2, minor_version=0, opengl_api="gles"),
-            pyglet.graphics.api.gl.OpenGLConfig(self, double_buffer=True, depth_size=16,
+            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16,
                                                 major_version=2, minor_version=0, opengl_api="gles"),
         ]
 

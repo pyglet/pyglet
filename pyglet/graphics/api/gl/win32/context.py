@@ -4,7 +4,6 @@ from ctypes import c_int, c_uint
 
 from _ctypes import sizeof, byref
 
-from pyglet.graphics.api.gl import glClearColor, gl
 from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLWindowContext, ContextException
 from pyglet.graphics.api.gl.win32 import wglext_arb, wgl
 from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
@@ -21,11 +20,11 @@ if TYPE_CHECKING:
 class Win32OpenGLConfig(OpenGLConfig):
 
     def match(self, window: Win32Window) -> Win32OpenGLWindowConfig | None:
-        # Use ARB API if available
-
         # Backend may not be done loading during the match process, load in func.
-        if self.backend.current_context and self.backend.get_info().have_extension('WGL_ARB_pixel_format'):
-            finalized_config = self._get_arb_pixel_format_matching_configs(window)
+        from pyglet.graphics.api import global_backend
+
+        if global_backend.current_context and global_backend.get_info().have_extension('WGL_ARB_pixel_format'):
+            finalized_config = self._get_arb_pixel_format_matching_configs(window, global_backend)
         else:
             finalized_config = self._get_pixel_format_descriptor_matching_configs(window)
 
@@ -73,13 +72,13 @@ class Win32OpenGLConfig(OpenGLConfig):
 
         return None
 
-    def _get_arb_pixel_format_matching_configs(self, window: Win32Window) -> Win32ARBOpenGLWindowConfig | None:
+    def _get_arb_pixel_format_matching_configs(self, window: Win32Window, global_backend: OpenGLBackend) -> Win32ARBOpenGLWindowConfig | None:
         """Get configs using the WGL_ARB_pixel_format extension.
 
         This method assumes a (dummy) GL context is already created.
         """
         # Check for required extensions
-        if (self.sample_buffers or self.samples) and not self.backend.current_context.get_info().have_extension('GL_ARB_multisample'):
+        if (self.sample_buffers or self.samples) and not global_backend.current_context.get_info().have_extension('GL_ARB_multisample'):
             return None
 
         # Construct array of attributes
