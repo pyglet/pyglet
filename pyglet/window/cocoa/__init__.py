@@ -33,7 +33,7 @@ CAMetalLayer = cocoapy.ObjCClass('CAMetalLayer')
 
 
 class CocoaMouseCursor(MouseCursor):
-    gl_drawable = False
+    api_drawable = False
 
     def __init__(self, cursorName: str) -> None:
         # cursorName is a string identifying one of the named default NSCursors
@@ -561,7 +561,7 @@ class CocoaWindow(BaseWindow):
                 SystemCursor.unhide()
             # If the mouse cursor is OpenGL drawable, then it we need to hide
             # the system mouse cursor, so that the cursor can draw itself.
-            elif self._mouse_cursor.gl_drawable:
+            elif self._mouse_cursor.api_drawable:
                 SystemCursor.hide()
             # Otherwise, show the default cursor.
             else:

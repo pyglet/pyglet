@@ -90,7 +90,7 @@ _motion_map: dict[tuple[int, bool], int] = {
 
 
 class Win32MouseCursor(MouseCursor):
-    gl_drawable: bool = False
+    api_drawable: bool = False
     hw_drawable: bool = True
 
     def __init__(self, cursor: HCURSOR) -> None:
@@ -485,7 +485,7 @@ class Win32Window(BaseWindow):
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
-                                (not self._mouse_cursor.gl_drawable or self._mouse_cursor.hw_drawable)) or \
+                                (not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable)) or \
                                (not self._mouse_in_window or
                                 not self._has_focus)
 

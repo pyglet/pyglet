@@ -1,7 +1,7 @@
 """Windowing and user-interface events.
 
-This module allows applications to create and display windows with an
-OpenGL context.  Windows can be created with a variety of border styles
+This module allows applications to create and display windows with a
+graphical context.  Windows can be created with a variety of border styles
 or set fullscreen.
 
 You can register event handlers for keyboard, mouse and window events.
@@ -62,16 +62,16 @@ opening a fullscreen window on each screen::
 
 Specifying a screen has no effect if the window is not fullscreen.
 
-Specifying the OpenGL context properties
+Specifying the Graphical context properties
 ----------------------------------------
 
 Each window has its own context which is created when the window is created.
 You can specify the properties of the context before it is created
 by creating a "template" configuration::
 
-    from pyglet import gl
+    from pyglet.graphics.api import get_config
     # Create template config
-    config = gl.Config()
+    config = get_config()
     config.stencil_size = 8
     config.aux_buffers = 4
     # Create a window using this config
@@ -98,14 +98,12 @@ import pyglet.window.key
 import pyglet.window.mouse
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
-#from pyglet.graphics import shader
 from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
-    from pyglet.backend.base import VerifiedGraphicsConfig
-    from pyglet.graphics.api.gl import OpenGLWindowContext, OpenGLConfig
-    from pyglet.display import Display, Screen, ScreenMode
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, WindowGraphicsContext, GraphicsConfig
+    from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
@@ -134,8 +132,8 @@ class MouseCursorException(WindowException):
 class MouseCursor:
     """An abstract mouse cursor."""
 
-    #: Indicates if the cursor is drawn using OpenGL, or natively.
-    gl_drawable: bool = True
+    #: Indicates if the cursor is drawn via the graphical api, or natively by the operating system.
+    api_drawable: bool = True
     hw_drawable: bool = False
 
     def draw(self, x: int, y: int) -> None:
@@ -157,7 +155,7 @@ class MouseCursor:
 
 class DefaultMouseCursor(MouseCursor):
     """The default mouse cursor set by the operating system."""
-    gl_drawable: bool = False
+    api_drawable: bool = False
     hw_drawable: bool = True
 
 
@@ -165,9 +163,9 @@ class ImageMouseCursor(MouseCursor):
     """A user-defined mouse cursor created from an image.
 
     Use this class to create your own mouse cursors and assign them
-    to windows. Cursors can be drawn by OpenGL, or optionally passed
+    to windows. Cursors can be drawn by the graphics API, or optionally passed
     to the OS to render natively. There are no restrictions on cursors
-    drawn by OpenGL, but natively rendered cursors may have some
+    drawn by the graphical API, but natively rendered cursors may have some
     platform limitations (such as color depth, or size). In general,
     reasonably sized cursors will render correctly
     """
@@ -186,7 +184,7 @@ class ImageMouseCursor(MouseCursor):
                 Y coordinate of the "hot" spot in the image, relative to the image's anchor.
                 May be clamped to the maximum image height if acceleration is enabled.
             acceleration:
-                If ``True``, draw the cursor natively instead of using OpenGL.
+                If ``True``, draw the cursor natively instead of using the graphics API.
                 The image may be downsampled or color reduced to fit the platform limitations.
         """
         self.texture = image.get_texture()
@@ -256,8 +254,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     A window is a "heavyweight" object occupying operating system resources.
     The "client" or "content" area of a window is filled entirely with
-    an OpenGL viewport.  Applications have no access to operating system
-    widgets or controls; all rendering must be done via OpenGL.
+    a graphical API's viewport, if enabled.  Applications have no access to operating system
+    widgets or controls; all rendering must be done via a graphical API backend.
 
     Windows may appear as floating regions or can be set to fill an entire
     screen (fullscreen).  When floating, windows may appear borderless or
@@ -269,7 +267,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     conventions.  This will ensure it is not obscured by other windows,
     and appears on an appropriate screen for the user.
 
-    To render into a window, you must first call its :py:meth:`.switch_to`
+    For OpenGL, to render into a window, you must first call its :py:meth:`.switch_to`
     method to make it the active OpenGL context. If you use only one
     window in your application, you can skip this step as it will always
     be the active context.
@@ -374,7 +372,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _file_drops: bool = False
     _screen: Screen | None = None
     _config: VerifiedGraphicsConfig | None = None
-    _context: OpenGLWindowContext | None = None
+    _context: WindowGraphicsContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
@@ -421,8 +419,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: OpenGLConfig | None = None,
-                 context: OpenGLWindowContext | None = None,
+                 config: GraphicsConfig | None = None,
+                 context: WindowGraphicsContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
 
@@ -665,7 +663,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         :py:meth:`~pyglet.window.Window.on_draw` and
         :py:meth:`~pyglet.window.Window.on_refresh`
         events. Finally, it calls the :py:meth:`~pyglet.window.Window.flip`
-        method to swap the front and back OpenGL buffers.
+        method to swap the front and back buffers.
         """
         self.before_draw()
         self.dispatch_event('on_draw')
@@ -684,13 +682,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         # Draw mouse cursor if set and visible.
 
-        if self._mouse_cursor.gl_drawable and self._mouse_visible and self._mouse_in_window:
+        if self._mouse_cursor.api_drawable and self._mouse_visible and self._mouse_in_window:
             # TODO: consider projection differences
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
 
     @abstractmethod
     def flip(self) -> None:
-        """Swap the OpenGL front and back buffers.
+        """Swap the front and back buffers.
 
         Call this method on a double-buffered window to update the
         visible display with the back buffer. Windows are
@@ -1129,7 +1127,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     @abstractmethod
     def switch_to(self) -> None:
-        """Make this window the current OpenGL rendering context.
+        """Make this window the current rendering context.
 
         Only one OpenGL context can be active at a time. This method
         sets the current window context as the active one.
@@ -1187,12 +1185,12 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     @property
     def config(self) -> VerifiedGraphicsConfig:
-        """A GL config describing the context of this window.  Read-only."""
+        """A graphical config describing the context of this window.  Read-only."""
         return self._config
 
     @property
-    def context(self) -> OpenGLWindowContext:
-        """The OpenGL context attached to this window.  Read-only."""
+    def context(self) -> WindowGraphicsContext:
+        """The graphical context attached to this window.  Read-only."""
         return self._context
 
     # These are the only properties that can be set
@@ -1250,7 +1248,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     @property
     def projection(self) -> Mat4:
-        """The OpenGL window projection matrix. Read-write.
+        """The window projection matrix. Read-write.
 
         This matrix is used to transform vertices when using any of the built-in
         drawable classes. `view` is done first, then `projection`.
@@ -1271,7 +1269,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
     @property
     def view(self) -> Mat4:
-        """The OpenGL window view matrix. Read-write.
+        """The window view matrix. Read-write.
 
         This matrix is used to transform vertices when using any of the built-in
         drawable classes. `view` is done first, then `projection`.

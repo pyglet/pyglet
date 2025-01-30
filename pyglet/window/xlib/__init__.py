@@ -111,7 +111,7 @@ class XlibException(WindowException):
 
 
 class XlibMouseCursor(MouseCursor):
-    gl_drawable: bool = False
+    api_drawable: bool = False
     hw_drawable: bool = True
 
     def __init__(self, cursor: xlib.Cursor) -> None:
@@ -691,7 +691,7 @@ class XlibWindow(BaseWindow):
         if not self._window:
             return
         if platform_visible is None:
-            platform_visible = self._mouse_visible and not self._mouse_cursor.gl_drawable
+            platform_visible = self._mouse_visible and not self._mouse_cursor.api_drawable
 
         if platform_visible is False:
             # Hide pointer by creating an empty cursor:
@@ -1058,7 +1058,7 @@ class XlibWindow(BaseWindow):
             event_handler(e)
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def _translate_modifiers(state: int) -> int:
         modifiers = 0
         if state & xlib.ShiftMask:
@@ -1204,10 +1204,9 @@ class XlibWindow(BaseWindow):
                     for auto_event in reversed(saved):
                         xlib.XPutBackEvent(self._x_display, byref(auto_event))
                     return
-                else:
-                    # Key code of press did not match, therefore no repeating
-                    # is going on, stop searching.
-                    break
+                # Key code of press did not match, therefore no repeating
+                # is going on, stop searching.
+                break
             # Whoops, put the events back, it's for real.
             for auto_event in reversed(saved):
                 xlib.XPutBackEvent(self._x_display, byref(auto_event))
@@ -1527,7 +1526,7 @@ class XlibWindow(BaseWindow):
             self._current_sync_valid = False
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def _translate_button(value: int) -> int:
         """Translate mouse button values to match mouse constants.
 
