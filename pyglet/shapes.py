@@ -846,7 +846,7 @@ class Arc(ShapeBase):
             # Each segment is now 6 vertices long
             self._segments * 6 + (6 if self._closed else 0),
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
@@ -1008,7 +1008,7 @@ class BezierCurve(ShapeBase):
         super().__init__(
             self._segments * 6,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def _make_curve(self, t: float) -> list[float]:
         n = len(self._points) - 1
@@ -1150,7 +1150,7 @@ class Circle(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1263,7 +1263,7 @@ class Ellipse(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1395,7 +1395,7 @@ class Sector(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -2179,7 +2179,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         super().__init__(
             (sum(self._segments) + 4) * 3,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         if isinstance(radius, (int, float)):
@@ -2489,7 +2489,7 @@ class Star(ShapeBase):
         super().__init__(
             num_spikes * 6,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -2708,7 +2708,7 @@ class MultiLine(ShapeBase):
         super().__init__(
             (len(self._coordinates) - 1) * 6,
             blend_src, blend_dest, batch, group, program,
-            )
+        )
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
