@@ -131,7 +131,8 @@ class DirectInputDevice(base.Device):
         if window is None:
             # Pick any open window, or the shadow window if no windows
             # have been created yet.
-            window = pyglet.gl._shadow_window
+            # TODO: consider the "shadow window" concept for non-GL backends.
+            # window = pyglet.gl._shadow_window
             for window in pyglet.app.windows:
                 break
 
