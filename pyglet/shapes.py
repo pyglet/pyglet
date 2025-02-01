@@ -84,7 +84,7 @@ vertex_source = """#version 150 core
     in vec2 translation;
     in vec4 colors;
     in float rotation;
-
+    in vec2 scale;
 
     out vec4 vertex_colors;
 
@@ -96,6 +96,7 @@ vertex_source = """#version 150 core
 
     mat4 m_rotation = mat4(1.0);
     mat4 m_translate = mat4(1.0);
+    mat4 m_scale = mat4(1.0);
 
     void main()
     {
@@ -105,8 +106,10 @@ vertex_source = """#version 150 core
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
+        m_scale[0][0] = scale.x;
+        m_scale[1][1] = scale.y;
 
-        gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 0.0, 1.0);
         vertex_colors = colors;
     }
 """
@@ -300,6 +303,7 @@ class ShapeBase(ABC):
     # doing so doesn't require None-handling from some type checkers.
     _rgba = (255, 255, 255, 255)
     _rotation: float = 0.0
+    _scale: scale = 1.0
     _visible: bool = True
     _x: float = 0.0
     _y: float = 0.0
@@ -485,6 +489,15 @@ class ShapeBase(ABC):
     def rotation(self, rotation: float) -> None:
         self._rotation = rotation
         self._vertex_list.rotation[:] = (rotation,) * self._num_verts
+
+    @property
+    def scale(self) -> float:
+        return self._scale
+
+    @scale.setter
+    def scale(self, scale: float) -> None:
+        self._scale = scale
+        self._vertex_list.scale[:] = (self._scale, self._scale) * self._num_verts
 
     def draw(self) -> None:
         """Debug method to draw a single shape at its current position.
@@ -833,11 +846,12 @@ class Arc(ShapeBase):
             # Each segment is now 6 vertices long
             self._segments * 6 + (6 if self._closed else 0),
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -994,7 +1008,7 @@ class BezierCurve(ShapeBase):
         super().__init__(
             self._segments * 6,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def _make_curve(self, t: float) -> list[float]:
         n = len(self._points) - 1
@@ -1008,6 +1022,7 @@ class BezierCurve(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1135,7 +1150,7 @@ class Circle(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1144,6 +1159,7 @@ class Circle(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1247,7 +1263,7 @@ class Ellipse(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1261,6 +1277,7 @@ class Ellipse(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._segments * 3, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1378,7 +1395,7 @@ class Sector(ShapeBase):
         super().__init__(
             self._segments * 3,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -1393,6 +1410,7 @@ class Sector(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1534,6 +1552,7 @@ class Line(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1659,6 +1678,7 @@ class Rectangle(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             6, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -1801,6 +1821,7 @@ class BorderedRectangle(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
         self._vertex_list = self._program.vertex_list_indexed(
             8, self._draw_mode, indices, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -2014,6 +2035,7 @@ class Box(ShapeBase):
         indices = [0, 1, 2, 0, 2, 3, 0, 5, 4, 0, 4, 1, 4, 5, 6, 4, 6, 7, 2, 7, 6, 2, 6, 3]
         self._vertex_list = self._program.vertex_list_indexed(
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -2157,7 +2179,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         super().__init__(
             (sum(self._segments) + 4) * 3,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         if isinstance(radius, (int, float)):
@@ -2192,6 +2214,7 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -2342,6 +2365,7 @@ class Triangle(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             3, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -2465,7 +2489,7 @@ class Star(ShapeBase):
         super().__init__(
             num_spikes * 6,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
@@ -2477,6 +2501,7 @@ class Star(ShapeBase):
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             rotation=('f', (self._rotation,) * self._num_verts),
@@ -2602,6 +2627,7 @@ class Polygon(ShapeBase):
             self._num_verts, self._draw_mode,
             earcut.earcut(vertices),
             self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
@@ -2682,11 +2708,12 @@ class MultiLine(ShapeBase):
         super().__init__(
             (len(self._coordinates) - 1) * 6,
             blend_src, blend_dest, batch, group, program,
-        )
+            )
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
+            scale=('f', (self._scale, self._scale) * self._num_verts),
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
             translation=('f', (self._x, self._y) * self._num_verts))
