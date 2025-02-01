@@ -1,10 +1,10 @@
 import pytest
 import time
-import weakref
 
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug
+
 from pyglet.media.synthesis import Silence
 
 try:
@@ -70,7 +70,7 @@ def test_context_make_current(context):
 
 @pytest.fixture
 def buffer_pool(context):
-    return context.vk_queue.buffer_pool
+    return context.device.buffer_pool
 
 
 @pytest.fixture
