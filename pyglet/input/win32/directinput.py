@@ -129,8 +129,7 @@ class DirectInputDevice(base.Device):
             return
 
         if window is None:
-            # Pick any open window, or the shadow window if no windows
-            # have been created yet.
+            # Pick any open window, or the shadow window if no windows have been created yet.
             # TODO: consider the "shadow window" concept for non-GL backends.
             # window = pyglet.gl._shadow_window
             for window in pyglet.app.windows:
@@ -235,12 +234,12 @@ class DIDeviceManager(EventDispatcher):
         """
         if not self.registered:
             # If a specific window is not specified, find one.
-            if not window:
+            if window is None:
                 # Pick any open window, or the shadow window if no windows have been created yet.
-                window = pyglet.gl._shadow_window
-                if not window:
-                    for window in pyglet.app.windows:
-                        break
+                # TODO: consider the "shadow window" concept for non-GL backends.
+                # window = pyglet.gl._shadow_window
+                for window in pyglet.app.windows:
+                    break
 
             self.window = window
             if self.window is not None:
