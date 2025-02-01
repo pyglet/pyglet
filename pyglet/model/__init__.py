@@ -32,18 +32,19 @@ from math import pi, sin, cos
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet import gl, graphics
+from pyglet import graphics
 from pyglet.math import Mat4
 
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
-from .codecs.base import Material, Scene
+from .codecs.base import SimpleMaterial, Scene
+
 
 if TYPE_CHECKING:
     from typing import BinaryIO, TextIO
     from pyglet.image import Texture
     from pyglet.graphics import Batch, Group
-    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
     from pyglet.image import Texture
     from pyglet.model.codecs import ModelDecoder
@@ -68,13 +69,13 @@ def load(filename: str, file: BinaryIO | TextIO | None = None, decoder: ModelDec
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.gl.current_context.create_program((MaterialGroup.default_vert_src, 'vertex'),
-                                                    (MaterialGroup.default_frag_src, 'fragment'))
+    return pyglet.graphics.api.global_backend.current_context.create_program(
+        (MaterialGroup.default_vert_src, 'vertex'), (MaterialGroup.default_frag_src, 'fragment'))
 
 
 def get_default_textured_shader() -> ShaderProgram:
-    return pyglet.gl.current_context.create_program((TexturedMaterialGroup.default_vert_src, 'vertex'),
-                                                    (TexturedMaterialGroup.default_frag_src, 'fragment'))
+    return pyglet.graphics.api.global_backend.current_context.create_program(
+        (TexturedMaterialGroup.default_vert_src, 'vertex'), (TexturedMaterialGroup.default_frag_src, 'fragment'))
 
 
 class Model:
@@ -123,7 +124,7 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            self._batch.migrate(vlist, gl.GL_TRIANGLES, group, batch)
+            self._batch.migrate(vlist, graphics.GeometryMode.TRIANGLES, group, batch)
 
         self._batch = batch
 
@@ -137,22 +138,13 @@ class Model:
         for group in self.groups:
             group.matrix = matrix
 
-    def draw(self) -> None:
-        """Draw the model.
-
-        This is not recommended. See the module documentation
-        for information on efficient drawing of multiple models.
-        """
-        gl.current_context.window_block.bind(0)
-        self._batch.draw_subset(self.vertex_lists)
-
 
 class BaseMaterialGroup(graphics.Group):
     default_vert_src: str
     default_frag_src: str
     matrix: Mat4 = Mat4()
 
-    def __init__(self, material: Material, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.material = material
         self.program = program
@@ -209,16 +201,17 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def __init__(self, material: Material, program: ShaderProgram,
+    def __init__(self, material: SimpleMaterial, program: ShaderProgram,
                  texture: Texture, order: int = 0, parent: Group | None = None):
         super().__init__(material, program, order, parent)
         self.texture = texture
 
     def set_state(self) -> None:
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(self.texture.target, self.texture.id)
-        self.program.use()
-        self.program['model'] = self.matrix
+        # gl.glActiveTexture(gl.GL_TEXTURE0)
+        # gl.glBindTexture(self.texture.target, self.texture.id)
+        # self.program.use()
+        # self.program['model'] = self.matrix
+        pass
 
     def __hash__(self) -> int:
         return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
@@ -305,7 +298,7 @@ class Cube(Model):
         self._program = program if program else get_default_shader()
 
         # Create a Material and Group for the Model
-        self._material = material if material else pyglet.model.Material(name="cube")
+        self._material = material if material else SimpleMaterial(name="cube")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._vlist = self._create_vertexlist()
@@ -342,7 +335,7 @@ class Cube(Model):
                    3, 7, 6, 3, 6, 2,    # top
                    0, 1, 5, 0, 5, 4)    # bottom
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
+        return self._program.vertex_list_indexed(len(vertices) // 3, graphics.GeometryMode.TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
                                                  POSITION=('f', vertices),
                                                  NORMAL=('f', normals),
@@ -361,7 +354,7 @@ class Sphere(Model):
         self._program = program if program else get_default_shader()
 
         # Create a Material and Group for the Model
-        self._material = material if material else pyglet.model.Material(name="sphere")
+        self._material = material if material else SimpleMaterial(name="sphere")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._vlist = self._create_vertexlist()
@@ -391,7 +384,7 @@ class Sphere(Model):
 
         normals = vertices
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
+        return self._program.vertex_list_indexed(len(vertices) // 3, graphics.GeometryMode.TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
                                                  POSITION=('f', vertices),
                                                  NORMAL=('f', normals),
