@@ -41,7 +41,7 @@ def mock_layout():
     _layout.foreground_decoration_group.attach_mock(program, 'program')
 
     # Allow the shader program to create a mock vertex list on demand
-    def _fake_vertex_list_method(count, mode, batch=None, group=None, colors=None, visible=None):
+    def _fake_vertex_list_method(count, mode, batch=None, group=None, colors=None, **kwargs):
         vertex_list = NonCallableMock(spec=IndexedVertexList)
         vertex_list.colors = ListSlicesAsTuple(colors[1])
         vertex_list.visible = (1, 1)
