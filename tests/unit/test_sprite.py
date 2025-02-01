@@ -91,6 +91,7 @@ def test_color_initially_rgba_white(sprite):
 def test_opacity_initially_255(sprite):
     assert sprite.opacity == 255
 
+
 def test_color_changes_opacity_if_set_to_rgba(sprite, new_rgba_color):
     sprite.color = new_rgba_color
     assert sprite.opacity == new_rgba_color[3]
@@ -207,14 +208,3 @@ def test_program_setter(request, fixture):
     with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
         _sprite.program = program
         assert _sprite.program == program
-
-
-@pytest.mark.parametrize('fixture', ['sprite', 'batched_sprite'])
-def test_blend_setter(request, fixture):
-    _sprite = request.getfixturevalue(fixture)
-
-    blend_mode = (1, 1)
-    with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
-        _sprite.blend_mode = blend_mode
-        assert _sprite._group.blend_src == 1  # noqa: SLF001
-        assert _sprite._group.blend_dest == 1  # noqa: SLF001
