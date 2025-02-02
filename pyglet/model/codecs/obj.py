@@ -4,13 +4,12 @@ import os
 
 import pyglet
 
-from pyglet.graphics.api.gl import GL_TRIANGLES
 from pyglet.util import asstr
 
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 from .. import Model, MaterialGroup, TexturedMaterialGroup
-from ...graphics import Batch, Group
+from ...graphics import Batch, Group, GeometryMode
 
 
 def _new_mesh(name, material):
@@ -18,13 +17,13 @@ def _new_mesh(name, material):
     attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
                   Attribute('NORMAL', 'f', 'VEC3', 0, []),
                   Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
-    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GL_TRIANGLES)
+    primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GeometryMode.TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
 
 
 def load_material_library(filename):
-    file = open(filename, 'r')
+    file = open(filename)
 
     name = None
     diffuse = [1.0, 1.0, 1.0]
@@ -73,7 +72,7 @@ def load_material_library(filename):
                 texture_name = values[1]
 
         except BaseException as ex:
-            raise ModelDecodeException('Parsing error in {0}.'.format((filename, ex)))
+            raise ModelDecodeException(f'Parsing error in {(filename, ex)}.')
 
     file.close()
 
@@ -93,7 +92,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
     try:
         if file is None:
-            with open(filename, 'r') as f:
+            with open(filename) as f:
                 file_contents = f.read()
         else:
             file_contents = asstr(file.read())
@@ -132,7 +131,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
         elif values[0] == 'mtllib':
             material_abspath = os.path.join(location, values[1])
-            materials = load_material_library(filename=material_abspath)            
+            materials = load_material_library(filename=material_abspath)
 
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])
@@ -214,7 +213,7 @@ class OBJScene(Scene):
                 # Add additional material data:
                 data['COLOR_0'] = 'f', material.diffuse * count
 
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup, **data))
+                vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
                 groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]

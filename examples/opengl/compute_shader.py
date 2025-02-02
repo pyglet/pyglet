@@ -25,7 +25,7 @@ void main() {
 }
 """
 
-program = pyglet.graphics.shader.ComputeShaderProgram(compute_src)
+program = pyglet.graphics.ComputeShaderProgram(compute_src)
 
 # Create an RGBA32F Texture that we can bind to the ShaderProgram.
 out_texture = pyglet.image.Texture.create(540, 540, internalformat=GL_RGBA32F)

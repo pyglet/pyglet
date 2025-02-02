@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum, auto
 
 
@@ -59,3 +60,14 @@ class TextureType(Enum):
     TYPE_1D_ARRAY = auto()
     TYPE_2D_ARRAY = auto()
     TYPE_CUBE_MAP_ARRAY = auto()
+
+
+class CompareOp(Enum):
+    NEVER = auto()
+    LESS = auto()
+    EQUAL = auto()
+    LESS_OR_EQUAL = auto()
+    GREATER = auto()
+    NOT_EQUAL = auto()
+    GREATER_OR_EQUAL = auto()
+    ALWAYS = auto()

@@ -8,7 +8,6 @@ outside the specified area. Drag the mouse to move the position.
 import pyglet
 
 from pyglet.sprite import Sprite
-from pyglet.graphics.api.gl import glEnable, glScissor, glDisable, GL_SCISSOR_TEST
 
 
 window = pyglet.window.Window(width=500, height=500)
@@ -52,22 +51,15 @@ class ScissorGroup(pyglet.graphics.Group):
         super().__init__(order, parent)
         self.x, self.y = x, y
         self.width, self.height = width, height
+        self.set_scissor(x, y, width, height)
 
     @property
     def area(self):
-        return self.x, self.y, self.width, self.height
+        return int(self.x), int(self.y), int(self.width), int(self.height)
 
     @area.setter
     def area(self, area):
         self.x, self.y, self.width, self.height = area
-
-    def set_state(self):
-        glEnable(GL_SCISSOR_TEST)
-        glScissor(int(self.x), int(self.y), self.width, self.height)
-
-    def unset_state(self):
-        glDisable(GL_SCISSOR_TEST)
-
 
 ###################################################
 # Create an instance of our Group, and some Sprites
@@ -90,6 +82,8 @@ for x in range(5):
 def on_mouse_drag(x, y, dx, dy, *etc):
     scissor_group.x += dx
     scissor_group.y += dy
+    scissor_group.update_data("scissor", scissor_group.area)
+
 
 
 pyglet.app.run()

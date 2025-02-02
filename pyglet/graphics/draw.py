@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import weakref
-from dataclasses import dataclass
 from typing import Any, Callable, Sequence, Tuple, TYPE_CHECKING
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp
+from pyglet.enums import BlendFactor, BlendOp, CompareOp
 from pyglet.graphics import GeometryMode
-from pyglet.graphics.state import State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState
+from pyglet.graphics.state import (
+    State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
+    DepthBufferComparison, ScissorState,
+)
 
 if TYPE_CHECKING:
     from pyglet.image.base import TextureBase
@@ -91,14 +93,15 @@ class Group:
         self._hash = hash((self._order, self.parent, self.hashable_states))
         self._dirty = True
 
-    def set_scissor(self, x, y, width, height):
-        self._add_state(ScissorState(x, y, width, height))
+    def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
+        self.data["scissor"] = [x, y, width, height]
+        self._add_state(ScissorState(self))
 
     def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD):
         self._add_state(BlendState(blend_src, blend_dst, blend_op))
 
-    def set_depth_test(self, func):
-        self._add_state(DepthTestState(func))
+    def set_depth_test(self, func: CompareOp) -> None:
+        self._add_state(DepthBufferComparison(func))
 
     def set_depth_write(self, flag):
         self._add_state(DepthWriteState(flag))

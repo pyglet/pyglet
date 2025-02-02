@@ -16,6 +16,7 @@ This example demonstrates:
 from math import pi, sin, cos
 
 import pyglet
+from pyglet.graphics import GeometryMode
 
 from pyglet.graphics.api.gl import (
     glEnable,
@@ -23,7 +24,6 @@ from pyglet.graphics.api.gl import (
     OpenGLConfig,
     GL_DEPTH_TEST,
     GL_CULL_FACE,
-    GL_TRIANGLES,
 )
 from pyglet.math import Mat4, Vec3
 
@@ -118,7 +118,7 @@ def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
     material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
     group = pyglet.model.MaterialGroup(material=material, program=shader)
 
-    vertex_list = shader.vertex_list_indexed(len(vertices) // 3, GL_TRIANGLES, indices, batch, group,
+    vertex_list = shader.vertex_list_indexed(len(vertices) // 3, GeometryMode.TRIANGLES, indices, batch, group,
                                              position=('f', vertices),
                                              normals=('f', normals),
                                              colors=('f', material.diffuse * (len(vertices) // 3)))

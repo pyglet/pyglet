@@ -12,9 +12,10 @@ from pyglet.graphics.api.gl import (
     GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, \
     GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_CONSTANT_COLOR,
     GL_ONE_MINUS_CONSTANT_COLOR, \
-    GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA)
+    GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_NEVER, GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_NOTEQUAL,
+    GL_GEQUAL, GL_ALWAYS)
 
-from pyglet.enums import BlendFactor, TextureFilter, TextureType, TextureWrapping
+from pyglet.enums import BlendFactor, TextureFilter, TextureType, TextureWrapping, CompareOp
 
 geometry_map = {
     GeometryMode.POINTS: GL_POINTS,
@@ -60,4 +61,16 @@ texture_map = {
     TextureWrapping.WRAP_R: GL_TEXTURE_WRAP_R,
     TextureWrapping.WRAP_S: GL_TEXTURE_WRAP_S,
     TextureWrapping.WRAP_T: GL_TEXTURE_WRAP_T,
+}
+
+
+compare_op_map = {
+    CompareOp.NEVER: GL_NEVER,
+    CompareOp.LESS: GL_LESS,
+    CompareOp.EQUAL: GL_EQUAL,
+    CompareOp.LESS_OR_EQUAL: GL_LEQUAL,
+    CompareOp.GREATER: GL_GREATER,
+    CompareOp.NOT_EQUAL: GL_NOTEQUAL,
+    CompareOp.GREATER_OR_EQUAL: GL_GEQUAL,
+    CompareOp.ALWAYS: GL_ALWAYS,
 }

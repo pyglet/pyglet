@@ -8,13 +8,11 @@ See the :ref:`guide_graphics` for details on how to use this graphics API.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence
-from enum import Enum, auto
 
-from pyglet.graphics.base import GeometryMode
-from pyglet.graphics import api
+from pyglet.graphics.base import GeometryMode  # noqa: F401
+from pyglet.graphics import api  # noqa: F401
 from pyglet.graphics.draw import Group, ShaderGroup  # noqa: F401
-from pyglet.graphics.api import Batch, get_default_shader, get_default_batch, global_backend, Shader, ShaderProgram
+from pyglet.graphics.api import Batch, get_default_shader, get_default_batch, global_backend, Shader, ShaderProgram, ComputeShaderProgram  # noqa: F401
 
 #
 # def _load_backend_base(name: str):

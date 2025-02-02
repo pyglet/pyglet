@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Sequence
     from pyglet.model import Model
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Batch, Group, GeometryMode
 
 
 class Scene(ABC):
@@ -75,7 +75,7 @@ class Attribute:
 class Primitive:
     """Geometry to be rendered, with optional material."""
     def __init__(self, attributes: list[Attribute], indices: Sequence[int] | None,
-                 mode: int, material: Material | None = None) -> None:
+                 mode: GeometryMode, material: Material | None = None) -> None:
         self.attributes = attributes
         self.indices = indices
         self.mode = mode

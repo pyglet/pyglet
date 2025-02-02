@@ -62,7 +62,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, Mapping
 
-
+from pyglet.enums import BlendFactor
 
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
@@ -162,16 +162,9 @@ else:  # Handle import edge cases
 # Import the other constants after the UI libraries to avoid
 # cluttering the symbol table when debugging import problems.
 from pyglet.graphics.api.gl import (
-   GL_BLEND,
    GL_COLOR_BUFFER_BIT,
    GL_DEPTH_BUFFER_BIT,
-   GL_TEXTURE0,
-   glActiveTexture,
-   glBindTexture,
-   glBlendFunc,
    glClear,
-   glDisable,
-   glEnable,
 )
 
 default_vertex_src = """#version 150 core
@@ -231,77 +224,40 @@ void main()
     final_colors = texture(sprite_texture1, uv) * texture(sprite_texture0, uv) * vertex_colors * vec4(col, 1.0);
 }"""
 
-
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
-    """A sprite group which uses multiple textures and samplers."""
+    """A sprite group that uses multiple active textures."""
 
-    def __init__(
-            self,
-            textures: Mapping[str, pyglet.image.Texture],
-            blend_src: int,
-            blend_dest: int,
-            program: pyglet.graphics.ShaderProgram | None = None,
-            parent: pyglet.graphics.Group | None = None,
-    ) -> None:
+    def __init__(self, textures: dict[str, pyglet.image.Texture],
+                 blend_src: BlendFactor, blend_dest: BlendFactor,
+                 program: pyglet.graphics.ShaderProgram | None = None,
+                 parent: pyglet.graphics.Group | None = None) -> None:
         """Create a sprite group for multiple textures and samplers.
 
         All textures must share the same target type.
 
-        :Parameters:
-            `textures` :
-                 A mapping of sampler names to texture data.
-            `blend_src` :
-                OpenGL blend source mode; for example,
-                ``GL_SRC_ALPHA``.
-            `blend_dest` :
-                OpenGL blend destination mode; for example,
-                ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` :
+        Args:
+            textures:
+                A dictionary of textures, with the keys being the GLSL sampler name.
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            parent:
                 Optional parent group.
         """
-        self.images = textures
-        texture = list(self.images.values())[0]
+        self.textures = textures
+        texture_list = list(self.textures.values())
+        texture = texture_list[0]
         self.target = texture.target
         super().__init__(texture, blend_src, blend_dest, program, parent)
+        for idx, texture_ in enumerate(texture_list[1:]):
+            self.set_texture(texture_, idx+1)
 
-        self.program.use()
-        for idx, name in enumerate(self.images):
-            try:
-                self.program[name] = idx
-            except pyglet.graphics.ShaderException as e:
-                print(e)
-
-        self.program.stop()
-
-    def set_state(self) -> None:
-        self.program.use()
-
-        for i, texture in enumerate(self.images.values()):
-            glActiveTexture(GL_TEXTURE0 + i)
-            glBindTexture(self.target, texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-        glActiveTexture(GL_TEXTURE0)
+        for idx, name in enumerate(self.textures):
+            self.set_shader_uniform(program, name, idx)
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.texture!r}-{int(self.texture.id)})'
-
-    def __eq__(self, other) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.images == other.textures and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self) -> int:
-        return hash((id(self.parent),
-                     id(self.images),
-                     self.blend_src, self.blend_dest))
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
@@ -310,8 +266,8 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
             self,
             imgs: Mapping[str, pyglet.image.Texture],
             x: float = 0, y: float = 0, z: float = 0,
-            blend_src: int = pyglet.gl.GL_SRC_ALPHA,
-            blend_dest: int = pyglet.gl.GL_ONE_MINUS_SRC_ALPHA,
+            blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+            blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
             batch: pyglet.graphics.Batch | None = None,
             group: MultiTextureSpriteGroup | None = None,
             subpixel: bool = False,
@@ -701,7 +657,9 @@ class PygletWidget(QOpenGLWidget):
             pyglet.graphics.Shader(self._default_vertex_source, 'vertex'),
             pyglet.graphics.Shader(self._default_fragment_source, 'fragment'))
 
-        self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
+        window_block = self._default_program.uniform_blocks['WindowBlock']
+        self.ubo = window_block.create_ubo()
+        window_block.bind(self.ubo)
 
         self.view = pyglet.math.Mat4()
         self.projection = pyglet.math.Mat4.orthogonal_projection(0, self.width(), 0, self.height(), -255, 255)
@@ -722,7 +680,7 @@ class PygletWidget(QOpenGLWidget):
         self._viewport = values
         pr = 1.0
         x, y, w, h = values
-        pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
+        pyglet.graphics.api.gl.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     @property
     def projection(self) -> pyglet.math.Mat4:

@@ -46,7 +46,6 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch, Group
     from pyglet.graphics import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.image import Texture
     from pyglet.model.codecs import ModelDecoder
 
 
@@ -69,13 +68,19 @@ def load(filename: str, file: BinaryIO | TextIO | None = None, decoder: ModelDec
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.global_backend.current_context.create_program(
-        (MaterialGroup.default_vert_src, 'vertex'), (MaterialGroup.default_frag_src, 'fragment'))
+    return pyglet.graphics.api.get_cached_shader(
+        "default_model_material",
+        (MaterialGroup.default_vert_src, 'vertex'),
+        (MaterialGroup.default_frag_src, 'fragment'),
+    )
 
 
 def get_default_textured_shader() -> ShaderProgram:
-    return pyglet.graphics.api.global_backend.current_context.create_program(
-        (TexturedMaterialGroup.default_vert_src, 'vertex'), (TexturedMaterialGroup.default_frag_src, 'fragment'))
+    return pyglet.graphics.api.get_cached_shader(
+        "default_model_textured_material",
+        (TexturedMaterialGroup.default_vert_src, 'vertex'),
+        (TexturedMaterialGroup.default_frag_src, 'fragment'),
+    )
 
 
 class Model:
@@ -205,25 +210,28 @@ class TexturedMaterialGroup(BaseMaterialGroup):
                  texture: Texture, order: int = 0, parent: Group | None = None):
         super().__init__(material, program, order, parent)
         self.texture = texture
-
-    def set_state(self) -> None:
-        # gl.glActiveTexture(gl.GL_TEXTURE0)
-        # gl.glBindTexture(self.texture.target, self.texture.id)
-        # self.program.use()
-        # self.program['model'] = self.matrix
-        pass
-
-    def __hash__(self) -> int:
-        return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
-
-    def __eq__(self, other) -> bool:
-        return (self.__class__ is other.__class__ and
-                self.material == other.material and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.program == other.program and
-                self.order == other.order and
-                self.parent == other.parent)
+        self.set_texture(self.texture)
+        self.set_shader_program(program)
+        self.set_shader_uniform(program, 'model', self.matrix)
+    #
+    # def set_state(self) -> None:
+    #     # gl.glActiveTexture(gl.GL_TEXTURE0)
+    #     # gl.glBindTexture(self.texture.target, self.texture.id)
+    #     # self.program.use()
+    #     # self.program['model'] = self.matrix
+    #     pass
+    #
+    # def __hash__(self) -> int:
+    #     return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
+    #
+    # def __eq__(self, other) -> bool:
+    #     return (self.__class__ is other.__class__ and
+    #             self.material == other.material and
+    #             self.texture.target == other.texture.target and
+    #             self.texture.id == other.texture.id and
+    #             self.program == other.program and
+    #             self.order == other.order and
+    #             self.parent == other.parent)
 
 
 class MaterialGroup(BaseMaterialGroup):

@@ -1,12 +1,60 @@
 """An example of sorting sprites in the Z axis based on the Y axis, and a standard projection."""
+from __future__ import annotations
+
 import pyglet
-from pyglet.graphics.api.gl import *
+from pyglet.enums import BlendFactor, CompareOp
 import random
 import math
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.graphics import Group, ShaderProgram
+    from pyglet.image.base import TextureBase
+
 # Standard projection Z is 0 to 255. Keep window within that.
 # You will have to change window projection if you wish to go beyond this.
-window = pyglet.window.Window(height=250)
+window = pyglet.window.Window(width=900, height=250)
+
+vertex_source: str = """#version 150 core
+    in vec3 translate;
+    in vec4 colors;
+    in vec3 tex_coords;
+    in vec2 scale;
+    in vec3 position;
+    in float rotation;
+
+    out vec4 vertex_colors;
+    out vec3 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    mat4 m_scale = mat4(1.0);
+    mat4 m_rotation = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
+
+    void main()
+    {
+        m_scale[0][0] = scale.x;
+        m_scale[1][1] = scale.y;
+        m_translate[3][0] = translate.x;
+        m_translate[3][1] = translate.y;
+        m_translate[3][2] = translate.z;
+        m_rotation[0][0] =  cos(-radians(rotation));
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
 
 fragment_source = """#version 150 core
     in vec4 vertex_colors;
@@ -28,22 +76,10 @@ fragment_source = """#version 150 core
 
 
 class DepthSpriteGroup(pyglet.sprite.SpriteGroup):
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        glDisable(GL_DEPTH_TEST)
-        self.program.stop()
+    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
+                 parent: Group | None = None) -> None:
+        super().__init__(texture, blend_src, blend_dest, program, parent)
+        self.set_depth_test(CompareOp.LESS)
 
 
 class DepthSprite(pyglet.sprite.Sprite):
@@ -60,7 +96,7 @@ batch = pyglet.graphics.Batch()
 sprites = []
 
 # Re-use vertex source and create new shader with alpha testing.
-vertex_shader = pyglet.graphics.Shader(pyglet.sprite.vertex_source, "vertex")
+vertex_shader = pyglet.graphics.Shader(vertex_source, "vertex")
 fragment_shader = pyglet.graphics.Shader(fragment_source, "fragment")
 depth_shader = pyglet.graphics.ShaderProgram(vertex_shader, fragment_shader)
 
@@ -78,12 +114,11 @@ for i in range(sprite_count):
     make_sprite(i)
 
 
-global elapsed
 elapsed = 0
 
 
 def update(dt):
-    global elapsed
+    global elapsed  # noqa: PLW0603
     for i, sprite in enumerate(sprites):
         sprite.update(x=i * .75 * (image.width - 15),
                       y=.25 * window.height * (1 + math.cos(2 * elapsed + i * math.pi / sprite_count)))

@@ -4,8 +4,6 @@ import pyglet
 from typing import TYPE_CHECKING, ClassVar
 
 from pyglet.enums import BlendFactor
-from pyglet.graphics.api.gl import glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glDisable, \
-    glActiveTexture, GL_TEXTURE0, glBindTexture
 from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
@@ -70,7 +68,7 @@ layout_fragment_source = """#version 330 core
 
     void main()
     {
-        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
+        final_colors = texture(text, texture_coords) * text_colors;
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
@@ -170,7 +168,7 @@ def get_default_layout_shader() -> ShaderProgram:
     return pyglet.graphics.api.global_backend.get_cached_shader(
         "default_text_layout",
         (layout_vertex_source, "vertex"),
-        (layout_fragment_source, "fragment")
+        (layout_fragment_source, "fragment"),
     )
 
 
@@ -179,7 +177,7 @@ def get_default_image_layout_shader() -> ShaderProgram:
     return pyglet.graphics.api.global_backend.get_cached_shader(
         "default_text_image",
         (layout_vertex_source, "vertex"),
-        (layout_fragment_image_source, "fragment")
+        (layout_fragment_image_source, "fragment"),
     )
 
 
@@ -188,7 +186,7 @@ def get_default_decoration_shader() -> ShaderProgram:
     return pyglet.graphics.api.global_backend.get_cached_shader(
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
-        (decoration_fragment_source, "fragment")
+        (decoration_fragment_source, "fragment"),
     )
 
 

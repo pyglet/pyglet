@@ -7,6 +7,7 @@ import time
 
 import pyglet
 from pyglet import clock, event, graphics, image
+from pyglet.graphics import GeometryMode
 from pyglet.graphics.api.gl import *
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -176,48 +177,25 @@ fragment_source = """#version 150
 
 
 def get_default_shader():
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_source, 'fragment'))
+    return pyglet.graphics.api.get_cached_shader(
+        "default_particles",
+        (vertex_source, 'vertex'),
+        (geometry_source, 'geometry'),
+        (fragment_source, 'fragment'),
+    )
 
 
 class EmitterGroup(graphics.Group):
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
         super().__init__(parent=parent)
         self.texture = texture
-        self.blend_src = blend_src
-        self.blend_dest = blend_dest
+        self.set_shader_program(program)
+        self.set_texture(texture)
+        self.set_blend(blend_src, blend_dest)
         self.program = program
 
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other):
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.parent == other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self):
-        return hash((self.program, self.parent,
-                     self.texture.id, self.texture.target,
-                     self.blend_src, self.blend_dest))
 
 
 class Emitter(event.EventDispatcher):
@@ -267,7 +245,7 @@ class Emitter(event.EventDispatcher):
         texture = self._texture
         count = self._count
         self._vertex_list = self.program.vertex_list(
-            count, GL_POINTS, self._batch, self._group,
+            count, GeometryMode.POINTS, self._batch, self._group,
             position=('f', (self._x, self._y, self._z) * count),
 
             size=('f', (texture.width, texture.height, texture.anchor_x, texture.anchor_y) * count),

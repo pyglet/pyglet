@@ -4,6 +4,7 @@ from typing import Generator, Any
 
 import pyglet
 
+
 class State:
     """Base class for all states with optional scope methods."""
     #: Flag whether this state has a function to call when it comes into scope.
@@ -45,6 +46,8 @@ class State:
         """
 
 if "gl" in pyglet.options.backend:
-    from pyglet.graphics.api.gl.state import TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState  # noqa: F401
+    from pyglet.graphics.api.gl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401
+                                              ShaderUniformState,
+                                              UniformBufferState, DepthBufferComparison, ScissorState)
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.state import *

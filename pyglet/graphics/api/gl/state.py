@@ -1,11 +1,11 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Any, Callable, Generator, TYPE_CHECKING, Sequence
+from dataclasses import dataclass
+from typing import Any, Callable, Generator, TYPE_CHECKING
 
-from pyglet.enums import BlendFactor, BlendOp
+from pyglet.enums import BlendFactor, BlendOp, CompareOp
 from pyglet.graphics.api.gl import glBindTexture, glActiveTexture, GL_TEXTURE0, glBlendFunc, glEnable, GL_BLEND, \
-    glDisable, glScissor, glViewport, GL_SCISSOR_TEST
-from pyglet.graphics.api.gl.enums import blend_factor_map
+    glDisable, glScissor, glViewport, GL_SCISSOR_TEST, GL_DEPTH_TEST, glDepthFunc
+from pyglet.graphics.api.gl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
@@ -81,18 +81,16 @@ class ScissorStateEnable(State):
 
 @dataclass(frozen=True)
 class ScissorState(State):
-    x: int
-    y: int
-    width: int
-    height: int
+    group: Group
 
     sets_state: bool = True
+    dependents: bool = True
 
     def generate_dependent_states(self) -> Generator[State, None, None]:
         yield ScissorStateEnable()
 
     def set_state(self) -> None:
-        glScissor(self.x, self.y, self.width, self.height)
+        glScissor(*self.group.data["scissor"])
 
 
 @dataclass(frozen=True)
@@ -127,8 +125,30 @@ class BlendState(State):
 
 
 @dataclass(frozen=True)
-class DepthTestState(State):
-    func: int
+class DepthTestStateEnable(State):
+    sets_state: bool = True
+    unsets_state: bool = True
+
+    def set_state(self) -> None:
+        glEnable(GL_DEPTH_TEST)
+
+    def unset_state(self) -> None:
+        glDisable(GL_DEPTH_TEST)
+
+
+@dataclass(frozen=True)
+class DepthBufferComparison(State):
+    func: CompareOp
+
+    sets_state: bool = True
+    dependents: bool = True
+
+    def generate_dependent_states(self) -> Generator[State, None, None]:
+        yield DepthTestStateEnable()
+
+    def set_state(self) -> None:
+        glDepthFunc(compare_op_map[self.func])
+
 
 @dataclass(frozen=True)
 class DepthWriteState(State):

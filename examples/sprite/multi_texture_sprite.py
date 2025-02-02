@@ -4,8 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable, \
-    glClearColor, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from pyglet.enums import BlendFactor
 
 if TYPE_CHECKING:
     from pyglet.image import Texture, AbstractImage
@@ -62,8 +61,7 @@ fragment_source = """#version 150 core
 
     void main()
     {
-        final_colors = texture(kitten_texture, texture_coords.xy) * texture(pyglet_texture, texture_coords.xy) * 
-        vertex_colors;
+        final_colors = texture(kitten_texture, texture_coords.xy) * texture(pyglet_texture, texture_coords.xy) * vertex_colors;
     }
 """
 
@@ -71,7 +69,7 @@ fragment_source = """#version 150 core
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """A sprite group that uses multiple active textures."""
 
-    def __init__(self, textures: dict[str, Texture], blend_src: int, blend_dest: int,
+    def __init__(self, textures: dict[str, Texture], blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: ShaderProgram | None = None, parent: Group | None = None) -> None:
         """Create a sprite group for multiple textures and samplers.
 
@@ -88,42 +86,18 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
                 Optional parent group.
         """
         self.textures = textures
-        texture = list(self.textures.values())[0]
+        texture_list = list(self.textures.values())
+        texture = texture_list[0]
         self.target = texture.target
         super().__init__(texture, blend_src, blend_dest, program, parent)
-
-    def set_state(self) -> None:
-        self.program.use()
+        for idx, texture_ in enumerate(texture_list[1:]):
+            self.set_texture(texture_, idx+1)
 
         for idx, name in enumerate(self.textures):
-            self.program[name] = idx
-
-        for i, texture in enumerate(self.textures.values()):
-            glActiveTexture(GL_TEXTURE0 + i)
-            glBindTexture(self.target, texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
-
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
-        glActiveTexture(GL_TEXTURE0)
+            self.set_shader_uniform(program, name, idx)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'
-
-    def __eq__(self, other: object | Group | MultiTextureSpriteGroup) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.program is other.program and
-                self.textures == other.textures and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
-
-    def __hash__(self) -> int:
-        return hash((id(self.parent),
-                     id(self.textures),
-                     self.blend_src, self.blend_dest))
+         return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
@@ -133,8 +107,8 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
     def __init__(self,
                  images: dict[str, AbstractImage],
                  x: float = 0, y: float = 0, z: float = 0,
-                 blend_src: int = GL_SRC_ALPHA,
-                 blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
+                 blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch: Batch | None = None,
                  group: Group | None = None,
                  subpixel: bool = False,
@@ -196,11 +170,11 @@ window.set_size(kitten_image.width, kitten_image.height)
 batch = pyglet.graphics.Batch()
 
 # Create our new shader that handles both texture sprites.
-multi_vert_shader = pyglet.graphics.shader.Shader(vertex_source, 'vertex')
-multi_frag_shader = pyglet.graphics.shader.Shader(fragment_source, 'fragment')
+multi_vert_shader = pyglet.graphics.Shader(vertex_source, 'vertex')
+multi_frag_shader = pyglet.graphics.Shader(fragment_source, 'fragment')
 
 # Our new shader just multiplies both images together.
-multitex_shader_program = pyglet.graphics.shader.ShaderProgram(multi_vert_shader, multi_frag_shader)
+multitex_shader_program = pyglet.graphics.ShaderProgram(multi_vert_shader, multi_frag_shader)
 
 # Give our shader names and textures.
 shader_images = {
@@ -214,7 +188,7 @@ sprite = MultiTextureSprite(shader_images,
                             batch=batch,
                             program=multitex_shader_program)
 
-glClearColor(1.0, 1.0, 1.0, 1.0)
+window.context.set_clear_color(1.0, 1.0, 1.0, 1.0)
 
 
 @window.event
