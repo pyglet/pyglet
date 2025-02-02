@@ -186,6 +186,11 @@ def main():
                 item_x, item_y, *item_z = item.position
                 item.position = item_x + dx, item_y + dy, *item_z
 
+    @window.event
+    def on_mouse_scroll(x, y, scroll_x, scroll_y):
+        for item in shapes.values():
+            item.scale += scroll_y
+
     # This line is crucial for 2.1 / the development branch
     pyglet.clock.schedule_interval(window.draw, 1 / 60)
     pyglet.app.run()
