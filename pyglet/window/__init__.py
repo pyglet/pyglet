@@ -514,8 +514,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._resizable = resizable
         self._fullscreen = fullscreen
         self._style = style
-        if pyglet.options['vsync'] is not None:
-            self._vsync = pyglet.options['vsync']
+        if pyglet.options.vsync is not None:
+            self._vsync = pyglet.options.vsync
         else:
             self._vsync = vsync
 
@@ -1818,7 +1818,7 @@ if _is_pyglet_doc_run:
 
 else:
     # Try to determine which platform to use.
-    if pyglet.options['headless']:
+    if pyglet.options.headless:
         from pyglet.window.headless import HeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window

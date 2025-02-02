@@ -511,8 +511,8 @@ class CocoaWindow(BaseWindow):
             self._nswindow.zoom_(None)
 
     def set_vsync(self, vsync: bool) -> None:
-        if pyglet.options['vsync'] is not None:
-            vsync = pyglet.options['vsync']
+        if pyglet.options.vsync is not None:
+            vsync = pyglet.options.vsync
 
         super().set_vsync(vsync)
         self.context.set_vsync(vsync)

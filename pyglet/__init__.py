@@ -186,7 +186,7 @@ class Options:
     """
 
     headless_device: int = 0
-    """If using ``headless`` mode (``pyglet.options['headless'] = True``), this option allows you to set which
+    """If using ``headless`` mode (``pyglet.options.headless = True``), this option allows you to set which
     GPU to use. This is only useful on multi-GPU systems.
     """
 

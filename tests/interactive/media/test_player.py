@@ -4,7 +4,7 @@ Interactively test the Player in pyglet.media for playing back sounds.
 import pytest
 
 import pyglet
-pyglet.options['debug_media'] = False
+pyglet.options.debug_media = False
 from pyglet.media.player import Player
 from pyglet.media import synthesis
 from pyglet.media.codecs.base import StaticSource

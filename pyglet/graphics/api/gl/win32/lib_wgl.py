@@ -10,7 +10,7 @@ from pyglet.util import asbytes
 
 __all__ = ['link_GL', 'link_WGL']
 
-_debug_trace = pyglet.options['debug_trace']
+_debug_trace = pyglet.options.debug_trace
 
 gl_lib = ctypes.windll.opengl32
 wgl_lib = gl_lib

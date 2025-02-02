@@ -62,7 +62,7 @@ except OSError:
     msg = "DirectWrite Not Found"
     raise ImportError(msg)  # noqa: B904
 
-_debug_font = pyglet.options["debug_font"]
+_debug_font = pyglet.options.debug_font
 
 _debug_print = debug_print("debug_font")
 
@@ -2093,7 +2093,7 @@ class Win32DirectWriteFont(base.Font):
         self._font_index, self._collection = self.get_collection(name)
         write_font = None
         # If not font found, search all collections for legacy GDI naming.
-        if pyglet.options["dw_legacy_naming"]:
+        if pyglet.options.dw_legacy_naming:
             if self._font_index is None and self._collection is None:
                 write_font, self._collection = self.find_font_face(name, self._weight, self._style, self._stretch)
 
@@ -2792,5 +2792,5 @@ white = D2D1_COLOR_F(1.0, 1.0, 1.0, 1.0)
 no_offset = D2D_POINT_2F(0, 0)
 
 # If we are not shaping, monkeypatch to no shape function.
-if pyglet.options["win32_disable_shaping"]:
+if pyglet.options.win32_disable_shaping:
     Win32DirectWriteFont.get_glyphs = Win32DirectWriteFont.get_glyphs_no_shape

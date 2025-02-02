@@ -16,7 +16,7 @@ from pyglet.graphics.api.gl.shader import Shader as GLShader
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.base import OpenGLWindowContext
 
-_debug_api_shaders = pyglet.options['debug_api_shaders']
+_debug_api_shaders = pyglet.options.debug_api_shaders
 
 
 

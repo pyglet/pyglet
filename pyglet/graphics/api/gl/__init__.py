@@ -57,7 +57,7 @@ from .base import OpenGLWindowConfig, OpenGLWindowContext, ObjectSpace  # noqa: 
 
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run
 
-if _pyglet.options['debug_texture']:
+if _pyglet.options.debug_texture:
     _debug_texture_total = 0
     _debug_texture_sizes = {}
     _debug_texture = None
@@ -130,7 +130,7 @@ if _pyglet.options['debug_texture']:
 if _is_pyglet_doc_run:
     from .base import OpenGLConfig
 
-elif _pyglet.options['headless']:
+elif _pyglet.options.headless:
     from .egl.context import HeadlessContext as OpenGLConfig
 elif compat_platform in ('win32', 'cygwin'):
     from .win32.context import Win32OpenGLConfig as OpenGLConfig

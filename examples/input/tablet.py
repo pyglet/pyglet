@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import pyglet
-pyglet.options["debug_input"] = True
+pyglet.options.debug_input = True
 
 window = pyglet.window.Window()
 tablets = pyglet.input.get_tablets()

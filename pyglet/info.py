@@ -55,7 +55,7 @@ def dump_pyglet():
     print('pyglet.compat_platform:', pyglet.compat_platform)
     print('pyglet.__file__:', pyglet.__file__)
     for key, value in pyglet.options.items():
-        print(f"pyglet.options['{key}'] = {value!r}")
+        print(f"pyglet.options.{key} = {value!r}")
 
 
 def dump_window():
@@ -132,7 +132,7 @@ def dump_media():
 def dump_ffmpeg():
     """Dump FFmpeg info."""
     import pyglet
-    pyglet.options['search_local_libs'] = True
+    pyglet.options.search_local_libs = True
     import pyglet.media
 
     if pyglet.media.have_ffmpeg():

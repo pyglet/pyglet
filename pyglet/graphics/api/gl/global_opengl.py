@@ -121,7 +121,7 @@ class OpenGLBackend(BackendGlobalObject):
         return self.current_context.object_space
 
     def post_init(self) -> None:
-        if pyglet.options['shadow_window'] and not _is_pyglet_doc_run:
+        if pyglet.options.shadow_window and not _is_pyglet_doc_run:
             self._shadow_window = _create_shadow_window()
 
     def create_context(self, config: OpenGLWindowConfig, shared: OpenGLWindowContext | None):

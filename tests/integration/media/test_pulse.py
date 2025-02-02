@@ -3,7 +3,7 @@ import pytest
 from threading import Timer
 
 import pyglet
-pyglet.options['debug_media'] = False
+pyglet.options.debug_media = False
 
 from pyglet.media.codecs import AudioFormat
 from pyglet.media.synthesis import Silence

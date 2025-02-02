@@ -9,7 +9,7 @@ from .types import *
 
 IS64 = struct.calcsize("P") == 8
 
-_debug_win32 = pyglet.options['debug_win32']
+_debug_win32 = pyglet.options.debug_win32
 
 DebugLibrary = lambda lib: ctypes.WinDLL(lib, use_last_error=True if _debug_win32 else False)
 
@@ -319,7 +319,7 @@ if _debug_win32:
 
 # Initialize COM. Required for: WIC (DirectWrite), WMF, and XInput
 try:
-    if pyglet.options["com_mta"] is True:
+    if pyglet.options.com_mta is True:
         _ole32.CoInitializeEx(None, constants.COINIT_MULTITHREADED)
     else:
         _ole32.CoInitializeEx(None, constants.COINIT_APARTMENTTHREADED)

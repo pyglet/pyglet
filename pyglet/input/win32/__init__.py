@@ -20,7 +20,7 @@ except:
 
 
 _xinput_enabled = False
-if not pyglet.options["win32_disable_xinput"]:
+if not pyglet.options.win32_disable_xinput:
     try:
         from pyglet.input.win32.xinput import XInputControllerManager, XInputController, XInputDevice
         from pyglet.input.win32.xinput import _device_manager as _xinput_device_manager

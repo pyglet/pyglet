@@ -19,7 +19,7 @@ class HeadlessDisplay(Display):
         num_devices = egl.EGLint()
         eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
         if num_devices.value > 0:
-            headless_device = pyglet.options['headless_device']
+            headless_device = pyglet.options.headless_device
             if headless_device < 0 or headless_device >= num_devices.value:
                 raise ValueError(f'Invalid EGL devide id: {headless_device}')
             devices = (eglext.EGLDeviceEXT * num_devices.value)()

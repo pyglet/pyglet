@@ -228,7 +228,7 @@ class Group:
             self.parent.unset_state_recursive()
 
 
-_debug_graphics_batch = pyglet.options['debug_graphics_batch']
+_debug_graphics_batch = pyglet.options.debug_graphics_batch
 _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
     #(False, False): vertexdomain.VertexDomain,

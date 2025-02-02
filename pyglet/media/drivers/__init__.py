@@ -5,7 +5,7 @@ import atexit
 
 import pyglet
 
-_debug = pyglet.options['debug_media']
+_debug = pyglet.options.debug_media
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
@@ -15,7 +15,7 @@ if _is_pyglet_doc_run:
 
 else:
 
-    for driver_name in pyglet.options['audio']:
+    for driver_name in pyglet.options.audio:
         try:
             if driver_name == 'pulse':
                 from . import pulse

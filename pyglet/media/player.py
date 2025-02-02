@@ -10,7 +10,7 @@ from pyglet.media import buffered_logger as bl
 from pyglet.media.codecs.base import Source, SourceGroup
 from pyglet.media.drivers import get_audio_driver
 
-_debug = pyglet.options['debug_media']
+_debug = pyglet.options.debug_media
 
 if TYPE_CHECKING:
     from pyglet.image import Texture

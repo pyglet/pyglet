@@ -44,7 +44,7 @@ class PlayerWorkerThread(threading.Thread):
         self.players: Set[AbstractAudioPlayer] = set()
 
     def run(self) -> None:
-        if pyglet.options['debug_trace']:
+        if pyglet.options.debug_trace:
             pyglet._install_trace()
 
         sleep_time = None

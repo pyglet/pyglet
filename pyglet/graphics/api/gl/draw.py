@@ -12,7 +12,7 @@ from pyglet.graphics.api.gl import (
 )
 from pyglet.graphics.state import State
 
-_debug_graphics_batch = pyglet.options['debug_graphics_batch']
+_debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
     from pyglet.graphics import GeometryMode

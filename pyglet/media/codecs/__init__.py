@@ -7,7 +7,7 @@ from .base import *
 import pyglet
 
 
-_debug = pyglet.options['debug_media']
+_debug = pyglet.options.debug_media
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 

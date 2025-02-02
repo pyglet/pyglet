@@ -39,7 +39,7 @@ import math
 import pyglet
 
 # # Default to OpenAL if available:
-# pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
+# pyglet.options.audio = 'openal', 'pulse', 'directsound', 'silent'
 
 from pyglet.graphics.api.gl import glClearColor
 from pyglet.graphics import Group

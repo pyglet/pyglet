@@ -43,7 +43,7 @@ StringFormatFlagsNoClip = 0x00004000
 FontFamilyNotFound = 14
 
 
-_debug_font = pyglet.options["debug_font"]
+_debug_font = pyglet.options.debug_font
 
 
 class Rectf(ctypes.Structure):

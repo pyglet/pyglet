@@ -292,7 +292,7 @@ class DIDeviceManager(EventDispatcher):
         _new_devices = []
         _xinput_devices = []
 
-        if not pyglet.options["win32_disable_xinput"]:
+        if not pyglet.options.win32_disable_xinput:
             try:
                 from pyglet.input.win32.xinput import get_xinput_guids
                 _xinput_devices = get_xinput_guids()
@@ -397,7 +397,7 @@ def get_devices(display=None):
     _devices = []
     _xinput_devices = []
 
-    if not pyglet.options["win32_disable_xinput"]:
+    if not pyglet.options.win32_disable_xinput:
         try:
             from pyglet.input.win32.xinput import get_xinput_guids
             _xinput_devices = get_xinput_guids()

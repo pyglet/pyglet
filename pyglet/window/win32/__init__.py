@@ -378,8 +378,8 @@ class Win32Window(BaseWindow):
         return bool(self._interval)
 
     def set_vsync(self, vsync: bool) -> None:
-        if pyglet.options['vsync'] is not None:
-            vsync = pyglet.options['vsync']
+        if pyglet.options.vsync is not None:
+            vsync = pyglet.options.vsync
 
         self._interval = vsync
 

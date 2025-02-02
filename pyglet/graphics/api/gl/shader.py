@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import CTypesDataType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
 
-_debug_api_shaders = pyglet.options['debug_api_shaders']
+_debug_api_shaders = pyglet.options.debug_api_shaders
 
 
 GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]

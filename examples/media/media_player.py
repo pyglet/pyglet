@@ -34,8 +34,8 @@ from pyglet.graphics.api.gl import (
 import pyglet
 from pyglet.window import key
 
-pyglet.options['debug_media'] = False
-# pyglet.options['audio'] = ('openal', 'pulse', 'silent')
+pyglet.options.debug_media = False
+# pyglet.options.audio = ('openal', 'pulse', 'silent')
 from pyglet.media import buffered_logger as bl
 
 

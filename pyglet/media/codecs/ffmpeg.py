@@ -1215,7 +1215,7 @@ class FFmpegSource(StreamingSource):
 
 
 ffmpeg_init()
-if pyglet.options['debug_media']:
+if pyglet.options.debug_media:
     _debug = True
 else:
     _debug = False

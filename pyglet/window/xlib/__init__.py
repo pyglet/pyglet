@@ -56,7 +56,7 @@ try:
 except ImportError:
     _have_xsync = False
 
-_debug = pyglet.options['debug_x11']
+_debug = pyglet.options.debug_x11
 
 
 class mwmhints_t(Structure):
@@ -541,8 +541,8 @@ class XlibWindow(BaseWindow):
         self._sync_resize()
 
     def set_vsync(self, vsync: bool) -> None:
-        if pyglet.options['vsync'] is not None:
-            vsync = pyglet.options['vsync']
+        if pyglet.options.vsync is not None:
+            vsync = pyglet.options.vsync
 
         super().set_vsync(vsync)
         self.context.set_vsync(vsync)

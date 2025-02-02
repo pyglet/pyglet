@@ -51,7 +51,7 @@ def _error_handler(display, event):
     # environment variable PYGLET_DEBUG_X11 to 1 to get dumps of the error
     # and a traceback (execution will continue).
     import pyglet
-    if pyglet.options['debug_x11']:
+    if pyglet.options.debug_x11:
         event = event.contents
         buf = c_buffer(1024)
         xlib.XGetErrorText(display, event.error_code, buf, len(buf))

@@ -8,9 +8,9 @@ import pyglet
 __all__ = ['link_GL', 'link_AGL', 'link_GLX', 'link_WGL',
            'GLException', 'missing_function', 'decorate_function', 'MissingFunctionException']
 
-_debug_api = pyglet.options['debug_api']
-_debug_api_trace = pyglet.options['debug_api_trace']
-_debug_api_trace_args = pyglet.options['debug_api_trace_args']
+_debug_api = pyglet.options.debug_api
+_debug_api_trace = pyglet.options.debug_api_trace
+_debug_api_trace_args = pyglet.options.debug_api_trace_args
 
 
 class MissingFunctionException(Exception):  # noqa: N818
