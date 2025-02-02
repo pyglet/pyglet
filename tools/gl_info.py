@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '1.2'
-
 import sys
 import textwrap
 

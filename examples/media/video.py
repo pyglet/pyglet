@@ -7,11 +7,6 @@ Usage::
 
 See the Programming Guide for a partial list of supported video formats.
 """
-
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import sys
 import pyglet
 

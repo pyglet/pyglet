@@ -190,8 +190,8 @@ Specify ``streaming=False`` in this case::
     sound = pyglet.resource.media('shot.wav', streaming=False)
     sound.play()
 
-The `examples/media_player.py` example demonstrates playback of streaming
-audio and video using pyglet.  The `examples/noisy/noisy.py` example
+The `examples/media/media_player.py` example demonstrates playback of streaming
+audio and video using pyglet.  The `examples/media/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
 .. [#mp3] MP3 and other compressed audio formats require FFmpeg to be installed.
@@ -222,7 +222,7 @@ bit, the `graphics` module provides higher level objects for the most common
 OpenGL constructs. The :ref:`guide_graphics` section goes into more detail.
 
 There are numerous examples of pyglet applications in the ``examples/``
-directory of the documentation and source distributions.  If you get
+directory of the documentation.  If you get
 stuck, or have any questions, join us on the `mailing list`_ or `Discord`_!
 
 .. _mailing list: http://groups.google.com/group/pyglet-users

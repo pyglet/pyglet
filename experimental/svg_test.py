@@ -1,12 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: latin-1 -*-
-
-"""
-"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import re
 import os.path
 import pyglet

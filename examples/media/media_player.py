@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Usage
 
@@ -14,11 +13,6 @@ Options
 The raw data captured in the .dbg can be rendered as human readable
 using the script report.py
 """
-
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
 import sys
 import weakref

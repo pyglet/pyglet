@@ -1258,8 +1258,6 @@ class Texture(AbstractImage):
 
         return cls(width, height, target, tex_id.value, min_filter, mag_filter)
 
-        return texture
-
     def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
 
