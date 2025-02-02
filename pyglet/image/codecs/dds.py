@@ -86,7 +86,7 @@ class DDSURFACEDESC2(_FileStruct):
     ]
 
     def __init__(self, data):
-        super(DDSURFACEDESC2, self).__init__(data)
+        super().__init__(data)
         self.ddpfPixelFormat = DDPIXELFORMAT(self.ddpfPixelFormat)
 
 

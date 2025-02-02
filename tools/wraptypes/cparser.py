@@ -104,15 +104,14 @@ class Declarator(object):
 class Pointer(Declarator):
     pointer = None
     def __init__(self):
-        super(Pointer, self).__init__()
+        super().__init__()
         self.qualifiers = []
 
     def __repr__(self):
         q = ''
         if self.qualifiers:
             q = '<%s>' % ' '.join(self.qualifiers)
-        return 'POINTER%s(%r)' % (q, self.pointer) + \
-            super(Pointer, self).__repr__()
+        return 'POINTER%s(%r)' % (q, self.pointer) + super().__repr__()
 
 class Array(object):
     def __init__(self):

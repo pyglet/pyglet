@@ -31,7 +31,7 @@ class CocoaScreen(Screen):
         # http://www.cocoabuilder.com/archive/cocoa/233492-ns-cg-rect-conversion-and-screen-coordinates.html
         x, y = bounds.origin.x, bounds.origin.y
         width, height = bounds.size.width, bounds.size.height
-        super(CocoaScreen, self).__init__(display, int(x), int(y), int(width), int(height))
+        super().__init__(display, int(x), int(y), int(width), int(height))
         self._cg_display_id = displayID
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
@@ -111,7 +111,7 @@ class CocoaScreen(Screen):
 class CocoaScreenMode(ScreenMode):
 
     def __init__(self, screen, cgmode):
-        super(CocoaScreenMode, self).__init__(screen)
+        super().__init__(screen)
         quartz.CGDisplayModeRetain(cgmode)
         self.cgmode = cgmode
         self.width = int(quartz.CGDisplayModeGetWidth(cgmode))
