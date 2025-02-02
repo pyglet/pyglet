@@ -12,7 +12,7 @@ def text_window(request):
 
     class _TestWindow(window.Window):
         def __init__(self, doctype, *args, **kwargs):
-            super(_TestWindow, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
             self.batch = graphics.Batch()
             self.document = doctype()

@@ -166,7 +166,7 @@ class InteractiveTestCase(PygletTestCase):
     allow_missing_screenshots = False
 
     def __init__(self, methodName):
-        super(InteractiveTestCase, self).__init__(methodName=methodName)
+        super().__init__(methodName=methodName)
         self._screenshots = []
 
     def check_screenshots(self):

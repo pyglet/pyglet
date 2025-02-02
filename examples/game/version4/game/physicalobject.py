@@ -6,7 +6,7 @@ class PhysicalObject(pyglet.sprite.Sprite):
     """A sprite with physical properties such as velocity"""
 
     def __init__(self, *args, **kwargs):
-        super(PhysicalObject, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Velocity
         self.velocity_x, self.velocity_y = 0.0, 0.0

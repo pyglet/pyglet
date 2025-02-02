@@ -32,7 +32,7 @@ And, because the parameter wrap_lines=True the {font_size 16}long lines are brok
 
 class BaseTestWindow(window.Window):
     def __init__(self, multiline, wrap_lines, msg, *args, **kwargs):
-        super(BaseTestWindow, self).__init__(*args, width=640, height=480, **kwargs)
+        super().__init__(*args, width=640, height=480, **kwargs)
 
         self.batch = graphics.Batch()
         self.document = text.decode_attributed(msg)
@@ -51,7 +51,7 @@ class BaseTestWindow(window.Window):
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
     def on_resize(self, width, height):
-        super(BaseTestWindow, self).on_resize(width, height)
+        super().on_resize(width, height)
         self.layout.begin_update()
         self.layout.x = self.margin
         self.layout.y = self.margin
@@ -70,7 +70,7 @@ class BaseTestWindow(window.Window):
         self.batch.draw()
 
     def on_key_press(self, symbol, modifiers):
-        super(BaseTestWindow, self).on_key_press(symbol, modifiers)
+        super().on_key_press(symbol, modifiers)
         if symbol == key.TAB:
             self.caret.on_text('\t')
 

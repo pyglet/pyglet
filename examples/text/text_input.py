@@ -29,7 +29,7 @@ class TextWidget:
 
 class Window(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
-        super(Window, self).__init__(400, 140, caption='Text entry', *args, **kwargs)
+        super().__init__(400, 140, caption='Text entry', *args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
         self.labels = [
@@ -52,7 +52,7 @@ class Window(pyglet.window.Window):
         self.set_focus(self.widgets[0])
 
     def on_resize(self, width, height):
-        super(Window, self).on_resize(width, height)
+        super().on_resize(width, height)
         for widget in self.widgets:
             widget.width = width - 110
 

@@ -63,7 +63,7 @@ class Win32Screen(Screen):
     _initial_mode = None
 
     def __init__(self, display, handle, x, y, width, height):
-        super(Win32Screen, self).__init__(display, x, y, width, height)
+        super().__init__(display, x, y, width, height)
         self._handle = handle
 
     def get_matching_configs(self, template):
@@ -145,7 +145,7 @@ class Win32Screen(Screen):
 
 class Win32ScreenMode(ScreenMode):
     def __init__(self, screen, mode):
-        super(Win32ScreenMode, self).__init__(screen)
+        super().__init__(screen)
         self._mode = mode
         self.width = mode.dmPelsWidth
         self.height = mode.dmPelsHeight
@@ -158,6 +158,6 @@ class Win32ScreenMode(ScreenMode):
 
 class Win32Canvas(Canvas):
     def __init__(self, display, hwnd, hdc):
-        super(Win32Canvas, self).__init__(display)
+        super().__init__(display)
         self.hwnd = hwnd
         self.hdc = hdc

@@ -91,7 +91,7 @@ class TestElement(document.InlineElement):
 
 class TestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
-        super(TestWindow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
         self.document = pyglet.text.decode_attributed(doctext)
@@ -113,7 +113,7 @@ class TestWindow(pyglet.window.Window):
         self.batch.draw()
 
     def on_key_press(self, symbol, modifiers):
-        super(TestWindow, self).on_key_press(symbol, modifiers)
+        super().on_key_press(symbol, modifiers)
         if symbol == pyglet.window.key.TAB:
             self.caret.on_text('\t')
 

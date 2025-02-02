@@ -54,7 +54,7 @@ class NotificationDevice(XlibSelectDevice):
 
 class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
-        super(XlibEventLoop, self).__init__()
+        super().__init__()
         self._notification_device = NotificationDevice()
         self.select_devices = set()
         self.select_devices.add(self._notification_device)

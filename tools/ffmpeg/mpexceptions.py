@@ -29,7 +29,7 @@ class ExceptionPlaylistFileDoNotExists(ExceptionPygletMediaPlayerTesting):
 class ExceptionBadSampleInPlaylist(ExceptionPygletMediaPlayerTesting):
     def __init__(self, rejected):
         self.rejected = rejected
-        super(ExceptionBadSampleInPlaylist, self).__init__()
+        super().__init__()
 
 class ExceptionUnknownReport(ExceptionPygletMediaPlayerTesting):
     def __init__(self, rpt_name):

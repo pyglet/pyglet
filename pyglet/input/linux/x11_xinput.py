@@ -43,7 +43,7 @@ class DeviceResponder:
 
 class XInputDevice(DeviceResponder, Device):
     def __init__(self, display, device_info):
-        super(XInputDevice, self).__init__(display, asstr(device_info.name))
+        super().__init__(display, asstr(device_info.name))
 
         self._device_id = device_info.id
         self._device = None
@@ -104,7 +104,7 @@ class XInputDevice(DeviceResponder, Device):
     def open(self, window=None, exclusive=False):
         # Checks for is_open and raises if already open.
         # TODO allow opening on multiple windows.
-        super(XInputDevice, self).open(window, exclusive)
+        super().open(window, exclusive)
 
         if window is None:
             self._is_open = False
@@ -126,7 +126,7 @@ class XInputDevice(DeviceResponder, Device):
         self._install_events(window)
 
     def close(self):
-        super(XInputDevice, self).close()
+        super().close()
 
         if not self._device:
             return
