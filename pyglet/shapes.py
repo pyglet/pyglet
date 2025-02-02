@@ -356,7 +356,11 @@ class ShapeBase(ABC):
             self._vertex_list = None
 
     def __contains__(self, point: tuple[float, float]) -> bool:
-        """Test whether a point is inside a shape."""
+        """Test whether a point is inside a shape.
+
+        NOTE: This does not account for the object's scale (if the scale property is not 1.0, this may not work
+        as intended)
+        """
         raise NotImplementedError(f"The `in` operator is not supported for {self.__class__.__name__}")
 
     def get_shape_group(self) -> _ShapeGroup | Group:
@@ -492,6 +496,10 @@ class ShapeBase(ABC):
 
     @property
     def scale(self) -> float:
+        """
+        Get/set the relative scale of the shape. The default starting value is 1.0.
+        All shapes scale from their position (self._x, self._y) coordinates.
+        """
         return self._scale
 
     @scale.setter
