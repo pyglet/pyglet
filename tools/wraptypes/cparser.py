@@ -13,11 +13,6 @@ Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
 
 '''
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import cPickle
 import operator
 import os.path
