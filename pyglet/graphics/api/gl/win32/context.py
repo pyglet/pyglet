@@ -13,7 +13,7 @@ from pyglet.libs.win32.constants import PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.backend import OpenGLBackend
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.window.win32 import Win32Window
 
 

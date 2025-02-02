@@ -204,12 +204,27 @@ class ShaderBase:
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
     You can reuse a Shader object in multiple ShaderPrograms.
     """
+    _src_str: str
     type: ShaderType
 
     def __init__(self, source_string: str, shader_type: ShaderType) -> None:
         """Initialize a shader type."""
         self._src_str = source_string
         self.type = shader_type
+
+        available_shaders = self.supported_shaders()
+        if shader_type not in available_shaders:
+            msg = (
+                f"Shader type '{shader_type}' is not supported by this shader class."
+                f"Supported types are: {available_shaders}"
+            )
+            raise ShaderException(msg)
+
+    @classmethod
+    @abstractmethod
+    def supported_shaders(cls) -> tuple[ShaderType, ...]:
+        """Return the supported shader types for this shader class."""
+
 
 DataTypeTuple = ('?', 'f', 'i', 'I', 'h',  'H', 'b', 'B', 'q','Q')
 

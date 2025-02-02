@@ -58,7 +58,7 @@ If you are using OpenGL directly, you can access the image as a texture::
 immediately loaded as textures, whereas others go through an intermediate
 form).  To use a texture with pyglet.gl::
 
-    from pyglet.backend.gl import *
+    from pyglet.graphics.api.gl import *
     glEnable(texture.target)        # typically target is GL_TEXTURE_2D
     glBindTexture(texture.target, texture.id)
     # ... draw with the texture

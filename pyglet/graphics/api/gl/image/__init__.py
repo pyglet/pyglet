@@ -58,7 +58,7 @@ If you are using OpenGL directly, you can access the image as a texture::
 immediately loaded as textures, whereas others go through an intermediate
 form).  To use a texture with pyglet.gl::
 
-    from pyglet.backend.gl import *
+    from pyglet.graphics.api.gl import *
     glEnable(texture.target)        # typically target is GL_TEXTURE_2D
     glBindTexture(texture.target, texture.id)
     # ... draw with the texture
@@ -217,8 +217,7 @@ def get_gl_format(texture_format: TextureInternalFormat) -> int:
     # Get the integer value of the GL constant using globals()
     if gl_format in globals():
         return globals()[gl_format]
-    else:
-        raise ValueError(f"GL constant '{gl_format}' not defined.")
+    raise ValueError(f"GL constant '{gl_format}' not defined.")
 
 
 if TYPE_CHECKING:
@@ -632,20 +631,20 @@ class GLImageData(AbstractImage):
     def _get_gl_format_and_type(fmt):
         if fmt == 'R':
             return GL_RED, GL_UNSIGNED_BYTE
-        elif fmt == 'RG':
+        if fmt == 'RG':
             return GL_RG, GL_UNSIGNED_BYTE
-        elif fmt == 'RGB':
+        if fmt == 'RGB':
             return GL_RGB, GL_UNSIGNED_BYTE
-        elif fmt == 'BGR':
+        if fmt == 'BGR':
             return GL_BGR, GL_UNSIGNED_BYTE
-        elif fmt == 'RGBA':
+        if fmt == 'RGBA':
             return GL_RGBA, GL_UNSIGNED_BYTE
-        elif fmt == 'BGRA':
+        if fmt == 'BGRA':
             return GL_BGRA, GL_UNSIGNED_BYTE
 
-        elif fmt == 'L':
+        if fmt == 'L':
             return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif fmt == 'A':
+        if fmt == 'A':
             return GL_ALPHA, GL_UNSIGNED_BYTE
 
         return None, None
@@ -654,20 +653,20 @@ class GLImageData(AbstractImage):
     def _get_internalformat(fmt):
         if fmt == 'R':
             return GL_RED
-        elif fmt == 'RG':
+        if fmt == 'RG':
             return GL_RG
-        elif fmt == 'RGB':
+        if fmt == 'RGB':
             return GL_RGB
-        elif fmt == 'RGBA':
+        if fmt == 'RGBA':
             return GL_RGBA
-        elif fmt == 'D':
+        if fmt == 'D':
             return GL_DEPTH_COMPONENT
-        elif fmt == 'DS':
+        if fmt == 'DS':
             return GL_DEPTH_STENCIL
 
-        elif fmt == 'L':
+        if fmt == 'L':
             return GL_LUMINANCE
-        elif fmt == 'A':
+        if fmt == 'A':
             return GL_ALPHA
 
         return GL_RGBA
@@ -1071,8 +1070,8 @@ class GLTexture(TextureBase):
         from pyglet.graphics.api.gl import GLAttribute
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
-        x2 = x1 + (width is None and self.width or width)
-        y2 = y1 + (height is None and self.height or height)
+        x2 = x1 + ((width is None and self.width) or width)
+        y2 = y1 + ((height is None and self.height) or height)
         position = x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z
         indices = [0, 1, 2, 0, 2, 3]
 
@@ -1582,38 +1581,36 @@ class TextureGrid(GLTextureRegion, UniformTextureSequence):
         if type(index) is slice:
             if type(index.start) is not tuple and type(index.stop) is not tuple:
                 return self.items[index]
-            else:
-                row1 = 0
-                col1 = 0
-                row2 = self.rows
-                col2 = self.columns
-                if type(index.start) is tuple:
-                    row1, col1 = index.start
-                elif type(index.start) is int:
-                    row1 = index.start // self.columns
-                    col1 = index.start % self.columns
-                assert 0 <= row1 < self.rows and 0 <= col1 < self.columns
+            row1 = 0
+            col1 = 0
+            row2 = self.rows
+            col2 = self.columns
+            if type(index.start) is tuple:
+                row1, col1 = index.start
+            elif type(index.start) is int:
+                row1 = index.start // self.columns
+                col1 = index.start % self.columns
+            assert 0 <= row1 < self.rows and 0 <= col1 < self.columns
 
-                if type(index.stop) is tuple:
-                    row2, col2 = index.stop
-                elif type(index.stop) is int:
-                    row2 = index.stop // self.columns
-                    col2 = index.stop % self.columns
-                assert 0 <= row2 <= self.rows and 0 <= col2 <= self.columns
+            if type(index.stop) is tuple:
+                row2, col2 = index.stop
+            elif type(index.stop) is int:
+                row2 = index.stop // self.columns
+                col2 = index.stop % self.columns
+            assert 0 <= row2 <= self.rows and 0 <= col2 <= self.columns
 
-                result = []
-                i = row1 * self.columns
-                for row in range(row1, row2):
-                    result += self.items[i + col1:i + col2]
-                    i += self.columns
-                return result
-        else:
-            if type(index) is tuple:
-                row, column = index
-                assert 0 <= row < self.rows and 0 <= column < self.columns
-                return self.items[row * self.columns + column]
-            elif type(index) is int:
-                return self.items[index]
+            result = []
+            i = row1 * self.columns
+            for row in range(row1, row2):
+                result += self.items[i + col1:i + col2]
+                i += self.columns
+            return result
+        if type(index) is tuple:
+            row, column = index
+            assert 0 <= row < self.rows and 0 <= column < self.columns
+            return self.items[row * self.columns + column]
+        if type(index) is int:
+            return self.items[index]
 
     def __setitem__(self, index: int | slice, value: AbstractImage | Sequence[AbstractImage]):
         if type(index) is slice:

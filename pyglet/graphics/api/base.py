@@ -107,7 +107,7 @@ class VerifiedGraphicsConfig:
 
     .. note:: Keep any non-backend attributes as private. Create a property if public use is wanted.
     """
-    def __init__(self, window: Window, config: GraphicsConfig) -> None:
+    def __init__(self, window: Window, config: GraphicsConfig) -> None:  # noqa: D107
         self._window = window
         self._config = config
 
@@ -215,7 +215,7 @@ class WindowTransformations:
         return self._projection
 
     @projection.setter
-    def projection(self, projection: Mat4):
+    def projection(self, projection: Mat4) -> None:
         self._projection = projection
 
     @property
@@ -223,7 +223,7 @@ class WindowTransformations:
         return self._view
 
     @view.setter
-    def view(self, view: Mat4):
+    def view(self, view: Mat4) -> None:
         self._view = view
 
     @property
@@ -231,14 +231,14 @@ class WindowTransformations:
         return self._model
 
     @model.setter
-    def model(self, model: Mat4):
+    def model(self, model: Mat4) -> None:
         self._model = model
 
 
-class UBOMatrixTransformations(WindowTransformations):
+class UBOMatrixTransformations(WindowTransformations):  # noqa: D101
     ...
 
-class GraphicsResource(Protocol):
+class GraphicsResource(Protocol):  # noqa: D101
     def delete(self) -> None:
         ...
 
@@ -250,24 +250,24 @@ class ResourceManagement:
     managers: list[GraphicsResource]
     weak_resources: weakref.WeakSet[GraphicsResource]
 
-    def __init__(self):
+    def __init__(self) -> None:  # noqa: D107
         self._func = None
         self.managers = []
         self.weak_resources = weakref.WeakSet()
         atexit.register(self.on_exit_cleanup)
 
-    def set_pre_cleanup_func(self, func: Callable):
+    def set_pre_cleanup_func(self, func: Callable) -> None:
         """Register a function to be called before cleanup.
 
         Some API's may need to enforce a sync before cleanup.
         """
         self._func = func
 
-    def register_manager(self, resource: GraphicsResource):
+    def register_manager(self, resource: GraphicsResource) -> None:
         """A manager handles multiple resources, these will be called in reverse order on cleanup."""
         self.managers.append(resource)
 
-    def register_resource(self, resource: GraphicsResource):
+    def register_resource(self, resource: GraphicsResource) -> None:
         """Registers a resource as a weak reference.
 
         Some resources do not have a manager, but they do need to be freed before others. Keeping them permanently
@@ -275,11 +275,11 @@ class ResourceManagement:
         """
         self.weak_resources.add(resource)
 
-    def on_exit_cleanup(self):
+    def on_exit_cleanup(self) -> None:
         """Cleans up all graphical resources that have been registered on application exit."""
         self.cleanup_all()
 
-    def cleanup_all(self):
+    def cleanup_all(self) -> None:
         """Cleans up all graphical resources that have been registered.
 
         Weak resources registered are destroyed first.

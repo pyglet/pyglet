@@ -9,7 +9,7 @@ If you are using more than one context, you can set up a separate GLInfo
 object for each context.  Call `set_active_context` after switching to the
 context::
 
-    from pyglet.backend.gl.gl_info import GLInfo
+    from pyglet.graphics.api.gl.gl_info import GLInfo
 
     info = GLInfo()
     info.set_active_context()
@@ -21,15 +21,15 @@ context::
 from __future__ import annotations
 
 from ctypes import c_char_p, cast
-
-from pyglet.graphics.api.gl.gl import GL_EXTENSIONS, GL_MAJOR_VERSION, GL_MINOR_VERSION, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint
+from pyglet.graphics.api.gl.gl import GL_EXTENSIONS, GL_MAJOR_VERSION, GL_MINOR_VERSION, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, GL_NUM_EXTENSIONS, glGetString, glGetStringi
 from pyglet.graphics.api.gl.lib import GLException
+
 from pyglet.util import asstr
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import GLXInfo
-    from pyglet.graphics.api.gl import WGLInfo
+    from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
+    from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
 
 
 def _get_number(parameter: int) -> int:
@@ -64,7 +64,7 @@ class GLInfo:
 
     platform_info: GLXInfo | WGLInfo | None
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa: D107
         super().__init__()
         self.extensions = set()
 
@@ -76,8 +76,6 @@ class GLInfo:
 
         Combines any information from the platform information.
         """
-        from pyglet.graphics.api.gl import GL_NUM_EXTENSIONS, glGetString, glGetStringi
-
         self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
         self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
         self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)

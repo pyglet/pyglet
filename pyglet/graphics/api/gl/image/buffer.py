@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.backend import global_backend
+from pyglet.graphics.api import global_backend
 from pyglet.graphics.api.gl import (
     GL_COLOR_ATTACHMENT0,
     GL_FRAMEBUFFER,

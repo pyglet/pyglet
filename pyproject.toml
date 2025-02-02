@@ -112,5 +112,4 @@ indent-style = "space"
     "F405",
 ]
 "tests/*" = ["I", "E", "F", "D", "B", "W", "S", "ANN", "ARG"]
-#"vulkan/*" =
 "pyglet/graphics/api/vulkan/vulkan_lib/vulkan_core.py" = ["ALL"]

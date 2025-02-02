@@ -24,8 +24,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.backend import global_backend
-from pyglet.graphics.api.gl import get_max_color_attachments
+from pyglet.graphics.api import global_backend
+from pyglet.graphics.api.gl.gl import (
+    GLuint, glGenRenderbuffers, glBindRenderbuffer, GL_RENDERBUFFER, glRenderbufferStorageMultisample,
+    glRenderbufferStorage, glDeleteRenderbuffers, glGenFramebuffers, glBindFramebuffer, glClear, glDeleteFramebuffers,
+    glCheckFramebufferStatus, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
+    GL_FRAMEBUFFER_UNSUPPORTED, GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT, GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT,
+    GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER, GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER,
+    GL_COLOR_ATTACHMENT0, glFramebufferTexture, glFramebufferTextureLayer, glFramebufferRenderbuffer,
+)
 
 if TYPE_CHECKING:
     from pyglet.image import Texture

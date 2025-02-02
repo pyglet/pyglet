@@ -1,6 +1,6 @@
 import pyglet
 
-pyglet.options["debug_gl"] = False
+pyglet.options.debug_api = False
 pyglet.options.dpi_scaling = "scaled"
 
 window = pyglet.window.Window(800, 600, caption="DPI Test", resizable=True)

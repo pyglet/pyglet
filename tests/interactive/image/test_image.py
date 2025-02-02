@@ -1,7 +1,7 @@
 from io import BytesIO
 import pytest
 
-from pyglet.backend import image
+from pyglet.graphics.api.gl import image
 from pyglet.graphics.api import gl
 
 from ...annotations import Platform, require_platform, require_gl_extension

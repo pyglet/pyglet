@@ -162,7 +162,7 @@ class OpenGLBackend(BackendGlobalObject):
 
         return self.current_context.get_info().have_version(major, minor)
 
-    def get_cached_shader(self, name: str, *sources: tuple[str, str]) -> ShaderProgram:
+    def get_cached_shader(self, name: str, *sources: tuple[str, ShaderType]) -> ShaderProgram:
         """Create a ShaderProgram from OpenGL GLSL source.
 
         This is a convenience method that takes one or more tuples of
@@ -196,7 +196,7 @@ class OpenGLBackend(BackendGlobalObject):
     def create_shader(self, source_string: str, shader_type: ShaderType) -> Shader:
         return Shader(source_string, shader_type)
 
-    def get_default_batch(self):
+    def get_default_batch(self) -> pyglet.graphics.Batch:
         assert self.current_context
         if not hasattr(self.current_context, "default_batch"):
             self.current_context.default_batch = pyglet.graphics.Batch()

@@ -2,14 +2,14 @@
 
 Usage::
 
-    from pyglet.backend.gl import glx_info
+    from pyglet.graphics.api.gl import glx_info
 
     if glx_info.have_extension('GLX_NV_float_buffer'):
         # ...
 
 Or, if using more than one display::
 
-    from pyglet.backend.gl.glx_info import GLXInfo
+    from pyglet.graphics.api.gl.glx_info import GLXInfo
 
     info = GLXInfo(window._display)
     if info.get_server_vendor() == 'ATI':

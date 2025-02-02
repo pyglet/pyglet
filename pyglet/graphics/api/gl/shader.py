@@ -1131,15 +1131,7 @@ class Shader(ShaderBase):
         self._id = None
         self.type = shader_type
 
-        try:
-            shader_gl_type = _shader_types[shader_type]
-        except KeyError as err:
-            msg = (
-                f"shader_type '{shader_type}' is invalid."
-                f"Valid types are: {list(_shader_types)}"
-            )
-            raise ShaderException(msg) from err
-
+        shader_gl_type = _shader_types[shader_type]
         source_string = GLShaderSource(source_string, shader_gl_type).validate()
         shader_source_utf8 = source_string.encode("utf8")
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
@@ -1168,6 +1160,10 @@ class Shader(ShaderBase):
 
         if _debug_api_shaders:
             print(self._get_shader_log(shader_id))
+
+    @classmethod
+    def supported_shaders(cls) -> tuple[ShaderType, ...]:
+        return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
     @property
     def id(self) -> int:
@@ -1220,6 +1216,7 @@ class ShaderProgram(ShaderProgramBase):
     _id: int | None
     _context: OpenGLWindowContext | None
     _uniforms: dict[str, _Uniform]
+    _uniform_blocks: dict[str, UniformBlock]
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
@@ -1237,7 +1234,11 @@ class ShaderProgram(ShaderProgramBase):
         have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
         self._attributes = _introspect_attributes(self._id)
         self._uniforms = _introspect_uniforms(self._id, have_dsa)
-        self._uniform_blocks = _introspect_uniform_blocks(self)
+        self._uniform_blocks = self._get_uniform_blocks()
+
+    def _get_uniform_blocks(self) -> dict[str, UniformBlock]:
+        """Return Uniform Block information."""
+        return _introspect_uniform_blocks(self)
 
     @property
     def id(self) -> int:
@@ -1402,13 +1403,13 @@ class ShaderProgram(ShaderProgramBase):
         """
         return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
 
-    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: Sequence[str], batch: Batch = None,
-                              group: Group = None, **data: Any) -> VertexList:
+    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: Sequence[str],
+                              batch: Batch | None = None, group: Group | None = None, **data: Any) -> VertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
 
-    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int], batch: Batch = None,
-                            group: Group = None, **data: Any) -> IndexedVertexList:
+    def vertex_list_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
+                            batch: Batch | None = None, group: Group | None = None, **data: Any) -> IndexedVertexList:
         """Create a IndexedVertexList.
 
         Args:
@@ -1430,8 +1431,9 @@ class ShaderProgram(ShaderProgramBase):
         """
         return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
 
-    def vertex_list_instanced_indexed(self, count: int, mode: int, indices: Sequence[int],
-                                      instance_attributes: Sequence[str], batch: Batch = None, group: Group = None,
+    def vertex_list_instanced_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
+                                      instance_attributes: Sequence[str],
+                                      batch: Batch | None = None, group: Group | None = None,
                                       **data: Any) -> IndexedVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
@@ -1456,7 +1458,7 @@ class ComputeShaderProgram:
         """Create an OpenGL ComputeShaderProgram from source."""
         self._id = None
 
-        if not (pyglet.backend.have_version(4, 3) or pyglet.backend.have_extension("GL_ARB_compute_shader")):
+        if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
             msg = (
                 "Compute Shader not supported. OpenGL Context version must be at least "
                 "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension."

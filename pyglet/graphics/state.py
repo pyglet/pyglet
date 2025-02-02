@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence, Generator
+from typing import Generator, Any
 
 import pyglet
 
