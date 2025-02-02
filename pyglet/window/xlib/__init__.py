@@ -1600,8 +1600,8 @@ class XlibWindow(BaseWindow):
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y
         if self._width != w or self._height != h:
-            self._width = w
-            self._height = h
+            self._width = max(1, w)
+            self._height = max(1, h)
             self._update_view_size()
             self.dispatch_event('_on_internal_resize', self._width, self._height)
         if self._x != x or self._y != y:
