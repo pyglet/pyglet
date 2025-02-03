@@ -26,7 +26,8 @@ from pyglet.font.freetype_lib import (
     FT_Set_Char_Size,
     f26p6_to_float,
     float_to_f26p6,
-    ft_get_library, FT_LOAD_TARGET_MONO,
+    ft_get_library, FT_LOAD_TARGET_MONO, FT_LOAD_COLOR, FT_FACE_FLAG_SCALABLE, FT_FACE_FLAG_FIXED_SIZES,
+    FT_Set_Pixel_Sizes, FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Sfnt_Table, FT_Sfnt_Tags, TT_OS2,
 )
 from pyglet.util import asbytes, asstr
 
@@ -67,6 +68,34 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self._lsb = self._glyph_slot.bitmap_left
         self._advance_x = int(f26p6_to_float(self._glyph_slot.advance.x))
 
+    def _expand_to_rgba(self, data: bytes, src_format: str, dst_format: str) -> bytes:
+        """Expands data type to 4 components with putting values into A.
+
+        Will re-evaluate on a better system later.
+        """
+        src_len = len(src_format)
+        dst_len = len(dst_format)
+
+        if src_len >= dst_len:
+            return data
+
+        expanded_data = bytearray(len(data) // src_len * dst_len)
+        mapping = {c: i for i, c in enumerate(src_format)}
+
+        for i in range(len(data) // src_len):
+            default_value = data[i * src_len + 0] if src_len > 0 else 0
+
+            for j, c in enumerate(dst_format):
+                if c in mapping:
+                    expanded_data[i * dst_len + j] = 255
+                elif c == 'A':
+                    # Default alpha to fully opaque
+                    expanded_data[i * dst_len + j] = default_value
+                else:
+                    expanded_data[i * dst_len + j] = 255
+
+        return bytes(expanded_data)
+
     def _get_bitmap_data(self) -> None:
         if self._mode == FT_PIXEL_MODE_MONO:
             # BCF fonts always render to 1 bit mono, regardless of render
@@ -76,51 +105,60 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
             # Usual case
             assert self._glyph_slot.bitmap.num_grays == 256
             self._data = self._glyph_slot.bitmap.buffer
+        elif self._mode == FT_PIXEL_MODE_BGRA:
+            # as of freetype 2.5
+            self._data = self._glyph_slot.bitmap.buffer
         else:
             msg = "Unsupported render mode for this glyph"
             raise base.FontException(msg)
 
     def _convert_mono_to_gray_bitmap(self) -> None:
-        bitmap_data = cast(self._bitmap.buffer,
-                           POINTER(c_ubyte * (self._pitch * self._height))).contents
-        data = (c_ubyte * (self._pitch * 8 * self._height))()
-        data_i = 0
-        for byte in bitmap_data:
-            # Data is MSB; left-most pixel in a byte has value 128.
-            data[data_i + 0] = (byte & 0x80) and 255 or 0
-            data[data_i + 1] = (byte & 0x40) and 255 or 0
-            data[data_i + 2] = (byte & 0x20) and 255 or 0
-            data[data_i + 3] = (byte & 0x10) and 255 or 0
-            data[data_i + 4] = (byte & 0x08) and 255 or 0
-            data[data_i + 5] = (byte & 0x04) and 255 or 0
-            data[data_i + 6] = (byte & 0x02) and 255 or 0
-            data[data_i + 7] = (byte & 0x01) and 255 or 0
-            data_i += 8
+        if self._bitmap.buffer:
+            bitmap_data = cast(self._bitmap.buffer,
+                               POINTER(c_ubyte * (self._pitch * self._height))).contents
+
+            data = (c_ubyte * (self._width * self._height))()
+
+            # Tightly pack the data, as freetype pads it.
+            for y in range(self._height):
+                for x in range(self._width):
+                    byte = bitmap_data[y * self._pitch + (x // 8)]
+                    bit = 7 - (x % 8)  # Data is MSB; left-most pixel in a byte has value 128.
+                    data[y * self._width + x] = 255 if (byte & (1 << bit)) else 0
+        else:
+            # No pointer in the buffer, no default or fallback in this font.
+            data = (c_ubyte * 0)()
         self._data = data
-        self._pitch <<= 3
+        self._pitch = self._width
 
     def _create_glyph(self) -> base.Glyph:
+        # Textures should be a minimum of 1x1.
+        if self._width == 0 and self._height == 0:
+            width = 1
+            height = 1
+            data = bytes(bytearray([0, 0, 0, 0]))
+            pitch = 4
+        else:
+            width = self._width
+            height = self._height
+            # If it's not in BGRA, convert it manually.
+            if self._mode != FT_PIXEL_MODE_BGRA:
+                size = self._width * self._height
+                ptr = cast(self._data, POINTER(c_ubyte * size))
+                data = self._expand_to_rgba(ptr.contents, 'R', 'BGRA')
+                pitch = self._pitch * 4
+            else:
+                data = self._data
+                pitch = self._pitch
+
+        img = image.ImageData(width, height,"BGRA", data, pitch)
+
+        glyph = self.font.create_glyph(img)
+        glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
+
         # In FT positive pitch means `down` flow, in Pyglet ImageData
         # negative values indicate a top-to-bottom arrangement. So pitch must be inverted.
-        # Using negative pitch causes conversions, so much faster to just swap tex_coords
-        img = image.ImageData(self._width,
-                              self._height,
-                              "A",
-                              self._data,
-                              abs(self._pitch))
-
-        # HACK: Get text working in GLES until image data can be converted properly
-        #       GLES don't support coversion during pixel transfer so we have to
-        #       force specify the glyph format to be GL_ALPHA. This format is not
-        #       supported in 3.3+ core, but are present in ES because of pixel transfer
-        #       limitations.
-        if pyglet.gl.current_context.get_info().get_opengl_api() == "gles":
-            GL_ALPHA = 0x1906
-            glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
-        else:
-            glyph = self.font.create_glyph(img)
-
-        glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
+        # Using negative pitch causes a CPU re-ordering. For now, swap texture coordinates for speed.
         if self._pitch > 0:
             t = list(glyph.tex_coords)
             glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
@@ -156,25 +194,23 @@ class MemoryFaceStore:
         lname = name and name.lower() or ""
         return self._dict.get((lname, weight, italic), None)
 
-
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
     # Map font (name, weight, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
     face: FreeTypeFace
+    fallback_fonts = ("Noto Color Emoji",)
 
-    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
-                 dpi: int | None = None) -> None:
-
-        if stretch:
-            warnings.warn("The current font render does not support stretching.")  # noqa: B028
+    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False,
+                 stretch: bool | str = False, dpi: int | None = None) -> None:
 
         super().__init__()
         self._name = name
         self.size = size
         self.weight = weight
         self.italic = italic
+        self.stretch = stretch
         self.dpi = dpi or 96
 
         self._load_font_face()
@@ -192,8 +228,26 @@ class FreeTypeFont(base.Font):
     def descent(self) -> int:
         return self.metrics.descent
 
+    def _get_slot_from_fallbacks(self, character: str) -> FT_GlyphSlot | None:
+        """Checks all fallback fonts in order to find a valid glyph index."""
+        # Check if fallback has this glyph, if so.
+        for fallback_font in self.fallback_fonts:
+            ft: FreeTypeFont = pyglet.font.load(fallback_font, self.size)
+            fb_index = ft.face.get_character_index(character)
+            if fb_index:
+                ft.face.set_char_size(self.size, self.dpi)
+                return ft.get_glyph_slot(character)
+
+        return None
+
     def get_glyph_slot(self, character: str) -> FT_GlyphSlot:
         glyph_index = self.face.get_character_index(character)
+        # Glyph index does not exist, so check fallback fonts.
+        if glyph_index == 0 and (self.name not in self.fallback_fonts):
+            glyph_slot = self._get_slot_from_fallbacks(character)
+            if glyph_slot is not None:
+                return glyph_slot
+
         self.face.set_char_size(self.size, self.dpi)
         return self.face.get_glyph_slot(glyph_index)
 
@@ -203,7 +257,7 @@ class FreeTypeFont(base.Font):
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self) -> None:
-        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.italic)
+        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.italic, self.stretch)
         if not match:
             msg = f"Could not match font '{self._name}'"
             raise base.FontException(msg)
@@ -219,8 +273,17 @@ class FreeTypeFont(base.Font):
 
     @classmethod
     def add_font_data(cls: type[FreeTypeFont], data: bytes) -> None:
-        face = FreeTypeMemoryFace(data)
+        font_data = (FT_Byte * len(data))()
+        memmove(font_data, data, len(data))
+
+        face = FreeTypeMemoryFace(font_data, 0)
         cls._memory_faces.add(face)
+        count = face.face_count
+        # Some fonts may be a collection. Load each one.
+        if count > 1:
+            for i in range(1, count):
+                face = FreeTypeMemoryFace(font_data, i)
+                cls._memory_faces.add(face)
 
 
 class FreeTypeFace:
@@ -237,6 +300,18 @@ class FreeTypeFace:
         assert ft_face is not None
         self.ft_face = ft_face
         self._get_best_name()
+
+        self._italic = self.style_flags & FT_STYLE_FLAG_ITALIC != 0
+        bold = self.style_flags & FT_STYLE_FLAG_BOLD != 0
+        if bold:
+            self._weight = "bold"
+        else:
+            # Sometimes it may have a weight, but FT_STYLE_FLAG_BOLD is not accurate. Check the font config.
+            config = get_fontconfig()
+            self._weight, italic, self._stretch = config.style_from_face(self.ft_face)
+            if italic != self._italic:
+                # Discrepancy in italics?
+                self._italic = italic
 
     @classmethod
     def from_file(cls: type[FreeTypeFace], file_name: str) -> FreeTypeFace:
@@ -268,6 +343,10 @@ class FreeTypeFace:
         return asstr(self.ft_face.contents.family_name)
 
     @property
+    def style_name(self) -> str:
+        return asstr(self.ft_face.contents.style_name)
+
+    @property
     def style_flags(self) -> int:
         return self.ft_face.contents.style_flags
 
@@ -277,11 +356,11 @@ class FreeTypeFace:
 
     @property
     def weight(self) -> str:
-        return "normal"
+        return self._weight
 
     @property
     def italic(self) -> bool:
-        return self.style_flags & FT_STYLE_FLAG_ITALIC != 0
+        return self._italic
 
     @property
     def face_flags(self) -> int:
@@ -293,21 +372,24 @@ class FreeTypeFace:
             self.ft_face = None
 
     def set_char_size(self, size: float, dpi: int) -> bool:
-        face_size = float_to_f26p6(size)
-        try:
-            FT_Set_Char_Size(self.ft_face,
-                             0,
-                             face_size,
-                             dpi,
-                             dpi)
-            return True
-        except FreeTypeError as e:
-            # Error 0x17 indicates invalid pixel size, so font size cannot be changed
-            # TODO Warn the user?
-            if e.errcode == 0x17:
-                return False
+        if self.face_flags & FT_FACE_FLAG_SCALABLE:
+            face_size = float_to_f26p6(size)
+            FT_Set_Char_Size(self.ft_face, 0, face_size, dpi, dpi)
 
-            raise
+        elif self.face_flags & FT_FACE_FLAG_COLOR:
+            if FT_Select_Size:
+                FT_Select_Size(self.ft_face, 0)
+
+        elif self.face_flags & FT_FACE_FLAG_FIXED_SIZES:
+            if self.ft_face.contents.num_fixed_sizes:
+                available_size = self.ft_face.contents.available_sizes[0]
+                width = available_size.width
+                height = available_size.height
+                FT_Set_Pixel_Sizes(self.ft_face, width, height)
+            else:
+                print("Has no fixed sizes, but is labeled as a fixed size font.")
+
+        return True
 
     def get_character_index(self, character: str) -> int:
         return get_fontconfig().char_index(self.ft_face, character)
@@ -316,6 +398,9 @@ class FreeTypeFace:
         flags = FT_LOAD_RENDER
         if pyglet.options.text_antialiasing is False:
             flags |= FT_LOAD_TARGET_MONO
+
+        if self.face_flags & FT_FACE_FLAG_COLOR:
+            flags |= FT_LOAD_COLOR
 
         FT_Load_Glyph(self.ft_face, glyph_index, flags)
         return self.ft_face.contents.glyph.contents
@@ -370,20 +455,18 @@ class FreeTypeFace:
 
 
 class FreeTypeMemoryFace(FreeTypeFace):
-    def __init__(self, data: bytes) -> None:
-        self._copy_font_data(data)
-        super().__init__(self._create_font_face())
-
-    def _copy_font_data(self, data: bytes) -> None:
-        self.font_data = (FT_Byte * len(data))()
-        memmove(self.font_data, data, len(data))
-
-    def _create_font_face(self) -> FT_Face:
+    def __init__(self, data: bytes, face_index: int) -> None:
+        self.font_data = data
         ft_library = ft_get_library()
         ft_face = FT_Face()
         FT_New_Memory_Face(ft_library,
                            self.font_data,
                            len(self.font_data),
-                           0,
+                           face_index,
                            byref(ft_face))
-        return ft_face
+
+        super().__init__(ft_face)
+
+    @property
+    def face_count(self) -> int:
+        return self.ft_face.contents.num_faces
