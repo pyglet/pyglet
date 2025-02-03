@@ -22,8 +22,10 @@ if TYPE_CHECKING:
 
 DriverStringOptionsCmapLookup = 1
 DriverStringOptionsRealizedAdvance = 4
+TextRenderingHintSingleBitPerPixelGridFit = 1
 TextRenderingHintAntiAlias = 4
 TextRenderingHintAntiAliasGridFit = 3
+
 
 FontStyleBold = 1
 FontStyleItalic = 2
@@ -55,7 +57,13 @@ class Rectf(ctypes.Structure):
     ]
 
 
+_text_quality = {
+    True: TextRenderingHintAntiAliasGridFit,
+    False: TextRenderingHintSingleBitPerPixelGridFit,
+}
+
 class GDIPlusGlyphRenderer(base.GlyphRenderer):
+
     def __init__(self, font: GDIPlusFont) -> None:
         self._bitmap = None
         self._dc = None
@@ -103,7 +111,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
         gdi32.SelectObject(self._dc, self.font.hfont)
 
         gdiplus.GdipSetTextRenderingHint(self._graphics,
-            TextRenderingHintAntiAliasGridFit)
+            _text_quality[pyglet.options.text_antialiasing])
 
         self._brush = ctypes.c_void_p()
         gdiplus.GdipCreateSolidFill(0xffffffff, ctypes.byref(self._brush))

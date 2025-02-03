@@ -26,7 +26,7 @@ from pyglet.font.freetype_lib import (
     FT_Set_Char_Size,
     f26p6_to_float,
     float_to_f26p6,
-    ft_get_library,
+    ft_get_library, FT_LOAD_TARGET_MONO,
 )
 from pyglet.util import asbytes, asstr
 
@@ -313,7 +313,11 @@ class FreeTypeFace:
         return get_fontconfig().char_index(self.ft_face, character)
 
     def get_glyph_slot(self, glyph_index: int) -> FT_GlyphSlot:
-        FT_Load_Glyph(self.ft_face, glyph_index, FT_LOAD_RENDER)
+        flags = FT_LOAD_RENDER
+        if pyglet.options.text_antialiasing is False:
+            flags |= FT_LOAD_TARGET_MONO
+
+        FT_Load_Glyph(self.ft_face, glyph_index, flags)
         return self.ft_face.contents.glyph.contents
 
     def get_font_metrics(self, size: float, dpi: int) -> FreeTypeFontMetrics:

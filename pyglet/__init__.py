@@ -110,6 +110,10 @@ class Options:
     debug_trace_depth: int = 1
     debug_trace_flush: bool = True
 
+    debug_com: bool = False
+    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
+    that utilize COM calls. Only applies to the Windows platform."""
+
     debug_win32: bool = False
     """If ``True``, prints error messages related to Windows library calls. Usually get's information from
     ``Kernel32.GetLastError``. This information is output to a file called ``debug_win32.log``."""
@@ -173,6 +177,11 @@ class Options:
     Due to those lack of features, it can potentially be more performant.
 
     .. versionadded:: 2.0
+    """
+
+    text_antialiasing: bool = True
+    """If ``True``, font renderers will improve text quality by adding antialiasing to the rendered characters. If
+    ``False``, text quality will appear pixelated.
     """
 
     headless: bool = False

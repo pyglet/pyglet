@@ -1657,7 +1657,7 @@ def get_system_locale() -> str:
 
 class DirectWriteGlyphRenderer(base.GlyphRenderer):
     font: Win32DirectWriteFont
-    antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
+    antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT if pyglet.options.text_antialiasing is True else D2D1_TEXT_ANTIALIAS_MODE_ALIASED
     draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT if WINDOWS_8_1_OR_GREATER else D2D1_DRAW_TEXT_OPTIONS_NONE
     measuring_mode = DWRITE_MEASURING_MODE_NATURAL
 

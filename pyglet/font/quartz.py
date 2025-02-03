@@ -90,7 +90,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
             cocoapy.kCGImageAlphaPremultipliedLast))
 
         # Draw text to bitmap context.
-        quartz.CGContextSetShouldAntialias(bitmap, True)
+        quartz.CGContextSetShouldAntialias(bitmap, pyglet.options.text_antialiasing)
         quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
         ct.CTLineDraw(line, bitmap)
         cf.CFRelease(line)
