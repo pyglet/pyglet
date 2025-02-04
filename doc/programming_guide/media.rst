@@ -807,16 +807,19 @@ normal, and only their volume and pitch properties will affect the sound.
 Ticking the clock
 -----------------
 
-If you are using pyglet's media libraries outside of a pyglet app, you will need 
-to use some kind of loop to tick the pyglet clock periodically (perhaps every 
-200ms or so), otherwise only the first small sample of media will be played::
+If you are using pyglet's media libraries outside of a pyglet app (not using
+``pyglet.app.run``) you will need to use some kind of loop to tick the pyglet clock
+periodically (perhaps every 200ms or so), otherwise you will have unintended side
+effects. Depending on the backend in use, this could mean only the first small sample
+of media will be played, or crashes due to internal resource exhaustion. At a minimum
+you will need to call::
 
     pyglet.clock.tick()
 
-If you wish to have a media source loop continuously (`player.loop = True`) you will
+If you wish to have a media source loop continuously (``player.loop = True``) you will
 also need to ensure Pyglet's events are dispatched inside your loop::
 
     pyglet.app.platform_event_loop.dispatch_posted_events()
 
-If you are inside a pyglet app then calling `pyglet.app.run()` takes care of 
+If you are inside a pyglet app then calling ``pyglet.app.run()`` takes care of
 all this for you.
