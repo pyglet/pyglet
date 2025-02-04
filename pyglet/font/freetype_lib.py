@@ -604,8 +604,8 @@ FT_Set_Pixel_Sizes = _get_function_with_error_handling("FT_Set_Pixel_Sizes",
                                                        [FT_Face, FT_UInt, FT_UInt], FT_Error)
 FT_Load_Glyph = _get_function_with_error_handling("FT_Load_Glyph",
                                                   [FT_Face, FT_UInt, FT_Int32], FT_Error)
-FT_Get_Char_Index = _get_function_with_error_handling("FT_Get_Char_Index",
-                                                      [FT_Face, FT_ULong], FT_Error)
+FT_Get_Char_Index = _get_function("FT_Get_Char_Index",
+                                                      [FT_Face, FT_ULong], FT_UInt)
 FT_Load_Char = _get_function_with_error_handling("FT_Load_Char",
                                                  [FT_Face, FT_ULong, FT_Int32], FT_Error)
 FT_Get_Kerning = _get_function_with_error_handling("FT_Get_Kerning",

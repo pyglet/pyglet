@@ -14,7 +14,6 @@ from pyglet.font.freetype_lib import (
     FT_PIXEL_MODE_MONO,
     FT_STYLE_FLAG_BOLD,
     FT_STYLE_FLAG_ITALIC,
-    FreeTypeError,
     FT_Byte,
     FT_Done_Face,
     FT_Face,
@@ -27,7 +26,7 @@ from pyglet.font.freetype_lib import (
     f26p6_to_float,
     float_to_f26p6,
     ft_get_library, FT_LOAD_TARGET_MONO, FT_LOAD_COLOR, FT_FACE_FLAG_SCALABLE, FT_FACE_FLAG_FIXED_SIZES,
-    FT_Set_Pixel_Sizes, FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Sfnt_Table, FT_Sfnt_Tags, TT_OS2,
+    FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Char_Index
 )
 from pyglet.util import asbytes, asstr
 
@@ -151,7 +150,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
                 data = self._data
                 pitch = self._pitch
 
-        img = image.ImageData(width, height,"BGRA", data, pitch)
+        img = image.ImageData(width, height, "BGRA", data, pitch)
 
         glyph = self.font.create_glyph(img)
         glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
@@ -193,6 +192,7 @@ class MemoryFaceStore:
     def get(self, name: str, weight: str, italic: bool) -> FreeTypeMemoryFace | None:
         lname = name and name.lower() or ""
         return self._dict.get((lname, weight, italic), None)
+
 
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
@@ -379,20 +379,22 @@ class FreeTypeFace:
         elif self.face_flags & FT_FACE_FLAG_COLOR:
             if FT_Select_Size:
                 FT_Select_Size(self.ft_face, 0)
+            else:
+                return False
 
         elif self.face_flags & FT_FACE_FLAG_FIXED_SIZES:
             if self.ft_face.contents.num_fixed_sizes:
-                available_size = self.ft_face.contents.available_sizes[0]
-                width = available_size.width
-                height = available_size.height
-                FT_Set_Pixel_Sizes(self.ft_face, width, height)
+                if FT_Select_Size:
+                    FT_Select_Size(self.ft_face, 0)
+                else:
+                    return False
             else:
                 print("Has no fixed sizes, but is labeled as a fixed size font.")
 
         return True
 
     def get_character_index(self, character: str) -> int:
-        return get_fontconfig().char_index(self.ft_face, character)
+        return FT_Get_Char_Index(self.ft_face, ord(character))
 
     def get_glyph_slot(self, glyph_index: int) -> FT_GlyphSlot:
         flags = FT_LOAD_RENDER
@@ -455,7 +457,7 @@ class FreeTypeFace:
 
 
 class FreeTypeMemoryFace(FreeTypeFace):
-    def __init__(self, data: bytes, face_index: int) -> None:
+    def __init__(self, data: bytes, face_index: int = 0) -> None:
         self.font_data = data
         ft_library = ft_get_library()
         ft_face = FT_Face()
