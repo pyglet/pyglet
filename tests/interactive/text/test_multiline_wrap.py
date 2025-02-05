@@ -38,8 +38,8 @@ class BaseTestWindow(window.Window):
         self.document = text.decode_attributed(msg)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-                                                   (self.width - self.margin * 2),
-                                                   self.height - self.margin * 2,
+                                                   width=(self.width - self.margin * 2),
+                                                   height=self.height - self.margin * 2,
                                                    multiline=multiline,
                                                    wrap_lines=wrap_lines,
                                                    batch=self.batch)
