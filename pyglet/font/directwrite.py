@@ -1802,7 +1802,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
     def get_glyph_metrics(self, font_face: IDWriteFontFace, indices: Array[UINT16], count: int) -> list[
         tuple[float, float, float, float, float]]:
         """Returns a list of tuples with the following metrics per indice:
-        .       (glyph width, glyph height, lsb, advanceWidth)
+        .       (glyph width, glyph height, left side bearing, advance width, bottom side bearing)
         """
         glyph_metrics = (DWRITE_GLYPH_METRICS * count)()
         font_face.GetDesignGlyphMetrics(indices, count, glyph_metrics, False)
@@ -1873,14 +1873,15 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return False
 
-    def render_single_glyph(self, font_face: IDWriteFontFace, indice: int, advance: float, offset: DWRITE_GLYPH_OFFSET,
+    def render_single_glyph(self, font_face: IDWriteFontFace, indice: int,
                             metrics: tuple[float, float, float, float, float]):
         """Renders a single glyph using D2D DrawGlyphRun"""
         glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics
 
         # Slicing an array turns it into a python object. Maybe a better way to keep it a ctypes value?
         new_indice = (UINT16 * 1)(indice)
-        new_advance = (FLOAT * 1)(advance)
+        new_advance = (FLOAT * 1)(0.0)
+        offset = DWRITE_GLYPH_OFFSET(0.0, 0.0)
 
         run = self._get_single_glyph_run(
             font_face,
@@ -1919,8 +1920,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                             render_height + 1)
 
         # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
-        baseline_offset = D2D_POINT_2F(-render_offset_x - offset.advanceOffset,
-                                       self.font.ascent + offset.ascenderOffset)
+        baseline_offset = D2D_POINT_2F(-render_offset_x,
+                                       self.font.ascent)
 
         self._render_target.BeginDraw()
 
@@ -1937,9 +1938,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         glyph = self.font.create_glyph(image)
 
         glyph.set_bearings(-self.font.descent, render_offset_x,
-                           advance,
-                           offset.advanceOffset,
-                           offset.ascenderOffset)
+                           glyph_advance * self.font.font_scale_ratio)
 
         return glyph
 
@@ -2036,7 +2035,7 @@ class Win32DirectWriteFont(base.Font):
     _font_cache = []
     _font_loader_key = None
 
-    _default_name = "Segoe UI"  # Default font for Win7/10.
+    _default_name = "Segoe UI"  # Default font for Windows 7+
 
     _glyph_renderer = None
     _empty_glyph = None
@@ -2048,7 +2047,6 @@ class Win32DirectWriteFont(base.Font):
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool | str = False,
                  stretch: bool | str = False, dpi: int | None = None, locale: str | None = None) -> None:
         self._filename: str | None = None
-        self._advance_cache = {}  # Stores glyph's by the indice and advance.
 
         super().__init__()
 
@@ -2214,20 +2212,6 @@ class Win32DirectWriteFont(base.Font):
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
-    def copy_glyph(self, glyph: base.Glyph, advance: int, offset: DWRITE_GLYPH_OFFSET) -> base.Glyph:
-        """This takes the existing glyph texture and puts it into a new Glyph with a new advance.
-        Texture memory is shared between both glyphs.
-        """
-        new_glyph = base.Glyph(glyph.x, glyph.y, glyph.z, glyph.width, glyph.height, glyph.owner)
-        new_glyph.set_bearings(
-            glyph.baseline,
-            glyph.lsb,
-            advance,
-            offset.advanceOffset,
-            offset.ascenderOffset,
-        )
-        return new_glyph
-
     def _render_layout_glyph(self, text_buffer: str, i: int, clusters: list[DWRITE_CLUSTER_METRICS], check_color: bool=True):
         # Some glyphs can be more than 1 char. We use the clusters to determine how many of an index exist.
         text_length = clusters.count(i)
@@ -2327,26 +2311,18 @@ class Win32DirectWriteFont(base.Font):
 
         return glyphs
 
-    def get_glyphs(self, text: str) -> list[Glyph]:
+    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
             self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
             self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
-        text_buffer, actual_count, indices, advances, offsets, clusters = self._glyph_renderer.get_string_info(text,
-                                                                                                               self.font_face)
+        string_info = self._glyph_renderer.get_string_info(text, self.font_face)
+        text_buffer, actual_count, indices, advances, offsets, clusters = string_info
 
         metrics = self._glyph_renderer.get_glyph_metrics(self.font_face, indices, actual_count)
 
         formatted_clusters = list(clusters)
-
-        # Convert to real sizes.
-        for i in range(actual_count):
-            advances[i] *= self.font_scale_ratio
-
-        for i in range(actual_count):
-            offsets[i].advanceOffset *= self.font_scale_ratio
-            offsets[i].ascenderOffset *= self.font_scale_ratio
 
         glyphs = []
 
@@ -2358,6 +2334,7 @@ class Win32DirectWriteFont(base.Font):
             if ct > 1:
                 substitutions[idx] = ct - 1
 
+        glyph_offsets = []
         for i in range(actual_count):
             indice = indices[i]
 
@@ -2368,33 +2345,34 @@ class Win32DirectWriteFont(base.Font):
                 glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters)
                 glyphs.append(glyph)
             else:
-                advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
+                glyph_offsets.append(
+                    base.GlyphPosition(
+                        (advances[i] - metrics[i][3]) * self.font_scale_ratio,
+                        0,
+                        offsets[i].advanceOffset * self.font_scale_ratio,
+                        offsets[i].ascenderOffset * self.font_scale_ratio)
+                )
 
                 # Glyphs can vary depending on shaping. We will cache it by indice, advance, and offset.
                 # Possible to just cache without offset and set them each time. This may be faster?
                 if indice in self.glyphs:
-                    if advance_key in self._advance_cache:
-                        glyph = self._advance_cache[advance_key]
-                    else:
-                        glyph = self.copy_glyph(self.glyphs[indice], advances[i], offsets[i])
-                        self._advance_cache[advance_key] = glyph
+                    glyph = self.glyphs[indice]
                 else:
-                    glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, advances[i], offsets[i],
-                                                                     metrics[i])
+                    glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, metrics[i])
                     if glyph is None:  # Will only return None if a color glyph is found. Use DW to render it directly.
                         glyph = self._render_layout_glyph(text_buffer, i, formatted_clusters, check_color=False)
                         glyph.colored = True
 
                     self.glyphs[indice] = glyph
-                    self._advance_cache[advance_key] = glyph
 
                 glyphs.append(glyph)
 
             if i in substitutions:
                 for _ in range(substitutions[i]):
                     glyphs.append(self._zero_glyph)
+                    glyph_offsets.append(base.GlyphPosition(0, 0, 0, 0))
 
-        return glyphs
+        return glyphs, glyph_offsets
 
     def create_text_layout(self, text: str) -> IDWriteTextLayout:
         text_buffer = create_unicode_buffer(text)
@@ -2645,7 +2623,7 @@ class Win32DirectWriteFont(base.Font):
                     strings = Win32DirectWriteFont.unpack_localized_string(fc_str, locale)
                     face_names.extend(strings)
 
-                    print(f"directwrite: Face names found: {strings}")
+                    assert _debug_print(f"directwrite: Face names found: {strings}")
 
                 # Check for GDI compatibility name
                 compat_names = IDWriteLocalizedStrings()

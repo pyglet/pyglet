@@ -7,6 +7,8 @@ classes as a documented interface to the concrete classes.
 from __future__ import annotations
 
 import abc
+from dataclasses import dataclass
+
 import unicodedata
 from typing import BinaryIO, ClassVar
 
@@ -101,6 +103,17 @@ def get_grapheme_clusters(text: str) -> list[str]:
     return clusters
 
 
+#: :meta private:
+@dataclass
+class GlyphPosition:
+    """Positioning offsets for a glyph."""
+    __slots__ = ('x_advance', 'y_advance', 'x_offset', 'y_offset')
+    x_advance: int  # How far the line advances AFTER drawing horizontal.
+    y_advance: int  # How far the line advances AFTER drawing vertical.
+    x_offset: int  # How much the current glyph moves on the X-axis when drawn. Does not advance.
+    y_offset: int  # How much the current glyph moves on the Y-axis when drawn. Does not advance.
+
+
 class Glyph(image.TextureRegion):
     """A single glyph located within a larger texture.
 
@@ -116,8 +129,7 @@ class Glyph(image.TextureRegion):
     #: :If a glyph is colored by the font renderer, such as an emoji, it may be treated differently by pyglet.
     colored = False
 
-    def set_bearings(self, baseline: int, left_side_bearing: int, advance: int, x_offset: int = 0,
-                     y_offset: int = 0) -> None:
+    def set_bearings(self, baseline: int, left_side_bearing: int, advance: int) -> None:
         """Set metrics for this glyph.
 
         Args:
@@ -127,20 +139,16 @@ class Glyph(image.TextureRegion):
                 Distance to add to the left edge of the glyph.
             advance:
                 Distance to move the horizontal advance to the next glyph, in pixels.
-            x_offset:
-                Distance to move the glyph horizontally from its default position.
-            y_offset:
-                Distance to move the glyph vertically from its default position.
         """
         self.baseline = baseline
         self.lsb = left_side_bearing
         self.advance = advance
 
         self.vertices = (
-            left_side_bearing + x_offset,
-            -baseline + y_offset,
-            left_side_bearing + self.width + x_offset,
-            -baseline + self.height + y_offset)
+            left_side_bearing,
+            -baseline,
+            left_side_bearing + self.width,
+            -baseline + self.height)
 
 
 class GlyphTexture(image.Texture):
