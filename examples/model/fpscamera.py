@@ -221,8 +221,7 @@ class FPSCamera:
         if self.controller_move:
             translation += forward * self.controller_move.y + right * self.controller_move.x
 
-        # self.position += translation.normalize() * walk_speed + up * self._elevation * walk_speed
-        self.position += (translation + up * self._elevation).normalize() * walk_speed
+        self.position += (translation + up * self._elevation) * walk_speed
 
         # Look forward from the new position
         self._window.view = Mat4.look_at(self.position, self.position + forward, self.UP)
