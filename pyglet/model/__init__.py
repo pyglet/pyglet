@@ -37,7 +37,7 @@ from pyglet.math import Mat4
 
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import registry as _codec_registry
-from .codecs.base import Material, Scene
+from .codecs.base import Material, Scene, SimpleMaterial
 
 if TYPE_CHECKING:
     from typing import BinaryIO, TextIO
@@ -137,22 +137,13 @@ class Model:
         for group in self.groups:
             group.matrix = matrix
 
-    def draw(self) -> None:
-        """Draw the model.
-
-        This is not recommended. See the module documentation
-        for information on efficient drawing of multiple models.
-        """
-        gl.current_context.window_block.bind(0)
-        self._batch.draw_subset(self.vertex_lists)
-
 
 class BaseMaterialGroup(graphics.Group):
     default_vert_src: str
     default_frag_src: str
     matrix: Mat4 = Mat4()
 
-    def __init__(self, material: Material, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.material = material
         self.program = program
@@ -209,7 +200,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def __init__(self, material: Material, program: ShaderProgram,
+    def __init__(self, material: SimpleMaterial, program: ShaderProgram,
                  texture: Texture, order: int = 0, parent: Group | None = None):
         super().__init__(material, program, order, parent)
         self.texture = texture
@@ -305,7 +296,7 @@ class Cube(Model):
         self._program = program if program else get_default_shader()
 
         # Create a Material and Group for the Model
-        self._material = material if material else pyglet.model.Material(name="cube")
+        self._material = material if material else SimpleMaterial(name="cube")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._vlist = self._create_vertexlist()
@@ -317,30 +308,51 @@ class Cube(Model):
         h = self._height / 2
         d = self._depth / 2
 
-        vertices = (-w, -h, -d,   # front, bottom-left    0
-                    w, -h, -d,    # front, bottom-right   1
-                    w, h, -d,     # front, top-right      2
-                    -w, h, -d,    # front, top-left       3
-                    -w, -h, d,    # back, bottom-left     4
-                    w, -h, d,     # back, bottom-right    5
-                    w, h, d,      # back, top-right       6
-                    -w, h, d)     # back, top-left        7
+        vertices = [
+            -w, -h, -d,   # front, bottom-left    0
+            w, -h, -d,    # front, bottom-right   1
+            w, h, -d,     # front, top-right      2         Front
+            -w, h, -d,    # front, top-left       3
 
-        normals = (-0.5, -0.5, -1.0,    # back, bottom-left
-                   0.5, -0.5, -1.0,     # back, buttom-right
-                   0.5,  0.5, -1.0,     # back, top-right
-                   -0.5, 0.5, -1.0,     # back, top-left
-                   -0.5, -0.5, 0.0,     # front, bottom-left
-                   0.5, -0.5, 0.0,      # front, bottom-right
-                   0.5, 0.5, 0.0,       # front, top-right
-                   -0.5, 0.5, 0.0)      # front, top-left
+            w, -h, d,     # back, bottom-right    4
+            -w, -h, d,    # back, bottom-left     5
+            -w, h, d,     # back, top-left        6         Back
+            w, h, d,      # back, top-right       7
 
-        indices = (0, 3, 2, 0, 2, 1,    # front
-                   4, 5, 6, 4, 6, 7,    # back
-                   4, 7, 3, 4, 3, 0,    # left
-                   1, 2, 6, 1, 6, 5,    # right
-                   3, 7, 6, 3, 6, 2,    # top
-                   0, 1, 5, 0, 5, 4)    # bottom
+            w, -h, -d,    # front, bottom-right   8
+            w, -h, d,     # back, bottom-right    9
+            w, h, d,      # back, top-right      10         Right
+            w, h, -d,     # front, top-right     11
+
+            -w, -h, d,    # back, bottom-left    12
+            -w, -h, -d,   # front, bottom-left   13
+            -w, h, -d,    # front, top-left      14         Left
+            -w, h, d,     # back, top-left       15
+
+            -w, h, -d,    # front, top-left      16
+            w, h, -d,     # front, top-right     17
+            w, h, d,      # back, top-right      18         Top
+            -w, h, d,     # back, top-left       19
+
+            -w, -h, d,    # back, bottom-left    20
+            w, -h, d,     # back, bottom-right   21
+            w, -h, -d,    # front, bottom-right  22         Bottom
+            -w, -h, -d,   # front, bottom-left   23
+        ]
+
+        normals = [0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,     # front face
+                   0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,         # back face
+                   1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,         # right face
+                   -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,     # left face
+                   0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,         # top face
+                   0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0]     # bottom face
+
+        indices = [23, 22, 20, 22, 21, 20,  # bottom
+                   19, 18, 16, 18, 17, 16,  # top
+                   15, 14, 12, 14, 13, 12,  # left
+                   11, 10, 8, 10, 9, 8,     # right
+                   7, 6, 4, 6, 5, 4,        # back
+                   3, 2, 0, 2, 1, 0]        # front
 
         return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
@@ -351,17 +363,18 @@ class Cube(Model):
 
 class Sphere(Model):
 
-    def __init__(self, radius=1.0, segments=30, color=(1.0, 1.0, 1.0, 1.0),
+    def __init__(self, radius=1.0, stacks=30, sectors=30, color=(1.0, 1.0, 1.0, 1.0),
                  material=None, batch=None, group=None, program=None):
         self._radius = radius
-        self._segments = segments
+        self._stacks = stacks
+        self._sectors = sectors
         self._color = color
 
         self._batch = batch
         self._program = program if program else get_default_shader()
 
         # Create a Material and Group for the Model
-        self._material = material if material else pyglet.model.Material(name="sphere")
+        self._material = material if material else SimpleMaterial(name="sphere")
         self._group = pyglet.model.MaterialGroup(material=self._material, program=self._program, parent=group)
 
         self._vlist = self._create_vertexlist()
@@ -369,27 +382,35 @@ class Sphere(Model):
         super().__init__([self._vlist], [self._group], self._batch)
 
     def _create_vertexlist(self):
-        radius = self._radius
-        segments = self._segments
+        radius = self._radius / 2
+        sectors = self._sectors
+        stacks = self._stacks
 
         vertices = []
+        normals = []
         indices = []
 
-        for i in range(segments):
-            u = i * pi / segments
-            for j in range(segments):
-                v = j * 2 * pi / segments
-                x = radius * sin(u) * cos(v)
-                y = radius * sin(u) * sin(v)
-                z = radius * cos(u)
-                vertices.extend((x, y, z))
+        sector_step = 2 * pi / sectors
+        stack_step = pi / stacks
 
-        for i in range(segments):
-            for j in range(segments):
-                indices.extend((i * segments + j, (i - 1) * segments + j, i * segments + (j - 1)))
-                indices.extend((i * segments + j, (i + 1) * segments + j, i * segments + (j + 1)))
+        for i in range(stacks + 1):
+            stack_angle = pi / 2 - i * stack_step
+            for j in range(sectors + 1):
+                sector_angle = j * sector_step
+                vertices.append(radius * cos(stack_angle) * cos(sector_angle))    # x
+                vertices.append(radius * cos(stack_angle) * sin(sector_angle))    # y
+                vertices.append(radius * sin(stack_angle))                             # z
+                normals.append(cos(stack_angle) * cos(sector_angle))              # x
+                normals.append(cos(stack_angle) * sin(sector_angle))              # y
+                normals.append(sin(stack_angle))                                       # z
 
-        normals = vertices
+        # Generate indices
+        for i in range(stacks):
+            for j in range(sectors):
+                first = i * (sectors + 1) + j
+                second = first + sectors + 1
+                indices.extend([first, second, second + 1])
+                indices.extend([first, second + 1, first + 1])
 
         return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.gl.GL_TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
