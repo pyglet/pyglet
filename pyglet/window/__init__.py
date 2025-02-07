@@ -590,11 +590,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
-        self._viewport = (0, 0, *self.get_framebuffer_size())
+        self._viewport = 0, 0, *self.get_framebuffer_size()
 
         width, height = self.get_size()
         self.view = Mat4()
-        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -8192, 8192)
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -842,13 +842,13 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def _on_internal_resize(self, width: int, height: int) -> None:
         gl.glViewport(0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
         self.dispatch_event('on_resize', w, h)
 
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
         gl.glViewport(0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
