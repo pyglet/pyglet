@@ -106,12 +106,12 @@ When sprites are collected into a batch, no guarantee is made about the order
 in which they will be drawn.  If you need to ensure some sprites are drawn
 before others (for example, landscape tiles might be drawn before character
 sprites, which might be drawn before some particle effect sprites), use two
-or more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the
+or more :py:class:`~pyglet.graphics.Group` objects to specify the
 draw order::
 
     batch = pyglet.graphics.Batch()
-    background = pyglet.graphics.OrderedGroup(0)
-    foreground = pyglet.graphics.OrderedGroup(1)
+    background = pyglet.graphics.Group(order=0)
+    foreground = pyglet.graphics.Group(order=1)
 
     sprites = [pyglet.sprite.Sprite(image, batch=batch, group=background),
                pyglet.sprite.Sprite(image, batch=batch, group=background),

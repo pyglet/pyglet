@@ -32,7 +32,7 @@ class Frame:
                 The cell ("bucket") size for each cell in the hash.
                 Widgets may span multiple cells.
             order:
-                Widgets use internal OrderedGroups for draw sorting.
+                Widgets use internal ordered Groups for draw sorting.
                 This is the base value for these Groups.
         """
         self._window = window
@@ -173,7 +173,7 @@ class MovableFrame(Frame):
             enable:
                 Whether to enable frame.
             order:
-                Widgets use internal OrderedGroups for draw sorting.
+                Widgets use internal ordered Groups for draw sorting.
                 This is the base value for these Groups.
             modifier:
                 A key modifier, such as `pyglet.window.key.MOD_CTRL`
