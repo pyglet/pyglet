@@ -35,7 +35,7 @@ class Vec2(_typing.NamedTuple):
     `Vec2` is an immutable 2D Vector, including most common
     operators. As an immutable type, all operations return a new object.
 
-    .. note:: The Python `len` operator returns the number of elements in
+    .. note:: The Python ``len`` operator returns the number of elements in
               the vector. For the vector length, use the `length()` method.
 
     .. note:: Python's :py:func:`sum` requires the first item to be a ``Vec2``.
@@ -370,10 +370,10 @@ class Vec2(_typing.NamedTuple):
 class Vec3(_typing.NamedTuple):
     """A three-dimensional vector represented as X Y Z coordinates.
 
-    `Vec3` is an immutable 2D Vector, including most common operators.
+    `Vec3` is an immutable 3D Vector, including most common operators.
     As an immutable type, all operations return a new object.
 
-    .. note:: The Python `len` operator returns the number of elements in
+    .. note:: The Python ``len`` operator returns the number of elements in
               the vector. For the vector length, use the `length()` method.
     """
 
@@ -671,10 +671,10 @@ class Vec3(_typing.NamedTuple):
 class Vec4(_typing.NamedTuple):
     """A four-dimensional vector represented as X Y Z W coordinates.
 
-    `Vec4` is an immutable 2D Vector, including most common operators.
+    `Vec4` is an immutable 4D Vector, including most common operators.
     As an immutable type, all operations return a new object.
 
-    .. note:: The Python `len` operator returns the number of elements in
+    .. note:: The Python ``len` operator returns the number of elements in
               the vector. For the vector length, use the `length()` method.
     """
 

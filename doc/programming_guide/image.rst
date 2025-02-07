@@ -69,7 +69,7 @@ sprites might share the same bullet image.
 A Sprite is constructed given an image or animation, and can be directly
 drawn with the :py:meth:`~pyglet.sprite.Sprite.draw` method::
 
-    sprite = pyglet.sprite.Sprite(img=image)
+    sprite = pyglet.sprite.Sprite(img=image, x=100, y=50)
 
     @window.event
     def on_draw():
@@ -158,9 +158,8 @@ image.  For example, to center the image at ``(x, y)``::
 
 You can also specify an optional `z` component to the
 :py:meth:`~pyglet.image.AbstractImage.blit` method.
-This has no effect unless you have changed the default projection
-or enabled depth testing.  In the following example, the second
-image is drawn *behind* the first, even though it is drawn after it::
+This has no effect unless you have enabled depth testing.  In the following example,
+the second image is drawn *behind* the first, even though it is drawn after it::
 
     from pyglet.gl import *
     glEnable(GL_DEPTH_TEST)
@@ -168,9 +167,10 @@ image is drawn *behind* the first, even though it is drawn after it::
     kitten.blit(x, y, 0)
     kitten.blit(x, y, -0.5)
 
-The default pyglet projection has a depth range of (-1, 1) -- images drawn
+The default pyglet projection has a depth range of (-8192, 8192) -- images drawn
 with a z value outside this range will not be visible, regardless of whether
-depth testing is enabled or not.
+depth testing is enabled or not. (You can create your own Window projection matrix
+if you have specific needs).
 
 Images with an alpha channel can be blended with the existing framebuffer.  To
 do this you need to supply OpenGL with a blend equation.  The following code
