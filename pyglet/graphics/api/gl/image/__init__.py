@@ -359,22 +359,10 @@ class GLImageData(AbstractImage):
         self._current_mipmap_texture = None
 
     def get_data(self, fmt: str | None = None, pitch: int | None = None) -> bytes:
-        """Get the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~get_bytes` instead.
-        """
-        return self.get_bytes(fmt, pitch)
+        raise NotImplementedError("Use ImageData.get_bytes instead")
 
     def set_data(self, fmt: str, pitch: int, data: bytes) -> None:
-        """Set the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~set_bytes` instead.
-        """
-        self.set_bytes(fmt, pitch, data)
+        raise NotImplementedError("Use ImageData.set_bytes instead")
 
     def set_mipmap_image(self, level: int, image: AbstractImage) -> None:
         """Set a user-defined mipmap image for a particular level.
