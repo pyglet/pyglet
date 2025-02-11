@@ -42,7 +42,7 @@ Limitations
 -----------
 
 Multisampling
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 Be careful with enabling multisampling on the window. Likely 
 ``get_best_config()`` will not have multisampling enabled.

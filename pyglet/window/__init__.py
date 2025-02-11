@@ -459,10 +459,10 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         ``config`` is a special case; it can be a template created by the
         user specifying the attributes desired, or it can be a complete
-        ``config`` as returned from :py:meth:`~pyglet.display.Screen.get_matching_configs`` or similar.
+        ``config`` as returned from :py:meth:`~pyglet.display.Screen.get_matching_configs` or similar.
 
         The context will be active as soon as the window is created, as if
-        :py:meth:`~pyglet.window.Window.switch_to`` was just called.
+        :py:meth:`~pyglet.window.Window.switch_to` was just called.
 
         Args:
             width:
@@ -497,7 +497,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 The context to attach to this window.  The context must not already be attached to another window.
             mode:
                 The screen will be switched to this mode if `fullscreen` is
-                True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height`.
+                True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height``.
 
         """
         EventDispatcher.__init__(self)
