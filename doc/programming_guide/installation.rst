@@ -1,10 +1,8 @@
 Installation
 ============
 
-.. note:: These instructions apply to pyglet |version|.
-
 pyglet is a pure Python library, with no hard dependencies on other modules.
-No special steps or complitation are required for installation. You can install
+No special steps or compilation are required for installation. You can install
 from `on PyPI <https://pypi.python.org/pypi/pyglet>`_ via **pip**. For example:
 
 .. code-block:: sh
