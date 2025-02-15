@@ -276,7 +276,7 @@ class XlibScreenMode(ScreenMode):
         self.info = info
         self.width = info.hdisplay
         self.height = info.vdisplay
-        self.rate = info.dotclock
+        self.rate = (info.dotclock * 1000) / (info.htotal * info.vtotal)
         self.depth = None
 
 
