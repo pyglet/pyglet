@@ -191,6 +191,7 @@ class ImageMouseCursor(MouseCursor):
         self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
+        self._scaling = 1.0
 
         self.gl_drawable = not acceleration
         self.hw_drawable = acceleration
@@ -198,7 +199,7 @@ class ImageMouseCursor(MouseCursor):
     def draw(self, x: int, y: int) -> None:
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        self.texture.blit((x - self.hot_x) / self._scaling, (y - self.hot_y) / self._scaling, 0)
         gl.glDisable(gl.GL_BLEND)
 
 
@@ -848,7 +849,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
         gl.glViewport(0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
+        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+        self._mouse_cursor._scaling = scale
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
@@ -1116,6 +1118,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if cursor is None:
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
+        self._mouse_cursor._scaling = self.scale
         self.set_mouse_platform_visible()
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
