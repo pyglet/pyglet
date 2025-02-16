@@ -149,7 +149,7 @@ class MovableFrame(Frame):
     When a specified modifier key is held down, Widgets can be
     repositioned by dragging them. Examples of modifier keys are
     Ctrl, Alt, Shift. These are defined in the `pyglet.window.key`
-    module, and start witih `MOD_`. For example::
+    module, and start with `MOD_`. For example::
 
         from pyglet.window.key import MOD_CTRL
 
@@ -163,7 +163,7 @@ class MovableFrame(Frame):
         """Create an instance of a MovableFrame.
 
         This is a similar to the standard Frame class, except that
-        you can specify a modifer key. When this key is held down,
+        you can specify a modifier key. When this key is held down,
         Widgets can be re-positioned by drag-and-dropping.
 
         Args:

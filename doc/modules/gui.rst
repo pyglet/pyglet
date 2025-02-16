@@ -7,6 +7,7 @@ Classes
 -------
 
 .. autoclass:: WidgetBase
+  :show-inheritance:
 
   .. rubric:: Attributes
 

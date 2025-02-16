@@ -337,7 +337,7 @@ for a more familar experience for computer graphics programmers.
     Vec2(x=10, y=5)
 
 * The vector ``heading`` property has been replace with the :py:meth:`~pyglet.math.Vec2.heading` function. This is to
-  better indicate that this is a calculation, not a static attribute. The function call is also margincally faster::
+  better indicate that this is a calculation, not a static attribute. The function call is also marginally faster.
 
 * The ``mag`` property has been removed. The :py:meth:`~pyglet.math.Vec2.length` function should be used in it's place.
 

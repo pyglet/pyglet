@@ -20,7 +20,7 @@ through the :ref:`guide_events` section of the documentation. Widgets are by nat
 very tightly associated with input events, so this is necessary to fully grasp their
 usage.
 
-Example code can be found in 'examples/gui/widgets.py' in the pyglet source repository.
+Example code can be found in ``examples/gui/widgets.py`` in the pyglet source repository.
 
 
 Creating a Widget
@@ -30,13 +30,16 @@ Included Widgets are :py:class:`~pyglet.gui.widgets.PushButton`,
 and :py:class:`~pyglet.gui.widgets.TextEntry`. They each have different arguments,
 which will be shown in the API documentation. For our example, we will create a
 'PushButton' widget, which requires you to provide at least two images. These two
-images will visually represent the "pressed" and "depressed" states of the button.
+images will visually represent the "pressed" and "unpressed" states of the button.
 This widget can also take an optional image for 'hover', but we'll skip that for now::
 
     pressed_img = pyglet.resource.image("button_pressed.png")
-    depressed_img = pyglet.resource.image("button_depressed.png")
+    unpressed_img = pyglet.resource.image("button_unpressed.png")
 
-    pushbutton = pyglet.gui.PushButton(x=100, y=300, pressed=pressed_img, depressed=depressed_img, batch=batch)
+    pushbutton = pyglet.gui.PushButton(
+        x=100, y=300, pressed=pressed_img,
+        unpressed=unpressed_img, batch=batch,
+    )
 
 We now have a PushButton widget, but it won't yet do anything. It will be drawn on
 screen, however, if included as part of a :py:class:`~pyglet.graphics.Batch` as shown
@@ -46,18 +49,18 @@ events dispatched by the Window::
     my_window.push_handlers(pushbutton)
 
 The widget should now change appearance when you click on it. It will switch between
-the provided images (pressed and depressed states). You can try adding the 'hover'
+the provided images (pressed and unpressed states). You can try adding the 'hover'
 image as well, for more visual feedback.
 
 Now that our widget is receiving events, we can now take of the events that are
-produced _by_ the widget. In this case, the PushButton widget dispatches two
-events: 'on_pressed' and 'on_released'. To wire these up, we simply set handlers
+produced *by* the widget. In this case, the PushButton widget dispatches two
+events: 'on_press' and 'on_release'. To wire these up, we simply set handlers
 for them::
 
-    def my_on_press_handler():
+    def my_on_press_handler(widget):
         print("Button Pressed!")
 
-    def my_on_release_handler():
+    def my_on_release_handler(widget):
         print("Button Released...")
 
     pushbutton.set_handler('on_press', my_on_press_handler)
@@ -112,7 +115,7 @@ Custom widgets
 --------------
 For users who are interested in creating their own custom Widgets, the
 :py:class:`~pyglet.gui.widgets.WidgetBase` base class is available for
-subclassing. This base class has most of the relavent Window events
+subclassing. This base class has most of the relevant Window events
 pre-defined, and is ready to be pushed as a handler. Custom subclasses
 can then override whichever mouse or keyboard events they need, depending
 on the application. Some additional helper properties are also provided.
