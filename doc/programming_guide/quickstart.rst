@@ -223,7 +223,4 @@ OpenGL constructs. The :ref:`guide_graphics` section goes into more detail.
 
 There are numerous examples of pyglet applications in the ``examples/``
 directory of the documentation.  If you get
-stuck, or have any questions, join us on the `mailing list`_ or `Discord`_!
-
-.. _mailing list: http://groups.google.com/group/pyglet-users
-.. _Discord: https://discord.gg/QXyegWe
+stuck, or have any questions, join us on the `Discord server <https://discord.gg/QXyegWe>`_!

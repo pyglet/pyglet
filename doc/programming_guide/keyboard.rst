@@ -402,7 +402,7 @@ Before adding a new motion, please do the following:
 #. Discuss the addition and any remaining questions with maintainers by either:
 
    * `Filing a GitHub Issue <https://github.com/pyglet/pyglet/issues>`_
-   * `Discord or the mailing list <https://github.com/pyglet/pyglet#contact>`_
+   * `Joining the Discord server <https://github.com/pyglet/pyglet#contact>`_
 
 Then, once you're ready:
 
