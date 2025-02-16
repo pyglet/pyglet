@@ -1146,7 +1146,7 @@ I’m going to leave it as an exercise for you to do the following::
 
 Good luck!  With a little effort, you should be able to figure out most of
 these things on your own. If you have trouble, join us on the pyglet
-`discord server <https://discord.gg/QXyegWe>`_.
+`Discord server <https://discord.gg/QXyegWe>`_.
 
 Also, in addition to this example game, there is yet *another* Asteroids clone
 available in the `/examples/astraea/` folder in the pyglet source directory.
