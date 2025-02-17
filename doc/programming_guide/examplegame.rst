@@ -1147,11 +1147,3 @@ I’m going to leave it as an exercise for you to do the following::
 Good luck!  With a little effort, you should be able to figure out most of
 these things on your own. If you have trouble, join us on the pyglet
 `Discord server <https://discord.gg/QXyegWe>`_.
-
-Also, in addition to this example game, there is yet *another* Asteroids clone
-available in the `/examples/astraea/` folder in the pyglet source directory.
-In comparison to this example game excercise we've just completed,
-Astraea is a complete game with a proper menu, score system, and additional
-graphical effects.  No step-by-step documentation is available for Astraea,
-but the code itself should be easy to understand and illustrates some nice
-techniques.
