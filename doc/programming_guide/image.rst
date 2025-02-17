@@ -582,8 +582,8 @@ Image grids
 ^^^^^^^^^^^
 
 An "image grid" is a single image which is divided into several smaller images
-by drawing an imaginary grid over it.  The following image shows an image used
-for the explosion animation in the *Astraea* example.
+by drawing an imaginary grid over it.  The following image shows an image that
+can be used for an asteroid explosion animation.
 
 .. figure:: img/explosion.png
 
