@@ -7,6 +7,7 @@ from typing import NamedTuple
 import pyglet
 from pyglet import image
 from pyglet.font import base
+from pyglet.font.base import GlyphPosition
 from pyglet.font.fontconfig import get_fontconfig
 from pyglet.font.freetype_lib import (
     FT_LOAD_RENDER,
@@ -26,7 +27,8 @@ from pyglet.font.freetype_lib import (
     f26p6_to_float,
     float_to_f26p6,
     ft_get_library, FT_LOAD_TARGET_MONO, FT_LOAD_COLOR, FT_FACE_FLAG_SCALABLE, FT_FACE_FLAG_FIXED_SIZES,
-    FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Char_Index
+    FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Char_Index, FT_FACE_FLAG_KERNING, FT_Vector,
+    FT_Get_Kerning, FT_KERNING_DEFAULT, FT_LOAD_NO_BITMAP, FT_Load_Char
 )
 from pyglet.util import asbytes, asstr
 
@@ -285,6 +287,51 @@ class FreeTypeFont(base.Font):
                 face = FreeTypeMemoryFace(font_data, i)
                 cls._memory_faces.add(face)
 
+    def get_glyph_positions(self, text: str):
+        positions = []
+        previous_glyph = None
+        if self.face.face_flags & FT_FACE_FLAG_KERNING:
+            for char in text:
+                glyph_index = self.face.get_character_index(char)
+                if previous_glyph:
+                    kerning_vec = FT_Vector()
+                    FT_Get_Kerning(self.face.ft_face, previous_glyph, glyph_index, FT_KERNING_DEFAULT, byref(kerning_vec))
+                    kerning_x = kerning_vec.x >> 6  # Convert from 1/64 pixels to pixels
+                    kerning_y = kerning_vec.y >> 6
+                    positions.append(GlyphPosition(kerning_x, kerning_y, 0, 0))
+
+                previous_glyph = glyph_index
+
+            # Last position cannot be kerned to something else.
+            positions.append(GlyphPosition(0, 0, 0, 0))
+        else:
+            return [GlyphPosition(0, 0, 0, 0)] * len(text)
+
+        return positions
+
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        width = 0
+        max_top = 0
+        min_bottom = 0
+        length = len(text)
+        self.face.set_char_size(self.size, self.dpi)
+        for i, char in enumerate(text):
+            FT_Load_Char(self.face.ft_face, ord(char), FT_LOAD_NO_BITMAP)
+            slot = self.face.ft_face.contents.glyph.contents
+
+            if i == length-1:
+                # Last glyph, use just the width.
+                width += slot.metrics.width >> 6
+            else:
+                width += slot.advance.x >> 6
+
+            glyph_top = slot.metrics.horiBearingY >> 6
+            glyph_bottom = (slot.metrics.horiBearingY - slot.metrics.height) >> 6
+
+            max_top = max(max_top, glyph_top)
+            min_bottom = min(min_bottom, glyph_bottom)
+
+        return width, max_top - min_bottom
 
 class FreeTypeFace:
     """FreeType typographic face object.
@@ -389,7 +436,7 @@ class FreeTypeFace:
                 else:
                     return False
             else:
-                print("Has no fixed sizes, but is labeled as a fixed size font.")
+                warnings.warn(f"{self.name} no fixed sizes, but is flagged as a fixed size font.")
 
         return True
 
