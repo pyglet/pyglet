@@ -33,14 +33,17 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         # Create an attributed string using text and font.
         attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
+            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+        )
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
-        string = c_void_p(cf.CFAttributedStringCreate(None, cocoapy.CFSTR(text), attributes))
+        cf_str = cocoapy.CFSTR(text)
+        string = c_void_p(cf.CFAttributedStringCreate(None, cf_str, attributes))
 
         # Create a CTLine object to render the string.
         line = c_void_p(ct.CTLineCreateWithAttributedString(string))
         cf.CFRelease(string)
         cf.CFRelease(attributes)
+        cf.CFRelease(cf_str)
 
         # Determine the glyphs involved for the text (if any)
         count = len(text)
@@ -125,60 +128,6 @@ class QuartzFont(base.Font):
     glyph_renderer_class: type[base.GlyphRenderer] = QuartzGlyphRenderer
     _loaded_CGFont_table: dict[str, dict[int, c_void_p]] = {}
 
-    def _lookup_font_with_family_and_traits(self, family: str, traits: int) -> c_void_p | None:
-        # This method searches the _loaded_CGFont_table to find a loaded
-        # font of the given family with the desired traits.  If it can't find
-        # anything with the exact traits, it tries to fall back to whatever
-        # we have loaded that's close.  If it can't find anything in the
-        # given family at all, it returns None.
-
-        # Check if we've loaded the font with the specified family.
-        if family not in self._loaded_CGFont_table:
-            return None
-        # Grab a dictionary of all fonts in the family, keyed by traits.
-        fonts = self._loaded_CGFont_table[family]
-        if not fonts:
-            return None
-        # Return font with desired traits if it is available.
-        if traits in fonts:
-            return fonts[traits]
-        # Otherwise try to find a font with some of the traits.
-        for (t, f) in fonts.items():
-            if traits & t:
-                return f
-        # Otherwise try to return a regular font.
-        if 0 in fonts:
-            return fonts[0]
-        # Otherwise return whatever we have.
-        return list(fonts.values())[0]
-
-    def _create_font_descriptor(self, family_name: str, traits: int) -> c_void_p:
-        # Create an attribute dictionary.
-        attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
-        # Add family name to attributes.
-        cfname = cocoapy.CFSTR(family_name)
-        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontFamilyNameAttribute, cfname)
-        cf.CFRelease(cfname)
-        # Construct a CFNumber to represent the traits.
-        itraits = c_int32(traits)
-        symTraits = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberSInt32Type, byref(itraits)))
-        if symTraits:
-            # Construct a dictionary to hold the traits values.
-            traitsDict = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks,
-                                                               cf.kCFTypeDictionaryValueCallBacks))
-            if traitsDict:
-                # Add CFNumber traits to traits dictionary.
-                cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontSymbolicTrait, symTraits)
-                # Add traits dictionary to attributes.
-                cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontTraitsAttribute, traitsDict)
-                cf.CFRelease(traitsDict)
-            cf.CFRelease(symTraits)
-        # Create font descriptor with attributes.
-        descriptor = c_void_p(ct.CTFontDescriptorCreateWithAttributes(attributes))
-        cf.CFRelease(attributes)
-        return descriptor
-
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
 
@@ -247,6 +196,60 @@ class QuartzFont(base.Font):
     def __del__(self) -> None:
         cf.CFRelease(self.ctFont)
 
+    def _lookup_font_with_family_and_traits(self, family: str, traits: int) -> c_void_p | None:
+        # This method searches the _loaded_CGFont_table to find a loaded
+        # font of the given family with the desired traits.  If it can't find
+        # anything with the exact traits, it tries to fall back to whatever
+        # we have loaded that's close.  If it can't find anything in the
+        # given family at all, it returns None.
+
+        # Check if we've loaded the font with the specified family.
+        if family not in self._loaded_CGFont_table:
+            return None
+        # Grab a dictionary of all fonts in the family, keyed by traits.
+        fonts = self._loaded_CGFont_table[family]
+        if not fonts:
+            return None
+        # Return font with desired traits if it is available.
+        if traits in fonts:
+            return fonts[traits]
+        # Otherwise try to find a font with some of the traits.
+        for (t, f) in fonts.items():
+            if traits & t:
+                return f
+        # Otherwise try to return a regular font.
+        if 0 in fonts:
+            return fonts[0]
+        # Otherwise return whatever we have.
+        return list(fonts.values())[0]
+
+    def _create_font_descriptor(self, family_name: str, traits: int) -> c_void_p:
+        # Create an attribute dictionary.
+        attributes = c_void_p(
+            cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
+        # Add family name to attributes.
+        cfname = cocoapy.CFSTR(family_name)
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontFamilyNameAttribute, cfname)
+        cf.CFRelease(cfname)
+        # Construct a CFNumber to represent the traits.
+        itraits = c_int32(traits)
+        symTraits = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberSInt32Type, byref(itraits)))
+        if symTraits:
+            # Construct a dictionary to hold the traits values.
+            traitsDict = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks,
+                                                               cf.kCFTypeDictionaryValueCallBacks))
+            if traitsDict:
+                # Add CFNumber traits to traits dictionary.
+                cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontSymbolicTrait, symTraits)
+                # Add traits dictionary to attributes.
+                cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontTraitsAttribute, traitsDict)
+                cf.CFRelease(traitsDict)
+            cf.CFRelease(symTraits)
+        # Create font descriptor with attributes.
+        descriptor = c_void_p(ct.CTFontDescriptorCreateWithAttributes(attributes))
+        cf.CFRelease(attributes)
+        return descriptor
+
     @classmethod
     def have_font(cls: type[QuartzFont], name: str) -> bool:
         name = str(name)
@@ -301,3 +304,25 @@ class QuartzFont(base.Font):
         if fullName not in cls._loaded_CGFont_table:
             cls._loaded_CGFont_table[fullName] = {}
         cls._loaded_CGFont_table[fullName][traits] = cgFont
+
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        ctFont = self.ctFont
+
+        attributes = c_void_p(
+            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+        )
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
+        cf_str = cocoapy.CFSTR(text)
+        string = c_void_p(cf.CFAttributedStringCreate(None, cf_str, attributes))
+
+        line = c_void_p(ct.CTLineCreateWithAttributedString(string))
+
+        ascent, descent = CGFloat(), CGFloat()
+        width = ct.CTLineGetTypographicBounds(line, byref(ascent), byref(descent), None)
+        height = ascent + descent
+
+        cf.CFRelease(string)
+        cf.CFRelease(attributes)
+        cf.CFRelease(line)
+        cf.CFRelease(cf_str)
+        return round(width), round(height)

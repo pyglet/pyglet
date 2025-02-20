@@ -16,6 +16,7 @@ if lib is None:
 cf = cdll.LoadLibrary(lib)
 
 kCFStringEncodingUTF8 = 0x08000100
+kCFAllocatorDefault = None
 
 CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
@@ -46,7 +47,11 @@ cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 
 # Core Foundation type to Python type conversion functions
 
-def CFSTR(string):
+def CFSTR(string: str):
+    """Create a CFStringRef object.
+
+    This must eventually be released by CFRelease.
+    """
     return cf.CFStringCreateWithCString(None, string.encode('utf8'), kCFStringEncodingUTF8)
 
 # Other possible names for this method:
