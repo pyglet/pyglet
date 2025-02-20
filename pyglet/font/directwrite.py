@@ -2546,6 +2546,12 @@ class Win32DirectWriteFont(base.Font):
 
         return None, None
 
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        layout = self.create_text_layout(text)
+        metrics = DWRITE_TEXT_METRICS()
+        layout.GetMetrics(byref(metrics))
+        return round(metrics.width), round(metrics.height)
+
     @classmethod
     def have_font(cls: type[Win32DirectWriteFont], name: str) -> bool:
         if cls.get_collection(name)[0] is not None:

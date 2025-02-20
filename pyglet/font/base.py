@@ -378,6 +378,13 @@ class Font:
             glyphs.append(self.glyphs[c])
         return glyphs
 
+    @abc.abstractmethod
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        """Return's an estimated width and height of text using glyph metrics without rendering..
+
+        This does not take into account any shaping.
+        """
+
     def get_glyphs_for_width(self, text: str, width: int) -> list[Glyph]:
         """Return a list of glyphs for ``text`` that fit within the given width.
 
