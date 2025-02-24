@@ -2121,10 +2121,11 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
 
     def __init__(
             self,
-            x: float, y: float,
-            width: float, height: float,
+            x: float, y: float, width: float, height: float,
             radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT],
             segments: int | tuple[int, int, int, int] | None = None,
+            border: float = None,
+            border_color: tuple[int, int, int, int] | tuple[int, int, int] = None,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             blend_src: int = GL_SRC_ALPHA,
             blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
@@ -2162,6 +2163,15 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
                 The RGB or RGBA color of the rectangle, specified as a
                 tuple of 3 or 4 ints in the range of 0-255. RGB colors
                 will be treated as having an opacity of 255.
+            border:
+                The thickness of the optional border outline of the rectangle.
+                the border is drawn as the outline of the rectangle within the
+                dimensions given for the rectangle. if zero, no border is generated
+                and the entire rectanlge takes the color specified as its color.
+            border_color:
+                The RGB or RGBA color of the optional border of the rectangle, specified as
+                a tuple of 3 or 4 ints in the range of 0-255. RGB colors will be treated as having
+                an opacity of 255. if border is specified, this value must be also specified.
             blend_src:
                 OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
             blend_dest:
@@ -2173,6 +2183,10 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             program:
                 Optional shader program of the shape.
         """
+
+        if border is not None and border_color is None:
+            raise ValueError("If border is specified, border_color must also be specified.")
+
         self._x = x
         self._y = y
         self._z = 0.0
@@ -2181,14 +2195,36 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         self._set_radius(radius)
         self._set_segments(segments)
         self._rotation = 0
+        self._border = border
 
-        r, g, b, *a = color
-        self._rgba = r, g, b, a[0] if a else 255
+        fill_r, fill_g, fill_b, *fill_a = color
 
-        super().__init__(
-            (sum(self._segments) + 4) * 3,
-            blend_src, blend_dest, batch, group, program,
-        )
+        if border_color is None:
+            r, g, b, *a = color
+            self._rgba = r, g, b, a[0] if a else 255
+            self._border_rgba = None
+        else:
+            border_r, border_g, border_b, *border_a = border_color
+
+            alpha = 255
+            if fill_a and border_a and fill_a[0] != border_a[0]:
+                raise ValueError("When color and border_color are both RGBA values,"
+                                 "they must both have the same opacity")
+
+            elif fill_a:
+                alpha = fill_a[0]
+            elif border_a:
+                alpha = border_a[0]
+
+            self._rgba = fill_r, fill_g, fill_b, alpha
+            self._border_rgba = border_r, border_g, border_b, alpha
+
+
+        vertex_count = (sum(self._segments) + 4) * 3
+        if self._border:
+            vertex_count *= 2
+
+        super().__init__(vertex_count, blend_src, blend_dest, batch, group, program)
 
     def _set_radius(self, radius: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         if isinstance(radius, (int, float)):
@@ -2221,15 +2257,27 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         return x < point[0] < x + self._width and y < point[1] < y + self._height
 
     def _create_vertex_list(self) -> None:
+        if self._border_rgba:
+            color = (self._border_rgba * (self._num_verts // 2)) + (self._rgba * (self._num_verts//2))
+        else:
+            color = self._rgba * (self._num_verts // 2)
         self._vertex_list = self._program.vertex_list(
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
-            color=('Bn', self._rgba * self._num_verts),
+            color=('Bn', color),
             translation=('f', (self._x, self._y) * self._num_verts))
+
+    def _update_color(self) -> None:
+        if self._border_rgba:
+            self._vertex_list.color[:] = (self._border_rgba * (self._num_verts // 2)) + (self._rgba * (self._num_verts // 2))
+        else:
+            self._vertex_list.color[:] = self._rgba * (self._num_verts // 2)
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
+
+        # first build up the points of the rectangle
 
         x = -self._anchor_x
         y = -self._anchor_y
@@ -2262,6 +2310,38 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
         for i, point in enumerate(points):
             triangle = center_x, center_y, *points[i - 1], *point
             vertices.extend(triangle)
+
+        # then add the border if a border is specified
+        if self._border:
+            border_x = x + self._border
+            border_y = y + self._border
+            border_width = self._width - self._border
+            border_height = self._height - self._border
+
+            border_points = []
+            border_arc_positions = [
+                # bottom-left
+                (border_x + self._radius[0][0],
+                 border_y + self._radius[0][1], math.pi * 3 / 2),
+                # top-left
+                (border_x + self._radius[1][0],
+                 border_height - self._radius[1][1], math.pi),
+                # top-right
+                (border_width - self._radius[2][0],
+                 border_height - self._radius[2][1], math.pi / 2),
+                # bottom-right
+                (border_width - self._radius[3][0],
+                 border_y + self._radius[3][1], 0),
+            ]
+
+            for (rx, ry), (arc_x, arc_y, arc_start), segments in zip(self._radius, border_arc_positions, self._segments):
+                tau_segs = -math.pi / 2 / segments
+                border_points.extend([(arc_x + rx * math.cos(i * tau_segs + arc_start),
+                                       arc_y + ry * math.sin(i * tau_segs + arc_start)) for i in range(segments + 1)])
+
+            for i, point in enumerate(border_points):
+                triangle = center_x, center_y, *border_points[i - 1], *point
+                vertices.extend(triangle)
 
         return vertices
 
@@ -2304,6 +2384,78 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
     def radius(self, value: _RadiusT | tuple[_RadiusT, _RadiusT, _RadiusT, _RadiusT]) -> None:
         self._set_radius(value)
         self._update_vertices()
+
+    @property
+    def border_color(self) -> tuple[int, int, int, int]:
+        """Get/set the bordered rectangle's border color.
+
+        To set the color of the interior fill, see :py:attr:`.color`.
+
+        You can set the border color to either of the following:
+
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
+
+        Setting the alpha on this property will change the alpha of
+        the entire shape, including both the fill and the border.
+
+        Each color component must be in the range 0 (dark) to 255 (saturated).
+        """
+        return self._border_rgba
+
+    @border_color.setter
+    def border_color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int],
+            ) -> None:
+        r, g, b, *a = values
+
+        if a:
+            alpha = a[0]
+        else:
+            alpha = self._rgba[3]
+
+        self._border_rgba = r, g, b, alpha
+        self._rgba = *self._rgba[:3], alpha
+
+        self._update_color()
+
+    @property
+    def color(self) -> tuple[int, int, int, int] | tuple[int, int, int]:
+        """Get/set the bordered rectangle's interior fill color.
+
+        To set the color of the border outline, see
+        :py:attr:`.border_color`.
+
+        The color may be specified as either of the following:
+
+        * An RGBA tuple of integers ``(red, green, blue, alpha)``
+        * An RGB tuple of integers ``(red, green, blue)``
+
+        Setting the alpha through this property will change the alpha
+        of the entire shape, including both the fill and the border.
+
+        Each color component must be in the range 0 (dark) to 255
+        (saturated).
+        """
+        return self._rgba
+
+    @color.setter
+    def color(
+            self,
+            values: tuple[int, int, int, int] | tuple[int, int, int],
+    ) -> None:
+        r, g, b, *a = values
+
+        if a:
+            alpha = a[0]
+        else:
+            alpha = self._rgba[3]
+
+        self._rgba = r, g, b, alpha
+        if self._border_rgba:
+            self._border_rgba = *self._border_rgba[:3], alpha
+        self._update_color()
 
 
 class Triangle(ShapeBase):
