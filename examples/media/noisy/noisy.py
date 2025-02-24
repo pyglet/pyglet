@@ -37,7 +37,7 @@ class Ball(pyglet.sprite.Sprite):
         x = random.random() * (window.width - self.width)
         y = random.random() * (window.height - self.height)
 
-        super(Ball, self).__init__(self.ball_image, x, y, batch=balls_batch)
+        super().__init__(self.ball_image, x, y, batch=balls_batch)
 
         self.dx = (random.random() - 0.5) * 1000
         self.dy = (random.random() - 0.5) * 1000

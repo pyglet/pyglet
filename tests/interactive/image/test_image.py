@@ -10,7 +10,7 @@ from ...base.event_loop import EventLoopFixture
 
 class ImageTestFixture(EventLoopFixture):
     def __init__(self, request, test_data):
-        super(ImageTestFixture, self).__init__(request)
+        super().__init__(request)
         self.test_data = test_data
 
         self.show_checkerboard = True

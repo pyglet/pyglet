@@ -7,10 +7,6 @@ Usage example::
 
 """
 from __future__ import annotations
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import sys
 import textwrap
 
@@ -62,10 +58,6 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
 
             Do not modify this file.
             '''
-
-            __docformat__ =  'restructuredtext'
-            __version__ = '$Id$'
-
             import ctypes
             from ctypes import *
 

@@ -6,19 +6,14 @@ Contributing
 Communication
 -------------
 
-pyglet communication occurs mostly in our
-`discord server <https://discord.gg/QXyegWe>`_,
-and
-`mailing list <http://groups.google.com/group/pyglet-users>`_.
+pyglet communication occurs mostly in our `Discord server <https://discord.gg/QXyegWe>`_.
 
 Issue Tracker
 -------------
 
 You can use the `issue tracker <https://github.com/pyglet/pyglet/issues>`_
-to report any bug or compatibility issue.
-
-We prefer the tracker to address discussions on specific bugs, and address
-broader topics of pyglet in the mailing list.
+to report any bug or compatibility issue. If your issue is more complex than what can be
+covered in a ticket, also consider joining the `Discord server <https://discord.gg/QXyegWe>`_.
 
 Getting the latest development version
 --------------------------------------
@@ -68,10 +63,8 @@ Contact
 
 pyglet is developed by many individual volunteers, and there is no central
 point of contact. If you have a question about developing with pyglet, or you
-wish to contribute, please join the
-`discord server <https://discord.gg/QXyegWe>`_,
-or the
-`mailing list <http://groups.google.com/group/pyglet-users>`_.
+wish to contribute, please join the `Discord server <https://discord.gg/QXyegWe>`_.
+
 
 For legal issues, please contact
 `Alex Holkner <mailto:Alex.Holkner@gmail.com>`_.

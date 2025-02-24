@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-"""
-"""
-
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import pyglet
 from pyglet.window import key
 from pyglet.window import mouse

@@ -83,7 +83,7 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
     mod_meta = key.MOD_SHIFT | key.MOD_ALT
 
     def setUp(self):
-        super(KeyPressWindowEventTestCase, self).setUp()
+        super().setUp()
         self.chosen_symbol = None
         self.chosen_modifiers = None
         self.completely_pressed = False
@@ -242,7 +242,7 @@ class TextWindowEventsTest(WindowEventsTestCase):
     text = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:"zxcvbnm,./ZXCVBNM<>?'
 
     def setUp(self):
-        super(TextWindowEventsTest, self).setUp()
+        super().setUp()
         self.chosen_text = None
         self.checks_passed = 0
 
@@ -284,7 +284,7 @@ class TextMotionWindowEventsTest(WindowEventsTestCase):
                    key.MOTION_DELETE)
 
     def setUp(self):
-        super(TextMotionWindowEventsTest, self).setUp()
+        super().setUp()
         self.chosen_key = None
         self.checks_passed = 0
 
@@ -332,7 +332,7 @@ class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
                    key.MOTION_DELETE)
 
     def setUp(self):
-        super(TextMotionSelectWindowEventsTest, self).setUp()
+        super().setUp()
         self.chosen_key = None
         self.checks_passed = 0
 
@@ -389,7 +389,7 @@ class ActivateDeactivateWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 3
 
     def setUp(self):
-        super(ActivateDeactivateWindowEventsTest, self).setUp()
+        super().setUp()
         self.window_active = None
         self.checks_passed = 0
 
@@ -434,7 +434,7 @@ class ExposeWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 5
 
     def setUp(self):
-        super(ExposeWindowEventsTest, self).setUp()
+        super().setUp()
         self.checks_passed = 0
 
     def on_expose(self):
@@ -458,7 +458,7 @@ class ShowHideWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 5
 
     def setUp(self):
-        super(ShowHideWindowEventsTest, self).setUp()
+        super().setUp()
         self.checks_passed = 0
         self.visible = False
 

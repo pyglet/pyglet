@@ -8,7 +8,7 @@ class Player(physicalobject.PhysicalObject):
     """Physical object that responds to user input"""
 
     def __init__(self, *args, **kwargs):
-        super(Player, self).__init__(img=resources.player_image, *args, **kwargs)
+        super().__init__(img=resources.player_image, *args, **kwargs)
 
         # Create a child sprite to show when the ship is thrusting
         self.engine_sprite = pyglet.sprite.Sprite(img=resources.engine_image, *args, **kwargs)
@@ -28,7 +28,7 @@ class Player(physicalobject.PhysicalObject):
 
     def update(self, dt):
         # Do all the normal physics stuff
-        super(Player, self).update(dt)
+        super().update(dt)
 
         if self.key_handler[key.LEFT]:
             self.rotation -= self.rotate_speed * dt
@@ -81,4 +81,4 @@ class Player(physicalobject.PhysicalObject):
         # We have a child sprite which must be deleted when this object
         # is deleted from batches, etc.
         self.engine_sprite.delete()
-        super(Player, self).delete()
+        super().delete()

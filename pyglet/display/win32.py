@@ -134,7 +134,7 @@ class Win32Screen(Screen):
 
 class Win32ScreenMode(ScreenMode):
     def __init__(self, screen, mode):
-        super(Win32ScreenMode, self).__init__(screen)
+        super().__init__(screen)
         self._mode = mode
         self.width = mode.dmPelsWidth
         self.height = mode.dmPelsHeight

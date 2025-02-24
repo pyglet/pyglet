@@ -526,7 +526,7 @@ same behavior as a PhysicalObject plus a little extra, so we’ll need to call
 PhysicalObject's `update()` method and then respond to input::
 
     def update(self, dt):
-        super(Player, self).update(dt)
+        super().update(dt)
 
         if self.keys['left']:
             self.rotation -= self.rotate_speed * dt
@@ -699,7 +699,7 @@ gracefully, we must write a simple but slightly enhanced `delete()` method::
 
     def delete(self):
         self.engine_sprite.delete()
-        super(Player, self).delete()
+        super().delete()
 
 The Player class is now cleaned up and ready to go.
 
@@ -890,7 +890,7 @@ subclass of PhysicalObject::
         """Bullets fired by the player"""
 
         def __init__(self, *args, **kwargs):
-            super(Bullet, self).__init__(
+            super().__init__(
                 resources.bullet_image, *args, **kwargs)
 
 To get bullets to disappear after a time, we could keep track of our own
@@ -906,7 +906,7 @@ We can do this as soon as the object is initialized by adding a call to
 :meth:`pyglet.clock.schedule_once` to the constructor::
 
     def __init__(self, *args, **kwargs):
-        super(Bullet, self).__init__(resources.bullet_image, *args, **kwargs)
+        super().__init__(resources.bullet_image, *args, **kwargs)
         pyglet.clock.schedule_once(self.die, 0.5)
 
 There’s still more work to be done on the Bullet class, but before we
@@ -924,7 +924,7 @@ to its constructor::
 
     class Player(physicalobject.PhysicalObject):
         def __init__(self, *args, **kwargs):
-            super(Player, self).__init__(img=resources.player_image, *args, **kwargs)
+            super().__init__(img=resources.player_image, *args, **kwargs)
             ...
             self.bullet_speed = 700.0
 
@@ -1065,7 +1065,7 @@ to pass a specific image to the superclass, passing along any other parameters::
 
     class Asteroid(physicalobject.PhysicalObject):
         def __init__(self, *args, **kwargs):
-            super(Asteroid, self).__init__(resources.asteroid_image, *args, **kwargs)
+            super().__init__(resources.asteroid_image, *args, **kwargs)
 
 Now we need to write a new `handle_collision_with()` method.  It should create
 a random number of new, smaller asteroids with random velocities.  However,
@@ -1077,7 +1077,7 @@ We want to keep the old behavior of ignoring other asteroids, so start the
 method with a call to the superclass’s method::
 
     def handle_collision_with(self, other_object):
-        super(Asteroid, self).handle_collision_with(other_object)
+        super().handle_collision_with(other_object)
 
 Now we can say that if it’s supposed to die, and it’s big enough, then we
 should create two or three new asteroids with random rotations and velocities.
@@ -1088,7 +1088,7 @@ like they come from the same object::
 
     class Asteroid:
         def handle_collision_with(self, other_object):
-            super(Asteroid, self).handle_collision_with(other_object)
+            super().handle_collision_with(other_object)
             if self.dead and self.scale > 0.25:
                 num_asteroids = random.randint(2, 3)
                 for i in range(num_asteroids):
@@ -1107,13 +1107,13 @@ rotation every frame.
 Add the attribute in the constructor::
 
     def __init__(self, *args, **kwargs):
-        super(Asteroid, self).__init__(resources.asteroid_image, *args, **kwargs)
+        super().__init__(resources.asteroid_image, *args, **kwargs)
         self.rotate_speed = random.random() * 100.0 - 50.0
 
 Then write the update() method::
 
     def update(self, dt):
-        super(Asteroid, self).update(dt)
+        super().update(dt)
         self.rotation += self.rotate_speed * dt
 
 The last thing we need to do is go over to load.py and have the asteroid()
@@ -1146,12 +1146,4 @@ I’m going to leave it as an exercise for you to do the following::
 
 Good luck!  With a little effort, you should be able to figure out most of
 these things on your own. If you have trouble, join us on the pyglet
-mailing list.
-
-Also, in addition to this example game, there is yet *another* Asteroids clone
-available in the `/examples/astraea/` folder in the pyglet source directory.
-In comparison to this example game excercise we've just completed,
-Astraea is a complete game with a proper menu, score system, and additional
-graphical effects.  No step-by-step documentation is available for Astraea,
-but the code itself should be easy to understand and illustrates some nice
-techniques.
+`Discord server <https://discord.gg/QXyegWe>`_.

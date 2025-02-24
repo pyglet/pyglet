@@ -13,11 +13,6 @@ Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
 
 '''
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import cPickle
 import operator
 import os.path
@@ -104,15 +99,14 @@ class Declarator(object):
 class Pointer(Declarator):
     pointer = None
     def __init__(self):
-        super(Pointer, self).__init__()
+        super().__init__()
         self.qualifiers = []
 
     def __repr__(self):
         q = ''
         if self.qualifiers:
             q = '<%s>' % ' '.join(self.qualifiers)
-        return 'POINTER%s(%r)' % (q, self.pointer) + \
-            super(Pointer, self).__repr__()
+        return 'POINTER%s(%r)' % (q, self.pointer) + super().__repr__()
 
 class Array(object):
     def __init__(self):

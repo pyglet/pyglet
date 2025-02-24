@@ -5,6 +5,7 @@ from pyglet.graphics.api.gl import *
 from pyglet import window
 from pyglet import clock
 from pyglet.window import key
+import pyglet
 
 
 @pytest.mark.requires_user_action

@@ -94,7 +94,7 @@ class XlibDisplay(XlibSelectDevice, Display):
         if x_screen >= screen_count:
             raise NoSuchDisplayException(f'Display "{name}" has no screen {x_screen:d}')
 
-        super(XlibDisplay, self).__init__()
+        super().__init__()
         self.name = name
         self.x_screen = x_screen
 
@@ -266,5 +266,5 @@ class XlibScreenMode(ScreenMode):
         self.info = info
         self.width = info.hdisplay
         self.height = info.vdisplay
-        self.rate = info.dotclock
+        self.rate = (info.dotclock * 1000) / (info.htotal * info.vtotal)
         self.depth = None

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Usage
 
@@ -14,11 +13,6 @@ Options
 The raw data captured in the .dbg can be rendered as human readable
 using the script report.py
 """
-
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
 import sys
 import weakref
@@ -58,7 +52,7 @@ class Control(pyglet.event.EventDispatcher):
     width = height = 10
 
     def __init__(self, parent):
-        super(Control, self).__init__()
+        super().__init__()
         self.parent = weakref.proxy(parent)
 
     def hit_test(self, x, y):
@@ -101,7 +95,7 @@ Button.register_event_type('on_press')
 
 class TextButton(Button):
     def __init__(self, *args, **kwargs):
-        super(TextButton, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._text = pyglet.text.Label('', anchor_x='center', anchor_y='center')
 
     def draw_label(self):
@@ -123,7 +117,7 @@ class Slider(Control):
     RESPONSIVNESS = 0.3
 
     def __init__(self, *args, **kwargs):
-        super(Slider, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.seek_value = None
 
     def draw(self):
@@ -183,7 +177,7 @@ class PlayerWindow(pyglet.window.Window):
     GUI_BUTTON_HEIGHT = 16
 
     def __init__(self, player):
-        super(PlayerWindow, self).__init__(caption='Media Player',
+        super().__init__(caption='Media Player',
                                            visible=False,
                                            resizable=True)
         # We only keep a weakref to player as we are about to push ourself
@@ -285,7 +279,7 @@ class PlayerWindow(pyglet.window.Window):
 
     def on_resize(self, width, height):
         """Position and size video image."""
-        super(PlayerWindow, self).on_resize(width, height)
+        super().on_resize(width, height)
         self.slider.width = width - self.GUI_PADDING * 2
 
         height -= self.GUI_HEIGHT

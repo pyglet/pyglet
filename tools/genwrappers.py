@@ -1,12 +1,4 @@
 #!/usr/bin/env python
-
-'''
-'''
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 from wraptypes.wrap import main as wrap
 import os.path
 import sys

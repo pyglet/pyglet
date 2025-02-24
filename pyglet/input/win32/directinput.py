@@ -64,7 +64,7 @@ def _create_control(object_instance):
 class DirectInputDevice(base.Device):
     def __init__(self, display, device, device_instance):
         name = device_instance.tszInstanceName
-        super(DirectInputDevice, self).__init__(display, name)
+        super().__init__(display, name)
 
         self._type = device_instance.dwDevType & 0xff
         self._subtype = device_instance.dwDevType & 0xff00

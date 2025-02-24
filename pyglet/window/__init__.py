@@ -190,6 +190,7 @@ class ImageMouseCursor(MouseCursor):
         self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
+        self.scaling = 1.0
 
         self.gl_drawable = not acceleration
         self.hw_drawable = acceleration
@@ -199,7 +200,7 @@ class ImageMouseCursor(MouseCursor):
         # Create agnostic version.
         # gl.glEnable(gl.GL_BLEND)
         # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        # self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        # self.texture.blit((x - self.hot_x) / self.scaling, (y - self.hot_y) / self.scaling, 0)
         # gl.glDisable(gl.GL_BLEND)
 
 
@@ -437,7 +438,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         user specifying the attributes desired
 
         The context will be active as soon as the window is created, as if
-        :py:meth:`~pyglet.window.Window.switch_to`` was just called.
+        :py:meth:`~pyglet.window.Window.switch_to` was just called.
 
         Args:
             width:
@@ -472,7 +473,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 The context to attach to this window.  The context must not already be attached to another window.
             mode:
                 The screen will be switched to this mode if `fullscreen` is
-                True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height`.
+                True.  If None, an appropriate mode is selected to accommodate ``width`` and ``height``.
 
         """
         EventDispatcher.__init__(self)
@@ -567,7 +568,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def _create_projection(self) -> None:
         self._matrices = self.context.global_ctx.initialize_matrices(self)
 
-        self._viewport = (0, 0, *self.get_framebuffer_size())
+        self._viewport = 0, 0, *self.get_framebuffer_size()
 
     def __del__(self) -> None:
         # Always try to clean up the window when it is dereferenced.
@@ -815,7 +816,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
         if self.context:
-            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
         self.dispatch_event('on_resize', w, h)
         #self.context.resized(w, h)
 
@@ -823,7 +824,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
         if self.context:
-            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -255, 255)
+            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
@@ -1091,6 +1092,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if cursor is None:
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
+        self._mouse_cursor.scaling = self.scale
         self.set_mouse_platform_visible()
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:

@@ -1,12 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: latin-1 -*-
-
-"""
-"""
 from __future__ import annotations
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 import os.path
 import re

@@ -1,3 +1,22 @@
+pyglet 2.1.3
+
+Changes
+-------
+- window: Change the default znear/zfar to (-8192, 8192).
+- docs: Fix top-left version display and copyright auto-generation (#1264).
+- docs: fixes in the quickstart guide, and lots of other cleanups.
+- clean up legacy super() call syntax around the codebase.
+
+Bugfixes
+--------
+- shapes: disable depth testing by default, due to usability issues.
+- window.xlib: prevent crash if initial configuration notify event has invalid width/height.
+- window.xlib: fix screen mode showing dotclock instead of Hz.
+- model: fix the (undocumented) Sphere and Cube test shapes.
+- examples.model.fpscamera: don't normalize the movement input.
+- window: Fix ImageMouseCursor positioning not adapting to scaling (#1278).
+
+
 pyglet 2.1.2
 
 Bugfixes

@@ -7,7 +7,7 @@ class Player(physicalobject.PhysicalObject):
     """Physical object that responds to user input"""
 
     def __init__(self, *args, **kwargs):
-        super(Player, self).__init__(img=resources.player_image, *args, **kwargs)
+        super().__init__(img=resources.player_image, *args, **kwargs)
 
         # Set some easy-to-tweak constants
         self.thrust = 300.0
@@ -33,7 +33,7 @@ class Player(physicalobject.PhysicalObject):
 
     def update(self, dt):
         # Do all the normal physics stuff
-        super(Player, self).update(dt)
+        super().update(dt)
 
         if self.keys['left']:
             self.rotation -= self.rotate_speed * dt

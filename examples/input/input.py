@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-
 """Print the details of all available input devices to stdout.
 """
-
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import pyglet
 
 window = pyglet.window.Window()
