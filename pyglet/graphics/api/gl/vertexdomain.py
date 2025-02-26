@@ -635,7 +635,7 @@ class IndexedVertexDomain(VertexDomain):
             glDrawElements(mode, sizes[0], self.index_gl_type,
                            starts[0] * self.index_element_size)
         else:
-            starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
+            starts = [s * self.index_element_size for s in starts]
             starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
             sizes = (GLsizei * primcount)(*sizes)
             glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
