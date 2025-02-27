@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import abc
-import select
 import socket
 import threading as _threading
 
@@ -191,7 +190,7 @@ class Object(UInt):
 
     def __init__(self, value: int):
         # Optional 'allow-null' (None) as 0:
-        super().__init__(value if value else 0)
+        super().__init__(value or 0)
 
 
 class NewID(UInt):
@@ -497,8 +496,9 @@ class Client:
     the ``/usr/share/wayland*`` directories. At a minimum, the base Wayland
     protocol file (``wayland.xml``) is required.
 
-    When instantiated, the Client automatically creates the main Display
-    (``wl_display``) interface, which is available as ``Client.wl_display``.
+    When instantiated, the Client automatically connects to the socket and
+    creates the main Display (``wl_display``) interface, which is available
+    as ``Client.wl_display``.
     """
     def __init__(self, *protocols: str) -> None:
         """Create a Wayland Client connection.
@@ -523,10 +523,7 @@ class Client:
             raise WaylandSocketError(f"Wayland endpoint not found: {path}")
 
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
-        self._sock.setblocking(False)
         self._sock.connect(path)
-        self._poll = select.poll()
-        self._poll.register(self._sock, select.POLLIN)
         self._recv_buffer = b""
 
         assert _debug_wayland(f"connected to: {self._sock.getpeername()}")
@@ -556,25 +553,25 @@ class Client:
 
         self._sync_done = _threading.Event()
 
+        self._receive_thread = _threading.Thread(target=self._receive_loop, daemon=True)
+        self._receive_thread.start()
+
+    def _receive_loop(self):
+        """A threaded method for continuously reading Server messages."""
+        while True:
+            self._receive()
+
     def sync(self):
         """Helper shortcut for wl_display.sync calls.
 
-        This method calls ``wl_display.sync``, and obtains a new ``wl_callback`` object.
-        It then continuously calls :py:meth:~`Client.receive` until the ``wl_callback.done``
-        event is returned from the server.
+        This method calls ``wl_display.sync``, and obtains a new ``wl_callback``
+        object. It then continuously spins until the ``wl_callback.done`` event
+        is returned from the server.
         """
         wl_callback = self.wl_display.sync(next(self.oid_pool))
         wl_callback.set_handler('done', self._wl_display_sync_handler)
-        while not self._sync_done.is_set():
-            self.receive()
+        self._sync_done.wait()
         self._sync_done.clear()
-
-    def fileno(self) -> int:
-        """The fileno of the internal socket.
-
-        This method allows the class to be "selectable" (see the ``select`` module).
-        """
-        return self._sock.fileno()
 
     def sendmsg(self, request: bytes, fds: bytes) -> None:
         """Send prepared requests and (optional) file descriptors to the server.
@@ -591,14 +588,12 @@ class Client:
         """
         self._sock.sendmsg([request], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, fds)])
 
-    def receive(self) -> None:
-        """Receive and process Wayland Events from the server."""
+    def _receive(self) -> None:
+        """Receive and process Wayland Events (messages) from the server."""
         _header_len = Header.length
 
         try:
             new_data, ancdata, msg_flags, _ = self._sock.recvmsg(4096, socket.CMSG_SPACE(64))
-        except BlockingIOError:
-            return
         except ConnectionError:
             raise WaylandSocketError(f"Socket is closed")
 
@@ -635,12 +630,6 @@ class Client:
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             print("Unhandled ancillary data")
             # TODO: handle file descriptors and stuff
-
-    def poll(self) -> bool:
-        """Return ``True`` if the server socket has pending data."""
-        if not self._poll.poll(0.0):
-            return False
-        return True
 
     def __del__(self) -> None:
         if hasattr(self, '_sock'):
