@@ -1849,13 +1849,15 @@ if _is_pyglet_doc_run:
 
 else:
     # Try to determine which platform to use.
-    if pyglet.options['headless']:
+    if pyglet.options.headless:
         from pyglet.window.headless import HeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
-    else:
+    elif pyglet.compat_platform == 'linux' and pyglet.options.wayland:
+        from pyglet.window.wayland import WaylandWindow as Window
+    elif pyglet.compat_platform == 'linux':
         from pyglet.window.xlib import XlibWindow as Window
 
 # Create shadow window. (trickery is for circular import)

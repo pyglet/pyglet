@@ -186,8 +186,8 @@ def _create_shadow_window() -> None:
 if _is_pyglet_doc_run:
     from .base import Config
 
-elif _pyglet.options['headless']:
-    from .headless import HeadlessConfig as Config
+elif _pyglet.options.headless or (compat_platform == 'linux' and _pyglet.options.wayland):
+    from .egl import EGLConfig as Config
 elif compat_platform in ('win32', 'cygwin'):
     from .win32 import Win32Config as Config
 elif compat_platform.startswith('linux'):

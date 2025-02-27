@@ -25,6 +25,8 @@ by the application; see the documentation for :class:`Screen`.
 import sys
 import weakref
 
+import pyglet
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
@@ -44,6 +46,10 @@ else:
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
         from pyglet.display.win32 import Win32Canvas as Canvas
+    elif compat_platform == 'linux' and pyglet.options.wayland:
+        from pyglet.display.wayland import WaylandDisplay as Display
+        from pyglet.display.wayland import WaylandScreen as Screen
+        from pyglet.display.wayland import WaylandCanvas as Canvas
     elif compat_platform == 'linux':
         from pyglet.display.xlib import XlibDisplay as Display
         from pyglet.display.xlib import XlibScreen as Screen

@@ -121,6 +121,9 @@ class Options:
     """If ``True``, prints information related to Linux X11 calls. This can potentially help narrow down driver or
     operating system issues."""
 
+    debug_wayland: bool = False
+    """If ``True``, prints information related to communications with the Wayland compositor."""
+
     shadow_window: bool = True
     """By default, pyglet creates a hidden window with a GL context when
      pyglet.gl is imported.  This allows resources to be loaded before
@@ -287,6 +290,12 @@ class Options:
     points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.
 
     .. versionadded:: 2.0.16
+    """
+
+    wayland: bool = False
+    """If ``True``, use Wayland instead of Xlib on Linux.
+    
+    .. versionadded:: 2.1.X
     """
 
     def get(self, item: str, default: Any = None) -> Any:

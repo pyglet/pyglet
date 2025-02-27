@@ -48,6 +48,7 @@ class Options:
     debug_trace_flush: bool
     debug_win32: bool
     debug_input: bool
+    debug_wayland: bool
     debug_x11: bool
     shadow_window: bool
     vsync: bool | None
@@ -64,6 +65,7 @@ class Options:
     osx_alt_loop: bool
     dpi_scaling: Literal["real", "scaled", "stretch"]
     shader_bind_management: bool
+    wayland: bool
 
     def get(self, item: str, default: Any = None) -> Any:
         ...

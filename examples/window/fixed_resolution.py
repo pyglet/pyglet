@@ -13,6 +13,9 @@ The method used in this example is:
 
 import pyglet
 
+pyglet.options.headless = True
+
+
 from pyglet.gl import *
 
 
@@ -110,8 +113,15 @@ if __name__ == '__main__':
     rectangle.anchor_position = 50, 50
 
 
+def make_screenshot(dt):
+    print("Saved screenshot")
+    fixed_res._color_buffer.save('screenshot.png')
+    pyglet.app.exit()
+
+
 # Call the combined update & redraw function at 60 FPS
 pyglet.clock.schedule_interval(update, 1/60)
+pyglet.clock.schedule_once(make_screenshot, 2)
 
 
 # Start the example

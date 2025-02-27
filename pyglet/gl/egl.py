@@ -3,6 +3,7 @@ from __future__ import annotations
 from ctypes import byref
 
 from pyglet import gl
+from pyglet.display.wayland import WaylandCanvas
 from pyglet.display.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
 
@@ -20,10 +21,10 @@ _fake_gl_attributes = {
 }
 
 
-class HeadlessConfig(Config):  # noqa: D101
-    def match(self, canvas: HeadlessCanvas) -> list[HeadlessDisplayConfig]:
-        if not isinstance(canvas, HeadlessCanvas):
-            msg = 'Canvas must be an instance of HeadlessCanvas'
+class EGLConfig(Config):  # noqa: D101
+    def match(self, canvas: HeadlessCanvas | WaylandCanvas) -> list[EGLDisplayConfig]:
+        if not isinstance(canvas, (HeadlessCanvas, WaylandCanvas)):
+            msg = 'Canvas must be an instance of HeadlessCanvas or WaylandCanvas'
             raise RuntimeError(msg)
 
         display_connection = canvas.display._display_connection  # noqa: SLF001
@@ -33,7 +34,7 @@ class HeadlessConfig(Config):  # noqa: D101
         for name, value in self.get_gl_attributes():
             if name == 'double_buffer':
                 continue
-            attr = HeadlessDisplayConfig.attribute_ids.get(name, None)
+            attr = EGLDisplayConfig.attribute_ids.get(name, None)
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
         attrs.extend([egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT])
@@ -53,12 +54,12 @@ class HeadlessConfig(Config):  # noqa: D101
         egl.eglChooseConfig(display_connection, attrs_list, configs,
                             num_config.value, byref(num_config))
 
-        return [HeadlessDisplayConfig(canvas, c, self) for c in configs]
+        return [EGLDisplayConfig(canvas, c, self) for c in configs]
 
 
-class HeadlessDisplayConfig(DisplayConfig):  # noqa: D101
-    canvas: HeadlessCanvas
-    config: HeadlessConfig
+class EGLDisplayConfig(DisplayConfig):  # noqa: D101
+    canvas: HeadlessCanvas | WaylandCanvas
+    config: EGLConfig
 
     attribute_ids = {  # noqa: RUF012
         'buffer_size': egl.EGL_BUFFER_SIZE,
@@ -73,7 +74,7 @@ class HeadlessDisplayConfig(DisplayConfig):  # noqa: D101
         'samples': egl.EGL_SAMPLES,
     }
 
-    def __init__(self, canvas: HeadlessCanvas, egl_config: egl.EGLConfig, config: HeadlessConfig) -> None:  # noqa: D107
+    def __init__(self, canvas: HeadlessCanvas | WaylandCanvas, egl_config: egl.EGLConfig, config: EGLConfig) -> None:  # noqa: D107
         super().__init__(canvas, config)
         self._egl_config = egl_config
         context_attribs = (egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
@@ -91,18 +92,18 @@ class HeadlessDisplayConfig(DisplayConfig):  # noqa: D101
         for name, value in _fake_gl_attributes.items():
             setattr(self, name, value)
 
-    def compatible(self, canvas: HeadlessCanvas) -> bool:
-        return isinstance(canvas, HeadlessCanvas)
+    def compatible(self, canvas: HeadlessCanvas | WaylandCanvas) -> bool:
+        return isinstance(canvas, (HeadlessCanvas, WaylandCanvas))
 
-    def create_context(self, share: HeadlessContext | None) -> HeadlessContext:
-        return HeadlessContext(self, share)
+    def create_context(self, share: EGLContext | None) -> EGLContext:
+        return EGLContext(self, share)
 
 
-class HeadlessContext(Context):  # noqa: D101
+class EGLContext(Context):  # noqa: D101
     display_connection: egl.EGLDisplay
-    config: HeadlessDisplayConfig
+    config: EGLDisplayConfig
 
-    def __init__(self, config: HeadlessDisplayConfig, share: HeadlessContext | None) -> None:  # noqa: D107
+    def __init__(self, config: EGLDisplayConfig, share: EGLContext | None) -> None:  # noqa: D107
         super().__init__(config, share)
 
         self.display_connection = config.canvas.display._display_connection  # noqa: SLF001
@@ -112,7 +113,7 @@ class HeadlessContext(Context):  # noqa: D101
             msg = 'Could not create GL context'
             raise gl.ContextException(msg)
 
-    def _create_egl_context(self, share: HeadlessContext | None) -> egl.EGLContext:
+    def _create_egl_context(self, share: EGLContext | None) -> egl.EGLContext:
         if share:
             share_context = share.egl_context
         else:
@@ -126,7 +127,7 @@ class HeadlessContext(Context):  # noqa: D101
                                     self.config._egl_config, share_context,  # noqa: SLF001
                                     self.config._context_attrib_array)  # noqa: SLF001
 
-    def attach(self, canvas: HeadlessCanvas) -> None:
+    def attach(self, canvas: HeadlessCanvas | WaylandCanvas) -> None:
         if canvas is self.canvas:
             return
 
