@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import abc
+import select
 import socket
 import threading as _threading
 
@@ -477,6 +478,7 @@ class Protocol:
 
 GlobalObject = _namedtuple('GlobalObject', 'name, interface, version')
 
+
 ##################################
 #           User API
 ##################################
@@ -523,6 +525,8 @@ class Client:
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
         self._sock.setblocking(False)
         self._sock.connect(path)
+        self._poll = select.poll()
+        self._poll.register(self._sock, select.POLLIN)
         self._recv_buffer = b""
 
         assert _debug_wayland(f"connected to: {self._sock.getpeername()}")
@@ -632,8 +636,11 @@ class Client:
             print("Unhandled ancillary data")
             # TODO: handle file descriptors and stuff
 
-    def poll(self) -> None:
-        self.receive()
+    def poll(self) -> bool:
+        """Return ``True`` if the server socket has pending data."""
+        if not self._poll.poll(0.0):
+            return False
+        return True
 
     def __del__(self) -> None:
         if hasattr(self, '_sock'):

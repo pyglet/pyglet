@@ -6,7 +6,7 @@ from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast
 from pyglet.util import asbytes
 
 from pyglet import app
-from pyglet.app.xlib import XlibSelectDevice
+from pyglet.app.linux import LinuxSelectDevice
 
 from ..libs.x11.xlib import Window
 from . import xlib_vidmoderestore
@@ -73,7 +73,7 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(XlibSelectDevice, Display):
+class XlibDisplay(LinuxSelectDevice, Display):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method

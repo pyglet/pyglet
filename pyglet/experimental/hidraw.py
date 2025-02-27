@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pyglet
 
-from pyglet.app.xlib import XlibSelectDevice
+from pyglet.app.linux import LinuxSelectDevice
 from pyglet.libs.ioctl import _IOR, _IOR_str, _IOWR_len
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
@@ -83,7 +83,7 @@ def get_set_bits(bytestring):
     return bits
 
 
-class HIDRawDevice(XlibSelectDevice, Device):
+class HIDRawDevice(LinuxSelectDevice, Device):
     _fileno = None
 
     def __init__(self, display, filename):
