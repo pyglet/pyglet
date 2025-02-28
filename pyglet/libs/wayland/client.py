@@ -249,7 +249,14 @@ class Argument:
         return f"{self.name}: {self.wl_type.__name__}"
 
 
-Entry = _namedtuple('Entry', 'name, value, summary')
+class Entry:
+    def __init__(self, element):
+        self.name = element.get('name')
+        self.value = int(element.get('value'), 0)
+        self.summary = element.get('summary')
+
+    def __and__(self, other) -> bool:
+        return self.value & other > 0
 
 
 class Enum:
@@ -260,9 +267,9 @@ class Enum:
         self.name = element.get('name')
         self.description = getattr(element.find('description'), 'text', "")
         self.summary = element.find('description').get('summary') if self.description else ""
-        self.bitfield = element.get('bitfield', 'false')
+        self.bitfield = element.get('bitfield', False)
 
-        self.entries = [Entry(e.get('name'), e.get('value'), e.get('summary')) for e in self._element.findall('entry')]
+        self.entries = [Entry(element) for element in self._element.findall('entry')]
         self.entries.sort(key=lambda e: e.value)
 
     def __getitem__(self, index):

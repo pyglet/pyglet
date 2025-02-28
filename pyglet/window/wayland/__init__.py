@@ -194,7 +194,6 @@ class WaylandWindow(BaseWindow):
     def wl_pointer_motion_handler(self, time, surface_x, surface_y):
         self._mouse_x = surface_x
         self._mouse_y = surface_y
-        print(surface_x, surface_y)
 
     def wl_pointer_enter_handler(self, serial, surface, surface_x, surface_y):
         # TODO: make sure it's the main app surface
