@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import os
-import abc
-import socket
+import os as _os
+import abc as _abc
+import socket as _socket
 import threading as _threading
 
-from struct import Struct
 from types import SimpleNamespace as _NameSpace
+from struct import Struct
 from collections import deque as _deque
 from collections import namedtuple as _namedtuple
+from collections import defaultdict as _defaultdict
 
-from xml.etree import ElementTree
+from xml.etree import ElementTree as _ElementTree
 from xml.etree.ElementTree import Element, ParseError
 
 from typing import Any
 
 from pyglet.util import debug_print
 
-
 _debug_wayland = debug_print('debug_wayland')
 
 
 class ObjectIDPool:
 
-    def __init__(self, minimum: int, maximum: int):
+    def __init__(self, minimum: int, maximum: int) -> None:
         self._sequence = iter(range(minimum, maximum + 1))
         self._recycle_pool = _deque()
 
@@ -32,7 +32,7 @@ class ObjectIDPool:
             return self._recycle_pool.popleft()
         return next(self._sequence)
 
-    def send(self, oid: int):
+    def send(self, oid: int) -> None:
         self._recycle_pool.append(oid)
 
 
@@ -60,17 +60,17 @@ class WaylandProtocolError(WaylandException, FileNotFoundError):
 #       Wayland data types
 ##################################
 
-class WaylandType(abc.ABC):
+class WaylandType(_abc.ABC):
     struct: Struct
     length: int
     value: int | float | str | bytes
 
-    @abc.abstractmethod
+    @_abc.abstractmethod
     def to_bytes(self) -> bytes:
         ...
 
     @classmethod
-    @abc.abstractmethod
+    @_abc.abstractmethod
     def from_bytes(cls, buffer: bytes) -> WaylandType:
         ...
 
@@ -258,6 +258,9 @@ class Entry:
     def __and__(self, other) -> bool:
         return self.value & other > 0
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, value={self.value})"
+
 
 class Enum:
     def __init__(self, interface, element):
@@ -268,7 +271,6 @@ class Enum:
         self.description = getattr(element.find('description'), 'text', "")
         self.summary = element.find('description').get('summary') if self.description else ""
         self.bitfield = element.get('bitfield', False)
-
         self.entries = [Entry(element) for element in self._element.findall('entry')]
         self.entries.sort(key=lambda e: e.value)
 
@@ -276,7 +278,7 @@ class Enum:
         return self.entries[index]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.name}')"
+        return f"{self.__class__.__name__}('{self.name}', entries={self.entries})"
 
 
 class Event:
@@ -412,7 +414,7 @@ class Protocol:
             filename: The .xml file that contains the Protocol definition.
         """
         try:
-            self._root = ElementTree.parse(filename).getroot()
+            self._root = _ElementTree.parse(filename).getroot()
         except (FileNotFoundError, ParseError)as e:
             raise WaylandProtocolError(e)
 
@@ -431,19 +433,28 @@ class Protocol:
             self._interface_classes[name] = interface_class
             assert _debug_wayland(f"   * found interface: '{name}'")
 
-    def bind_interface(self, name: str) -> Interface:
-        """Create an Interface instance & bind to a global object."""
-        # find global match:
-        interface_global = self.client.interface_global[name]
-        # make client-side object:
+    def bind_interface(self, name: str, index: int = 0) -> Interface:
+        """Create an Interface instance & bind it to a global object.
+
+        In case there are multiple global objects with the same interface
+        name, an ``index`` can be provided.
+
+        Args:
+            name: The interface name to bind.
+            index: The index of the global to bind, if more than one.
+        """
+        # Find a global match, and create a local instance for it.
+        interface_global = self.client.globals[name][index]
         interface_instance = self.create_interface(name)
+        self.client._bound_globals[interface_global.name] = interface_instance
+
+        # Inform the server of the new relationship:
         _string = String(name).to_bytes()
         _version = UInt(interface_global.version).to_bytes()
         _new_id = NewID(interface_instance.oid).to_bytes()
         combined_new_id = _string + _version + _new_id
-
-        assert _debug_wayland(f"> {self}.bind: global {name}")
         self.client.wl_registry.bind(interface_global.name, combined_new_id)
+        assert _debug_wayland(f"> {self}.bind: global {name}")
         return interface_instance
 
     def create_interface(self, name: str, oid: int | None = None) -> Interface:
@@ -459,8 +470,7 @@ class Protocol:
         oid = oid or next(self.client.oid_pool)
         interface = self._interface_classes[name](oid=oid)
         assert _debug_wayland(f"> {self}.create_interface: {interface}")
-        self.client.oid_interface[oid] = interface
-        self.client.interface_oid[name] = oid
+        self.client._oid_interface_map[oid] = interface
         return interface
 
     def delete_interface(self, oid: int) -> None:
@@ -469,10 +479,9 @@ class Protocol:
         Args:
             oid: The object ID (oid) of the interface.
         """
-        interface = self.client.oid_interface.pop(oid)
-        self.client.interface_oid.pop(interface.name)
+        interface = self.client._oid_interface_map.pop(oid)
         self.client.oid_pool.send(oid)      # to reuse later
-        assert _debug_wayland(f"> {self}delete_interface: {interface}")
+        assert _debug_wayland(f"> {self}.delete_interface: {interface}")
 
     @property
     def interface_names(self) -> list[str]:
@@ -483,7 +492,6 @@ class Protocol:
 
 
 GlobalObject = _namedtuple('GlobalObject', 'name, interface, version')
-
 
 ##################################
 #           User API
@@ -516,20 +524,20 @@ class Client:
         assert protocols, ("At a minimum you must provide at least a wayland.xml "
                            "protocol file, commonly '/usr/share/wayland/wayland.xml'.")
 
-        endpoint = os.environ.get('WAYLAND_DISPLAY', default='wayland-0')
+        endpoint = _os.environ.get('WAYLAND_DISPLAY', default='wayland-0')
 
-        if os.path.isabs(endpoint):
+        if _os.path.isabs(endpoint):
             path = endpoint
         else:
-            _runtime_dir = os.environ.get('XDG_RUNTIME_DIR', default='/run/user/1000')
-            path = os.path.join(_runtime_dir, endpoint)
+            _runtime_dir = _os.environ.get('XDG_RUNTIME_DIR', default='/run/user/1000')
+            path = _os.path.join(_runtime_dir, endpoint)
 
         assert _debug_wayland(f"endpoint: {path}")
 
-        if not os.path.exists(path):
+        if not _os.path.exists(path):
             raise WaylandSocketError(f"Wayland endpoint not found: {path}")
 
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
+        self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM, 0)
         self._sock.connect(path)
         self._recv_buffer = b""
 
@@ -538,10 +546,11 @@ class Client:
         # Client side object ID generation:
         self.oid_pool = ObjectIDPool(minimum=1, maximum=0xfeffffff)
 
-        self.oid_interface = {}     # oid: Interface
-        self.interface_oid = {}     # interface_name: oid
-        self.interface_global = {}  # interface_name: GlobalObject
-        self.global_interface = {}  # global_name: interface_name
+        self._oid_interface_map: dict[int, Interface] = {}  # oid: Interface
+
+        self.globals: dict[str, list] = _defaultdict(list)  # interface_name: [GlobalObject]
+        self._global_interface_map: dict[int, str] = {}     # global_name: interface_name
+        self._bound_globals: dict[int, Interface] = {}      # global_name: interface_instance
 
         self.protocol_dict = {p.name: p for p in [Protocol(self, filename) for filename in protocols]}
         self.protocols = _NameSpace(self.protocol_dict)
@@ -572,12 +581,13 @@ class Client:
         """Helper shortcut for wl_display.sync calls.
 
         This method calls ``wl_display.sync``, and obtains a new ``wl_callback``
-        object. It then continuously spins until the ``wl_callback.done`` event
-        is returned from the server.
+        object. It then blocks until the ``wl_callback.done`` event is received
+        from the server, ensuring that all prior events are received as well.
         """
         wl_callback = self.wl_display.sync(next(self.oid_pool))
         wl_callback.set_handler('done', self._wl_display_sync_handler)
-        self._sync_done.wait()
+        if self._sync_done.wait(5.0) is False:
+            raise WaylandSocketError("wl_display.sync timed out")
         self._sync_done.clear()
 
     def sendmsg(self, request: bytes, fds: bytes) -> None:
@@ -593,14 +603,14 @@ class Client:
             request: a raw bytestring representing a concatenated Header & Request.
             fds: a raw bytestring representing file descriptors.
         """
-        self._sock.sendmsg([request], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, fds)])
+        self._sock.sendmsg([request], [(_socket.SOL_SOCKET, _socket.SCM_RIGHTS, fds)])
 
     def _receive(self) -> None:
         """Receive and process Wayland Events (messages) from the server."""
         _header_len = Header.length
 
         try:
-            new_data, ancdata, msg_flags, _ = self._sock.recvmsg(4096, socket.CMSG_SPACE(64))
+            new_data, ancdata, msg_flags, _ = self._sock.recvmsg(4096, _socket.CMSG_SPACE(64))
         except ConnectionError:
             raise WaylandSocketError(f"Socket is closed")
 
@@ -624,7 +634,7 @@ class Client:
             # - find the matching event by its header.opcode
             # - pass the raw payload into the event, which will decode it
             # TODO: handle "dead" interfaces:
-            interface = self.oid_interface[header.oid]
+            interface = self._oid_interface_map[header.oid]
             event = interface.events[header.opcode]
             event(data[_header_len:header.size])
 
@@ -652,7 +662,7 @@ class Client:
 
     def _wl_display_error_handler(self, oid: int, code: int, message: str):
         try:
-            error_enum = self.oid_interface[oid].enums['error']
+            error_enum = self._oid_interface_map[oid].enums['error']
             error_entry = error_enum.entries[code]
             raise WaylandServerError(f"'{error_entry.name}': {error_entry.summary}; {message}.")
         except (IndexError, KeyError):
@@ -661,16 +671,17 @@ class Client:
     def _wl_display_sync_handler(self, _unused):
         self._sync_done.set()
 
-    def _wl_registry_global(self, name, interface, version):
-        assert _debug_wayland(f"wl_registry global: {name}, {interface}, {version}")
-        self.interface_global[interface] = GlobalObject(name, interface, version)
-        self.global_interface[name] = interface
+    def _wl_registry_global(self, global_name, interface_name, version):
+        assert _debug_wayland(f"wl_registry global: {global_name}, {interface_name}, {version}")
+        self.globals[interface_name].append(GlobalObject(global_name, interface_name, version))
+        self._global_interface_map[global_name] = interface_name
 
-    def _wl_registry_global_remove(self, name):
-        assert _debug_wayland(f"wl_registry global_remove: {name}")
-        interface_name = self.global_interface[name]
-        del self.global_interface[name]
-        del self.interface_global[interface_name]
-        # TODO: test if this works:
-        oid = self.interface_oid.pop(interface_name)
-        del self.oid_interface[oid]
+    def _wl_registry_global_remove(self, global_name):
+        assert _debug_wayland(f"wl_registry global_remove: {global_name}")
+        interface = self._global_interface_map.pop(global_name)
+        self.globals[interface] = [g for g in self.globals[interface] if g.name != global_name]
+
+        if instance := self._bound_globals.pop(global_name, None):
+            # TODO:
+            pass
+
