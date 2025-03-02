@@ -270,7 +270,7 @@ class Enum:
         self.name = element.get('name')
         self.description = getattr(element.find('description'), 'text', "")
         self.summary = element.find('description').get('summary') if self.description else ""
-        self.bitfield = element.get('bitfield', False)
+        self.bitfield = True if element.get('bitfield') else False
         self.entries = [Entry(element) for element in self._element.findall('entry')]
         self.entries.sort(key=lambda e: e.value)
 
@@ -278,7 +278,7 @@ class Enum:
         return self.entries[index]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.name}', entries={self.entries})"
+        return f"{self.__class__.__name__}('{self.name}', entries={len(self.entries)})"
 
 
 class Event:

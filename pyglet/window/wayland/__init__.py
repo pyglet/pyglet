@@ -168,16 +168,18 @@ class WaylandWindow(BaseWindow):
         self.xdg_wm_base.pong(serial)
 
     def wl_surface_preferred_buffer_scale_handler(self, factor):
-        print(f" --> wl_surface scaling: {factor}")
+        # print(f" --> wl_surface scaling: {factor}")
+        pass
 
     def xdg_toplevel_configure_handler(self, width, height, states):
-        print(" --> xdg_toplevel configure event", width, height, states)
+        # print(" --> xdg_toplevel configure event", width, height, states)
+        pass
 
     def xdg_toplevel_close_handler(self):
         self.dispatch_event('on_close')
 
     def xdg_surface_configure_handler(self, *args):
-        print(" --> xdg_surface configure event", args)
+        # print(" --> xdg_surface configure event", args)
         self.xdg_surface.ack_configure(args[0])
 
     def wl_pointer_button_handler(self, serial, time, button, state):

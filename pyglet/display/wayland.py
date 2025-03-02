@@ -11,7 +11,8 @@ from pyglet.libs.egl import eglext
 from pyglet.libs.wayland.client import Client
 
 
-ModeInfo = namedtuple('ModeInfo', 'width, height, depth, rate')
+ModeInfo = namedtuple('ModeInfo', 'width, height, depth, rate, current, primary')
+Geometry = namedtuple('Geometry', 'x, y, physical_width, physical_height, make, model, transform')
 
 
 class WaylandScreenMode(ScreenMode):
@@ -20,6 +21,8 @@ class WaylandScreenMode(ScreenMode):
         self.height = info.height
         self.depth = info.depth
         self.rate = info.rate
+        self.primary = info.primary
+        self.current = info.current
         super().__init__(screen)
 
 
@@ -27,12 +30,13 @@ class WaylandDisplay(Display):
 
     def __init__(self):
         super().__init__()
+        # TODO: should EGL Display be one layer higher?
         num_devices = egl.EGLint()
         eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
         if num_devices.value > 0:
             headless_device = pyglet.options['headless_device']
             if headless_device < 0 or headless_device >= num_devices.value:
-                raise ValueError(f'Invalid EGL devide id: {headless_device}')
+                raise ValueError(f'Invalid EGL device id: {headless_device}')
             devices = (eglext.EGLDeviceEXT * num_devices.value)()
             eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
             self._display_connection = eglext.eglGetPlatformDisplayEXT(
@@ -44,32 +48,57 @@ class WaylandDisplay(Display):
 
         egl.eglInitialize(self._display_connection, None, None)
 
-        self.mode_done = Event()
-
+        # Create temporary Client connection to query Screen information:
+        # TODO: use the new fractional scaling Protocol if available.
         client = Client('/usr/share/wayland/wayland.xml')
         client.sync()
-        self.wl_output = client.protocol_dict['wayland'].bind_interface('wl_output')
-        # self.wl_output.set_handler('geometry', self.wl_output_geometry_handler)
-        self.wl_output.set_handler('mode', self._wl_output_mode_handler)
-        self.wl_output.set_handler('done', self._wl_output_done_handler)
-        #
-        # self.mode_done.wait()
-        self.wl_output.release()
 
-        self._screen_modes = []
+        self._screens = []
 
-        self._screens = [WaylandScreen(self, 0, 0, 1920, 1080)]
+        for i, _ in enumerate(client.globals.get('wl_output', [])):
+            self._geo = None
+            self._modes = []
+            self._scale = None
+            self._name = None
+            self._descript = None
+            self._query_done = Event()
+            wl_output = client.protocol_dict['wayland'].bind_interface('wl_output', index=i)
+            self._mode_enum = wl_output.enums['mode']
+            self._transform_enum = wl_output.enums['transform']
+            wl_output.set_handler('geometry', self._wl_output_geometry_handler)
+            wl_output.set_handler('mode', self._wl_output_mode_handler)
+            wl_output.set_handler('scale', self._wl_output_scale_handler)
+            wl_output.set_handler('name', self._wl_output_name_handler)
+            wl_output.set_handler('description', self._wl_output_description_handler)
+            wl_output.set_handler('done', self._wl_output_done_handler)
+            wl_output.release()
+            self._query_done.wait()
+            self._screens.append(WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript))
+
+    # Start Wayland Event handlers
 
     def _wl_output_done_handler(self):
-        self.mode_done.set()
+        self._query_done.set()
+
+    def _wl_output_scale_handler(self, scale):
+        self._scale = scale
+
+    def _wl_output_name_handler(self, name):
+        self._name = name
+
+    def _wl_output_description_handler(self, description):
+        self._descript = description
+
+    def _wl_output_geometry_handler(self, x, y, physical_width, physical_height, subpixel, make, model, transform):
+        transform = self._transform_enum[transform]
+        self._geo = Geometry(x, y, physical_width, physical_height, make, model, transform)
 
     def _wl_output_mode_handler(self, flags, width, height, refresh):
-        # mode_enum = self.wl_output.enums['mode']
-        # is_current = mode_enum.entries[0] & flags
-        # is_primary = mode_enum.entries[1] & flags
-        refresh *= 0.001
-        modeinfo = ModeInfo(width, height, None, refresh)
-        self._screen_modes.append(modeinfo)
+        is_current = self._mode_enum.entries[0] & flags
+        is_primary = self._mode_enum.entries[1] & flags
+        self._modes.append(ModeInfo(width, height, None, refresh * 0.001, is_current, is_primary))
+
+    # End Wayland Event handlers
 
     def get_screens(self):
         return self._screens
@@ -85,8 +114,20 @@ class WaylandCanvas(Canvas):
 
 
 class WaylandScreen(Screen):
-    def __init__(self, display, x, y, width, height):
-        super().__init__(display, x, y, width, height)
+    def __init__(self, display, geometry, modes, scale, name, description):
+        self.name = name
+        self.description = description
+        self._scale = scale
+        self._geo = geometry
+        self._modes = modes
+        _width_pixels = max(mode.width for mode in self._modes)
+        _height_pixels = max(mode.height for mode in self._modes)
+        _width_inches = self._geo.physical_width / 25.4
+        _height_inches = self._geo.physical_height / 25.4
+        _dpi_width = _width_pixels / _width_inches
+        _dpi_height = _height_pixels / _height_inches
+        self._dpi = (_dpi_width + _dpi_height) / 2
+        super().__init__(display, self._geo.x, self._geo.y, _width_pixels, _height_pixels)
 
     def get_matching_configs(self, template):
         canvas = WaylandCanvas(self.display, None)
@@ -97,13 +138,25 @@ class WaylandScreen(Screen):
         return configs
 
     def get_modes(self):
-        pass
+        return self._modes
 
     def get_mode(self):
-        pass
+        for mode in self._modes:
+            if mode.current:
+                return mode
+        return self._modes[0]
 
     def set_mode(self, mode):
         pass
 
     def restore_mode(self):
         pass
+
+    def get_dpi(self):
+        return self._dpi
+
+    def get_scale(self):
+        return self._scale
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
