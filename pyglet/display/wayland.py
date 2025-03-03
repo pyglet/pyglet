@@ -30,7 +30,6 @@ class WaylandDisplay(Display):
 
     def __init__(self):
         super().__init__()
-        # TODO: should EGL Display be one layer higher?
         num_devices = egl.EGLint()
         eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
         if num_devices.value > 0:
@@ -71,9 +70,10 @@ class WaylandDisplay(Display):
             wl_output.set_handler('name', self._wl_output_name_handler)
             wl_output.set_handler('description', self._wl_output_description_handler)
             wl_output.set_handler('done', self._wl_output_done_handler)
-            wl_output.release()
+            client.sync()
             self._query_done.wait()
             self._screens.append(WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript))
+            wl_output.release()
 
     # Start Wayland Event handlers
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+import pyglet
+
 from pyglet.display.wayland import WaylandCanvas
 
 from pyglet.window import key
@@ -38,6 +40,11 @@ class WaylandWindow(BaseWindow):
     wdg_surface: Interface
     xdg_toplevel: Interface
     wl_pointer: Interface
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        self._mouse_buttons_pressed = 0
+        self._key_modifiers_pressed = 0
+        super().__init__(*args, **kwargs)
 
     def _recreate(self, changes: Sequence[str]) -> None:
         pass
@@ -121,6 +128,19 @@ class WaylandWindow(BaseWindow):
 
             self.dispatch_event('_on_internal_resize', self._width, self._height)
 
+        self._dpi = self._screen.get_dpi()
+        self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "stretch" else 1.0
+
+        # if self._fullscreen:
+        #     width, height = self.screen.width, self.screen.height
+        # else:
+        #     width, height = self._width, self._height
+        #     self._view_x = self._view_y = 0
+        #     if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+        #         w, h = self.get_requested_size()
+        #         self._width = width = int(w * self.scale)
+        #         self._height = height = int(h * self.scale)
+
         if not self.client:
             self.client = Client(*self._protocols)
             self.client.sync()
@@ -152,12 +172,12 @@ class WaylandWindow(BaseWindow):
             import os, tempfile
             fd, name = tempfile.mkstemp()
             _data_size = self._width * self._height * 4  # width x height x rgba
-            os.write(fd, b'\xee\x33\x33\xee' * self.width * self.height)  # BGRA
+            os.write(fd, b'\xee\x33\x33\xee' * self._width * self._height)  # BGRA
 
             wl_shm = self.client.protocol_dict['wayland'].bind_interface('wl_shm')
             wl_shm_pool = wl_shm.create_pool(next(self.client.oid_pool), fd, _data_size)
-            wl_buffer = wl_shm_pool.create_buffer(next(self.client.oid_pool), 0, self.width, self.height,
-                                                  self.width * 4, 0)
+            wl_buffer = wl_shm_pool.create_buffer(next(self.client.oid_pool), 0, self._width, self._height,
+                                                  self._width * 4, 0)
             self.wl_surface.attach(wl_buffer.oid, 0, 0)
             self.wl_surface.commit()
 
@@ -189,13 +209,27 @@ class WaylandWindow(BaseWindow):
                         0x113: mouse.MOUSE4,
                         0x114: mouse.MOUSE5}[button]
 
-        state_name = self.wl_pointer.enums['button_state'][state].name
-        event_name = {'pressed': 'on_mouse_press', 'released': 'on_mouse_release'}[state_name]
-        self.dispatch_event(event_name, self._mouse_x, self._mouse_y, mouse_button, 0)
+        if self.wl_pointer.enums['button_state'][state].name == 'pressed':
+            self._mouse_buttons_pressed |= mouse_button
+            self.dispatch_event('on_mouse_press', self._mouse_x, self._mouse_y, mouse_button, 0)
+
+        elif self.wl_pointer.enums['button_state'][state].name == 'released':
+            self._mouse_buttons_pressed &= ~mouse_button
+            self.dispatch_event('on_mouse_release', self._mouse_x, self._mouse_y, mouse_button, 0)
 
     def wl_pointer_motion_handler(self, time, surface_x, surface_y):
-        self._mouse_x = surface_x
-        self._mouse_y = surface_y
+        x = surface_x / self._scale
+        # TODO: isolate flipped-Y to a single value
+        y = self.height - surface_y / self._scale
+        dx = x - self._mouse_x
+        dy = y - self._mouse_y
+        self._mouse_x = x
+        self._mouse_y = y
+
+        if self._mouse_buttons_pressed:
+            self.dispatch_event('on_mouse_drag', x, y, dx, dy, self._mouse_buttons_pressed, self._key_modifiers_pressed)
+        else:
+            self.dispatch_event('on_mouse_motion', x, y, dx, dy)
 
     def wl_pointer_enter_handler(self, serial, surface, surface_x, surface_y):
         # TODO: make sure it's the main app surface
