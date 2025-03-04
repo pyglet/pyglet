@@ -204,12 +204,13 @@ class _pInterfaceMeta(_PointerMeta):
 class Interface(ctypes.Structure, metaclass=_InterfaceMeta, create_pointer_type=False):
     @classmethod
     def get_interface_inheritance(cls):
-        """Returns the types of all interfaces implemented by this interface, up to but not
-        including the base `Interface`.
+        """Return a reverse iterator over the interfaces implemented by this interface,
+        ranging from just after the base type `Interface` to this type.
         `Interface` does not represent an actual interface, but merely the base concept of
-        them, so viewing it as part of an interface's inheritance chain is meaningless.
+        them. Viewing it as part of an interface's inheritance chain is meaningless, so
+        it is excluded.
         """
-        return cls.__mro__[:cls.__mro__.index(Interface)]
+        return reversed(cls.__mro__[:cls.__mro__.index(Interface)])
 
 
 class pInterface(_DummyPointerType, metaclass=_pInterfaceMeta):
