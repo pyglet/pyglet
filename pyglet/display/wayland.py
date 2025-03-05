@@ -6,9 +6,8 @@ from threading import Event
 from collections import namedtuple
 
 from .base import Display, Screen, ScreenMode, Canvas
-from pyglet.libs.egl import egl
-from pyglet.libs.egl import eglext
-from pyglet.libs.wayland.client import Client
+from ..libs.linux.egl import eglext, egl
+from pyglet.libs.linux.wayland.client import Client
 
 
 ModeInfo = namedtuple('ModeInfo', 'width, height, depth, rate, current, primary')

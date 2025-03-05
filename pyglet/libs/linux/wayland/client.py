@@ -293,14 +293,19 @@ class Event:
 
         self.arguments = [Argument(self, element) for element in element.findall('arg')]
 
-    def __call__(self, payload):
+    def __call__(self, payload: bytes, fds: bytes) -> None:
         decoded_values = []
 
         for arg in self.arguments:
-            wl_type = arg.wl_type.from_bytes(payload)
-            decoded_values.append(wl_type.value)
-            # trim, and continue loop:
-            payload = payload[wl_type.length:]
+            if arg.wl_type == FD:
+                wl_type = arg.wl_type.from_bytes(fds)
+                decoded_values.append(wl_type.value)
+                # TODO: do events with more than one FD exist?
+            else:
+                wl_type = arg.wl_type.from_bytes(payload)
+                decoded_values.append(wl_type.value)
+                # trim, and continue loop:
+                payload = payload[wl_type.length:]
 
         # signature = tuple(f"{arg.name}={value}" for arg, value in zip(self.arguments, decoded_values))
         # print(f"Event({self.name}), arguments={signature}")
@@ -497,6 +502,7 @@ GlobalObject = _namedtuple('GlobalObject', 'name, interface, version')
 #           User API
 ##################################
 
+
 class Client:
     """Wayland Client
 
@@ -619,6 +625,7 @@ class Client:
 
         # Include any leftover partial data:
         data = self._recv_buffer + new_data
+        fds = b"".join([fds for _, _, fds in ancdata])
 
         # Parse the events in chunks:
         while len(data) > _header_len:
@@ -636,17 +643,13 @@ class Client:
             # TODO: handle "dead" interfaces:
             interface = self._oid_interface_map[header.oid]
             event = interface.events[header.opcode]
-            event(data[_header_len:header.size])
+            event(data[_header_len:header.size], fds)
 
             # trim, and continue loop
             data = data[header.size:]
 
         # Keep leftover for next time:
         self._recv_buffer = data
-
-        for cmsg_level, cmsg_type, cmsg_data in ancdata:
-            print("Unhandled ancillary data")
-            # TODO: handle file descriptors and stuff
 
     def __del__(self) -> None:
         if hasattr(self, '_sock'):

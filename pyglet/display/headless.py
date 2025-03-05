@@ -1,12 +1,11 @@
 import pyglet
 import warnings
 
-from .base import Display, Screen, ScreenMode, Canvas
+from .base import Display, Screen, Canvas
 
 
 from ctypes import byref
-from pyglet.libs.egl import egl
-from pyglet.libs.egl import eglext
+from ..libs.linux.egl import eglext, egl
 
 
 class HeadlessDisplay(Display):

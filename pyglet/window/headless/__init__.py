@@ -7,15 +7,15 @@ from pyglet.display.headless import HeadlessCanvas
 # from pyglet.window import key
 # from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import egl
+from pyglet.libs.linux.egl import egl
 from pyglet.window import (
     BaseWindow,
-    DefaultMouseCursor,  # noqa: F401
-    ImageMouseCursor,  # noqa: F401
-    MouseCursor,  # noqa: F401
-    MouseCursorException,  # noqa: F401
-    NoSuchDisplayException,  # noqa: F401
-    WindowException,  # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
     _PlatformEventHandler,
     _ViewEventHandler,
 )

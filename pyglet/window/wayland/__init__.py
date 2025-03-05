@@ -9,16 +9,16 @@ from pyglet.display.wayland import WaylandCanvas
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import egl
-from pyglet.libs.wayland.client import Client, Interface
+from pyglet.libs.linux.egl import egl
+from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.window import (
     BaseWindow,
-    DefaultMouseCursor,  # noqa: F401
-    ImageMouseCursor,  # noqa: F401
-    MouseCursor,  # noqa: F401
-    MouseCursorException,  # noqa: F401
-    NoSuchDisplayException,  # noqa: F401
-    WindowException,  # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
+    # noqa: F401
     _PlatformEventHandler,
     _ViewEventHandler,
 )
@@ -42,8 +42,8 @@ class WaylandWindow(BaseWindow):
     wl_pointer: Interface
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        self._mouse_buttons_pressed = 0
-        self._key_modifiers_pressed = 0
+        self._mouse_buttons = 0
+        self._key_modifiers = 0
         super().__init__(*args, **kwargs)
 
     def _recreate(self, changes: Sequence[str]) -> None:
@@ -168,6 +168,12 @@ class WaylandWindow(BaseWindow):
             self.wl_pointer.set_handler('enter', self.wl_pointer_enter_handler)
             self.wl_pointer.set_handler('leave', self.wl_pointer_leave_handler)
 
+            self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
+            self.wl_keyboard.set_handler('enter', self.wl_keyboard_enter_handler)
+            self.wl_keyboard.set_handler('leave', self.wl_keyboard_leave_handler)
+            self.wl_keyboard.set_handler('keymap', self.wl_keyboard_keymap_handler)
+            self.wl_keyboard.set_handler('key', self.wl_keyboard_key_handler)
+
             # TODO: remove temporary SHM surface:
             import os, tempfile
             fd, name = tempfile.mkstemp()
@@ -210,12 +216,12 @@ class WaylandWindow(BaseWindow):
                         0x114: mouse.MOUSE5}[button]
 
         if self.wl_pointer.enums['button_state'][state].name == 'pressed':
-            self._mouse_buttons_pressed |= mouse_button
-            self.dispatch_event('on_mouse_press', self._mouse_x, self._mouse_y, mouse_button, 0)
+            self._mouse_buttons |= mouse_button
+            self.dispatch_event('on_mouse_press', self._mouse_x, self._mouse_y, mouse_button, self._key_modifiers)
 
         elif self.wl_pointer.enums['button_state'][state].name == 'released':
-            self._mouse_buttons_pressed &= ~mouse_button
-            self.dispatch_event('on_mouse_release', self._mouse_x, self._mouse_y, mouse_button, 0)
+            self._mouse_buttons &= ~mouse_button
+            self.dispatch_event('on_mouse_release', self._mouse_x, self._mouse_y, mouse_button, self._key_modifiers)
 
     def wl_pointer_motion_handler(self, time, surface_x, surface_y):
         x = surface_x / self._scale
@@ -226,8 +232,8 @@ class WaylandWindow(BaseWindow):
         self._mouse_x = x
         self._mouse_y = y
 
-        if self._mouse_buttons_pressed:
-            self.dispatch_event('on_mouse_drag', x, y, dx, dy, self._mouse_buttons_pressed, self._key_modifiers_pressed)
+        if self._mouse_buttons:
+            self.dispatch_event('on_mouse_drag', x, y, dx, dy, self._mouse_buttons, self._key_modifiers)
         else:
             self.dispatch_event('on_mouse_motion', x, y, dx, dy)
 
@@ -240,6 +246,25 @@ class WaylandWindow(BaseWindow):
         # TODO: make sure it's the main app surface
         self._mouse_in_window = False
         self.dispatch_event('on_mouse_leave', self._mouse_x, self._mouse_y)
+
+    def wl_keyboard_enter_handler(self, serial, surface, keys):
+        print("wl_keyboard_enter:", serial, surface, keys)
+
+    def wl_keyboard_leave_handler(self, serial, surface):
+        print("wl_keyboard_leave:", serial, surface)
+
+    def wl_keyboard_keymap_handler(self, fmt, fd, size):
+        print("wl_keyboard_keymap:", fmt, fd, size)
+
+    def wl_keyboard_key_handler(self, serial, time, keycode, state):
+        # released	0	key is not pressed
+        # pressed	1	key is pressed
+        # repeated  2	key was repeated
+        state_name = self.wl_keyboard.enums['key_state'][state].name
+
+        if state_name == 'pressed':
+            shifted = keycode + 8
+            print(f"key: {key._key_names.get(shifted)}, {keycode} / {hex(keycode)} -> {shifted} / {hex(shifted)} ")
 
     # End Wayland event handlers
 

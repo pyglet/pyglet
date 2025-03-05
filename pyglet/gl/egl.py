@@ -5,8 +5,7 @@ from ctypes import byref
 from pyglet import gl
 from pyglet.display.wayland import WaylandCanvas
 from pyglet.display.headless import HeadlessCanvas
-from pyglet.libs.egl import egl
-
+from ..libs.linux.egl import egl
 
 from .base import DisplayConfig, Config, Context
 

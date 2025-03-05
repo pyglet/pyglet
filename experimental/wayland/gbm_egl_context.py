@@ -17,10 +17,6 @@
 
 import os
 
-from pyglet.libs.wayland.gbm import *
-from pyglet.libs.egl.egl import *
-from pyglet.libs.egl.eglext import *
-
 assert eglBindAPI(EGL_OPENGL_API) == EGL_TRUE
 
 try:
