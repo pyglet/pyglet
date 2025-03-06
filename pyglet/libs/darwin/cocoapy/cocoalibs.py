@@ -345,8 +345,6 @@ kCGImageAlphaNoneSkipLast           = 5
 kCGImageAlphaNoneSkipFirst          = 6
 kCGImageAlphaOnly                   = 7
 
-kCGImageAlphaPremultipliedLast = 1
-
 kCGBitmapAlphaInfoMask              = 0x1F
 kCGBitmapFloatComponents            = 1 << 8
 
@@ -393,6 +391,15 @@ kCGImagePropertyGIFDelayTime = c_void_p.in_dll(quartz, 'kCGImagePropertyGIFDelay
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     CoreGraphics.framework/Headers/CGColorSpace.h
 kCGRenderingIntentDefault = 0
+
+kCGTextFill = 0
+kCGTextStroke = 1
+kCGTextFillStroke = 2
+kCGTextInvisible = 3
+kCGTextFillClip = 4
+kCGTextStrokeClip = 5
+kCGTextFillStrokeClip = 6
+kCGTextClip = 7
 
 quartz.CGDisplayIDToOpenGLDisplayMask.restype = c_uint32
 quartz.CGDisplayIDToOpenGLDisplayMask.argtypes = [c_uint32]
@@ -495,6 +502,9 @@ quartz.CGDataProviderRelease.argtypes = [c_void_p]
 quartz.CGColorSpaceRelease.restype = None
 quartz.CGColorSpaceRelease.argtypes = [c_void_p]
 
+quartz.CGContextFillRect.restype = None
+quartz.CGContextFillRect.argtypes = [c_void_p, CGRect]
+
 quartz.CGWarpMouseCursorPosition.restype = CGError
 quartz.CGWarpMouseCursorPosition.argtypes = [CGPoint]
 
@@ -528,6 +538,12 @@ quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
 quartz.CGContextSetShouldAntialias.restype = None
 quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
 
+quartz.CGContextSetTextDrawingMode.restype = None
+quartz.CGContextSetTextDrawingMode.argtypes = [c_void_p, c_int32]
+
+quartz.CGContextSetRGBFillColor.restype = None
+quartz.CGContextSetRGBFillColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
+
 ######################################################################
 
 # CORETEXT
@@ -549,6 +565,9 @@ kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
 kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
 kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
 kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
+kCTForegroundColorAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorAttributeName')
+kCTForegroundColorFromContextAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorFromContextAttributeName')
+kCFBooleanTrue = c_void_p.in_dll(ct, 'kCFBooleanTrue')
 
 # constants from CTFontTraits.h
 kCTFontItalicTrait = (1 << 0)

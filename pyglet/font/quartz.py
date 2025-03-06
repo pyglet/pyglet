@@ -33,9 +33,10 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         # Create an attributed string using text and font.
         attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+            cf.CFDictionaryCreateMutable(None, 2, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
         )
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTForegroundColorFromContextAttributeName , cocoapy.kCFBooleanTrue)
         cf_str = cocoapy.CFSTR(text)
         string = c_void_p(cf.CFAttributedStringCreate(None, cf_str, attributes))
 
@@ -95,9 +96,10 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         # Draw text to bitmap context.
         quartz.CGContextSetShouldAntialias(bitmap, pyglet.options.text_antialiasing)
         quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
+        quartz.CGContextSetRGBFillColor(bitmap, 1, 1, 1, 1)
+
         ct.CTLineDraw(line, bitmap)
         cf.CFRelease(line)
-
         # Create an image to get the data out.
         imageRef = c_void_p(quartz.CGBitmapContextCreateImage(bitmap))
 
@@ -319,7 +321,7 @@ class QuartzFont(base.Font):
 
         ascent, descent = CGFloat(), CGFloat()
         width = ct.CTLineGetTypographicBounds(line, byref(ascent), byref(descent), None)
-        height = ascent + descent
+        height = ascent.value + descent.value
 
         cf.CFRelease(string)
         cf.CFRelease(attributes)
