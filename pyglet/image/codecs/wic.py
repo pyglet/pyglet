@@ -90,6 +90,84 @@ def get_factory() -> IWICImagingFactory2 | IWICImagingFactory:
     """
     return _factory
 
+def _get_bitmap_frame(bitmap_decoder: IWICBitmapDecoder, frame_index: int) -> IWICBitmapFrameDecode:
+    bitmap = IWICBitmapFrameDecode()
+    bitmap_decoder.GetFrame(frame_index, byref(bitmap))
+    return bitmap
+
+def get_bitmap(width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat32bppBGRA) -> IWICBitmap:
+    """Create a WIC Bitmap.
+
+    Caller is responsible for releasing ``IWICBitmap``.
+    """
+    bitmap = IWICBitmap()
+    _factory.CreateBitmap(width, height,
+                      target_fmt,
+                      WICBitmapCacheOnDemand,
+                      byref(bitmap))
+    return bitmap
+
+# def create_image(width: int, height: int, target_fmt:com.GUID=GUID_WICPixelFormat32bppPBGRA) -> ImageData:
+#     bitmap = self.get_bitmap(width, height, target_fmt)
+#     return self.get_image(bitmap, target_fmt)
+
+
+def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelFormat32bppBGRA) -> ImageData:
+    """Extra image data from IWICBitmap into ImageData, specifying target format.
+
+    .. note:: ``bitmap`` is released before this function returns.
+    """
+    width = UINT()
+    height = UINT()
+
+    bitmap.GetSize(byref(width), byref(height))
+
+    width = int(width.value)
+    height = int(height.value)
+
+    # Get image pixel format
+    pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    bitmap.GetPixelFormat(byref(pf))
+
+    fmt = 'BGRA'
+    # If target format is not what we want (32bit BGRA) convert it.
+    if pf != target_fmt:
+        converter = IWICFormatConverter()
+        _factory.CreateFormatConverter(byref(converter))
+
+        conversion_possible = BOOL()
+        converter.CanConvert(pf, target_fmt, byref(conversion_possible))
+
+        # 99% of the time conversion will be possible to default.
+        # However, we check to be safe and fallback to 24 bit BGR if not possible.
+        if not conversion_possible:
+            target_fmt = GUID_WICPixelFormat24bppBGR
+            fmt = 'BGR'
+
+        converter.Initialize(bitmap, target_fmt, WICBitmapDitherTypeNone, None, 0, WICBitmapPaletteTypeCustom)
+
+        bitmap.Release()
+        bitmap = converter
+
+    # Most images are loaded with a negative pitch, which requires list comprehension to fix.
+    # Create a flipped bitmap through the decoder rather through Python to increase performance.
+    flipper = IWICBitmapFlipRotator()
+    _factory.CreateBitmapFlipRotator(byref(flipper))
+
+    flipper.Initialize(bitmap, WICBitmapTransformFlipVertical)
+
+    stride = len(fmt) * width
+    buffer_size = stride * height
+
+    buffer = (BYTE * buffer_size)()
+
+    flipper.CopyPixels(None, stride, buffer_size, byref(buffer))
+
+    flipper.Release()
+    bitmap.Release()  # Can be converter.
+
+    return ImageData(width, height, fmt, buffer)
+
 
 class WICDecoder(ImageDecoder):
     """Windows Imaging Component implementation for image decoding.
@@ -125,94 +203,20 @@ class WICDecoder(ImageDecoder):
 
         return decoder, stream
 
-    @staticmethod
-    def _get_bitmap_frame(bitmap_decoder: IWICBitmapDecoder, frame_index: int) -> IWICBitmapFrameDecode:
-        bitmap = IWICBitmapFrameDecode()
-        bitmap_decoder.GetFrame(frame_index, byref(bitmap))
-        return bitmap
-
-    def get_bitmap(self, width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat32bppBGRA) -> IWICBitmap:
-        bitmap = IWICBitmap()
-        self._factory.CreateBitmap(width, height,
-                          target_fmt,
-                          WICBitmapCacheOnDemand,
-                          byref(bitmap))
-        return bitmap
-
-    def create_image(self, width: int, height: int, target_fmt:com.GUID=GUID_WICPixelFormat32bppPBGRA) -> ImageData:
-        bitmap = self.get_bitmap(width, height, target_fmt)
-        return self.get_image(bitmap, target_fmt)
-
-    def get_image(self, bitmap: IWICBitmap, target_fmt: com.GUID=GUID_WICPixelFormat32bppBGRA) -> ImageData:
-        """Get ImageData from bitmap, specifying target format.
-
-        .. note:: ``bitmap`` is released before this function returns.
-        """
-        width = UINT()
-        height = UINT()
-
-        bitmap.GetSize(byref(width), byref(height))
-
-        width = int(width.value)
-        height = int(height.value)
-
-        # Get image pixel format
-        pf = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        bitmap.GetPixelFormat(byref(pf))
-
-        fmt = 'BGRA'
-        # If target format is not what we want (32bit BGRA) convert it.
-        if pf != target_fmt:
-            converter = IWICFormatConverter()
-            self._factory.CreateFormatConverter(byref(converter))
-
-            conversion_possible = BOOL()
-            converter.CanConvert(pf, target_fmt, byref(conversion_possible))
-
-            # 99% of the time conversion will be possible to default.
-            # However, we check to be safe and fallback to 24 bit BGR if not possible.
-            if not conversion_possible:
-                target_fmt = GUID_WICPixelFormat24bppBGR
-                fmt = 'BGR'
-
-            converter.Initialize(bitmap, target_fmt, WICBitmapDitherTypeNone, None, 0, WICBitmapPaletteTypeCustom)
-
-            bitmap.Release()
-            bitmap = converter
-
-        # Most images are loaded with a negative pitch, which requires list comprehension to fix.
-        # Create a flipped bitmap through the decoder rather through Python to increase performance.
-        flipper = IWICBitmapFlipRotator()
-        self._factory.CreateBitmapFlipRotator(byref(flipper))
-
-        flipper.Initialize(bitmap, WICBitmapTransformFlipVertical)
-
-        stride = len(fmt) * width
-        buffer_size = stride * height
-
-        buffer = (BYTE * buffer_size)()
-
-        flipper.CopyPixels(None, stride, buffer_size, byref(buffer))
-
-        flipper.Release()
-        bitmap.Release()  # Can be converter.
-
-        return ImageData(width, height, fmt, buffer)
-
-    @staticmethod
-    def _delete_bitmap_decoder(bitmap_decoder: IWICBitmapDecoder, stream: IWICStream) -> None:
-        # Release decoder and stream
-        bitmap_decoder.Release()
-        stream.Release()
-
     def decode(self, filename: str, file: BinaryIO | None) -> ImageData:
         if not file:
-            file = open(filename, 'rb')
-        bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
-        bitmap = self._get_bitmap_frame(bitmap_decoder, 0)
-        image = self.get_image(bitmap)
-        self._delete_bitmap_decoder(bitmap_decoder, stream)
-        return image
+            with open(filename, 'rb') as f:
+                bitmap_decoder, stream = self._load_bitmap_decoder(filename, f)
+                bitmap = _get_bitmap_frame(bitmap_decoder, 0)
+                image_data = extract_image_data(bitmap)
+        else:
+            bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
+            bitmap = _get_bitmap_frame(bitmap_decoder, 0)
+            image_data = extract_image_data(bitmap)
+
+        bitmap_decoder.Release()
+        stream.Release()
+        return image_data
 
     @staticmethod
     def get_property_value(reader: IWICMetadataQueryReader, metadata_name: str) -> int:

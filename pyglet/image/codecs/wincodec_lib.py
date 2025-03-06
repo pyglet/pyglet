@@ -1,12 +1,31 @@
 """Windows Imaging Component library definitions for Windows OS."""
-from ctypes import byref
+from ctypes import byref, c_void_p, memmove
+
 from pyglet.image import ImageData
 from pyglet.image.codecs import ImageDecodeException, ImageDecoder, ImageEncoder, os
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
-from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER, GENERIC_WRITE, GMEM_MOVEABLE, STREAM_SEEK_SET, WINDOWS_8_OR_GREATER
-from pyglet.libs.win32.types import BOOL, BYTE, DOUBLE, DWORD, IStream, LPCWSTR, POINTER, PROPVARIANT, STATSTG, UINT, ULONG, c_void_p, com, memmove
-
+from pyglet.libs.win32 import com
+from pyglet.libs.win32.constants import (
+    CLSCTX_INPROC_SERVER,
+    GENERIC_WRITE,
+    GMEM_MOVEABLE,
+    STREAM_SEEK_SET,
+    WINDOWS_8_OR_GREATER,
+)
+from pyglet.libs.win32.types import (
+    BOOL,
+    BYTE,
+    DOUBLE,
+    DWORD,
+    LPCWSTR,
+    POINTER,
+    PROPVARIANT,
+    STATSTG,
+    UINT,
+    ULONG,
+    IStream,
+)
 
 CLSID_WICImagingFactory1 = com.GUID(0xcacaf262, 0x9370, 0x4615, 0xa1, 0x3b, 0x9f, 0x55, 0x39, 0xda, 0x4c, 0xa)
 CLSID_WICImagingFactory2 = com.GUID(0x317d06e8, 0x5f24, 0x433d, 0xbd, 0xf7, 0x79, 0xce, 0x68, 0xd8, 0xab, 0xc2)

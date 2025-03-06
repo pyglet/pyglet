@@ -469,10 +469,10 @@ class _GlyphBox(_AbstractBox):
             baseline = layout._parse_distance(baseline_)  # noqa: SLF001
             assert len(self.glyphs[start - i:end - i]) == end - start
             for (kern, glyph), glyph_pos in zip(self.glyphs[start - i:end - i], self.offsets[start - i: end - i]):
-                x1 += kern + glyph_pos.x_offset
+                x1 += kern
                 v0, v1, v2, v3 = glyph.vertices
-                v0 += x1
-                v2 += x1
+                v0 += x1 + glyph_pos.x_offset
+                v2 += x1 + glyph_pos.x_offset
                 v1 += line_y + baseline + glyph_pos.y_offset
                 v3 += line_y + baseline + glyph_pos.y_offset
                 vertices.extend(map(round, [v0, v1, 0, v2, v1, 0, v2, v3, 0, v0, v3, 0]))

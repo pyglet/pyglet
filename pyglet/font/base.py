@@ -199,6 +199,7 @@ class GlyphRenderer(abc.ABC):
         Args:
             font: The :py:class:`~pyglet.font.base.Font` object to be rendered.
         """
+        self.font = font
 
     @abc.abstractmethod
     def render(self, text: str) -> Glyph:
@@ -211,6 +212,15 @@ class GlyphRenderer(abc.ABC):
              A Glyph with the proper metrics for that specific character.
         """
 
+    def create_zero_glyph(self) -> Glyph:
+        """Zero glyph is a 1x1 image that has a -1 advance.
+
+        This is to fill in for potential substitutions since font system requires 1 glyph per character in a string.
+        """
+        image_data = image.ImageData(1, 1, 'RGBA', bytes([0, 0, 0, 0]))
+        glyph = self.font.create_glyph(image_data)
+        glyph.set_bearings(-self.font.descent, 0, -1)
+        return glyph
 
 class FontException(Exception):  # noqa: N818
     """Generic exception related to errors from the font module.  Typically, from invalid font data."""
@@ -354,7 +364,7 @@ class Font:
 
         return atlas_size
 
-    def get_glyphs(self, text: str) -> list[Glyph]:
+    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -365,7 +375,9 @@ class Font:
                 Text to render.
         """
         glyph_renderer = None
+
         glyphs = []  # glyphs that are committed.
+        offsets = []
         for c in get_grapheme_clusters(str(text)):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
             # boxes)
@@ -376,7 +388,9 @@ class Font:
                     glyph_renderer = self.glyph_renderer_class(self)
                 self.glyphs[c] = glyph_renderer.render(c)
             glyphs.append(self.glyphs[c])
-        return glyphs
+            offsets.append(GlyphPosition(0, 0, 0, 0))
+
+        return glyphs, offsets
 
     @abc.abstractmethod
     def get_text_size(self, text: str) -> tuple[int, int]:
