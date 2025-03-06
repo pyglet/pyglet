@@ -309,6 +309,32 @@ class FreeTypeFont(base.Font):
 
         return positions
 
+    def get_glyphs(self, text: str) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
+        """Create and return a list of Glyphs for `text`.
+
+        If any characters do not have a known glyph representation in this
+        font, a substitution will be made.
+
+        Args:
+            text:
+                Text to render.
+        """
+        glyph_renderer = None
+
+        glyphs = []  # glyphs that are committed.
+        for c in base.get_grapheme_clusters(str(text)):
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
+            # boxes)
+            if c == "\t":
+                c = " "  # noqa: PLW2901
+            if c not in self.glyphs:
+                if not glyph_renderer:
+                    glyph_renderer = self.glyph_renderer_class(self)
+                self.glyphs[c] = glyph_renderer.render(c)
+            glyphs.append(self.glyphs[c])
+
+        return glyphs, self.get_glyph_positions(text)
+
     def get_text_size(self, text: str) -> tuple[int, int]:
         width = 0
         max_top = 0
