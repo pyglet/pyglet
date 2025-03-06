@@ -1,16 +1,27 @@
+import ctypes
 import os
 import platform
 import warnings
+from ctypes import HRESULT, POINTER, c_longlong, c_uint32, c_uint64, c_ulonglong, c_void_p, cast
+from ctypes.wintypes import BOOL, DWORD, LONG, LPCWSTR, UINT, ULONG, WORD
 
 from pyglet import image
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32 import com
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import (
+    GMEM_MOVEABLE,
+    MF_ACCESSMODE_READWRITE,
+    MF_FILEFLAGS_NONE,
+    MF_OPENMODE_DELETE_IF_EXIST,
+    WINDOWS_7_OR_GREATER,
+    WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER,
+    WINDOWS_VISTA_OR_GREATER,
+)
+from pyglet.libs.win32.types import BYTE, PROPVARIANT
 from pyglet.media import Source
-from pyglet.media.codecs import AudioFormat, AudioData, VideoFormat, MediaDecoder, StaticSource
-from pyglet.util import debug_print, DecodeException
+from pyglet.media.codecs import AudioData, AudioFormat, MediaDecoder, StaticSource, VideoFormat
+from pyglet.util import DecodeException, debug_print
 
 _debug = debug_print('debug_media')
 
@@ -21,10 +32,9 @@ try:
     # System32 and SysWOW64 folders are opposite perception in Windows x64.
     # System32 = x64 dll's | SysWOW64 = x86 dlls
     # By default ctypes only seems to look in system32 regardless of Python architecture, which has x64 dlls.
-    if platform.architecture()[0] == '32bit':
-        if platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
-            mfreadwrite = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfreadwrite.dll')
-            mfplat = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfplat.dll')
+    if platform.architecture()[0] == '32bit' and platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
+        mfreadwrite = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfreadwrite.dll')
+        mfplat = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfplat.dll')
 
     mfreadwrite_lib = ctypes.windll.LoadLibrary(mfreadwrite)
     mfplat_lib = ctypes.windll.LoadLibrary(mfplat)
