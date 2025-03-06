@@ -20,7 +20,6 @@ from pyglet.font.dwrite.d2d1_types_lib import (
     D2D1_SIZE_U,
     D2D_POINT_2F,
 )
-from pyglet.font.dwrite.d3d11_lib import IDXGIDevice
 from pyglet.font.dwrite.dwrite_lib import (
     DWRITE_GLYPH_IMAGE_FORMATS,
     DWRITE_GLYPH_RUN,
@@ -158,7 +157,7 @@ class ID2D1Resource(com.pIUnknown):
     ]
 
 
-class ID2D1Brush(ID2D1Resource, com.pIUnknown):
+class ID2D1Brush(ID2D1Resource):
     _methods_ = [
         ("SetOpacity",
          com.STDMETHOD()),
@@ -171,10 +170,10 @@ class ID2D1Brush(ID2D1Resource, com.pIUnknown):
     ]
 
 
-class ID2D1SolidColorBrush(ID2D1Brush, ID2D1Resource, com.pIUnknown):
+class ID2D1SolidColorBrush(ID2D1Brush):
     _methods_ = [
         ("SetColor",
-         com.METHOD(None, D2D1_COLOR_F)),
+         com.METHOD(None, POINTER(D2D1_COLOR_F))),
         ("GetColor",
          com.STDMETHOD()),
     ]
@@ -198,10 +197,10 @@ class D2D1_MAPPED_RECT(Structure):
         ("bits", POINTER(BYTE)),
     ]
 
-class ID2D1Image(ID2D1Resource, com.pIUnknown):
+class ID2D1Image(ID2D1Resource):
     _methods_ = []
 
-class ID2D1Bitmap(ID2D1Image, ID2D1Resource, com.pIUnknown):
+class ID2D1Bitmap(ID2D1Image):
     _methods_ = [
         ("GetSize",
          com.METHOD(D2D1_SIZE_F)),
@@ -219,7 +218,7 @@ class ID2D1Bitmap(ID2D1Image, ID2D1Resource, com.pIUnknown):
          com.STDMETHOD()),
     ]
 
-class ID2D1Bitmap1(ID2D1Bitmap, ID2D1Image, ID2D1Resource, com.pIUnknown):
+class ID2D1Bitmap1(ID2D1Bitmap):
     _methods_ = [
         ("GetColorContext",
          com.STDMETHOD()),
@@ -561,7 +560,7 @@ class ID2D1Factory(com.pIUnknown):
 
 class ID2D1Factory1(ID2D1Factory):
     _methods_ = [
-        ("CreateDevice", com.STDMETHOD(IDXGIDevice, POINTER(ID2D1Device))),
+        ("CreateDevice", com.STDMETHOD(c_void_p, POINTER(ID2D1Device))),
         ("CreateStrokeStyle1", com.STDMETHOD()),
         ("CreatePathGeometry1", com.STDMETHOD()),
         ("CreateDrawingStateBlock1", com.STDMETHOD()),
@@ -592,7 +591,7 @@ class ID2D1Factory4(ID2D1Factory3):
 class ID2D1Factory5(ID2D1Factory4):
     _methods_ = [
         ("CreateDevice5",
-         com.STDMETHOD(IDXGIDevice, POINTER(ID2D1Device4))),
+         com.STDMETHOD(c_void_p, POINTER(ID2D1Device4))),
     ]
 
 
@@ -635,5 +634,4 @@ default_bitmap_properties0 = D2D1_BITMAP_PROPERTIES(
 )
 
 IID_ID2D1DeviceContext = com.GUID(0xe8f7fe7a, 0x191c, 0x466d, 0xad, 0x95, 0x97, 0x56, 0x78, 0xbd, 0xa9, 0x98)
-
 IID_ID2D1DeviceContext4 = com.GUID.from_string("8c427831-3d90-4476-b647-c4fae349e4db")

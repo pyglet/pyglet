@@ -487,20 +487,22 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
                 glyph_image_fmt = color_run.contents.glyphImageFormat
                 if glyph_image_fmt == DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-                    self._render_target.DrawSvgGlyphRun(
-                        baseline_offset,
-                        color_run.contents.glyphRun,
-                        self._brush,
-                        None,
-                        0,
-                        mode
-                    )
+                    if self._ctx_supported:
+                        self._render_target.DrawSvgGlyphRun(
+                            baseline_offset,
+                            color_run.contents.glyphRun,
+                            self._brush,
+                            None,
+                            0,
+                            mode
+                        )
                 elif glyph_image_fmt & DWRITE_GLYPH_IMAGE_FORMATS_BITMAP:
-                    self._render_target.DrawColorBitmapGlyphRun(
-                        glyph_image_fmt,
-                        baseline_offset,
-                        color_run.contents.glyphRun,
-                        self.measuring_mode
+                    if self._ctx_supported:
+                        self._render_target.DrawColorBitmapGlyphRun(
+                            glyph_image_fmt,
+                            baseline_offset,
+                            color_run.contents.glyphRun,
+                            self.measuring_mode
                     )
                 else:
                     glyph_run = color_run.contents.glyphRun
@@ -508,7 +510,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                                                      glyph_run,
                                                      brush,
                                                      mode)
-
             enumerator.Release()
             if temp_brush:
                 temp_brush.Release()
@@ -783,14 +784,13 @@ class Win32DirectWriteFont(base.Font):
         font_face = IDWriteFontFace()
         write_font.CreateFontFace(byref(font_face))
 
-        font_face4 = IDWriteFontFace4()
-        if com.is_available(font_face, IID_IDWriteFontFace4, font_face4):
-            font_face = font_face4
-            print("FMTS", DWRITE_GLYPH_IMAGE_FORMAT_FLAG(font_face4.GetGlyphImageFormats()))
-        else:
-            font_face2 = IDWriteFontFace2()
-            if com.is_available(font_face, IID_IDWriteFontFace2, font_face2):
-                font_face = font_face2
+        # font_face4 = IDWriteFontFace4()
+        # if com.is_available(font_face, IID_IDWriteFontFace4, font_face4):
+        #     font_face = font_face4
+        # else:
+        #     font_face2 = IDWriteFontFace2()
+        #     if com.is_available(font_face, IID_IDWriteFontFace2, font_face2):
+        #         font_face = font_face2
 
         self.font_face = font_face
         self._font_metrics = DWRITE_FONT_METRICS()
