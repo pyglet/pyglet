@@ -23,7 +23,7 @@ class XInputTablet(Tablet):
 
 class XInputTabletCanvas(DeviceResponder, TabletCanvas):
     def __init__(self, window, cursors):
-        super(XInputTabletCanvas, self).__init__(window)
+        super().__init__(window)
         self.cursors = cursors
 
         dispatcher = XInputWindowEventDispatcher.get_dispatcher(window)
@@ -71,7 +71,7 @@ class XInputTabletCanvas(DeviceResponder, TabletCanvas):
 
 class XInputTabletCursor(TabletCursor):
     def __init__(self, device):
-        super(XInputTabletCursor, self).__init__(device.name)
+        super().__init__(device.name)
         self.device = device
 
 

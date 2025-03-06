@@ -86,7 +86,7 @@ class WintabTabletCanvas(TabletCanvas):
     override_keys = False
 
     def __init__(self, device, window, msg_base=wintab.WT_DEFBASE):
-        super(WintabTabletCanvas, self).__init__(window)
+        super().__init__(window)
 
         self.device = device
         self.msg_base = msg_base

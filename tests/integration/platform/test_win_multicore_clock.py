@@ -7,11 +7,6 @@
 due to the underlaying use of win32 QueryPerformanceCounter.
 If your update is seeing a negative dt, then time.clock is probably the culprit.
 AMD or Intel Patches for multicore may fix this problem (if you see it at all)"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-
 import time
 import sys
 from tests.annotations import require_platform, Platform

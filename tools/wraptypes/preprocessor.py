@@ -13,11 +13,6 @@ Reference is C99:
   * Also understands GNU #include_next
 
 '''
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import operator
 import os.path
 import cPickle

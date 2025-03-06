@@ -211,14 +211,17 @@ master_doc = "index"
 
 # General information about the project.
 project = "pyglet"
-copyright = "2006-2008, Alex Holkner. 2008-2023 pyglet contributors"
+copyright = f"2006-2008, Alex Holkner. 2008-{now.year} pyglet contributors"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = "2.0"
+if pyglet.version.count(".") == 1:
+    version = pyglet.version
+else:
+    version = pyglet.version.rsplit('.', 1)[0]
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 

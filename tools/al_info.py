@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-
 """Print OpenAL driver information.
 
 Options:
   -d <device>   Optionally specify device to query.
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import ctypes
 import optparse
 import sys
