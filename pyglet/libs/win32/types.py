@@ -30,6 +30,7 @@ from ctypes import (
 from ctypes.wintypes import (
     BOOL,
     BYTE,
+    DOUBLE,  # noqa: F401
     DWORD,
     FILETIME,
     HANDLE,
@@ -41,7 +42,6 @@ from ctypes.wintypes import (
     HMONITOR,
     HRGN,
     HWND,
-    INT,  # noqa: F401
     LARGE_INTEGER,
     LONG,
     LPARAM,

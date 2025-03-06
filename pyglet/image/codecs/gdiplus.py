@@ -1,11 +1,30 @@
-from pyglet.libs.win32.com import pIUnknown
-from pyglet.image import *
-from pyglet.image.codecs import *
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from ctypes import (
+    POINTER,
+    Structure,
+    c_buffer,
+    c_byte,
+    c_float,
+    c_long,
+    c_short,
+    c_uint32,
+    c_ulong,
+    c_void_p,
+    c_wchar,
+    c_wchar_p,
+    cast,
+    create_string_buffer,
+    memmove,
+    windll,
+)
+from ctypes.wintypes import BOOL, BYTE, INT, UINT, ULONG
+
+from pyglet.image import Animation, AnimationFrame, ImageData, byref, c_int, c_uint, sizeof
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
-
+from pyglet.libs.win32.com import pIUnknown
+from pyglet.libs.win32.constants import GMEM_MOVEABLE
+from pyglet.libs.win32.types import LONG_PTR
 
 gdiplus = windll.gdiplus
 
@@ -248,13 +267,13 @@ class GDIPlusDecoder(ImageDecoder):
         if not file:
             file = open(filename, 'rb')
         bitmap = self._load_bitmap(filename, file)
-        
+
         dimension_count = c_uint()
         gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))
         if dimension_count.value < 1:
             self._delete_bitmap(bitmap)
             raise ImageDecodeException('Image has no frame dimensions')
-        
+
         # XXX Make sure this dimension is time?
         dimensions = (c_void_p * dimension_count.value)()
         gdiplus.GdipImageGetFrameDimensionsList(bitmap, dimensions, dimension_count.value)
@@ -274,7 +293,7 @@ class GDIPlusDecoder(ImageDecoder):
         delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
 
         frames = []
-        
+
         for i in range(frame_count.value):
             gdiplus.GdipImageSelectActiveFrame(bitmap, dimensions, i)
             image = self._get_image(bitmap)

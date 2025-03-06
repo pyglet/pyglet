@@ -1,14 +1,14 @@
+from __future__ import annotations
+
 import ctypes
+from ctypes.wintypes import DWORD, HWND, LONG, WORD
+
 from pyglet.libs.win32 import com
 
 lib = ctypes.oledll.dsound
 
-DWORD = ctypes.c_uint32
 LPDWORD = ctypes.POINTER(DWORD)
-LONG = ctypes.c_long
 LPLONG = ctypes.POINTER(LONG)
-WORD = ctypes.c_uint16
-HWND = DWORD
 LPUNKNOWN = ctypes.c_void_p
 
 D3DVALUE = ctypes.c_float

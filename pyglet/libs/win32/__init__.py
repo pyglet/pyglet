@@ -1,10 +1,12 @@
 import atexit
 import struct
 import warnings
+from ctypes import HRESULT
+from ctypes.wintypes import ATOM, HFONT, HGDIOBJ, HGLOBAL, HMENU, HMODULE, INT, LPVOID, PUINT
 
 import pyglet
-from . import com
-from . import constants
+
+from . import com, constants
 from .types import *
 
 IS64 = struct.calcsize("P") == 8
