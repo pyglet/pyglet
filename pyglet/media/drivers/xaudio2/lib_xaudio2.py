@@ -1,30 +1,47 @@
-import ctypes
-import platform
 import os
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+import platform
+from ctypes import (
+    HRESULT,
+    POINTER,
+    Structure,
+    c_bool,
+    c_char,
+    c_float,
+    c_int,
+    c_uint32,
+    c_uint64,
+    c_void_p,
+    cdll,
+    windll,
+)
+from ctypes.wintypes import BOOL, BYTE, DWORD, FLOAT, LPCWSTR, UINT, WORD
+
 from pyglet.libs.win32 import com
+from pyglet.libs.win32.constants import WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER
+from pyglet.libs.win32.types import c_void
 from pyglet.util import debug_print
 
 _debug = debug_print('debug_media')
 
 
 def load_xaudio2(dll_name):
-    """This will attempt to load a version of XAudio2. Versions supported: 2.9, 2.8.
-       While Windows 8 ships with 2.8 and Windows 10 ships with version 2.9, it is possible to install 2.9 on 8/8.1.
+    """This will attempt to load a version of XAudio2.
+
+    Versions supported: 2.9, 2.8.
+
+    While Windows 8 ships with 2.8 and Windows 10 ships with version 2.9, it is possible to install 2.9 on 8/8.1.
     """
     xaudio2 = dll_name
     # System32 and SysWOW64 folders are opposite perception in Windows x64.
     # System32 = x64 dll's | SysWOW64 = x86 dlls
     # By default ctypes only seems to look in system32 regardless of Python architecture, which has x64 dlls.
-    if platform.architecture()[0] == '32bit':
-        if platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
-            xaudio2 = os.path.join(os.environ['WINDIR'], 'SysWOW64', '{}.dll'.format(xaudio2))
+    if platform.architecture()[0] == '32bit' and platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
+        xaudio2 = os.path.join(os.environ['WINDIR'], 'SysWOW64', '{}.dll'.format(xaudio2))
 
-    xaudio2_lib = ctypes.windll.LoadLibrary(xaudio2)
+    xaudio2_lib = windll.LoadLibrary(xaudio2)
 
     # Somehow x3d uses different calling structure than the rest of the DLL; Only affects 32 bit? Microsoft...
-    x3d_lib = ctypes.cdll.LoadLibrary(xaudio2)
+    x3d_lib = cdll.LoadLibrary(xaudio2)
     return xaudio2_lib, x3d_lib
 
 
@@ -43,7 +60,7 @@ UINT32 = c_uint32
 FLOAT32 = c_float
 
 
-class XAUDIO2_DEBUG_CONFIGURATION(ctypes.Structure):
+class XAUDIO2_DEBUG_CONFIGURATION(Structure):
     _fields_ = [
         ('TraceMask', UINT32),
         ('BreakMask', UINT32),
@@ -54,7 +71,7 @@ class XAUDIO2_DEBUG_CONFIGURATION(ctypes.Structure):
     ]
 
 
-class XAUDIO2_PERFORMANCE_DATA(ctypes.Structure):
+class XAUDIO2_PERFORMANCE_DATA(Structure):
     _fields_ = [
         ('AudioCyclesSinceLastQuery', c_uint64),
         ('TotalCyclesSinceLastQuery', c_uint64),
@@ -76,14 +93,14 @@ class XAUDIO2_PERFORMANCE_DATA(ctypes.Structure):
         return "XAUDIO2PerformanceData(active_voices={}, total_voices={}, glitches={}, latency={} samples, memory_usage={} bytes)".format(self.ActiveSourceVoiceCount, self.TotalSourceVoiceCount, self.GlitchesSinceEngineStarted, self.CurrentLatencyInSamples, self.MemoryUsageInBytes)
 
 
-class XAUDIO2_VOICE_SENDS(ctypes.Structure):
+class XAUDIO2_VOICE_SENDS(Structure):
     _fields_ = [
         ('SendCount', UINT32),
         ('pSends', c_void_p),
     ]
 
 
-class XAUDIO2_BUFFER(ctypes.Structure):
+class XAUDIO2_BUFFER(Structure):
     _fields_ = [
         ('Flags', UINT32),
         ('AudioBytes', UINT32),
@@ -96,7 +113,7 @@ class XAUDIO2_BUFFER(ctypes.Structure):
         ('pContext', c_void_p),
     ]
 
-class XAUDIO2_VOICE_STATE(ctypes.Structure):
+class XAUDIO2_VOICE_STATE(Structure):
     _fields_ = [
         ('pCurrentBufferContext', c_void_p),
         ('BuffersQueued', UINT32),
@@ -106,7 +123,7 @@ class XAUDIO2_VOICE_STATE(ctypes.Structure):
     def __repr__(self):
         return "XAUDIO2_VOICE_STATE(BuffersQueued={0}, SamplesPlayed={1})".format(self.BuffersQueued, self.SamplesPlayed)
 
-class WAVEFORMATEX(ctypes.Structure):
+class WAVEFORMATEX(Structure):
     _fields_ = [
         ('wFormatTag', WORD),
         ('nChannels', WORD),
@@ -198,13 +215,13 @@ class IXAudio2VoiceCallback(com.Interface):
         ('OnStreamEnd',
          com.VOIDMETHOD()),
         ('OnBufferStart',
-         com.VOIDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD(c_void_p)),
         ('OnBufferEnd',
-         com.VOIDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD(c_void_p)),
         ('OnLoopEnd',
-         com.VOIDMETHOD(ctypes.c_void_p)),
+         com.VOIDMETHOD(c_void_p)),
         ('OnVoiceError',
-         com.VOIDMETHOD(ctypes.c_void_p, HRESULT))
+         com.VOIDMETHOD(c_void_p, HRESULT))
     ]
 
 
@@ -216,7 +233,7 @@ class XAUDIO2_EFFECT_DESCRIPTOR(Structure):
     ]
 
 
-class XAUDIO2_EFFECT_CHAIN(ctypes.Structure):
+class XAUDIO2_EFFECT_CHAIN(Structure):
     _fields_ = [
         ('EffectCount', UINT32),
         ('pEffectDescriptors', POINTER(XAUDIO2_EFFECT_DESCRIPTOR)),
@@ -331,21 +348,21 @@ class IXAudio2EngineCallback(com.Interface):
 
 
 # -------------- 3D Audio Positioning----------
-class X3DAUDIO_DISTANCE_CURVE_POINT(ctypes.Structure):
+class X3DAUDIO_DISTANCE_CURVE_POINT(Structure):
     _fields_ = [
         ('Distance', FLOAT32),
         ('DSPSetting', FLOAT32)
     ]
 
 
-class X3DAUDIO_DISTANCE_CURVE(ctypes.Structure):
+class X3DAUDIO_DISTANCE_CURVE(Structure):
     _fields_ = [
         ('pPoints', POINTER(X3DAUDIO_DISTANCE_CURVE_POINT)),
         ('PointCount', UINT32)
     ]
 
 
-class X3DAUDIO_VECTOR(ctypes.Structure):
+class X3DAUDIO_VECTOR(Structure):
     _fields_ = [
         ('x', c_float),
         ('y', c_float),
