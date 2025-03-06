@@ -9,7 +9,8 @@ if os.name == "nt":
     # On Windows, it's possible to change the font anti-aliasing mode.
     # Uncomment the below lines to set the options:
     #
-    from pyglet.font.directwrite import DirectWriteGlyphRenderer
+    from pyglet.font.dwrite import DirectWriteGlyphRenderer
+
     D2D1_TEXT_ANTIALIAS_MODE_DEFAULT = 0
     D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE = 1 # not working?
     D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE = 2 # same as default
