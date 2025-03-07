@@ -451,7 +451,7 @@ class Protocol:
         # Find a global match, and create a local instance for it.
         interface_global = self.client.globals[name][index]
         interface_instance = self.create_interface(name)
-        self.client._bound_globals[interface_global.name] = interface_instance
+        self.client.bound_globals[interface_global.name] = interface_instance
 
         # Inform the server of the new relationship:
         _string = String(name).to_bytes()
@@ -555,8 +555,8 @@ class Client:
         self._oid_interface_map: dict[int, Interface] = {}  # oid: Interface
 
         self.globals: dict[str, list] = _defaultdict(list)  # interface_name: [GlobalObject]
-        self._global_interface_map: dict[int, str] = {}     # global_name: interface_name
-        self._bound_globals: dict[int, Interface] = {}      # global_name: interface_instance
+        self.global_interface_map: dict[int, str] = {}     # global_name: interface_name
+        self.bound_globals: dict[int, Interface] = {}      # global_name: interface_instance
 
         self.protocol_dict = {p.name: p for p in [Protocol(self, filename) for filename in protocols]}
         self.protocols = _NameSpace(self.protocol_dict)
@@ -635,6 +635,7 @@ class Client:
 
             # Do we have enough data for the full message?
             if len(data) < header.size:
+                print("WARNING! Pending FDS!", fds)
                 break
 
             # - find the matching object (interface) from the header.oid
@@ -677,14 +678,14 @@ class Client:
     def _wl_registry_global(self, global_name, interface_name, version):
         assert _debug_wayland(f"wl_registry global: {global_name}, {interface_name}, {version}")
         self.globals[interface_name].append(GlobalObject(global_name, interface_name, version))
-        self._global_interface_map[global_name] = interface_name
+        self.global_interface_map[global_name] = interface_name
 
     def _wl_registry_global_remove(self, global_name):
         assert _debug_wayland(f"wl_registry global_remove: {global_name}")
-        interface = self._global_interface_map.pop(global_name)
+        interface = self.global_interface_map.pop(global_name)
         self.globals[interface] = [g for g in self.globals[interface] if g.name != global_name]
 
-        if instance := self._bound_globals.pop(global_name, None):
+        if instance := self.bound_globals.pop(global_name, None):
             # TODO:
             pass
 

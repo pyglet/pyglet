@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import ctypes
+import os
+import mmap
+
+from ctypes import create_string_buffer
 from typing import Sequence
 
 import pyglet
 
 from pyglet.display.wayland import WaylandCanvas
 
-from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.egl import egl
+from pyglet.libs.linux.wayland import xkbcommon
 from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.window import (
     BaseWindow,
@@ -44,6 +49,12 @@ class WaylandWindow(BaseWindow):
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         self._mouse_buttons = 0
         self._key_modifiers = 0
+        self._has_keyboard_focus = False
+
+        self.xkb_context = xkbcommon.xkb_context_new(xkbcommon.enum_xkb_context_flags(xkbcommon.XKB_CONTEXT_NO_FLAGS))
+        self.xkb_keymap = None
+        self.xkb_state_withmod = None   # updated with modifiers
+        self.xkb_state_default = None   # not updated with modifiers
         super().__init__(*args, **kwargs)
 
     def _recreate(self, changes: Sequence[str]) -> None:
@@ -169,10 +180,11 @@ class WaylandWindow(BaseWindow):
             self.wl_pointer.set_handler('leave', self.wl_pointer_leave_handler)
 
             self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
+            self.wl_keyboard.set_handler('keymap', self.wl_keyboard_keymap_handler)
+            self.wl_keyboard.set_handler('modifiers', self.wl_keyboard_modifiers_handler)
+            self.wl_keyboard.set_handler('key', self.wl_keyboard_key_handler)
             self.wl_keyboard.set_handler('enter', self.wl_keyboard_enter_handler)
             self.wl_keyboard.set_handler('leave', self.wl_keyboard_leave_handler)
-            self.wl_keyboard.set_handler('keymap', self.wl_keyboard_keymap_handler)
-            self.wl_keyboard.set_handler('key', self.wl_keyboard_key_handler)
 
             # TODO: remove temporary SHM surface:
             import os, tempfile
@@ -248,23 +260,56 @@ class WaylandWindow(BaseWindow):
         self.dispatch_event('on_mouse_leave', self._mouse_x, self._mouse_y)
 
     def wl_keyboard_enter_handler(self, serial, surface, keys):
-        print("wl_keyboard_enter:", serial, surface, keys)
+        # TODO: process held keys?
+        self._has_keyboard_focus = True
 
     def wl_keyboard_leave_handler(self, serial, surface):
-        print("wl_keyboard_leave:", serial, surface)
+        self._has_keyboard_focus = False
 
     def wl_keyboard_keymap_handler(self, fmt, fd, size):
-        print("wl_keyboard_keymap:", fmt, fd, size)
+        # Does not work reliably without mmapping:
+        mmap_obj = mmap.mmap(fd, size, prot=mmap.PROT_READ, flags=mmap.MAP_PRIVATE)
+        data = ctypes.create_string_buffer(mmap_obj.read())
+        os.close(fd)
+
+        # Note: There is only one format, so no need to check:
+        # fmt = self.wl_keyboard.enums['keymap_format'][fmt].name
+        fmt = xkbcommon.enum_xkb_keymap_format(xkbcommon.XKB_KEYMAP_FORMAT_TEXT_V1)
+        flags = xkbcommon.enum_xkb_keymap_compile_flags(xkbcommon.XKB_KEYMAP_COMPILE_NO_FLAGS)
+        if xkb_keymap := xkbcommon.xkb_keymap_new_from_string(self.xkb_context, data, fmt, flags):
+            self.xkb_keymap = xkb_keymap
+            self.xkb_state_withmod = xkbcommon.xkb_state_new(self.xkb_keymap)
+            self.xkb_state_default = xkbcommon.xkb_state_new(self.xkb_keymap)
+
+    def wl_keyboard_modifiers_handler(self, serial, mods_depressed, mods_latched, mods_locked, group):
+        depressed_mods = mods_depressed
+        latched_mods = mods_latched
+        locked_mods = mods_locked
+
+        xkbcommon.xkb_state_update_mask(
+            self.xkb_state_withmod, depressed_mods, latched_mods, locked_mods, group, group, group)
+
+        # TODO: confirm the format, and then updated:
+        # self._key_modifiers =
 
     def wl_keyboard_key_handler(self, serial, time, keycode, state):
-        # released	0	key is not pressed
-        # pressed	1	key is pressed
-        # repeated  2	key was repeated
+        keycode += 8    # xkbcommon expects +8
+        _buffer = create_string_buffer(4)
+        _size = xkbcommon.xkb_state_key_get_utf8(self.xkb_state_withmod, keycode, _buffer, 4)
+        character = bytes(_buffer[:_size]).decode()
+        symbol = xkbcommon.xkb_state_key_get_one_sym(self.xkb_state_default, keycode)
+
+        # released	0, pressed	1, repeated  2
         state_name = self.wl_keyboard.enums['key_state'][state].name
 
         if state_name == 'pressed':
-            shifted = keycode + 8
-            print(f"key: {key._key_names.get(shifted)}, {keycode} / {hex(keycode)} -> {shifted} / {hex(shifted)} ")
+            self.dispatch_event('on_text', character)
+            self.dispatch_event('on_key_press', symbol, self._key_modifiers)
+
+        if state_name == 'released':
+            self.dispatch_event('on_key_release', symbol, self._key_modifiers)
+
+        # TODO: confirm 'repeated' state
 
     # End Wayland event handlers
 
