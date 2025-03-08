@@ -176,8 +176,10 @@ class WaylandWindow(BaseWindow):
             self.wl_pointer = self.wl_seat.get_pointer(next(self.client.oid_pool))
             self.wl_pointer.set_handler('motion', self.wl_pointer_motion_handler)
             self.wl_pointer.set_handler('button', self.wl_pointer_button_handler)
+            self.wl_pointer.set_handler('axis_value120', self.wl_pointer_axis_value120_handler)
             self.wl_pointer.set_handler('enter', self.wl_pointer_enter_handler)
             self.wl_pointer.set_handler('leave', self.wl_pointer_leave_handler)
+            # self.wl_pointer.set_handler('frame', self.wl_pointer_frame_handler)
 
             self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
             self.wl_keyboard.set_handler('keymap', self.wl_keyboard_keymap_handler)
@@ -248,6 +250,18 @@ class WaylandWindow(BaseWindow):
             self.dispatch_event('on_mouse_drag', x, y, dx, dy, self._mouse_buttons, self._key_modifiers)
         else:
             self.dispatch_event('on_mouse_motion', x, y, dx, dy)
+
+    def wl_pointer_axis_value120_handler(self, axis, value120):
+        # TODO: combine discreet events & dispatch with wl_pointer frame event.
+        # 0: vertical axis, 1: horizontal axis
+        axis = self.wl_pointer.enums['axis'][axis].value
+        scroll_x, scroll_y = {0: (0, -1), 1: (-1, 0)}[axis]
+        scroll_x *= (value120 / 120)
+        scroll_y *= (value120 / 120)
+        self.dispatch_event('on_mouse_scroll', self._mouse_x, self._mouse_y, scroll_x, scroll_y)
+
+    # def wl_pointer_frame_handler(self):
+    #     print("end of pointer frame")
 
     def wl_pointer_enter_handler(self, serial, surface, surface_x, surface_y):
         # TODO: make sure it's the main app surface
