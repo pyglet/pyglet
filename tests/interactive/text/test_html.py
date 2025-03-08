@@ -198,7 +198,8 @@ class TestWindow(pyglet.window.Window):
         self.document = pyglet.text.decode_html(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-                                                   self.width - self.margin * 2, self.height - self.margin * 2,
+                                                   width=self.width - self.margin * 2,
+                                                   height=self.height - self.margin * 2,
                                                    multiline=True,
                                                    batch=self.batch)
         self.caret = caret.Caret(self.layout)
