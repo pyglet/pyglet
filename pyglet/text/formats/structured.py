@@ -315,7 +315,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
                 break
 
     def add_text(self, text: str) -> None:
-        self.document.append_text(text, self.next_style)
+        self.document.insert_text(self.len_text, text, self.next_style)
         self.next_style.clear()
         self.len_text += len(text)
 
