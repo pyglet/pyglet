@@ -1446,7 +1446,8 @@ class TextLayout:
     def _get_lines(self) -> list[_Line]:
         len_text = len(self._document.text)
         glyphs, offsets = self._get_glyphs()
-        owner_runs = self._get_owner_runs(glyphs)
+        owner_runs = runlist.RunList(len_text, None)
+        self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, offsets, owner_runs, 0, len_text)]
         self._content_width = 0
         self._line_count = len(lines)
@@ -1645,18 +1646,18 @@ class TextLayout:
 
         return glyphs, offsets
 
-    def _get_owner_runs(self, glyphs: list[_InlineElementBox | Glyph]) -> runlist.RunList:
-        owner = glyphs[0].owner
-        run_start = 0
-        owner_runs = runlist.RunList(0, owner)
+    def _get_owner_runs(self, owner_runs: runlist.RunList, glyphs: list[_InlineElementBox | Glyph], start: int,
+                        end: int) -> None:
+        owner = glyphs[start].owner
+        run_start = start
 
-        for i, glyph in enumerate(glyphs):
+        # TODO avoid glyph slice on non-incremental
+        for i, glyph in enumerate(glyphs[start:end]):
             if owner != glyph.owner:
-                owner_runs.append_run(i-run_start, owner)
+                owner_runs.set_run(run_start, i + start, owner)
                 owner = glyph.owner
-                run_start = i
-        owner_runs.append_run(len(glyphs)-run_start, owner)
-        return owner_runs
+                run_start = i + start
+        owner_runs.set_run(run_start, end, owner)
 
     def _flow_glyphs_wrap(self, glyphs: list[_InlineElementBox | Glyph],
                           offsets: list[GlyphPosition],
