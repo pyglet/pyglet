@@ -6,7 +6,7 @@ import socket as _socket
 import threading as _threading
 
 from types import SimpleNamespace as _NameSpace
-from struct import Struct
+from struct import Struct as _Struct
 from collections import deque as _deque
 from collections import namedtuple as _namedtuple
 from collections import defaultdict as _defaultdict
@@ -61,7 +61,7 @@ class WaylandProtocolError(WaylandException, FileNotFoundError):
 ##################################
 
 class WaylandType(_abc.ABC):
-    struct: Struct
+    struct: _Struct
     length: int
     value: int | float | str | bytes
 
@@ -79,7 +79,7 @@ class WaylandType(_abc.ABC):
 
 
 class Int(WaylandType):
-    struct = Struct('i')
+    struct = _Struct('i')
     length = struct.size
 
     def __init__(self, value: int):
@@ -94,7 +94,7 @@ class Int(WaylandType):
 
 
 class UInt(WaylandType):
-    struct = Struct('I')
+    struct = _Struct('I')
     length = struct.size
 
     def __init__(self, value: int):
@@ -109,7 +109,7 @@ class UInt(WaylandType):
 
 
 class Fixed(WaylandType):
-    struct = Struct('I')
+    struct = _Struct('I')
     length = struct.size
 
     def __init__(self, value: int):
@@ -125,7 +125,7 @@ class Fixed(WaylandType):
 
 
 class String(WaylandType):
-    struct = Struct('I')
+    struct = _Struct('I')
 
     def __init__(self, text: str):
         # length uint + text length + 4byte rounding
@@ -146,7 +146,7 @@ class String(WaylandType):
 
 
 class Array(WaylandType):
-    struct = Struct('I')
+    struct = _Struct('I')
 
     def __init__(self, array: bytes):
         # length uint + text length + 4byte padding
@@ -166,7 +166,7 @@ class Array(WaylandType):
 
 
 class Header(WaylandType):
-    struct = Struct('IHH')
+    struct = _Struct('IHH')
     length = struct.size
 
     def __init__(self, oid, opcode, size):
@@ -300,7 +300,7 @@ class Event:
             if arg.wl_type == FD:
                 wl_type = arg.wl_type.from_bytes(fds)
                 decoded_values.append(wl_type.value)
-                # TODO: do events with more than one FD exist?
+                fds = fds[wl_type.length:]
             else:
                 wl_type = arg.wl_type.from_bytes(payload)
                 decoded_values.append(wl_type.value)
@@ -691,4 +691,3 @@ class Client:
         if instance := self.bound_globals.pop(global_name, None):
             # TODO:
             pass
-
