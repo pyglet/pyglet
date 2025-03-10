@@ -11,6 +11,7 @@ import pyglet
 
 from pyglet.display.wayland import WaylandCanvas
 
+from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.egl import egl
@@ -18,12 +19,6 @@ from pyglet.libs.linux.wayland import xkbcommon
 from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.window import (
     BaseWindow,
-    # noqa: F401
-    # noqa: F401
-    # noqa: F401
-    # noqa: F401
-    # noqa: F401
-    # noqa: F401
     _PlatformEventHandler,
     _ViewEventHandler,
 )
@@ -31,6 +26,37 @@ from pyglet.window import (
 # Platform event data is single item, so use platform event handler directly.
 WaylandEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
+
+
+# symbol,ctrl -> motion mapping
+_motion_map: dict[tuple[int, bool], int] = {
+    (key.UP, False): key.MOTION_UP,
+    (key.RIGHT, False): key.MOTION_RIGHT,
+    (key.DOWN, False): key.MOTION_DOWN,
+    (key.LEFT, False): key.MOTION_LEFT,
+    (key.RIGHT, True): key.MOTION_NEXT_WORD,
+    (key.LEFT, True): key.MOTION_PREVIOUS_WORD,
+    (key.HOME, False): key.MOTION_BEGINNING_OF_LINE,
+    (key.END, False): key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False): key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False): key.MOTION_NEXT_PAGE,
+    (key.HOME, True): key.MOTION_BEGINNING_OF_FILE,
+    (key.END, True): key.MOTION_END_OF_FILE,
+    (key.BACKSPACE, False): key.MOTION_BACKSPACE,
+    (key.DELETE, False): key.MOTION_DELETE,
+    (key.C, True): key.MOTION_COPY,
+    (key.V, True): key.MOTION_PASTE,
+}
+
+_modifier_map: dict[int, int] = {
+    key.LCTRL: key.MOD_CTRL, key.RCTRL: key.MOD_CTRL,
+    key.LSHIFT: key.MOD_SHIFT, key.RSHIFT: key.MOD_SHIFT,
+    key.LALT: key.MOD_ALT, key.RALT: key.MOD_ALT,
+    key.LWINDOWS: key.MOD_WINDOWS, key.RWINDOWS: key.MOD_WINDOWS,
+    key.CAPSLOCK: key.MOD_CAPSLOCK,
+    key.NUMLOCK: key.MOD_NUMLOCK,
+    key.SCROLLLOCK: key.MOD_SCROLLLOCK
+}
 
 
 class WaylandWindow(BaseWindow):
@@ -296,15 +322,8 @@ class WaylandWindow(BaseWindow):
             self.xkb_state_default = xkbcommon.xkb_state_new(self.xkb_keymap)
 
     def wl_keyboard_modifiers_handler(self, serial, mods_depressed, mods_latched, mods_locked, group):
-        depressed_mods = mods_depressed
-        latched_mods = mods_latched
-        locked_mods = mods_locked
-
         xkbcommon.xkb_state_update_mask(
-            self.xkb_state_withmod, depressed_mods, latched_mods, locked_mods, group, group, group)
-
-        # TODO: confirm the format, and then updated:
-        # self._key_modifiers =
+            self.xkb_state_withmod, mods_depressed, mods_latched, mods_locked, group, group, group)
 
     def wl_keyboard_key_handler(self, serial, time, keycode, state):
         keycode += 8    # xkbcommon expects +8
@@ -313,17 +332,30 @@ class WaylandWindow(BaseWindow):
         character = bytes(_buffer[:_size]).decode()
         symbol = xkbcommon.xkb_state_key_get_one_sym(self.xkb_state_default, keycode)
 
+        modifier = _modifier_map.get(symbol, 0)
+
         # released	0, pressed	1, repeated  2
         state_name = self.wl_keyboard.enums['key_state'][state].name
 
         if state_name == 'pressed':
             self.dispatch_event('on_text', character)
             self.dispatch_event('on_key_press', symbol, self._key_modifiers)
+            self._key_modifiers |= modifier
+
+            if self._key_modifiers & key.MOD_ALT:
+                return
+
+            ctrl = self._key_modifiers & key.MOD_CTRL != 0
+            shft = self._key_modifiers & key.MOD_SHIFT != 0
+            if motion := _motion_map.get((symbol, ctrl), None):
+                if shft:
+                    self.dispatch_event('on_text_motion_select', motion)
+                else:
+                    self.dispatch_event('on_text_motion', motion)
 
         if state_name == 'released':
             self.dispatch_event('on_key_release', symbol, self._key_modifiers)
-
-        # TODO: confirm 'repeated' state
+            self._key_modifiers &= ~modifier
 
     # End Wayland event handlers
 

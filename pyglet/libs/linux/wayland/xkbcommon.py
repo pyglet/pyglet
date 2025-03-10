@@ -69,6 +69,32 @@ XKB_CONTEXT_NO_ENVIRONMENT_NAMES = (1 << 1)
 XKB_KEYMAP_COMPILE_NO_FLAGS = 0
 XKB_KEYMAP_FORMAT_TEXT_V1 = 1
 
+XKB_MOD_NAME_SHIFT = c_char_p(b'Shift')
+XKB_MOD_NAME_CAPS = c_char_p(b'Lock')
+XKB_MOD_NAME_CTRL = c_char_p(b'Control')
+XKB_MOD_NAME_MOD1 = c_char_p(b'Mod1')
+XKB_MOD_NAME_MOD2 = c_char_p(b'Mod2')
+XKB_MOD_NAME_MOD3 = c_char_p(b'Mod3')
+XKB_MOD_NAME_MOD4 = c_char_p(b'Mod4')
+XKB_MOD_NAME_MOD5 = c_char_p(b'Mod5')
+XKB_MOD_NAME_ALT = c_char_p(b'Mod1')
+XKB_MOD_NAME_LOGO = c_char_p(b'Mod4')
+XKB_MOD_NAME_NUM = c_char_p(b'Mod2')
+XKB_VMOD_NAME_ALT = c_char_p(b'Alt')
+XKB_VMOD_NAME_HYPER = c_char_p(b'Hyper')
+XKB_VMOD_NAME_LEVEL3 = c_char_p(b'LevelThree')
+XKB_VMOD_NAME_LEVEL5 = c_char_p(b'LevelFive')
+XKB_VMOD_NAME_META = c_char_p(b'Meta')
+XKB_VMOD_NAME_NUM = c_char_p(b'NumLock')
+XKB_VMOD_NAME_SCROLL = c_char_p(b'ScrollLock')
+XKB_VMOD_NAME_SUPER = c_char_p(b'Super')
+XKB_LED_NAME_NUM = c_char_p(b'Num')
+XKB_LED_NAME_CAPS = c_char_p(b'Caps')
+XKB_LED_NAME_SCROLL = c_char_p(b'Scroll')
+XKB_LED_NAME_COMPOSE = c_char_p(b'Compose')
+XKB_LED_NAME_KANA = c_char_p(b'Kana')
+
+
 xkb_keycode_t = c_uint32  # /usr/include/xkbcommon/xkbcommon.h:165
 xkb_keysym_t = c_uint32  # /usr/include/xkbcommon/xkbcommon.h:195
 xkb_layout_index_t = c_uint32  # /usr/include/xkbcommon/xkbcommon.h:224
