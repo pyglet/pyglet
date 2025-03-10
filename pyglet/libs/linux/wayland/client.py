@@ -574,13 +574,16 @@ class Client:
         self.wl_registry.set_handler('global_remove', self._wl_registry_global_remove)
 
         self._sync_done = _threading.Event()
+        self._thread_running = _threading.Event()
 
         self._receive_thread = _threading.Thread(target=self._receive_loop, daemon=True)
         self._receive_thread.start()
+        self._thread_running.wait()
 
     def _receive_loop(self):
         """A threaded method for continuously reading Server messages."""
-        while True:
+        self._thread_running.set()
+        while self._thread_running.is_set():
             self._receive()
 
     def sync(self):
