@@ -13,6 +13,10 @@ Reference is C99:
   * Also understands GNU #include_next
 
 '''
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id$'
+
 import operator
 import os.path
 import cPickle
@@ -141,7 +145,7 @@ punctuators = {
 
 def punctuator_regex(punctuators):
     punctuator_regexes = [v[0] for v in punctuators.values()]
-    punctuator_regexes.sort(key=len, reverse=True)
+    punctuator_regexes.sort(lambda a, b: -cmp(len(a), len(b)))
     return '(%s)' % '|'.join(punctuator_regexes)
 
 def t_clinecomment(t):
@@ -211,7 +215,7 @@ def t_identifier(t):
 def t_pp_number(t):
     t.type = 'PP_NUMBER'
     return t
-
+    
 @TOKEN(STRING_LITERAL)
 def t_string_literal(t):
     t.type = 'STRING_LITERAL'
@@ -290,7 +294,7 @@ class BinaryExpressionNode(ExpressionNode):
         self.right = right
 
     def evaluate(self, context):
-        return self.op(self.left.evaluate(context),
+        return self.op(self.left.evaluate(context), 
                        self.right.evaluate(context))
 
     def __str__(self):
@@ -344,7 +348,7 @@ class PreprocessorLexer(lex.Lexer):
 
     def input(self, data, filename=None):
         if filename:
-            self.filename = filename
+            self.filename = filename 
         self.lasttoken = None
         self.input_stack = []
 
@@ -440,7 +444,7 @@ class PreprocessorGrammar(Grammar):
 
     def p_group_opt(self, p):
         '''group_opt : group
-                     |
+                     | 
         '''
 
     def p_group(self, p):
@@ -465,7 +469,7 @@ class PreprocessorGrammar(Grammar):
     def p_if_line(self, p):
         '''if_line : IF replaced_constant_expression NEWLINE
                    | IFDEF IDENTIFIER NEWLINE
-                   | IFNDEF IDENTIFIER NEWLINE
+                   | IFNDEF IDENTIFIER NEWLINE 
         '''
         if p.parser.enable_declaratives():
             type = p.slice[1].type
@@ -482,7 +486,7 @@ class PreprocessorGrammar(Grammar):
                 p.parser.write((create_token('PP_IFNDEF', p[2], p),))
         else:
             result = False
-
+        
         p.parser.condition_if(result)
 
     def p_elif_groups_opt(self, p):
@@ -536,7 +540,7 @@ class PreprocessorGrammar(Grammar):
         '''
 
     def p_include_line(self, p):
-        '''include_line : INCLUDE pp_tokens
+        '''include_line : INCLUDE pp_tokens 
                         | INCLUDE_NEXT pp_tokens
                         | IMPORT pp_tokens
         '''
@@ -563,10 +567,10 @@ class PreprocessorGrammar(Grammar):
                         return
 
             # TODO
-            print('Invalid #include', file=sys.stderr)
+            print >> sys.stderr, 'Invalid #include'
 
     def p_define_object(self, p):
-        '''define_object : DEFINE IDENTIFIER replacement_list NEWLINE
+        '''define_object : DEFINE IDENTIFIER replacement_list NEWLINE 
         '''
         if p.parser.enable_declaratives():
             p.parser.namespace.define_object(p[2], p[3])
@@ -574,7 +578,7 @@ class PreprocessorGrammar(Grammar):
             # Try to parse replacement list as an expression
             tokens = p.parser.namespace.apply_macros(p[3])
             lexer = TokenListLexer(tokens)
-            expr_parser = StrictConstantExpressionParser(lexer,
+            expr_parser = StrictConstantExpressionParser(lexer, 
                                                          p.parser.namespace)
             value = expr_parser.parse(debug=False)
             if value is not None:
@@ -615,7 +619,7 @@ class PreprocessorGrammar(Grammar):
         '''error_line : ERROR pp_tokens_opt NEWLINE
         '''
         if p.parser.enable_declaratives():
-            p.parser.error(' '.join([t.value for t in p[2]]),
+            p.parser.error(' '.join([t.value for t in p[2]]), 
                            p.slice[1].filename, p.slice[1].lineno)
 
     def p_text_line(self, p):
@@ -627,7 +631,7 @@ class PreprocessorGrammar(Grammar):
             p.parser.write(tokens)
 
     def p_replacement_list(self, p):
-        '''replacement_list :
+        '''replacement_list : 
                             | preprocessing_token_no_lparen
                             | preprocessing_token_no_lparen pp_tokens
         '''
@@ -640,7 +644,7 @@ class PreprocessorGrammar(Grammar):
 
     def p_identifier_list_opt(self, p):
         '''identifier_list_opt : identifier_list
-                               |
+                               | 
         '''
         if len(p) == 2:
             p[0] = p[1]
@@ -662,7 +666,7 @@ class PreprocessorGrammar(Grammar):
             tokens = p[1]
             tokens = p.parser.namespace.apply_macros(tokens)
             lexer = TokenListLexer(tokens)
-            parser = ConstantExpressionParser(lexer, p.parser.namespace)
+            parser = ConstantExpressionParser(lexer, p.parser.namespace) 
             p[0] = parser.parse(debug=True)
         else:
             p[0] = ConstantExpressionNode(0)
@@ -673,7 +677,7 @@ class PreprocessorGrammar(Grammar):
             tokens = p[1]
             tokens = p.parser.namespace.apply_macros(tokens)
             lexer = TokenListLexer(tokens)
-            parser = ConstantExpressionParser(lexer, p.parser.namespace)
+            parser = ConstantExpressionParser(lexer, p.parser.namespace) 
             p[0] = parser.parse(debug=True)
         else:
             p[0] = ConstantExpressionNode(0)
@@ -681,7 +685,7 @@ class PreprocessorGrammar(Grammar):
 
     def p_pp_tokens_opt(self, p):
         '''pp_tokens_opt : pp_tokens
-                         |
+                         |  
         '''
         if len(p) == 2:
             p[0] = p[1]
@@ -716,53 +720,53 @@ class PreprocessorGrammar(Grammar):
         p[0] = symbol_to_token(p.slice[1])
 
     def p_punctuator(self, p):
-        '''punctuator : ELLIPSIS
-                      | RIGHT_ASSIGN
-                      | LEFT_ASSIGN
+        '''punctuator : ELLIPSIS 
+                      | RIGHT_ASSIGN 
+                      | LEFT_ASSIGN 
                       | ADD_ASSIGN
-                      | SUB_ASSIGN
-                      | MUL_ASSIGN
-                      | DIV_ASSIGN
-                      | MOD_ASSIGN
-                      | AND_ASSIGN
-                      | XOR_ASSIGN
-                      | OR_ASSIGN
-                      | RIGHT_OP
-                      | LEFT_OP
-                      | INC_OP
-                      | DEC_OP
-                      | PTR_OP
-                      | AND_OP
-                      | OR_OP
-                      | LE_OP
+                      | SUB_ASSIGN 
+                      | MUL_ASSIGN 
+                      | DIV_ASSIGN 
+                      | MOD_ASSIGN 
+                      | AND_ASSIGN 
+                      | XOR_ASSIGN 
+                      | OR_ASSIGN 
+                      | RIGHT_OP 
+                      | LEFT_OP 
+                      | INC_OP 
+                      | DEC_OP 
+                      | PTR_OP 
+                      | AND_OP 
+                      | OR_OP 
+                      | LE_OP 
                       | GE_OP
-                      | EQ_OP
-                      | NE_OP
-                      | HASH_HASH
-                      | ';'
-                      | '{'
-                      | '}'
-                      | ','
-                      | ':'
-                      | '='
-                      | '('
-                      | ')'
-                      | '['
-                      | ']'
+                      | EQ_OP 
+                      | NE_OP 
+                      | HASH_HASH 
+                      | ';' 
+                      | '{' 
+                      | '}' 
+                      | ',' 
+                      | ':' 
+                      | '=' 
+                      | '(' 
+                      | ')' 
+                      | '[' 
+                      | ']' 
                       | PERIOD
-                      | '&'
-                      | '!'
-                      | '~'
+                      | '&' 
+                      | '!' 
+                      | '~' 
                       | '-'
-                      | '+'
-                      | '*'
-                      | '/'
-                      | '%'
-                      | '<'
-                      | '>'
-                      | '^'
-                      | '|'
-                      | '?'
+                      | '+' 
+                      | '*' 
+                      | '/' 
+                      | '%' 
+                      | '<' 
+                      | '>' 
+                      | '^' 
+                      | '|' 
+                      | '?' 
                       | '#'
         '''
         p[0] = symbol_to_token(p.slice[1])
@@ -770,12 +774,12 @@ class PreprocessorGrammar(Grammar):
     def p_error(self, t):
         if not t:
             # Crap, no way to get to Parser instance.  FIXME TODO
-            print('Syntax error at end of file.', file=sys.stderr)
+            print >> sys.stderr, 'Syntax error at end of file.'
         else:
             # TODO
-            print('%s:%d Syntax error at %r' % \
-                (t.lexer.filename, t.lexer.lineno, t.value), file=sys.stderr)
-            # t.lexer.cparser.handle_error(f'Syntax error at {t.value!r}',
+            print >> sys.stderr, '%s:%d Syntax error at %r' % \
+                (t.lexer.filename, t.lexer.lineno, t.value)
+            #t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
             #     t.lexer.filename, t.lexer.lineno)
         # Don't alter lexer: default behaviour is to pass error production
         # up until it hits the catch-all at declaration, at which point
@@ -799,7 +803,7 @@ class ConstantExpressionGrammar(Grammar):
         '''
         try:
             value = ord(eval(p[1].lstrip('L')))
-        except Exception:
+        except StandardError:
             value = 0
         p[0] = ConstantExpressionNode(value)
 
@@ -843,7 +847,7 @@ class ConstantExpressionGrammar(Grammar):
         '''postfix_expression : primary_expression
         '''
         p[0] = p[1]
-
+        
     def p_unary_expression(self, p):
         '''unary_expression : postfix_expression
                             | unary_operator cast_expression
@@ -914,7 +918,7 @@ class ConstantExpressionGrammar(Grammar):
                 '>>': operator.rshift}[p[2]], p[2], p[1], p[3])
 
     def p_relational_expression(self, p):
-        '''relational_expression : shift_expression
+        '''relational_expression : shift_expression 
                                  | relational_expression '<' shift_expression
                                  | relational_expression '>' shift_expression
                                  | relational_expression LE_OP shift_expression
@@ -953,7 +957,7 @@ class ConstantExpressionGrammar(Grammar):
     def p_exclusive_or_expression(self, p):
         '''exclusive_or_expression : and_expression
                                    | exclusive_or_expression '^' and_expression
-        '''
+        ''' 
         if len(p) == 2:
             p[0] = p[1]
         else:
@@ -1082,7 +1086,7 @@ class PreprocessorParser(yacc.Parser):
 
     def add_gcc_search_path(self):
         from subprocess import Popen, PIPE
-        path = Popen('gcc -print-file-name=include',
+        path = Popen('gcc -print-file-name=include', 
                      shell=True, stdout=PIPE).communicate()[0].strip()
         if path:
             self.include_path.append(path)
@@ -1097,16 +1101,16 @@ class PreprocessorParser(yacc.Parser):
         if output:
             output = output.split('\n')
             while output and not '#include <...>' in output[0]:
-                print(('Skipping:', output[0]))
+                print('Skipping:', output[0])
                 del output[0]
             if output:
                 del output[0]  # Remove start line
                 while output and not 'End of search list' in output[0]:
                     self.include_path.append(output[0].strip())
-                    print(('Adding:', output[0].strip()))
+                    print('Adding:', output[0].strip())
                     del output[0]
 
-    def parse(self, filename=None, data=None, namespace=None, debug=False):
+    def parse(self, filename=None, data=None, namespace=None, debug=False): 
         self.output = []
         if not namespace:
             namespace = self.namespace
@@ -1125,7 +1129,7 @@ class PreprocessorParser(yacc.Parser):
         return yacc.Parser.parse(self, debug=debug)
 
     def push_file(self, filename, data=None):
-        print(filename, file=sys.stderr)
+        print >> sys.stderr, filename
         if not data:
             data = open(filename).read()
         self.lexer.push_input(data, filename)
@@ -1135,7 +1139,7 @@ class PreprocessorParser(yacc.Parser):
         if path:
             self.push_file(path)
         else:
-            print('"%s" not found' % header, file=sys.stderr) # TODO
+            print >> sys.stderr, '"%s" not found' % header # TODO
 
     def include_system(self, header):
         if header in self.system_headers:
@@ -1146,7 +1150,7 @@ class PreprocessorParser(yacc.Parser):
         if path:
             self.push_file(path)
         else:
-            print('"%s" not found' % header, file=sys.stderr) # TODO
+            print >> sys.stderr, '"%s" not found' % header # TODO
 
     def include_next(self, header, reference):
         # XXX doesn't go via get_system_header
@@ -1159,8 +1163,8 @@ class PreprocessorParser(yacc.Parser):
                     return
                 elif p == reference:
                     next = True
-        print('%s: cannot include_next from %s' % \
-            (header, reference), file=sys.stderr) # TODO
+        print >> sys.stderr, '%s: cannot include_next from %s' % \
+            (header, reference) # TODO
 
     def import_(self, header):
         path = self.get_header_path(header)
@@ -1169,7 +1173,7 @@ class PreprocessorParser(yacc.Parser):
                 self.imported_headers.add(path)
                 self.push_file(path)
         else:
-            print('"%s" not found' % header, file=sys.stderr) # TODO
+            print >> sys.stderr, '"%s" not found' % header # TODO
 
     def import_system(self, header):
         if header in self.system_headers:
@@ -1183,8 +1187,8 @@ class PreprocessorParser(yacc.Parser):
                 self.imported_headers.add(path)
                 self.push_file(path)
         else:
-            print('"%s" not found' % header, file=sys.stderr) # TODO
-
+            print >> sys.stderr, '"%s" not found' % header # TODO
+ 
     def get_header_path(self, header):
         p = os.path.join(os.path.dirname(self.lexer.filename), header)
         if os.path.exists(p):
@@ -1216,14 +1220,14 @@ class PreprocessorParser(yacc.Parser):
                 localpath += parent + '.framework'
                 paths.append(os.path.join(localpath, 'Frameworks'))
             for path in paths:
-                p = os.path.join(path, '%s.framework' % framework,
+                p = os.path.join(path, '%s.framework' % framework, 
                                  'Headers', header)
                 if os.path.exists(p):
                     return p
 
     def error(self, message, filename, line):
-        print('%s:%d #error %s' % (filename, line, message), file=sys.stderr)
-
+        print >> sys.stderr, '%s:%d #error %s' % (filename, line, message)
+    
     def condition_if(self, result):
         self.condition_stack.append(
             ExecutionState(self.condition_stack[-1].enabled, result))
@@ -1263,7 +1267,7 @@ class PreprocessorParser(yacc.Parser):
                 while tb is not None:
                     if hasattr(tb, 'lexer'):
                         del tb.lexer
-                    self.output.append(tb)
+                    self.output.append(tb) 
                     tb = l.token()
 
                 tc = create_token('>', '>')
@@ -1278,7 +1282,7 @@ class PreprocessorParser(yacc.Parser):
             self.output.append(t)
 
     def get_memento(self):
-        return (set(self.namespace.objects.keys()),
+        return (set(self.namespace.objects.keys()), 
                 set(self.namespace.functions.keys()))
 
 class ConstantExpressionParser(yacc.Parser):
@@ -1303,7 +1307,7 @@ class StrictConstantExpressionParser(ConstantExpressionParser):
     _const_grammar = StrictConstantExpressionGrammar
 
 class PreprocessorNamespace(EvaluationContext):
-    def __init__(self, gcc_macros=True,
+    def __init__(self, gcc_macros=True, 
                        stdc_macros=True,
                        workaround_macros=True):
         self.objects = {}
@@ -1311,7 +1315,7 @@ class PreprocessorNamespace(EvaluationContext):
 
         if stdc_macros:
             self.add_stdc_macros()
-
+        
         if gcc_macros:
             self.add_gcc_macros()
 
@@ -1329,15 +1333,15 @@ class PreprocessorNamespace(EvaluationContext):
         import time
         date = time.strftime('%b %d %Y') # XXX %d should have leading space
         t = time.strftime('%H:%M:S')
-        self.define_object('__DATE__',
+        self.define_object('__DATE__', 
                            (create_token('STRING_LITERAL', date),))
-        self.define_object('__TIME__',
+        self.define_object('__TIME__', 
                            (create_token('STRING_LITERAL', t),))
-        self.define_object('__STDC__',
+        self.define_object('__STDC__', 
                            (create_token('PP_NUMBER', '1'),))
-        self.define_object('__STDC_HOSTED__',
+        self.define_object('__STDC_HOSTED__', 
                            (create_token('PP_NUMBER', '1'),))
-        self.define_object('__STDC_VERSION',
+        self.define_object('__STDC_VERSION', 
                            (create_token('PP_NUMBER', '199901L'),))
 
     def add_gcc_macros(self):
@@ -1372,7 +1376,7 @@ class PreprocessorNamespace(EvaluationContext):
         tok1.value = '1'
         tok1.lineno = -1
         tok1.lexpos = -1
-
+        
         for macro in machine_macros + platform_macros + gcc_macros:
             self.define_object(macro, (tok1,))
 
@@ -1418,7 +1422,7 @@ class PreprocessorNamespace(EvaluationContext):
             elif t.type == 'IDENTIFIER' and t.value == '__VA_ARGS__' and \
                 '...' in params:
                 replacements[i] = len(params) - 1
-
+                
         self.functions[name] = replacements, numargs
 
     def apply_macros(self, tokens, replacing=None):
@@ -1476,7 +1480,7 @@ class PreprocessorNamespace(EvaluationContext):
                     i += 1
                 else:
                     # TODO
-                    print('Invalid use of "defined"', file=sys.stderr)
+                    print >> sys.stderr, 'Invalid use of "defined"'
                     result = 0
                 t = lex.LexToken()
                 t.value = str(int(result))
@@ -1499,4 +1503,4 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     parser = PreprocessorParser()
     parser.parse(filename, debug=True)
-    print(' '.join([str(t.value) for t in parser.output]))
+    print ' '.join([str(t.value) for t in parser.output])
