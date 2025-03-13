@@ -154,8 +154,8 @@ note that this class has the following caveats:
 
   * accounts for the following values on an instance:
 
-    * the :py:attr:`~pyglet.shapes.ShapeBase.rotation` angle
-    * the :py:attr:`~pyglet.shapes.ShapeBase.anchor_position`
+    * :py:attr:`~pyglet.shapes.ShapeBase.rotation` angle
+    * :py:attr:`~pyglet.shapes.ShapeBase.anchor_position`
 
   * returns a :py:class:`bool`
 
