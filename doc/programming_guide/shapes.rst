@@ -83,7 +83,9 @@ method:
 - :py:class:`~pyglet.shapes.Polygon`
 - :py:class:`~pyglet.shapes.Star`
 
+The anchor point and rotation angle of a shape modify the bounds and return value for this
+check accordingly.
+
 .. note:: pyglet treats :py:class:`~pyglet.shapes.Star` as a :py:class:`~pyglet.shapes.Circle`
           with a radius of ``(outer_radius + inner_radius) / 2``.
 
-It's also available for anchored and rotated shapes.
