@@ -85,8 +85,8 @@ The point can be any :py:class:`tuple` of two numbers:
         circle.color = (255, 0, 0)
 
 
-Bound Checks Are In World Space
-"""""""""""""""""""""""""""""""
+Bounding Checks Are In World Space
+""""""""""""""""""""""""""""""""""
 
 If you move or alter your viewport, you must account for this when
 checking coordinates from :ref:`mouse events <guide_mouse_events>`.
@@ -95,8 +95,8 @@ it is a subclass of :py:class:`tuple`.
 
 .. _guide_shapes-bounding-supported:
 
-Which Shapes Bounding Checks?
-"""""""""""""""""""""""""""""
+Which Shapes Support Bounding Checks?
+"""""""""""""""""""""""""""""""""""""
 
 Instances of the following shape classes support the ``in`` operator:
 
