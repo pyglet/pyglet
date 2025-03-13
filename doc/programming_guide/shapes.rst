@@ -109,9 +109,8 @@ Instances of the following shape classes support the ``in`` operator:
 - :py:class:`~pyglet.shapes.Triangle`
 - :py:class:`~pyglet.shapes.Polygon`
 - :py:class:`~pyglet.shapes.Star`
-
-.. note:: pyglet treats :py:class:`~pyglet.shapes.Star` as a :py:class:`~pyglet.shapes.Circle`
-          with a radius of ``(outer_radius + inner_radius) / 2``.
+  (acts like a :py:class:`~pyglet.shapes.Circle`
+  with a radius of ``(outer_radius + inner_radius) / 2``).
 
 
 .. _guide_shapes-bounding-details:
