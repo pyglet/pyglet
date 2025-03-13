@@ -6,6 +6,8 @@ All pyglet windows can receive input from a 3 button mouse with a
 operating system, but you can override this and request either a different
 cursor shape or provide your own image or animation.
 
+.. _guide_mouse_events:
+
 Mouse events
 ------------
 
