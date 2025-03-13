@@ -64,13 +64,14 @@ default anchor points::
 Advanced Operation
 ------------------
 
-You can use the ``in`` operator to check whether a point is inside a shape::
+Certain shapes support the ``in`` operator to check whether a point is inside an instance::
 
     circle = shapes.Circle(x=100, y=100, radius=50)
     if (200, 200) in circle:
         circle.color = (255, 0, 0)
 
-The following shapes have above features:
+The following shapes support ``in`` by implementing a :py:meth:`~object.__contains__`
+method:
 
 - :py:class:`~pyglet.shapes.Circle`
 - :py:class:`~pyglet.shapes.Ellipse`
