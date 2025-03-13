@@ -72,17 +72,17 @@ You can use the ``in`` operator to check whether a point is inside a shape::
 
 The following shapes have above features:
 
-- Circle
-- Ellipse
-- Sector
-- Line
-- Rectangle
-- BorderedRectangle
-- Triangle
-- Polygon
-- Star
+- :py:class:`~pyglet.shapes.Circle`
+- :py:class:`~pyglet.shapes.Ellipse`
+- :py:class:`~pyglet.shapes.Sector`
+- :py:class:`~pyglet.shapes.Line`
+- :py:class:`~pyglet.shapes.Rectangle`
+- :py:class:`~pyglet.shapes.BorderedRectangle`
+- :py:class:`~pyglet.shapes.Triangle`
+- :py:class:`~pyglet.shapes.Polygon`
+- :py:class:`~pyglet.shapes.Star`
 
-.. note:: pyglet now treats Star as a circle with a radius of
-          ``(outer_radius + inner_radius) / 2``.
+.. note:: pyglet treats :py:class:`~pyglet.shapes.Star` as a :py:class:`~pyglet.shapes.Circle`
+          with a radius of ``(outer_radius + inner_radius) / 2``.
 
 It's also available for anchored and rotated shapes.
