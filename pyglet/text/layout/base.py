@@ -414,10 +414,8 @@ class _GlyphBox(_AbstractBox):
     glyphs: list[tuple[int, Glyph]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
-    offsets: list[GlyphPosition]
 
-    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph]], advance: int,
-                 offsets: list[GlyphPosition]) -> None:
+    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph]], advance: int) -> None:
         """Create a run of glyphs sharing the same texture.
 
         Args:
@@ -440,7 +438,6 @@ class _GlyphBox(_AbstractBox):
         self.font = font
         self.glyphs = glyphs
         self.advance = advance
-        self.offsets = offsets
         self.vertex_lists = []
 
     def _add_vertex_list(self, vertex_list: _LayoutVertexList | VertexList, context: _LayoutContext) -> None:
@@ -468,7 +465,7 @@ class _GlyphBox(_AbstractBox):
         for start, end, baseline_ in context.baseline_iter.ranges(i, i + n_glyphs):
             baseline = layout._parse_distance(baseline_)  # noqa: SLF001
             assert len(self.glyphs[start - i:end - i]) == end - start
-            for (kern, glyph), glyph_pos in zip(self.glyphs[start - i:end - i], self.offsets[start - i: end - i]):
+            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
                 x1 += kern
                 v0, v1, v2, v3 = glyph.vertices
                 v0 += x1 + glyph_pos.x_offset
@@ -526,7 +523,7 @@ class _GlyphBox(_AbstractBox):
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
             x2 = x1
-            for (kern, glyph), glyph_pos in zip(self.glyphs[start - i:end - i], self.offsets[start - i:end - i]):
+            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
                 x2 += glyph.advance + kern + glyph_pos.x_advance
 
             if bg is not None:
@@ -820,6 +817,9 @@ class TextDecorationGroup(Group):
         self.program.stop()
 
 
+# Just have one object for empty positions in layout. It won't be modified.
+_empty_pos = GlyphPosition(0, 0, 0, 0)
+
 class TextLayout:
     """Lay out and display documents.
 
@@ -984,11 +984,6 @@ class TextLayout:
         self._initialize_groups()
         self.group_cache.clear()
         self._update()
-
-    @property
-    def dpi(self) -> float:
-        """Get DPI used by this layout."""
-        return self._dpi
 
     @property
     def document(self) -> AbstractDocument:
@@ -1377,17 +1372,12 @@ class TextLayout:
         self._update()
 
     @property
-    def dpi(self):
-        """Get DPI used by this layout.
-
-            Read-only.
-
-            :type: float
-        """
+    def dpi(self) -> float:
+        """Get DPI used by this layout."""
         return self._dpi
 
     @dpi.setter
-    def dpi(self, value):
+    def dpi(self, value: float) -> None:
         self._dpi = value
         self._update()
 
@@ -1448,7 +1438,7 @@ class TextLayout:
         glyphs, offsets = self._get_glyphs()
         owner_runs = runlist.RunList(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
-        lines = [line for line in self._flow_glyphs(glyphs, offsets, owner_runs, 0, len_text)]
+        lines = list(self._flow_glyphs(glyphs, offsets, owner_runs, 0, len_text))
         self._content_width = 0
         self._line_count = len(lines)
         self._flow_lines(lines, 0, self._line_count)
@@ -1638,7 +1628,7 @@ class TextLayout:
         for start, end, (font, element) in runs.ranges(0, len(text)):
             if element:
                 glyphs.append(_InlineElementBox(element))
-                offsets.append(GlyphPosition(0, 0, 0, 0))
+                offsets.append(_empty_pos)
             else:
                 char_glyphs, char_offsets = font.get_glyphs(text[start:end])
                 glyphs.extend(char_glyphs)
@@ -1665,7 +1655,6 @@ class TextLayout:
                           end: int) -> Iterator[_Line]:
         # Word-wrap styled text into lines of fixed width.
         # Fits glyphs in range start to end into Lines which are then yielded.
-
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
@@ -1762,7 +1751,7 @@ class TextLayout:
                             tab_stop = (((x + line.margin_left) // tab) + 1) * tab
                         kern = int(tab_stop - x - line.margin_left - glyph.advance)
 
-                    owner_accum.append((kern, glyph))
+                    owner_accum.append((kern, glyph, offset))
                     owner_accum_commit.extend(owner_accum)
                     owner_accum_commit_width += owner_accum_width + glyph.advance + kern + offset.x_advance
                     eol_ws += glyph.advance + kern + offset.x_advance
@@ -1805,7 +1794,7 @@ class TextLayout:
                         # Create the _GlyphBox for the committed glyphs in the
                         # current owner.
                         if owner_accum_commit:
-                            line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width, offsets[start:end]))
+                            line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
@@ -1842,11 +1831,11 @@ class TextLayout:
                             # Remove kern from first glyph of line
                             if run_accum and hasattr(run_accum, "glyphs") and run_accum.glyphs:
                                 k, g = run_accum[0].glyphs[0]
-                                run_accum[0].glyphs[0] = (0, g)
+                                run_accum[0].glyphs[0] = (0, g, _empty_pos)
                                 run_accum_width -= k
                             elif owner_accum:
-                                k, g = owner_accum[0]
-                                owner_accum[0] = (0, g)
+                                k, g, _ = owner_accum[0]
+                                owner_accum[0] = (0, g, _empty_pos)
                                 owner_accum_width -= k
                             else:
                                 nokern = True
@@ -1869,7 +1858,7 @@ class TextLayout:
                     elif not new_line:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.
-                        owner_accum.append((kern, glyph))
+                        owner_accum.append((kern, glyph, offset))
                         owner_accum_width += glyph.advance + kern + offset.x_advance
                         x += glyph.advance + kern + offset.x_advance
                     index += 1
@@ -1878,9 +1867,9 @@ class TextLayout:
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
             if owner_accum_commit:
-                line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width, offsets[start:end]))
+                line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
             if owner_accum:
-                run_accum.append(_GlyphBox(owner, font, owner_accum, owner_accum_width, offsets[start:end]))
+                run_accum.append(_GlyphBox(owner, font, owner_accum, owner_accum_width))
                 run_accum_width += owner_accum_width
 
         # All glyphs have been processed: commit everything pending and flush
@@ -1922,16 +1911,17 @@ class TextLayout:
             owner_glyphs = []
             for kern_start, kern_end, kern in kern_iterator.ranges(start, end):
                 gs = glyphs[kern_start:kern_end]
+                os = offsets[kern_start:kern_end]
                 width += sum([g.advance for g in gs])
                 width += kern * (kern_end - kern_start)
+                width += sum([o.x_advance for o in os])
                 owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
-            width += sum([off.x_advance for off in offsets[start:end]])
             if owner is None:
                 # Assume glyphs are already boxes.
                 for kern, glyph in owner_glyphs:
                     line.add_box(glyph)
             else:
-                line.add_box(_GlyphBox(owner, font, owner_glyphs, width, offsets))
+                line.add_box(_GlyphBox(owner, font, owner_glyphs, width, offsets[start:end]))
 
         if not line.boxes:
             line.ascent = font.ascent

@@ -15,60 +15,58 @@ from typing import BinaryIO, ClassVar
 from pyglet import image
 from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
 
-_other_grapheme_extend = list(map(chr, [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
-                                        0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
-                                        0x200d, 0xff9e, 0xff9f]))  # skip codepoints above U+10000
-_logical_order_exception = list(map(chr, list(range(0xe40, 0xe45)) + list(range(0xec0, 0xec4))))
+_OTHER_GRAPHEME_EXTEND = {
+    chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
+                     0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
+                     0x200d, 0xff9e, 0xff9f]
+}  # skip codepoints above U+10000
+_LOGICAL_ORDER_EXCEPTION = {chr(x) for x in range(0xe40, 0xe45)} | {chr(x) for x in range(0xec0, 0xec4)}
 
-_grapheme_extend = lambda c, cc: cc in ("Me", "Mn") or c in _other_grapheme_extend
+_EXTEND_CHARS = {chr(x) for x in [0xe30, 0xe32, 0xe33, 0xe45, 0xeb0, 0xeb2, 0xeb3]}
 
 _CR = "\u000d"
 _LF = "\u000a"
-_control = lambda c, cc: cc in ("ZI", "Zp", "Cc", "Cf") and c not in list(map(chr, [0x000d, 0x000a, 0x200c, 0x200d]))
-_extend = lambda c, cc: _grapheme_extend(c, cc) or \
-                        c in list(map(chr, [0xe30, 0xe32, 0xe33, 0xe45, 0xeb0, 0xeb2, 0xeb3]))
-_prepend = lambda c, cc: c in _logical_order_exception  # noqa: ARG005
-_spacing_mark = lambda c, cc: cc == "Mc" and c not in _other_grapheme_extend
+
+_CATEGORY_EXTEND = {"Me", "Mn"}
+_CATEGORY_CONTROL = {"ZI", "Zp", "Cc", "Cf"}
+_CATEGORY_SPACING_MARK = {"Mc"}
 
 
-def grapheme_break(left: str, right: str) -> bool:  # noqa: D103
+def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
+    """Determines if there should be a break between characters."""
     # GB1
     if left is None:
         return True
 
     # GB2 not required, see end of get_grapheme_clusters
 
-    # GB3
+    # GB3: CR + LF do not break
     if left == _CR and right == _LF:
         return False
 
-    left_cc = unicodedata.category(left)
-
-    # GB4
-    if _control(left, left_cc):
+    # GB4: Break before Control characters
+    if left_cc in _CATEGORY_CONTROL and left not in _OTHER_GRAPHEME_EXTEND:
         return True
 
-    right_cc = unicodedata.category(right)
-
-    # GB5
-    if _control(right, right_cc):
+    # GB5: Break after Control characters
+    if right_cc in _CATEGORY_CONTROL and right not in _OTHER_GRAPHEME_EXTEND:
         return True
 
     # GB6, GB7, GB8 not implemented
 
-    # GB9
-    if _extend(right, right_cc):
+    # GB9: Do not break before Extend characters
+    if right_cc in _CATEGORY_EXTEND or right in _EXTEND_CHARS:
         return False
 
-    # GB9a
-    if _spacing_mark(right, right_cc):
+    # GB9a: Do not break before SpacingMark characters
+    if right_cc == "Mc" and right not in _OTHER_GRAPHEME_EXTEND:
         return False
 
-    # GB9b
-    if _prepend(left, left_cc):
+    # GB9b: Do not break after Prepend characters
+    if left in _LOGICAL_ORDER_EXCEPTION:  # noqa: SIM103
         return False
 
-    # GB10
+    # GB999: Default to break
     return True
 
 
@@ -85,21 +83,24 @@ def get_grapheme_clusters(text: str) -> list[str]:
          List of Unicode grapheme clusters.
     """
     clusters = []
-    cluster = ""
+    cluster_chars = []
     left = None
-    for right in text:
-        if cluster and grapheme_break(left, right):
-            clusters.append(cluster)
-            cluster = ""
-        elif cluster:
-            # Add a zero-width space to keep len(clusters) == len(text)
-            clusters.append("\u200b")
-        cluster += right
-        left = right
+    left_cc = None
 
-    # GB2
-    if cluster:
-        clusters.append(cluster)
+    for right in text:
+        right_cc = unicodedata.category(right)
+
+        if cluster_chars and grapheme_break(left, left_cc, right, right_cc):
+            clusters.append("".join(cluster_chars))
+            cluster_chars.clear()
+
+        cluster_chars.append(right)
+        left = right
+        left_cc = right_cc
+
+    if cluster_chars:
+        clusters.append("".join(cluster_chars))
+
     return clusters
 
 
@@ -107,7 +108,7 @@ def get_grapheme_clusters(text: str) -> list[str]:
 @dataclass
 class GlyphPosition:
     """Positioning offsets for a glyph."""
-    __slots__ = ('x_advance', 'y_advance', 'x_offset', 'y_offset')
+    __slots__ = ('x_advance', 'x_offset', 'y_advance', 'y_offset')
     x_advance: int  # How far the line advances AFTER drawing horizontal.
     y_advance: int  # How far the line advances AFTER drawing vertical.
     x_offset: int  # How much the current glyph moves on the X-axis when drawn. Does not advance.
@@ -258,7 +259,7 @@ class Font:
             ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
     """
     #: :meta private:
-    glyphs: dict[str, Glyph]
+    glyphs: dict[str | int, Glyph]
 
     texture_width: int = 512
     texture_height: int = 512

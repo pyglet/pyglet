@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import unicodedata
+
 from pyglet.event import EventDispatcher
 from pyglet.font.base import grapheme_break, GlyphPosition
 from pyglet.text import runlist
@@ -271,16 +273,25 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if invalid_end - invalid_start <= 0:
             return
 
+
         # Find grapheme breaks and extend glyph range to encompass.
         text = self.document.text
         while invalid_start > 0:
-            if grapheme_break(text[invalid_start - 1], text[invalid_start]):
+            left = text[invalid_start - 1]
+            right = text[invalid_start]
+            right_cc = unicodedata.category(right)
+            left_cc = unicodedata.category(left)
+            if grapheme_break(left, left_cc, right, right_cc):
                 break
             invalid_start -= 1
 
         len_text = len(text)
         while invalid_end < len_text:
-            if grapheme_break(text[invalid_end - 1], text[invalid_end]):
+            left = text[invalid_end - 1]
+            right = text[invalid_end]
+            right_cc = unicodedata.category(right)
+            left_cc = unicodedata.category(left)
+            if grapheme_break(left, left_cc, right, right_cc):
                 break
             invalid_end += 1
 
