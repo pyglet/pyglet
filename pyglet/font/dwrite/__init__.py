@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import copy
 import ctypes
 import math
 import pathlib
+from collections import defaultdict
 from ctypes.wintypes import WCHAR, BOOL, FLOAT, UINT
 from typing import NoReturn, BinaryIO, Any
 
@@ -61,6 +61,11 @@ from pyglet.util import debug_print
 
 _debug_font = pyglet.options["debug_font"]
 _debug_print = debug_print("debug_font")
+
+try:
+    from pyglet.libs.harfbuzz import create_hb_font_from_memory, shape_text, adjust_clusters
+except ImportError:
+    pass
 
 try:
     from pyglet.image.codecs import wic
@@ -124,100 +129,21 @@ class DWRITE_GLYPH_IMAGE_FORMAT_FLAG(Flag):
 
 
 
+def get_cluster_metrics(text, layout):
+    utf16_text = text.encode("utf-16-le")
+    utf16_units = len(utf16_text) // 2  # Each UTF-16 char is 2 bytes
+    text_buffer = create_unicode_buffer(text, utf16_units)
+    max_glyph_size = int(3 * len(text) / 2 + 16)
+    cluster_metrics = (DWRITE_CLUSTER_METRICS * max_glyph_size)()
+    count = UINT32()
+    layout.GetClusterMetrics(cluster_metrics, max_glyph_size, byref(count))
+    print("CLUSTERS", cluster_metrics, count.value, repr(text))
+    length = 0
+    for i in range(count.value):
+        missing_text = text_buffer[length:length+cluster_metrics[i].length]
+        print("cluster",i, cluster_metrics[i], length, length+cluster_metrics[i].length, missing_text, "size", len(missing_text), "length", cluster_metrics[i].length)
+        length += cluster_metrics[i].length
 
-
-def get_clusters(text: str) -> list[int]:
-    """
-    Computes the clusters (pre-shaped) for a string,
-    i.e. the starting UTF-16 code unit index for each character.
-    """
-    clusters = []
-    index = 0
-    for char in text:
-        clusters.append(index)
-        # Characters outside the BMP are surrogate pairs (2 code units)
-        if ord(char) > 0xFFFF:
-            index += 2
-        else:
-            index += 1
-    return clusters
-
-
-def get_utf16_indice(text):
-    """Computes UTF-16 logical cluster indices for each character in `text`."""
-    utf16_indices = []
-    utf16_pos = 0
-
-    for char in text:
-        codepoint = ord(char)
-        utf16_indices.append(utf16_pos)
-
-        if 0xD800 <= codepoint <= 0xDFFF:  # Surrogate range (shouldn't appear in input)
-            raise ValueError(f"Unexpected surrogate character: U+{codepoint:X}")
-
-        if codepoint > 0x10FFFF:  # Replace invalid Unicode characters
-            utf16_pos += 1  # U+FFFD is a single UTF-16 code unit
-        elif codepoint >= 0x10000:
-            utf16_pos += 2  # Surrogate pair
-        else:
-            utf16_pos += 1  # Single UTF-16 code unit
-
-    print("SIZE", len(utf16_indices))
-    return utf16_indices
-
-
-def get_logical_clusters(text: str):
-    """Get logical cluster"""
-    clusters = []
-    sizes = []
-    char_pos = 0
-    for i, char in enumerate(text):
-        codepoint = ord(char)
-        clusters.append(char_pos)
-
-        char_pos += 1
-        size = 1
-
-        if 0x10000 <= codepoint <= 0x10FFFF:
-            char_pos += 1
-            size += 1
-        sizes.append(size)
-
-    return clusters, sizes
-
-
-def compute_insertion_indices(pre_clusters, post_clusters):
-    """
-    Determine the indices in the pre-shape (original character order) where the zero-width
-    glyphs need to be inserted.
-      1. Finding all positions where the pre-shape cluster is missing from the post-shape clusters.
-      2. Grouping consecutive missing indices (from post shape)
-      3. From each group, selecting every other index (starting with the first) to serve as
-         the insertion point.
-    """
-    # Find indices where the pre-shape cluster doesn't appear in the post-shape clusters.
-    missing_indices = [
-        i for i, cl in enumerate(pre_clusters)
-        if cl not in post_clusters
-    ]
-
-    # Group the missing indices into consecutive groups.
-    groups = []
-    current = []
-    for i in missing_indices:
-        if not current or i == current[-1] + 1:
-            current.append(i)
-        else:
-            groups.append(current)
-            current = [i]
-    if current:
-        groups.append(current)
-
-    # For each group, select every other index (starting with the first)
-    insertion_indices = []
-    for group in groups:
-        insertion_indices.extend(group[::2])
-    return insertion_indices
 
 
 def get_system_locale() -> str:
@@ -255,31 +181,49 @@ class _DWriteTextRenderer(com.COMObject):
     def DrawInlineObject(self, *_args) -> int:  # noqa: ANN002, N802
         return com.E_NOTIMPL
 
-    def IsPixelSnappingDisabled(self, _draw_ctx: c_void_p, is_disabled: POINTER(FLOAT)) -> int:
+    def IsPixelSnappingDisabled(self, _draw_ctx: c_void_p, is_disabled: POINTER(FLOAT)) -> int:  # noqa: N802
         is_disabled[0] = self.pixel_snapping
         return 0
 
-    def GetPixelsPerDip(self, _draw_ctx: c_void_p, pixels_per_dip: POINTER(FLOAT)) -> int:
+    def GetPixelsPerDip(self, _draw_ctx: c_void_p, pixels_per_dip: POINTER(FLOAT)) -> int:  # noqa: N802
         pixels_per_dip[0] = self.pixels_per_dip
         return 0
 
-    def GetCurrentTransform(self, _draw_ctx: c_void_p, transform: POINTER(DWRITE_MATRIX)) -> int:
+    def GetCurrentTransform(self, _draw_ctx: c_void_p, transform: POINTER(DWRITE_MATRIX)) -> int:  # noqa: N802
         transform[0] = self.dmatrix
         return 0
 
-    def DrawGlyphRun(self, drawing_context: c_void_p,
+    def DrawGlyphRun(self, drawing_context: c_void_p,  # noqa: N802
                      _baseline_x: float, _baseline_y: float, mode: int,
                      glyph_run_ptr: POINTER(DWRITE_GLYPH_RUN),
                      _run_des: POINTER(DWRITE_GLYPH_RUN_DESCRIPTION),
                      _effect: c_void_p) -> int:
+
+        c_buf = create_unicode_buffer(_run_des.contents.text)
+
+        c_wchar_txt = c_buf[:_run_des.contents.textLength]
+        pystr_len = len(c_wchar_txt)
+
+        # print("------GLYPH DRAW START!", "count", glyph_run_ptr.contents.glyphCount,
+        #       "text_len", _run_des.contents.textLength, "pylen", pystr_len,
+        #       cast(_run_des.contents.clusterMap,POINTER(UINT16 * _run_des.contents.textLength)).contents[:],
+        #       c_wchar_txt,
+        #       )
+
         glyph_renderer: DirectWriteGlyphRenderer = ctypes.cast(drawing_context, ctypes.py_object).value
         glyph_run = glyph_run_ptr.contents
+
+        if glyph_run.glyphCount == 0:
+            glyph = glyph_renderer.font._zero_glyph
+            glyph_renderer.current_glyphs.append(glyph)
+            glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
+            return 0
 
         # Process any glyphs we haven't rendered.
         missing = []
         for i in range(glyph_run.glyphCount):
             glyph_indice = glyph_run.glyphIndices[i]
-            if glyph_indice not in glyph_renderer.font.glyphs:
+            if glyph_indice not in glyph_renderer.font.glyphs and glyph_indice not in missing:
                 missing.append(glyph_indice)
 
         # Missing glyphs, get their info.
@@ -288,21 +232,35 @@ class _DWriteTextRenderer(com.COMObject):
 
             for idx, glyph_indice in enumerate(missing):
                 glyph = glyph_renderer.render_single_glyph(glyph_run.fontFace, glyph_indice, metrics[idx], mode)
-                glyph.base_advance = metrics[idx][3] * glyph_renderer.font.font_scale_ratio
                 glyph_renderer.font.glyphs[glyph_indice] = glyph
 
-        # Process and create glyphs for run.
+        # Set glyphs for run.
+        current = []
         for i in range(glyph_run.glyphCount):
             glyph_indice = glyph_run.glyphIndices[i]
             glyph = glyph_renderer.font.glyphs[glyph_indice]
-            offset = base.GlyphPosition(
-                        (glyph_run.glyphAdvances[i] - glyph.base_advance),
-                        0,
-                        glyph_run.glyphOffsets[i].advanceOffset,
-                        glyph_run.glyphOffsets[i].ascenderOffset
-            )
+            current.append(glyph)
+            # In some cases (italics) the offsets may be NULL.
+            if glyph_run.glyphOffsets:
+                offset = base.GlyphPosition(
+                            (glyph_run.glyphAdvances[i] - glyph.advance),
+                            0,
+                            glyph_run.glyphOffsets[i].advanceOffset,
+                            glyph_run.glyphOffsets[i].ascenderOffset
+                )
+
+            else:
+                offset = base.GlyphPosition(0, 0, 0, 0)
+
             glyph_renderer.current_glyphs.append(glyph)
             glyph_renderer.current_offsets.append(offset)
+
+        diff = pystr_len - glyph_run.glyphCount
+        if diff > 0:
+            for i in range(diff):
+                glyph = glyph_renderer.font._zero_glyph
+                glyph_renderer.current_glyphs.append(glyph)
+                glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return 0
 
@@ -350,7 +308,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         self.current_glyphs = []
         self.current_offsets = []
         super().__init__(font)
-        self.font = font
 
     def render(self, text: str) -> Glyph:
         pass
@@ -407,7 +364,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return wic.extract_image_data(bitmap, wic_fmt)
 
-    def render_single_glyph(self, font_face: IDWriteFontFace, indice: int,
+    def render_single_glyph(self, font_face: IDWriteFontFace,
+                            indice: int,
                             metrics: tuple[float, float, float, float, float],
                             mode: int) -> base.Glyph:
         """Renders a single glyph indice using Direct2D."""
@@ -440,8 +398,9 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         else:
             # Use the glyph width, or if the advance is larger, use that instead.
             # Diacritics usually have no proper sizing, but instead have an advance.
-            render_width = int(math.ceil(max(glyph_width, glyph_advance) * self.font.font_scale_ratio))
-            render_height = int(math.ceil(self.font.max_glyph_height))
+            # Add 1, sometimes AA can add an extra pixel or so.
+            render_width = int(math.ceil(max(glyph_width, glyph_advance) * self.font.font_scale_ratio)) + 1
+            render_height = int(math.ceil(self.font.max_glyph_height)) + 1
 
         render_offset_x = 0
         if glyph_lsb < 0:
@@ -451,8 +410,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         # Create new bitmap.
         # TODO: We can probably adjust bitmap/baseline to reduce the whitespace and save a lot of texture space.
         # Note: Floating point precision makes this a giant headache, will need to be solved for this approach.
-        self._create_bitmap(render_width + 1,  # Add 1, sometimes AA can add an extra pixel or so.
-                            render_height + 1)
+        self._create_bitmap(render_width, render_height)
 
         # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
         baseline_offset = D2D_POINT_2F(-render_offset_x,
@@ -710,6 +668,7 @@ class Win32DirectWriteFont(base.Font):
         if not name:
             name = self._default_name
 
+        self.buffers = []
         self._name = name
         self.weight = weight
         self.size = size
@@ -804,6 +763,39 @@ class Win32DirectWriteFont(base.Font):
 
         self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
 
+        self.fallbacks = []
+
+        self.font_data = None
+        if pyglet.options.text_shaping == 'harfbuzz':
+            self.font_data = bytes(self._get_font_file_bytes())
+            self._hb_blob, self._hb_face, self.hb_font = create_hb_font_from_memory(self.font_data)
+
+    def _get_font_file_bytes(self) -> bytes | None:
+        ff = _get_font_file(self.font_face)
+        loader = IDWriteFontFileLoader()
+        ff.GetLoader(byref(loader))
+
+        key, size = _get_font_ref(ff, False)
+
+        font_filestream = POINTER(IDWriteFontFileStream)()
+        loader.CreateStreamFromKey(key, size, byref(font_filestream))
+
+        if font_filestream:
+            size = UINT64()
+            font_filestream.GetFileSize(byref(size))
+            void_data = c_void_p()
+            context = c_void_p()
+            font_filestream.ReadFileFragment(byref(void_data), 0, size.value, byref(context))
+
+            font_data = (c_ubyte * size.value).from_address(void_data.value)
+
+            if context:
+                font_filestream.ReleaseFileFragment(context)
+
+            return font_data
+
+        return None
+
     @property
     def filename(self) -> str:
         """Returns a filename associated with the font face.
@@ -860,48 +852,200 @@ class Win32DirectWriteFont(base.Font):
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
+    def add_fallback(self, font):
+        self.fallbacks.append(font)
 
-    def get_glyphs_no_shape(self, text: str) -> list[Glyph]:
-        """This differs in that it does not attempt to shape the text at all.
+    def get_glyph_indices(self, text: str):
+        codepoints = []
+        clusters = base.get_grapheme_clusters(text)
+        #print("logical", get_logical_clusters(text))
+        #print("grapheme", clusters)
 
-        May be useful in cases where your font has no special shaping requirements, spacing is the same, or some other
-        reason where faster performance is wanted and you can get away with this.
-        """
-        if not self._glyph_renderer:
-            self._glyph_renderer = self.glyph_renderer_class(self)
-            self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
-
-        glyphs = []
-        for c in text:
+        text_length = len(clusters)
+        for c in clusters:
             if c == "\t":
                 c = " "
+            codepoints.append(ord(c[0]))
 
-            if c not in self.glyphs:
-                self.glyphs[c] = self._glyph_renderer.render_using_layout(c)
-                if not self.glyphs[c]:
-                    self.glyphs[c] = self._empty_glyph
+        text_array = (UINT32 * text_length)()
+        text_array[:] = codepoints
 
-            glyphs.append(self.glyphs[c])
+        glyph_indices = (UINT16 * text_length)()
 
-        return glyphs
+        self.font_face.GetGlyphIndices(text_array, text_length, glyph_indices)
+
+        missing = {}
+        for i, glyph_indice in enumerate(glyph_indices):
+            if glyph_indice == 0:
+                missing[i] = clusters[i]
+
+        return glyph_indices, missing
+
+    def render_glyph_indices(self, font_face, indices, count):
+        """Given the indice list, ensure all glyphs are available."""
+        # Process any glyphs we haven't rendered.
+        if not self._glyph_renderer:
+            self._glyph_renderer = self.glyph_renderer_class(self)
+            self._empty_glyph = self._glyph_renderer.create_zero_glyph()
+            self._zero_glyph = self._glyph_renderer.create_zero_glyph()
+
+        missing = set()
+        for i in range(count):
+            glyph_indice = indices[i]
+            if glyph_indice not in self.glyphs:
+                missing.add(glyph_indice)
+
+        # Missing glyphs, get their info.
+        if missing:
+            metrics = get_glyph_metrics(font_face, (UINT16 * len(missing))(*missing), len(missing))
+
+            for idx, glyph_indice in enumerate(missing):
+                glyph = self._glyph_renderer.render_single_glyph(font_face, glyph_indice, metrics[idx], self._glyph_renderer.measuring_mode)
+                self.glyphs[glyph_indice] = glyph
+
+    def _get_fallback_glyph(self, text: str) -> base.Glyph:
+        for fallback in self.fallbacks:
+            indices, missing = fallback.get_glyph_indices(text)
+            # If the amount of indices match what's missing, nothing was retrieved.
+            if len(indices) == len(missing):
+                continue
+            # Fallback should render the glyphs it found.
+            fallback.render_glyph_indices(fallback.font_face, indices, len(indices))
+            for indice in indices:
+                if indice != 0:
+                    return fallback.glyphs[indice]
+
+        return self.glyphs[0]
+
+    def _get_fallback_glyph_shape(self, text: str) -> base.Glyph:
+        glyphs = []
+        offsets = []
+        for fallback in self.fallbacks:
+            glyph_info = shape_text(fallback.hb_font, text, fallback._real_size)
+            # print("GLYPH_INFO", glyph_info)
+            # indices, missing = fallback.get_glyph_indices(text)
+            # # If the amount of indices match what's missing, nothing was retrieved.
+            # if len(indices) == len(missing):
+            #     continue
+            indices = [glyph_data["codepoint"] for glyph_data in glyph_info]
+            fallback.render_glyph_indices(fallback.font_face, indices, len(indices))
+
+            pystr_len = len(text)
+
+            for glyph_data in glyph_info:
+                glyph = fallback.glyphs[glyph_data["codepoint"]]
+                glyphs.append(glyph)
+                offset =  GlyphPosition(glyph_data["x_advance"]-glyph.advance, glyph_data["y_advance"],
+                                             glyph_data["x_offset"], glyph_data["y_offset"])
+                offsets.append(offset)
+
+            diff = pystr_len - len(glyphs)
+            if diff > 0:
+                for i in range(diff):
+                    glyphs.append(self._zero_glyph)
+                    offsets.append(GlyphPosition(0, 0, 0, 0))
 
 
+        return glyphs, offsets
+
+    #@profile
     def get_glyphs(self, text: str) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
-            #self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
+            self._empty_glyph = self._glyph_renderer.create_zero_glyph()
             self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
-        text_layout = self.create_text_layout(text)
+        if pyglet.options.text_shaping is False:
+            glyphs = []
+            offsets = []
+            indices, missing = self.get_glyph_indices(text)
+            self.render_glyph_indices(self.font_face, indices, len(indices))
+            for i, indice in enumerate(indices):
+                if indice == 0:
+                    glyph = self._get_fallback_glyph(missing[i])
+                    glyphs.append(glyph)
+                else:
+                    glyphs.append(self.glyphs[indice])
+                offsets.append(GlyphPosition(0, 0, 0, 0))
 
-        self._glyph_renderer.current_glyphs.clear()
-        self._glyph_renderer.current_offsets.clear()
+            return glyphs, offsets
+        elif pyglet.options.text_shaping == 'harfbuzz':
+            glyph_info = shape_text(self.hb_font, text, self._real_size)
 
-        ptr = ctypes.cast(id(self._glyph_renderer), ctypes.c_void_p)
-        text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
-        text_layout.Release()
+            indices = [glyph_data["codepoint"] for glyph_data in glyph_info]
+            self.render_glyph_indices(self.font_face, indices, len(indices))
+            clusters = [glyph_data["cluster"] for glyph_data in glyph_info]
+            cluster_map = defaultdict(list)
 
-        return self._glyph_renderer.current_glyphs, self._glyph_renderer.current_offsets
+            # Find any clusters that have empty indices.
+            empty_clusters = {}
+            for glyph_data in glyph_info:
+                # If any clusters have no codepoint, determine the size to pass to fallback.
+                cluster_num = glyph_data["cluster"]
+                if glyph_data["codepoint"] == 0 and cluster_num not in empty_clusters:
+                    empty_clusters[cluster_num] = clusters.count(cluster_num)
+
+                if cluster_num not in cluster_map:
+                    cluster_map[cluster_num] = []
+
+                cluster_map[cluster_num].append(glyph_data)
+
+            # If a cluster is missing and had 0 indices.
+            missing_glyphs = {}
+            for cluster_id, cluster_ct in empty_clusters.items():
+                missing_text = text[cluster_id:cluster_id+cluster_ct]
+                if missing_text not in self.glyphs:
+                    if missing_text == '\n':
+                        fb_glyph_info = ([self._zero_glyph], [GlyphPosition(0, 0, 0, 0)])
+                    else:
+                        # Get glyphs from fallback, since we need the fallback to actually render it.
+                        fb_glyph_info = self._get_fallback_glyph_shape(missing_text)
+                    self.glyphs[missing_text] = fb_glyph_info  # Cache by string to prevent fallback path.
+                missing_glyphs[cluster_id] = self.glyphs[missing_text]
+
+            glyphs = []
+            offsets = []
+            for i in range(len(text)):
+                cluster_glyph_info = cluster_map[i]
+
+                # Cluster has data, check if it's part of the missing glyphs.
+                if i in missing_glyphs:
+                    _glyphs, _offsets = missing_glyphs[i]
+                    glyphs.extend(_glyphs)
+                    offsets.extend(_offsets)
+
+                # If this cluster is missing, add some zero glyphs until count matches.
+                elif len(cluster_glyph_info) == 0:
+                    while len(glyphs)-1 < i:
+                        glyphs.append(self._zero_glyph)
+                        offsets.append(GlyphPosition(0, 0, 0, 0))
+                else:
+                    for glyph_info in cluster_glyph_info:
+                        glyph = self.glyphs[glyph_info["codepoint"]]
+                        glyphs.append(glyph)
+
+                        offsets.append(
+                            GlyphPosition(glyph_info["x_advance"] - glyph.advance, glyph_info["y_advance"],
+                                          glyph_info["x_offset"], glyph_info["y_offset"])
+                        )
+
+            return glyphs, offsets
+
+        elif pyglet.options.text_shaping == 'platform':
+            self._glyph_renderer.current_glyphs.clear()
+            self._glyph_renderer.current_offsets.clear()
+            text_layout = self.create_text_layout(text)
+
+            get_cluster_metrics(text, text_layout)
+
+            ptr = ctypes.cast(id(self._glyph_renderer), ctypes.c_void_p)
+            text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
+            text_layout.Release()
+
+            #assert len(self._glyph_renderer.current_glyphs) == len(text), "Received {} glyphs, expected {}".format(len(self._glyph_renderer.current_glyphs), len(text))
+            return self._glyph_renderer.current_glyphs, self._glyph_renderer.current_offsets
+
+        raise Exception
 
     def create_text_layout(self, text: str) -> IDWriteTextLayout:
         """Create a text layout that holds the specified text.
@@ -911,9 +1055,9 @@ class Win32DirectWriteFont(base.Font):
         text_buffer = create_unicode_buffer(text)
 
         text_layout = IDWriteTextLayout()
-        hr = self._write_factory.CreateTextLayout(
-            text_buffer, len(text_buffer), self._text_format,
-            10000, 80, # Doesn't affect glyph, bitmap size.
+        self._write_factory.CreateTextLayout(
+            text_buffer, len(text_buffer)-1, self._text_format,
+            10000, 10000, # Doesn't affect glyph, bitmap size.
             byref(text_layout),
         )
 
@@ -1310,7 +1454,3 @@ white = D2D1_COLOR_F(1.0, 1.0, 1.0, 1.0)
 red = D2D1_COLOR_F(1.0, 0.0, 0.0, 1.0)
 no_offset = D2D_POINT_2F(0, 0)
 
-
-# If we are not shaping, monkeypatch to no shape function.
-if pyglet.options["win32_disable_shaping"]:
-    Win32DirectWriteFont.get_glyphs = Win32DirectWriteFont.get_glyphs_no_shape

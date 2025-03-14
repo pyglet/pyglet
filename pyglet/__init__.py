@@ -195,14 +195,17 @@ class Options:
     GPU to use. This is only useful on multi-GPU systems.
     """
 
-    win32_disable_shaping: bool = False
-    """If ``True``, will disable the shaping process for the default Windows font renderer to offer a performance
-    speed up. If your font is simple, monospaced, or you require no advanced OpenType features, this option may be
-    useful. You can try enabling this to see if there is any impact on clarity for your font. The advance will be
-    determined by the glyph width.
+    text_shaping: Literal["platform", "harfbuzz", False] = False
+    """Determines how text is processed and displayed based on features of the font.
 
-    .. note:: Shaping is the process of determining which character glyphs to use and specific placements of those
-       glyphs when given a full string of characters.
+    Valid option names are:
+
+     * ``False``, Disables the shaping process for text. This may increase performance as it reduces the amount
+        of calls during rendering. If your font is simple, monospaced, or you require no advanced OpenType features,
+        this option may be useful.
+     * ``'platform'``, Uses platform's font system for shaping. Supported by Windows (DirectWrite) and Mac (CoreText).
+     * ``'harfbuzz'``, Utilize the harfbuzz library for font shaping. This requires an optional dependency, if not
+     found, it will fallback to platform shaping.
 
     .. versionadded:: 2.0
     """
@@ -279,7 +282,7 @@ class Options:
     rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
     of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
-    
+
     `'platform'`: A DPI aware window is created, however window sizing and framebuffer sizing is not interfered with
     by Pyglet. Final sizes are dictated by the platform the window was created on. It is up to the user to make any
     platform adjustments themselves such as sizing on a platform, mouse coordinate adjustments, or framebuffer size
