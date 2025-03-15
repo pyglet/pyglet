@@ -283,10 +283,44 @@ class Font:
     # The default type of texture bins. Should not be overridden by users.
     texture_class: ClassVar[type[GlyphTextureBin]] = GlyphTextureBin
 
+    # A list of fallback fonts to use when an existing glyph is not found.
+    fallbacks: list[Font]
+
+    _glyph_renderer: GlyphRenderer | None
+    _missing_glyph: Glyph | None
+    _zero_glyph: Glyph | None
+
     def __init__(self) -> None:
         """Initialize a font that can be used with Pyglet."""
         self.texture_bin = None
+        self.hb_resource =  None
+        self._glyph_renderer = None
+
+        # Represents a missing glyph.
+        self._missing_glyph = None
+
+        # Represents a zero width glyph.
+        self._zero_glyph = None
         self.glyphs = {}
+        self.fallbacks = []
+
+    def _initialize_renderer(self):
+        """Initialize the glyph renderer and cache it on the Font.
+
+        This way renderers for fonts that have been loaded but not used will not have unnecessary loaders.
+        """
+        if not self._glyph_renderer:
+            self._glyph_renderer = self.glyph_renderer_class(self)
+            self._missing_glyph = self._glyph_renderer.create_zero_glyph()
+            self._zero_glyph = self._glyph_renderer.create_zero_glyph()
+
+    def add_fallback(self, font: Font) -> None:
+        assert font not in self.fallbacks, "Font is already added."
+        self.fallbacks.append(font)
+
+    def remove_fallback(self, font: Font) -> None:
+        assert font not in self.fallbacks, "Font has not been added."
+        self.fallbacks.remove(font)
 
     @property
     @abc.abstractmethod

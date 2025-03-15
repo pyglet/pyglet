@@ -195,7 +195,7 @@ class Options:
     GPU to use. This is only useful on multi-GPU systems.
     """
 
-    text_shaping: Literal["platform", "harfbuzz", False] = False
+    text_shaping: Literal["platform", "harfbuzz", False] = 'platform'
     """Determines how text is processed and displayed based on features of the font.
 
     Valid option names are:

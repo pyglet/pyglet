@@ -23,6 +23,7 @@ from ctypes import (
     c_ulong,
     c_ushort,
     c_void_p,
+    Union,
 )
 from typing import Any, Callable, Iterable, NoReturn, Sequence
 
@@ -329,6 +330,35 @@ class FT_SizeRec(Structure):
     ]
 
 
+class FT_StreamDesc(Union):
+    _fields_ = [
+        ("pointer", c_void_p),
+        ("value", c_long)
+    ]
+
+
+FT_Stream_IoFunc = CFUNCTYPE(c_ulong, c_void_p, c_ulong, c_void_p, c_ulong)
+FT_Stream_CloseFunc = CFUNCTYPE(None, c_void_p)
+
+
+class FT_StreamRec(Structure):
+    _fields_ = [
+        ("base", POINTER(c_ubyte)),  # Pointer to raw font data
+        ("size", c_ulong),  # Size of the stream
+        ("pos", c_ulong),  # Current read position
+
+        ("descriptor", FT_StreamDesc),  # File descriptor or user data
+        ("pathname", FT_StreamDesc),  # Optional pathname
+
+        ("read", FT_Stream_IoFunc),  # Read function
+        ("close", FT_Stream_CloseFunc),  # Close function
+
+        ("memory", c_void_p),  # FT_Memory pointer (memory management)
+        ("cursor", POINTER(c_ubyte)),  # Current stream position
+        ("limit", POINTER(c_ubyte)),  # End of stream data
+    ]
+
+FT_Stream = FT_StreamRec
 FT_Size = POINTER(FT_SizeRec)
 
 
@@ -370,9 +400,10 @@ class FT_FaceRec(Structure):
         ("size", FT_Size),
         ("charmap", c_void_p),
 
+        # Internal
         ("driver", c_void_p),
         ("memory", c_void_p),
-        ("stream", c_void_p),
+        ("stream", POINTER(FT_Stream)),
 
         ("sizes_list", c_void_p),
 

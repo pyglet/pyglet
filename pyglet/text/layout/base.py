@@ -411,11 +411,11 @@ class _AbstractBox(ABC):
 class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
-    glyphs: list[tuple[int, Glyph]]
+    glyphs: list[tuple[int, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
 
-    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph]], advance: int) -> None:
+    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph, GlyphPosition]], advance: int) -> None:
         """Create a run of glyphs sharing the same texture.
 
         Args:
@@ -1915,13 +1915,13 @@ class TextLayout:
                 width += sum([g.advance for g in gs])
                 width += kern * (kern_end - kern_start)
                 width += sum([o.x_advance for o in os])
-                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
+                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs, os))
             if owner is None:
                 # Assume glyphs are already boxes.
                 for kern, glyph in owner_glyphs:
                     line.add_box(glyph)
             else:
-                line.add_box(_GlyphBox(owner, font, owner_glyphs, width, offsets[start:end]))
+                line.add_box(_GlyphBox(owner, font, owner_glyphs, width))
 
         if not line.boxes:
             line.ascent = font.ascent

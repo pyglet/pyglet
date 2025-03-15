@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from ctypes import POINTER, byref, c_ubyte, cast, memmove
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 
 import pyglet
 from pyglet import image
@@ -30,6 +30,7 @@ from pyglet.font.freetype_lib import (
     FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Char_Index, FT_FACE_FLAG_KERNING, FT_Vector,
     FT_Get_Kerning, FT_KERNING_DEFAULT, FT_LOAD_NO_BITMAP, FT_Load_Char
 )
+from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ft_font, get_harfbuzz_shaped_glyphs
 from pyglet.util import asbytes, asstr
 
 
@@ -52,11 +53,15 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
         self._data = None
 
-    def _get_glyph(self, character: str) -> None:
+    def _get_glyph_by_char(self, character: str) -> None:
         assert self.font
         assert len(character) == 1
 
         self._glyph_slot = self.font.get_glyph_slot(character)
+        self._bitmap = self._glyph_slot.bitmap
+
+    def _get_glyph_by_index(self, glyph_index: int) -> None:
+        self._glyph_slot = self.font.get_glyph_slot_index(glyph_index)
         self._bitmap = self._glyph_slot.bitmap
 
     def _get_glyph_metrics(self) -> None:
@@ -166,8 +171,14 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
         return glyph
 
+    def render_index(self, glyph_index: int):
+        self._get_glyph_by_index(glyph_index)
+        self._get_glyph_metrics()
+        self._get_bitmap_data()
+        return self._create_glyph()
+
     def render(self, text: str) -> base.Glyph:
-        self._get_glyph(text[0])
+        self._get_glyph_by_char(text[0])
         self._get_glyph_metrics()
         self._get_bitmap_data()
         return self._create_glyph()
@@ -198,15 +209,15 @@ class MemoryFaceStore:
 
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
+    _glyph_renderer: FreeTypeGlyphRenderer
 
     # Map font (name, weight, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
     face: FreeTypeFace
-    fallback_fonts = ("Noto Color Emoji",)
+    fallbacks: list[FreeTypeFont]
 
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False,
                  stretch: bool | str = False, dpi: int | None = None) -> None:
-
         super().__init__()
         self._name = name
         self.size = size
@@ -214,9 +225,13 @@ class FreeTypeFont(base.Font):
         self.italic = italic
         self.stretch = stretch
         self.dpi = dpi or 96
+        self.pixel_size = (self.size * self.dpi) // 72
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
+
+        if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
+            self.hb_resource = get_resource_from_ft_font(self)
 
     @property
     def name(self) -> str:
@@ -230,22 +245,28 @@ class FreeTypeFont(base.Font):
     def descent(self) -> int:
         return self.metrics.descent
 
+    def add_fallback(self, font):
+        self.fallbacks.append(font)
+
     def _get_slot_from_fallbacks(self, character: str) -> FT_GlyphSlot | None:
         """Checks all fallback fonts in order to find a valid glyph index."""
         # Check if fallback has this glyph, if so.
-        for fallback_font in self.fallback_fonts:
-            ft: FreeTypeFont = pyglet.font.load(fallback_font, self.size)
-            fb_index = ft.face.get_character_index(character)
+        for fallback_font in self.fallbacks:
+            fb_index = fallback_font.face.get_character_index(character)
             if fb_index:
-                ft.face.set_char_size(self.size, self.dpi)
-                return ft.get_glyph_slot(character)
+                fallback_font.face.set_char_size(self.size, self.dpi)
+                return fallback_font.get_glyph_slot(character)
 
         return None
+
+    def get_glyph_slot_index(self, glyph_index: int) -> FT_GlyphSlot:
+        self.face.set_char_size(self.size, self.dpi)
+        return self.face.get_glyph_slot(glyph_index)
 
     def get_glyph_slot(self, character: str) -> FT_GlyphSlot:
         glyph_index = self.face.get_character_index(character)
         # Glyph index does not exist, so check fallback fonts.
-        if glyph_index == 0 and (self.name not in self.fallback_fonts):
+        if glyph_index == 0 and (self.name not in self.fallbacks):
             glyph_slot = self._get_slot_from_fallbacks(character)
             if glyph_slot is not None:
                 return glyph_slot
@@ -287,27 +308,18 @@ class FreeTypeFont(base.Font):
                 face = FreeTypeMemoryFace(font_data, i)
                 cls._memory_faces.add(face)
 
-    def get_glyph_positions(self, text: str):
-        positions = []
-        previous_glyph = None
-        if self.face.face_flags & FT_FACE_FLAG_KERNING:
-            for char in text:
-                glyph_index = self.face.get_character_index(char)
-                if previous_glyph:
-                    kerning_vec = FT_Vector()
-                    FT_Get_Kerning(self.face.ft_face, previous_glyph, glyph_index, FT_KERNING_DEFAULT, byref(kerning_vec))
-                    kerning_x = kerning_vec.x >> 6  # Convert from 1/64 pixels to pixels
-                    kerning_y = kerning_vec.y >> 6
-                    positions.append(GlyphPosition(kerning_x, kerning_y, 0, 0))
+    def render_glyph_indices(self, indices: Sequence[int]):
+        # Process any glyphs that have not been rendered.
+        self._initialize_renderer()
 
-                previous_glyph = glyph_index
+        missing = set()
+        for glyph_indice in set(indices):
+            if glyph_indice not in self.glyphs:
+                missing.add(glyph_indice)
 
-            # Last position cannot be kerned to something else.
-            positions.append(GlyphPosition(0, 0, 0, 0))
-        else:
-            return [GlyphPosition(0, 0, 0, 0)] * len(text)
-
-        return positions
+        # Missing glyphs, get their info.
+        for glyph_indice in missing:
+            self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
 
     def get_glyphs(self, text: str) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
@@ -319,21 +331,21 @@ class FreeTypeFont(base.Font):
             text:
                 Text to render.
         """
-        glyph_renderer = None
+        self._initialize_renderer()
+        if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
+            return get_harfbuzz_shaped_glyphs(self, text)
+        else:
+            glyphs = []  # glyphs that are committed.
+            for idx, c in enumerate(text):
+                # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
+                # boxes)
+                if c == "\t":
+                    c = " "  # noqa: PLW2901
+                if c not in self.glyphs:
+                    self.glyphs[c] = self._glyph_renderer.render(c)
+                glyphs.append(self.glyphs[c])
 
-        glyphs = []  # glyphs that are committed.
-        for c in base.get_grapheme_clusters(str(text)):
-            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-            # boxes)
-            if c == "\t":
-                c = " "  # noqa: PLW2901
-            if c not in self.glyphs:
-                if not glyph_renderer:
-                    glyph_renderer = self.glyph_renderer_class(self)
-                self.glyphs[c] = glyph_renderer.render(c)
-            glyphs.append(self.glyphs[c])
-
-        return glyphs, self.get_glyph_positions(text)
+            return glyphs, [GlyphPosition(0, 0, 0, 0)] * len(text)
 
     def get_text_size(self, text: str) -> tuple[int, int]:
         width = 0
@@ -487,7 +499,8 @@ class FreeTypeFace:
                 return self._get_font_metrics_workaround()
 
             return FreeTypeFontMetrics(ascent=int(f26p6_to_float(metrics.ascender)),
-                                       descent=int(f26p6_to_float(metrics.descender)))
+                                       descent=int(f26p6_to_float(metrics.descender)),
+                                       )
 
         return self._get_font_metrics_workaround()
 
