@@ -10,6 +10,7 @@ from ..base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.font.freetype import FreeTypeFont
+    from pyglet.font.dwrite import Win32DirectWriteFont
 
 from .harfbuzz_lib import hb_lib
 _available = False
@@ -20,7 +21,8 @@ if hb_lib:
 from .harfbuzz_lib import HB_MEMORY_MODE_READONLY, HB_DIRECTION_LTR
 
 
-def harfbuzz_available():
+def harfbuzz_available() -> bool:
+    """Return if the Harfbuzz library is available to use."""
     return _available
 
 
@@ -49,10 +51,17 @@ elif sys.maxunicode == 0xFFFF:  # UTF-16
 def get_resource_from_cg_font(cg_font):
     pass
 
-def get_resource_from_dw_font(idwritefont_face):
-    pass
+def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
+    key = (font.name, font.weight, font.italic, font.stretch)
+    if key in _hb_cache:
+        return _hb_cache
 
-def get_resource_from_ft_font(font: FreeTypeFont):
+    data = bytes(font._get_font_file_bytes())
+    resource = _HarfbuzzResources(data)
+    _hb_cache[key] = resource
+    return resource
+
+def get_resource_from_ft_font(font: FreeTypeFont) -> _HarfbuzzResources:
     key = (font.name, font.weight, font.italic, font.stretch)
     if key in _hb_cache:
         return _hb_cache
