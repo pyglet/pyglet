@@ -107,9 +107,6 @@ if hb_lib:
     hb_lib.hb_face_get_upem.argtypes = [c_void_p]  # hb_face_t *face
     hb_lib.hb_face_get_upem.restype = c_uint
 
-    hb_lib.hb_face_set_get_table_tags_func.restype = None
-    hb_lib.hb_face_set_get_table_tags_func.argtypes = [c_void_p, ]
-
     hb_lib.hb_font_set_scale.argtypes = [
         c_void_p,  # b_font_t *font
         c_int,  # x_scale
