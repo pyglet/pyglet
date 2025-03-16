@@ -337,8 +337,6 @@ class QuartzFont(base.Font):
 
         return data
 
-
-
     @property
     def filename(self) -> str:
         descriptor = self._create_font_descriptor(self.name, self.traits)
@@ -419,15 +417,20 @@ class QuartzFont(base.Font):
         name = str(name)
         if name in cls._loaded_CGFont_table:
             return True
-        # Try to create the font to see if it exists.
-        # TODO: Find a better way to check.
-        cfstring = cocoapy.CFSTR(name)
-        cgfont = c_void_p(quartz.CGFontCreateWithFontName(cfstring))
-        cf.CFRelease(cfstring)
-        if cgfont:
-            cf.CFRelease(cgfont)
-            return True
-        return False
+
+        # Query CoreText to see if the font exists.
+        descriptor = ct.CTFontDescriptorCreateWithNameAndSize(cocoapy.CFSTR(name), 0.0)
+        matched = ct.CTFontDescriptorCreateMatchingFontDescriptor(descriptor, None)
+
+        exists = True if matched else False
+
+        if descriptor:
+            cf.CFRelease(descriptor)
+
+        if matched:
+            cf.CFRelease(matched)
+
+        return exists
 
     @classmethod
     def add_font_data(cls: type[QuartzFont], data: BinaryIO) -> None:
@@ -491,7 +494,7 @@ class QuartzFont(base.Font):
         cf.CFRelease(cf_str)
         return round(width), round(height)
 
-    def render_glyph_indices(self, indices: list[int]):
+    def render_glyph_indices(self, indices: list[int]) -> None:
         # Process any glyphs that have not been rendered.
         self._initialize_renderer()
 
@@ -503,7 +506,6 @@ class QuartzFont(base.Font):
         # Missing glyphs, get their info.
         for glyph_indice in missing:
             self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
-            print("INDICES", self.glyphs, indices)
 
     def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
@@ -519,15 +521,15 @@ class QuartzFont(base.Font):
 
         if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
             return get_harfbuzz_shaped_glyphs(self, text)
-        else:
-            glyphs = []  # glyphs that are committed.
-            offsets = []
-            for c in base.get_grapheme_clusters(str(text)):
-                if c == "\t":
-                    c = " "  # noqa: PLW2901
-                if c not in self.glyphs:
-                    self.glyphs[c] = self._glyph_renderer.render(c)
-                glyphs.append(self.glyphs[c])
-                offsets.append(base.GlyphPosition(0, 0, 0, 0))
 
-            return glyphs, offsets
+        glyphs = []  # glyphs that are committed.
+        offsets = []
+        for c in base.get_grapheme_clusters(str(text)):
+            if c == "\t":
+                c = " "  # noqa: PLW2901
+            if c not in self.glyphs:
+                self.glyphs[c] = self._glyph_renderer.render(c)
+            glyphs.append(self.glyphs[c])
+            offsets.append(base.GlyphPosition(0, 0, 0, 0))
+
+        return glyphs, offsets
