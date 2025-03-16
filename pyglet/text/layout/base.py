@@ -623,7 +623,7 @@ class _GlyphBox(_AbstractBox):
 
     def get_point_in_box(self, position: int) -> int:
         x = 0
-        for (kern, glyph), offset in zip(self.glyphs, self.offsets):
+        for (kern, glyph, offset) in self.glyphs:
             if position == 0:
                 break
             position -= 1
@@ -633,7 +633,7 @@ class _GlyphBox(_AbstractBox):
     def get_position_in_box(self, x: float) -> int:
         position = 0
         last_glyph_x = 0
-        for (kern, glyph), offset in zip(self.glyphs, self.offsets):
+        for (kern, glyph, offset) in self.glyphs:
             last_glyph_x += kern
             if last_glyph_x + glyph.advance + offset.x_advance // 2 > x:
                 return position
