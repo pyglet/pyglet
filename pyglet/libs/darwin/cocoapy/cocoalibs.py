@@ -23,6 +23,7 @@ CFStringEncoding = c_uint32
 CFURLRef = c_void_p
 CFStringRef = c_void_p
 CFURLPathStyle = c_int
+CFDataRef = c_void_p
 
 cf.CFStringCreateWithCString.restype = c_void_p
 cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
@@ -76,6 +77,9 @@ cf.CFDataCreate.argtypes = [c_void_p, c_void_p, CFIndex]
 
 cf.CFDataGetBytes.restype = None
 cf.CFDataGetBytes.argtypes = [c_void_p, CFRange, c_void_p]
+
+cf.CFDataGetBytePtr.restype = POINTER(c_uint8)
+cf.CFDataGetBytePtr.argtypes = [CFDataRef]
 
 cf.CFDataGetLength.restype = CFIndex
 cf.CFDataGetLength.argtypes = [c_void_p]
@@ -382,6 +386,9 @@ quartz = cdll.LoadLibrary(lib)
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
 CGBitmapInfo = c_uint32          # CGImage.h
+CGContextRef = c_void_p
+CGFontRef = c_void_p
+CTFontRef = c_void_p
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     ImageIO.framework/Headers/CGImageProperties.h
@@ -526,6 +533,24 @@ quartz.CGFontCreateWithDataProvider.argtypes = [c_void_p]
 quartz.CGFontCreateWithFontName.restype = c_void_p
 quartz.CGFontCreateWithFontName.argtypes = [c_void_p]
 
+quartz.CGContextSetFont.restype = None
+quartz.CGContextSetFont.argtypes = [CGContextRef, CGFontRef]
+
+quartz.CGContextSetFontSize.restype = None
+quartz.CGContextSetFontSize.argtypes = [CGContextRef, CGFloat]
+
+quartz.CGContextShowGlyphsAtPositions.restype = None
+quartz.CGContextShowGlyphsAtPositions.argtypes = [CGContextRef, POINTER(CGGlyph), POINTER(CGPoint), c_size_t]
+
+quartz.CTFontDrawGlyphs.restype = None
+quartz.CTFontDrawGlyphs.argtypes = [CTFontRef, POINTER(CGGlyph), POINTER(CGPoint), c_size_t, CGContextRef]
+
+quartz.CGContextTranslateCTM.restype = None
+quartz.CGContextTranslateCTM.argtypes = [CGContextRef, CGFloat, CGFloat]
+
+quartz.CGContextScaleCTM.restype = None
+quartz.CGContextScaleCTM.argtypes = [CGContextRef, CGFloat, CGFloat]
+
 quartz.CGContextDrawImage.restype = None
 quartz.CGContextDrawImage.argtypes = [c_void_p, CGRect, c_void_p]
 
@@ -543,6 +568,17 @@ quartz.CGContextSetTextDrawingMode.argtypes = [c_void_p, c_int32]
 
 quartz.CGContextSetRGBFillColor.restype = None
 quartz.CGContextSetRGBFillColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
+
+quartz.CGFontCopyTableTags.restype = c_void_p
+quartz.CGFontCopyTableTags.argtypes = [c_void_p]
+
+quartz.CGFontCopyTableForTag.restype = c_void_p
+quartz.CGFontCopyTableForTag.argtypes = [c_void_p, c_uint32]
+
+quartz.CTFontCopyGraphicsFont.restype = c_void_p
+quartz.CTFontCopyGraphicsFont.argtypes = [c_void_p, c_void_p]
+
+
 
 ######################################################################
 

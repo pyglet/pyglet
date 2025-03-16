@@ -3,17 +3,59 @@ from __future__ import annotations
 
 import math
 import warnings
-from ctypes import byref, c_byte, c_int32, c_void_p
+from ctypes import byref, c_int32, c_void_p, string_at, cast, c_char_p
 from typing import BinaryIO
 
 import pyglet.image
 from pyglet.font import base
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute
+from pyglet.font.base import Glyph, GlyphPosition
+from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfarray_to_list, CGPoint
+from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, \
+    get_harfbuzz_shaped_glyphs, _HarfbuzzResources
+
 
 cf = cocoapy.cf
 ct = cocoapy.ct
 quartz = cocoapy.quartz
 
+
+if harfbuzz_available():
+    from pyglet.font.harfbuzz.harfbuzz_lib import hb_lib, hb_destroy_func_t, hb_reference_table_func_t, HB_MEMORY_MODE_READONLY
+
+    def py_coretext_table_data_destroy(user_data: c_void_p):
+        """Release the table resources once harfbuzz is done."""
+        if user_data:
+            cf.CFRelease(user_data)
+
+    py_coretext_table_data_destroy_c = hb_destroy_func_t(py_coretext_table_data_destroy)
+
+    @hb_reference_table_func_t
+    def py_coretext_table_callback(face: c_void_p, tag: int, user_data: c_void_p):
+        """This callback is invoked by HarfBuzz for each table it needs.
+
+        user_data is a pointer to the CGFont.
+        """
+        # Use Quartz to get the table data for the given tag.
+        table_data = quartz.CGFontCopyTableForTag(user_data, tag)
+        if table_data is None:
+            return None
+
+        # Get the length and pointer to the raw data.
+        length = cf.CFDataGetLength(table_data)
+        data_ptr = cf.CFDataGetBytePtr(table_data)
+        if not data_ptr:
+            # Release the table_data and return empty blob.
+            cf.CFRelease(table_data)
+            return None
+
+        # Create a blob that references this table data.
+        data_ptr_char = cast(data_ptr, c_char_p)
+        blob = hb_lib.hb_blob_create(data_ptr_char, length, HB_MEMORY_MODE_READONLY,
+                                     table_data, py_coretext_table_data_destroy_c)
+        return blob
+
+    # Null callback, so harfbuzz cannot destroy our CGFont.
+    _destroy_callback_null = cast(None, hb_destroy_func_t)
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     font: QuartzFont
@@ -21,6 +63,81 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font: QuartzFont) -> None:
         super().__init__(font)
         self.font = font
+
+    def render_index(self, glyph_index: int):
+        ctFont = self.font.ctFont
+
+        # Create an attributed string using text and font.
+        # Determine the glyphs involved for the text (if any)
+        # Get a bounding rectangle for glyphs in string.
+        count = 1
+        glyphs = (cocoapy.CGGlyph * count)(glyph_index)
+
+        rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
+
+        # Get advance for all glyphs in string.
+        advance = ct.CTFontGetAdvancesForGlyphs(ctFont, 0, glyphs, None, count)
+
+        # Set image parameters:
+        # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
+        # around the glyph image when it is placed in the texture atlas.  This prevents
+        # weird artifacts from showing up around the edges of the rendered glyph textures.
+        # We adjust the baseline and lsb of the glyph by 1 pixel accordingly.
+        width = max(int(math.ceil(rect.size.width) + 2), 1)
+        height = max(int(math.ceil(rect.size.height) + 2), 1)
+        baseline = -int(math.floor(rect.origin.y)) + 1
+        lsb = int(math.ceil(rect.origin.x)) - 1
+        advance = int(round(advance))
+
+        # Create bitmap context.
+        bits_per_components = 8
+        bytes_per_row = 4 * width
+        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        bitmap_context = c_void_p(quartz.CGBitmapContextCreate(
+            None,
+            width,
+            height,
+            bits_per_components,
+            bytes_per_row,
+            colorSpace,
+            cocoapy.kCGImageAlphaPremultipliedLast))
+
+        # Draw text to bitmap context.
+        quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
+        quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
+        quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)
+        quartz.CGContextSetFont(bitmap_context, ctFont)
+        quartz.CGContextSetFontSize(bitmap_context, self.font.pixel_size)
+        quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
+        quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
+
+        positions = (cocoapy.CGPoint * 1)(*[cocoapy.CGPoint(0, 0)])
+        quartz.CTFontDrawGlyphs(ctFont, glyphs, positions, 1, bitmap_context)
+
+        # Create an image to get the data out.
+        image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
+
+        bytes_per_row = quartz.CGImageGetBytesPerRow(image_ref)
+        data_provider = c_void_p(quartz.CGImageGetDataProvider(image_ref))
+        image_data = c_void_p(quartz.CGDataProviderCopyData(data_provider))
+        buffer_size = cf.CFDataGetLength(image_data)
+        buffer_ptr = cf.CFDataGetBytePtr(image_data)
+        if buffer_ptr:
+            buffer = string_at(buffer_ptr, buffer_size)
+
+            quartz.CGImageRelease(image_ref)
+            quartz.CGDataProviderRelease(image_data)
+            cf.CFRelease(bitmap_context)
+            cf.CFRelease(colorSpace)
+
+            glyph_image = pyglet.image.ImageData(width, height, "RGBA", buffer, bytes_per_row)
+
+            glyph = self.font.create_glyph(glyph_image)
+            glyph.set_bearings(baseline, lsb, advance)
+
+            return glyph
+
+        raise Exception("CG Image buffer could not be read.")
 
     def render(self, text: str) -> base.Glyph:
         # Using CTLineDraw seems to be the only way to make sure that the text
@@ -81,54 +198,56 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
             advance = int(round(advance))
 
         # Create bitmap context.
-        bitsPerComponent = 8
-        bytesPerRow = 4 * width
+        bits_per_components = 8
+        bytes_per_row = 4 * width
         colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
-        bitmap = c_void_p(quartz.CGBitmapContextCreate(
+        bitmap_context = c_void_p(quartz.CGBitmapContextCreate(
             None,
             width,
             height,
-            bitsPerComponent,
-            bytesPerRow,
+            bits_per_components,
+            bytes_per_row,
             colorSpace,
             cocoapy.kCGImageAlphaPremultipliedLast))
 
         # Draw text to bitmap context.
-        quartz.CGContextSetShouldAntialias(bitmap, pyglet.options.text_antialiasing)
-        quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
-        quartz.CGContextSetRGBFillColor(bitmap, 1, 1, 1, 1)
+        quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
+        quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
+        quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)  # Render white for multiplying.
+        quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
+        quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
 
-        ct.CTLineDraw(line, bitmap)
+        ct.CTLineDraw(line, bitmap_context)
         cf.CFRelease(line)
         # Create an image to get the data out.
-        imageRef = c_void_p(quartz.CGBitmapContextCreateImage(bitmap))
+        image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
 
-        bytesPerRow = quartz.CGImageGetBytesPerRow(imageRef)
-        dataProvider = c_void_p(quartz.CGImageGetDataProvider(imageRef))
-        imageData = c_void_p(quartz.CGDataProviderCopyData(dataProvider))
-        buffersize = cf.CFDataGetLength(imageData)
-        buffer = (c_byte * buffersize)()
-        byteRange = cocoapy.CFRange(0, buffersize)
-        cf.CFDataGetBytes(imageData, byteRange, buffer)
+        bytes_per_row = quartz.CGImageGetBytesPerRow(image_ref)
+        data_provider = c_void_p(quartz.CGImageGetDataProvider(image_ref))
+        image_data = c_void_p(quartz.CGDataProviderCopyData(data_provider))
+        buffer_size = cf.CFDataGetLength(image_data)
+        buffer_ptr = cf.CFDataGetBytePtr(image_data)
+        if buffer_ptr:
+            buffer = string_at(buffer_ptr, buffer_size)
 
-        quartz.CGImageRelease(imageRef)
-        quartz.CGDataProviderRelease(imageData)
-        cf.CFRelease(bitmap)
-        cf.CFRelease(colorSpace)
+            quartz.CGImageRelease(image_ref)
+            quartz.CGDataProviderRelease(image_data)
+            cf.CFRelease(bitmap_context)
+            cf.CFRelease(colorSpace)
 
-        glyph_image = pyglet.image.ImageData(width, height, "RGBA", buffer, bytesPerRow)
+            glyph_image = pyglet.image.ImageData(width, height, "RGBA", buffer, bytes_per_row)
 
-        glyph = self.font.create_glyph(glyph_image)
-        glyph.set_bearings(baseline, lsb, advance)
-        t = list(glyph.tex_coords)
-        glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
+            glyph = self.font.create_glyph(glyph_image)
+            glyph.set_bearings(baseline, lsb, advance)
 
-        return glyph
+            return glyph
+
+        raise Exception("CG Image buffer could not be read.")
 
 
 class QuartzFont(base.Font):
     glyph_renderer_class: type[base.GlyphRenderer] = QuartzGlyphRenderer
-    _loaded_CGFont_table: dict[str, dict[int, c_void_p]] = {}
+    _loaded_CGFont_table: dict[str, dict[int, tuple[c_void_p, bytes]]] = {}
 
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
@@ -140,9 +259,12 @@ class QuartzFont(base.Font):
 
         name = name or "Helvetica"
 
-        # I don't know what is the right thing to do here.
-        dpi = dpi or 96
-        size = size * dpi / 72.0
+        self.dpi = dpi or 96
+        self.size = size
+        self.pixel_size = size * dpi / 72.0
+        self.italic = italic
+        self.stretch = stretch
+        self.weight = weight
 
         # Construct traits value.
         traits = 0
@@ -160,14 +282,15 @@ class QuartzFont(base.Font):
         name = str(name)
         self.traits = traits
         # First see if we can find an appropriate font from our table of loaded fonts.
-        cgFont = self._lookup_font_with_family_and_traits(name, traits)
-        if cgFont:
+        result = self._lookup_font_with_family_and_traits(name, traits)
+        if result:
+            cgFont = result[0]
             # Use cgFont from table to create a CTFont object with the specified size.
-            self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, size, None, None))
+            self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, self.pixel_size, None, None))
         else:
             # Create a font descriptor for given name and traits and use it to create font.
             descriptor = self._create_font_descriptor(name, traits)
-            self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, size, None))
+            self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, self.pixel_size, None))
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
 
@@ -178,14 +301,53 @@ class QuartzFont(base.Font):
         self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
         self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
 
+        if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
+            self._cg_font = None
+            self.hb_resource = get_resource_from_ct_font(self)
+
+
+    def _get_hb_face(self):
+        assert self._cg_font is None
+
+        # Create a CGFont from the CTFont for the face.
+        self._cg_font = quartz.CTFontCopyGraphicsFont(self.ctFont, None)
+        if self._cg_font is None:
+            raise ValueError("Could not get CGFont from CTFont")
+
+        # Create the HarfBuzz face using our table callback.
+        return hb_lib.hb_face_create_for_tables(py_coretext_table_callback, self._cg_font, _destroy_callback_null)
+
+    def get_font_data(self) -> bytes:
+        """Get the font file in bytes if possible.
+
+        Unfortunately CoreText doesn't have a good way to retrieve directly from a font object. Attempt to get the
+        filename from the system. If the filename is unknown, it most likely was loaded from memory. In which case,
+        the data was added and cached at some point with `add_font_data`.
+        """
+        filename = self.filename
+        if filename == "Unknown":
+            result = self._lookup_font_with_family_and_traits(self.name, self.traits)
+            if result:
+                _, data = result
+            else:
+                raise Exception("Couldn't load font data by name and traits. Report as a bug with the font file.")
+        else:
+            with open(filename, "rb") as f:
+                data = f.read()
+
+        return data
+
+
+
     @property
     def filename(self) -> str:
         descriptor = self._create_font_descriptor(self.name, self.traits)
         ref = c_void_p(ct.CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute))
         if ref:
-            url = cocoapy.ObjCInstance(ref, cache=False)  # NSURL
+            url = cocoapy.ObjCInstance(ref)  # NSURL
             filepath = url.fileSystemRepresentation().decode()
             cf.CFRelease(ref)
+            cf.CFRelease(descriptor)
             return filepath
 
         cf.CFRelease(descriptor)
@@ -198,7 +360,7 @@ class QuartzFont(base.Font):
     def __del__(self) -> None:
         cf.CFRelease(self.ctFont)
 
-    def _lookup_font_with_family_and_traits(self, family: str, traits: int) -> c_void_p | None:
+    def _lookup_font_with_family_and_traits(self, family: str, traits: int) -> tuple[c_void_p, bytes] | None:
         # This method searches the _loaded_CGFont_table to find a loaded
         # font of the given family with the desired traits.  If it can't find
         # anything with the exact traits, it tries to fall back to whatever
@@ -301,11 +463,11 @@ class QuartzFont(base.Font):
         # full name, since its not always clear which one will be looked up.
         if familyName not in cls._loaded_CGFont_table:
             cls._loaded_CGFont_table[familyName] = {}
-        cls._loaded_CGFont_table[familyName][traits] = cgFont
+        cls._loaded_CGFont_table[familyName][traits] = (cgFont, data)
 
         if fullName not in cls._loaded_CGFont_table:
             cls._loaded_CGFont_table[fullName] = {}
-        cls._loaded_CGFont_table[fullName][traits] = cgFont
+        cls._loaded_CGFont_table[fullName][traits] = (cgFont, data)
 
     def get_text_size(self, text: str) -> tuple[int, int]:
         ctFont = self.ctFont
@@ -328,3 +490,44 @@ class QuartzFont(base.Font):
         cf.CFRelease(line)
         cf.CFRelease(cf_str)
         return round(width), round(height)
+
+    def render_glyph_indices(self, indices: list[int]):
+        # Process any glyphs that have not been rendered.
+        self._initialize_renderer()
+
+        missing = set()
+        for glyph_indice in set(indices):
+            if glyph_indice not in self.glyphs:
+                missing.add(glyph_indice)
+
+        # Missing glyphs, get their info.
+        for glyph_indice in missing:
+            self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
+            print("INDICES", self.glyphs, indices)
+
+    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+        """Create and return a list of Glyphs for `text`.
+
+        If any characters do not have a known glyph representation in this
+        font, a substitution will be made.
+
+        Args:
+            text:
+                Text to render.
+        """
+        self._initialize_renderer()
+
+        if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
+            return get_harfbuzz_shaped_glyphs(self, text)
+        else:
+            glyphs = []  # glyphs that are committed.
+            offsets = []
+            for c in base.get_grapheme_clusters(str(text)):
+                if c == "\t":
+                    c = " "  # noqa: PLW2901
+                if c not in self.glyphs:
+                    self.glyphs[c] = self._glyph_renderer.render(c)
+                glyphs.append(self.glyphs[c])
+                offsets.append(base.GlyphPosition(0, 0, 0, 0))
+
+            return glyphs, offsets

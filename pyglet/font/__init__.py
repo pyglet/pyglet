@@ -194,7 +194,7 @@ if not getattr(sys, "is_pyglet_doc_run", False):
     _user_fonts = []
 
 
-def add_file(font: str | BinaryIO) -> None:
+def add_file(font: str | BinaryIO | bytes) -> None:
     """Add a font to pyglet's search path.
 
     In order to load a font that is not installed on the system, you must
@@ -208,7 +208,7 @@ def add_file(font: str | BinaryIO) -> None:
 
     Args:
         font:
-            Filename or file-like object to load fonts from.
+            Filename, file-like object, or bytes to load fonts from.
 
     """
     if isinstance(font, str):

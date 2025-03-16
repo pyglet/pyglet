@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import TYPE_CHECKING
-from ctypes import c_void_p, c_uint16, c_uint32, string_at, create_string_buffer
+from ctypes import c_void_p, c_uint16, c_uint32, string_at, create_string_buffer, py_object, cast, POINTER
 import sys
 
-from .. import base
-from ..base import GlyphPosition
+from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.font.freetype import FreeTypeFont
     from pyglet.font.dwrite import Win32DirectWriteFont
+    from pyglet.font.quartz import QuartzFont
+    from pyglet.font.base import Font, Glyph
 
 from .harfbuzz_lib import hb_lib
 _available = False
@@ -26,7 +27,7 @@ def harfbuzz_available() -> bool:
     return _available
 
 
-_hb_cache = {}
+_hb_cache: dict[tuple[str, str, bool, str | bool], _HarfbuzzResources] = {}
 
 
 def _add_utf16_buffer(text: str, buffer: c_void_p) -> None:
@@ -48,27 +49,41 @@ if sys.maxunicode == 0x10FFFF:  # UTF-32
 elif sys.maxunicode == 0xFFFF:  # UTF-16
     set_buffer_string = _add_utf16_buffer
 
-def get_resource_from_cg_font(cg_font):
-    pass
-
-def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
+def get_resource_from_ct_font(font: QuartzFont):
+    """Get a harfbuzz resource object from a CoreText (Mac) font."""
     key = (font.name, font.weight, font.italic, font.stretch)
     if key in _hb_cache:
-        return _hb_cache
+        return _hb_cache[key]
+
+    resource = _HarfbuzzResources()
+    hb_face = font._get_hb_face()
+    resource.load_from_tabled_face(hb_face)
+    _hb_cache[key] = resource
+    return resource
+
+
+def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
+    """Get a harfbuzz resource object from a DirectWrite (Windows) font."""
+    key = (font.name, font.weight, font.italic, font.stretch)
+    if key in _hb_cache:
+        return _hb_cache[key]
 
     data = bytes(font._get_font_file_bytes())
-    resource = _HarfbuzzResources(data)
+    resource = _HarfbuzzResources()
+    resource.load_from_memory(data)
     _hb_cache[key] = resource
     return resource
 
 def get_resource_from_ft_font(font: FreeTypeFont) -> _HarfbuzzResources:
+    """Get a harfbuzz resource object from a FreeType (Linux) font."""
     key = (font.name, font.weight, font.italic, font.stretch)
     if key in _hb_cache:
-        return _hb_cache
+        return _hb_cache[key]
 
     stream = font.face.ft_face.contents.stream.contents
     data = string_at(stream.base, stream.size)
-    resource = _HarfbuzzResources(data)
+    resource = _HarfbuzzResources()
+    resource.load_from_memory(data)
     _hb_cache[key] = resource
     return resource
 
@@ -77,9 +92,11 @@ def get_resource_from_path(font_path: str):
     with open(font_path, "rb") as f:
         data = f.read()
 
-    return _HarfbuzzResources(data)
+    resource = _HarfbuzzResources()
+    resource.load_from_memory(data)
+    return resource
 
-def _get_fallback_glyph_shape(font: base.Font, text: str) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
+def _get_fallback_glyph_shape(font: Font, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
     glyphs = []
     offsets = []
     pystr_len = len(text)
@@ -104,7 +121,7 @@ def _get_fallback_glyph_shape(font: base.Font, text: str) -> tuple[list[base.Gly
 
     return glyphs, offsets
 
-def get_harfbuzz_shaped_glyphs(font: base.Font, text: str) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
+def get_harfbuzz_shaped_glyphs(font: Font, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
     glyph_info = font.hb_resource.shape_text(text, font.pixel_size)
     clusters = [glyph_data["cluster"] for glyph_data in glyph_info]
     cluster_map = defaultdict(list)
@@ -170,14 +187,24 @@ def get_harfbuzz_shaped_glyphs(font: base.Font, text: str) -> tuple[list[base.Gl
 
 
 class _HarfbuzzResources:
-    def __init__(self, data: bytes):
+    def __init__(self) -> None:
+        self.blob = None
+        self.face = None
+        self.font = None
+
+    def load_from_tabled_face(self, hb_face: c_void_p) -> None:
+        self.blob = None
+        self.face = hb_face
+        self.font = hb_lib.hb_font_create(self.face)
+
+    def load_from_memory(self, data: bytes) -> None:
         data_len = len(data)
         data_buf = create_string_buffer(data, data_len)
         self.blob = hb_lib.hb_blob_create(data_buf, data_len, HB_MEMORY_MODE_READONLY, None, None)
         self.face = hb_lib.hb_face_create(self.blob, 0)
         self.font = hb_lib.hb_font_create(self.face)
 
-    def shape_text(self, text: str, pixel_size: float, direction: int=HB_DIRECTION_LTR):
+    def shape_text(self, text: str, pixel_size: int, direction: int=HB_DIRECTION_LTR):
         """Shapes the given string using the provided hb_font.
         Returns a list of dictionaries for each glyph containing:
           - codepoint: the glyph index
@@ -191,7 +218,7 @@ class _HarfbuzzResources:
         # hb_lib.hb_buffer_set_cluster_level(buf, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS)
         set_buffer_string(text, buf)
 
-        scale = pixel_size * 64
+        scale = int(pixel_size * 64)
         hb_lib.hb_font_set_scale(self.font, scale, scale)
 
         hb_lib.hb_buffer_guess_segment_properties(buf)
@@ -222,7 +249,6 @@ class _HarfbuzzResources:
                 "x_offset": pos.x_offset / 64.0,
                 "y_offset": pos.y_offset / 64.0,
             })
-            # print("i", i, "indice", info.codepoint, "cluster", info.cluster)
 
         # Clean up the buffer.
         hb_lib.hb_buffer_destroy(buf)

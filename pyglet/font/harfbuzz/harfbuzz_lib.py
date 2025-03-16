@@ -1,12 +1,12 @@
 from ctypes import Structure, c_uint, c_uint32, c_int32, c_int16, c_uint16, c_uint8, c_int8, c_char_p, c_size_t, \
-    c_void_p, c_int, POINTER, Union
+    c_void_p, c_int, POINTER, Union, CFUNCTYPE
 
 import pyglet
 
 # Harfbuzz DLL depends on libglib and libintl (for Windows)
 hb_lib = None
 try:
-    hb_lib = pyglet.lib.load_library("harfbuzz", win32='libharfbuzz-0.dll')
+    hb_lib = pyglet.lib.load_library("harfbuzz", win32='libharfbuzz-0.dll', darwin='libharfbuzz.0.dylib')
 except ImportError:
     pass
 
@@ -91,8 +91,24 @@ if hb_lib:
     ]
     hb_lib.hb_face_create.restype = c_void_p
 
+    hb_reference_table_func_t = CFUNCTYPE(c_void_p, c_void_p, c_uint32, c_void_p)
+    hb_destroy_func_t = CFUNCTYPE(None, c_void_p)
+
+    hb_lib.hb_face_create_for_tables.argtypes = [
+        hb_reference_table_func_t,  # table func
+        c_void_p,  # user data ptr
+        hb_destroy_func_t  # free memory function
+    ]
+    hb_lib.hb_face_create_for_tables.restype = c_void_p
+
     hb_lib.hb_font_create.argtypes = [c_void_p]  # hb_face_t *face
     hb_lib.hb_font_create.restype = c_void_p
+
+    hb_lib.hb_face_get_upem.argtypes = [c_void_p]  # hb_face_t *face
+    hb_lib.hb_face_get_upem.restype = c_uint
+
+    hb_lib.hb_face_set_get_table_tags_func.restype = None
+    hb_lib.hb_face_set_get_table_tags_func.argtypes = [c_void_p, ]
 
     hb_lib.hb_font_set_scale.argtypes = [
         c_void_p,  # b_font_t *font

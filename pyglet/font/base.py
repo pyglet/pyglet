@@ -290,6 +290,9 @@ class Font:
     _missing_glyph: Glyph | None
     _zero_glyph: Glyph | None
 
+    # The size of the font in pixels.
+    pixel_size: float
+
     def __init__(self) -> None:
         """Initialize a font that can be used with Pyglet."""
         self.texture_bin = None
