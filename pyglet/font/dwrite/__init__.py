@@ -3,62 +3,123 @@ from __future__ import annotations
 import ctypes
 import math
 import pathlib
-from collections import defaultdict
-from ctypes.wintypes import WCHAR, BOOL, FLOAT, UINT
-from typing import NoReturn, BinaryIO, Any
-
-from _ctypes import POINTER, pointer, sizeof, byref, Array
-from ctypes import c_wchar_p, c_void_p, c_ubyte, cast, c_uint32, create_unicode_buffer, c_wchar
-
+from ctypes import POINTER, Array, byref, c_void_p, cast, create_unicode_buffer, pointer, sizeof, string_at
+from ctypes.wintypes import BOOL, FLOAT, UINT
 from enum import Flag
+from typing import TYPE_CHECKING, BinaryIO, Sequence
 
 import pyglet
 from pyglet.font import base
 from pyglet.font.base import Glyph, GlyphPosition
-from pyglet.font.dwrite.dwrite_lib import DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_WEIGHT_BOLD, \
-    DWRITE_FONT_STRETCH_CONDENSED, \
-    DWRITE_SCRIPT_ANALYSIS, IDWriteFontFileStream, IDWriteFontFile, IDWriteFactory, IDWriteFontFileEnumerator, \
-    IDWriteTextAnalyzer, DWRITE_GLYPH_OFFSET, IDWriteFontFace, DWRITE_GLYPH_RUN, IDWriteColorGlyphRunEnumerator1, \
-    IDWriteColorGlyphRunEnumerator, DWRITE_TEXT_METRICS, \
-    D2D_POINT_2F, DWRITE_FONT_STYLE_ITALIC, DWRITE_FONT_STYLE_NORMAL, \
-    DWRITE_FONT_STRETCH_EXPANDED, DWRITE_FONT_STRETCH_NORMAL, IDWriteFont, IDWriteTextLayout, IDWriteFontFileLoader_LI, \
-    IDWriteFontCollection1, IDWriteFontCollection, IDWriteLocalizedStrings, D2D1_COLOR_F, TextAnalysis, \
-    LegacyFontFileLoader, LegacyCollectionLoader, DWRITE_TEXT_RANGE, IDWriteTextRenderer, \
-    DWRITE_MATRIX, DWRITE_GLYPH_RUN_DESCRIPTION, DWRITE_GLYPH_IMAGE_FORMATS_ALL
-from pyglet.font.dwrite.d2d1_lib import D2D1_TEXT_ANTIALIAS_MODE_DEFAULT, D2D1_TEXT_ANTIALIAS_MODE_ALIASED, \
-    D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, D2D1_DRAW_TEXT_OPTIONS_NONE, ID2D1RenderTarget, default_target_properties, \
-    ID2D1SolidColorBrush, ID2D1DeviceContext4, IID_ID2D1DeviceContext4, ID2D1Factory, D2D1CreateFactory, \
-    D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_ID2D1Factory
-from pyglet.font.dwrite.d2d1_types_lib import D2D_POINT_2F, D2D1_COLOR_F
-from pyglet.font.dwrite.dwrite_lib import DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_WEIGHT_THIN, \
-    DWRITE_FONT_WEIGHT_EXTRA_LIGHT, DWRITE_FONT_WEIGHT_ULTRA_LIGHT, DWRITE_FONT_WEIGHT_LIGHT, \
-    DWRITE_FONT_WEIGHT_SEMI_LIGHT, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_WEIGHT_MEDIUM, DWRITE_FONT_WEIGHT_DEMI_BOLD, \
-    DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_WEIGHT_EXTRA_BOLD, DWRITE_FONT_WEIGHT_ULTRA_BOLD, \
-    DWRITE_FONT_WEIGHT_BLACK, DWRITE_FONT_WEIGHT_HEAVY, DWRITE_FONT_WEIGHT_EXTRA_BLACK, DWRITE_FONT_STRETCH_UNDEFINED, \
-    DWRITE_FONT_STRETCH_ULTRA_CONDENSED, DWRITE_FONT_STRETCH_EXTRA_CONDENSED, DWRITE_FONT_STRETCH_CONDENSED, \
-    DWRITE_FONT_STRETCH_SEMI_CONDENSED, DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STRETCH_MEDIUM, \
-    DWRITE_FONT_STRETCH_SEMI_EXPANDED, DWRITE_FONT_STRETCH_EXPANDED, DWRITE_FONT_STRETCH_EXTRA_EXPANDED, \
-    DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STYLE_OBLIQUE, DWRITE_FONT_STYLE_ITALIC, DWRITE_SCRIPT_ANALYSIS, \
-    IDWriteTextAnalysisSource, IDWriteTextAnalysisSink, IDWriteTextAnalyzer, IDWriteFontFileStream, \
-    IDWriteFontFileLoader_LI, IDWriteFontFileEnumerator, IDWriteFactory, IDWriteFontFile, IDWriteFontCollectionLoader, \
-    DWRITE_MEASURING_MODE_NATURAL, IDWriteTextLayout, DWRITE_TEXT_METRICS, IDWriteFontFace, DWRITE_GLYPH_OFFSET, \
-    DWRITE_SHAPING_TEXT_PROPERTIES, DWRITE_SHAPING_GLYPH_PROPERTIES, DWRITE_GLYPH_METRICS, DWRITE_GLYPH_RUN, \
-    IDWriteColorGlyphRunEnumerator, IDWriteColorGlyphRunEnumerator1, DWRITE_COLOR_GLYPH_RUN1, DWRITE_NO_PALETTE_INDEX, \
-    DWRITE_GLYPH_IMAGE_FORMATS_SVG, DWRITE_GLYPH_IMAGE_FORMATS_BITMAP, IDWriteFontFamily1, IDWriteFont, \
-    IDWriteTextFormat, IDWriteFontFace4, IID_IDWriteFontFace4, IDWriteFontFace2, IID_IDWriteFontFace2, \
-    DWRITE_FONT_METRICS, IDWriteFontFallback, IDWriteFontFileLoader, IDWriteLocalFontFileLoader, \
-    IID_IDWriteLocalFontFileLoader, DWRITE_CLUSTER_METRICS, IDWriteFactory7, IID_IDWriteFactory7, IDWriteFactory5, \
-    IID_IDWriteFactory5, IDWriteFactory2, IID_IDWriteFactory2, IID_IDWriteFactory, DWriteCreateFactory, \
-    DWRITE_FACTORY_TYPE_SHARED, IDWriteInMemoryFontFileLoader, IDWriteFontSetBuilder1, IDWriteFontSet, \
-    IDWriteFontCollection1, IDWriteFontCollection, IDWriteFontFamily, IDWriteLocalizedStrings, \
-    DWRITE_INFORMATIONAL_STRING_WIN32_FAMILY_NAMES
-from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_dw_font, get_harfbuzz_shaped_glyphs
-from pyglet.image import ImageData
-from pyglet.image.codecs.wincodec_lib import IWICBitmap, GUID_WICPixelFormat32bppPBGRA, WICBitmapCacheOnDemand
-from pyglet.libs.win32 import com, UINT32, UINT64, _kernel32 as kernel32, UINT16
-from pyglet.libs.win32.constants import LOCALE_NAME_MAX_LENGTH, WINDOWS_8_1_OR_GREATER, \
-    WINDOWS_10_CREATORS_UPDATE_OR_GREATER, WINDOWS_10_1809_OR_GREATER
+from pyglet.font.dwrite.d2d1_lib import (
+    D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
+    D2D1_DRAW_TEXT_OPTIONS_NONE,
+    D2D1_FACTORY_TYPE_SINGLE_THREADED,
+    D2D1_TEXT_ANTIALIAS_MODE_ALIASED,
+    D2D1_TEXT_ANTIALIAS_MODE_DEFAULT,
+    D2D1CreateFactory,
+    ID2D1DeviceContext4,
+    ID2D1Factory,
+    ID2D1RenderTarget,
+    ID2D1SolidColorBrush,
+    IID_ID2D1DeviceContext4,
+    IID_ID2D1Factory,
+    default_target_properties,
+)
+from pyglet.font.dwrite.d2d1_types_lib import D2D1_COLOR_F, D2D_POINT_2F
+from pyglet.font.dwrite.dwrite_lib import (
+    DWRITE_CLUSTER_METRICS,
+    DWRITE_COLOR_GLYPH_RUN1,
+    DWRITE_FACTORY_TYPE_SHARED,
+    DWRITE_FONT_METRICS,
+    DWRITE_FONT_STRETCH_CONDENSED,
+    DWRITE_FONT_STRETCH_EXPANDED,
+    DWRITE_FONT_STRETCH_EXTRA_CONDENSED,
+    DWRITE_FONT_STRETCH_EXTRA_EXPANDED,
+    DWRITE_FONT_STRETCH_MEDIUM,
+    DWRITE_FONT_STRETCH_NORMAL,
+    DWRITE_FONT_STRETCH_SEMI_CONDENSED,
+    DWRITE_FONT_STRETCH_SEMI_EXPANDED,
+    DWRITE_FONT_STRETCH_ULTRA_CONDENSED,
+    DWRITE_FONT_STRETCH_UNDEFINED,
+    DWRITE_FONT_STYLE_ITALIC,
+    DWRITE_FONT_STYLE_NORMAL,
+    DWRITE_FONT_STYLE_OBLIQUE,
+    DWRITE_FONT_WEIGHT_BLACK,
+    DWRITE_FONT_WEIGHT_BOLD,
+    DWRITE_FONT_WEIGHT_DEMI_BOLD,
+    DWRITE_FONT_WEIGHT_EXTRA_BLACK,
+    DWRITE_FONT_WEIGHT_EXTRA_BOLD,
+    DWRITE_FONT_WEIGHT_EXTRA_LIGHT,
+    DWRITE_FONT_WEIGHT_HEAVY,
+    DWRITE_FONT_WEIGHT_LIGHT,
+    DWRITE_FONT_WEIGHT_MEDIUM,
+    DWRITE_FONT_WEIGHT_NORMAL,
+    DWRITE_FONT_WEIGHT_REGULAR,
+    DWRITE_FONT_WEIGHT_SEMI_BOLD,
+    DWRITE_FONT_WEIGHT_SEMI_LIGHT,
+    DWRITE_FONT_WEIGHT_THIN,
+    DWRITE_FONT_WEIGHT_ULTRA_BOLD,
+    DWRITE_FONT_WEIGHT_ULTRA_LIGHT,
+    DWRITE_GLYPH_IMAGE_FORMATS_ALL,
+    DWRITE_GLYPH_IMAGE_FORMATS_BITMAP,
+    DWRITE_GLYPH_IMAGE_FORMATS_SVG,
+    DWRITE_GLYPH_METRICS,
+    DWRITE_GLYPH_OFFSET,
+    DWRITE_GLYPH_RUN,
+    DWRITE_GLYPH_RUN_DESCRIPTION,
+    DWRITE_INFORMATIONAL_STRING_WIN32_FAMILY_NAMES,
+    DWRITE_MATRIX,
+    DWRITE_MEASURING_MODE_NATURAL,
+    DWRITE_NO_PALETTE_INDEX,
+    DWRITE_TEXT_METRICS,
+    DWriteCreateFactory,
+    IDWriteColorGlyphRunEnumerator,
+    IDWriteColorGlyphRunEnumerator1,
+    IDWriteFactory,
+    IDWriteFactory2,
+    IDWriteFactory5,
+    IDWriteFactory7,
+    IDWriteFont,
+    IDWriteFontCollection,
+    IDWriteFontCollection1,
+    IDWriteFontFace,
+    IDWriteFontFamily,
+    IDWriteFontFamily1,
+    IDWriteFontFile,
+    IDWriteFontFileLoader,
+    IDWriteFontFileLoader_LI,
+    IDWriteFontFileStream,
+    IDWriteFontSet,
+    IDWriteFontSetBuilder1,
+    IDWriteInMemoryFontFileLoader,
+    IDWriteLocalFontFileLoader,
+    IDWriteLocalizedStrings,
+    IDWriteTextFormat,
+    IDWriteTextLayout,
+    IDWriteTextRenderer,
+    IID_IDWriteFactory,
+    IID_IDWriteFactory2,
+    IID_IDWriteFactory5,
+    IID_IDWriteFactory7,
+    IID_IDWriteLocalFontFileLoader,
+    LegacyCollectionLoader,
+    LegacyFontFileLoader,
+)
+from pyglet.font.harfbuzz import get_harfbuzz_shaped_glyphs, get_resource_from_dw_font, harfbuzz_available
+from pyglet.image.codecs.wincodec_lib import GUID_WICPixelFormat32bppPBGRA
+from pyglet.libs.win32 import UINT16, UINT32, UINT64, com
+from pyglet.libs.win32 import _kernel32 as kernel32
+from pyglet.libs.win32.constants import (
+    LOCALE_NAME_MAX_LENGTH,
+    WINDOWS_8_1_OR_GREATER,
+    WINDOWS_10_1809_OR_GREATER,
+    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
+)
 from pyglet.util import debug_print
+
+if TYPE_CHECKING:
+    from pyglet.image import ImageData
 
 _debug_font = pyglet.options["debug_font"]
 _debug_print = debug_print("debug_font")
@@ -126,23 +187,6 @@ class DWRITE_GLYPH_IMAGE_FORMAT_FLAG(Flag):
 
 
 
-def get_cluster_metrics(text, layout):
-    utf16_text = text.encode("utf-16-le")
-    utf16_units = len(utf16_text) // 2  # Each UTF-16 char is 2 bytes
-    text_buffer = create_unicode_buffer(text, utf16_units)
-    max_glyph_size = int(3 * len(text) / 2 + 16)
-    cluster_metrics = (DWRITE_CLUSTER_METRICS * max_glyph_size)()
-    count = UINT32()
-    layout.GetClusterMetrics(cluster_metrics, max_glyph_size, byref(count))
-    print("CLUSTERS", cluster_metrics, count.value, repr(text))
-    length = 0
-    for i in range(count.value):
-        missing_text = text_buffer[length:length+cluster_metrics[i].length]
-        print("cluster",i, cluster_metrics[i], length, length+cluster_metrics[i].length, missing_text, "size", len(missing_text), "length", cluster_metrics[i].length)
-        length += cluster_metrics[i].length
-
-
-
 def get_system_locale() -> str:
     """Retrieve the string representing the system locale."""
     local_name = create_unicode_buffer(LOCALE_NAME_MAX_LENGTH)
@@ -156,7 +200,7 @@ class _DWriteTextRenderer(com.COMObject):
     This allows the use of DirectWrite shaping to offload manual shaping, fallback detection, glyph combining, and
     other complicated scenarios.
     """
-    _interfaces_ = [IDWriteTextRenderer]
+    _interfaces_ = [IDWriteTextRenderer]  # noqa: RUF012
 
     def __init__(self) -> None:
         super().__init__()
@@ -201,17 +245,11 @@ class _DWriteTextRenderer(com.COMObject):
         c_wchar_txt = c_buf[:_run_des.contents.textLength]
         pystr_len = len(c_wchar_txt)
 
-        # print("------GLYPH DRAW START!", "count", glyph_run_ptr.contents.glyphCount,
-        #       "text_len", _run_des.contents.textLength, "pylen", pystr_len,
-        #       cast(_run_des.contents.clusterMap,POINTER(UINT16 * _run_des.contents.textLength)).contents[:],
-        #       c_wchar_txt,
-        #       )
-
         glyph_renderer: DirectWriteGlyphRenderer = ctypes.cast(drawing_context, ctypes.py_object).value
         glyph_run = glyph_run_ptr.contents
 
         if glyph_run.glyphCount == 0:
-            glyph = glyph_renderer.font._zero_glyph
+            glyph = glyph_renderer.font._zero_glyph  # noqa: SLF001
             glyph_renderer.current_glyphs.append(glyph)
             glyph_renderer.current_offsets.append(GlyphPosition(0, 0, 0, 0))
             return 0
@@ -289,7 +327,7 @@ def get_glyph_metrics(font_face: IDWriteFontFace, indices: Array[UINT16], count:
 
         return metrics_out
 
-class DirectWriteGlyphRenderer(base.GlyphRenderer):
+class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
     current_run: list[DWRITE_GLYPH_RUN]
     font: Win32DirectWriteFont
     antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT if pyglet.options.text_antialiasing is True else D2D1_TEXT_ANTIALIAS_MODE_ALIASED
@@ -314,7 +352,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         This may allows more accurate fonts (bidi, rtl, etc) in very special circumstances.
         """
-        raise Exception
         text_buffer = create_unicode_buffer(text)
 
         text_layout = IDWriteTextLayout()
@@ -677,7 +714,7 @@ class Win32DirectWriteFont(base.Font):
         if self.locale is None:
             self.locale = ""
             self.rtl = False  # Right to left should be handled by pyglet?
-            # TODO: Use system locale string?
+            # Use system locale string?
 
         if self.dpi is None:
             self.dpi = 96
@@ -760,13 +797,10 @@ class Win32DirectWriteFont(base.Font):
 
         self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
 
-        self.fallbacks = []
-
-        self.font_data = None
         if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
             self.hb_resource = get_resource_from_dw_font(self)
 
-    def _get_font_file_bytes(self) -> bytes | None:
+    def get_font_data(self) -> bytes | None:
         ff = _get_font_file(self.font_face)
         loader = IDWriteFontFileLoader()
         ff.GetLoader(byref(loader))
@@ -783,7 +817,7 @@ class Win32DirectWriteFont(base.Font):
             context = c_void_p()
             font_filestream.ReadFileFragment(byref(void_data), 0, size.value, byref(context))
 
-            font_data = (c_ubyte * size.value).from_address(void_data.value)
+            font_data = string_at(void_data, size.value)
 
             if context:
                 font_filestream.ReleaseFileFragment(context)
@@ -839,23 +873,18 @@ class Win32DirectWriteFont(base.Font):
         return self._name
 
     def render_to_image(self, text: str, width: int=10000, height: int=80) -> ImageData:
-        """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
+        """This process uses only DirectWrite to shape and render text for layout and graphics.
+
         This may allow more accurate fonts (bidi, rtl, etc) in very special circumstances at the cost of
         additional texture space.
         """
-        if not self._glyph_renderer:
-            self._glyph_renderer = self.glyph_renderer_class(self)
+        self._initialize_renderer()
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
-    def add_fallback(self, font):
-        self.fallbacks.append(font)
-
-    def get_glyph_indices(self, text: str):
+    def get_glyph_indices(self, text: str) -> tuple[Sequence[int], dict[int, int]]:
         codepoints = []
         clusters = base.get_grapheme_clusters(text)
-        #print("logical", get_logical_clusters(text))
-        #print("grapheme", clusters)
 
         text_length = len(clusters)
         for c in clusters:
@@ -875,15 +904,14 @@ class Win32DirectWriteFont(base.Font):
             if glyph_indice == 0:
                 missing[i] = clusters[i]
 
+        print("MISSING", missing)
+
         return glyph_indices, missing
 
-    def render_glyph_indices(self, indices: list[int]):
+    def render_glyph_indices(self, indices: list[int]) -> None:
         """Given the indice list, ensure all glyphs are available."""
         # Process any glyphs we haven't rendered.
-        if not self._glyph_renderer:
-            self._glyph_renderer = self.glyph_renderer_class(self)
-            self._empty_glyph = self._glyph_renderer.create_zero_glyph()
-            self._zero_glyph = self._glyph_renderer.create_zero_glyph()
+        self._initialize_renderer()
 
         missing = set()
         for i in range(len(indices)):
@@ -896,7 +924,8 @@ class Win32DirectWriteFont(base.Font):
             metrics = get_glyph_metrics(self.font_face, (UINT16 * len(missing))(*missing), len(missing))
 
             for idx, glyph_indice in enumerate(missing):
-                glyph = self._glyph_renderer.render_single_glyph(self.font_face, glyph_indice, metrics[idx], self._glyph_renderer.measuring_mode)
+                glyph = self._glyph_renderer.render_single_glyph(self.font_face, glyph_indice, metrics[idx],
+                                                                 self._glyph_renderer.measuring_mode)
                 self.glyphs[glyph_indice] = glyph
 
     def _get_fallback_glyph(self, text: str) -> base.Glyph:
@@ -906,7 +935,7 @@ class Win32DirectWriteFont(base.Font):
             if len(indices) == len(missing):
                 continue
             # Fallback should render the glyphs it found.
-            fallback.render_glyph_indices(fallback.font_face, indices, len(indices))
+            fallback.render_glyph_indices(indices)
             for indice in indices:
                 if indice != 0:
                     return fallback.glyphs[indice]
@@ -916,21 +945,6 @@ class Win32DirectWriteFont(base.Font):
     def get_glyphs(self, text: str) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         self._initialize_renderer()
 
-        if pyglet.options.text_shaping is False:
-            glyphs = []
-            offsets = []
-            indices, missing = self.get_glyph_indices(text)
-            self.render_glyph_indices(self.font_face, indices, len(indices))
-            for i, indice in enumerate(indices):
-                if indice == 0:
-                    glyph = self._get_fallback_glyph(missing[i])
-                    glyphs.append(glyph)
-                else:
-                    glyphs.append(self.glyphs[indice])
-                offsets.append(GlyphPosition(0, 0, 0, 0))
-
-            return glyphs, offsets
-
         if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
             return get_harfbuzz_shaped_glyphs(self, text)
 
@@ -939,16 +953,25 @@ class Win32DirectWriteFont(base.Font):
             self._glyph_renderer.current_offsets.clear()
             text_layout = self.create_text_layout(text)
 
-            get_cluster_metrics(text, text_layout)
-
             ptr = ctypes.cast(id(self._glyph_renderer), ctypes.c_void_p)
             text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
             text_layout.Release()
 
-            #assert len(self._glyph_renderer.current_glyphs) == len(text), "Received {} glyphs, expected {}".format(len(self._glyph_renderer.current_glyphs), len(text))
             return self._glyph_renderer.current_glyphs, self._glyph_renderer.current_offsets
 
-        raise Exception
+        glyphs = []
+        offsets = []
+        indices, missing = self.get_glyph_indices(text)
+        self.render_glyph_indices(indices)
+        for i, indice in enumerate(indices):
+            if indice == 0:
+                glyph = self._get_fallback_glyph(missing[i])
+                glyphs.append(glyph)
+            else:
+                glyphs.append(self.glyphs[indice])
+            offsets.append(GlyphPosition(0, 0, 0, 0))
+
+        return glyphs, offsets
 
     def create_text_layout(self, text: str) -> IDWriteTextLayout:
         """Create a text layout that holds the specified text.

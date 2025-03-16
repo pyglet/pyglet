@@ -68,11 +68,14 @@ def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
     if key in _hb_cache:
         return _hb_cache[key]
 
-    data = bytes(font._get_font_file_bytes())
-    resource = _HarfbuzzResources()
-    resource.load_from_memory(data)
-    _hb_cache[key] = resource
-    return resource
+    data = font.get_font_data()
+    if data:
+        resource = _HarfbuzzResources()
+        resource.load_from_memory(data)
+        _hb_cache[key] = resource
+        return resource
+
+    raise Exception("Font data could not be read.")
 
 def get_resource_from_ft_font(font: FreeTypeFont) -> _HarfbuzzResources:
     """Get a harfbuzz resource object from a FreeType (Linux) font."""
