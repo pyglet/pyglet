@@ -3,23 +3,78 @@ from __future__ import annotations
 
 import math
 import warnings
-from ctypes import byref, c_int32, c_void_p, string_at, cast, c_char_p
+from ctypes import byref, c_int32, c_void_p, string_at, cast, c_char_p, c_float
 from typing import BinaryIO
 
 import pyglet.image
 from pyglet.font import base
 from pyglet.font.base import Glyph, GlyphPosition
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfarray_to_list, CGPoint
+from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, \
+    kCTFontWeightTrait
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, \
-    get_harfbuzz_shaped_glyphs, _HarfbuzzResources
+    get_harfbuzz_shaped_glyphs
 
 
 cf = cocoapy.cf
 ct = cocoapy.ct
 quartz = cocoapy.quartz
 
+UIFontWeightUltraLight = -0.8
+UIFontWeightThin = -0.6
+UIFontWeightLight = -0.4
+UIFontWeightRegular = 0.0
+UIFontWeightMedium = 0.23
+UIFontWeightSemibold = 0.3
+UIFontWeightBold = 0.4
+UIFontWeightHeavy = 0.56
+UIFontWeightBlack = 0.62
+
+name_to_weight = {
+    True: UIFontWeightBold,     # Bold as default for True
+    False: UIFontWeightRegular,    # Regular for False
+    None: UIFontWeightRegular,     # Regular if no weight provided
+    "thin": UIFontWeightThin,
+    "extralight": UIFontWeightUltraLight,
+    "ultralight": UIFontWeightUltraLight,
+    "light": UIFontWeightLight,
+    "semilight": UIFontWeightLight,
+    "normal": UIFontWeightRegular,
+    "regular": UIFontWeightRegular,
+    "medium": UIFontWeightMedium,
+    "demibold": UIFontWeightSemibold,
+    "semibold": UIFontWeightSemibold,
+    "bold": UIFontWeightBold,
+    "extrabold": UIFontWeightBold,
+    "ultrabold": UIFontWeightBold,
+    "black": UIFontWeightBlack,
+    "heavy": UIFontWeightHeavy,
+    "extrablack": UIFontWeightBlack,
+}
+
+name_to_stretch = {
+    None: 1.0,
+    False: 1.0,
+    "undefined": 1.0,
+    "ultracondensed": -0.4,
+    "extracondensed": -0.3,
+    "condensed": -0.2,
+    "semicondensed": -0.1,
+    "normal": 0.0,
+    "medium": 0.0,
+    "semiexpanded": 0.1,
+    "expanded": 0.2,
+    "extraexpanded": 0.3,
+    "ultraexpanded": 0.4,
+}
+
 
 if harfbuzz_available():
+    """Build the callbacks and information needed for Harfbuzz to work with CoreText Fonts.
+    
+    Getting the font data is not always reliable, and since no other way exists to
+    retrieve the full font bytes from memory, we must construct callbacks for harfbuzz
+    to retrieve the tag tables.
+    """
     from pyglet.font.harfbuzz.harfbuzz_lib import hb_lib, hb_destroy_func_t, hb_reference_table_func_t, HB_MEMORY_MODE_READONLY
 
     def py_coretext_table_data_destroy(user_data: c_void_p):
@@ -252,9 +307,6 @@ class QuartzFont(base.Font):
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
                  dpi: int | None = None) -> None:
 
-        if stretch:
-            warnings.warn("The current font render does not support stretching.")  # noqa: B028
-
         super().__init__()
 
         name = name or "Helvetica"
@@ -266,18 +318,24 @@ class QuartzFont(base.Font):
         self.stretch = stretch
         self.weight = weight
 
+        if isinstance(weight, str):
+            self.weight_value = name_to_weight[weight]
+        elif weight is True:
+            self.weight_value = name_to_weight["bold"]
+        else:
+            self.weight_value = None
+
+        self.italic = italic
+
         # Construct traits value.
         traits = 0
-
-        # TODO: Use kCTFontWeightTrait instead, and
-        #       translate to the correct weight values.
-        if isinstance(weight, str) and "bold" in weight:
-            traits |= cocoapy.kCTFontBoldTrait
-        elif weight is True:
-            traits |= cocoapy.kCTFontBoldTrait
-
         if italic:
             traits |= cocoapy.kCTFontItalicTrait
+
+        if isinstance(stretch, str):
+            self.stretch_value = name_to_stretch[stretch]
+        else:
+            self.stretch_value = None
 
         name = str(name)
         self.traits = traits
@@ -289,7 +347,7 @@ class QuartzFont(base.Font):
             self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, self.pixel_size, None, None))
         else:
             # Create a font descriptor for given name and traits and use it to create font.
-            descriptor = self._create_font_descriptor(name, traits)
+            descriptor = self._create_font_descriptor(name, traits, self.weight_value, self.stretch_value)
             self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, self.pixel_size, None))
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
@@ -339,7 +397,7 @@ class QuartzFont(base.Font):
 
     @property
     def filename(self) -> str:
-        descriptor = self._create_font_descriptor(self.name, self.traits)
+        descriptor = self._create_font_descriptor(self.name, self.traits, self.weight_value, self.stretch_value)
         ref = c_void_p(ct.CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute))
         if ref:
             url = cocoapy.ObjCInstance(ref)  # NSURL
@@ -385,7 +443,9 @@ class QuartzFont(base.Font):
         # Otherwise return whatever we have.
         return list(fonts.values())[0]
 
-    def _create_font_descriptor(self, family_name: str, traits: int) -> c_void_p:
+    def _create_font_descriptor(self, family_name: str, traits: int,
+                                weight: float | None = None,
+                                stretch: float | None = None) -> c_void_p:
         # Create an attribute dictionary.
         attributes = c_void_p(
             cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
@@ -393,6 +453,7 @@ class QuartzFont(base.Font):
         cfname = cocoapy.CFSTR(family_name)
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontFamilyNameAttribute, cfname)
         cf.CFRelease(cfname)
+
         # Construct a CFNumber to represent the traits.
         itraits = c_int32(traits)
         symTraits = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberSInt32Type, byref(itraits)))
@@ -401,11 +462,26 @@ class QuartzFont(base.Font):
             traitsDict = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks,
                                                                cf.kCFTypeDictionaryValueCallBacks))
             if traitsDict:
+                if weight is not None:
+                    weight_value = c_float(weight)
+                    cfWeight = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberFloatType, byref(weight_value)))
+                    if cfWeight:
+                        cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontWeightTrait, cfWeight)
+                        cf.CFRelease(cfWeight)
+
+                if stretch is not None:
+                    stretch_value = c_float(stretch)
+                    cfWidth = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberFloatType, byref(stretch_value)))
+                    if cfWidth:
+                        cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontWidthTrait, cfWidth)
+                        cf.CFRelease(cfWidth)
+
                 # Add CFNumber traits to traits dictionary.
                 cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontSymbolicTrait, symTraits)
                 # Add traits dictionary to attributes.
                 cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontTraitsAttribute, traitsDict)
                 cf.CFRelease(traitsDict)
+
             cf.CFRelease(symTraits)
         # Create font descriptor with attributes.
         descriptor = c_void_p(ct.CTFontDescriptorCreateWithAttributes(attributes))
@@ -493,6 +569,18 @@ class QuartzFont(base.Font):
         cf.CFRelease(line)
         cf.CFRelease(cf_str)
         return round(width), round(height)
+
+    def _get_font_weight(self):
+        traits = ct.CTFontCopyTraits(self.ctFont)
+        font_weight = cfnumber_to_number(c_void_p(cf.CFDictionaryGetValue(traits, kCTFontWeightTrait)))
+        cf.CFRelease(traits)
+        return font_weight
+
+    def _get_font_stretch(self):
+        traits = ct.CTFontCopyTraits(self.ctFont)
+        font_width = cfnumber_to_number(c_void_p(cf.CFDictionaryGetValue(traits, cocoapy.kCTFontWidthTrait)))
+        cf.CFRelease(traits)
+        return font_width
 
     def render_glyph_indices(self, indices: list[int]) -> None:
         # Process any glyphs that have not been rendered.

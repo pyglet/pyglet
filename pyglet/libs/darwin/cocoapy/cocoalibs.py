@@ -600,6 +600,8 @@ kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
 kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
 kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
 kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
+kCTFontWidthTrait = c_void_p.in_dll(ct, 'kCTFontWidthTrait')
+kCTFontSlantTrait = c_void_p.in_dll(ct, 'kCTFontSlantTrait')
 kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
 kCTForegroundColorAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorAttributeName')
 kCTForegroundColorFromContextAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorFromContextAttributeName')
@@ -659,6 +661,9 @@ ct.CTFontDescriptorCreateWithNameAndSize.argtypes = [CFStringRef, CGFloat]
 
 ct.CTFontDescriptorCreateMatchingFontDescriptor.restype = c_void_p
 ct.CTFontDescriptorCreateMatchingFontDescriptor.argtypes = [c_void_p, c_void_p]
+
+ct.CTFontCopyTraits.restype = c_void_p
+ct.CTFontCopyTraits.argtypes = [c_void_p]
 
 kCTFontURLAttribute = c_void_p.in_dll(ct, 'kCTFontURLAttribute')
 
