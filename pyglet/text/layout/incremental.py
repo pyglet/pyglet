@@ -443,6 +443,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
         top_anchor = self._get_top_anchor()
+        group_ct = len(self.group_cache)
 
         for line in lines:
             line.delete(self)
@@ -461,6 +462,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if update_view_translation:
             self._update_view_translation()
 
+        # Update groups with scissor areas if any groups were changed.
+        if group_ct != len(self.group_cache):
+            self._update_scissor_area()
+
     @property
     def x(self) -> float:
         return self._x
@@ -477,6 +482,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @y.setter
     def y(self, y: float) -> None:
         super()._set_y(y)
+        # Invalidate vertices, as the vertices will have changed.
+        self._invalid_vertex_lines.invalidate(0, len(self.document.text))
         self._update_scissor_area()
 
     @property
@@ -494,7 +501,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @position.setter
     def position(self, position: tuple[float, float, float]) -> None:
+        old_y = self._y
         super()._set_position(position)
+        # Invalidate the lines if the Y changed.
+        if self._y != old_y:
+            self._invalid_vertex_lines.invalidate(0, len(self.document.text))
         self._update_view_translation()
         self._update_scissor_area()
 
@@ -543,8 +554,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if height == self._height:
             return
         self._height = height
+        self._update_visible_lines()
         if self._update_enabled:
-            self._update_visible_lines()
             self._update_vertex_lists()
 
     @property
