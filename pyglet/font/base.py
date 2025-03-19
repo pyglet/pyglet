@@ -307,14 +307,14 @@ class Font:
         self.glyphs = {}
         self.fallbacks = []
 
-    def _initialize_renderer(self):
+    def _initialize_renderer(self) -> None:
         """Initialize the glyph renderer and cache it on the Font.
 
         This way renderers for fonts that have been loaded but not used will not have unnecessary loaders.
         """
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
-            self._missing_glyph = self._glyph_renderer.create_zero_glyph()
+            self._missing_glyph = self._glyph_renderer.render(" ")
             self._zero_glyph = self._glyph_renderer.create_zero_glyph()
 
     def add_fallback(self, font: Font) -> None:

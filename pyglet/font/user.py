@@ -163,6 +163,13 @@ class UserDefinedFontBase(base.Font):
         self._base_size = base_size
         self._scaling = True
 
+    def _initialize_renderer(self) -> None:
+        """Initialize the glyph renderer and cache it on the Font.
+
+        This way renderers for fonts that have been loaded but not used will not have unnecessary loaders.
+        """
+        if not self._glyph_renderer:
+            self._glyph_renderer = self.glyph_renderer_class(self)
 
 class UserDefinedFontException(Exception):  # noqa: N818
     """An exception related to user font creation."""
