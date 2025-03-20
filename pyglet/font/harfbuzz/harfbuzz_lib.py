@@ -1,14 +1,31 @@
-from ctypes import Structure, c_uint, c_uint32, c_int32, c_int16, c_uint16, c_uint8, c_int8, c_char_p, c_size_t, \
-    c_void_p, c_int, POINTER, Union, CFUNCTYPE
+from __future__ import annotations
+
+import contextlib
+from ctypes import (
+    CFUNCTYPE,
+    POINTER,
+    Structure,
+    Union,
+    c_char_p,
+    c_int,
+    c_int8,
+    c_int16,
+    c_int32,
+    c_size_t,
+    c_uint,
+    c_uint8,
+    c_uint16,
+    c_uint32,
+    c_void_p,
+)
 
 import pyglet
 
 # Harfbuzz DLL depends on libglib and libintl (for Windows)
 hb_lib = None
-try:
+with contextlib.suppress(ImportError):
     hb_lib = pyglet.lib.load_library("harfbuzz", win32='libharfbuzz-0.dll', darwin='libharfbuzz.0.dylib')
-except ImportError:
-    pass
+
 
 HB_MEMORY_MODE_READONLY = 0  # for read-only font data
 

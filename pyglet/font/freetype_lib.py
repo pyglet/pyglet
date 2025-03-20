@@ -4,6 +4,7 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    Union,
     byref,
     c_byte,
     c_char,
@@ -23,9 +24,8 @@ from ctypes import (
     c_ulong,
     c_ushort,
     c_void_p,
-    Union,
 )
-from typing import Any, Callable, Iterable, NoReturn, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 import pyglet.lib
 

@@ -16,7 +16,6 @@ from pyglet.image.codecs.wincodec_lib import (
     GUID_ContainerFormatWmp,
     GUID_WICPixelFormat24bppBGR,
     GUID_WICPixelFormat32bppBGRA,
-    GUID_WICPixelFormat32bppPBGRA,
     IID_IWICImagingFactory1,
     IID_IWICImagingFactory2,
     IPropertyBag2,
@@ -106,10 +105,6 @@ def get_bitmap(width: int, height: int, target_fmt: com.GUID=GUID_WICPixelFormat
                       WICBitmapCacheOnDemand,
                       byref(bitmap))
     return bitmap
-
-# def create_image(width: int, height: int, target_fmt:com.GUID=GUID_WICPixelFormat32bppPBGRA) -> ImageData:
-#     bitmap = self.get_bitmap(width, height, target_fmt)
-#     return self.get_image(bitmap, target_fmt)
 
 
 def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelFormat32bppBGRA) -> ImageData:

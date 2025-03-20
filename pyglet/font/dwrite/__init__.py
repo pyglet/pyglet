@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import ctypes
 import math
 import pathlib
-from ctypes import POINTER, Array, byref, c_void_p, cast, create_unicode_buffer, pointer, sizeof, string_at
+from ctypes import POINTER, Array, byref, c_void_p, cast, create_unicode_buffer, pointer, py_object, sizeof, string_at
 from ctypes.wintypes import BOOL, FLOAT, UINT
 from enum import Flag
 from typing import TYPE_CHECKING, BinaryIO, Sequence
@@ -245,7 +244,7 @@ class _DWriteTextRenderer(com.COMObject):
         c_wchar_txt = c_buf[:_run_des.contents.textLength]
         pystr_len = len(c_wchar_txt)
 
-        glyph_renderer: DirectWriteGlyphRenderer = ctypes.cast(drawing_context, ctypes.py_object).value
+        glyph_renderer: DirectWriteGlyphRenderer = cast(drawing_context, py_object).value
         glyph_run = glyph_run_ptr.contents
 
         if glyph_run.glyphCount == 0:
@@ -953,7 +952,7 @@ class Win32DirectWriteFont(base.Font):
             self._glyph_renderer.current_offsets.clear()
             text_layout = self.create_text_layout(text)
 
-            ptr = ctypes.cast(id(self._glyph_renderer), ctypes.c_void_p)
+            ptr = cast(id(self._glyph_renderer), c_void_p)
             text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
             text_layout.Release()
 
@@ -1041,7 +1040,7 @@ class Win32DirectWriteFont(base.Font):
 
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             font_file = IDWriteFontFile()
-            hr = cls._font_loader.CreateInMemoryFontFileReference(cls._write_factory,
+            cls._font_loader.CreateInMemoryFontFileReference(cls._write_factory,
                                                                   data,
                                                                   len(data),
                                                                   None,

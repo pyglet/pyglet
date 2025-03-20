@@ -1524,7 +1524,6 @@ class MyEnumerator(com.COMObject):
         self._font_data = fonts
 
     def MoveNext(self, hasCurrentFile: BOOL) -> None:
-
         self.current_index += 1
         if self.current_index != len(self._font_data):
             font_file = IDWriteFontFile()
@@ -1540,14 +1539,16 @@ class MyEnumerator(com.COMObject):
 
                 self._keys.append(ptr)
 
-            self.factory.CreateCustomFontFileReference(self._keys[self.current_index],
-                                                       sizeof(buffer),
-                                                       self._file_loader,
-                                                       byref(font_file))
+                self.factory.CreateCustomFontFileReference(self._keys[self.current_index],
+                                                           sizeof(buffer),
+                                                           self._file_loader,
+                                                           byref(font_file))
 
-            self._font_files.append(font_file)
+                self._font_files.append(font_file)
 
-            hasCurrentFile[0] = 1
+                hasCurrentFile[0] = 1
+            else:
+                hasCurrentFile[0] = 0
         else:
             hasCurrentFile[0] = 0
 
