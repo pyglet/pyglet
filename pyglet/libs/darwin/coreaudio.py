@@ -111,8 +111,6 @@ ca.ExtAudioFileDispose.argtypes = [ExtAudioFileRef]
 ca.AudioFileClose.restype = OSStatus
 ca.AudioFileClose.argtypes = [AudioFileID]
 
-kCFAllocatorDefault = None
-
 
 def c_literal(mnemonic: str) -> int:
     """Pack a tiny ASCII string into a 32-bit int.

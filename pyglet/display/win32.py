@@ -1,35 +1,34 @@
-from .base import Display, Screen, ScreenMode, Canvas
+from ctypes import byref, sizeof
 
-from pyglet.libs.win32 import _user32, _shcore, _gdi32
+from pyglet.libs.win32 import _gdi32, _shcore, _user32
 from pyglet.libs.win32.constants import (
     CDS_FULLSCREEN,
     DISP_CHANGE_SUCCESSFUL,
     ENUM_CURRENT_SETTINGS,
-    WINDOWS_8_1_OR_GREATER,
-    WINDOWS_VISTA_OR_GREATER,
-    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
-    USER_DEFAULT_SCREEN_DPI,
     LOGPIXELSX,
     LOGPIXELSY,
-
+    USER_DEFAULT_SCREEN_DPI,
+    WINDOWS_8_1_OR_GREATER,
+    WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
+    WINDOWS_VISTA_OR_GREATER,
 )
+from pyglet.libs.win32.context_managers import device_context
 from pyglet.libs.win32.types import (
     DEVMODE,
     DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
-    MONITORINFOEX,
     MONITORENUMPROC,
+    MONITORINFOEX,
     PROCESS_PER_MONITOR_DPI_AWARE,
     UINT,
-    sizeof,
-    byref
 )
-from pyglet.libs.win32.context_managers import device_context
+
+from .base import Canvas, Display, Screen, ScreenMode
 
 
-def set_dpi_awareness():
-    """
-       Setting DPI varies per Windows version.
-       Note: DPI awareness needs to be set before Window, Display, or Screens are initialized.
+def set_dpi_awareness() -> None:
+    """Setting DPI varies per Windows version.
+
+    .. note:: DPI awareness needs to be set before Window, Display, or Screens are initialized.
     """
     if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
         _user32.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)

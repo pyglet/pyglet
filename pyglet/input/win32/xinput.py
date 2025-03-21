@@ -1,21 +1,22 @@
+import threading
 import time
 import weakref
-import threading
+from ctypes import POINTER, Structure, byref, c_void_p, windll
+from ctypes.wintypes import DWORD, LONG, LPCWSTR, SHORT, ULONG, WORD
 
 import pyglet
-
-from pyglet.math import Vec2
-from pyglet.libs.win32 import com
 from pyglet.event import EventDispatcher
-from pyglet.libs.win32.types import *
-from pyglet.libs.win32 import _ole32 as ole32, _oleaut32 as oleaut32
+from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Device
+from pyglet.libs.win32 import _ole32 as ole32
+from pyglet.libs.win32 import _oleaut32 as oleaut32
+from pyglet.libs.win32 import com
 from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
-from pyglet.input.base import Device, Controller, Button, AbsoluteAxis, ControllerManager
-
+from pyglet.libs.win32.types import BYTE, VARIANT
+from pyglet.math import Vec2
 
 for library_name in ['xinput1_4', 'xinput9_1_0', 'xinput1_3']:
     try:
-        lib = ctypes.windll.LoadLibrary(library_name)
+        lib = windll.LoadLibrary(library_name)
         break
     except OSError:
         continue

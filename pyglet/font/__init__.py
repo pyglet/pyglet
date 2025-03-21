@@ -42,7 +42,7 @@ def _get_system_font_class() -> type[Font]:
     elif pyglet.compat_platform in ("win32", "cygwin"):
         from pyglet.libs.win32.constants import WINDOWS_7_OR_GREATER
         if WINDOWS_7_OR_GREATER and not pyglet.options["win32_gdi_font"]:
-            from pyglet.font.directwrite import Win32DirectWriteFont
+            from pyglet.font.dwrite import Win32DirectWriteFont
             _font_class = Win32DirectWriteFont
         else:
             from pyglet.font.win32 import GDIPlusFont
@@ -194,7 +194,7 @@ if not getattr(sys, "is_pyglet_doc_run", False):
     _user_fonts = []
 
 
-def add_file(font: str | BinaryIO) -> None:
+def add_file(font: str | BinaryIO | bytes) -> None:
     """Add a font to pyglet's search path.
 
     In order to load a font that is not installed on the system, you must
@@ -208,7 +208,7 @@ def add_file(font: str | BinaryIO) -> None:
 
     Args:
         font:
-            Filename or file-like object to load fonts from.
+            Filename, file-like object, or bytes to load fonts from.
 
     """
     if isinstance(font, str):

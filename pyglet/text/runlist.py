@@ -5,6 +5,7 @@ from typing import Any, Callable, Generator, Iterable, Iterator
 
 
 class _Run:
+    __slots__ = ('count', 'value')
     def __init__(self, value: Any, count: int) -> None:
         self.value = value
         self.count = count
@@ -33,6 +34,7 @@ class RunList:
     ``set_run(2, 5, 'x')`` would change the sequence to ``aaxxxbccccc``.
     """
     runs: list[_Run]
+    __slots__ = ['runs']
 
     def __init__(self, size: int, initial: Any) -> None:
         """Create a run list of the given size and a default value.

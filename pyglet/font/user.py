@@ -73,7 +73,7 @@ except ImportError:
     pass
 
 if TYPE_CHECKING:
-    from pyglet.font.base import Glyph
+    from pyglet.font.base import Glyph, GlyphPosition
     from pyglet.image import ImageData
 
 
@@ -158,11 +158,18 @@ class UserDefinedFontBase(base.Font):
     def enable_scaling(self, base_size: int) -> None:
         if not SCALING_ENABLED:
             msg = "PIL is not installed. User Font Scaling requires PIL."
-            raise Exception(msg)
+            raise ImportError(msg)
 
         self._base_size = base_size
         self._scaling = True
 
+    def _initialize_renderer(self) -> None:
+        """Initialize the glyph renderer and cache it on the Font.
+
+        This way renderers for fonts that have been loaded but not used will not have unnecessary loaders.
+        """
+        if not self._glyph_renderer:
+            self._glyph_renderer = self.glyph_renderer_class(self)
 
 class UserDefinedFontException(Exception):  # noqa: N818
     """An exception related to user font creation."""
@@ -175,9 +182,10 @@ class DictLikeObject(Protocol):
 
 class UserDefinedMappingFont(UserDefinedFontBase):
     """The class allows the creation of user defined fonts from a set of mappings.
-    
+
     .. versionadded:: 2.0.15
     """
+    _glyph_renderer: UserDefinedGlyphRenderer
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
             ascent: int | None = None, descent: int | None = None, weight: str = "normal", italic: bool = False,
@@ -233,17 +241,18 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 The base size is used to calculate the ratio between new sizes and the original.
         """
         super().enable_scaling(base_size)
-        glyphs = self.get_glyphs(self.default_char)
+        glyphs, offsets = self.get_glyphs(self.default_char)
         self.ascent = glyphs[0].height
         self.descent = 0
 
-    def get_glyphs(self, text: str) -> list[Glyph]:
+    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this font, a substitution will be made with
         the ``default_char``.
         """
-        glyph_renderer = None
+        self._initialize_renderer()
+        offsets = []
         glyphs = []  # glyphs that are committed.
         for c in base.get_grapheme_clusters(text):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
@@ -251,16 +260,14 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             if c == "\t":
                 c = " "
             if c not in self.glyphs:
-                if not glyph_renderer:
-                    glyph_renderer = self.glyph_renderer_class(self)
-
                 image_data = self.mappings.get(c)
                 if not image_data:
                     c = self.default_char
                 else:
-                    self.glyphs[c] = glyph_renderer.render(image_data)
+                    self.glyphs[c] = self._glyph_renderer.render(image_data)
             glyphs.append(self.glyphs[c])
-        return glyphs
+            offsets.append(base.GlyphPosition(0, 0, 0, 0))
+        return glyphs, offsets
 
 
 def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDefinedMappingFont:

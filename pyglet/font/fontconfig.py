@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p
+from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p, POINTER
 from typing import TYPE_CHECKING
 
 from pyglet.font.base import FontException
@@ -28,6 +28,7 @@ FC_SLANT = asbytes("slant")
 FC_WEIGHT = asbytes("weight")
 FC_FT_FACE = asbytes("ftface")
 FC_FILE = asbytes("file")
+FC_WIDTH = asbytes("width")
 
 FC_WEIGHT_THIN = 10
 FC_WEIGHT_EXTRALIGHT = 40
@@ -49,11 +50,10 @@ FC_WEIGHT_HEAVY = FC_WEIGHT_BLACK
 FC_WEIGHT_EXTRABLACK = 215
 FC_WEIGHT_ULTRABLACK = FC_WEIGHT_EXTRABLACK
 
-
 name_to_weight = {
-    True: FC_WEIGHT_BOLD,       # Temporary alias for attributed text
-    False: FC_WEIGHT_NORMAL,    # Temporary alias for attributed text
-    None: FC_WEIGHT_NORMAL,     # Temporary alias for attributed text
+    True: FC_WEIGHT_BOLD,  # Temporary alias for attributed text
+    False: FC_WEIGHT_NORMAL,  # Temporary alias for attributed text
+    None: FC_WEIGHT_NORMAL,  # Temporary alias for attributed text
     "thin": FC_WEIGHT_THIN,
     "extralight": FC_WEIGHT_EXTRALIGHT,
     "ultralight": FC_WEIGHT_ULTRALIGHT,
@@ -73,6 +73,7 @@ name_to_weight = {
 }
 
 weight_to_name = {
+    None: 'normal',
     0: 'thin',
     40: 'extralight',
     50: 'light',
@@ -87,8 +88,50 @@ weight_to_name = {
 }
 
 
+FC_WIDTH_ULTRACONDENSED = 50
+FC_WIDTH_EXTRACONDENSED = 63
+FC_WIDTH_CONDENSED = 75
+FC_WIDTH_SEMICONDENSED = 87
+FC_WIDTH_NORMAL = 100
+FC_WIDTH_SEMIEXPANDED = 113
+FC_WIDTH_EXPANDED = 125
+FC_WIDTH_EXTRAEXPANDED = 150
+FC_WIDTH_ULTRAEXPANDED = 200
+
+
+name_to_stretch = {
+    None: FC_WIDTH_NORMAL,
+    False: FC_WIDTH_NORMAL,
+    "undefined": FC_WIDTH_NORMAL,
+    "ultracondensed": FC_WIDTH_ULTRACONDENSED,
+    "extracondensed": FC_WIDTH_EXTRACONDENSED,
+    "condensed": FC_WIDTH_CONDENSED,
+    "semicondensed": FC_WIDTH_SEMICONDENSED,
+    "normal": FC_WIDTH_NORMAL,
+    "medium": FC_WIDTH_NORMAL,
+    "semiexpanded": FC_WIDTH_SEMIEXPANDED,
+    "expanded": FC_WIDTH_EXPANDED,
+    "extraexpanded": FC_WIDTH_EXTRAEXPANDED,
+    "ultraexpanded": FC_WIDTH_ULTRAEXPANDED,
+}
+
+stretch_to_name = {
+    None: "normal",
+    False: "normal",
+    FC_WIDTH_ULTRACONDENSED : "ultracondensed",
+    FC_WIDTH_EXTRACONDENSED: "extracondensed",
+    FC_WIDTH_CONDENSED: "condensed",
+    FC_WIDTH_SEMICONDENSED: "semicondensed",
+    FC_WIDTH_NORMAL: "normal",
+    FC_WIDTH_SEMIEXPANDED: "semiexpanded",
+    FC_WIDTH_EXPANDED:  "expanded",
+    FC_WIDTH_EXTRAEXPANDED: "extraexpanded",
+    FC_WIDTH_ULTRAEXPANDED: "narrow",
+}
+
 FC_SLANT_ROMAN = 0
 FC_SLANT_ITALIC = 100
+FC_SLANT_OBLIQUE = 110
 
 (FcTypeVoid,
  FcTypeInteger,
@@ -131,7 +174,7 @@ class FcValue(Structure):
 
 
 class FontConfig:
-    _search_cache: OrderedDict[tuple[str, float, str, bool], FontConfigSearchResult]
+    _search_cache: OrderedDict[tuple[str, float, str, bool, str], FontConfigSearchResult]
     _fontconfig: CDLL | None
 
     def __init__(self) -> None:
@@ -151,8 +194,14 @@ class FontConfig:
     def create_search_pattern(self) -> FontConfigSearchPattern:
         return FontConfigSearchPattern(self._fontconfig)
 
-    def find_font(self, name: str, size: float = 12, weight: str = "normal", italic: bool = False) -> FontConfigSearchResult:
-        if result := self._get_from_search_cache(name, size, weight, italic):
+    def style_from_face(self, font_face: FT_Face):
+        pattern = self._fontconfig.FcFreeTypeQueryFace(font_face, None, 0, None)
+        result = FontConfigSearchResult(self._fontconfig, pattern)
+        return result.weight, result.italic, result.stretch
+
+    def find_font(self, name: str, size: float = 12, weight: str = "normal",
+                  italic: bool = False, stretch: str = "normal") -> FontConfigSearchResult:
+        if result := self._get_from_search_cache(name, size, weight, italic, stretch):
             return result
 
         search_pattern = self.create_search_pattern()
@@ -160,6 +209,7 @@ class FontConfig:
         search_pattern.size = size
         search_pattern.weight = weight
         search_pattern.italic = italic
+        search_pattern.stretch = stretch
 
         result = search_pattern.match()
         self._add_to_search_cache(search_pattern, result)
@@ -183,12 +233,14 @@ class FontConfig:
         self._search_cache[(search_pattern.name,
                             search_pattern.size,
                             search_pattern.weight,
-                            search_pattern.italic)] = result_pattern
+                            search_pattern.italic,
+                            search_pattern.stretch)] = result_pattern
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 
-    def _get_from_search_cache(self, name: str, size: float, weight: str, italic: bool) -> FontConfigSearchResult | None:
-        result = self._search_cache.get((name, size, weight, italic), None)
+    def _get_from_search_cache(self, name: str, size: float, weight: str,
+                               italic: bool, stretch: str) -> FontConfigSearchResult | None:
+        result = self._search_cache.get((name, size, weight, italic, stretch), None)
 
         if result and result.is_valid:
             return result
@@ -215,6 +267,9 @@ class FontConfig:
 
         fontconfig.FcPatternGetFTFace.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
         fontconfig.FcPatternGet.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
+
+        fontconfig.FcFreeTypeQueryFace.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
+        fontconfig.FcFreeTypeQueryFace.restype = c_void_p
 
         return fontconfig
 
@@ -255,7 +310,7 @@ class FontConfigPattern:
 
         self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
 
-    def _set_double(self, name: bytes, value: int) -> None:
+    def _set_double(self, name: bytes, value: float) -> None:
         assert self._pattern
         assert name
         assert self._fontconfig
@@ -321,18 +376,20 @@ class FontConfigPattern:
 
 
 class FontConfigSearchPattern(FontConfigPattern):
-    size: int | None
+    size: float | None
     italic: bool
     weight: str
     name: str | None
+    stretch: str
 
-    def __init__(self, fontconfig: CDLL) -> None:
-        super().__init__(fontconfig)
+    def __init__(self, fontconfig: CDLL, pattern: c_void_p | None = None) -> None:
+        super().__init__(fontconfig, pattern)
 
         self.name = None
         self.weight = "normal"
         self.italic = False
         self.size = None
+        self.stretch = 'normal'
 
     def match(self) -> FontConfigSearchResult | None:
         self._prepare_search_pattern()
@@ -344,11 +401,13 @@ class FontConfigSearchPattern(FontConfigPattern):
         return None
 
     def _prepare_search_pattern(self) -> None:
-        self._create()
+        if self._pattern is None:
+            self._create()
         self._set_string(FC_FAMILY, self.name)
         self._set_double(FC_SIZE, self.size)
         self._set_double(FC_WEIGHT, name_to_weight[self.weight])
         self._set_integer(FC_SLANT, self._italic_to_slant(self.italic))
+        self._set_integer(FC_WIDTH, name_to_stretch[self.stretch])
 
         self._substitute_defaults()
 
@@ -398,6 +457,10 @@ class FontConfigSearchResult(FontConfigPattern):
     @property
     def face(self) -> FT_Face:
         return self._get_face(FC_FT_FACE)
+
+    @property
+    def stretch(self) -> str:
+        return stretch_to_name[self._get_integer(FC_WIDTH)]
 
     @property
     def file(self) -> str:

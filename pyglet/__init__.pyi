@@ -49,15 +49,17 @@ class Options:
     debug_win32: bool
     debug_input: bool
     debug_x11: bool
+    debug_com: bool
     shadow_window: bool
     vsync: bool | None
     xsync: bool
     xlib_fullscreen_override_redirect: bool
     search_local_libs: bool
     win32_gdi_font: bool
+    text_antialiasing: bool
     headless: bool
     headless_device: int
-    win32_disable_shaping: bool
+    text_shaping: Literal["platform", "harfbuzz", False]
     dw_legacy_naming: bool
     win32_disable_xinput: bool
     com_mta: bool

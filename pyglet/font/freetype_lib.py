@@ -4,6 +4,7 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    Union,
     byref,
     c_byte,
     c_char,
@@ -24,7 +25,7 @@ from ctypes import (
     c_ushort,
     c_void_p,
 )
-from typing import Any, Callable, Iterable, NoReturn
+from typing import Any, Callable, Iterable, Sequence
 
 import pyglet.lib
 
@@ -70,6 +71,42 @@ FT_Error = c_int
 FT_Fixed = c_long
 FT_Pointer = c_void_p
 FT_Pos = c_long
+
+class TT_OS2(Structure):
+    _fields_ = [
+        ("version",              c_ushort),
+        ("xAvgCharWidth",        c_short),
+        ("usWeightClass",        c_ushort),  # This is the key field
+        ("usWidthClass",         c_ushort),
+        ("fsType",               c_short),
+        ("ySubscriptXSize",      c_short),
+        ("ySubscriptYSize",      c_short),
+        ("ySubscriptXOffset",    c_short),
+        ("ySubscriptYOffset",    c_short),
+        ("ySuperscriptXSize",    c_short),
+        ("ySuperscriptYSize",    c_short),
+        ("ySuperscriptXOffset",  c_short),
+        ("ySuperscriptYOffset",  c_short),
+        ("yStrikeoutSize",       c_short),
+        ("yStrikeoutPosition",   c_short),
+        ("sFamilyClass",         c_short),
+        ("panose",               c_byte * 10),
+        ("ulUnicodeRange1",      c_uint),
+        ("ulUnicodeRange2",      c_uint),
+        ("ulUnicodeRange3",      c_uint),
+        ("ulUnicodeRange4",      c_uint),
+        ("achVendID",            c_char * 4),
+        ("fsSelection",          c_ushort),
+        ("usFirstCharIndex",     c_ushort),
+        ("usLastCharIndex",      c_ushort),
+        ("sTypoAscender",        c_short),
+        ("sTypoDescender",       c_short),
+        ("sTypoLineGap",         c_short),
+        ("usWinAscent",          c_ushort),
+        ("usWinDescent",         c_ushort),
+        ("ulCodePageRange1",     c_uint),
+        ("ulCodePageRange2",     c_uint),
+    ]
 
 
 class FT_Vector(Structure):
@@ -150,6 +187,10 @@ FT_PIXEL_MODE_GRAY4 = 4
 FT_PIXEL_MODE_LCD = 5
 FT_PIXEL_MODE_LCD_V = 6
 FT_PIXEL_MODE_BGRA = 7
+
+FT_KERNING_DEFAULT = 0
+FT_KERNING_UNFITTED = 1
+FT_KERNING_UNSCALED = 2
 
 
 class FT_LibraryRec(Structure):
@@ -289,6 +330,35 @@ class FT_SizeRec(Structure):
     ]
 
 
+class FT_StreamDesc(Union):
+    _fields_ = [
+        ("pointer", c_void_p),
+        ("value", c_long)
+    ]
+
+
+FT_Stream_IoFunc = CFUNCTYPE(c_ulong, c_void_p, c_ulong, c_void_p, c_ulong)
+FT_Stream_CloseFunc = CFUNCTYPE(None, c_void_p)
+
+
+class FT_StreamRec(Structure):
+    _fields_ = [
+        ("base", POINTER(c_ubyte)),  # Pointer to raw font data
+        ("size", c_ulong),  # Size of the stream
+        ("pos", c_ulong),  # Current read position
+
+        ("descriptor", FT_StreamDesc),  # File descriptor or user data
+        ("pathname", FT_StreamDesc),  # Optional pathname
+
+        ("read", FT_Stream_IoFunc),  # Read function
+        ("close", FT_Stream_CloseFunc),  # Close function
+
+        ("memory", c_void_p),  # FT_Memory pointer (memory management)
+        ("cursor", POINTER(c_ubyte)),  # Current stream position
+        ("limit", POINTER(c_ubyte)),  # End of stream data
+    ]
+
+FT_Stream = FT_StreamRec
 FT_Size = POINTER(FT_SizeRec)
 
 
@@ -330,9 +400,10 @@ class FT_FaceRec(Structure):
         ("size", FT_Size),
         ("charmap", c_void_p),
 
+        # Internal
         ("driver", c_void_p),
         ("memory", c_void_p),
-        ("stream", c_void_p),
+        ("stream", POINTER(FT_Stream)),
 
         ("sizes_list", c_void_p),
 
@@ -343,27 +414,31 @@ class FT_FaceRec(Structure):
 
     def dump(self) -> None:
         for (name, _) in self._fields_:
-            print("FT_FaceRec", name, repr(getattr(self, name))) 
-
-    def has_kerning(self) -> bool:
-        return self.face_flags & FT_FACE_FLAG_KERNING
+            print("FT_FaceRec", name, repr(getattr(self, name)))
 
 
 FT_Face = POINTER(FT_FaceRec)
 
 # face_flags values
-FT_FACE_FLAG_SCALABLE = 1 << 0
-FT_FACE_FLAG_FIXED_SIZES = 1 << 1
-FT_FACE_FLAG_FIXED_WIDTH = 1 << 2
-FT_FACE_FLAG_SFNT = 1 << 3
-FT_FACE_FLAG_HORIZONTAL = 1 << 4
-FT_FACE_FLAG_VERTICAL = 1 << 5
-FT_FACE_FLAG_KERNING = 1 << 6
-FT_FACE_FLAG_FAST_GLYPHS = 1 << 7
-FT_FACE_FLAG_MULTIPLE_MASTERS = 1 << 8
-FT_FACE_FLAG_GLYPH_NAMES = 1 << 9
-FT_FACE_FLAG_EXTERNAL_STREAM = 1 << 10
-FT_FACE_FLAG_HINTER = 1 << 11
+FT_FACE_FLAG_SCALABLE          = 1 << 0   # Vector-based (TTF/OTF
+FT_FACE_FLAG_FIXED_SIZES       = 1 << 1   # Has pre-rendered bitmap sizes
+FT_FACE_FLAG_FIXED_WIDTH       = 1 << 2   # Monospaced font
+FT_FACE_FLAG_SFNT              = 1 << 3   # SFNT-based (TrueType/OpenType/WOFF
+FT_FACE_FLAG_HORIZONTAL        = 1 << 4   # Has horizontal glyph metrics
+FT_FACE_FLAG_VERTICAL          = 1 << 5   # Has vertical glyph metrics
+FT_FACE_FLAG_KERNING           = 1 << 6   # Supports kerning
+FT_FACE_FLAG_FAST_GLYPHS       = 1 << 7   # Deprecated (No effect
+FT_FACE_FLAG_MULTIPLE_MASTERS  = 1 << 8   # Supports variable fonts (GX/AAT
+FT_FACE_FLAG_GLYPH_NAMES       = 1 << 9   # Has glyph names
+FT_FACE_FLAG_EXTERNAL_STREAM   = 1 << 10  # Uses external stream (not file-based
+FT_FACE_FLAG_HINTER            = 1 << 11  # Font has its own hinter
+FT_FACE_FLAG_CID_KEYED         = 1 << 12  # CID-keyed PostScript font
+FT_FACE_FLAG_TRICKY            = 1 << 13  # Requires special TrueType bytecode handling
+FT_FACE_FLAG_COLOR             = 1 << 14  # Color emoji font
+FT_FACE_FLAG_VARIATION         = 1 << 15  # OpenType Variable Fonts
+FT_FACE_FLAG_SVG               = 1 << 16  # SVG-based color glyphs
+FT_FACE_FLAG_SBIX              = 1 << 17  # sbix color glyphs
+FT_FACE_FLAG_SBIX_OVERLAY      = 1 << 18  # sbix overlay support
 
 FT_STYLE_FLAG_ITALIC = 1
 FT_STYLE_FLAG_BOLD = 2
@@ -402,118 +477,146 @@ def float_to_f26p6(value: float) -> float:
     return int(value * (1 << 6))
 
 
+
+_ft_errors = {
+    0x00: "no error",
+    0x01: "cannot open resource",
+    0x02: "unknown file format",
+    0x03: "broken file",
+    0x04: "invalid FreeType version",
+    0x05: "module version is too low",
+    0x06: "invalid argument",
+    0x07: "unimplemented feature",
+    0x08: "broken table",
+    0x09: "broken offset within table",
+    0x10: "invalid glyph index",
+    0x11: "invalid character code",
+    0x12: "unsupported glyph image format",
+    0x13: "cannot render this glyph format",
+    0x14: "invalid outline",
+    0x15: "invalid composite glyph",
+    0x16: "too many hints",
+    0x17: "invalid pixel size",
+    0x20: "invalid object handle",
+    0x21: "invalid library handle",
+    0x22: "invalid module handle",
+    0x23: "invalid face handle",
+    0x24: "invalid size handle",
+    0x25: "invalid glyph slot handle",
+    0x26: "invalid charmap handle",
+    0x27: "invalid cache manager handle",
+    0x28: "invalid stream handle",
+    0x30: "too many modules",
+    0x31: "too many extensions",
+    0x40: "out of memory",
+    0x41: "unlisted object",
+    0x51: "cannot open stream",
+    0x52: "invalid stream seek",
+    0x53: "invalid stream skip",
+    0x54: "invalid stream read",
+    0x55: "invalid stream operation",
+    0x56: "invalid frame operation",
+    0x57: "nested frame access",
+    0x58: "invalid frame read",
+    0x60: "raster uninitialized",
+    0x61: "raster corrupted",
+    0x62: "raster overflow",
+    0x63: "negative height while rastering",
+    0x70: "too many registered caches",
+    0x80: "invalid opcode",
+    0x81: "too few arguments",
+    0x82: "stack overflow",
+    0x83: "code overflow",
+    0x84: "bad argument",
+    0x85: "division by zero",
+    0x86: "invalid reference",
+    0x87: "found debug opcode",
+    0x88: "found ENDF opcode in execution stream",
+    0x89: "nested DEFS",
+    0x8A: "invalid code range",
+    0x8B: "execution context too long",
+    0x8C: "too many function definitions",
+    0x8D: "too many instruction definitions",
+    0x8E: "SFNT font table missing",
+    0x8F: "horizontal header (hhea, table missing",
+    0x90: "locations (loca, table missing",
+    0x91: "name table missing",
+    0x92: "character map (cmap, table missing",
+    0x93: "horizontal metrics (hmtx, table missing",
+    0x94: "PostScript (post, table missing",
+    0x95: "invalid horizontal metrics",
+    0x96: "invalid character map (cmap, format",
+    0x97: "invalid ppem value",
+    0x98: "invalid vertical metrics",
+    0x99: "could not find context",
+    0x9A: "invalid PostScript (post, table format",
+    0x9B: "invalid PostScript (post, table",
+    0xA0: "opcode syntax error",
+    0xA1: "argument stack underflow",
+    0xA2: "ignore",
+    0xB0: "`STARTFONT' field missing",
+    0xB1: "`FONT' field missing",
+    0xB2: "`SIZE' field missing",
+    0xB3: "`CHARS' field missing",
+    0xB4: "`STARTCHAR' field missing",
+    0xB5: "`ENCODING' field missing",
+    0xB6: "`BBX' field missing",
+    0xB7: "`BBX' too big",
+}
+
+
 class FreeTypeError(FontException):
-    def __init__(self, message: str | None, errcode: int) -> None:
+    def __init__(self, error_code, message):
+        self.errcode = error_code
         self.message = message
-        self.errcode = errcode
 
-    def __str__(self) -> str:
-        return "{}: {} ({})".format(self.__class__.__name__, self.message,
-                                    self._ft_errors.get(self.errcode, "unknown error"))
 
-    @classmethod
-    def check_and_raise_on_error(cls: type[FreeTypeError], errcode: int) -> NoReturn:
-        if errcode != 0:
-            raise cls(None, errcode)
-
-    _ft_errors = {
-        0x00: "no error",
-        0x01: "cannot open resource",
-        0x02: "unknown file format",
-        0x03: "broken file",
-        0x04: "invalid FreeType version",
-        0x05: "module version is too low",
-        0x06: "invalid argument",
-        0x07: "unimplemented feature",
-        0x08: "broken table",
-        0x09: "broken offset within table",
-        0x10: "invalid glyph index",
-        0x11: "invalid character code",
-        0x12: "unsupported glyph image format",
-        0x13: "cannot render this glyph format",
-        0x14: "invalid outline",
-        0x15: "invalid composite glyph",
-        0x16: "too many hints",
-        0x17: "invalid pixel size",
-        0x20: "invalid object handle",
-        0x21: "invalid library handle",
-        0x22: "invalid module handle",
-        0x23: "invalid face handle",
-        0x24: "invalid size handle",
-        0x25: "invalid glyph slot handle",
-        0x26: "invalid charmap handle",
-        0x27: "invalid cache manager handle",
-        0x28: "invalid stream handle",
-        0x30: "too many modules",
-        0x31: "too many extensions",
-        0x40: "out of memory",
-        0x41: "unlisted object",
-        0x51: "cannot open stream",
-        0x52: "invalid stream seek",
-        0x53: "invalid stream skip",
-        0x54: "invalid stream read",
-        0x55: "invalid stream operation",
-        0x56: "invalid frame operation",
-        0x57: "nested frame access",
-        0x58: "invalid frame read",
-        0x60: "raster uninitialized",
-        0x61: "raster corrupted",
-        0x62: "raster overflow",
-        0x63: "negative height while rastering",
-        0x70: "too many registered caches",
-        0x80: "invalid opcode",
-        0x81: "too few arguments",
-        0x82: "stack overflow",
-        0x83: "code overflow",
-        0x84: "bad argument",
-        0x85: "division by zero",
-        0x86: "invalid reference",
-        0x87: "found debug opcode",
-        0x88: "found ENDF opcode in execution stream",
-        0x89: "nested DEFS",
-        0x8A: "invalid code range",
-        0x8B: "execution context too long",
-        0x8C: "too many function definitions",
-        0x8D: "too many instruction definitions",
-        0x8E: "SFNT font table missing",
-        0x8F: "horizontal header (hhea, table missing",
-        0x90: "locations (loca, table missing",
-        0x91: "name table missing",
-        0x92: "character map (cmap, table missing",
-        0x93: "horizontal metrics (hmtx, table missing",
-        0x94: "PostScript (post, table missing",
-        0x95: "invalid horizontal metrics",
-        0x96: "invalid character map (cmap, format",
-        0x97: "invalid ppem value",
-        0x98: "invalid vertical metrics",
-        0x99: "could not find context",
-        0x9A: "invalid PostScript (post, table format",
-        0x9B: "invalid PostScript (post, table",
-        0xA0: "opcode syntax error",
-        0xA1: "argument stack underflow",
-        0xA2: "ignore",
-        0xB0: "`STARTFONT' field missing",
-        0xB1: "`FONT' field missing",
-        0xB2: "`SIZE' field missing",
-        0xB3: "`CHARS' field missing",
-        0xB4: "`STARTCHAR' field missing",
-        0xB5: "`ENCODING' field missing",
-        0xB6: "`BBX' field missing",
-        0xB7: "`BBX' too big",
-    }
-
+def _errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
+    if result != 0:
+        raise FreeTypeError(result, _ft_errors.get(result, "Unknown."))
 
 def _get_function_with_error_handling(name: str, argtypes: Iterable[Any], rtype: Any) -> Callable:
     func = _get_function(name, argtypes, rtype)
-
-    def _error_handling(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        err = func(*args, **kwargs)
-        FreeTypeError.check_and_raise_on_error(err)
-
-    return _error_handling
+    func.errcheck = _errcheck
+    func.__name__ = name
+    return func
 
 
-FT_LOAD_RENDER = 0x4
+FT_LOAD_DEFAULT = 0x0  # Use default font loading behavior
+FT_LOAD_NO_SCALE = (1 << 0)  # Disable scaling; use unscaled native units
+FT_LOAD_NO_HINTING = (1 << 1)  # Disable font hinting (may cause blurriness at small sizes)
+FT_LOAD_RENDER = (1 << 2)  # Automatically render the glyph after loading
+FT_LOAD_NO_BITMAP = (1 << 3)  # Ignore bitmap strikes, force vector rendering
+FT_LOAD_VERTICAL_LAYOUT = (1 << 4)  # Load glyph with vertical metrics if available
+FT_LOAD_FORCE_AUTOHINT = (1 << 5)  # Force FreeType’s auto-hinter, ignoring native hints
+FT_LOAD_CROP_BITMAP = (1 << 6)  # Crop bitmaps to bounding box (removes empty padding)
+FT_LOAD_PEDANTIC = (1 << 7)  # Enable strict font parsing (useful for debugging malformed fonts)
+FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH = (1 << 9)  # Ignore font-wide advance width; use glyph-specific advance
+FT_LOAD_NO_RECURSE = (1 << 10)  # Load only composite glyphs, do not load sub-glyphs recursively
+FT_LOAD_IGNORE_TRANSFORM = (1 << 11)  # Disable any transformations with FT_Set_Transform()
+FT_LOAD_MONOCHROME = (1 << 12)  # Render glyphs in monochrome (1-bit, no anti-aliasing)
+FT_LOAD_LINEAR_DESIGN = (1 << 13)  # Use linear design metrics instead of transformed metrics
+FT_LOAD_SBITS_ONLY = (1 << 14)  # Load only embedded bitmap strikes (ignore vector outlines)
+FT_LOAD_NO_AUTOHINT = (1 << 15)  # Disable FreeType’s auto-hinter
+FT_LOAD_COLOR = (1 << 20)  # Load color emoji glyphs (e.g., sbix, CBDT/CBLC, SVG fonts)
+FT_LOAD_COMPUTE_METRICS = (1 << 21)  # Compute glyph metrics even if loading only a bitmap
+FT_LOAD_BITMAP_METRICS_ONLY = (1 << 22)  # Compute bitmap glyph metrics but do not load the glyph itself
+FT_LOAD_NO_SVG = (1 << 24)  # Disable loading of SVG glyphs (for fonts that contain both vector and SVG glyphs)
+
+FT_Sfnt_Tag = c_int
+class FT_Sfnt_Tags:
+    """SFNT table tags for use with FT_Get_Sfnt_Table."""
+    HEAD  = 0
+    MAXP  = 1
+    OS2   = 2
+    HHEA  = 3
+    VHEA  = 4
+    POST  = 5
+    NAME  = 6
+    CFF   = 7
+    GASP  = 8
+    PCLT  = 9
+
 
 FT_Init_FreeType = _get_function_with_error_handling("FT_Init_FreeType",
                                                      [POINTER(FT_Library)], FT_Error)
@@ -536,13 +639,19 @@ FT_Set_Pixel_Sizes = _get_function_with_error_handling("FT_Set_Pixel_Sizes",
                                                        [FT_Face, FT_UInt, FT_UInt], FT_Error)
 FT_Load_Glyph = _get_function_with_error_handling("FT_Load_Glyph",
                                                   [FT_Face, FT_UInt, FT_Int32], FT_Error)
-FT_Get_Char_Index = _get_function_with_error_handling("FT_Get_Char_Index",
-                                                      [FT_Face, FT_ULong], FT_Error)
+FT_Get_Char_Index = _get_function("FT_Get_Char_Index",
+                                                      [FT_Face, FT_ULong], FT_UInt)
 FT_Load_Char = _get_function_with_error_handling("FT_Load_Char",
                                                  [FT_Face, FT_ULong, FT_Int32], FT_Error)
 FT_Get_Kerning = _get_function_with_error_handling("FT_Get_Kerning",
                                                    [FT_Face, FT_UInt, FT_UInt, FT_UInt, POINTER(FT_Vector)], FT_Error)
 
+FT_Get_Sfnt_Table = _get_function("FT_Get_Sfnt_Table", [FT_Face, FT_Sfnt_Tag], c_void_p)
+
+try:
+    FT_Select_Size = _get_function_with_error_handling("FT_Select_Size", [FT_Face, FT_Int], FT_Error)
+except ImportError:
+    FT_Select_Size = None
 
 # SFNT interface
 

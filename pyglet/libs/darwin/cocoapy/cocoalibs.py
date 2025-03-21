@@ -16,12 +16,14 @@ if lib is None:
 cf = cdll.LoadLibrary(lib)
 
 kCFStringEncodingUTF8 = 0x08000100
+kCFAllocatorDefault = None
 
 CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
 CFURLRef = c_void_p
 CFStringRef = c_void_p
 CFURLPathStyle = c_int
+CFDataRef = c_void_p
 
 cf.CFStringCreateWithCString.restype = c_void_p
 cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
@@ -46,7 +48,11 @@ cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 
 # Core Foundation type to Python type conversion functions
 
-def CFSTR(string):
+def CFSTR(string: str):
+    """Create a CFStringRef object.
+
+    This must eventually be released by CFRelease.
+    """
     return cf.CFStringCreateWithCString(None, string.encode('utf8'), kCFStringEncodingUTF8)
 
 # Other possible names for this method:
@@ -71,6 +77,9 @@ cf.CFDataCreate.argtypes = [c_void_p, c_void_p, CFIndex]
 
 cf.CFDataGetBytes.restype = None
 cf.CFDataGetBytes.argtypes = [c_void_p, CFRange, c_void_p]
+
+cf.CFDataGetBytePtr.restype = POINTER(c_uint8)
+cf.CFDataGetBytePtr.argtypes = [CFDataRef]
 
 cf.CFDataGetLength.restype = CFIndex
 cf.CFDataGetLength.argtypes = [c_void_p]
@@ -340,8 +349,6 @@ kCGImageAlphaNoneSkipLast           = 5
 kCGImageAlphaNoneSkipFirst          = 6
 kCGImageAlphaOnly                   = 7
 
-kCGImageAlphaPremultipliedLast = 1
-
 kCGBitmapAlphaInfoMask              = 0x1F
 kCGBitmapFloatComponents            = 1 << 8
 
@@ -379,6 +386,9 @@ quartz = cdll.LoadLibrary(lib)
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
 CGBitmapInfo = c_uint32          # CGImage.h
+CGContextRef = c_void_p
+CGFontRef = c_void_p
+CTFontRef = c_void_p
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     ImageIO.framework/Headers/CGImageProperties.h
@@ -388,6 +398,15 @@ kCGImagePropertyGIFDelayTime = c_void_p.in_dll(quartz, 'kCGImagePropertyGIFDelay
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     CoreGraphics.framework/Headers/CGColorSpace.h
 kCGRenderingIntentDefault = 0
+
+kCGTextFill = 0
+kCGTextStroke = 1
+kCGTextFillStroke = 2
+kCGTextInvisible = 3
+kCGTextFillClip = 4
+kCGTextStrokeClip = 5
+kCGTextFillStrokeClip = 6
+kCGTextClip = 7
 
 quartz.CGDisplayIDToOpenGLDisplayMask.restype = c_uint32
 quartz.CGDisplayIDToOpenGLDisplayMask.argtypes = [c_uint32]
@@ -490,6 +509,9 @@ quartz.CGDataProviderRelease.argtypes = [c_void_p]
 quartz.CGColorSpaceRelease.restype = None
 quartz.CGColorSpaceRelease.argtypes = [c_void_p]
 
+quartz.CGContextFillRect.restype = None
+quartz.CGContextFillRect.argtypes = [c_void_p, CGRect]
+
 quartz.CGWarpMouseCursorPosition.restype = CGError
 quartz.CGWarpMouseCursorPosition.argtypes = [CGPoint]
 
@@ -511,6 +533,24 @@ quartz.CGFontCreateWithDataProvider.argtypes = [c_void_p]
 quartz.CGFontCreateWithFontName.restype = c_void_p
 quartz.CGFontCreateWithFontName.argtypes = [c_void_p]
 
+quartz.CGContextSetFont.restype = None
+quartz.CGContextSetFont.argtypes = [CGContextRef, CGFontRef]
+
+quartz.CGContextSetFontSize.restype = None
+quartz.CGContextSetFontSize.argtypes = [CGContextRef, CGFloat]
+
+quartz.CGContextShowGlyphsAtPositions.restype = None
+quartz.CGContextShowGlyphsAtPositions.argtypes = [CGContextRef, POINTER(CGGlyph), POINTER(CGPoint), c_size_t]
+
+quartz.CTFontDrawGlyphs.restype = None
+quartz.CTFontDrawGlyphs.argtypes = [CTFontRef, POINTER(CGGlyph), POINTER(CGPoint), c_size_t, CGContextRef]
+
+quartz.CGContextTranslateCTM.restype = None
+quartz.CGContextTranslateCTM.argtypes = [CGContextRef, CGFloat, CGFloat]
+
+quartz.CGContextScaleCTM.restype = None
+quartz.CGContextScaleCTM.argtypes = [CGContextRef, CGFloat, CGFloat]
+
 quartz.CGContextDrawImage.restype = None
 quartz.CGContextDrawImage.argtypes = [c_void_p, CGRect, c_void_p]
 
@@ -522,6 +562,23 @@ quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
 
 quartz.CGContextSetShouldAntialias.restype = None
 quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
+
+quartz.CGContextSetTextDrawingMode.restype = None
+quartz.CGContextSetTextDrawingMode.argtypes = [c_void_p, c_int32]
+
+quartz.CGContextSetRGBFillColor.restype = None
+quartz.CGContextSetRGBFillColor.argtypes = [c_void_p, CGFloat, CGFloat, CGFloat, CGFloat]
+
+quartz.CGFontCopyTableTags.restype = c_void_p
+quartz.CGFontCopyTableTags.argtypes = [c_void_p]
+
+quartz.CGFontCopyTableForTag.restype = c_void_p
+quartz.CGFontCopyTableForTag.argtypes = [c_void_p, c_uint32]
+
+quartz.CTFontCopyGraphicsFont.restype = c_void_p
+quartz.CTFontCopyGraphicsFont.argtypes = [c_void_p, c_void_p]
+
+
 
 ######################################################################
 
@@ -543,7 +600,12 @@ kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
 kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
 kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
 kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
+kCTFontWidthTrait = c_void_p.in_dll(ct, 'kCTFontWidthTrait')
+kCTFontSlantTrait = c_void_p.in_dll(ct, 'kCTFontSlantTrait')
 kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
+kCTForegroundColorAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorAttributeName')
+kCTForegroundColorFromContextAttributeName = c_void_p.in_dll(ct, 'kCTForegroundColorFromContextAttributeName')
+kCFBooleanTrue = c_void_p.in_dll(ct, 'kCFBooleanTrue')
 
 # constants from CTFontTraits.h
 kCTFontItalicTrait = (1 << 0)
@@ -593,6 +655,15 @@ ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
 
 ct.CTFontDescriptorCopyAttribute.restype = c_void_p
 ct.CTFontDescriptorCopyAttribute.argtypes = [c_void_p, CFStringRef]
+
+ct.CTFontDescriptorCreateWithNameAndSize.restype = c_void_p
+ct.CTFontDescriptorCreateWithNameAndSize.argtypes = [CFStringRef, CGFloat]
+
+ct.CTFontDescriptorCreateMatchingFontDescriptor.restype = c_void_p
+ct.CTFontDescriptorCreateMatchingFontDescriptor.argtypes = [c_void_p, c_void_p]
+
+ct.CTFontCopyTraits.restype = c_void_p
+ct.CTFontCopyTraits.argtypes = [c_void_p]
 
 kCTFontURLAttribute = c_void_p.in_dll(ct, 'kCTFontURLAttribute')
 

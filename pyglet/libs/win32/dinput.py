@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import ctypes
+from ctypes.wintypes import BOOL, DWORD, HANDLE, HWND, LPDWORD, LPVOID, UINT, WCHAR, WORD
 
 from pyglet.libs.win32 import com
 
 lib = ctypes.oledll.dinput8
 
-LPVOID = ctypes.c_void_p
-WORD = ctypes.c_uint16
-DWORD = ctypes.c_uint32
-LPDWORD = ctypes.POINTER(DWORD)
-BOOL = ctypes.c_int
-WCHAR = ctypes.c_wchar
-UINT = ctypes.c_uint
-HWND = ctypes.c_uint32
-HANDLE = LPVOID
 MAX_PATH = 260
 
 DIENUM_STOP = 0

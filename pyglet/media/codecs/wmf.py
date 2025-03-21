@@ -1,16 +1,43 @@
+from __future__ import annotations
+
 import os
 import platform
 import warnings
+from ctypes import (
+    HRESULT,
+    POINTER,
+    Structure,
+    byref,
+    c_int32,
+    c_longlong,
+    c_uint32,
+    c_uint64,
+    c_ulonglong,
+    c_void_p,
+    cast,
+    memmove,
+    string_at,
+    windll,
+)
+from ctypes.wintypes import BOOL, DWORD, LONG, LPCWSTR, UINT, ULONG, WORD
 
 from pyglet import image
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32 import com
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import (
+    GMEM_MOVEABLE,
+    MF_ACCESSMODE_READWRITE,
+    MF_FILEFLAGS_NONE,
+    MF_OPENMODE_DELETE_IF_EXIST,
+    WINDOWS_7_OR_GREATER,
+    WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER,
+    WINDOWS_VISTA_OR_GREATER,
+)
+from pyglet.libs.win32.types import BYTE, PROPVARIANT
 from pyglet.media import Source
-from pyglet.media.codecs import AudioFormat, AudioData, VideoFormat, MediaDecoder, StaticSource
-from pyglet.util import debug_print, DecodeException
+from pyglet.media.codecs import AudioData, AudioFormat, MediaDecoder, StaticSource, VideoFormat
+from pyglet.util import DecodeException, debug_print
 
 _debug = debug_print('debug_media')
 
@@ -21,13 +48,12 @@ try:
     # System32 and SysWOW64 folders are opposite perception in Windows x64.
     # System32 = x64 dll's | SysWOW64 = x86 dlls
     # By default ctypes only seems to look in system32 regardless of Python architecture, which has x64 dlls.
-    if platform.architecture()[0] == '32bit':
-        if platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
-            mfreadwrite = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfreadwrite.dll')
-            mfplat = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfplat.dll')
+    if platform.architecture()[0] == '32bit' and platform.machine().endswith('64'):  # Machine is 64 bit, Python is 32 bit.
+        mfreadwrite = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfreadwrite.dll')
+        mfplat = os.path.join(os.environ['WINDIR'], 'SysWOW64', 'mfplat.dll')
 
-    mfreadwrite_lib = ctypes.windll.LoadLibrary(mfreadwrite)
-    mfplat_lib = ctypes.windll.LoadLibrary(mfplat)
+    mfreadwrite_lib = windll.LoadLibrary(mfreadwrite)
+    mfplat_lib = windll.LoadLibrary(mfplat)
 except OSError:
     # Doesn't exist? Should stop import of library.
     raise ImportError('Could not load WMF library.')
@@ -204,7 +230,7 @@ class IMFMediaBuffer(com.pIUnknown):
         ('SetCurrentLength',
          com.STDMETHOD(DWORD)),
         ('GetMaxLength',
-         com.STDMETHOD(POINTER(DWORD)))
+         com.STDMETHOD(POINTER(DWORD))),
     ]
 
 
@@ -316,7 +342,7 @@ class IMFSourceReader(com.pIUnknown):
     ]
 
 
-class WAVEFORMATEX(ctypes.Structure):
+class WAVEFORMATEX(Structure):
     _fields_ = [
         ('wFormatTag', WORD),
         ('nChannels', WORD),
@@ -328,11 +354,8 @@ class WAVEFORMATEX(ctypes.Structure):
     ]
 
     def __repr__(self):
-        return 'WAVEFORMATEX(wFormatTag={}, nChannels={}, nSamplesPerSec={}, nAvgBytesPersec={}' \
-               ', nBlockAlign={}, wBitsPerSample={}, cbSize={})'.format(
-            self.wFormatTag, self.nChannels, self.nSamplesPerSec,
-            self.nAvgBytesPerSec, self.nBlockAlign, self.wBitsPerSample,
-            self.cbSize)
+        return f'WAVEFORMATEX(wFormatTag={self.wFormatTag}, nChannels={self.nChannels}, nSamplesPerSec={self.nSamplesPerSec}, nAvgBytesPersec={self.nAvgBytesPerSec}' \
+               f', nBlockAlign={self.nBlockAlign}, wBitsPerSample={self.wBitsPerSample}, cbSize={self.cbSize})'
 
 
 # Stream constants
@@ -424,16 +447,16 @@ class WMFSource(Source):
                 # Stole code from GDIPlus for older IStream support.
                 hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, data_len)
                 ptr = kernel32.GlobalLock(hglob)
-                ctypes.memmove(ptr, data, data_len)
+                memmove(ptr, data, data_len)
                 kernel32.GlobalUnlock(hglob)
 
                 # Create IStream
                 self._stream_obj = com.pIUnknown()
-                ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
+                ole32.CreateStreamOnHGlobal(hglob, True, byref(self._stream_obj))
 
                 # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
-                # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
-                MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(self._imf_bytestream))
+                # (Also unsure how/if new Windows async functions and callbacks work with )
+                MFCreateMFByteStreamOnStream(self._stream_obj, byref(self._imf_bytestream))
             else:
                 # Vista does not support MFCreateMFByteStreamOnStream.
                 # HACK: Create file in Windows temp folder to write our byte data to.
@@ -441,24 +464,24 @@ class WMFSource(Source):
                 MFCreateTempFile(MF_ACCESSMODE_READWRITE,
                                  MF_OPENMODE_DELETE_IF_EXIST,
                                  MF_FILEFLAGS_NONE,
-                                 ctypes.byref(self._imf_bytestream))
+                                 byref(self._imf_bytestream))
 
                 wrote_length = ULONG()
                 data_ptr = cast(data, POINTER(BYTE))
-                self._imf_bytestream.Write(data_ptr, data_len, ctypes.byref(wrote_length))
+                self._imf_bytestream.Write(data_ptr, data_len, byref(wrote_length))
                 self._imf_bytestream.SetCurrentPosition(0)
 
                 if wrote_length.value != data_len:
                     raise DecodeException("Could not write all of the data to the bytestream file.")
 
             try:
-                MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
+                MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, byref(self._source_reader))
             except OSError as err:
                 raise DecodeException(err) from None
         else:
             # We can just load from filename if no file object specified..
             try:
-                MFCreateSourceReaderFromURL(filename, self._attributes, ctypes.byref(self._source_reader))
+                MFCreateSourceReaderFromURL(filename, self._attributes, byref(self._source_reader))
             except OSError as err:
                 raise DecodeException(err) from None
 
@@ -474,17 +497,17 @@ class WMFSource(Source):
         try:
             prop = PROPVARIANT()
             self._source_reader.GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE,
-                                                         ctypes.byref(MF_PD_DURATION),
-                                                         ctypes.byref(prop))
+                                                         byref(MF_PD_DURATION),
+                                                         byref(prop))
 
             self._duration = timestamp_from_wmf(prop.llVal)
-            ole32.PropVariantClear(ctypes.byref(prop))
+            ole32.PropVariantClear(byref(prop))
         except OSError:
-            warnings.warn("Could not determine duration of media file: '{}'.".format(filename))
+            warnings.warn(f"Could not determine duration of media file: '{filename}'.")
 
     def _load_audio(self, stream=MF_SOURCE_READER_FIRST_AUDIO_STREAM):
-        """ Prepares the audio stream for playback by detecting if it's compressed and attempting to decompress to PCM.
-            Default: Only get the first available audio stream.
+        """Prepares the audio stream for playback by detecting if it's compressed and attempting to decompress to PCM.
+        Default: Only get the first available audio stream.
         """
         # Will be an audio file.
         self._audio_stream_index = stream
@@ -493,7 +516,7 @@ class WMFSource(Source):
         imfmedia = IMFMediaType()
 
         try:
-            self._source_reader.GetNativeMediaType(self._audio_stream_index, 0, ctypes.byref(imfmedia))
+            self._source_reader.GetNativeMediaType(self._audio_stream_index, 0, byref(imfmedia))
         except OSError as err:
             if err.winerror == MF_E_INVALIDSTREAMNUMBER:
                 assert _debug('WMFAudioDecoder: No audio stream found.')
@@ -503,7 +526,7 @@ class WMFSource(Source):
         # TODO: Make GUID take no arguments for a null version:
         guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-        imfmedia.GetGUID(MF_MT_MAJOR_TYPE, ctypes.byref(guid_audio_type))
+        imfmedia.GetGUID(MF_MT_MAJOR_TYPE, byref(guid_audio_type))
 
         if guid_audio_type == MFMediaType_Audio:
             assert _debug('WMFAudioDecoder: Found Audio Stream.')
@@ -517,7 +540,7 @@ class WMFSource(Source):
 
             # Check sub media type, AKA what kind of codec
             guid_compressed = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-            imfmedia.GetGUID(MF_MT_SUBTYPE, ctypes.byref(guid_compressed))
+            imfmedia.GetGUID(MF_MT_SUBTYPE, byref(guid_compressed))
 
             if guid_compressed == MFAudioFormat_PCM or guid_compressed == MFAudioFormat_Float:
                 assert _debug(f'WMFAudioDecoder: Found Uncompressed Audio: {guid_compressed}')
@@ -526,7 +549,7 @@ class WMFSource(Source):
                 # If audio is compressed, attempt to decompress it by forcing source reader to use PCM
                 mf_mediatype = IMFMediaType()
 
-                MFCreateMediaType(ctypes.byref(mf_mediatype))
+                MFCreateMediaType(byref(mf_mediatype))
                 mf_mediatype.SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio)
                 mf_mediatype.SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM)
 
@@ -537,14 +560,14 @@ class WMFSource(Source):
 
             # Current media type should now be properly decoded at this point.
             decoded_media_type = IMFMediaType()  # Maybe reusing older IMFMediaType will work?
-            self._source_reader.GetCurrentMediaType(self._audio_stream_index, ctypes.byref(decoded_media_type))
+            self._source_reader.GetCurrentMediaType(self._audio_stream_index, byref(decoded_media_type))
 
-            wfx_length = ctypes.c_uint32()
+            wfx_length = c_uint32()
             wfx = POINTER(WAVEFORMATEX)()
 
             MFCreateWaveFormatExFromMFMediaType(decoded_media_type,
-                                                ctypes.byref(wfx),
-                                                ctypes.byref(wfx_length),
+                                                byref(wfx),
+                                                byref(wfx_length),
                                                 0)
 
             self._wfx = wfx.contents
@@ -565,7 +588,7 @@ class WMFSource(Source):
         imfmedia = IMFMediaType()
 
         try:
-            self._source_reader.GetCurrentMediaType(self._video_stream_index, ctypes.byref(imfmedia))
+            self._source_reader.GetCurrentMediaType(self._video_stream_index, byref(imfmedia))
         except OSError as err:
             if err.winerror == MF_E_INVALIDSTREAMNUMBER:
                 assert _debug('WMFVideoDecoder: No video stream found.')
@@ -575,7 +598,7 @@ class WMFSource(Source):
 
         # All video is basically compressed, try to decompress.
         uncompressed_mt = IMFMediaType()
-        MFCreateMediaType(ctypes.byref(uncompressed_mt))
+        MFCreateMediaType(byref(uncompressed_mt))
 
         imfmedia.CopyAllItems(uncompressed_mt)
 
@@ -593,12 +616,12 @@ class WMFSource(Source):
         height, width = self._get_attribute_size(uncompressed_mt, MF_MT_FRAME_SIZE)
 
         self.video_format = VideoFormat(width=width, height=height)
-        assert _debug('WMFVideoDecoder: Frame width: {} height: {}'.format(width, height))
+        assert _debug(f'WMFVideoDecoder: Frame width: {width} height: {height}')
 
         # Frame rate
         den, num = self._get_attribute_size(uncompressed_mt, MF_MT_FRAME_RATE)
         self.video_format.frame_rate = num / den
-        assert _debug('WMFVideoDecoder: Frame Rate: {} / {} = {}'.format(num, den, self.video_format.frame_rate))
+        assert _debug(f'WMFVideoDecoder: Frame Rate: {num} / {den} = {self.video_format.frame_rate}')
 
         # Sometimes it can return negative? Variable bit rate? Needs further tests and examples.
         if self.video_format.frame_rate < 0:
@@ -608,18 +631,18 @@ class WMFSource(Source):
         # Pixel ratio
         den, num = self._get_attribute_size(uncompressed_mt, MF_MT_PIXEL_ASPECT_RATIO)
         self.video_format.sample_aspect = num / den
-        assert _debug('WMFVideoDecoder: Pixel Ratio: {} / {} = {}'.format(num, den, self.video_format.sample_aspect))
+        assert _debug(f'WMFVideoDecoder: Pixel Ratio: {num} / {den} = {self.video_format.sample_aspect}')
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         flags = DWORD()
-        timestamp = ctypes.c_longlong()
+        timestamp = c_longlong()
 
         imf_sample = IMFSample()
         imf_buffer = IMFMediaBuffer()
 
         while True:
-            self._source_reader.ReadSample(self._audio_stream_index, 0, None, ctypes.byref(flags),
-                                           ctypes.byref(timestamp), ctypes.byref(imf_sample))
+            self._source_reader.ReadSample(self._audio_stream_index, 0, None, byref(flags),
+                                           byref(timestamp), byref(imf_sample))
 
             if flags.value & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED:
                 assert _debug('WMFAudioDecoder: Data is no longer valid.')
@@ -634,14 +657,14 @@ class WMFSource(Source):
                 continue
 
             # Convert to single buffer as a sample could potentially(rarely) have multiple buffers.
-            imf_sample.ConvertToContiguousBuffer(ctypes.byref(imf_buffer))
+            imf_sample.ConvertToContiguousBuffer(byref(imf_buffer))
 
             audio_data_ptr = POINTER(BYTE)()
             audio_data_length = DWORD()
 
-            imf_buffer.Lock(ctypes.byref(audio_data_ptr), None, ctypes.byref(audio_data_length))
+            imf_buffer.Lock(byref(audio_data_ptr), None, byref(audio_data_length))
 
-            audio_data = ctypes.string_at(audio_data_ptr, audio_data_length.value)
+            audio_data = string_at(audio_data_ptr, audio_data_length.value)
 
             imf_buffer.Unlock()
             imf_buffer.Release()
@@ -658,7 +681,7 @@ class WMFSource(Source):
     def get_next_video_frame(self, skip_empty_frame=True):
         video_data_length = DWORD()
         flags = DWORD()
-        timestamp = ctypes.c_longlong()
+        timestamp = c_longlong()
 
         if self._current_video_sample:
             self._current_video_buffer.Release()
@@ -668,20 +691,20 @@ class WMFSource(Source):
         self._current_video_buffer = IMFMediaBuffer()
 
         while True:
-            self._source_reader.ReadSample(self._video_stream_index, 0, None, ctypes.byref(flags),
-                                           ctypes.byref(timestamp), ctypes.byref(self._current_video_sample))
+            self._source_reader.ReadSample(self._video_stream_index, 0, None, byref(flags),
+                                           byref(timestamp), byref(self._current_video_sample))
 
             if flags.value & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED:
                 assert _debug('WMFVideoDecoder: Data is no longer valid.')
 
                 # Get Major media type (Audio, Video, etc)
                 new = IMFMediaType()
-                self._source_reader.GetCurrentMediaType(self._video_stream_index, ctypes.byref(new))
+                self._source_reader.GetCurrentMediaType(self._video_stream_index, byref(new))
 
                 # Sometimes this happens once. I think this only
                 # changes if the stride is added/changed before playback?
-                stride = ctypes.c_uint32()
-                new.GetUINT32(MF_MT_DEFAULT_STRIDE, ctypes.byref(stride))
+                stride = c_uint32()
+                new.GetUINT32(MF_MT_DEFAULT_STRIDE, byref(stride))
                 new.Release()
 
                 self._stride = stride.value
@@ -698,16 +721,16 @@ class WMFSource(Source):
             self._current_video_buffer = IMFMediaBuffer()
 
             # Convert to single buffer as a sample could potentially have multiple buffers.
-            self._current_video_sample.ConvertToContiguousBuffer(ctypes.byref(self._current_video_buffer))
+            self._current_video_sample.ConvertToContiguousBuffer(byref(self._current_video_buffer))
 
             video_data = POINTER(BYTE)()
 
-            self._current_video_buffer.Lock(ctypes.byref(video_data), None, ctypes.byref(video_data_length))
+            self._current_video_buffer.Lock(byref(video_data), None, byref(video_data_length))
 
             width = self.video_format.width
             height = self.video_format.height
 
-            # buffer = ctypes.create_string_buffer(size)
+            # buffer = create_string_buffer(size)
             self._timestamp = timestamp_from_wmf(timestamp.value)
 
             self._current_video_buffer.Unlock()
@@ -734,36 +757,35 @@ class WMFSource(Source):
         except OSError as err:
             warnings.warn(str(err))
 
-        ole32.PropVariantClear(ctypes.byref(prop))
+        ole32.PropVariantClear(byref(prop))
 
     @staticmethod
     def _get_attribute_size(attributes, guidKey):
-        """ Convert int64 attributes to int32"""  # HI32/LOW32
-
-        size = ctypes.c_uint64()
+        """Convert int64 attributes to int32"""  # HI32/LOW32
+        size = c_uint64()
         attributes.GetUINT64(guidKey, size)
         lParam = size.value
 
-        x = ctypes.c_int32(lParam).value
-        y = ctypes.c_int32(lParam >> 32).value
+        x = c_int32(lParam).value
+        y = c_int32(lParam >> 32).value
         return x, y
 
     def set_config_attributes(self):
-        """ Here we set user specified attributes, by default we try to set low latency mode. (Win7+)"""
+        """Here we set user specified attributes, by default we try to set low latency mode. (Win7+)"""
         if self.low_latency or self.decode_video:
             self._attributes = IMFAttributes()
 
-            MFCreateAttributes(ctypes.byref(self._attributes), 3)
+            MFCreateAttributes(byref(self._attributes), 3)
 
         if self.low_latency and WINDOWS_7_OR_GREATER:
-            self._attributes.SetUINT32(ctypes.byref(MF_LOW_LATENCY), 1)
+            self._attributes.SetUINT32(byref(MF_LOW_LATENCY), 1)
 
             assert _debug('WMFAudioDecoder: Setting configuration attributes.')
 
         # If it's a video we need to enable the streams to be accessed.
         if self.decode_video:
-            self._attributes.SetUINT32(ctypes.byref(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS), 1)
-            self._attributes.SetUINT32(ctypes.byref(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING), 1)
+            self._attributes.SetUINT32(byref(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS), 1)
+            self._attributes.SetUINT32(byref(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING), 1)
 
             assert _debug('WMFVideoDecoder: Setting configuration attributes.')
 
@@ -830,8 +852,7 @@ class WMFDecoder(MediaDecoder):
     def decode(self, filename, file, streaming=True):
         if streaming:
             return WMFSource(filename, file)
-        else:
-            return StaticSource(WMFSource(filename, file))
+        return StaticSource(WMFSource(filename, file))
 
     def __del__(self):
         if self.MFShutdown is not None:

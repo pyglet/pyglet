@@ -62,7 +62,7 @@ def test_memory_face(test_data, font_file_name, font_name, bold, italic):
     """Test loading a font into memory using FreeTypeMemoryFont."""
     with open(test_data.get_file('fonts', font_file_name), 'rb') as font_file:
         font_data = font_file.read()
-    font = FreeTypeMemoryFace(font_data)
+    font = FreeTypeMemoryFace(font_data, 0)
 
     assert font.name == font_name
     assert font.bold == bold
@@ -77,7 +77,10 @@ def test_memory_face(test_data, font_file_name, font_name, bold, italic):
     ('action_man.ttf', 16, 96, 15, -4),
     ('action_man.ttf', 10, 96, 9, -3),
     ('action_man.ttf', 16, 72, 11, -3),
-    ('courR12-ISO8859-1.pcf', 16, 96, 15, -4),
+    ('courR12-ISO8859-1.pcf', 16, 96, 12, -3),
+
+    # A fixed bitmap size font. Will fail if render size is used. Keep for legacy info.
+    # ('courR12-ISO8859-1.pcf', 16, 96, 15, -4),
     ])
 def test_face_metrics(test_data, font_file_name, size, dpi, ascent, descent):
     """Test a face from file and check the metrics."""
