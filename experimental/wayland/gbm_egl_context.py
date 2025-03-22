@@ -1,21 +1,9 @@
-# from ctypes import *
-#
-# from . import xkbcommon
-#
-#
-# ctx = xkbcommon.xkb_context_new(xkbcommon.XKB_CONTEXT_NO_FLAGS)
-# print(ctx)
-#
-# # TODO: get a real string from Wayland:
-# keymap_string = create_string_buffer(b"ACTUAL KEYMAP STRING HERE")
-#
-# keymap = xkbcommon.xkb_keymap_new_from_string(ctx, keymap_string, xkbcommon.XKB_KEYMAP_FORMAT_TEXT_V1,
-#                                               xkbcommon.XKB_KEYMAP_COMPILE_NO_FLAGS)
-# print(keymap)
-#
-# state = xkbcommon.xkb_state_new(keymap)
-
 import os
+
+from pyglet.libs.linux.egl.egl import *
+from pyglet.libs.linux.egl.eglext import *
+from pyglet.libs.linux.wayland.gbm import *
+
 
 assert eglBindAPI(EGL_OPENGL_API) == EGL_TRUE
 
