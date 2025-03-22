@@ -345,7 +345,6 @@ class EventDispatcher:
             "EventDispatcher.register_event_type('event_name')."
         )
         assert event_type in self.event_types, f"{event_type} not found in {self}.event_types == {self.event_types}"
-
         invoked = False
 
         # Search handler stack for matching event handlers

@@ -23,7 +23,6 @@ import weakref
 from typing import TYPE_CHECKING, BinaryIO, Iterable
 
 import pyglet
-from pyglet.graphics.api import global_backend
 from pyglet.font.user import UserDefinedFontBase
 
 if TYPE_CHECKING:
@@ -47,9 +46,12 @@ def _get_system_font_class() -> type[Font]:
         else:
             from pyglet.font.win32 import GDIPlusFont
             _font_class = GDIPlusFont
-    else:
+    elif pyglet.compat_platform == "linux":
         from pyglet.font.freetype import FreeTypeFont
         _font_class = FreeTypeFont
+    elif pyglet.compat_platform == "emscripten":
+        from pyglet.font.pyodide_js import PyodideFont
+        _font_class = PyodideFont
 
     return _font_class
 
@@ -72,6 +74,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
         raise Exception(msg)
 
     # Locate or create font cache
+    from pyglet.graphics.api import global_backend
     shared_object_space = global_backend.current_context.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
@@ -139,6 +142,7 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, wei
 
     # Locate or create font cache
     #shared_object_space = global_backend.current_context.object_space
+    from pyglet.graphics.api import global_backend
     shared_object_space = global_backend.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()

@@ -40,6 +40,15 @@ elif pyglet.options.backend == "gles2":
     from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch, get_default_blit_shader
     from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
 
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl import WebGLBackend
+
+    global_backend = WebGLBackend()
+
+    from pyglet.graphics.api.webgl.draw import Batch
+    from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.webgl.shader import ShaderProgram, Shader, ComputeShaderProgram
+
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.instance import VulkanGlobal
     global_backend = VulkanGlobal()

@@ -1,249 +1,205 @@
 from __future__ import annotations
 
-import weakref
-from typing import Any, Callable, Sequence, Tuple, TYPE_CHECKING
+from typing import Callable, Sequence, Any, TYPE_CHECKING
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp, CompareOp
-from pyglet.graphics import GeometryMode
-from pyglet.graphics.api.webgl import vertexdomain
-from pyglet.graphics.state import (
-    State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
-    DepthBufferComparison, ScissorState,
+from pyglet.graphics.api.webgl.enums import geometry_map
+from pyglet.graphics.api.webgl.gl import glGetParameter
+
+from pyglet.graphics.draw import DomainKey, BatchBase, Group
+from pyglet.graphics.api.webgl import (
+   vertexdomain,
 )
-
-if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
-    from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList
-    from pyglet.graphics.shader import ShaderProgramBase
-
-
-
-
-
-
-class Group:
-    """Group of common state.
-
-    ``Group`` provides extra control over how drawables are handled within a
-    ``Batch``. When a batch draws a drawable, it ensures its group's state is set;
-    this can include binding textures, shaders, or setting any other parameters.
-    It also sorts the groups before drawing.
-
-    In the following example, the background sprite is guaranteed to be drawn
-    before the car and the boat::
-
-        batch = pyglet.graphics.Batch()
-        background = pyglet.graphics.Group(order=0)
-        foreground = pyglet.graphics.Group(order=1)
-
-        background = pyglet.sprite.Sprite(background_image, batch=batch, group=background)
-        car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
-        boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
-
-        def on_draw():
-            batch.draw()
-    """
-    _hash: int
-    hashable_states: tuple
-
-    def __init__(self, order: int = 0, parent: Group | None = None) -> None:
-        """Initialize a rendering group.
-
-        Args:
-            order:
-                Set the order to render above or below other Groups.
-                Lower orders are drawn first.
-            parent:
-                Group to contain this Group; its state will be set before this Group's state.
-        """
-        self._order = order
-        self.parent = parent
-        self._visible = True
-        self._assigned_batches = weakref.WeakSet()
-
-        self.state_names = {}
-        self.states = []
-
-        # Store data on the group for states to use during their state call.
-        self.data = { "uniform" : {}}
-
-        # Default hash
-        self.hashable_states = ()
-        self._hash = hash((self._order, self.parent))
-
-        # When dirty, it needs to be recalculated.
-        self._dirty = False
-
-    def set_state(self):
-        pass
-
-    def unset_state(self):
-        pass
-
-    @property
-    def dirty(self) -> bool:
-        """The group requires a recalculation of it's state."""
-        return self._dirty
-
-    def _add_state(self, state: State) -> None:
-        self.states.append(state)
-        self.state_names[state.__class__.__name__] = state
-
-        self.hashable_states = tuple({state for state in self.states if state.group_hash is True})
-        self._hash = hash((self._order, self.parent, self.hashable_states))
-        self._dirty = True
-
-    def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
-        self.data["scissor"] = [x, y, width, height]
-        self._add_state(ScissorState(self))
-
-    def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD):
-        self._add_state(BlendState(blend_src, blend_dst, blend_op))
-
-    def set_depth_test(self, func: CompareOp) -> None:
-        self._add_state(DepthBufferComparison(func))
-
-    def set_depth_write(self, flag):
-        self._add_state(DepthWriteState(flag))
-
-    def set_stencil(self, func, ref, mask, fail, zfail, zpass):
-        self._add_state("stencil_func", func, ref, mask)
-        self._add_state("stencil_op", fail, zfail, zpass)
-
-    def set_polygon_mode(self, face, mode):
-        self._add_state("polygon_mode", face, mode)
-
-    def set_viewport(self, x, y, width, height):
-        self._add_state(ViewportState(x, y, width, height))
-
-    def set_shader_program(self, program: ShaderProgramBase):
-        self._add_state(ShaderProgramState(program))
-
-    def set_shader_uniform(self, program: ShaderProgramBase, name: str, value: float | Sequence):
-        self.data[name] = value  # Initial data.
-        self._add_state(ShaderUniformState(program, name, self))
-
-    def update_data(self, name: str, value: Any) -> None:
-        self.data[name] = value
-
-    def set_texture(self, texture: TextureBase, texture_unit: int=0, set_id: int=0) -> None:
-        """Set the texture state.
-
-        Args:
-            texture:
-                The Texture instance that this draw call uses.
-            texture_unit:
-                The binding unit this Texture/Sampler is bound to.
-                In OpenGL this is the Active Texture (glActiveTexture).
-                In Vulkan this is the Sampler binding number in the descriptor.
-            set_id:
-                The set that the sampler belongs to. Only applicable in Vulkan.
-        """
-        self._add_state(TextureState(texture, texture_unit, set_id))
-
-    def set_uniform_buffer(self, ubo, binding: int):
-        self._add_state(UniformBufferState(ubo, binding))
-
-    @property
-    def order(self) -> int:
-        """Rendering order of this group compared to others.
-
-        Lower numbers are drawn first.
-        """
-        return self._order
-
-    @property
-    def visible(self) -> bool:
-        """Visibility of the group in the rendering pipeline.
-
-        Determines whether this Group is visible in any of the Batches
-        it is assigned to. If ``False``, objects in this Group will not
-        be rendered.
-        """
-        return self._visible
-
-    @visible.setter
-    def visible(self, value: bool) -> None:
-        self._visible = value
-
-        for batch in self._assigned_batches:
-            batch.invalidate()
-
-    @property
-    def batches(self) -> tuple[BatchBase, ...]:
-        """Which graphics Batches this Group is a part of.
-
-        Read Only.
-        """
-        return tuple(self._assigned_batches)
-
-    def __lt__(self, other: Group) -> bool:
-        return self._order < other.order
-
-    def __eq__(self, other: Group) -> bool:
-        """Comparison function used to determine if another Group is providing the same state.
-
-        When the same state is determined, those groups will be consolidated into one draw call.
-
-        If subclassing, then care must be taken to ensure this function can compare to another of the same group.
-
-        :see: ``__hash__`` function, both must be implemented.
-        """
-        return (self.__class__ is other.__class__ and
-                self._order == other.order and
-                self.parent == other.parent and
-                self.hashable_states == other.hashable_states)
-
-    def __hash__(self) -> int:
-        """This is an immutable return to establish the permanent identity of the object.
-
-        This is used by Python with ``__eq__`` to determine if something is unique.
-
-        For simplicity, the hash should be a tuple containing your unique identifiers of your Group.
-
-        By default, this is (``order``, ``parent``).
-
-        :see: ``__eq__`` function, both must be implemented.
-        """
-        return self._hash
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(order={self._order})"
-
-    def set_state_recursive(self) -> None:
-        """Set this group and its ancestry.
-
-        Call this method if you are using a group in isolation: the
-        parent groups will be called in top-down order, with this class's
-        ``set`` being called last.
-        """
-        if self.parent:
-            self.parent.set_state_recursive()
-        self.set_state()
-
-    def unset_state_recursive(self) -> None:
-        """Unset this group and its ancestry.
-
-        The inverse of ``set_state_recursive``.
-        """
-        self.unset_state()
-        if self.parent:
-            self.parent.unset_state_recursive()
-
+from pyglet.graphics.state import State
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
-_domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
+
+if TYPE_CHECKING:
+    from pyglet.graphics import GeometryMode
+    from pyglet.graphics.api.gl2.shader import ShaderProgram
+    from pyglet.graphics.api.gl.vertexdomain import VertexList, IndexedVertexList
+
+
+# Default Shader source:
+
+_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec4 colors;
+    in vec3 tex_coords;
+    out vec4 vertex_colors;
+    out vec3 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+_fragment_source: str = """#version 330 core
+    in vec4 vertex_colors;
+    in vec3 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
+    }
+"""
+
+# Default blit source
+_blit_vertex_source: str = """#version 330 core
+    in vec3 position;
+    in vec3 tex_coords;
+    out vec3 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
+
+        texture_coords = tex_coords;
+    }
+"""
+
+_blit_fragment_source: str = """#version 330 core
+    in vec3 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords.xy);
+    }
+"""
+
+
+def get_default_batch() -> Batch:
+    """Batch used globally for objects that have no Batch specified."""
+    return pyglet.graphics.api.global_backend.get_default_batch()
+    # try:
+    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+    # except AttributeError:
+    #     pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch = Batch()
+    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+
+
+def get_default_shader() -> ShaderProgram:
+    """A default basic shader for default batches."""
+    return pyglet.graphics.api.global_backend.get_cached_shader(
+        "default_graphics",
+        (_vertex_source, 'vertex'),
+        (_fragment_source, 'fragment'),
+    )
+
+
+def get_default_blit_shader() -> ShaderProgram:
+    """A default basic shader for blitting, provides no blending."""
+    return pyglet.graphics.api.global_backend.get_cached_shader(
+        "default_blit",
+        (_blit_vertex_source, 'vertex'),
+        (_blit_fragment_source, 'fragment'),
+    )
+
+
+
+
+_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     # Indexed, Instanced : Domain
     (False, False): vertexdomain.VertexDomain,
-   (True, False): vertexdomain.IndexedVertexDomain,
-   (False, True): vertexdomain.InstancedVertexDomain,
-    (True, True): vertexdomain.InstancedIndexedVertexDomain,
+    (True, False): vertexdomain.IndexedVertexDomain,
+    (False, True): vertexdomain.InstancedVertexDomain,
+   (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
-DomainKey = Tuple[bool, int, GeometryMode, str]
 
 
-class BatchBase:
+class StateManager:
+    def __init__(self):
+        self.active_states = {}
+
+    def get_state_funcs(self, states: list[State]) -> tuple[list[callable], list[callable]]:
+        set_functions = []
+        unset_functions = []
+        new_states = {}
+
+        # Collect all states and their dependencies
+        all_states = []
+        for state in states:
+            if state.dependents:
+                all_states.extend(state.generate_dependent_states())
+            all_states.append(state)
+
+        # Process states in dependency order
+        for state in all_states:
+            state_type = type(state)
+
+            # Handle replacement logic
+            if state_type in self.active_states:
+                current_state = self.active_states[state_type]
+                if state != current_state:
+                    # Call unset only if the flag is enabled
+                    #if current_state.unsets_state and current_state.call_unset_on_replace:
+                    #    unset_functions.append(current_state.unset_state)
+                    if state.sets_state:
+                        set_functions.append(state.set_state)
+            else:
+                # New state, add its set function if applicable
+                if state.sets_state:
+                    set_functions.append(state.set_state)
+
+            # Update new states
+            new_states[state_type] = state
+
+        # Determine which states were removed
+        removed_states = {
+            state_type: self.active_states[state_type]
+            for state_type in self.active_states
+            if state_type not in new_states
+        }
+
+        for state in removed_states.values():
+            if state.unsets_state:
+                unset_functions.append(state.unset_state)
+
+        # Update active states
+        self.active_states = new_states
+
+        return set_functions, unset_functions
+
+    def get_cleanup_states(self) -> list[callable]:
+        """Return a list of functions to unset all active states.
+
+        Clears the active states in the process. This is done at the end of the batch draw.
+        """
+        unset_functions = [
+            state.unset_state for state in self.active_states.values() if state.unsets_state
+        ]
+        self.active_states.clear()
+        return unset_functions
+
+
+# Singleton instance for all batches. (How to cleanup state between all batches?)
+import js
+_state_manager: StateManager = StateManager()
+canvas = js.document.getElementById("pygletCanvas")
+_gl_context = canvas.getContext("webgl2")
+class Batch(BatchBase):
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
@@ -273,24 +229,14 @@ class BatchBase:
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
 
     def __init__(self) -> None:
         """Create a graphics batch."""
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
-        self.group_map = {}
-
-        # Mapping of group to list of children.
-        self.group_children = {}
-
-        # List of top-level groups
-        self.top_groups = []
-
-        self._draw_list = []
-        self._draw_list_dirty = False
-
-        self._instance_count = 0
+        super().__init__()
+        self._context = pyglet.graphics.api.global_backend.current_context
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
@@ -303,7 +249,7 @@ class BatchBase:
         self._draw_list_dirty = True
 
     def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                      program: ShaderProgramBase) -> bool:
+                      program: ShaderProgram) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
         The results are undefined if `mode` is not correct or if `vertex_list`
@@ -342,7 +288,8 @@ class BatchBase:
 
         return True
 
-    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: BatchBase) -> None:
+    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
+                batch: Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -369,8 +316,32 @@ class BatchBase:
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
         vertex_list.migrate(domain)
 
+    def _convert_to_instanced(self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain,
+                              instance_attributes: Sequence[
+                                  str]) -> (vertexdomain.InstancedVertexDomain |
+                                            vertexdomain.InstancedIndexedVertexDomain):
+        """Takes a domain from inside the Batch and creates a new instanced version."""
+        # Search for the existing domain.
+        for group, domain_map in self.group_map.items():
+            for key, mapped_domain in domain_map.items():
+                if domain == mapped_domain:
+                    # Set instance attributes.
+                    new_attributes = mapped_domain.attribute_meta.copy()
+                    for name, attribute_dict in new_attributes.items():
+                        if name in instance_attributes:
+                            attribute_dict['instance'] = True
+                    dindexed, dinstanced, dmode, _ = key
+
+                    assert dinstanced == 0, "Cannot convert an instanced domain."
+                    return self.get_domain(dindexed, True, dmode, group, new_attributes)
+
+        msg = "Domain was not found and could not be converted."
+        raise Exception(msg)
+
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> VertexDomain:
+                   attributes: dict[str, Any]) -> (
+            vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain |
+            vertexdomain.InstancedIndexedVertexDomain):
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -428,7 +399,7 @@ class BatchBase:
                 if domain.is_empty:
                     del domain_map[(indexed, instanced, mode, formats)]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))  # noqa: PLC3002
+                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
@@ -439,7 +410,8 @@ class BatchBase:
                         draw_list.extend(visit(child))
 
             if children or domain_map:
-                return [group.set_state, *draw_list, group.unset_state]
+                set_funcs, unset_funcs = _state_manager.get_state_funcs(group.states)
+                return [*set_funcs, *draw_list, *unset_funcs]
 
             # Remove unused group from batch
             del self.group_map[group]
@@ -463,6 +435,8 @@ class BatchBase:
         for top_group in list(self.top_groups):
             if top_group.visible:
                 self._draw_list.extend(visit(top_group))
+
+        self._draw_list.extend(_state_manager.get_cleanup_states())
 
         self._draw_list_dirty = False
 
@@ -541,12 +515,3 @@ class BatchBase:
         for top_group in self.top_groups:
             if top_group.visible:
                 visit(top_group)
-
-
-class ShaderGroup(Group):
-    """A group that enables and binds a ShaderProgram."""
-
-    def __init__(self, program: ShaderProgramBase, order: int = 0, parent: Group | None = None) -> None:
-        super().__init__(order, parent)
-        self.set_shader_program(program)
-

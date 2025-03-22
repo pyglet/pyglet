@@ -86,6 +86,8 @@ if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.shapes import _ShapeGroup, get_default_shader
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.shapes import _ShapeGroup, get_default_shader
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.shapes import _ShapeGroup, get_default_shader
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.shapes import _ShapeGroup, get_default_shader
 

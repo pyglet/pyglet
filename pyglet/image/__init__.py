@@ -99,7 +99,6 @@ from typing import TYPE_CHECKING, BinaryIO, Sequence
 
 import pyglet
 
-from .base import TextureFilter
 
 
 if TYPE_CHECKING:
@@ -120,6 +119,19 @@ if pyglet.options.backend in ("opengl", "gl2", "gles2"):
     from pyglet.graphics.api.gl.image import GLTextureArrayRegion as TextureArrayRegion
     from pyglet.graphics.api.gl.image import GLTextureRegion as TextureRegion
     from pyglet.graphics.api.gl.image import get_buffer_manager, get_max_texture_size
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.image import GLBufferImage as BufferImage
+    from pyglet.graphics.api.webgl.image import GLBufferImageMask as BufferImageMask
+    from pyglet.graphics.api.webgl.image import GLBufferManager as BufferManager
+    from pyglet.graphics.api.webgl.image import GLDepthBufferImage as DepthBufferImage
+    from pyglet.graphics.api.webgl.image import GLImageData as ImageData
+    from pyglet.graphics.api.webgl.image import GLImageDataRegion as ImageDataRegion
+    from pyglet.graphics.api.webgl.image import GLTexture as Texture
+    from pyglet.graphics.api.webgl.image import GLTexture3D as Texture3D
+    from pyglet.graphics.api.webgl.image import GLTextureArray as TextureArray
+    from pyglet.graphics.api.webgl.image import GLTextureArrayRegion as TextureArrayRegion
+    from pyglet.graphics.api.webgl.image import GLTextureRegion as TextureRegion
+    from pyglet.graphics.api.webgl.image import get_buffer_manager, get_max_texture_size
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageData
     from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageDataRegion

@@ -52,9 +52,11 @@ else:
             from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
-    else:
+    elif compat_platform == 'linux':
         from pyglet.app.xlib import XlibEventLoop as PlatformEventLoop
-
+    elif compat_platform == 'emscripten':
+        from pyglet.app.async_app import AsyncPlatformEventLoop as PlatformEventLoop
+        from pyglet.app.async_app import AsyncEventLoop as EventLoop
 
 class AppException(Exception):
     pass
@@ -76,7 +78,11 @@ def run(interval: float | None = 1 / 60) -> None:
         pyglet.app.event_loop.run(interval)
 
     """
-    event_loop.run(interval)
+    if pyglet.compat_platform == "emscripten":
+        import asyncio
+        task = asyncio.create_task(event_loop.run())
+    else:
+        event_loop.run(interval)
 
 
 def exit() -> None:
@@ -91,7 +97,13 @@ def exit() -> None:
         pyglet.app.event_loop.exit()
 
     """
-    event_loop.exit()
+    if pyglet.compat_platform == "emscripten":
+        import asyncio
+        asyncio.create_task(event_loop.exit())
+    else:
+        event_loop.exit()
+
+
 
 
 #: The global event loop. Applications can replace this

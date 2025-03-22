@@ -44,6 +44,12 @@ elif pyglet.options.backend in ("gl2", "gles2"):
         get_default_layout_shader,
         get_default_image_layout_shader,
     )
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.text import (
+        get_default_decoration_shader,
+        get_default_layout_shader,
+        get_default_image_layout_shader,
+    )
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.text import (
         get_default_decoration_shader,
@@ -654,8 +660,10 @@ class TextDecorationGroup(Group):
     #     glDisable(GL_BLEND)
     #     self.program.stop()
 
-if "gl" in pyglet.options.backend :
+if pyglet.options.backend in ("opengl", "gles2", "gl2"):
     from pyglet.graphics.api.gl.text import TextDecorationGroup, TextLayoutGroup
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.text import TextDecorationGroup, TextLayoutGroup
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.text import TextDecorationGroup, TextLayoutGroup
 

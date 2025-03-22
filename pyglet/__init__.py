@@ -293,7 +293,7 @@ class Options:
     .. versionadded:: 2.0.16
     """
 
-    backend: str | None = "opengl"
+    backend: str | None = "webgl"
     """Specify the graphics API backend."""
 
     def get(self, item: str, default: Any = None) -> Any:
