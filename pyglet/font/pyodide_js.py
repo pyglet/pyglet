@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import BinaryIO, TYPE_CHECKING
 
 try:
@@ -32,11 +33,8 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
     def render(self, text: str) -> Glyph:
         _font_context.font = self.font.js_name
         metrics = _font_context.measureText(text)
-        text_width = int(metrics.width)
-        text_height = int(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
-        padding = 0  # Prevents text cutoff
-        w = max(1, text_width + padding)
-        h = max(1, text_height + padding)
+        w = max(1, int(math.ceil(metrics.width)))
+        h = max(1, int(math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)))
 
         # Setting the canvas size seems to reset the context settings?
         _font_canvas.width = w
@@ -49,15 +47,15 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         _font_context.scale(1, -1)  # Flip vertically
 
         # Draw to context
-        _font_context.fillText(text, 0, max(1, metrics.actualBoundingBoxAscent))
+        _font_context.fillText(text, 0, max(1, int(math.ceil(metrics.actualBoundingBoxAscent))))
 
         image_data = _font_context.getImageData(0, 0, w, h)
         pixel_data = image_data.data  # Uint8Array
 
-        image =  ImageData(w, h, 'RGBA', pixel_data)
+        image = ImageData(w, h, 'RGBA', pixel_data)
 
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(metrics.actualBoundingBoxDescent, 0, w)
+        glyph.set_bearings(int(math.ceil(metrics.actualBoundingBoxDescent)), 0, w)
         return glyph
 
 
@@ -72,15 +70,16 @@ class PyodideFont(base.Font):
         if not name:
             name = "Arial"
         self._name = name
+        self.pixel_size = size * dpi / 72.0
 
-        self.js_name = f"{size}pt {name}"
+        self.js_name = f"{self.pixel_size}px {name}"
         _font_context.font = self.js_name
         metrics = _font_context.measureText("A")
         self.ascent = metrics.fontBoundingBoxAscent
         self.descent = -metrics.fontBoundingBoxDescent
 
     @classmethod
-    def add_font_data(cls: type[Font], data: BinaryIO) -> None:
+    def add_font_data(cls: type[base.Font], data: BinaryIO) -> None:
         super().add_font_data(data)
 
     def create_glyph(self, img: AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
@@ -104,7 +103,7 @@ class PyodideFont(base.Font):
         return super().get_glyphs_for_width(text, width)
 
     @classmethod
-    def have_font(cls: type[Font], name: str) -> bool:
+    def have_font(cls: type[base.Font], name: str) -> bool:
         return super().have_font(name)
 
     @property

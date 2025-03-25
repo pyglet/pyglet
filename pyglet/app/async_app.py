@@ -18,31 +18,39 @@ class AsyncEventLoop(event.EventDispatcher):
         self._interval = None
 
     async def run(self, interval: float | None = 1/60) -> None:
-        """Begin processing events asynchronously."""
-        self._interval = interval
+        try:
+            """Begin processing events asynchronously."""
+            self._interval = interval
 
-        # if interval is None:
-        #     pass  # User will manually schedule updates
-        # elif interval == 0:
-        #     self.clock.schedule(self._redraw_windows)
-        # else:
-        #     self.clock.schedule_interval(self._redraw_windows, interval)
+            # if interval is None:
+            #     pass  # User will manually schedule updates
+            # elif interval == 0:
+            #     self.clock.schedule(self._redraw_windows)
+            # else:
+            #     self.clock.schedule_interval(self._redraw_windows, interval)
 
-        self._has_exit_event.clear()
-        platform_event_loop = app.platform_event_loop
+            self._has_exit_event.clear()
+            platform_event_loop = app.platform_event_loop
 
-        await platform_event_loop.start()
-        self.dispatch_event('on_enter')
-        self.is_running = True
+            await platform_event_loop.start()
+            self.dispatch_event('on_enter')
+            self.is_running = True
 
-        while not self._has_exit_event.is_set():
-            timeout = self.idle()
-            await platform_event_loop.step(timeout)
-            await asyncio.sleep(0.03)
+            while not self._has_exit_event.is_set():
+                timeout = self.idle()
+                await platform_event_loop.step(timeout)
+                if timeout is not None:
+                    await asyncio.sleep(timeout)
+                else:
+                    await asyncio.sleep(0.001)
 
-        self.is_running = False
-        self.dispatch_event('on_exit')
-        await platform_event_loop.stop()
+            self.is_running = False
+            self.dispatch_event('on_exit')
+            await platform_event_loop.stop()
+        except Exception as err:
+            import traceback
+            print("Error in wrapped task", err)
+            traceback.print_exc()
 
     async def enter_blocking(self) -> None:
         """Ensure `idle()` continues to be called during blocking operations."""

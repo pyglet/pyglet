@@ -6,7 +6,6 @@ from typing import Any, Callable, Sequence, Tuple, TYPE_CHECKING
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
 from pyglet.graphics import GeometryMode
-from pyglet.graphics.api.webgl import vertexdomain
 from pyglet.graphics.state import (
     State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
     DepthBufferComparison, ScissorState,
@@ -235,10 +234,10 @@ class Group:
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
-    (False, False): vertexdomain.VertexDomain,
-   (True, False): vertexdomain.IndexedVertexDomain,
-   (False, True): vertexdomain.InstancedVertexDomain,
-    (True, True): vertexdomain.InstancedIndexedVertexDomain,
+   #  (False, False): vertexdomain.VertexDomain,
+   # (True, False): vertexdomain.IndexedVertexDomain,
+   # (False, True): vertexdomain.InstancedVertexDomain,
+   #  (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 DomainKey = Tuple[bool, int, GeometryMode, str]
 

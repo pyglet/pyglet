@@ -44,6 +44,16 @@ def add_default_codecs():
     # Add all bundled codecs. These should be listed in order of
     # preference.  This is called automatically by pyglet.media.
 
+    if pyglet.compat_platform == "emscripten":
+        try:
+            # Currently other codecs cannot retrieve files from pyodides path, as it exists in its own environment.
+            # Will make this the only audio codec providers.
+            # This could potentially be adjusted later, but the codec already handles all the major filetypes.
+            from . import webaudio_pyodide
+            registry.add_decoders(webaudio_pyodide)
+            return  # Return to prevent other codecs from handling file types.
+        except ImportError:
+            pass
     try:
         from . import wave
         registry.add_decoders(wave)
@@ -86,6 +96,7 @@ def add_default_codecs():
             registry.add_decoders(coreaudio)
         except ImportError:
             pass
+
 
 
 def have_ffmpeg():

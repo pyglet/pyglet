@@ -187,7 +187,7 @@ class ImageMouseCursor(MouseCursor):
                 If ``True``, draw the cursor natively instead of using the graphics API.
                 The image may be downsampled or color reduced to fit the platform limitations.
         """
-        self.texture = image.get_texture()
+        self.texture = image
         self.hot_x = hot_x
         self.hot_y = hot_y
         self.scaling = 1.0

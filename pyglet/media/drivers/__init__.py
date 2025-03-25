@@ -55,8 +55,13 @@ else:
                 traceback.print_exc()
 
     else:
-        from . import silent
-        _audio_driver = silent.create_audio_driver()
+        if pyglet.compat_platform == "emscripten":
+            from . import pyodide_js
+
+            _audio_driver = pyodide_js.create_audio_driver()
+        else:
+            from . import silent
+            _audio_driver = silent.create_audio_driver()
 
 
 def get_audio_driver():

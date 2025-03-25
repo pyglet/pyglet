@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Sequence, TYPE_CHECKING, Any
+from functools import lru_cache
+from typing import Sequence, TYPE_CHECKING, Any, Callable
 
 import pyglet.app
 from pyglet.display.base import Display, Screen, ScreenMode
-from pyglet.window import key
-# from pyglet.window import mouse
-from pyglet.event import EventDispatcher, EVENT_HANDLE_STATE
+from pyglet.window import key, BaseWindow, MouseCursor, ImageMouseCursor
 
-from pyglet.window import (
-    BaseWindow,
-)
 
 import js  # noqa
 from pyodide.ffi import create_proxy  # noqa
@@ -49,6 +45,7 @@ code_map = {
     "NumpadDivide": key.NUM_DIVIDE,
 
     "CapsLock": key.CAPSLOCK, "NumLock": key.NUMLOCK, "ScrollLock": key.SCROLLLOCK,
+
 }
 
 # Special character mapping (needed for `event.key`)
@@ -81,7 +78,6 @@ def get_modifiers(event) -> int:
 # Convert JavaScript key events to your format
 def js_key_to_pyglet(event):
     """Convert JS event code to the equivalent key mapping."""
-    symbol = None
     modifiers = 0
 
     # Use event.code if available
@@ -90,9 +86,10 @@ def js_key_to_pyglet(event):
     # Check special character mapping (needed for characters like `@`, `!`)
     elif event.key in chmap:
         symbol = chmap[event.key]
-    # If nothing found, use event.key as a fallback
+    # Doesn't exist in either mapping. Unknown.
     else:
-        print(f"Warning: Unmapped key -> {event.code} ({event.key})")
+        symbol = event.code if event.code else 0
+        print(f"Warning: Unmapped key -> {symbol} ({event.key})")
 
     # Handle modifiers
     if event.ctrlKey:
@@ -113,9 +110,43 @@ def translate_mouse_button(value: int) -> int:
         return 1 << value  # Shift like in Xlib
     return 0  # Ignore unsupported buttons
 
+def BrowserWindowEventHandler(name: str):
+    def _event_wrapper(f: Callable) -> Callable:
+        f._platform_event = True  # noqa: SLF001
+        if not hasattr(f, '_platform_event_data'):
+            f._platform_event_data = []  # noqa: SLF001
+        f._platform_event_data.append(name)  # noqa: SLF001
+        return f
+
+    return _event_wrapper
+
+def CanvasEventHandler(name: str):
+    def _event_wrapper(f: Callable) -> Callable:
+        f._canvas = True
+        f._platform_event = True  # noqa: SLF001
+        if not hasattr(f, '_platform_event_data'):
+            f._platform_event_data = []  # noqa: SLF001
+        f._platform_event_data.append(name)  # noqa: SLF001
+        return f
+
+    return _event_wrapper
+
+class JavascriptCursor(MouseCursor):
+    api_drawable: bool = False
+    hw_drawable: bool = True
+    def __init__(self, name: str):
+        self.name = name
+
+class DefaultMouseCursor(JavascriptCursor):
+
+    def __init__(self):
+        super().__init__('default')
+
+
 # Temporary
 class EmscriptenWindow(BaseWindow):
     """The HTML5 Canvas."""
+    _mouse_cursor: JavascriptCursor
 
     def __init__(self, width: int | None = None, height: int | None = None, caption: str | None = None,
                  resizable: bool = False, style: str | None = None, fullscreen: bool = False,
@@ -123,12 +154,82 @@ class EmscriptenWindow(BaseWindow):
                  screen: Screen | None = None, config: GraphicsConfig | None = None,
                  context: WindowGraphicsContext | None = None, mode: ScreenMode | None = None) -> None:
         self.canvas = None
+        self._event_handlers: dict[int, Callable] = {}
+        self._canvas_event_handlers: dict[int, Callable] = {}
+
+        self._scale = js.window.devicePixelRatio
         super().__init__(width, height, caption, resizable, style, fullscreen, visible, vsync, file_drops, display,
                          screen, config, context, mode)
         self._enable_event_queue = False
 
-    def _recreate(self, changes: Sequence[str]) -> None:
-        pass
+    @property
+    def scale(self) -> float:
+        """The scale of the window factoring in DPI.
+
+        Read only.
+        """
+        return self._scale
+
+    @property
+    def dpi(self) -> int:
+        """DPI values of the Window.
+
+        Read only.
+        """
+        return int(self._scale * 96)
+
+    def _set_event_handlers(self):
+        assert self.canvas, "Canvas has not been created."
+        for func_name in self._platform_event_names:
+            if not hasattr(self, func_name):
+                continue
+            func = getattr(self, func_name)
+            for message in func._platform_event_data:  # noqa: SLF001
+                assert message not in self._event_handlers, f"event: '{message}' already exists."
+                proxy = create_proxy(func)
+                if hasattr(func, '_canvas'):
+                    self._canvas_event_handlers[message] = func
+                    self.canvas.addEventListener(message, proxy)
+                else:
+                    self._event_handlers[message] = func
+                    js.window.addEventListener(message, proxy)
+
+        self._proxy_resize = create_proxy(self._event_resized)
+        self._observer = js.ResizeObserver.new(self._proxy_resize)
+        self._observer.observe(self.canvas)
+
+    def set_fullscreen(self, fullscreen: bool = True, _screen: Screen | None = None, mode: ScreenMode | None = None,
+                       width: int | None = None, height: int | None = None) -> None:
+        if (fullscreen == self._fullscreen and
+                (_screen is None or _screen is self._screen) and
+                (width is None or width == self._width) and
+                (height is None or height == self._height)):
+            return
+
+        if not self._fullscreen:
+            self._windowed_size = self.get_size()
+
+        self._fullscreen = fullscreen
+        if self._fullscreen:
+            self.canvas.requestFullscreen()
+        else:
+            js.document.exitFullscreen()
+
+    def _enter_fullscreen(self, event):
+        self._fullscreen = True
+        scale = js.window.devicePixelRatio
+        self.canvas.width = js.window.innerWidth
+        self.canvas.height = js.window.innerHeight
+
+    def _exited_fullscreen(self, event, width: int | None = None,height: int | None = None):
+        self._fullscreen = False
+        self._width, self._height = self._windowed_size
+        self.canvas.width = self._width
+        self.canvas.height = self._height
+        if width is not None:
+            self._width = width
+        if height is not None:
+            self._height = height
 
     def flip(self) -> None:
         if self._context:
@@ -144,178 +245,283 @@ class EmscriptenWindow(BaseWindow):
     def set_caption(self, caption: str) -> None:
         js.document.title = caption
 
-    def set_minimum_size(self, width: int, height: int) -> None:
-        pass
+    def set_minimum_size(self, width: int | str, height: int | str) -> None:
+        self._minimum_size = width, height
+        if isinstance(width, int) or isinstance(width, float):
+            width = f"{width}px"
 
-    def set_maximum_size(self, width: int, height: int) -> None:
-        pass
+        if isinstance(width, int) or isinstance(width, float):
+            height = f"{width}px"
+
+        self.canvas.style.minWidth = width
+        self.canvas.style.minHeight = height
+
+    def set_maximum_size(self, width: int | str, height: int | str) -> None:
+        self._maximum_size = width, height
+        if isinstance(width, int) or isinstance(width, float):
+            width = f"{width}px"
+
+        if isinstance(width, int) or isinstance(width, float):
+            height = f"{width}px"
+
+        self.canvas.style.maxWidth = width
+        self.canvas.style.maxHeight = height
 
     def set_size(self, width: int, height: int) -> None:
-        self._width = width
-        self._height = height
-        self.canvas.width = width
-        self.canvas.height = height
+        super().set_size(width, height)
+        self.adjust_scale(width, height)
 
     def get_size(self) -> tuple[int, int]:
-        return self._width, self._height
+        if not self.canvas:
+            return self._width, self._height
+
+        return self.canvas.width, self.canvas.height
 
     def set_location(self, x: int, y: int) -> None:
-        pass
+        #self.canvas.style.setProperty("position", "absolute")
+        self.canvas.style.setProperty("left", f"{x}px")
+        self.canvas.style.setProperty("top", f"{x}px")
 
-    def get_location(self) -> None:
-        pass
+    def get_location(self) -> tuple[int, int]:
+        rect = self.canvas.getBoundingClientRect()
+        return rect.left, rect.top
 
     def activate(self) -> None:
-        pass
+        self.canvas.focus()
 
     def set_visible(self, visible: bool = True) -> None:
-        pass
+        if visible is False:
+            if self.canvas.style.visibility != "hidden":
+                self.canvas.visibility = "hidden"
+        else:
+            if self.canvas.style.visibility != "visible":
+                self.canvas.visibility = "visible"
 
     def minimize(self) -> None:
-        pass
+        """While minimized, events will not occur."""
+        self.canvas.style.display = "hidden"
 
     def maximize(self) -> None:
-        pass
+        self.canvas.style.display = "block"
 
     def set_vsync(self, vsync: bool) -> None:
-        pass
+        """A browser does not allow this."""
+
+    @lru_cache  # noqa: B019
+    def _create_data_url_from_image(self, cursor: ImageMouseCursor) -> str:
+        """Create a cursor image from the data.
+
+        Use a DATA URI as this allows converting the image into a cursor without fetching through HTTP.
+
+        This does need to be in a PNG encoded format, so a temporary canvas is created to encode.
+        """
+        image = cursor.texture.get_image_data()
+        canvas = js.document.createElement("canvas")
+
+        canvas.width = image.width
+        canvas.height = image.height
+        data = image.get_bytes('RGBA')
+        pixel_array = js.Uint8ClampedArray.new(data)
+
+        ctx = canvas.getContext("2d")
+        image_data = ctx.createImageData(image.width, image.height)
+        image_data.data.set(pixel_array)
+        ctx.putImageData(image_data, 0, 0)
+
+        data_url = canvas.toDataURL("image/png")
+        canvas.remove()
+        return data_url
 
     def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
-        pass
+        if not self.canvas:
+            return
+
+        if platform_visible is None:
+            platform_visible = (self._mouse_visible and
+                                (not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable))
+
+        if platform_visible is False:
+            cursor_name = "none"
+        elif isinstance(self._mouse_cursor, ImageMouseCursor) and self._mouse_cursor.hw_drawable:
+            # Create a custom hardware cursor.
+            cursor_name = self._create_data_url_from_image(self._mouse_cursor)
+            cursor_name = f"url({cursor_name}) {self._mouse_cursor.hot_x} {self._mouse_cursor.hot_y}, default"
+        else:
+            # Restore a standard hardware cursor
+            cursor_name = self._mouse_cursor.name
+
+        self.canvas.style.cursor = cursor_name
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
-        pass
+        assert self.canvas
+        # Requires a user gesture to lock it like a button.
+        if exclusive is True:
+            self.canvas.requestPointerLock()
+        else:
+            self.canvas.exitPointerLock()
 
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
-        pass
+        """Not relevant."""
 
-    def get_system_mouse_cursor(self, name: str) -> None:
-        pass
+    def get_system_mouse_cursor(self, name: str) -> JavascriptCursor:
+        if name == self.CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+
+        return JavascriptCursor(name)
 
     async def dispatch_events(self) -> None:
         """Process input events asynchronously."""
-        print("should not be called")
-        # while True:
-        #     event = await self._event_queue.get()
-        #
-        #     # Call corresponding event functions
-        #     if event["type"] == "key_press":
-        #         print(f"on_key_press(symbol={event['symbol']}, modifiers={event['modifiers']})")
-        #     elif event["type"] == "key_release":
-        #         print(f"on_key_release(symbol={event['symbol']}, modifiers={event['modifiers']})")
-        #     elif event["type"] == "mouse_motion":
-        #         print(f"on_mouse_motion(x={event['x']}, y={event['y']}, dx={event['dx']}, dy={event['dy']})")
-        #     elif event["type"] == "mouse_press":
-        #         print(
-        #             f"on_mouse_press(x={event['x']}, y={event['y']}, button={event['buttons']}, modifiers={event['modifiers']})")
-        #     elif event["type"] == "mouse_release":
-        #         print(
-        #             f"on_mouse_release(x={event['x']}, y={event['y']}, button={event['buttons']}, modifiers={event['modifiers']})")
-        #     elif event["type"] == "mouse_scroll":
-        #         print(
-        #             f"on_mouse_scroll(x={event['x']}, y={event['y']}, scroll_x={event['scroll_x']}, scroll_y={event['scroll_y']})")
-        #     elif event["type"] == "mouse_enter":
-        #         print(f"on_mouse_enter(x={event['x']}, y={event['y']})")
-        #     elif event["type"] == "mouse_leave":
-        #         print(f"on_mouse_leave(x={event['x']}, y={event['y']})")
+        raise Exception("Not implemented.")
 
-    def _add_listeners(self, canvas):
-        print("ADD LISTENERS")
-        async def on_key_down(event):
-            """Handle key press event."""
+    @CanvasEventHandler("keydown")
+    async def _event_key_down(self, event):
+        if not event.repeat:
             symbol, modifier = js_key_to_pyglet(event)
             await pyglet.app.platform_event_loop.post_event(self, 'on_key_press', symbol, modifier)
 
+    @CanvasEventHandler("keyup")
+    async def _event_key_up(self, event):
+        symbol, modifier = js_key_to_pyglet(event)
+        await pyglet.app.platform_event_loop.post_event(self, 'on_key_release', symbol, modifier)
 
-        async def on_key_up(event):
-            """Handle key release event."""
-            symbol, modifier = js_key_to_pyglet(event)
-            await pyglet.app.platform_event_loop.post_event(self, 'on_key_release', symbol, modifier)
+    @CanvasEventHandler("mousedown")
+    async def _event_mouse_down(self, event):
+        modifiers = get_modifiers(event)
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_press',
+                                                                 event.clientX,
+                                                                 self.height - event.clientY,
+                                                                 translate_mouse_button(event.button),
+                                                                 modifiers)
 
-        async def on_mouse_up(event):
-            """Handle key release event."""
-            modifiers = get_modifiers(event)
-            await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_release',
-                                                                     event.clientX,
-                                                                     self.height - event.clientY,
-                                                                     translate_mouse_button(event.button),
-                                                                     modifiers)
+    @CanvasEventHandler("mouseup")
+    async def _event_mouse_up(self, event):
+        modifiers = get_modifiers(event)
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_release',
+                                                                 event.clientX,
+                                                                 self.height - event.clientY,
+                                                                 translate_mouse_button(event.button),
+                                                                 modifiers)
 
-        async def on_mouse_move(event):
-            """Handle key release event."""
-            await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_motion',
-                                                                     event.clientX,
-                                                                     self.height - event.clientY,
-                                                                     event.movementX,
-                                                                     event.movementY)
+    @CanvasEventHandler("mousemove")
+    async def _event_mouse_motion(self, event):
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_motion',
+                                                                 event.clientX,
+                                                                 self.height - event.clientY,
+                                                                 event.movementX,
+                                                                 event.movementY)
 
-        async def on_mouse_down(event):
-            """Handle key release event."""
-            modifiers = get_modifiers(event)
-            await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_press',
-                                                                     event.clientX,
-                                                                     self.height - event.clientY,
-                                                                     translate_mouse_button(event.button),
-                                                                     modifiers)
-        async def on_mouse_scroll(event):
-            """Handle key release event."""
-            await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_scroll',
-                                                                     event.clientX,
-                                                                     event.clientY,
-                                                                     event.deltaX,
-                                                                     event.deltaY)
+    @CanvasEventHandler("wheel")
+    async def _event_mouse_scroll(self, event):
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_scroll',
+                                                                 event.clientX,
+                                                                 event.clientY,
+                                                                 event.deltaX,
+                                                                 event.deltaY)
 
-        # def on_mouse_enter(event):
-        #     """Handle mouse entering the canvas."""
-        #     asyncio.create_task(self._event_queue.put({
-        #         "type": "mouse_enter",
-        #         "x": event.clientX,
-        #         "y": event.clientY
-        #     }))
-        #
-        # def on_mouse_leave(event):
-        #     """Handle mouse leaving the canvas."""
-        #     asyncio.create_task(self._event_queue.put({
-        #         "type": "mouse_leave",
-        #         "x": event.clientX,
-        #         "y": event.clientY
-        #     }))
-        def on_context_lost(event):
-            print("WebGL context lost!");
+    @CanvasEventHandler("mouseenter")
+    async def _event_mouse_enter(self, event):
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_enter',
+                                                        event.clientX,
+                                                        self.height - event.clientY)
 
-        # Attach event listeners to the canvas
-        canvas.addEventListener("keydown", create_proxy(on_key_down))
-        canvas.addEventListener("keyup", create_proxy(on_key_up))
-        #canvas.addEventListener("mousemove", create_proxy(on_mouse_move))
-        canvas.addEventListener("mousedown", create_proxy(on_mouse_down))
-        canvas.addEventListener("mouseup", create_proxy(on_mouse_up))
-        canvas.addEventListener("wheel", create_proxy(on_mouse_scroll))
-        # canvas.addEventListener("mouseenter", create_proxy(on_mouse_enter))
-        # canvas.addEventListener("mouseleave", create_proxy(on_mouse_leave))
+    @CanvasEventHandler("mouseleave")
+    async def _event_mouse_leave(self, event):
+        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_leave',
+                                                        event.clientX,
+                                                        self.height - event.clientY)
+    @CanvasEventHandler("contextlost")
+    async def _event_context_lost(self, event):
+        print("WebGL context lost!")
 
-        canvas.addEventListener("webglcontextlost", create_proxy(on_context_lost))
+    @CanvasEventHandler("contextrestored")
+    async def _event_context_restored(self, event):
+        print("WebGL context restored!")
 
-        print("REGISTERED EVENTS")
+    @CanvasEventHandler("focus")
+    async def _event_gain_focus(self, event):
+        print("Focused!")
 
-        # Ensure the canvas can receive keyboard input
-        canvas.setAttribute("tabindex", "1")
-        canvas.focus()
+    @CanvasEventHandler("blur")
+    async def _event_lose_focus(self, event):
+        print("Lost focus!")
+
+    @CanvasEventHandler("contextmenu")
+    def _event_contextmenu(self, event):
+        # Some keys or mouse presses (right click) can open the browser context menu. Disable this.
+        event.preventDefault()
+
+    @CanvasEventHandler("fullscreenchange")
+    def _event_fullscreen_change(self, event):
+        if js.document.fullscreenElement == self.canvas:
+            self._enter_fullscreen(event)
+        else:
+            self._exited_fullscreen(event, *self._windowed_size)
+
+    def get_framebuffer_size(self):
+        return self._width, self._height
+
+    def _event_resized(self, entries, observer):
+        for entry in entries:
+            rect = entry.contentRect
+            print(f"Canvas resized to {rect.width}x{rect.height}")
+            #Update internal resolution if needed
+
+            self.dispatch_event('_on_internal_resize', 0, 0)
 
     def dispatch_pending_events(self) -> None:
         pass
 
+    # copy, cut, paste, dragenter, dragleave,dragover, drop
+    # touchmove, touchstart, touchend, touchcancel
+
+    def adjust_scale(self, width, height):
+        ratio = js.window.devicePixelRatio or 1.0
+
+        # The framebuffer size.
+        self.canvas.width = width * ratio
+        self.canvas.height = height * ratio
+
+        # How large the canvas appears visually. Browser automatically scales based on DPI.
+        self.canvas.style.width = f"{width}px"
+        self.canvas.style.height = f"{height}px"
+
     def _create(self) -> None:
         assert self.canvas is None
-        self.canvas = js.document.getElementById("pygletCanvas")
-        if self.canvas:
-            self._add_listeners(self.canvas)
+        canvas_name = "pygletCanvas"
+        canvas = js.document.getElementById(canvas_name)
+        if not self.canvas:
+            self.canvas = js.document.createElement("canvas")
+            self.canvas.id = canvas_name
+            js.document.body.appendChild(self.canvas)
+        else:
+            self.canvas = canvas
 
-            # Context must be created after window is created.
-            if pyglet.options.backend == "webgl":
-                self._assign_config()
-                self.context.attach(self)
+        self.canvas.width = self._width * self.scale
+        self.canvas.height = self._height * self.scale
+        self.canvas.style.width = f"{self._width}px"
+        self.canvas.style.height = f"{self._height}px"
 
-                self.context.start_render()
+        if not js.document.getElementById(canvas_name):
+            raise Exception(f"Canvas: {canvas_name} could not be created.")
+
+        # By default, the canvas does not receive keyboard events.
+        self.canvas.setAttribute("tabindex", "0")
+        self._set_event_handlers()
+
+        # When the canvas gets focus, it gains a white outline around it. Remove it.
+        style = js.document.createElement("style")
+        style.innerHTML = "#%s:focus { outline: none; }" % canvas_name
+        js.document.head.appendChild(style)
+
+        # Context must be created after window is created.
+        if pyglet.options.backend == "webgl":
+            self._assign_config()
+
+            self.context.attach(self)
+
+            rect = self.canvas.getBoundingClientRect()
+            self.adjust_scale(rect.width, rect.height)
+            self.context.start_render()
 
 
 

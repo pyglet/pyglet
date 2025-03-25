@@ -179,14 +179,6 @@ def add_default_codecs():
         except ImportError:
             pass
 
-    if compat_platform.startswith("emscripten"):
-        try:
-            from pyglet.image.codecs import js_image
-            registry.add_decoders(js_image)
-        except ImportError:
-            pass
-
-
     # Fallback: PIL
     try:
         from pyglet.image.codecs import pil

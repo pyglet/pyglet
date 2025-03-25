@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import time
 
 from pyglet.image import ImageDecoder
 from pyglet.image import ImageData
@@ -28,15 +30,38 @@ async def check_image_exists(url):
         print(f"Error checking image: {e}")
         return False
 
+async def load_image_from_vfs(vfs_path):
+    # Read image from Pyodide's VFS
+    with open(vfs_path, "rb") as f:
+        img_data = f.read()
+
+    # Convert image to Base64
+    base64_data = base64.b64encode(img_data).decode("utf-8")
+
+    # Create a Data URL
+    mime_type = "image/png"  # Change this based on file type (e.g., "image/jpeg")
+    data_url = f"data:{mime_type};base64,{base64_data}"
+
+    # Use the Data URL as the image source
+    img = js.Image.new()
+    img.src = data_url
+
+    # Wait for image to load before returning
+    await pyodide.ffi.to_js(img.decode())
+
+    return img
+
 class JSImageDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.png']
 
     async def decode(self, filename, file) -> ImageData:
-        img = js.Image.new()
-        img.src = filename
+        t = time.perf_counter()
+        #img = js.Image.new()
+        #img.src = filename
 
-        await pyodide.ffi.to_js(img.decode())  # Wait for image to load
+        #await pyodide.ffi.to_js(img.decode())  # Wait for image to load
+        img = await load_image_from_vfs(filename)
 
         _image_canvas.width = img.width
         _image_canvas.height = img.height
@@ -51,6 +76,8 @@ class JSImageDecoder(ImageDecoder):
 
         image_data = _image_context.getImageData(0, 0, img.width, img.height)
         pixel_data = image_data.data  # Uint8Array
+
+        print("Took", time.perf_counter() - t, "seconds")
 
         return ImageData(img.width, img.height, 'RGBA', pixel_data)
 
