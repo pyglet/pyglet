@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-import asyncio
 from functools import lru_cache
-from typing import Sequence, TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
+
+import js  # noqa
+import unicodedata
+from pyodide.ffi import create_proxy  # noqa
 
 import pyglet.app
 from pyglet.display.base import Display, Screen, ScreenMode
-from pyglet.window import key, BaseWindow, MouseCursor, ImageMouseCursor
-
-
-import js  # noqa
-from pyodide.ffi import create_proxy  # noqa
+from pyglet.window import key, mouse, BaseWindow, MouseCursor, ImageMouseCursor
 
 if TYPE_CHECKING:
     from pyglet.graphics.api import GraphicsConfig
     from pyglet.graphics.api.base import WindowGraphicsContext
-
 
 # Keymap using `event.code`
 code_map = {
@@ -59,6 +57,27 @@ chmap = {
     "?": key.QUESTION, "`": key.GRAVE, "~": key.ASCIITILDE
 }
 
+# symbol,ctrl -> motion mapping
+_motion_map: dict[tuple[int, bool], int] = {
+    (key.UP, False): key.MOTION_UP,
+    (key.RIGHT, False): key.MOTION_RIGHT,
+    (key.DOWN, False): key.MOTION_DOWN,
+    (key.LEFT, False): key.MOTION_LEFT,
+    (key.RIGHT, True): key.MOTION_NEXT_WORD,
+    (key.LEFT, True): key.MOTION_PREVIOUS_WORD,
+    (key.HOME, False): key.MOTION_BEGINNING_OF_LINE,
+    (key.END, False): key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False): key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False): key.MOTION_NEXT_PAGE,
+    (key.HOME, True): key.MOTION_BEGINNING_OF_FILE,
+    (key.END, True): key.MOTION_END_OF_FILE,
+    (key.BACKSPACE, False): key.MOTION_BACKSPACE,
+    (key.DELETE, False): key.MOTION_DELETE,
+    (key.C, True): key.MOTION_COPY,
+    (key.V, True): key.MOTION_PASTE,
+}
+
+
 def get_modifiers(event) -> int:
     """Extract modifier flags from a JavaScript event."""
     modifiers = 0
@@ -74,6 +93,7 @@ def get_modifiers(event) -> int:
         modifiers |= key.MOD_COMMAND
 
     return modifiers
+
 
 # Convert JavaScript key events to your format
 def js_key_to_pyglet(event):
@@ -104,11 +124,45 @@ def js_key_to_pyglet(event):
 
     return symbol, modifiers
 
-def translate_mouse_button(value: int) -> int:
+
+# Javascript Buttons Bitwise
+JS_MOUSE_LEFT_BIT = 1 << 0  # 1
+JS_MOUSE_RIGHT_BIT = 1 << 1  # 2
+JS_MOUSE_MIDDLE_BIT = 1 << 2  # 4
+JS_MOUSE_BACK_BIT = 1 << 3  # 8
+JS_MOUSE_FORWARD_BIT = 1 << 4  # 16
+
+JS_MOUSE_LEFT = 0
+JS_MOUSE_MIDDLE = 1
+JS_MOUSE_RIGHT = 2
+JS_MOUSE_BACK = 3  # Mouse 4
+JS_MOUSE_FORWARD = 4  # Mouse 5
+
+# Normal button presses are not bitwise.
+_mouse_map = {
+    JS_MOUSE_LEFT: mouse.LEFT,
+    JS_MOUSE_MIDDLE: mouse.MIDDLE,
+    JS_MOUSE_RIGHT: mouse.RIGHT,
+    JS_MOUSE_BACK: mouse.MOUSE4,
+    JS_MOUSE_FORWARD: mouse.MOUSE5
+}
+
+
+def translate_mouse_bits(buttons: int) -> int:
     """Translate JavaScript mouse button values to match pyglet constants."""
-    if value < 5:
-        return 1 << value  # Shift like in Xlib
-    return 0  # Ignore unsupported buttons
+    result = 0
+    if buttons & JS_MOUSE_LEFT_BIT:  # JavaScript Left button
+        result |= mouse.LEFT
+    if buttons & JS_MOUSE_RIGHT_BIT:  # JavaScript Right button
+        result |= mouse.RIGHT
+    if buttons & JS_MOUSE_MIDDLE_BIT:  # JavaScript Middle button (wheel)
+        result |= mouse.MIDDLE
+    if buttons & JS_MOUSE_BACK_BIT:  # JavaScript Back (X1)
+        result |= mouse.MOUSE4
+    if buttons & JS_MOUSE_FORWARD_BIT:  # JavaScript Forward (X2)
+        result |= mouse.MOUSE5
+    return result
+
 
 def BrowserWindowEventHandler(name: str):
     def _event_wrapper(f: Callable) -> Callable:
@@ -119,6 +173,7 @@ def BrowserWindowEventHandler(name: str):
         return f
 
     return _event_wrapper
+
 
 def CanvasEventHandler(name: str):
     def _event_wrapper(f: Callable) -> Callable:
@@ -131,11 +186,14 @@ def CanvasEventHandler(name: str):
 
     return _event_wrapper
 
+
 class JavascriptCursor(MouseCursor):
     api_drawable: bool = False
     hw_drawable: bool = True
+
     def __init__(self, name: str):
         self.name = name
+
 
 class DefaultMouseCursor(JavascriptCursor):
 
@@ -156,6 +214,7 @@ class EmscriptenWindow(BaseWindow):
         self.canvas = None
         self._event_handlers: dict[int, Callable] = {}
         self._canvas_event_handlers: dict[int, Callable] = {}
+        self._keys_down = set()
 
         self._scale = js.window.devicePixelRatio
         super().__init__(width, height, caption, resizable, style, fullscreen, visible, vsync, file_drops, display,
@@ -221,7 +280,7 @@ class EmscriptenWindow(BaseWindow):
         self.canvas.width = js.window.innerWidth
         self.canvas.height = js.window.innerHeight
 
-    def _exited_fullscreen(self, event, width: int | None = None,height: int | None = None):
+    def _exited_fullscreen(self, event, width: int | None = None, height: int | None = None):
         self._fullscreen = False
         self._width, self._height = self._windowed_size
         self.canvas.width = self._width
@@ -278,7 +337,7 @@ class EmscriptenWindow(BaseWindow):
         return self.canvas.width, self.canvas.height
 
     def set_location(self, x: int, y: int) -> None:
-        #self.canvas.style.setProperty("position", "absolute")
+        # self.canvas.style.setProperty("position", "absolute")
         self.canvas.style.setProperty("left", f"{x}px")
         self.canvas.style.setProperty("top", f"{x}px")
 
@@ -373,62 +432,105 @@ class EmscriptenWindow(BaseWindow):
         """Process input events asynchronously."""
         raise Exception("Not implemented.")
 
+    @staticmethod
+    def _event_text_motion(symbol: int, modifiers: int) -> int | None:
+        if modifiers & key.MOD_ALT:
+            return None
+        ctrl = modifiers & key.MOD_CTRL != 0
+        return _motion_map.get((symbol, ctrl), None)
+
     @CanvasEventHandler("keydown")
     async def _event_key_down(self, event):
         if not event.repeat:
-            symbol, modifier = js_key_to_pyglet(event)
-            await pyglet.app.platform_event_loop.post_event(self, 'on_key_press', symbol, modifier)
+            text = None
+            if len(event.key) == 1:
+                text = event.key
+            symbol, modifiers = js_key_to_pyglet(event)
+            motion = self._event_text_motion(symbol, modifiers)
+            modifiers_ctrl = modifiers & (key.MOD_CTRL | key.MOD_ALT)
+            # If key A is pressed, then key B is pressed, if key A is released, key B will trigger a keydown.
+            if symbol in self._keys_down:
+                return
+            if symbol:
+                self._keys_down.add(symbol)  # Keep track of pressed internally.
+                self.dispatch_event('on_key_press', symbol, modifiers)
+            if motion:
+                if modifiers & key.MOD_SHIFT:
+                    motion_event = 'on_text_motion_select'
+                else:
+                    motion_event = 'on_text_motion'
+                self.dispatch_event(motion_event, motion)
+            elif text and not modifiers_ctrl:
+                self.dispatch_event('on_text', text)
 
     @CanvasEventHandler("keyup")
     async def _event_key_up(self, event):
-        symbol, modifier = js_key_to_pyglet(event)
-        await pyglet.app.platform_event_loop.post_event(self, 'on_key_release', symbol, modifier)
+        symbol, modifiers = js_key_to_pyglet(event)
+        if symbol in self._keys_down:
+            self._keys_down.remove(symbol)
+        else:
+            js.console.log(f"{symbol} was released but was not down. This should not occur.")
+
+        self.dispatch_event('on_key_release', symbol, modifiers)
 
     @CanvasEventHandler("mousedown")
     async def _event_mouse_down(self, event):
         modifiers = get_modifiers(event)
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_press',
-                                                                 event.clientX,
-                                                                 self.height - event.clientY,
-                                                                 translate_mouse_button(event.button),
-                                                                 modifiers)
+        self.dispatch_event(
+            'on_mouse_press',
+            event.clientX,
+            self.height - event.clientY,
+            _mouse_map.get(event.button, 0),
+            modifiers
+        )
 
     @CanvasEventHandler("mouseup")
     async def _event_mouse_up(self, event):
         modifiers = get_modifiers(event)
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_release',
-                                                                 event.clientX,
-                                                                 self.height - event.clientY,
-                                                                 translate_mouse_button(event.button),
-                                                                 modifiers)
+        self.dispatch_event(
+            'on_mouse_release',
+            event.clientX,
+            self.height - event.clientY,
+            _mouse_map.get(event.button, 0),
+            modifiers
+        )
 
     @CanvasEventHandler("mousemove")
     async def _event_mouse_motion(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_motion',
-                                                                 event.clientX,
-                                                                 self.height - event.clientY,
-                                                                 event.movementX,
-                                                                 event.movementY)
+        if event.buttons:
+            modifiers = get_modifiers(event)
+            self.dispatch_event(
+                'on_mouse_drag',
+                event.clientX,
+                self.height - event.clientY,
+                event.movementX,
+                event.movementY,
+                _mouse_map.get(event.button, 0),
+                modifiers
+            )
+        else:
+            self.dispatch_event(
+                'on_mouse_motion',
+                                                            event.clientX,
+                                                            self.height - event.clientY,
+                                                            event.movementX,
+                                                            event.movementY
+            )
 
     @CanvasEventHandler("wheel")
     async def _event_mouse_scroll(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_scroll',
-                                                                 event.clientX,
-                                                                 event.clientY,
-                                                                 event.deltaX,
-                                                                 event.deltaY)
+        self.dispatch_event(
+            'on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY
+        )
 
     @CanvasEventHandler("mouseenter")
     async def _event_mouse_enter(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_enter',
-                                                        event.clientX,
-                                                        self.height - event.clientY)
+        self.dispatch_event('on_mouse_enter', event.clientX, self.height - event.clientY)
 
     @CanvasEventHandler("mouseleave")
     async def _event_mouse_leave(self, event):
-        await pyglet.app.platform_event_loop.post_event(self, 'on_mouse_leave',
-                                                        event.clientX,
-                                                        self.height - event.clientY)
+        self.dispatch_event('on_mouse_leave', event.clientX, self.height - event.clientY)
+
     @CanvasEventHandler("contextlost")
     async def _event_context_lost(self, event):
         print("WebGL context lost!")
@@ -439,11 +541,11 @@ class EmscriptenWindow(BaseWindow):
 
     @CanvasEventHandler("focus")
     async def _event_gain_focus(self, event):
-        print("Focused!")
+        await pyglet.app.platform_event_loop.post_event(self, 'on_activate')
 
     @CanvasEventHandler("blur")
     async def _event_lose_focus(self, event):
-        print("Lost focus!")
+        await pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
     @CanvasEventHandler("contextmenu")
     def _event_contextmenu(self, event):
@@ -463,9 +565,6 @@ class EmscriptenWindow(BaseWindow):
     def _event_resized(self, entries, observer):
         for entry in entries:
             rect = entry.contentRect
-            print(f"Canvas resized to {rect.width}x{rect.height}")
-            #Update internal resolution if needed
-
             self.dispatch_event('_on_internal_resize', 0, 0)
 
     def dispatch_pending_events(self) -> None:
@@ -522,7 +621,6 @@ class EmscriptenWindow(BaseWindow):
             rect = self.canvas.getBoundingClientRect()
             self.adjust_scale(rect.width, rect.height)
             self.context.start_render()
-
 
 
 __all__ = ['EmscriptenWindow']
