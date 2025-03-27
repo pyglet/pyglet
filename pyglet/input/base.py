@@ -705,7 +705,9 @@ class Controller(EventDispatcher):
                 elif ctrl.name == "hat":
                     self._hat_control = ctrl
                 else:
-                    self._axis_controls.append(ctrl)
+                    # only add axis from Desktop Page (https://www.usb.org/sites/default/files/hut1_6.pdf)
+                    if ctrl.raw_name.startswith("0x1"):
+                        self._axis_controls.append(ctrl)
 
         for name, relation in self._mapping.items():
 
