@@ -528,10 +528,11 @@ class PygletDevice(Device):
         super().__init__(display=display, name=device.product)
         self.device = device
         self.device.add_value_observer(self)
-        self._create_controls()
         
         self._axis_filter = axis_filter
         self._button_filter = button_filter
+        
+        self._create_controls()
 
     def open(self, window=None, exclusive=False):
         super().open(window, exclusive)
