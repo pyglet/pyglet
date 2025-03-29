@@ -639,7 +639,7 @@ class IndexedVertexDomain(VertexDomain):
             starts = [s * self.index_element_size for s in starts]
             starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
             sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+            glMultiDrawElements(mode, sizes[:], 0, self.index_gl_type, starts[:], 0, primcount)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+from ctypes.wintypes import LONG
 
 from pyglet.libs.win32 import com
 
@@ -304,6 +305,42 @@ class DIPROPDWORD(ctypes.Structure):
 # methods have no parameters.. they'll crash when we try and use them, at
 # which point we can go in and fill them in.
 
+# Define DIJOYSTATE2 based on the C++ struct
+class DIJOYSTATE2(ctypes.Structure):
+    _fields_ = [
+        ("lX", LONG),         # X-axis
+        ("lY", LONG),         # Y-axis
+        ("lZ", LONG),         # Z-axis
+        ("lRx", LONG),        # X-axis rotation
+        ("lRy", LONG),        # Y-axis rotation
+        ("lRz", LONG),        # Z-axis rotation
+        ("rglSlider", LONG * 2),  # Two slider axes
+        ("rgdwPOV", DWORD * 4),   # Four POVs (D-pad directions)
+        ("rgbButtons", ctypes.c_ubyte * 128),  # 128 buttons
+        ("lVX", LONG),        # X-axis velocity
+        ("lVY", LONG),        # Y-axis velocity
+        ("lVZ", LONG),        # Z-axis velocity
+        ("lVRx", LONG),       # Angular velocity X
+        ("lVRy", LONG),       # Angular velocity Y
+        ("lVRz", LONG),       # Angular velocity Z
+        ("rglVSlider", LONG * 2),
+        ("lAX", LONG),        # Acceleration X
+        ("lAY", LONG),        # Acceleration Y
+        ("lAZ", LONG),        # Acceleration Z
+        ("lARx", LONG),       # Angular acceleration X
+        ("lARy", LONG),       # Angular acceleration Y
+        ("lARz", LONG),       # Angular acceleration Z
+        ("rglASlider", LONG * 2),
+        ("lFX", LONG),        # Force X
+        ("lFY", LONG),        # Force Y
+        ("lFZ", LONG),        # Force Z
+        ("lFRx", LONG),       # Force angular X
+        ("lFRy", LONG),       # Force angular Y
+        ("lFRz", LONG),       # Force angular Z
+        ("rglFSlider", LONG * 2),
+    ]
+
+
 # IDirect* interfaces are all Unicode (e.g. IDirectInputDevice8W).
 
 class IDirectInputDevice8(com.pIUnknown):
@@ -321,7 +358,7 @@ class IDirectInputDevice8(com.pIUnknown):
         ('Unacquire',
          com.STDMETHOD()),
         ('GetDeviceState',
-         com.STDMETHOD()),
+         com.STDMETHOD(DWORD, LPVOID)),
         ('GetDeviceData',
          com.STDMETHOD(DWORD, LPDIDEVICEOBJECTDATA, LPDWORD, DWORD)),
         ('SetDataFormat',

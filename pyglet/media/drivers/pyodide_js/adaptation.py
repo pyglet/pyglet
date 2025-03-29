@@ -15,7 +15,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from pyglet.media import Player
-    from pyglet.media.codecs.pyodide_js import PyodideJS_Source
+    from pyglet.media.codecs.webaudio_pyodide import JavascriptWebAudioSource
 
 
 class JSAudioDriver(AbstractAudioDriver):
@@ -91,7 +91,7 @@ class PyodideJSListener(AbstractListener):
 
 
 class PyodideJSAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: JSAudioDriver, source: PyodideJS_Source, player: Player):
+    def __init__(self, driver: JSAudioDriver, source: JavascriptWebAudioSource, player: Player):
         super().__init__(source, player)
         self.driver = driver
 

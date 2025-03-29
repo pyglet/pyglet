@@ -4,7 +4,6 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Callable
 
 import js  # noqa
-import unicodedata
 from pyodide.ffi import create_proxy  # noqa
 
 import pyglet.app
@@ -16,38 +15,80 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import WindowGraphicsContext
 
 # Keymap using `event.code`
-code_map = {
-    "KeyA": key.A, "KeyB": key.B, "KeyC": key.C, "KeyD": key.D, "KeyE": key.E,
-    "KeyF": key.F, "KeyG": key.G, "KeyH": key.H, "KeyI": key.I, "KeyJ": key.J,
-    "KeyK": key.K, "KeyL": key.L, "KeyM": key.M, "KeyN": key.N, "KeyO": key.O,
-    "KeyP": key.P, "KeyQ": key.Q, "KeyR": key.R, "KeyS": key.S, "KeyT": key.T,
-    "KeyU": key.U, "KeyV": key.V, "KeyW": key.W, "KeyX": key.X, "KeyY": key.Y,
-    "KeyZ": key.Z,
+_key_map = {
+    # Alpha
+    "a": key.A, "b": key.B, "c": key.C, "d": key.D, "e": key.E,
+    "f": key.F, "g": key.G, "h": key.H, "i": key.I, "j": key.J,
+    "k": key.K, "l": key.L, "m": key.M, "n": key.N, "o": key.O,
+    "p": key.P, "q": key.Q, "r": key.R, "s": key.S, "t": key.T,
+    "u": key.U, "v": key.V, "w": key.W, "x": key.X, "y": key.Y,
+    "z": key.Z,
+    "A": key.A, "B": key.B, "C": key.C, "D": key.D, "E": key.E,
+    "F": key.F, "G": key.G, "H": key.H, "I": key.I, "J": key.J,
+    "K": key.K, "L": key.L, "M": key.M, "N": key.N, "O": key.O,
+    "P": key.P, "Q": key.Q, "R": key.R, "S": key.S, "T": key.T,
+    "U": key.U, "V": key.V, "W": key.W, "X": key.X, "Y": key.Y,
+    "Z": key.Z,
 
-    "Digit0": key._0, "Digit1": key._1, "Digit2": key._2, "Digit3": key._3, "Digit4": key._4,
-    "Digit5": key._5, "Digit6": key._6, "Digit7": key._7, "Digit8": key._8, "Digit9": key._9,
+    # Numeric
+    "0": key._0, "1": key._1, "2": key._2, "3": key._3, "4": key._4,
+    "5": key._5, "6": key._6, "7": key._7, "8": key._8, "9": key._9,
 
-    "Backspace": key.BACKSPACE, "Tab": key.TAB, "Enter": key.RETURN, "ShiftLeft": key.LSHIFT, "ShiftRight": key.RSHIFT,
-    "ControlLeft": key.LCTRL, "ControlRight": key.RCTRL, "AltLeft": key.LALT, "AltRight": key.RALT,
-    "Escape": key.ESCAPE, "Space": key.SPACE,
+    # Whitespace and control keys
+    "Backspace": key.BACKSPACE,
+    "Tab": key.TAB,
+    "Enter": key.RETURN,
+    "Escape": key.ESCAPE,
+    " ": key.SPACE,
 
-    "ArrowLeft": key.LEFT, "ArrowUp": key.UP, "ArrowRight": key.RIGHT, "ArrowDown": key.DOWN,
+    # Navication keys
+    "Insert": key.INSERT,
+    "Home": key.HOME,
+    "End": key.END,
+    "PageUp": key.PAGEUP,
+    "PageDown": key.PAGEDOWN,
+    "ArrowLeft": key.LEFT,
+    "ArrowUp": key.UP,
+    "ArrowRight": key.RIGHT,
+    "ArrowDown": key.DOWN,
 
-    "F1": key.F1, "F2": key.F2, "F3": key.F3, "F4": key.F4, "F5": key.F5, "F6": key.F6, "F7": key.F7,
-    "F8": key.F8, "F9": key.F9, "F10": key.F10, "F11": key.F11, "F12": key.F12,
+    # Modifier keys
+    "Shift": key.LSHIFT,
+    "ShiftLeft": key.LSHIFT,
+    "ShiftRight": key.RSHIFT,
+    "Control": key.LCTRL,
+    "ControlLeft": key.LCTRL,
+    "ControlRight": key.RCTRL,
+    "Alt": key.LALT,
+    "AltLeft": key.LALT,
+    "AltRight": key.RALT,
+    "Meta": key.LMETA,
+    "MetaLeft": key.LMETA,
+    "MetaRight": key.RMETA,
+    "Pause": key.PAUSE,
+    "PrintScreen": key.PRINT,
+    "ContextMenu": key.MENU,
+
+    # Locks
+    "CapsLock": key.CAPSLOCK,
+    "NumLock": key.NUMLOCK,
+    "ScrollLock": key.SCROLLLOCK,
+
+    # Function keys
+    "F1": key.F1, "F2": key.F2, "F3": key.F3, "F4": key.F4,
+    "F5": key.F5, "F6": key.F6, "F7": key.F7, "F8": key.F8,
+    "F9": key.F9, "F10": key.F10, "F11": key.F11, "F12": key.F12,
 
     "Numpad0": key.NUM_0, "Numpad1": key.NUM_1, "Numpad2": key.NUM_2, "Numpad3": key.NUM_3,
     "Numpad4": key.NUM_4, "Numpad5": key.NUM_5, "Numpad6": key.NUM_6, "Numpad7": key.NUM_7,
-    "Numpad8": key.NUM_8, "Numpad9": key.NUM_9, "NumpadMultiply": key.NUM_MULTIPLY,
-    "NumpadAdd": key.NUM_ADD, "NumpadSubtract": key.NUM_SUBTRACT, "NumpadDecimal": key.NUM_DECIMAL,
+    "Numpad8": key.NUM_8, "Numpad9": key.NUM_9,
+    "NumpadMultiply": key.NUM_MULTIPLY,
+    "NumpadAdd": key.NUM_ADD,
+    "NumpadSubtract": key.NUM_SUBTRACT,
+    "NumpadDecimal": key.NUM_DECIMAL,
     "NumpadDivide": key.NUM_DIVIDE,
+    "NumpadEnter": key.NUM_ENTER,
 
-    "CapsLock": key.CAPSLOCK, "NumLock": key.NUMLOCK, "ScrollLock": key.SCROLLLOCK,
-
-}
-
-# Special character mapping (needed for `event.key`)
-chmap = {
     "!": key.EXCLAMATION, "@": key.AT, "#": key.HASH, "$": key.DOLLAR, "%": key.PERCENT,
     "^": key.ASCIICIRCUM, "&": key.AMPERSAND, "*": key.ASTERISK, "(": key.PARENLEFT,
     ")": key.PARENRIGHT, "-": key.MINUS, "_": key.UNDERSCORE, "=": key.EQUAL, "+": key.PLUS,
@@ -100,12 +141,8 @@ def js_key_to_pyglet(event):
     """Convert JS event code to the equivalent key mapping."""
     modifiers = 0
 
-    # Use event.code if available
-    if event.code in code_map:
-        symbol = code_map[event.code]
-    # Check special character mapping (needed for characters like `@`, `!`)
-    elif event.key in chmap:
-        symbol = chmap[event.key]
+    if event.key in _key_map:
+        symbol = _key_map[event.key]
     # Doesn't exist in either mapping. Unknown.
     else:
         symbol = event.code if event.code else 0
@@ -162,17 +199,6 @@ def translate_mouse_bits(buttons: int) -> int:
     if buttons & JS_MOUSE_FORWARD_BIT:  # JavaScript Forward (X2)
         result |= mouse.MOUSE5
     return result
-
-
-def BrowserWindowEventHandler(name: str):
-    def _event_wrapper(f: Callable) -> Callable:
-        f._platform_event = True  # noqa: SLF001
-        if not hasattr(f, '_platform_event_data'):
-            f._platform_event_data = []  # noqa: SLF001
-        f._platform_event_data.append(name)  # noqa: SLF001
-        return f
-
-    return _event_wrapper
 
 
 def CanvasEventHandler(name: str):
@@ -469,7 +495,7 @@ class EmscriptenWindow(BaseWindow):
         if symbol in self._keys_down:
             self._keys_down.remove(symbol)
         else:
-            js.console.log(f"{symbol} was released but was not down. This should not occur.")
+            js.console.log(f"{event.key} was released but was not down. This should not occur.")
 
         self.dispatch_event('on_key_release', symbol, modifiers)
 
