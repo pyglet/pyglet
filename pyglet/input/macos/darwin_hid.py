@@ -512,10 +512,26 @@ _button_names = {
 
 
 class PygletDevice(Device):
-    def __init__(self, display, device):
+    """
+    Represents a device in the Pyglet input system.
+    
+    :param display: The display the device is attached to.
+    :param device: The HIDDevice object.
+    :param axis_filter: A list of usage_pages to include
+                        (e.g. [0x1]).
+    :param button_filter: A list of usage_pages to include
+                          (e.g. [0x1]).
+    """
+    
+    
+    def __init__(self, display, device, axis_filter=None, button_filter=None):
         super().__init__(display=display, name=device.product)
         self.device = device
         self.device.add_value_observer(self)
+        
+        self._axis_filter = axis_filter
+        self._button_filter = button_filter
+        
         self._create_controls()
 
     def open(self, window=None, exclusive=False):
@@ -544,12 +560,22 @@ class PygletDevice(Device):
         for element in self.device.elements:
             raw_name = element.name or '0x%x:%x' % (element.usagePage, element.usage)
             if element.type in (kIOHIDElementTypeInput_Misc, kIOHIDElementTypeInput_Axis):
+                
+                # apply axis filter to allow filtering for usage pages
+                if self._axis_filter is not None and element.usagePage not in self._axis_filter:
+                    continue
+                
                 name = _axis_names.get((element.usagePage, element.usage))
                 if element.isRelative:
                     control = RelativeAxis(name, raw_name)
                 else:
                     control = AbsoluteAxis(name, element.logicalMin, element.logicalMax, raw_name)
             elif element.type == kIOHIDElementTypeInput_Button:
+                
+                # apply button filter to allow filtering for usage pages
+                if self._button_filter is not None and element.usagePage not in self._button_filter:
+                    continue
+                
                 name = _button_names.get((element.usagePage, element.usage))
                 control = Button(name, raw_name)
             else:
@@ -629,7 +655,7 @@ def _create_controller(device, display):
     if device.is_joystick() or device.is_gamepad() or device.is_multi_axis():
 
         if mapping := get_mapping(device.get_guid()):
-            return Controller(PygletDevice(display, device), mapping)
+            return Controller(PygletDevice(display, device, axis_filter=[0x1, 0x2]), mapping)
         else:
             warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
                           f"has no controller mappings. Update the mappings in the Controller DB.")
