@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, Sequence, Type
 
 from _ctypes import Array, _Pointer, _SimpleCData
 
+import pyglet.graphics
 from pyglet.graphics.api.webgl import vertexarray
 from pyglet.graphics.api.webgl.gl import (
     GL_BYTE,
@@ -41,12 +42,6 @@ from pyglet.graphics.api.webgl.gl import (
     GLintptr,
     GLsizei,
     GLvoid,
-    glDrawArrays,
-    glDrawArraysInstanced,
-    glDrawElements,
-    glDrawElementsInstanced,
-    glMultiDrawArrays,
-    glMultiDrawElements,
 )
 from pyglet.graphics import allocation
 from pyglet.graphics.api.webgl.enums import geometry_map
@@ -291,6 +286,17 @@ class VertexDomain:
     _vertex_class: type[VertexList] = VertexList
 
     def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
+        self._context = pyglet.graphics.global_backend.current_context
+        self._gl = self._context.gl
+
+        ext = self._gl.getExtension("WEBGL_multi_draw")
+        if ext:
+            self._multi_draw_array = ext.multiDrawArraysWEBGL
+            self._multi_draw_elements = ext.multiDrawElementsWEBGL
+        else:
+            self._multi_draw_array = None
+            self._multi_draw_elements = None
+
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
         self.vao = vertexarray.VertexArray()
@@ -387,11 +393,16 @@ class VertexDomain:
             pass
         elif primcount == 1:
             # Common case
-            glDrawArrays(mode, starts[0], sizes[0])
+            self._gl.drawArrays(mode, starts[0], sizes[0])
         else:
-            starts = (GLint * primcount)(*starts)
-            sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawArrays(mode, starts, sizes, primcount)
+            if self._multi_draw_array:
+                starts = (GLint * primcount)(*starts)
+                sizes = (GLsizei * primcount)(*sizes)
+                self._multi_draw_array(starts[:], 0, sizes[:], 0, primcount)
+            else:
+                # If not available, draw separately.
+                for start, size in zip(starts, sizes):
+                    self._gl.drawArrays(mode, start, size)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
         """Draw a specific VertexList in the domain.
@@ -410,7 +421,7 @@ class VertexDomain:
         for buffer, _ in self.buffer_attributes:
             buffer.commit()
 
-        glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
+        self._gl.drawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
 
     @property
     def is_empty(self) -> bool:
@@ -633,13 +644,17 @@ class IndexedVertexDomain(VertexDomain):
             pass
         elif primcount == 1:
             # Common case
-            glDrawElements(mode, sizes[0], self.index_gl_type,
-                           starts[0] * self.index_element_size)
+            self._gl.drawElements(mode, sizes[0], self.index_gl_type, starts[0] * self.index_element_size)
         else:
-            starts = [s * self.index_element_size for s in starts]
-            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-            sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawElements(mode, sizes[:], 0, self.index_gl_type, starts[:], 0, primcount)
+            if self._multi_draw_elements:
+                starts = [s * self.index_element_size for s in starts]
+                starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+                sizes = (GLsizei * primcount)(*sizes)
+                self._multi_draw_elements(mode, sizes[:], 0, self.index_gl_type, starts[:], 0, primcount)
+            else:
+                for start, size in zip(starts, sizes):
+                    self._gl.drawElements(mode, size, self.index_gl_type,
+                                          start * self.index_element_size)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
@@ -659,7 +674,7 @@ class IndexedVertexDomain(VertexDomain):
 
         self.index_buffer.commit()
 
-        glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
+        self._gl.drawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
                        vertex_list.index_start * self.index_element_size)
 
 

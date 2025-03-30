@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.webgl.gl import glCreateVertexArray, glDeleteVertexArray, glBindVertexArray
 
 if TYPE_CHECKING:
-    from ctypes import c_uint
+    from pyglet.graphics.api.webgl.webgl_js import WebGLVertexArrayObject
 
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.webgl import OpenGLWindowContext
 
 __all__ = ['VertexArray']
 
@@ -16,32 +15,32 @@ __all__ = ['VertexArray']
 class VertexArray:
     """OpenGL Vertex Array Object."""
     _context: OpenGLWindowContext | None
-    _id: c_uint
+    _id: WebGLVertexArrayObject
 
     def __init__(self) -> None:
         """Create an instance of a Vertex Array object."""
         self._context = pyglet.graphics.api.global_backend.current_context
-        self._id = glCreateVertexArray()
+        self._gl = self._context.gl
+        self._id = self._gl.createVertexArray()
 
     @property
-    def id(self) -> int:
-        return self._id.value
+    def id(self) -> WebGLVertexArrayObject | int:
+        return self._id
 
     def bind(self) -> None:
-        glBindVertexArray(self._id)
+        self._gl.bindVertexArray(self._id)
 
-    @staticmethod
-    def unbind() -> None:
-        glBindVertexArray(None)
+    def unbind(self) -> None:
+        self._gl.bindVertexArray(None)
 
     def delete(self) -> None:
-        glDeleteVertexArray(self._id)
+        self._gl.deleteVertexArray(self._id)
         self._id = None
 
     __enter__ = bind
 
     def __exit__(self, *_) -> None:  # noqa: ANN002
-        glBindVertexArray(None)
+        self._gl.bindVertexArray(None)
 
     def __del__(self) -> None:
         if self._id is not None:
@@ -52,4 +51,4 @@ class VertexArray:
                 pass  # Interpreter is shutting down
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self._id.value})"
+        return f"{self.__class__.__name__}(id={self._id})"

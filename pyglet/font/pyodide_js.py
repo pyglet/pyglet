@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 _font_canvas = js.document.createElement("canvas")
 # Added desynchronized for testing. Supposedly lower latency, but may introduce artifacts?
 # Doesn't seem to affect quality since we are just using this to get pixel data. Remove if problem in future.
-_font_context = _font_canvas.getContext("2d", willReadFrequently=True, desynchronized=True)
+_font_context = _font_canvas.getContext("2d", willReadFrequently=True, desynchronized=True, antialias=False)
 
 class PyodideGlyphRenderer(base.GlyphRenderer):
     font: PyodideFont
@@ -40,6 +40,9 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         _font_canvas.width = w
         _font_canvas.height = h
         _font_context.imageSmoothingEnabled = False  # Doesn't seem to make a difference with antialiasing?
+        _font_context.mozImageSmoothingEnabled = False
+        _font_context.webkitImageSmoothingEnabled = False
+        _font_context.msImageSmoothingEnabled = False
         _font_context.font = self.font.js_name
         _font_context.fillStyle = 'white'
 

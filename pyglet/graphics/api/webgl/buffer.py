@@ -15,7 +15,6 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-from _ctypes import Array
 
 import pyglet
 from pyglet.customtypes import CType, CTypesPointer
@@ -28,20 +27,15 @@ from pyglet.graphics.api.webgl.gl import (
     GL_MAP_READ_BIT,
     GL_MAP_WRITE_BIT,
     GL_WRITE_ONLY,
-    GLubyte,
-    GLuint,
-    glBindBuffer,
-    glBufferData,
-    glBufferSubData,
-    glGetBufferSubData,
-    glDeleteBuffer,
-    glCreateBuffer, GL_DYNAMIC_READ, GL_BUFFER_SIZE, glGetBufferParameter,
+    GL_BUFFER_SIZE,
 )
 
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
+    from _ctypes import Array
+    from pyglet.graphics.api.webgl import OpenGLWindowContext
     from pyglet.graphics.shader import Attribute
 
 
@@ -57,12 +51,12 @@ class BufferObject(AbstractBuffer):
     The intended target can be set when binding the buffer.
     """
 
-    id: int
+    id: WebGLBuffer
     usage: int
     target: int
     _context: OpenGLWindowContext | None
 
-    def __init__(self, size: int, target = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, size: int, target: int = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage.
 
         JS does not allow to directly map memory, so all of them must be backed.
@@ -71,18 +65,15 @@ class BufferObject(AbstractBuffer):
         self.usage = usage
         self.target = target
         self._context = pyglet.graphics.api.global_backend.current_context
+        self._gl = self._context.gl
 
-        self.id = glCreateBuffer()
+        self.id = self._gl.createBuffer()
 
-        glBindBuffer(self.target, self.id)
-        glBufferData(self.target, self.size, self.usage)
+        self._gl.bindBuffer(self.target, self.id)
+        self._gl.bufferData(self.target, self.size, self.usage)
 
     def get_bytes(self) -> bytes:
-        glBindBuffer(self.target, self.id)
-        ptr = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
-        data = ctypes.string_at(ptr, size=self.size)
-        glUnmapBuffer(self.target)
-        return data
+        ...
 
     def get_bytes_region(self, offset: int, length: int) -> bytes:
         ...
@@ -100,21 +91,21 @@ class BufferObject(AbstractBuffer):
         ...
 
     def get_buffer_size(self):
-        return glGetBufferParameter(self.target, GL_BUFFER_SIZE)
+        return self._gl.getBufferParameter(self.target, GL_BUFFER_SIZE)
 
     def invalidate(self) -> None:
-        glBufferData(self.target, self.size, None, self.usage)
+        self._gl.bufferData(self.target, None, self.usage)
 
     def bind(self) -> None:
-        glBindBuffer(self.target, self.id)
+        self._gl.bindBuffer(self.target, self.id)
 
     def unbind(self) -> None:
-        glBindBuffer(self.target, 0)
+        self._gl.bindBuffer(self.target, 0)
 
     def get_data(self) -> ctypes.Array[CType]:
         data = js.Uint8Array.new(self.size)
-        glBindBuffer(self.target, self.id)
-        glGetBufferSubData(self.target, 0, data)
+        self._gl.bindBuffer(self.target, self.id)
+        self._gl.getBufferSubData(self.target, 0, data)
         py_buffer = data.buffer.to_py(depth=1)
         return bytes(py_buffer)
 
@@ -122,12 +113,12 @@ class BufferObject(AbstractBuffer):
         byte_data = ctypes.string_at(data, ctypes.sizeof(data.contents))
         buffer = pyodide.ffi.to_js(memoryview(byte_data))
         js_array = js.Uint8Array.new(buffer)
-        glBindBuffer(self.target, self.id)
-        glBufferData(self.target, js_array, self.usage)
+        self._gl.bindBuffer(self.target, self.id)
+        self._gl.bufferData(self.target, js_array, self.usage)
 
     def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
-        glBindBuffer(self.target, self.id)
-        glBufferSubData(self.target, start, length, data)
+        self._gl.bindBuffer(self.target, self.id)
+        self._gl.bufferSubData(self.target, start, data)
 
     def map(self, bits=GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
         raise NotImplementedError()
@@ -139,7 +130,7 @@ class BufferObject(AbstractBuffer):
         raise NotImplementedError()
 
     def delete(self) -> None:
-        glDeleteBuffer(self.id)
+        self._gl.deleteBuffer(self.id)
         self.id = None
 
     def __del__(self) -> None:
@@ -154,13 +145,13 @@ class BufferObject(AbstractBuffer):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
-        glBindBuffer(self.target, self.id)
+        self._gl.bindBuffer(self.target, self.id)
         data = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         ctypes.memmove(temp, data, min(size, self.size))
         glUnmapBuffer(self.target)
 
         self.size = size
-        glBufferData(self.target, self.size, temp, self.usage)
+        self._gl.bufferData(self.target, self.size, temp, self.usage)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, data_type={self.data_type}, size={self.size})"
@@ -208,20 +199,20 @@ class BackedBufferObject(BufferObject):
         if not self._dirty:
             return
 
-        glBindBuffer(self.target, self.id)
+        self._gl.bindBuffer(self.target, self.id)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
                 byte_data = ctypes.string_at(self.data_ptr, self.size)
                 buffer = pyodide.ffi.to_js(memoryview(byte_data))
                 js_array = js.Uint8Array.new(buffer)
-                glBufferData(self.target, js_array, self.usage)
+                self._gl.bufferData(self.target, js_array, self.usage)
             else:
                 byte_data = ctypes.string_at(self.data_ptr + self._dirty_min, size)
                 buffer = pyodide.ffi.to_js(memoryview(byte_data))
                 js_array = js.Uint8Array.new(buffer)
 
-                glBufferSubData(self.target, self._dirty_min, js_array)
+                self._gl.bufferSubData(self.target, self._dirty_min, js_array)
 
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
@@ -299,7 +290,7 @@ class IndexedBufferObject(BackedBufferObject):
 
     def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
 
 
 class PersistentBufferObject(BackedBufferObject):

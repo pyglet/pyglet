@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NoReturn, BinaryIO
+from typing import BinaryIO, NoReturn
 
-from pyglet.util import DecodeException
+import pyglet
 
 from . import MediaDecoder
 from .base import AudioFormat, Source, StaticSource
+
+_debug = pyglet.options.debug_media
 
 
 try:
@@ -17,15 +19,18 @@ except ImportError:
 
 from pyglet.media import get_audio_driver
 
+
 class JavascriptWebAudioSource(Source):
-    def __init__(self, filename: str, file: BinaryIO | None=None) -> None:  # noqa: D107
+    def __init__(self, filename: str, file: BinaryIO | None = None) -> None:  # noqa: D107
         if file is None:
             with open(filename, 'rb') as f:
                 data = f.read()
             self._file = data
+        else:
+            self._file = file.read()
 
         self.filename = filename
-        self.js_array = js.Uint8Array.new()
+        self.js_array = js.Uint8Array.new(self._file)
         self.audio_buffer = None
         self._duration = 0
         self._current_offset = 0
@@ -34,7 +39,8 @@ class JavascriptWebAudioSource(Source):
 
     # Decode the audio data
     def on_decode(self, audio_buffer) -> None:
-        print("Decoded successfully:", audio_buffer)
+        if _debug:
+            print(f"Decoded {self.filename} successfully.")
         self.audio_buffer = audio_buffer
 
         self.audio_format = AudioFormat(
@@ -45,7 +51,7 @@ class JavascriptWebAudioSource(Source):
         self._duration = self.audio_buffer.duration
 
     def on_error(self, error) -> NoReturn:
-        raise DecodeException(error)
+        js.console.log(f"Failed decoding {self.filename}: {error}")
 
     def __del__(self) -> None:
         if hasattr(self, '_file'):
@@ -54,7 +60,7 @@ class JavascriptWebAudioSource(Source):
         self.js_array = None
         self.audio_buffer = None
 
-    def get_audio_data(self, num_bytes: int, compensation_time: float=0.0) -> NoReturn:
+    def get_audio_data(self, num_bytes: int, compensation_time: float = 0.0) -> NoReturn:
         raise NotImplementedError("This is not supported and should not be called.")
 
     def seek(self, timestamp: float) -> NoReturn:
@@ -65,13 +71,13 @@ class JavascriptWebAudioSource(Source):
 #   Decoder class:
 #########################################
 
-class PyodideDecoder(MediaDecoder):  # noqa: D101
 
+class PyodideDecoder(MediaDecoder):  # noqa: D101
     def get_file_extensions(self) -> tuple[str, ...]:
         return '.mp3', '.aac', '.wav', '.ogg', '.webm'
         # possibly use audio.canPlayType?
 
-    def decode(self, filename: str, file: BinaryIO, streaming: bool=True) -> JavascriptWebAudioSource | StaticSource:
+    def decode(self, filename: str, file: BinaryIO, streaming: bool = True) -> JavascriptWebAudioSource | StaticSource:
         if streaming:
             return JavascriptWebAudioSource(filename, file)
         return StaticSource(JavascriptWebAudioSource(filename, file))

@@ -31,9 +31,6 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 import pyglet
 from pyglet.graphics.api.webgl.buffer import BufferObject
 
-
-class GLException(Exception):
-    pass
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import (
     GL_FALSE,
@@ -41,23 +38,6 @@ from pyglet.graphics.api.webgl.gl import (
     GL_LINK_STATUS,
     GL_TRUE,
     GL_UNIFORM_BUFFER,
-    glAttachShader,
-    glBindBufferBase,
-    glCreateProgram,
-    glDeleteProgram,
-    glDeleteShader,
-    glDetachShader,
-    #glDispatchCompute,
-    glEnableVertexAttribArray,
-    glGetActiveAttrib,
-    glGetProgramInfoLog,
-    glGetProgramParameter,
-    glLinkProgram,
-    #glMemoryBarrier,
-    glUseProgram,
-    glVertexAttribDivisor,
-    glVertexAttribPointer,
-    glGetParameter,
 )
 from pyglet.graphics.shader import ShaderSource, ShaderType, ShaderBase, Attribute, \
     ShaderProgramBase, UniformBufferObjectBase
@@ -66,11 +46,20 @@ from pyglet.graphics.shader import ShaderException
 #from pyglet.graphics.api.webgl.buffer import BufferObject
 from pyglet.graphics import GeometryMode
 
+try:
+    import js
+except ImportError:
+    pass
+
+
+class GLException(Exception):
+    pass
 if TYPE_CHECKING:
 
+    from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext, WebGL2RenderingContext, WebGLProgram
     from _weakref import CallableProxyType
     from pyglet.customtypes import CTypesPointer, DataTypes
-    from pyglet.graphics.api.gl.base import OpenGLWindowContext
+    from pyglet.graphics.api.webgl.context import OpenGLWindowContext
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import CTypesDataType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
@@ -113,90 +102,6 @@ _shader_types: dict[ShaderType, int] = {
     'vertex': gl.GL_VERTEX_SHADER,
 }
 
-_uniform_getters: dict[GLDataType, Callable] = {
-    gl.GLint: gl.glGetUniform,
-    gl.GLfloat: gl.glGetUniform,
-    gl.GLboolean: gl.glGetUniform,
-}
-
-_uniform_setters: dict[int, tuple[GLDataType, GLFunc, GLFunc, int]] = {
-    # uniform:    gl_type, legacy_setter, setter, length
-    gl.GL_BOOL: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_BOOL_VEC2: (gl.GLint, gl.glUniform2iv, gl.glUniform2iv, 2),
-    gl.GL_BOOL_VEC3: (gl.GLint, gl.glUniform3iv, gl.glUniform3iv, 3),
-    gl.GL_BOOL_VEC4: (gl.GLint, gl.glUniform4iv, gl.glUniform4iv, 4),
-
-    gl.GL_INT: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_INT_VEC2: (gl.GLint, gl.glUniform2iv, gl.glUniform2iv, 2),
-    gl.GL_INT_VEC3: (gl.GLint, gl.glUniform3iv, gl.glUniform3iv, 3),
-    gl.GL_INT_VEC4: (gl.GLint, gl.glUniform4iv, gl.glUniform4iv, 4),
-
-    gl.GL_FLOAT: (gl.GLfloat, gl.glUniform1f, gl.glUniform1f, 1),
-    gl.GL_FLOAT_VEC2: (gl.GLfloat, gl.glUniform2fv, gl.glUniform2fv, 2),
-    gl.GL_FLOAT_VEC3: (gl.GLfloat, gl.glUniform3fv, gl.glUniform3fv, 3),
-    gl.GL_FLOAT_VEC4: (gl.GLfloat, gl.glUniform4fv, gl.glUniform4fv, 4),
-
-    # 1D Samplers
-    gl.GL_SAMPLER_1D: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_1D: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_INT_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_1D: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-
-    # 2D Samplers
-    gl.GL_SAMPLER_2D: (gl.GLint, gl.glUniform1i, gl.glUniform1i, 1),
-    gl.GL_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_2D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_2D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    # Multisample
-    gl.GL_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-
-    # Cube Samplers
-    gl.GL_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_CUBE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-
-    # 3D Samplers
-    gl.GL_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_INT_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-
-    gl.GL_FLOAT_MAT2: (gl.GLfloat, gl.glUniformMatrix2fv, gl.glUniformMatrix2fv, 4),
-    gl.GL_FLOAT_MAT3: (gl.GLfloat, gl.glUniformMatrix3fv, gl.glUniformMatrix3fv, 6),
-    gl.GL_FLOAT_MAT4: (gl.GLfloat, gl.glUniformMatrix4fv, gl.glUniformMatrix4fv, 16),
-
-    # TODO: test/implement these:
-    # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glUniformMatrix2x3fv,
-    # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv, glUniformMatrix2x4fv,
-    # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv, glUniformMatrix3x2fv,
-    # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glUniformMatrix3x4fv,
-    # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glUniformMatrix4x2fv,
-    # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glUniformMatrix4x3fv,
-
-    gl.GL_IMAGE_1D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_IMAGE_2D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 2),
-    gl.GL_IMAGE_2D_RECT: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-    gl.GL_IMAGE_3D: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-
-    gl.GL_IMAGE_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 2),
-    gl.GL_IMAGE_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-
-    gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 2),
-    gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-
-    gl.GL_IMAGE_BUFFER: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-    gl.GL_IMAGE_CUBE: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 1),
-    gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glUniform1iv, 3),
-}
-
 _attribute_types: dict[int, tuple[int, DataTypes]] = {
     gl.GL_BOOL: (1, '?'),
     gl.GL_BOOL_VEC2: (2, '?'),
@@ -232,7 +137,7 @@ class GLAttribute(Attribute):
     gl_type: int
     """OpenGL type enumerant; for example, ``GL_FLOAT``"""
 
-    def __init__(self, name: str, location: int, components: int, data_type: DataTypes, normalize: bool,
+    def __init__(self, name: str, location: int, components: int, data_type: DataTypes, normalize: bool,  # noqa: D417
                  instance: bool) -> None:
         """Create the attribute accessor.
 
@@ -250,11 +155,12 @@ class GLAttribute(Attribute):
 
         """
         super().__init__(name, location, components, data_type, normalize, instance)
+        self._gl = pyglet.graphics.api.global_backend.current_context.gl
         self.gl_type = _data_type_to_gl_type[self.data_type]
 
     def enable(self) -> None:
         """Enable the attribute."""
-        glEnableVertexAttribArray(self.location)
+        self._gl.enableVertexAttribArray(self.location)
 
     def set_pointer(self, ptr: int) -> None:
         """Setup this attribute to point to the currently bound buffer at the given offset.
@@ -266,10 +172,10 @@ class GLAttribute(Attribute):
                 Pointer offset to the currently bound buffer for this attribute.
 
         """
-        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
+        self._gl.vertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
 
     def set_divisor(self) -> None:
-        glVertexAttribDivisor(self.location, 1)
+        self._gl.vertexAttribDivisor(self.location, 1)
 
     def __repr__(self) -> str:
         return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
@@ -282,19 +188,19 @@ class _UniformArray:
     Types with a length longer than 1 will be returned as tuples as an inner list would not support individual value
     reassignment. Array data must either be set in full, or by indexing.
     """
+    _gl: WebGLRenderingContext
     _uniform: _Uniform
     _gl_type: GLDataType
     _gl_getter: GLFunc
     _gl_setter: GLFunc
     _is_matrix: bool
-    _dsa: bool
     _c_array: Array[GLDataType]
     _ptr: CTypesPointer[GLDataType]
     _idx_to_loc: dict[int, int]
 
     __slots__ = (
         '_c_array',
-        '_dsa',
+        '_gl',
         '_gl_getter',
         '_gl_setter',
         '_gl_type',
@@ -304,15 +210,14 @@ class _UniformArray:
         '_uniform',
     )
 
-    def __init__(self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
-                 dsa: bool) -> None:
+    def __init__(self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool) -> None:
         self._uniform = uniform
         self._gl_type = gl_type
         self._gl_getter = gl_getter
         self._gl_setter = gl_setter
         self._is_matrix = is_matrix
         self._idx_to_loc = {}  # Array index to uniform location mapping.
-        self._dsa = dsa
+        self._gl = pyglet.graphics.api.global_backend.current_context.gl
 
         if self._uniform.length > 1:
             self._c_array = (gl_type * self._uniform.length * self._uniform.size)()
@@ -330,8 +235,7 @@ class _UniformArray:
         offset from 0 to index. Here, we store the location ID's of each index to ensure we are setting data on the
         right location.
         """
-        loc = gl.glGetUniformLocation(self._uniform.program,
-                                create_string_buffer(f"{self._uniform.name}[{index}]".encode()))
+        loc = self._gl.getUniformLocation(self._uniform.program, f"{self._uniform.name}[{index}]")
         return loc
 
     def _get_array_loc(self, index: int) -> int:
@@ -406,17 +310,11 @@ class _UniformArray:
 
         location = self._get_location_for_index(offset)
 
-        if self._dsa:
-            if self._is_matrix:
-                self._gl_setter(self._uniform.program, location, size, GL_FALSE, data)
-            else:
-                self._gl_setter(self._uniform.program, location, size, data)
+        self._gl.useProgram(self._uniform.program)
+        if self._is_matrix:
+            self._gl_setter(location, size, GL_FALSE, data)
         else:
-            glUseProgram(self._uniform.program)
-            if self._is_matrix:
-                self._gl_setter(location, size, GL_FALSE, data)
-            else:
-                self._gl_setter(location, size, data)
+            self._gl_setter(location, size, data)
 
     def __repr__(self) -> str:
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
@@ -431,27 +329,28 @@ _gl_matrices: tuple[int, ...] = (
 
 
 class _Uniform:
+    _ctx: OpenGLWindowContext | None
     type: int
     size: int
     location: int
-    program: int
+    program: int | WebGLProgram
     name: str
     length: int
     get: Callable[[], Array[GLDataType] | GLDataType]
     set: Callable[[float], None] | Callable[[Sequence], None]
 
-    __slots__ = 'count', 'get', 'length', 'location', 'name', 'program', 'set', 'size', 'type'
+    __slots__ = '_ctx', 'count', 'get', 'length', 'location', 'name', 'program', 'set', 'size', 'type'
 
-    def __init__(self, program: int, name: str, uniform_type: int, size: int, location: int, dsa: bool) -> None:
+    def __init__(self, program: int | WebGLProgram, name: str, uniform_type: int, size: int, location: int) -> None:
+        self._ctx = pyglet.graphics.api.global_backend.current_context
         self.name = name
         self.type = uniform_type
         self.size = size
         self.location = location
         self.program = program
 
-        gl_type, gl_setter_legacy, gl_setter_dsa, length = _uniform_setters[uniform_type]
-        gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
-        gl_getter = _uniform_getters[gl_type]
+        gl_type, gl_setter, length = self._ctx._uniform_setters[uniform_type]
+        gl_getter = self._ctx.gl.getUniform
 
         # Argument length of data
         self.length = length
@@ -460,7 +359,7 @@ class _Uniform:
 
         # If it's an array, use the wrapper object.
         if size > 1:
-            array = _UniformArray(self, gl_getter, gl_setter, gl_type, is_matrix, dsa)
+            array = _UniformArray(self, gl_getter, gl_setter, gl_type, is_matrix)
             self.get = array.get
             self.set = array.set
         else:
@@ -468,10 +367,10 @@ class _Uniform:
             ptr = cast(c_array, POINTER(gl_type))
 
             self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
-            self.set = self._create_setter_func(program, location, gl_setter, c_array, length, ptr, is_matrix, dsa)
+            self.set = self._create_setter_func(self._ctx.gl, program, location, gl_setter, c_array, length, ptr, is_matrix)
 
     @staticmethod
-    def _create_getter_func(program_id: int, location: int, gl_getter: GLFunc, c_array: Array[GLDataType],
+    def _create_getter_func(program_id: int | WebGLRenderingContext, location: int, gl_getter: GLFunc, c_array: Array[GLDataType],
                             length: int) -> Callable[[], Array[GLDataType] | GLDataType]:
         """Factory function for creating simplified Uniform getters."""
         if length == 1:
@@ -486,43 +385,22 @@ class _Uniform:
         return getter_func
 
     @staticmethod
-    def _create_setter_func(program_id: int, location: int, gl_setter: GLFunc, c_array: Array[GLDataType], length: int,
-                            ptr: CTypesPointer[GLDataType], is_matrix: bool, dsa: bool) -> Callable[[float], None]:
+    def _create_setter_func(gl_ctx: WebGLRenderingContext, program_id: int | WebGLProgram, location: int, gl_setter: GLFunc, c_array: Array[GLDataType], length: int,
+                            ptr: CTypesPointer[GLDataType], is_matrix: bool) -> Callable[[float], None]:
         """Factory function for creating simplified Uniform setters."""
-        if dsa:  # Bindless updates:
-
-            if is_matrix:
-                def setter_func(value: float) -> None:
-                    c_array[:] = value
-                    gl_setter(program_id, location, 1, GL_FALSE, ptr)
-            elif length == 1:
-                def setter_func(value: float) -> None:
-                    c_array[0] = value
-                    gl_setter(program_id, location, 1, ptr)
-            elif length > 1:
-                def setter_func(values: float) -> None:
-                    c_array[:] = values
-                    gl_setter(program_id, location, 1, ptr)
-
-            else:
-                msg = "Uniform type not yet supported."
-                raise ShaderException(msg)
-
-            return setter_func
-
         if is_matrix:
             def setter_func(value: float) -> None:
-                glUseProgram(program_id)
+                gl_ctx.useProgram(program_id)
                 c_array[:] = value
                 gl_setter(location, 1, GL_FALSE, ptr)
         elif length == 1:
             def setter_func(value: float) -> None:
-                glUseProgram(program_id)
+                gl_ctx.useProgram(program_id)
                 c_array[0] = value
                 gl_setter(location, 1, ptr)
         elif length > 1:
             def setter_func(values: float) -> None:
-                glUseProgram(program_id)
+                gl_ctx.useProgram(program_id)
                 c_array[:] = values
                 gl_setter(location, 1, ptr)
         else:
@@ -552,7 +430,7 @@ class _UBOBindingManager:
         self._ubo_programs = defaultdict(weakref.WeakSet)
         # Reserve 'WindowBlock' for 0.
         self._ubo_names = {'WindowBlock': 0}
-        self._max_binding_count = get_maximum_binding_count()
+        self._max_binding_count = 5#get_maximum_binding_count()
         self._pool = list(range(1, self._max_binding_count))
         self._in_use = {0}
 
@@ -649,7 +527,7 @@ def compute_std140_offsets(uniforms):
 
     for name, c_type, length, size in uniforms.values():
         type_size = sizeof(c_type * length)
-        align_size = type_size if type_size < 16 else 16  # ✅ Align to std140 rules
+        align_size = min(16, type_size)  # Align to std140
 
         # Align offset
         if offset % align_size != 0:
@@ -661,28 +539,8 @@ def compute_std140_offsets(uniforms):
 
     return offsets
 
-
-# Query all active uniforms and store their types
-def get_active_uniforms(program):
-    """Retrieves active uniforms and their types."""
-    uniform_count = gl.glGetProgramParameter(program, gl.ACTIVE_UNIFORMS)
-    uniforms = []
-    uniform_name_to_type = {}
-
-    for i in range(uniform_count):
-        uniform_info = gl.glGetActiveUniform(program, i)
-        if uniform_info:
-            name = uniform_info.name
-            size = uniform_info.size  # Array size (1 if not an array)
-            dtype = uniform_info.type  # WebGL type
-
-            # Store for later use in offset computation
-            uniforms.append((name, dtype, size))
-            uniform_name_to_type[name] = (dtype, size)
-
-    return uniforms, uniform_name_to_type
-
-class UniformBlock:
+class UniformBlock:  # noqa: D101
+    ctx: OpenGLWindowContext | None
     program: CallableProxyType[Callable[..., Any] | Any] | Any
     name: str
     index: int
@@ -690,11 +548,13 @@ class UniformBlock:
     binding: int
     uniforms: dict[int, tuple[str, GLDataType, int, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
+    __slots__ = 'ctx', 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int) -> None:
         """Initialize a uniform block for a ShaderProgram."""
+        self.ctx = pyglet.graphics.api.global_backend.current_context
+        assert self.ctx
         self.program = weakref.proxy(program)
         self.name = name
         self.index = index
@@ -709,7 +569,7 @@ class UniformBlock:
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind buffer to the binding point."""
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.binding, ubo.buffer.id)
+        self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, self.binding, ubo.buffer.id)
 
     def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
@@ -807,9 +667,7 @@ class UniformBlock:
 
     def _actual_binding_point(self) -> int:
         """Queries OpenGL to find what the bind point currently is."""
-        binding = gl.GLint()
-        gl.glGetActiveUniformBlockiv(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING, binding)
-        return binding.value
+        return self.ctx.gl.getActiveUniformBlockParameter(self.program.id, self.index, gl.GL_UNIFORM_BLOCK_BINDING)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(program={self.program.id}, location={self.index}, size={self.size}, "
@@ -852,30 +710,29 @@ class UniformBufferObject(UniformBufferObjectBase):
 
 # Utility functions:
 
-def _get_number(program_id: int, variable_type: int) -> int:
+def _get_number(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram, variable_type: int) -> int:
     """Get the number of active variables of the passed GL type."""
-    return gl.glGetProgramParameter(program_id, variable_type)
-
-
-def _query_attribute(program_id: int, index: int) -> tuple[str, int, int]:
-    """Query the name, type, and size of an Attribute by index."""
-    info = glGetActiveAttrib(program_id, index)
-    return info.name, info.type, info.size
+    return gl_ctx.getProgramParameter(program_id, variable_type)
 
 
 
-def _introspect_attributes(program_id: int) -> dict[str, Attribute]:
+def _introspect_attributes(program_id: WebGLProgram) -> dict[str, Attribute]:
     """Introspect a Program's Attributes, and return a dict of accessors."""
+    _gl = pyglet.graphics.api.global_backend.current_context.gl
     attributes = {}
 
-    if not gl.glGetProgramParameter(program_id, gl.GL_LINK_STATUS):
+    if not _gl.getProgramParameter(program_id, gl.GL_LINK_STATUS):
         print("Shader program not linked!")
         return {}
 
-    count = _get_number(program_id, gl.GL_ACTIVE_ATTRIBUTES)
+    count = _get_number(_gl, program_id, gl.GL_ACTIVE_ATTRIBUTES)
     for index in range(count):
-        a_name, a_type, a_size = _query_attribute(program_id, index)
-        loc = gl.glGetAttribLocation(program_id, a_name)
+        idx_attribs = _gl.getActiveAttrib(program_id, index)
+        if not idx_attribs:
+            raise ShaderException(f"Attribute Index {index} not found in Program.")
+
+        a_name, a_type, a_size = idx_attribs.name, idx_attribs.type, idx_attribs.size
+        loc = _gl.getAttribLocation(program_id, a_name)
         if loc == -1:  # not a user defined attribute
             continue
         count, fmt = _attribute_types[a_type]
@@ -888,58 +745,50 @@ def _introspect_attributes(program_id: int) -> dict[str, Attribute]:
     return attributes
 
 
-def _link_program(*shaders: Shader) -> int:
+def _link_program(gl: WebGLRenderingContext, *shaders: Shader) -> int:
     """Link one or more Shaders into a ShaderProgram.
 
     Returns:
         The ID assigned to the linked ShaderProgram.
     """
-    program_id = glCreateProgram()
+    program_id = gl.createProgram()
     for shader in shaders:
-        glAttachShader(program_id, shader.id)
-    glLinkProgram(program_id)
+        gl.attachShader(program_id, shader.id)
+    gl.linkProgram(program_id)
 
     # Check the link status of program
-    status = glGetProgramParameter(program_id, GL_LINK_STATUS)
+    status = gl.getProgramParameter(program_id, GL_LINK_STATUS)
     if not status:
-        length = glGetProgramParameter(program_id, GL_INFO_LOG_LENGTH)
+        length = gl.getProgramParameter(program_id, GL_INFO_LOG_LENGTH)
         log = c_buffer(length.value)
-        glGetProgramInfoLog(program_id, len(log), None, log)
+        gl.getProgramInfoLog(program_id, len(log), None, log)
         msg = f"Error linking shader program:\n{log.value.decode()}"
         raise ShaderException(msg)
 
     # Shader objects no longer needed
     for shader in shaders:
-        glDetachShader(program_id, shader.id)
+        gl.detachShader(program_id, shader.id)
 
     return program_id
 
 
-def _get_program_log(program_id: int) -> str:
-    """Query a ShaderProgram link logs."""
-    result = glGetProgramInfoLog(program_id)
-    if result:
-        return f"OpenGL returned the following message when linking the program: \n{result}"
 
-    return f"Program '{program_id}' linked successfully."
-
-
-def _query_uniform(program_id: int, index: int) -> tuple[str, int, int]:
+def _query_uniform(gl_ctx, program_id: WebGLProgram, index: int) -> tuple[str, int, int]:
     """Query the name, type, and size of a Uniform by index."""
     try:
-        info = gl.glGetActiveUniform(program_id, index)
+        info = gl_ctx.getActiveUniform(program_id, index)
         return info.name, info.type, info.size
 
     except GLException as exc:
         raise ShaderException from exc
 
 
-def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]:
+def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram) -> dict[str, _Uniform]:
     """Introspect a Program's uniforms, and return a dict of accessors."""
     uniforms = {}
 
-    for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORMS)):
-        u_name, u_type, u_size = _query_uniform(program_id, index)
+    for index in range(_get_number(gl_ctx, program_id, gl.GL_ACTIVE_UNIFORMS)):
+        u_name, u_type, u_size = _query_uniform(gl_ctx, program_id, index)
 
         # Multidimensional arrays cannot be fully inspected via OpenGL calls and compile errors with 3.3.
         array_count = u_name.count("[0]")
@@ -947,8 +796,8 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
             msg = "Multidimensional arrays are not currently supported."
             raise ShaderException(msg)
 
-        loc = gl.glGetUniformLocation(program_id, u_name)
-        if loc == -1:  # Skip uniforms that may be inside a Uniform Block
+        loc = gl_ctx.getUniformLocation(program_id, u_name)
+        if not loc or loc == -1:  # Skip uniforms that may be inside a Uniform Block
             continue
 
         # Strip [0] from array name for a more user-friendly name.
@@ -956,7 +805,7 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
             u_name = u_name.strip('[0]')
 
         assert u_name not in uniforms, f"{u_name} exists twice in the shader. Possible name clash with an array."
-        uniforms[u_name] = _Uniform(program_id, u_name, u_type, u_size, loc, have_dsa)
+        uniforms[u_name] = _Uniform(program_id, u_name, u_type, u_size, loc)
 
     if _debug_api_shaders:
         for uniform in uniforms.values():
@@ -965,27 +814,21 @@ def _introspect_uniforms(program_id: int, have_dsa: bool) -> dict[str, _Uniform]
     return uniforms
 
 
-def _get_uniform_block_name(program_id: int, index: int) -> str:
-    """Query the name of a Uniform Block, by index."""
-    name = gl.glGetActiveUniformBlockName(program_id, index)
-    if name:
-        return name
-
-    msg = f"Unable to query UniformBlock name at index: {index}"
-    raise ShaderException(msg)  # noqa: B904
-
-
-def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) -> dict[str, UniformBlock]:
+def _introspect_uniform_blocks(ctx: OpenGLWindowContext, program: ShaderProgram | ComputeShaderProgram) -> dict[str, UniformBlock]:
     uniform_blocks = {}
-    program_id = program.id
+    gl_ctx: WebGL2RenderingContext = ctx.gl
+    program_id: WebGLProgram = program.id
 
-    for index in range(_get_number(program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
-        name = _get_uniform_block_name(program_id, index)
+    for index in range(_get_number(gl_ctx, program_id, gl.GL_ACTIVE_UNIFORM_BLOCKS)):
+        name = gl_ctx.getActiveUniformBlockName(program_id, index)
+        if not name:
+            msg = f"Unable to query UniformBlock name at index: {index}"
+            raise ShaderException(msg)  # noqa: B904
 
         #num_active = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS)
-        block_data_size = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE)
-        binding = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_BINDING)
-        indices = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES)
+        block_data_size = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE)
+        binding = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_BINDING)
+        indices = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES)
 
         uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
 
@@ -995,7 +838,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
         manager = pyglet.graphics.api.global_backend.current_context.ubo_manager
 
         for block_uniform_index in indices:
-            uniform_name, u_type, u_size = _query_uniform(program_id, block_uniform_index)
+            uniform_name, u_type, u_size = _query_uniform(gl_ctx, program_id, block_uniform_index)
 
             # Remove block name.
             if uniform_name.startswith(f"{name}."):
@@ -1005,7 +848,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
                 msg = "Multidimensional arrays are not currently supported."
                 raise ShaderException(msg)
 
-            gl_type, _, _, length = _uniform_setters[u_type]
+            gl_type, _, length = ctx._uniform_setters[u_type]
             uniforms[block_uniform_index] = (uniform_name, gl_type, length, u_size)
 
         binding_index = binding
@@ -1016,7 +859,7 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
 
                 # This might cause an error if index > GL_MAX_UNIFORM_BUFFER_BINDINGS, but surely no
                 # one would be crazy enough to use more than 36 uniform blocks, right?
-                gl.glUniformBlockBinding(program_id, index, binding_index)
+                gl_ctx.uniformBlockBinding(program_id, index, binding_index)
             else:
                 # If a binding was manually set in GLSL, just check if the values collide to warn the user.
                 _block_name = manager.get_name(binding)
@@ -1122,6 +965,7 @@ class Shader(ShaderBase):
         """
         super().__init__(source_string, shader_type)
         self._context = pyglet.graphics.api.global_backend.current_context
+        self._gl = self._context.gl
         self._id = None
         self.type = shader_type
 
@@ -1131,12 +975,12 @@ class Shader(ShaderBase):
         #source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         #source_length = c_int(len(shader_source_utf8))
 
-        shader_id = gl.glCreateShader(shader_gl_type)
+        shader_id = self._gl.createShader(shader_gl_type)
         self._id = shader_id
-        gl.glShaderSource(shader_id, source_string)
-        gl.glCompileShader(shader_id)
+        self._gl.shaderSource(shader_id, source_string)
+        self._gl.compileShader(shader_id)
 
-        status = gl.glGetShaderParameter(shader_id, gl.GL_COMPILE_STATUS)
+        status = self._gl.getShaderParameter(shader_id, gl.GL_COMPILE_STATUS)
 
         if status != GL_TRUE:
             source = source_string
@@ -1159,33 +1003,23 @@ class Shader(ShaderBase):
         return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
     @property
-    def id(self) -> int:
+    def id(self) -> int | WebGLProgram:
         return self._id
 
     def _get_shader_log(self, shader_id: int) -> str:
-        info_log = gl.glGetShaderInfoLog(shader_id)
-        print("INFO LOG?", info_log)
+        info_log = self._gl.getShaderInfoLog(shader_id)
         if info_log:
             return (f"OpenGL returned the following message when compiling the "
                     f"'{self.type}' shader: \n{info_log}")
 
         return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
 
-    @staticmethod
-    def _get_shader_source(shader_id: int) -> str:
-        """Get the shader source from the shader object."""
-        source_length = c_int(0)
-        gl.glGetShaderiv(shader_id, gl.GL_SHADER_SOURCE_LENGTH, source_length)
-        source_str = create_string_buffer(source_length.value)
-        gl.glGetShaderSource(shader_id, source_length, None, source_str)
-        return source_str.value.decode('utf8')
-
     def delete(self) -> None:
         """Deletes the shader.
 
         This cannot be undone.
         """
-        glDeleteShader(self._id)
+        self._gl.deleteShader(self._id)
         self._id = None
 
     def __del__(self) -> None:
@@ -1204,7 +1038,7 @@ class Shader(ShaderBase):
 
 class ShaderProgram(ShaderProgramBase):
     """OpenGL shader program."""
-    _id: int | None
+    _id: int | WebGLProgram | None
     _context: OpenGLWindowContext | None
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, UniformBlock]
@@ -1214,24 +1048,29 @@ class ShaderProgram(ShaderProgramBase):
     def __init__(self, *shaders: Shader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
         super().__init__(*shaders)
-        self._id = _link_program(*shaders)
         self._context = pyglet.graphics.api.global_backend.current_context
+        self._gl = self._context.gl
+        self._id = _link_program(self._gl, *shaders)
 
         if _debug_api_shaders:
-            print(_get_program_log(self._id))
+            """Query a ShaderProgram link logs."""
+            result = self._gl.getProgramInfoLog(self._id)
+            if result:
+                print(f"OpenGL returned the following message when linking the program: \n{result}")
+            else:
+                js.console.log(f"Program '{self._id}' linked successfully.")
 
         # Query if Direct State Access is available:
         self.use()
 
-        #have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
         self._attributes = _introspect_attributes(self._id)
-        self._uniforms = _introspect_uniforms(self._id, False)
+        self._uniforms = _introspect_uniforms(self._gl, self._id)
         self._uniform_blocks = self._get_uniform_blocks()
         self.stop()
 
     def _get_uniform_blocks(self) -> dict[str, UniformBlock]:
         """Return Uniform Block information."""
-        return _introspect_uniform_blocks(self)
+        return _introspect_uniform_blocks(self._context, self)
 
     @property
     def id(self) -> int:
@@ -1253,21 +1092,20 @@ class ShaderProgram(ShaderProgramBase):
         return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
 
     def use(self) -> None:
-        glUseProgram(self._id)
+        self._gl.useProgram(self._id)
 
-    @staticmethod
-    def stop() -> None:
-        glUseProgram(None)
+    def stop(self) -> None:
+        self._gl.useProgram(None)
 
     __enter__ = use
     bind = use
     unbind = stop
 
     def __exit__(self, *_) -> None:  # noqa: ANN002
-        glUseProgram(None)
+        self._gl.useProgram(None)
 
     def delete(self) -> None:
-        glDeleteProgram(self._id)
+        self._gl.deleteProgram(self._id)
         self._id = None
 
     def __del__(self) -> None:
@@ -1437,135 +1275,7 @@ class ShaderProgram(ShaderProgramBase):
 
 class ComputeShaderProgram:
     """OpenGL Compute Shader Program."""
-    _context: OpenGLWindowContext | None
-    _id: int | None
-    _shader: Shader
-    _uniforms: dict[str, Any]
-    _uniform_blocks: dict[str, UniformBlock]
-    max_work_group_size: tuple[int, int, int]
-    max_work_group_count: tuple[int, int, int]
-    max_shared_memory_size: int
-    max_work_group_invocations: int
 
     def __init__(self, source: str) -> None:
         """Create an OpenGL ComputeShaderProgram from source."""
-        self._id = None
-
-        if not (pyglet.graphics.api.have_version(4, 3) or pyglet.graphics.api.have_extension("GL_ARB_compute_shader")):
-            msg = (
-                "Compute Shader not supported. OpenGL Context version must be at least "
-                "4.3 or higher, or 4.2 with the 'GL_ARB_compute_shader' extension."
-            )
-            raise ShaderException(msg)
-
-        self._shader = Shader(source, 'compute')
-        self._context = pyglet.graphics.api.global_backend.current_context
-        self._id = _link_program(self._shader)
-
-        if _debug_api_shaders:
-            print(_get_program_log(self._id))
-
-        self._uniforms = _introspect_uniforms(self._id, True)
-        self._uniform_blocks = _introspect_uniform_blocks(self)
-
-        self.max_work_group_size = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_SIZE)  # x, y, z
-        self.max_work_group_count = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_COUNT)  # x, y, z
-        self.max_shared_memory_size = self._get_value(gl.GL_MAX_COMPUTE_SHARED_MEMORY_SIZE)
-        self.max_work_group_invocations = self._get_value(gl.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
-
-    @staticmethod
-    def _get_tuple(parameter: int) -> tuple[int, int, int]:
-        val_x = gl.GLint()
-        val_y = gl.GLint()
-        val_z = gl.GLint()
-        for i, value in enumerate((val_x, val_y, val_z)):
-            gl.glGetIntegeri_v(parameter, i, byref(value))
-        return val_x.value, val_y.value, val_z.value
-
-    @staticmethod
-    def _get_value(parameter: int) -> int:
-        return gl.glGetParameter(parameter)
-
-    @staticmethod
-    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier: int = gl.GL_ALL_BARRIER_BITS) -> None:
-        """Launch one or more compute work groups.
-
-        The ComputeShaderProgram should be active (bound) before calling
-        this method. The x, y, and z parameters specify the number of local
-        work groups that will be  dispatched in the X, Y and Z dimensions.
-        """
-        glDispatchCompute(x, y, z)
-        if barrier:
-            glMemoryBarrier(barrier)
-
-    @property
-    def id(self) -> int:
-        return self._id
-
-    @property
-    def uniforms(self) -> dict[str, dict[str, Any]]:
-        return {n: {'location': u.location, 'length': u.length, 'size': u.size} for n, u in self._uniforms.items()}
-
-    @property
-    def uniform_blocks(self) -> dict[str, UniformBlock]:
-        return self._uniform_blocks
-
-    def use(self) -> None:
-        glUseProgram(self._id)
-
-    @staticmethod
-    def stop() -> None:
-        glUseProgram(0)
-
-    __enter__ = use
-    bind = use
-    unbind = stop
-
-    def __exit__(self, *_) -> None:  # noqa: ANN002
-        glUseProgram(0)
-
-    def delete(self) -> None:
-        glDeleteProgram(self._id)
-        self._id = None
-
-    def __del__(self) -> None:
-        if self._id is not None:
-            try:
-                self._context.delete_shader_program(self._id)
-                self._id = None
-            except (AttributeError, ImportError):
-                pass  # Interpreter is shutting down
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        try:
-            uniform = self._uniforms[key]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{key}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return
-
-            raise ShaderException from err
-        try:
-            uniform.set(value)
-        except GLException as err:
-            raise ShaderException from err
-
-    def __getitem__(self, item: str) -> Any:
-        try:
-            uniform = self._uniforms[item]
-        except KeyError as err:
-            msg = (f"A Uniform with the name `{item}` was not found.\n"
-                   f"The spelling may be incorrect, or if not in use it "
-                   f"may have been optimized out by the OpenGL driver.")
-            if _debug_api_shaders:
-                warnings.warn(msg)
-                return None
-
-            raise ShaderException(msg) from err
-        try:
-            return uniform.get()
-        except GLException as err:
-            raise ShaderException from err
+        raise ShaderException("Compute Shaders are not supported in WebGL.")

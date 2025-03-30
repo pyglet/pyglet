@@ -1,22 +1,19 @@
 from __future__ import annotations
 
-import ctypes
 import sys
 import js
-from pyodide.ffi import create_proxy
 import warnings
-import weakref
 from typing import Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.webgl import gl_info
+from pyglet.graphics.api.webgl.config import OpenGLWindowConfig, OpenGLConfig
 from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
-from pyglet.graphics.api.base import BackendGlobalObject, GraphicsConfig, VerifiedGraphicsConfig, WindowGraphicsContext, \
+from pyglet.graphics.api.base import BackendGlobalObject, WindowGraphicsContext, \
     UBOMatrixTransformations
-from pyglet.graphics.api.webgl.gl import glViewport
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl.context import OpenGLWindowContext
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
@@ -103,30 +100,6 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
 
         self._model = model
 
-class OpenGLWindowConfig(VerifiedGraphicsConfig):
-    """An OpenGL configuration for a particular display.
-
-    Use ``Config.match`` to obtain an instance of this class.
-
-    .. versionadded:: 1.2
-    """
-
-    def __init__(self, window: Window, base_config: OpenGLConfig) -> None:
-        super().__init__(window, base_config)
-        self.major_version = base_config.major_version
-        self.minor_version = base_config.minor_version
-        self.forward_compatible = base_config.forward_compatible
-        self.opengl_api = base_config.opengl_api or base_config.opengl_api
-        self.debug = base_config.debug
-
-    def create_context(self, opengl_backend: WebGLBackend, share: OpenGLWindowContext) -> OpenGLWindowContext:
-        """Create a GL context that satisfies this configuration.
-
-        Args:
-            share:
-                If not ``None``, a Context with which to share objects with.
-        """
-        return OpenGLWindowContext(opengl_backend, self._window, self._config, None)
 
 class ObjectSpace:
     """A container to store shared objects that are to be removed."""
@@ -139,187 +112,6 @@ class ObjectSpace:
         self.doomed_shader_programs = []
         self.doomed_shaders = []
         self.doomed_renderbuffers = []
-
-class OpenGLWindowContext(WindowGraphicsContext):
-    """A base OpenGL context for drawing.
-
-    Use ``DisplayConfig.create_context`` to create a context.
-    """
-    config: OpenGLWindowConfig
-    context_share: OpenGLWindowContext | None
-
-    def __init__(self, global_ctx: WebGLBackend, window: Window, config: OpenGLWindowConfig, context_share: OpenGLWindowContext | None = None) -> None:
-        """Initialize a context.
-
-        This should only be created through the ``DisplayConfig.create_context`` method.
-
-        Args:
-            config:
-                An operating system specific config.
-            context_share:
-                A context to share objects with. Use ``None`` to disable sharing.
-        """
-        self.global_ctx = global_ctx
-        self.window = window
-        self.config = config
-        self.context_share = context_share
-        self.is_current = False
-        self._info = gl_info.GLInfo()
-        self.object_space = ObjectSpace()
-
-        self.context = self.window.canvas.getContext("webgl2")
-
-        from pyglet.graphics.api.webgl import gl
-
-        self._draw_proxy = create_proxy(self.window.draw)
-
-        self._clear_color = (0.0, 0.0, 0.0, 1.0)
-
-        self.doomed_vaos = []
-        self.doomed_framebuffers = []
-
-        self.cached_programs = weakref.WeakValueDictionary()
-
-    def get_info(self) -> gl_info.GLInfo:
-        """Get the :py:class:`~GLInfo` instance for this context."""
-        return self._info
-
-    def start_render(self):
-        js.requestAnimationFrame(self._draw_proxy)
-        print("START RENDER")
-
-    def resized(self, width, height):
-        ...
-
-    def detach(self):
-        self.context = None
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
-
-    def __enter__(self) -> None:
-        self.set_current()
-
-    def __exit__(self, *_args) -> None:  # noqa: ANN002
-        return
-
-    def set_clear_color(self, r: float, g: float, b: float, a: float) -> None:
-        self._clear_color = (r, g, b, a)
-
-    def clear(self) -> None:
-        self.context.clear(self.context.COLOR_BUFFER_BIT)
-
-    def flip(self):
-        js.requestAnimationFrame(self._draw_proxy)
-
-    def attach(self, window: Window) -> None:
-        # if not self.config.compatible(canvas):
-        #     msg = f'Cannot attach {canvas} to {self}'
-        #     raise RuntimeError(msg)
-        self.window = window
-
-    def before_draw(self) -> None:
-        self.context.clearColor(*self._clear_color)
-        self.context.clear(self.context.COLOR_BUFFER_BIT)
-
-    def set_current(self) -> None:
-        return
-        """Make this the active Context.
-
-        Setting the Context current will also delete any OpenGL
-        objects that have been queued for deletion. IE: any objects
-        that were created in this Context, but have been called for
-        deletion while another Context was active.
-        """
-        assert self.window is not None, "Window has not been attached."
-
-        # Not per-thread
-        self.global_ctx.current_context = self
-        gl.current_context = self
-
-        # Set active context.
-        #gl_info.set_active_context()
-
-        if not self._info.was_queried:
-            self._info.query()
-
-        if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
-        if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
-        if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
-                                            gl.glDeleteProgram)
-        if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
-        if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
-
-        if self.doomed_vaos:
-            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
-        if self.doomed_framebuffers:
-            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
-
-class OpenGLConfig(GraphicsConfig):
-    """An OpenGL Graphics configuration."""
-    #: Specify the presence of a back-buffer for every color buffer.
-    double_buffer: bool
-    #: Specify the presence of separate left and right buffer sets.
-    stereo: bool
-    #: Total bits per sample per color buffer.
-    buffer_size: int
-    #: The number of auxiliary color buffers.
-    aux_buffers: int
-    #: The number of multisample buffers.
-    sample_buffers: int
-    #: The number of samples per pixel, or 0 if there are no multisample buffers.
-    samples: int
-    #: Bits per sample per buffer devoted to the red component.
-    red_size: int
-    #: Bits per sample per buffer devoted to the green component.
-    green_size: int
-    #: Bits per sample per buffer devoted to the blue component.
-    blue_size: int
-    #: Bits per sample per buffer devoted to the alpha component.
-    alpha_size: int
-    #: Bits per sample in the depth buffer.
-    depth_size: int
-    #: Bits per sample in the stencil buffer.
-    stencil_size: int
-    #: Bits per pixel devoted to the red component in the accumulation buffer.
-    accum_red_size: int
-    #: Bits per pixel devoted to the green component in the accumulation buffer.
-    accum_green_size: int
-    #: Bits per pixel devoted to the blue component in the accumulation buffer.
-    accum_blue_size: int
-    #: Bits per pixel devoted to the alpha component in the accumulation buffer.
-    accum_alpha_size: int
-    #: The OpenGL major version.
-    major_version: int
-    #: The OpenGL minor version.
-    minor_version: int
-    #: Whether to use forward compatibility mode.
-    forward_compatible: bool
-    #: The OpenGL API, such as "gl" or "gles".
-    opengl_api: str = "gl"
-    #: Debug mode.
-    debug: bool
-
-    def match(self, window: Window) -> OpenGLWindowConfig:
-        return OpenGLWindowConfig(window, self)
-
-    @property
-    def finalized_config(self) -> OpenGLWindowConfig | None:
-        return self._finalized_config
-
-    def get_gl_attributes(self) -> list[tuple[str, bool | int | str]]:
-        """Return a list of attributes set on this config.
-
-        The attributes are returned as a list of tuples, containing
-        the name and values. Any unset attributes will have a value
-        of ``None``.
-        """
-        return [(name, getattr(self, name)) for name in self._attributes]
 
 
 class WebGLBackend(BackendGlobalObject):
@@ -436,4 +228,4 @@ class WebGLBackend(BackendGlobalObject):
         return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
-        glViewport(x, y, width, height)
+        self.current_context.gl.viewport(x, y, width, height)

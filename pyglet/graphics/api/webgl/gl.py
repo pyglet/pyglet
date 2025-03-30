@@ -1,13 +1,4 @@
 import ctypes
-from typing import NoReturn, Sequence, Callable
-from ctypes import *
-import js
-from ctypes import CFUNCTYPE, c_void_p, c_int, c_float, c_uint
-
-# The GL Canvas should exist already before pyglet is even loaded.
-canvas = js.document.getElementById("pygletCanvas")
-_gl_context = canvas.getContext("webgl2")
-
 
 _int_types = (ctypes.c_int16, ctypes.c_int32)
 if hasattr(ctypes, 'c_int64'):
@@ -19,195 +10,29 @@ for t in _int_types:
     if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
         c_ptrdiff_t = t
 
-GLenum = c_uint
-GLboolean = c_ubyte
-GLbitfield = c_uint
+GLenum = ctypes.c_uint
+GLboolean = ctypes.c_ubyte
+GLbitfield = ctypes.c_uint
 GLvoid = None
-GLbyte = c_char
-GLubyte = c_ubyte
-GLshort = c_short
-GLushort = c_ushort
-GLint = c_int
-GLuint = c_uint
-GLclampx = c_uint
-GLsizei = c_int
-GLfloat = c_float
-GLclampf = c_float
-GLdouble = c_double
-GLclampd = c_double
-GLchar = c_char
+GLbyte = ctypes.c_char
+GLubyte = ctypes.c_ubyte
+GLshort = ctypes.c_short
+GLushort = ctypes.c_ushort
+GLint = ctypes.c_int
+GLuint = ctypes.c_uint
+GLclampx = ctypes.c_uint
+GLsizei = ctypes.c_int
+GLfloat = ctypes.c_float
+GLclampf = ctypes.c_float
+GLdouble = ctypes.c_double
+GLclampd = ctypes.c_double
+GLchar = ctypes.c_char
 GLintptr = c_ptrdiff_t
 GLsizeiptr = c_ptrdiff_t
-GLint64 = c_int64
-GLuint64 = c_uint64
-GLuint64EXT = c_uint64
+GLint64 = ctypes.c_int64
+GLuint64 = ctypes.c_uint64
+GLuint64EXT = ctypes.c_uint64
 
-# WebGL function signatures (adjust as needed)
-webgl_functions = {
-    "vertexAttribPointer": (None, [c_uint, c_int, c_uint, c_int, c_int, c_void_p]),
-    "bindBuffer": (None, [c_uint, c_uint]),
-    "bufferData": (None, [c_uint, c_int, c_void_p, c_uint]),
-    "enableVertexAttribArray": (None, [c_uint]),
-    "useProgram": (None, [c_uint]),
-    "clearColor": (None, [c_float, c_float, c_float, c_float]),
-    "clear": (None, [c_uint]),
-    "drawArrays": (None, [c_uint, c_int, c_int]),
-    "createShader": (c_uint, [c_uint]),
-    "shaderSource": (None, [c_uint, c_void_p]),
-    "compileShader": (None, [c_uint]),
-    "createProgram": (c_uint, []),
-    "attachShader": (None, [c_uint, c_uint]),
-    "linkProgram": (None, [c_uint]),
-    "deleteProgram": (None, []),
-    "deleteShader": (None, []),
-    "detachShader": (None, []),
-    "getShaderInfoLog": (None, []),
-    "getActiveAttrib": (None, []),
-    "getProgramInfoLog": (None, []),
-    "getProgramParameter": (None, []),
-    "getParameter": (None, []),
-    "vertexAttribDivisor": (None, []),
-    "getUniform": (None, []),
-
-    "uniform1f": (None, []),
-    "uniform2f": (None, []),
-    "uniform3f": (None, []),
-    "uniform4f": (None, []),
-
-    "uniform1i": (None, []),
-    "uniform2i": (None, []),
-    "uniform3i": (None, []),
-    "uniform4i": (None, []),
-
-    "uniform1iv": (None, []),
-    "uniform2iv": (None, []),
-    "uniform3iv": (None, []),
-    "uniform4iv": (None, []),
-
-    "uniform1fv": (None, []),
-    "uniform2fv": (None, []),
-    "uniform3fv": (None, []),
-    "uniform4fv": (None, []),
-
-    "uniformMatrix2fv": (None, []),
-    "uniformMatrix3fv": (None, []),
-    "uniformMatrix4fv": (None, []),
-
-    "getShaderParameter": (None, []),
-    "getSupportedExtensions": (None, []),
-    "getExtension": (None, []),
-    "getAttribLocation": (None, []),
-    "bindAttribLocation": (None, []),
-    "getActiveUniform": (None, []),
-    "getActiveUniforms": (None, []),
-
-    # 2
-    "getActiveUniformBlockName": (None, []),
-    "getActiveUniformBlockParameter": (None, []),
-    "getUniformBlockIndex": (None, []),
-    "uniformBlockBinding": (None, []),
-    "getUniformLocation": (None, []),
-    "bindBufferBase": (None, []),
-
-    # Buffer
-    "createBuffer": (None, []),
-    "bufferSubData": (None, []),
-    "deleteBuffer": (None, []),
-    "createBuffer": (None, []),
-    "getBufferSubData": (None, []),
-    "copyBufferSubData": (None, []),
-    "readBuffer": (None, []),
-    "bindBufferRange": (None, []),
-    "getBufferParameter": (None, []),
-
-    # VAO
-    "createVertexArray": (None, []),  # GL2
-    "bindVertexArray": (None, []),  # GL2
-    "deleteVertexArray": (None, []),  # GL2
-
-    # DRAWS
-    "drawArrays": (None, []),
-    "drawElements": (None, []),
-    "drawArraysInstanced": (None, []),
-    "drawElementsInstanced": (None, []),
-
-    "bindTexture": (None, []),
-    "activeTexture": (None, []),
-    "blendFunc": (None, []),
-    "enable": (None, []),
-    "disable": (None, []),
-    "scissor": (None, []),
-    "viewport": (None, []),
-    "depthFunc": (None, []),
-
-    # Images
-    "createTexture": (None, []),
-    "copyTexSubImage2D": (None, []),
-    "deleteTexture": (None, []),
-    "flush": (None, []),
-    "generateMipmap": (None, []),
-    "getFramebufferAttachmentParameter": (None, []),  # GL2
-
-    "pixelStorei" : (None, []),
-    "readPixels": (None, []),
-    "texImage2D": (None, []),
-    "texImage3D": (None, []),  # GL2.
-
-    "texParameterf": (None, []),
-    "texParameteri": (None, []),
-    "texSubImage2D": (None, []),
-    "texSubImage3D": (None, []),  # GL2
-}
-
-ext_draw = _gl_context.getExtension("WEBGL_multi_draw")
-if ext_draw:
-    print("multidraw available.")
-    glMultiDrawArrays = ext_draw.multiDrawArraysWEBGL
-    glMultiDrawElements = ext_draw.multiDrawElementsWEBGL
-else:
-    print("multidraw not available")
-    glMultiDrawArrays = None
-    glMultiDrawElements = None
-
-class MissingFunctionException(Exception):  # noqa: N818
-    def __init__(self, name: str, requires: str | None = None, suggestions: Sequence[str] | None=None) -> None:
-        msg = f'{name} is not exported by the available OpenGL driver.'
-        if requires:
-            msg += f'  {requires} is required for this functionality.'
-        if suggestions:
-            msg += '  Consider alternative(s) {}.'.format(', '.join(suggestions))
-        Exception.__init__(self, msg)
-
-def missing_function(name: str, requires: str | None =None, suggestions: Sequence[str] | None=None) -> Callable:
-    def MissingFunction(*_args, **_kwargs) -> NoReturn:  # noqa: ANN002, ANN003, N802
-        raise MissingFunctionException(name, requires, suggestions)
-
-    return MissingFunction
-
-def link_webgl(name: str, restype, argtypes):
-    """Create a function wrapper for WebGL functions."""
-    js_func = getattr(_gl_context, name, None)
-
-    gl_name = f"gl{name[0].upper() + name[1:]}"
-
-    if not js_func:
-        print(f"Missing WebGL function: {name}")
-        wrapper = missing_function
-        globals()[gl_name] = wrapper
-        return wrapper
-
-    def wrapper(*args):
-        return js_func(*args)
-
-    globals()[gl_name] = wrapper  # Expose as global function
-    return wrapper
-
-
-for func_name, (restype, argtypes) in webgl_functions.items():
-    link_webgl(func_name, restype, argtypes)
-
-
-print("WebGL functions linked and exposed as global OpenGL-style names.")
 
 # GL enumerant (token) definitions
 GL_FALSE = 0

@@ -82,7 +82,6 @@ class Device:
                 If the device cannot be opened in exclusive mode, usually
                 due to being opened exclusively by another application.
         """
-
         if self._is_open:
             raise DeviceOpenException('Device is already open.')
 
@@ -121,7 +120,7 @@ class Control(EventDispatcher):
     device; in some cases the control's value will be outside this range.
     """
 
-    def __init__(self, name: None | str, raw_name: None | str = None, inverted: bool = False):
+    def __init__(self, name: None | str, raw_name: None | str = None, inverted: bool = False) -> None:
         """Create a Control to receive input.
 
         Args:
@@ -151,7 +150,7 @@ class Control(EventDispatcher):
         return self._value
 
     @value.setter
-    def value(self, newvalue: float):
+    def value(self, newvalue: float) -> None:
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -160,12 +159,10 @@ class Control(EventDispatcher):
     def __repr__(self) -> str:
         if self.name:
             return f"{self.__class__.__name__}(name={self.name}, raw_name={self.raw_name})"
-        else:
-            return f"{self.__class__.__name__}(raw_name={self.raw_name})"
+        return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
     # Events
-
-    def on_change(self, value) -> float:
+    def on_change(self, value: float) -> bool:
         """The value changed."""
 
 
@@ -192,7 +189,7 @@ class RelativeAxis(Control):
         return self._value
 
     @value.setter
-    def value(self, value: float):
+    def value(self, value: float) -> None:
         self._value = value
         self.dispatch_event('on_change', value)
 
@@ -213,21 +210,21 @@ class AbsoluteAxis(Control):
     HAT_X: str = 'hat_x'
     HAT_Y: str = 'hat_y'
 
-    def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False):
+    def __init__(self, name: str, minimum: float, maximum: float, raw_name: None | str = None, inverted: bool = False) -> None:  # noqa: D107
         super().__init__(name, raw_name, inverted)
         self.min = minimum
         self.max = maximum
 
 
 class Button(Control):
-    """A control whose value is boolean. """
+    """A control whose value is boolean."""
 
     @property
     def value(self) -> bool:
         return bool(self._value)
 
     @value.setter
-    def value(self, newvalue: bool | int):
+    def value(self, newvalue: bool | int) -> None:
         if newvalue == self._value:
             return
         self._value = newvalue
@@ -252,8 +249,9 @@ Button.register_event_type('on_release')
 
 
 class Joystick(EventDispatcher):
-    """High-level interface for joystick-like devices.  This includes a wide
-    range of analog and digital joysticks, gamepads, controllers, and possibly
+    """High-level interface for joystick-like devices.
+
+    This includes a wide range of analog and digital joysticks, gamepads, controllers, and possibly
     even steering wheels and other input devices. There is unfortunately no
     easy way to distinguish between most of these different device types.
 
@@ -263,7 +261,7 @@ class Joystick(EventDispatcher):
 
     To use a joystick, first call `open`, then in your game loop examine
     the values of `x`, `y`, and so on.  These values are normalized to the
-    range [-1.0, 1.0]. 
+    range [-1.0, 1.0].
 
     To receive events when the value of an axis changes, attach an
     on_joyaxis_motion event handler to the joystick. The :py:class:`~pyglet.input.Joystick`
@@ -275,7 +273,7 @@ class Joystick(EventDispatcher):
 
     Alternately, you may attach event handlers to each individual button in 
     `button_controls` to receive on_press or on_release events.
-    
+
     To use the hat switch, attach an on_joyhat_motion event handler to the joystick.
     The handler will be called with both the hat_x and hat_y values whenever the value
     of the hat switch changes.
@@ -356,7 +354,7 @@ class Joystick(EventDispatcher):
         self.hat_y_control = None
         self.button_controls = []
 
-        def add_axis(control: AbsoluteAxis):
+        def add_axis(control: AbsoluteAxis) -> None:
             if not (control.min or control.max):
                 warnings.warn(f"Control('{control.name}') min & max values are both 0. Skipping.")
                 return
@@ -374,7 +372,7 @@ class Joystick(EventDispatcher):
                 setattr(self, name, normalized_value)
                 self.dispatch_event('on_joyaxis_motion', self, name, normalized_value)
 
-        def add_button(control: Button):
+        def add_button(control: Button) -> None:
             i = len(self.buttons)
             self.buttons.append(False)
             self.button_controls.append(control)
@@ -391,7 +389,7 @@ class Joystick(EventDispatcher):
             def on_release():
                 self.dispatch_event('on_joybutton_release', self, i)
 
-        def add_hat(control: AbsoluteAxis):
+        def add_hat(control: AbsoluteAxis) -> None:
             # 8-directional hat encoded as a single control (Windows/Mac)
             self.hat_x_control = control
             self.hat_y_control = control
@@ -415,11 +413,11 @@ class Joystick(EventDispatcher):
                 add_button(ctrl)
 
     def open(self, window: BaseWindow | None = None, exclusive: bool = False) -> None:
-        """Open the joystick device.  See `Device.open`. """
+        """Open the joystick device.  See `Device.open`."""
         self.device.open(window, exclusive)
 
     def close(self) -> None:
-        """Close the joystick device.  See `Device.close`. """
+        """Close the joystick device.  See `Device.close`."""
         self.device.close()
 
     # Events

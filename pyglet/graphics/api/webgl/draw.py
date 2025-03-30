@@ -4,17 +4,16 @@ from typing import Callable, Sequence, Any, TYPE_CHECKING
 
 import pyglet
 from pyglet.graphics.api.webgl.enums import geometry_map
-from pyglet.graphics.api.webgl.gl import glGetParameter
 
 from pyglet.graphics.draw import DomainKey, BatchBase, Group
 from pyglet.graphics.api.webgl import (
    vertexdomain,
 )
-from pyglet.graphics.state import State
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
+    from pyglet.graphics.state import State
     from pyglet.graphics import GeometryMode
     from pyglet.graphics.api.gl2.shader import ShaderProgram
     from pyglet.graphics.api.gl.vertexdomain import VertexList, IndexedVertexList
@@ -195,10 +194,8 @@ class StateManager:
 
 
 # Singleton instance for all batches. (How to cleanup state between all batches?)
-import js
 _state_manager: StateManager = StateManager()
-canvas = js.document.getElementById("pygletCanvas")
-_gl_context = canvas.getContext("webgl2")
+
 class Batch(BatchBase):
     """Manage a collection of drawables for batched rendering.
 

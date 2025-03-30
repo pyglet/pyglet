@@ -1,4 +1,9 @@
-from pyglet.graphics.api.webgl.gl import glGetParameter, GL_VENDOR, GL_RENDERER, GL_VERSION, _gl_context, glGetSupportedExtensions
+from __future__ import annotations
+from pyglet.graphics.api.webgl.gl import GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext
 
 
 class GLInfo:
@@ -28,27 +33,20 @@ class GLInfo:
         super().__init__()
         self.extensions = set()
 
-        # A subset of OpenGL that is platform specific. (WGL, GLX)
-        self.platform_info = None
-
-    def query(self) -> None:
+    def query(self, gl: WebGLRenderingContext) -> None:
         """Store information for the currently active context.
 
         Combines any information from the platform information.
         """
-        self.vendor = glGetParameter(GL_VENDOR)
-        self.renderer = glGetParameter(GL_RENDERER)
-        self.version = glGetParameter(GL_VERSION)
-        self.language = glGetParameter(_gl_context.SHADING_LANGUAGE_VERSION)
+        self.vendor = gl.getParameter(GL_VENDOR)
+        self.renderer = gl.getParameter(GL_RENDERER)
+        self.version = gl.getParameter(GL_VERSION)
+        self.language = gl.getParameter(GL_SHADING_LANGUAGE_VERSION)
         self.opengl_api = "webgl"
 
         self.major_version = 2 if "WebGL 2" in self.version else 1
         self.minor_version = 0
-        self.extensions = glGetSupportedExtensions()
-
-
-        if self.platform_info:
-            self.extensions.update(set(self.platform_info.get_extensions()))
+        self.extensions = set(gl.getSupportedExtensions())
 
         self.was_queried = True
 

@@ -1195,6 +1195,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
+    @property
+    def ctx(self) -> WindowGraphicsContext:
+        """The graphical context attached to this window.  Read-only."""
+        return self._context
+
     # These are the only properties that can be set
     @property
     def width(self) -> int:
