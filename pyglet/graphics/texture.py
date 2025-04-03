@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, NamedTuple, Sequence
+from typing import Iterator, Literal, NamedTuple, Sequence, Union
 
 import pyglet
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
@@ -11,6 +11,7 @@ from pyglet.image.base import (
     ImageDataRegion,
     ImageException,
     ImageGrid,
+    _AbstractGrid,
 )
 
 
@@ -52,8 +53,17 @@ class TextureInternalFormat(NamedTuple):
 
 
 class TextureDescriptor:
-    __slots__ = ("tex_type", "min_filter", "mag_filter", "address_mode", "internal_format", "pixel_format",
-                 "anisotropic_level", "depth", "mipmap_levels")
+    __slots__ = (
+        "address_mode",
+        "anisotropic_level",
+        "depth",
+        "internal_format",
+        "mag_filter",
+        "min_filter",
+        "mipmap_levels",
+        "pixel_format",
+        "tex_type",
+    )
 
     def __init__(self,
                  tex_type: TextureType = TextureType.TYPE_2D,
@@ -117,8 +127,6 @@ class TextureBase(_AbstractImage):
 
     target: int
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
-
-    colors = (0, 0, 0, 0) * 4
 
     level: int = 0
     """The mipmap level of this texture."""
@@ -354,7 +362,7 @@ class TextureRegionBase(TextureBase):
         image_data = self.owner.get_image_data(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
-    def get_image_data(self):
+    def get_image_data(self) -> ImageDataRegion:
         return self.fetch()
 
     def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
@@ -521,7 +529,7 @@ class TileableTexture(TextureBase):
         raise NotImplementedError
 
 
-class TextureGridBase(TextureRegionBase, UniformTextureSequence):
+class TextureGridBase(_AbstractGrid):
     """A texture containing a regular grid of texture regions.
 
     To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
@@ -553,182 +561,57 @@ class TextureGridBase(TextureRegionBase, UniformTextureSequence):
         images = texture_grid[(1,1):(3,3)]
 
     """
-    items: list
-    rows: int
-    columns: int
-    item_width: int
-    item_height: int
+    def __init__(self, texture: Texture | TextureRegion, rows: int, columns: int, item_width: int,
+                 item_height: int, row_padding: int = 0, column_padding: int = 0) -> None:
+        """Construct a grid for the given image.
 
-    def __init__(self, grid: ImageGrid) -> None:
-        image = grid.get_texture()
-        if isinstance(image, TextureRegionBase):
-            owner = image.owner
+        You can specify parameters for the grid, for example setting
+        the padding between cells.  Grids are always aligned to the
+        bottom-left corner of the image.
+
+        Args:
+            texture:
+                A texture or region over which to construct the grid.
+            rows:
+                Number of rows in the grid.
+            columns:
+                Number of columns in the grid.
+            item_width:
+                Width of each column.  If unspecified, is calculated such
+                that the entire texture width is used.
+            item_height:
+                Height of each row.  If unspecified, is calculated such that
+                the entire texture height is used.
+            row_padding:
+                Pixels separating adjacent rows.  The padding is only
+                inserted between rows, not at the edges of the grid.
+            column_padding:
+                Pixels separating adjacent columns.  The padding is only
+                inserted between columns, not at the edges of the grid.
+        """
+        if isinstance(texture, TextureRegion):
+            owner = texture.owner
         else:
-            owner = image
+            owner = texture
 
-        super().__init__(image.x, image.y, image.z, image.width, image.height, owner)
+        item_width = item_width or (texture.width - column_padding * (columns - 1)) // columns
+        item_height = item_height or (texture.height - row_padding * (rows - 1)) // rows
+        self.texture = owner
+        super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
 
-        items = []
-        y = 0
-        for row in range(grid.rows):
-            x = 0
-            for col in range(grid.columns):
-                items.append(self.get_region(x, y, grid.item_width, grid.item_height))
-                x += grid.item_width + grid.column_padding
-            y += grid.item_height + grid.row_padding
+    @classmethod
+    def from_image_grid(cls, image_grid: ImageGrid) -> TextureGridBase:
+        texture = image_grid.image.get_texture()
+        return cls(
+            texture,
+            image_grid.rows,
+            image_grid.columns,
+            image_grid.item_width,
+            image_grid.item_height,
+            image_grid.row_padding,
+            image_grid.column_padding
+        )
 
-        self.items = items
-        self.rows = grid.rows
-        self.columns = grid.columns
-        self.item_width = grid.item_width
-        self.item_height = grid.item_height
-
-    def get(self, row: int, column: int):
-        return self[(row, column)]
-
-    def __getitem__(self, index: int | tuple[int, int] | slice) -> TextureRegionBase | list[TextureRegionBase]:
-        if type(index) is slice:
-            if type(index.start) is not tuple and type(index.stop) is not tuple:
-                return self.items[index]
-            else:
-                row1 = 0
-                col1 = 0
-                row2 = self.rows
-                col2 = self.columns
-                if type(index.start) is tuple:
-                    row1, col1 = index.start
-                elif type(index.start) is int:
-                    row1 = index.start // self.columns
-                    col1 = index.start % self.columns
-                assert 0 <= row1 < self.rows and 0 <= col1 < self.columns
-
-                if type(index.stop) is tuple:
-                    row2, col2 = index.stop
-                elif type(index.stop) is int:
-                    row2 = index.stop // self.columns
-                    col2 = index.stop % self.columns
-                assert 0 <= row2 <= self.rows and 0 <= col2 <= self.columns
-
-                result = []
-                i = row1 * self.columns
-                for row in range(row1, row2):
-                    result += self.items[i + col1:i + col2]
-                    i += self.columns
-                return result
-        else:
-            if type(index) is tuple:
-                row, column = index
-                assert 0 <= row < self.rows and 0 <= column < self.columns
-                return self.items[row * self.columns + column]
-            elif type(index) is int:
-                return self.items[index]
-
-    def __setitem__(self, index: int | slice, value: _AbstractImage | Sequence[_AbstractImage]):
-        if type(index) is slice:
-            for region, image in zip(self[index], value):
-                if image.width != self.item_width or image.height != self.item_height:
-                    raise ImageException('Image has incorrect dimensions')
-                image.blit_into(region, image.anchor_x, image.anchor_y, 0)
-        else:
-            image = value
-            if image.width != self.item_width or image.height != self.item_height:
-                raise ImageException('Image has incorrect dimensions')
-            image.blit_into(self[index], image.anchor_x, image.anchor_y, 0)
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
-
-
-class BufferImage(_AbstractImage):
-    """An abstract "default" framebuffer."""
-
-    #: The OpenGL read and write target for this buffer.
-    #gl_buffer = GL_BACK
-
-    #: The OpenGL format constant for image data.
-    #gl_format = 0
-
-    #: The format string used for image data.
-    format = ''
-
-    owner = None
-
-    def __init__(self, x, y, width, height):
-        super().__init__(width, height)
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-    def get_image_data(self) -> ImageData:
-        raise NotImplementedError
-
-    def get_region(self, x, y, width, height):
-        if self.owner:
-            return self.owner.get_region(x + self.x, y + self.y, width, height)
-
-        region = self.__class__(x + self.x, y + self.y, width, height)
-        #region.gl_buffer = self.gl_buffer
-        region.owner = self
-        return region
-
-    def get_texture(self ) -> TextureBase:
-        raise NotImplementedError(f"Not implemented for {self}")
-
-    def get_mipmapped_texture(self) -> TextureBase:
-        raise NotImplementedError(f"Not implemented for {self}")
-
-    def blit(self, x: int, y: int, z: int = 0) -> None:
-        raise NotImplementedError(f"Not implemented for {self}")
-
-    def blit_into(self, source, x: int, y: int, z: int) -> None:
-        raise NotImplementedError(f"Not implemented for {self}")
-
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
-        raise NotImplementedError(f"Not implemented for {self}")
-
-
-class ColorBufferImage(BufferImage):
-    """A color framebuffer.
-
-    This class is used to wrap the primary color buffer (i.e., the back
-    buffer)
-    """
-    #gl_format = GL_RGBA
-    #format = 'RGBA'
-
-    def get_texture(self):
-        texture = TextureBase.create(self.width, self.height, TextureDescriptor(), blank_data=False)
-        self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
-        return texture
-
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
-        raise NotImplementedError
-
-
-class DepthBufferImage(BufferImage):
-    """The depth buffer.
-    """
-    #gl_format = GL_DEPTH_COMPONENT
-    #format = 'R'
-
-    def get_texture(self):
-        image_data = self.get_image_data()
-        return image_data.get_texture()
-
-    def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
-        raise NotImplementedError
-
-
-class BufferImageMask(BufferImage):
-    """A single bit of the stencil buffer."""
-    #gl_format = GL_STENCIL_INDEX
-    #format = 'R'
-
-    # TODO mask methods
 
 TextureBase.region_class = TextureRegionBase
 
@@ -738,14 +621,10 @@ TextureArrayRegion.region_class = TextureArrayRegion
 
 if pyglet.options.backend in ("opengl", "gl2", "gles2"):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
-        BufferImage,
-        BufferImageMask,
-        BufferManager,
-        DepthBufferImage,
-        get_buffer_manager,
         Framebuffer,
         Renderbuffer,
         get_max_color_attachments,
+        get_screenshot,
     )
     from pyglet.graphics.api.gl.texture import (  # noqa: F401
         Texture,

@@ -280,7 +280,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
         self._texture = list(imgs.values())[0]
 
-        if isinstance(self._texture, pyglet.graphics.TextureArrayRegion):
+        if isinstance(self._texture, pyglet.graphics.texture.TextureArrayRegion):
             self._program = program or pyglet.sprite.get_default_array_shader()
         else:
             self._program = program or pyglet.sprite.get_default_shader()
@@ -462,7 +462,7 @@ class Ui_MainWindow:
 
             if self.program:
                 print("Successfully compiled shader.")
-        except pyglet.gl.lib.GLException as err:
+        except pyglet.graphics.api.gl.GLException as err:
             print(f"Failed to compile shader: {err}")
         except Exception as err:
             print("Unexpected error", err)

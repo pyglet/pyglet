@@ -6,7 +6,6 @@ import warnings
 import pytest
 
 import pyglet
-from pyglet.graphics.framebuffer import get_buffer_manager
 
 from .data import PygletTestCase
 
@@ -72,7 +71,7 @@ class InteractiveFixture:
         if window is not None:
             window.switch_to()
 
-        get_buffer_manager().get_color_buffer().get_image_data().save(screenshot_file_name)
+        pyglet.graphics.texture.get_screenshot().save(screenshot_file_name)
         self.screenshots.append(screenshot_name)
         self._schedule_commit()
 
@@ -236,7 +235,7 @@ class InteractiveTestCase(PygletTestCase):
         screenshot_name = self._get_next_screenshot_name()
         screenshot_file_name = self._get_screenshot_session_file_name(screenshot_name)
 
-        get_buffer_manager().get_color_buffer().get_image_data().save(screenshot_file_name)
+        pyglet.graphics.texture.get_screenshot().save(screenshot_file_name)
 
         self._screenshots.append(screenshot_name)
 

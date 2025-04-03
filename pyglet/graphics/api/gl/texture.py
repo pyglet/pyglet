@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from _ctypes import byref
 from ctypes import c_int
-from typing import Callable, Literal, Iterator, Sequence
+from typing import Callable, Literal, Iterator, Sequence, Union
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat
@@ -16,7 +16,7 @@ from pyglet.graphics.api.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BG
     GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, glTexSubImage3D, \
     glTexSubImage2D, glTexImage3D, GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8  # noqa: F401
 from pyglet.graphics.api.gl.enums import texture_map
-from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid
+from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
 from pyglet.image.base import CompressedImageData, ImageException
 from pyglet.graphics.texture import TextureInternalFormat, TextureBase, TextureRegionBase, TextureDescriptor, \
     UniformTextureSequence, TextureArraySizeExceeded, TextureArrayDepthExceeded, TextureArray
@@ -939,7 +939,7 @@ class GLTileableTexture(Texture):
         return image.create_texture(cls)
 
 
-class TextureGrid(TextureRegion, UniformTextureSequence):
+class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
     """A texture containing a regular grid of texture regions.
 
     To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
@@ -971,89 +971,59 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         images = texture_grid[(1,1):(3,3)]
 
     """
-    items: list
-    rows: int
-    columns: int
-    item_width: int
-    item_height: int
+    def __init__(self, texture: Texture | TextureRegion, rows: int, columns: int, item_width: int,
+                 item_height: int, row_padding: int = 0, column_padding: int = 0) -> None:
+        """Construct a grid for the given image.
 
-    def __init__(self, grid: ImageGrid) -> None:
-        image = grid.get_texture()
-        if isinstance(image, TextureRegionBase):
-            owner = image.owner
+        You can specify parameters for the grid, for example setting
+        the padding between cells.  Grids are always aligned to the
+        bottom-left corner of the image.
+
+        Args:
+            texture:
+                A texture or region over which to construct the grid.
+            rows:
+                Number of rows in the grid.
+            columns:
+                Number of columns in the grid.
+            item_width:
+                Width of each column.  If unspecified, is calculated such
+                that the entire texture width is used.
+            item_height:
+                Height of each row.  If unspecified, is calculated such that
+                the entire texture height is used.
+            row_padding:
+                Pixels separating adjacent rows.  The padding is only
+                inserted between rows, not at the edges of the grid.
+            column_padding:
+                Pixels separating adjacent columns.  The padding is only
+                inserted between columns, not at the edges of the grid.
+        """
+        if isinstance(texture, TextureRegion):
+            owner = texture.owner
         else:
-            owner = image
+            owner = texture
 
-        super().__init__(image.x, image.y, image.z, image.width, image.height, owner)
+        item_width = item_width or (texture.width - column_padding * (columns - 1)) // columns
+        item_height = item_height or (texture.height - row_padding * (rows - 1)) // rows
+        self.texture = owner
+        super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
 
-        items = []
-        y = 0
-        for row in range(grid.rows):
-            x = 0
-            for col in range(grid.columns):
-                items.append(self.get_region(x, y, grid.item_width, grid.item_height))
-                x += grid.item_width + grid.column_padding
-            y += grid.item_height + grid.row_padding
+    @classmethod
+    def from_image_grid(cls, image_grid: ImageGrid) -> TextureGrid:
+        texture = image_grid.image.get_texture()
+        return cls(
+            texture,
+            image_grid.rows,
+            image_grid.columns,
+            image_grid.item_width,
+            image_grid.item_height,
+            image_grid.row_padding,
+            image_grid.column_padding
+        )
 
-        self.items = items
-        self.rows = grid.rows
-        self.columns = grid.columns
-        self.item_width = grid.item_width
-        self.item_height = grid.item_height
+    def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegion:
+        return self.texture.get_region(x, y, width, height)
 
-    def get(self, row: int, column: int):
-        return self[(row, column)]
-
-    def __getitem__(self, index: int | tuple[int, int] | slice) -> TextureRegionBase | list[TextureRegionBase]:
-        if type(index) is slice:
-            if type(index.start) is not tuple and type(index.stop) is not tuple:
-                return self.items[index]
-            row1 = 0
-            col1 = 0
-            row2 = self.rows
-            col2 = self.columns
-            if type(index.start) is tuple:
-                row1, col1 = index.start
-            elif type(index.start) is int:
-                row1 = index.start // self.columns
-                col1 = index.start % self.columns
-            assert 0 <= row1 < self.rows and 0 <= col1 < self.columns
-
-            if type(index.stop) is tuple:
-                row2, col2 = index.stop
-            elif type(index.stop) is int:
-                row2 = index.stop // self.columns
-                col2 = index.stop % self.columns
-            assert 0 <= row2 <= self.rows and 0 <= col2 <= self.columns
-
-            result = []
-            i = row1 * self.columns
-            for row in range(row1, row2):
-                result += self.items[i + col1:i + col2]
-                i += self.columns
-            return result
-        if type(index) is tuple:
-            row, column = index
-            assert 0 <= row < self.rows and 0 <= column < self.columns
-            return self.items[row * self.columns + column]
-        if type(index) is int:
-            return self.items[index]
-
-    def __setitem__(self, index: int | slice, value: Texture | Sequence[Texture]):
-        if type(index) is slice:
-            for region, image in zip(self[index], value):
-                if image.width != self.item_width or image.height != self.item_height:
-                    raise ImageException('Image has incorrect dimensions')
-                image.upload(region, image.anchor_x, image.anchor_y, 0)
-        else:
-            image = value
-            if image.width != self.item_width or image.height != self.item_height:
-                raise ImageException('Image has incorrect dimensions')
-            image.upload(self[index], image.anchor_x, image.anchor_y, 0)
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
-
+    def _update_item(self, existing_item: T, new_item: T) -> None:
+        existing_item.upload(new_item, new_item.anchor_x, new_item.anchor_y, 0)
