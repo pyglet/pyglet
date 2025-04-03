@@ -1396,7 +1396,17 @@ class Mat4(_typing.NamedTuple):
 
 
 class Quaternion(_typing.NamedTuple):
-    """Quaternion."""
+    """Quaternions are special 4-dimensional vectors useful for 3D rotations.
+
+    This type is separate from the :py:class:`Vec4` type for clarity when:
+
+    * organizing helper methods
+    * annotating types
+
+    .. tip:: Store method results if you will need them more than once.
+
+             Otherwise, you will be re-calculating values wastefully.
+    """
 
     w: float = 1.0
     x: float = 0.0
@@ -1412,6 +1422,8 @@ class Quaternion(_typing.NamedTuple):
         raise NotImplementedError
 
     def to_mat4(self) -> Mat4:
+        """Calculate a 4 by 4 transform matrix which applies a rotation."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1437,6 +1449,8 @@ class Quaternion(_typing.NamedTuple):
         return Mat4(a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0)
 
     def to_mat3(self) -> Mat3:
+        """Convert the quaternion to a 3 by 3 rotation matrix."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1462,21 +1476,38 @@ class Quaternion(_typing.NamedTuple):
         return Mat3(*(a, b, c, e, f, g, i, j, k))
 
     def length(self) -> float:
-        """Calculate the length of the Quaternion.
-
-        The distance between the coordinates and the origin.
-        """
+        """Calculate the length of the quaternion from the origin."""
         return _math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
 
     def conjugate(self) -> Quaternion:
+        """Return the conjugate of this quaternion.
+
+        This operation:
+        #. leaves the :py:attr:`.w` component alone
+        #. inverts the sign of the :py:attr:`.x`, :py:attr:`.y`, and :py:attr:`.z` components
+
+        """
         return Quaternion(self.w, -self.x, -self.y, -self.z)
 
     def dot(self, other: Quaternion) -> float:
+        """Calculate the dot product with another quaternion.
+
+        """
+
         a, b, c, d = self
         e, f, g, h = other
         return a * e + b * f + c * g + d * h
 
     def normalize(self) -> Quaternion:
+        """Calculate a unit quaternion from the instance.
+
+        The returned quaternion will be a scaled-down version
+        of the instance which has:
+
+        * a length of ``1``
+        * the same relative of its components
+
+        """
         m = self.length()
         if m == 0:
             return self
