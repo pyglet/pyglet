@@ -6,9 +6,9 @@ from typing import Callable, Literal, Iterator, Sequence, Union
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat
-from pyglet.graphics.api.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
+from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
-    glGetIntegerv, GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, gl_info, glBindTexture, \
+    glGetIntegerv, GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, glBindTexture, \
     glTexParameteri, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, glCompressedTexImage2D, glFlush, GL_TEXTURE_2D, \
     GL_LINEAR_MIPMAP_LINEAR, glGenerateMipmap, GL_TEXTURE_3D, glCompressedTexSubImage3D, glCompressedTexSubImage2D, \
     glDeleteTextures, GLuint, glActiveTexture, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, glBindImageTexture, \
@@ -151,7 +151,8 @@ class GLCompressedImageData(CompressedImageData):
         self.mipmap_data[level - 1] = data
 
     def _have_extension(self) -> bool:
-        return self.extension is None or gl_info.have_extension(self.extension)
+        from pyglet.graphics.api import global_backend
+        return self.extension is None or global_backend.have_extension(self.extension)
 
     def get_texture(self) -> TextureBase:
         if self._current_texture:

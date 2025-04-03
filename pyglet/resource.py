@@ -57,7 +57,6 @@ from io import BytesIO, StringIO
 from typing import IO, TYPE_CHECKING
 
 import pyglet
-import pyglet.graphics.api.gl.texture
 
 if TYPE_CHECKING:
     from typing import Literal
