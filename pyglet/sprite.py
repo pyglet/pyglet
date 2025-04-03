@@ -69,11 +69,11 @@ from __future__ import annotations
 import pyglet
 from pyglet import event, clock
 import sys
-from typing import ClassVar, TYPE_CHECKING, Literal
+from typing import ClassVar, Literal
 
 from pyglet.graphics import Group, Batch, ShaderProgram, GeometryMode
 from pyglet.enums import BlendFactor
-from pyglet.image.base import TextureBase, TextureArrayRegion
+from pyglet.graphics.texture import TextureBase, TextureArrayRegion
 from pyglet.image.base import AbstractImage, Animation
 
 if pyglet.options.backend == "opengl":

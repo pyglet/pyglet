@@ -85,7 +85,7 @@ class UserDefinedGlyphRenderer(base.GlyphRenderer):
     def render(self, image_data: ImageData) -> Glyph:
         if self._font._scaling:  # noqa: SLF001
             image_original = Image.frombytes("RGBA", (image_data.width, image_data.height),
-                                             image_data.get_image_data().get_data("RGBA"))
+                                             image_data.get_image_data().get_bytes("RGBA"))
             scale_ratio = self._font.size / self._font._base_size
             image_resized = image_original.resize((int(image_data.width * scale_ratio),
                                                    int(image_data.height * scale_ratio)), Resampling.NEAREST)

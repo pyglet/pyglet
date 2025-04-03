@@ -6,7 +6,7 @@ easily accessing their data, saving to disk, etc. Renderbuffers can be used
 if you don't need to access their data at a later time. For example::
 
     # Create two objects to use as attachments for our Framebuffer.
-    color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
+    color_buffer = pyglet.graphics.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
     depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
 
     # Create a framebuffer object, and attach the two buffers:
@@ -35,7 +35,7 @@ from pyglet.graphics.api.gl.gl import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
 
 
 def get_max_color_attachments() -> int:

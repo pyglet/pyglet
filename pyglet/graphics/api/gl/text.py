@@ -7,7 +7,7 @@ from pyglet.enums import BlendFactor
 from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
+    from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.api.gl import ShaderProgram
 
 layout_vertex_source = """#version 330 core

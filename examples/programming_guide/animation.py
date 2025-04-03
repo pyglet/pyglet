@@ -17,7 +17,7 @@ import pyglet
 if len(sys.argv) > 1:
     # Load the animation from file path.
     animation = pyglet.image.load_animation(sys.argv[1])
-    texture_bin = pyglet.image.atlas.TextureBin()
+    texture_bin = pyglet.graphics.atlas.TextureBin()
     animation.add_to_texture_bin(texture_bin)
 else:
     # Load animation from resource (this script's directory).

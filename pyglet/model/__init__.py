@@ -41,7 +41,7 @@ from .codecs.base import Material, Scene, SimpleMaterial
 
 if TYPE_CHECKING:
     from typing import BinaryIO, TextIO
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
     from pyglet.graphics import Batch, Group
     from pyglet.graphics import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList

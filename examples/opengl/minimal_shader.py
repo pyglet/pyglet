@@ -82,7 +82,7 @@ class RenderGroup(Group):
         """Create a RenderGroup.
 
         :Parameters:
-            `texture` : `~pyglet.image.Texture`
+            `texture` : `~pyglet.graphics.Texture`
                 Texture to bind.
             `program` : `~pyglet.graphics.shader.ShaderProgram`
                 ShaderProgram to use.

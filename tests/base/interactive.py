@@ -6,7 +6,7 @@ import warnings
 import pytest
 
 import pyglet
-from pyglet.image import get_buffer_manager
+from pyglet.graphics.framebuffer import get_buffer_manager
 
 from .data import PygletTestCase
 

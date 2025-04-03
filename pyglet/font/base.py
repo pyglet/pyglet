@@ -10,13 +10,12 @@ import abc
 import unicodedata
 from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
-from pyglet.image import Texture, TextureRegion, atlas
-from pyglet.image.base import (
+from pyglet.graphics import atlas
+from pyglet.enums import (
     ComponentFormat,
-    TextureDescriptor,
     TextureFilter,
-    TextureInternalFormat,
 )
+from pyglet.graphics.texture import TextureInternalFormat, TextureDescriptor, Texture, TextureRegion
 
 if TYPE_CHECKING:
     from pyglet.image import AbstractImage

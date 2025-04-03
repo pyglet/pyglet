@@ -28,7 +28,6 @@ from pyglet.font.freetype_lib import (
     float_to_f26p6,
     ft_get_library,
 )
-from pyglet.image.base import TextureDescriptor, TextureInternalFormat
 from pyglet.util import asbytes, asstr
 
 

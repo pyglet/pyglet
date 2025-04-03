@@ -12,7 +12,7 @@ from pyglet.graphics.state import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
+    from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList
     from pyglet.graphics.shader import ShaderProgramBase
 

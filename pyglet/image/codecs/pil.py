@@ -66,7 +66,7 @@ class PILImageEncoder(ImageEncoder):
             image_from_fn = getattr(Image, "frombytes")
         except AttributeError:
             image_from_fn = getattr(Image, "fromstring")
-        pil_image = image_from_fn(fmt, (image.width, image.height), image.get_data(fmt, pitch))
+        pil_image = image_from_fn(fmt, (image.width, image.height), image.get_bytes(fmt, pitch))
 
         try:
             pil_image.save(file, pil_format)

@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import sys
-from typing import ClassVar, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet import event, image, clock
 from pyglet.graphics import Group
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
+    from pyglet.graphics.texture import TextureBase
     from pyglet.enums import BlendFactor
-    from pyglet.graphics import Batch, Group
+    from pyglet.graphics import Group
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import AbstractImage, Animation, Texture
+    from pyglet.graphics import Texture
 
 
 vertex_source: str = """#version 150 core

@@ -1,4 +1,6 @@
 import pytest
+
+import pyglet.graphics.api.gl.framebuffer
 from tests.base.interactive import InteractiveTestCase
 
 from pyglet.graphics.api.gl import *
@@ -35,7 +37,7 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
     samples = 2
 
     # This test does not work on all hardware, unless rendered to texture.
-    texture = pyglet.image.TextureBase.create(width, height, GL_TEXTURE_RECTANGLE)
+    texture = pyglet.graphics.TextureBase.create(width, height, GL_TEXTURE_RECTANGLE)
 
     def set_window(self):
         oldwindow = self.win
@@ -120,8 +122,8 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
         glEnd()
 
         # Render to texture, then blit to screen:
-        buffer = pyglet.image.get_buffer_manager().get_color_buffer()
-        self.texture.blit_into(buffer, 0, 0, 0)
+        buffer = pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_color_buffer()
+        self.texture.upload(buffer, 0, 0, 0)
         glViewport(0, 0, self.width, self.height)
         glClearColor(0, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)

@@ -47,7 +47,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Literal
     from pyglet.image import AbstractImage, AbstractImageSequence
-    from pyglet.image.atlas import TextureBin
+    from pyglet.graphics.atlas import TextureBin
 
 
 class Animation:
