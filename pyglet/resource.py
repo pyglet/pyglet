@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from typing import Literal
 
     from pyglet.graphics.shader import Shader
-    from pyglet.image import AbstractImage, Texture, TextureRegion
+    from pyglet.image import _AbstractImage, Texture, TextureRegion
     from pyglet.image.animation import Animation
     from pyglet.graphics.atlas import TextureBin
     from pyglet.media.codecs import Source
@@ -471,7 +471,7 @@ class Loader:
         fileobj = self.file(filename)
         font.add_file(fileobj)
 
-    def _alloc_image(self, name: str, use_atlas: bool, border: int) -> AbstractImage:
+    def _alloc_image(self, name: str, use_atlas: bool, border: int) -> _AbstractImage:
         fileobj = self.file(name)
         try:
             img = pyglet.image.load(name, file=fileobj)

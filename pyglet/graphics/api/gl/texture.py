@@ -16,7 +16,7 @@ from pyglet.graphics.api.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BG
     GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, glTexSubImage3D, \
     glTexSubImage2D, glTexImage3D, GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8  # noqa: F401
 from pyglet.graphics.api.gl.enums import texture_map
-from pyglet.image.base import AbstractImage, ImageData, ImageDataRegion, ImageGrid
+from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid
 from pyglet.image.base import CompressedImageData, ImageException
 from pyglet.graphics.texture import TextureInternalFormat, TextureBase, TextureRegionBase, TextureDescriptor, \
     UniformTextureSequence, TextureArraySizeExceeded, TextureArrayDepthExceeded, TextureArray
@@ -109,7 +109,7 @@ class GLCompressedImageData(CompressedImageData):
 
     def __init__(self, width: int, height: int, gl_format: int, data: bytes,
                  extension: str | None = None,
-                 decoder: Callable[[bytes, int, int], AbstractImage] | None = None) -> None:
+                 decoder: Callable[[bytes, int, int], _AbstractImage] | None = None) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
         Args:
@@ -247,7 +247,7 @@ class GLCompressedImageData(CompressedImageData):
     def get_image_data(self) -> CompressedImageData:
         return self
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         raise NotImplementedError(f"Not implemented for {self}")
 
     def blit(self, x: int, y: int, z: int = 0) -> None:
@@ -667,7 +667,7 @@ class TextureRegion(Texture):
         region._set_tex_coords_order(*self.tex_coords_order)
         return region
 
-    def upload(self, source: AbstractImage, x: int, y: int, z: int) -> None:
+    def upload(self, source: _AbstractImage, x: int, y: int, z: int) -> None:
         assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
@@ -825,7 +825,7 @@ class TextureArray(Texture, UniformTextureSequence):
 
         return texture
 
-    def _verify_size(self, image: AbstractImage) -> None:
+    def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(
                 f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
@@ -843,7 +843,7 @@ class TextureArray(Texture, UniformTextureSequence):
         self.items.append(item)
         return item
 
-    def allocate(self, *images: AbstractImage) -> list[TextureArrayRegion]:
+    def allocate(self, *images: _AbstractImage) -> list[TextureArrayRegion]:
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
@@ -934,7 +934,7 @@ class GLTileableTexture(Texture):
         glBindTexture(self.target, 0)
 
     @classmethod
-    def create_for_image(cls, image: AbstractImage) -> TextureBase:
+    def create_for_image(cls, image: _AbstractImage) -> TextureBase:
         image = image.get_image_data()
         return image.create_texture(cls)
 

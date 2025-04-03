@@ -98,7 +98,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, BinaryIO, Sequence
 
 if TYPE_CHECKING:
-    from pyglet.image.base import AbstractImage
+    from pyglet.image.base import _AbstractImage
 
 from pyglet.image import animation  # noqa: F401
 from pyglet.image.base import ImageData, ImageDataRegion  # noqa: F401
@@ -110,7 +110,7 @@ from pyglet.image.codecs import add_default_codecs as _add_default_codecs
 from pyglet.image.codecs import registry as _codec_registry
 
 
-def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> AbstractImage:
+def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> _AbstractImage:
     """Load an image from a file on disk, or from an open file-like object.
 
     Args:
@@ -154,7 +154,7 @@ def load_animation(filename: str, file: BinaryIO | None = None, decoder: ImageDe
     return _codec_registry.decode_animation(filename, file)
 
 
-def create(width: int, height: int, pattern: ImagePattern | None = None) -> AbstractImage:
+def create(width: int, height: int, pattern: ImagePattern | None = None) -> _AbstractImage:
     """Create an image optionally filled with the given pattern.
 
     :Parameters:
@@ -189,7 +189,7 @@ class SolidColorImagePattern(ImagePattern):
         """
         self.color = _color_as_bytes(color)
 
-    def create_image(self, width: int, height: int) -> AbstractImage:
+    def create_image(self, width: int, height: int) -> _AbstractImage:
         data = self.color * width * height
         return ImageData(width, height, 'RGBA', data)
 
@@ -214,7 +214,7 @@ class CheckerImagePattern(ImagePattern):
         self.color1 = _color_as_bytes(color1)
         self.color2 = _color_as_bytes(color2)
 
-    def create_image(self, width: int, height: int) -> AbstractImage:
+    def create_image(self, width: int, height: int) -> _AbstractImage:
         hw = width // 2
         hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw

@@ -37,7 +37,7 @@ from pyglet.graphics.api.gl import GLint, glGetIntegerv, GL_VIEWPORT, glGetFrame
     GL_COLOR_ATTACHMENT0, glFramebufferTexture, glFramebufferTextureLayer, glFramebufferRenderbuffer
 from pyglet.graphics.api.gl.texture import Texture
 from pyglet.graphics.framebuffer import BufferManagerBase
-from pyglet.image.base import AbstractImage, ImageData, ImageException
+from pyglet.image.base import _AbstractImage, ImageData, ImageException
 from pyglet.graphics.texture import TextureBase
 
 
@@ -111,7 +111,7 @@ class BufferManager(BufferManagerBase):
         return bufimg
 
 
-class BufferImage(AbstractImage):
+class BufferImage(_AbstractImage):
     """An abstract "default" framebuffer."""
 
     #: The OpenGL read and write target for this buffer.

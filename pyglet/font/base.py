@@ -18,7 +18,7 @@ from pyglet.enums import (
 from pyglet.graphics.texture import TextureInternalFormat, TextureDescriptor, Texture, TextureRegion
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
+    from pyglet.image import _AbstractImage
 
 _other_grapheme_extend = list(map(chr, [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
                                         0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
@@ -164,14 +164,14 @@ class GlyphTextureAtlas(atlas.TextureAtlas):
         self.texture = self.texture_class.create(width, height, descriptor)
         self.allocator = atlas.Allocator(width, height)
 
-    def add(self, img: AbstractImage, border: int = 0) -> Glyph:
+    def add(self, img: _AbstractImage, border: int = 0) -> Glyph:
         return super().add(img, border)
 
 
 class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: AbstractImage, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
+    def add(self, img: _AbstractImage, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
         for glyph_atlas in list(self.atlases):
             try:
                 return glyph_atlas.add(img, border)
@@ -298,7 +298,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, img: AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
+    def create_glyph(self, img: _AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -320,7 +320,7 @@ class Font:
 
         return self.texture_bin.add(img, descriptor or self.default_descriptor, border=1)
 
-    def _get_optimal_atlas_size(self, image_data: AbstractImage) -> tuple[int, int]:
+    def _get_optimal_atlas_size(self, image_data: _AbstractImage) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
         # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
         # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)

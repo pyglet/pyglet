@@ -24,7 +24,7 @@ class ImagePattern(ABC):
     """Abstract image creation class."""
 
     @abstractmethod
-    def create_image(self, width: int, height: int) -> AbstractImage:
+    def create_image(self, width: int, height: int) -> _AbstractImage:
         """Create an image of the given size."""
         raise NotImplementedError('method must be defined in subclass')
 
@@ -37,7 +37,7 @@ class ImageException(Exception):
     pass
 
 
-class AbstractImage(ABC):
+class _AbstractImage(ABC):
     """Abstract class representing an image."""
 
     anchor_x: int = 0
@@ -62,7 +62,7 @@ class AbstractImage(ABC):
         """
 
     @abstractmethod
-    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         """Retrieve a rectangular region of this image."""
 
     def save(self, filename: str | None = None,
@@ -90,7 +90,7 @@ class AbstractImage(ABC):
             _codec_registry.encode(self, filename, file)
 
 
-class AbstractImageSequence(ABC):
+class _AbstractImageSequence(ABC):
     """Abstract sequence of images.
 
     Image sequence are useful for storing image animations or slices of a volume.
@@ -120,11 +120,11 @@ class AbstractImageSequence(ABC):
         return Animation.from_image_sequence(self, period, loop)
 
     @abstractmethod
-    def __getitem__(self, item) -> AbstractImage:
+    def __getitem__(self, item) -> _AbstractImage:
         """Retrieve one or more images by index."""
 
     @abstractmethod
-    def __setitem__(self, item, image: AbstractImage) -> AbstractImage:
+    def __setitem__(self, item, image: _AbstractImage) -> _AbstractImage:
         """Replace one or more images in the sequence.
 
         Args:
@@ -138,11 +138,11 @@ class AbstractImageSequence(ABC):
         """Length of the image sequence."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[AbstractImage]:
+    def __iter__(self) -> Iterator[_AbstractImage]:
         """Iterate over the images in sequence."""
 
 
-class ImageData(AbstractImage):
+class ImageData(_AbstractImage):
     """An image represented as a string of unsigned bytes."""
 
     _swap1_pattern = re.compile(asbytes('(.)'), re.DOTALL)
@@ -425,14 +425,14 @@ class ImageDataRegion(ImageData):
         y += self.y
         return super().get_region(x, y, width, height)
 
-class CompressedImageData(AbstractImage):
+class CompressedImageData(_AbstractImage):
     """Compressed image data suitable for direct uploading to GPU."""
 
     _current_texture = None
 
     def __init__(self, width: int, height: int, data: bytes,
                  extension: str | None = None,
-                 decoder: Callable[[bytes, int, int], AbstractImage] | None = None) -> None:
+                 decoder: Callable[[bytes, int, int], _AbstractImage] | None = None) -> None:
         """Construct a CompressedImageData with the given compressed data.
 
         Args:
@@ -463,14 +463,14 @@ class CompressedImageData(AbstractImage):
     def get_image_data(self) -> CompressedImageData:
         return self
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         raise NotImplementedError(f"Not implemented for {self}")
 
     def blit(self, x: int, y: int, z: int = 0) -> None:
         raise NotImplementedError
 
 
-class ImageGrid(AbstractImage, AbstractImageSequence):
+class ImageGrid(_AbstractImage, _AbstractImageSequence):
     """An imaginary grid placed over an image allowing easy access to regular regions of that image.
 
     The grid can be accessed either as a complete image, or as a sequence
@@ -540,7 +540,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
             self._texture_grid = TextureGrid(self)
         return self._texture_grid
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> AbstractImage:
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         raise NotImplementedError(f"Not implemented for {self}.")
 
     def blit(self, x: int, y: int, z: int = 0) -> None:
@@ -565,7 +565,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         else:
             return self._items[index]
 
-    def __setitem__(self, index: int, value: AbstractImage):
+    def __setitem__(self, index: int, value: _AbstractImage):
         raise NotImplementedError
 
     def __len__(self) -> int:

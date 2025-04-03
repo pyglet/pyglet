@@ -25,7 +25,7 @@ import pyglet
 from pyglet.text.formats import structured
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
+    from pyglet.image import _AbstractImage
     from pyglet.resource import Location
 
 
@@ -124,7 +124,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         self.feed(text)
         self.close()
 
-    def get_image(self, filename: str) -> AbstractImage:
+    def get_image(self, filename: str) -> _AbstractImage:
         return pyglet.image.load(filename, file=self.location.open(filename))
 
     def prepare_for_data(self) -> None:

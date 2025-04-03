@@ -5,8 +5,8 @@ from typing import Iterator, Literal, NamedTuple, Sequence
 import pyglet
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
 from pyglet.image.base import (
-    AbstractImage,
-    AbstractImageSequence,
+    _AbstractImage,
+    _AbstractImageSequence,
     ImageData,
     ImageDataRegion,
     ImageException,
@@ -22,7 +22,7 @@ class TextureArrayDepthExceeded(ImageException):
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
-class TextureSequence(AbstractImageSequence):
+class TextureSequence(_AbstractImageSequence):
     """Interface for a sequence of textures.
 
     Typical implementations store multiple :py:class:`~pyglet.graphics.TextureRegion`s
@@ -32,7 +32,7 @@ class TextureSequence(AbstractImageSequence):
     def __getitem__(self, item) -> TextureBase:
         raise NotImplementedError
 
-    def __setitem__(self, item, texture: type[TextureBase]) -> AbstractImage:
+    def __setitem__(self, item, texture: type[TextureBase]) -> _AbstractImage:
         raise NotImplementedError
 
     def __len__(self) -> int:
@@ -92,7 +92,7 @@ class TextureDescriptor:
         self.anisotropic_level = anisotropic_level
 
 
-class TextureBase(AbstractImage):
+class TextureBase(_AbstractImage):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
@@ -422,7 +422,7 @@ class TextureArray(TextureBase, UniformTextureSequence):
         """
         raise NotImplementedError
 
-    def _verify_size(self, image: AbstractImage) -> None:
+    def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(
                 f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
@@ -440,7 +440,7 @@ class TextureArray(TextureBase, UniformTextureSequence):
         self.items.append(item)
         return item
 
-    def allocate(self, *images: AbstractImage) -> list[TextureArrayRegion]:
+    def allocate(self, *images: _AbstractImage) -> list[TextureArrayRegion]:
         """Allocates multiple images at once."""
         raise NotImplementedError
 
@@ -517,7 +517,7 @@ class TileableTexture(TextureBase):
         raise NotImplementedError
 
     @classmethod
-    def create_for_image(cls, image: AbstractImage) -> TextureBase:
+    def create_for_image(cls, image: _AbstractImage) -> TextureBase:
         raise NotImplementedError
 
 
@@ -623,7 +623,7 @@ class TextureGridBase(TextureRegionBase, UniformTextureSequence):
             elif type(index) is int:
                 return self.items[index]
 
-    def __setitem__(self, index: int | slice, value: AbstractImage | Sequence[AbstractImage]):
+    def __setitem__(self, index: int | slice, value: _AbstractImage | Sequence[_AbstractImage]):
         if type(index) is slice:
             for region, image in zip(self[index], value):
                 if image.width != self.item_width or image.height != self.item_height:
@@ -642,7 +642,7 @@ class TextureGridBase(TextureRegionBase, UniformTextureSequence):
         return iter(self.items)
 
 
-class BufferImage(AbstractImage):
+class BufferImage(_AbstractImage):
     """An abstract "default" framebuffer."""
 
     #: The OpenGL read and write target for this buffer.
