@@ -9,7 +9,7 @@ from pyglet.graphics.api.gl import glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA
 from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
     from pyglet.graphics.api.gl import ShaderProgram
 
 layout_vertex_source = """#version 110

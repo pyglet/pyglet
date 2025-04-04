@@ -170,7 +170,7 @@ class ImageMouseCursor(MouseCursor):
     reasonably sized cursors will render correctly
     """
 
-    def __init__(self, image: pyglet.image.AbstractImage, hot_x: int = 0, hot_y: int = 0,
+    def __init__(self, image: pyglet.image._AbstractImage, hot_x: int = 0, hot_y: int = 0,
                  acceleration: bool = False) -> None:
         """Create a mouse cursor from an image.
 
@@ -1116,7 +1116,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         self._keyboard_exclusive = exclusive
 
-    def set_icon(self, *images: pyglet.image.AbstractImage) -> None:
+    def set_icon(self, *images: pyglet.image._AbstractImage) -> None:
         """Set the window icon.
 
         If multiple images are provided, one with an appropriate size

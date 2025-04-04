@@ -108,7 +108,7 @@ def test_shader_ubo_data_structure():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()
@@ -212,7 +212,7 @@ def test_shader_ubo_matrix_data_structure():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()
@@ -310,7 +310,7 @@ def test_shader_uniform_block_matrix():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()

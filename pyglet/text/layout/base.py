@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.image import Texture, TextureDescriptor
+    from pyglet.graphics import Texture, TextureDescriptor
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
@@ -254,7 +254,7 @@ class _GlyphBox(_AbstractBox):
         """Create a run of glyphs sharing the same texture.
 
         :Parameters:
-            `owner` : `pyglet.image.Texture`
+            `owner` : `pyglet.graphics.Texture`
                 Texture of all glyphs in this run.
             `font` : `pyglet.font.base.Font`
                 Font of all glyphs in this run.
@@ -1256,7 +1256,7 @@ class TextLayout:
         # temp_pos = self.position
         # width = int(round(self._content_width))
         # height = int(round(self._content_height))
-        # texture = pyglet.image.Texture.create(width, height, texture_desc)
+        # texture = pyglet.graphics.Texture.create(width, height, texture_desc)
         # depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
         # framebuffer.attach_texture(texture)
         # framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)

@@ -669,7 +669,7 @@ class XlibWindow(BaseWindow):
         width = texture.width
         height = texture.height
 
-        alpha_luma_bytes = texture.get_image_data().get_data('AL', -width * 2)
+        alpha_luma_bytes = texture.get_image_data().get_bytes('AL', -width * 2)
         mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
         bmp_data = self._downsample_1bit(alpha_luma_bytes[1::2])
 
@@ -842,7 +842,7 @@ class XlibWindow(BaseWindow):
             pitch = -(image.width * len(fmt))
             s = c_buffer(sizeof(c_ulong) * 2)
             memmove(s, cast((c_ulong * 2)(image.width, image.height), POINTER(c_ubyte)), len(s))
-            data += s.raw + image.get_data(fmt, pitch)
+            data += s.raw + image.get_bytes(fmt, pitch)
         buffer = (c_ubyte * len(data))()
         memmove(buffer, data, len(data))
         atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_ICON'), False)

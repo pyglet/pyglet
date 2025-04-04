@@ -46,10 +46,8 @@ class ComponentFormat(str, Enum):
     RG = 'RG'
     RGB = 'RGB'
     RGBA = 'RGBA'
-    BGR = 'BGR'
-    BGRA = 'BGRA'
-    L = 'L'  # Legacy.
-    ALPHA = 'ALPHA'  # Legacy.
+    D = 'D'  # Depth Component
+    DS = 'DS'  # Depth Stencil
 
 
 class TextureType(Enum):

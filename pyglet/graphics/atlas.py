@@ -5,7 +5,7 @@ This can have major performance benefits when dealiing with a large number of im
 
 :py:class:`~pyglet.image.atlas.TextureAtlas` maintains one texture; :py:class:`TextureBin`
 manages a collection of atlases of a given size. :py:class:`TextureArrayBin` works similarly
-except for :py:class:`~pyglet.image.TextureArray`s instead of altases.
+except for :py:class:`~pyglet.graphics.TextureArray`s instead of altases.
 
 This module is used internally by the :py:mod:`pyglet.resource` module.
 
@@ -34,8 +34,10 @@ import pyglet
 
 from typing import TYPE_CHECKING
 
+import pyglet
+
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage, ImageData, TextureRegion, TextureArrayRegion
+    from pyglet.image import _AbstractImage, ImageData, TextureRegion, TextureArrayRegion
 
 
 class AllocatorException(Exception):
@@ -140,7 +142,7 @@ class TextureAtlas:
     by allowing all the Images to be drawn together with a single
     Texture bind, rather than multiple tiny Texture binds per draw.
 
-    When creating a TextureAtlas instance, a new :py:class:`~pyglet.image.Texture`
+    When creating a TextureAtlas instance, a new :py:class:`~pyglet.graphics.Texture`
     object will be created at the requested size. If the maximum texture
     size supported by the OpenGL driver is less than requested, the
     smaller of the two will be used.
@@ -148,18 +150,18 @@ class TextureAtlas:
 
     def __init__(self, width: int = 2048, height: int = 2048) -> None:
         """Create a Texture Atlas of the given size."""
-        max_texture_size = pyglet.image.get_max_texture_size()
+        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
-        self.texture = pyglet.image.Texture.create(width, height)
+        self.texture = pyglet.graphics.Texture.create(width, height)
         self.allocator = Allocator(width, height)
 
     def add(self, img: ImageData, border: int = 0) -> TextureRegion:
         """Add ImageData to the atlas.
 
         Given :py:class:`~pyglet.image.ImageData`, add it to the Atlas and
-        return a new :py:class:`~pyglet.image.TextureRegion` object. An
+        return a new :py:class:`~pyglet.graphics.TextureRegion` object. An
         optional ``border`` argument can be passed, which will leave the
         specified number of blank pixels around the added ImageData. This
         can be useful in certain situations and blend modes, where
@@ -171,7 +173,7 @@ class TextureAtlas:
         no room in the atlas for the image.
         """
         x, y = self.allocator.alloc(img.width + border * 2, img.height + border * 2)
-        self.texture.blit_into(img, x + border, y + border, 0)
+        self.texture.upload(img, x + border, y + border, 0)
         return self.texture.get_region(x + border, y + border, img.width, img.height)
 
 
@@ -186,12 +188,12 @@ class TextureBin:
 
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048) -> None:
         """Create a texture bin for holding atlases of the given size."""
-        max_texture_size = pyglet.image.get_max_texture_size()
+        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img: ImageData | AbstractImage, border: int = 0) -> TextureRegion:
+    def add(self, img: ImageData | _AbstractImage, border: int = 0) -> TextureRegion:
         """Add an image into this texture bin.
 
         This method calls :py:meth:`~TextureAtlas.add` for the first atlas
@@ -224,8 +226,8 @@ class TextureArrayBin:
     """
 
     def __init__(self, texture_width: int = 2048, texture_height: int = 2048, max_depth: int | None = None) -> None:
-        max_texture_size = pyglet.image.get_max_texture_size()
-        self.max_depth = max_depth or pyglet.image.get_max_array_texture_layers()
+        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
+        self.max_depth = max_depth or pyglet.graphics.texture.get_max_array_texture_layers()
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.arrays = []
@@ -233,7 +235,7 @@ class TextureArrayBin:
     def add(self, img: ImageData) -> TextureArrayRegion:
         """Add an image into this texture array bin.
 
-        This method calls :py:meth:`~pyglet.image.TextureArray.add` for the first
+        This method calls :py:meth:`~pyglet.graphics.TextureArray.add` for the first
         array that has room for the image.
 
         ``TextureArraySizeExceeded`` is raised if the image exceeds the dimensions of
@@ -242,11 +244,11 @@ class TextureArrayBin:
         try:
             array = self.arrays[-1]
             return array.add(img)
-        except pyglet.image.TextureArrayDepthExceeded:
+        except pyglet.graphics.texture.TextureArrayDepthExceeded:
             pass
         except IndexError:
             pass
 
-        array = pyglet.image.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
+        array = pyglet.graphics.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
         self.arrays.append(array)
         return array.add(img)

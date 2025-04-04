@@ -7,7 +7,7 @@ import pyglet
 from pyglet.enums import BlendFactor
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture, AbstractImage
+    from pyglet.graphics import Texture, AbstractImage
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
 

@@ -28,7 +28,7 @@ void main() {
 program = pyglet.graphics.ComputeShaderProgram(compute_src)
 
 # Create an RGBA32F Texture that we can bind to the ShaderProgram.
-out_texture = pyglet.image.Texture.create(540, 540, internalformat=GL_RGBA32F)
+out_texture = pyglet.graphics.Texture.create(540, 540, internalformat=GL_RGBA32F)
 
 # If the uniform location is not specifically set in the shader,
 # you can look up it's metadata in the `program.uniforms` dict.

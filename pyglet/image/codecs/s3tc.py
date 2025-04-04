@@ -9,13 +9,13 @@ import re
 
 import pyglet
 from pyglet.graphics.api.gl import *
-from pyglet.image import AbstractImage, Texture
+from pyglet.image import _AbstractImage, Texture
 
 split_8byte = re.compile('.' * 8, flags=re.DOTALL)
 split_16byte = re.compile('.' * 16, flags=re.DOTALL)
 
 
-class PackedImageData(AbstractImage):
+class PackedImageData(_AbstractImage):
     _current_texture = None
 
     def __init__(self, width, height, fmt, packed_format, data):

@@ -376,7 +376,7 @@ class CocoaWindow(BaseWindow):
         image = max_image.get_image_data()
         fmt = 'ARGB'
         bytesPerRow = len(fmt) * image.width
-        data = image.get_data(fmt, -bytesPerRow)
+        data = image.get_bytes(fmt, -bytesPerRow)
 
         # Use image data to create a data provider.
         # Using CGDataProviderCreateWithData crashes PyObjC 2.2b3, so we create

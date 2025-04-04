@@ -69,12 +69,12 @@ from __future__ import annotations
 import pyglet
 from pyglet import event, clock
 import sys
-from typing import ClassVar, TYPE_CHECKING, Literal
+from typing import ClassVar, Literal
 
 from pyglet.graphics import Group, Batch, ShaderProgram, GeometryMode
 from pyglet.enums import BlendFactor
-from pyglet.image.base import TextureBase, TextureArrayRegion
-from pyglet.image.base import AbstractImage, Animation
+from pyglet.graphics.texture import TextureBase, TextureArrayRegion
+from pyglet.image.base import _AbstractImage, Animation
 
 if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.sprite import SpriteGroup, get_default_array_shader, get_default_shader
@@ -110,7 +110,7 @@ class Sprite(event.EventDispatcher):
     group_class: ClassVar[type[SpriteGroup | Group]] = SpriteGroup
 
     def __init__(self,
-                 img: AbstractImage | Animation,
+                 img: _AbstractImage | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -308,7 +308,7 @@ class Sprite(event.EventDispatcher):
             self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
-    def image(self) -> AbstractImage | Animation:
+    def image(self) -> _AbstractImage | Animation:
         """The Sprite's Image or Animation to display.
 
         .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
@@ -318,7 +318,7 @@ class Sprite(event.EventDispatcher):
         return self._texture
 
     @image.setter
-    def image(self, img: AbstractImage | Animation) -> None:
+    def image(self, img: _AbstractImage | Animation) -> None:
         if self._animation is not None:
             clock.unschedule(self._animate)
             self._animation = None

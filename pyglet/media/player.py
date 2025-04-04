@@ -13,7 +13,7 @@ from pyglet.media.drivers import get_audio_driver
 _debug = pyglet.options.debug_media
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
 
 
 class PlaybackTimer:
@@ -368,7 +368,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self) -> None:
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height)
+        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
         self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
@@ -447,7 +447,7 @@ class Player(pyglet.event.EventDispatcher):
             with self._context:
                 if self._texture is None:
                     self._create_texture()
-                self._texture.blit_into(image, 0, 0, 0)
+                self._texture.upload(image, 0, 0, 0)
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
 

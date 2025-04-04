@@ -173,7 +173,7 @@ class SpriteGroup(graphics.Group):
         is created; applications usually do not need to explicitly create it.
 
         :Parameters:
-            `texture` : `~pyglet.image.Texture`
+            `texture` : `~pyglet.graphics.Texture`
                 The (top-level) texture containing the sprite image.
             `blend_src` : int
                 OpenGL blend source mode; for example,

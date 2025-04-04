@@ -6,7 +6,7 @@ from pyglet.enums import BlendFactor
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage, Animation
+    from pyglet.image import _AbstractImage, Animation
     from pyglet.graphics import Batch, Group, GeometryMode
     from pyglet.text.layout import TextLayout
 
@@ -31,7 +31,7 @@ class NinePatch(Sprite):
     """
 
     def __init__(self,
-                 img: AbstractImage | Animation,
+                 img: _AbstractImage | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int | None = None, height: int | None = None,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
@@ -71,7 +71,7 @@ class NinePatch(Sprite):
 
     @classmethod
     def create_around_layout(cls,
-                             img: AbstractImage | Animation,
+                             img: _AbstractImage | Animation,
                              layout: TextLayout,
                              border: int = 0,
                              blend_src: BlendFactor = BlendFactor.SRC_ALPHA,

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
     from pyglet.text.document import AbstractDocument
 
 

@@ -92,7 +92,7 @@ class Options:
 
     debug_graphics_batch: bool = False
     """If ``True``, prints batch information being drawn, including :py:class:`~pyglet.graphics.Group`'s, VertexDomains,
-    and :py:class:`~pyglet.image.Texture` information. This can be useful to see how many Group's are being
+    and :py:class:`~pyglet.graphics.Texture` information. This can be useful to see how many Group's are being
     consolidated."""
 
     debug_lib: bool = False
@@ -102,7 +102,7 @@ class Options:
     """If ``True``, prints more detailed media information for audio codecs and drivers. Will be very verbose."""
 
     debug_texture: bool = False
-    """If ``True``, prints information on :py:class:`~pyglet.image.Texture` size (in bytes) when they are allocated and
+    """If ``True``, prints information on :py:class:`~pyglet.graphics.Texture` size (in bytes) when they are allocated and
     deleted."""
 
     debug_trace: bool = False

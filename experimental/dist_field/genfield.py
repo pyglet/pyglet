@@ -15,7 +15,7 @@ def gen_dist_field(img, width, height, spread, bidirectional=True):
     dist_scale = 127. / max_dist
 
     # Grab image data as list of int.
-    data = img.get_data('L', img.width)
+    data = img.get_bytes('L', img.width)
     if isinstance(data, str):
         data = map(ord, data)
 

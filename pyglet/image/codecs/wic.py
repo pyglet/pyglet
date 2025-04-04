@@ -595,7 +595,7 @@ class WICEncoder(ImageEncoder):
 
         pitch = image.width * len(fmt)
 
-        image_data = image.get_data(fmt, -pitch)
+        image_data = image.get_bytes(fmt, -pitch)
 
         size = pitch * image.height
 

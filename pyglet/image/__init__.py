@@ -97,45 +97,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, BinaryIO, Sequence
 
-import pyglet
-
-from .base import TextureFilter
-
-
 if TYPE_CHECKING:
-    from pyglet.image.base import AbstractImage
+    from pyglet.image.base import _AbstractImage
 
-from pyglet.image import atlas, animation
+from pyglet.image import animation  # noqa: F401
+from pyglet.image.base import ImageData, ImageDataRegion  # noqa: F401
+from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401, TC001
 
-if pyglet.options.backend in ("opengl", "gl2", "gles2"):
-    from pyglet.graphics.api.gl.image import GLBufferImage as BufferImage
-    from pyglet.graphics.api.gl.image import GLBufferImageMask as BufferImageMask
-    from pyglet.graphics.api.gl.image import GLBufferManager as BufferManager
-    from pyglet.graphics.api.gl.image import GLDepthBufferImage as DepthBufferImage
-    from pyglet.graphics.api.gl.image import GLImageData as ImageData
-    from pyglet.graphics.api.gl.image import GLImageDataRegion as ImageDataRegion
-    from pyglet.graphics.api.gl.image import GLTexture as Texture
-    from pyglet.graphics.api.gl.image import GLTexture3D as Texture3D
-    from pyglet.graphics.api.gl.image import GLTextureArray as TextureArray
-    from pyglet.graphics.api.gl.image import GLTextureArrayRegion as TextureArrayRegion
-    from pyglet.graphics.api.gl.image import GLTextureRegion as TextureRegion
-    from pyglet.graphics.api.gl.image import get_buffer_manager, get_max_texture_size
-elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageData
-    from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageDataRegion
-    from pyglet.graphics.api.vulkan.texture import VulkanTexture as Texture
-    from pyglet.graphics.api.vulkan.texture import VulkanTextureRegion as TextureRegion
-    from pyglet.graphics.api.vulkan.texture import get_max_texture_size
-
-from pyglet.image.animation import Animation, AnimationFrame
-
-from pyglet.image.base import ImagePattern, ImageGrid, _color_as_bytes
+from pyglet.image.base import ImagePattern, ImageGrid, _color_as_bytes  # noqa: F401
 from pyglet.image.codecs import ImageDecoder
 from pyglet.image.codecs import add_default_codecs as _add_default_codecs
 from pyglet.image.codecs import registry as _codec_registry
 
 
-def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> AbstractImage:
+def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> _AbstractImage:
     """Load an image from a file on disk, or from an open file-like object.
 
     Args:
@@ -179,7 +154,7 @@ def load_animation(filename: str, file: BinaryIO | None = None, decoder: ImageDe
     return _codec_registry.decode_animation(filename, file)
 
 
-def create(width: int, height: int, pattern: ImagePattern | None = None) -> AbstractImage:
+def create(width: int, height: int, pattern: ImagePattern | None = None) -> _AbstractImage:
     """Create an image optionally filled with the given pattern.
 
     :Parameters:
@@ -214,7 +189,7 @@ class SolidColorImagePattern(ImagePattern):
         """
         self.color = _color_as_bytes(color)
 
-    def create_image(self, width: int, height: int) -> AbstractImage:
+    def create_image(self, width: int, height: int) -> _AbstractImage:
         data = self.color * width * height
         return ImageData(width, height, 'RGBA', data)
 
@@ -239,7 +214,7 @@ class CheckerImagePattern(ImagePattern):
         self.color1 = _color_as_bytes(color1)
         self.color2 = _color_as_bytes(color2)
 
-    def create_image(self, width: int, height: int) -> AbstractImage:
+    def create_image(self, width: int, height: int) -> _AbstractImage:
         hw = width // 2
         hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw

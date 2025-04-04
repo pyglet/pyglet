@@ -666,7 +666,7 @@ class Win32Window(BaseWindow):
             _user32.ReleaseDC(None, hdc)
 
             img = img.get_image_data()
-            data = img.get_data(fmt, pitch)
+            data = img.get_bytes(fmt, pitch)
             memmove(dataptr, data, len(data))
 
             mask = _gdi32.CreateBitmap(img.width, img.height, 1, 1, None)
@@ -715,7 +715,7 @@ class Win32Window(BaseWindow):
         _user32.ReleaseDC(None, hdc)
 
         image = image.get_image_data()
-        data = image.get_data(fmt, pitch)
+        data = image.get_bytes(fmt, pitch)
         memmove(dataptr, data, len(data))
 
         mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)

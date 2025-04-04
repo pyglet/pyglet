@@ -1,7 +1,7 @@
 import unittest
 
-from pyglet.image import *
-from pyglet.window import *
+from pyglet.image import ImageData, ImageGrid
+from pyglet.window import Window
 
 
 def colorbyte(color):
@@ -32,13 +32,13 @@ class ImageGridTestCase(unittest.TestCase):
         self.grid = ImageGrid(self.image, rows, cols,
                               itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
 
-    def check_cell(self, cellimage, cellindex):
-        self.assertTrue(cellimage.width == self.grid.item_width)
-        self.assertTrue(cellimage.height == self.grid.item_height)
+    def check_cell(self, cell_texture, cellindex):
+        self.assertTrue(cell_texture.width == self.grid.item_width)
+        self.assertTrue(cell_texture.height == self.grid.item_height)
 
         color = colorbyte(cellindex + 1)
-        cellimage = cellimage.get_image_data()
-        data = cellimage.get_data('R', cellimage.width)
+        cellimage = cell_texture.get_image_data()
+        data = cellimage.get_bytes('R', cellimage.width)
         self.assertTrue(data == color * len(data))
 
     def setUp(self):

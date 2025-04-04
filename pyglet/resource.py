@@ -61,11 +61,10 @@ import pyglet
 if TYPE_CHECKING:
     from typing import Literal
 
-    from pyglet.graphics import Batch
     from pyglet.graphics.shader import Shader
-    from pyglet.image import AbstractImage, Texture, TextureRegion
+    from pyglet.image import _AbstractImage, Texture, TextureRegion
     from pyglet.image.animation import Animation
-    from pyglet.image.atlas import TextureBin
+    from pyglet.graphics.atlas import TextureBin
     from pyglet.media.codecs import Source
     from pyglet.model import Scene
     from pyglet.text.document import AbstractDocument
@@ -471,7 +470,7 @@ class Loader:
         fileobj = self.file(filename)
         font.add_file(fileobj)
 
-    def _alloc_image(self, name: str, use_atlas: bool, border: int) -> AbstractImage:
+    def _alloc_image(self, name: str, use_atlas: bool, border: int) -> _AbstractImage:
         fileobj = self.file(name)
         try:
             img = pyglet.image.load(name, file=fileobj)
@@ -493,7 +492,7 @@ class Loader:
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        max_texture_size = pyglet.image.get_max_texture_size()
+        max_texture_size = pyglet.graphics.texture.get_max_texture_size()
         max_size = min(2048, max_texture_size) - border
         if width > max_size or height > max_size:
             return None
@@ -507,7 +506,7 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin()
+            texture_bin = pyglet.graphics.atlas.TextureBin()
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin

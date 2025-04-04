@@ -227,7 +227,7 @@ void main()
 class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
     """A sprite group that uses multiple active textures."""
 
-    def __init__(self, textures: dict[str, pyglet.image.Texture],
+    def __init__(self, textures: dict[str, pyglet.graphics.Texture],
                  blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: pyglet.graphics.ShaderProgram | None = None,
                  parent: pyglet.graphics.Group | None = None) -> None:
@@ -264,7 +264,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
     def __init__(
             self,
-            imgs: Mapping[str, pyglet.image.Texture],
+            imgs: Mapping[str, pyglet.graphics.Texture],
             x: float = 0, y: float = 0, z: float = 0,
             blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
             blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -280,7 +280,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
         self._texture = list(imgs.values())[0]
 
-        if isinstance(self._texture, pyglet.image.TextureArrayRegion):
+        if isinstance(self._texture, pyglet.graphics.texture.TextureArrayRegion):
             self._program = program or pyglet.sprite.get_default_array_shader()
         else:
             self._program = program or pyglet.sprite.get_default_shader()
@@ -462,7 +462,7 @@ class Ui_MainWindow:
 
             if self.program:
                 print("Successfully compiled shader.")
-        except pyglet.gl.lib.GLException as err:
+        except pyglet.graphics.api.gl.GLException as err:
             print(f"Failed to compile shader: {err}")
         except Exception as err:
             print("Unexpected error", err)

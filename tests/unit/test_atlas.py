@@ -1,6 +1,6 @@
 import unittest
 
-from pyglet.image import atlas
+from pyglet.graphics import atlas
 
 __noninteractive = True
 
