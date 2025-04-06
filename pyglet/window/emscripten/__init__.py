@@ -7,40 +7,85 @@ import js  # noqa
 from pyodide.ffi import create_proxy  # noqa
 
 import pyglet.app
-from pyglet.display.base import Display, Screen, ScreenMode
-from pyglet.window import key, mouse, BaseWindow, MouseCursor, ImageMouseCursor
+from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
 
 if TYPE_CHECKING:
+    from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.graphics.api import GraphicsConfig
     from pyglet.graphics.api.base import WindowGraphicsContext
 
 # Keymap using `event.code`
 _key_map = {
     # Alpha
-    "a": key.A, "b": key.B, "c": key.C, "d": key.D, "e": key.E,
-    "f": key.F, "g": key.G, "h": key.H, "i": key.I, "j": key.J,
-    "k": key.K, "l": key.L, "m": key.M, "n": key.N, "o": key.O,
-    "p": key.P, "q": key.Q, "r": key.R, "s": key.S, "t": key.T,
-    "u": key.U, "v": key.V, "w": key.W, "x": key.X, "y": key.Y,
+    "a": key.A,
+    "b": key.B,
+    "c": key.C,
+    "d": key.D,
+    "e": key.E,
+    "f": key.F,
+    "g": key.G,
+    "h": key.H,
+    "i": key.I,
+    "j": key.J,
+    "k": key.K,
+    "l": key.L,
+    "m": key.M,
+    "n": key.N,
+    "o": key.O,
+    "p": key.P,
+    "q": key.Q,
+    "r": key.R,
+    "s": key.S,
+    "t": key.T,
+    "u": key.U,
+    "v": key.V,
+    "w": key.W,
+    "x": key.X,
+    "y": key.Y,
     "z": key.Z,
-    "A": key.A, "B": key.B, "C": key.C, "D": key.D, "E": key.E,
-    "F": key.F, "G": key.G, "H": key.H, "I": key.I, "J": key.J,
-    "K": key.K, "L": key.L, "M": key.M, "N": key.N, "O": key.O,
-    "P": key.P, "Q": key.Q, "R": key.R, "S": key.S, "T": key.T,
-    "U": key.U, "V": key.V, "W": key.W, "X": key.X, "Y": key.Y,
+    "A": key.A,
+    "B": key.B,
+    "C": key.C,
+    "D": key.D,
+    "E": key.E,
+    "F": key.F,
+    "G": key.G,
+    "H": key.H,
+    "I": key.I,
+    "J": key.J,
+    "K": key.K,
+    "L": key.L,
+    "M": key.M,
+    "N": key.N,
+    "O": key.O,
+    "P": key.P,
+    "Q": key.Q,
+    "R": key.R,
+    "S": key.S,
+    "T": key.T,
+    "U": key.U,
+    "V": key.V,
+    "W": key.W,
+    "X": key.X,
+    "Y": key.Y,
     "Z": key.Z,
-
     # Numeric
-    "0": key._0, "1": key._1, "2": key._2, "3": key._3, "4": key._4,
-    "5": key._5, "6": key._6, "7": key._7, "8": key._8, "9": key._9,
-
+    "0": key._0,
+    "1": key._1,
+    "2": key._2,
+    "3": key._3,
+    "4": key._4,
+    "5": key._5,
+    "6": key._6,
+    "7": key._7,
+    "8": key._8,
+    "9": key._9,
     # Whitespace and control keys
     "Backspace": key.BACKSPACE,
     "Tab": key.TAB,
     "Enter": key.RETURN,
     "Escape": key.ESCAPE,
     " ": key.SPACE,
-
     # Navication keys
     "Insert": key.INSERT,
     "Home": key.HOME,
@@ -51,7 +96,6 @@ _key_map = {
     "ArrowUp": key.UP,
     "ArrowRight": key.RIGHT,
     "ArrowDown": key.DOWN,
-
     # Modifier keys
     "Shift": key.LSHIFT,
     "ShiftLeft": key.LSHIFT,
@@ -68,34 +112,69 @@ _key_map = {
     "Pause": key.PAUSE,
     "PrintScreen": key.PRINT,
     "ContextMenu": key.MENU,
-
     # Locks
     "CapsLock": key.CAPSLOCK,
     "NumLock": key.NUMLOCK,
     "ScrollLock": key.SCROLLLOCK,
-
     # Function keys
-    "F1": key.F1, "F2": key.F2, "F3": key.F3, "F4": key.F4,
-    "F5": key.F5, "F6": key.F6, "F7": key.F7, "F8": key.F8,
-    "F9": key.F9, "F10": key.F10, "F11": key.F11, "F12": key.F12,
-
-    "Numpad0": key.NUM_0, "Numpad1": key.NUM_1, "Numpad2": key.NUM_2, "Numpad3": key.NUM_3,
-    "Numpad4": key.NUM_4, "Numpad5": key.NUM_5, "Numpad6": key.NUM_6, "Numpad7": key.NUM_7,
-    "Numpad8": key.NUM_8, "Numpad9": key.NUM_9,
+    "F1": key.F1,
+    "F2": key.F2,
+    "F3": key.F3,
+    "F4": key.F4,
+    "F5": key.F5,
+    "F6": key.F6,
+    "F7": key.F7,
+    "F8": key.F8,
+    "F9": key.F9,
+    "F10": key.F10,
+    "F11": key.F11,
+    "F12": key.F12,
+    "Numpad0": key.NUM_0,
+    "Numpad1": key.NUM_1,
+    "Numpad2": key.NUM_2,
+    "Numpad3": key.NUM_3,
+    "Numpad4": key.NUM_4,
+    "Numpad5": key.NUM_5,
+    "Numpad6": key.NUM_6,
+    "Numpad7": key.NUM_7,
+    "Numpad8": key.NUM_8,
+    "Numpad9": key.NUM_9,
     "NumpadMultiply": key.NUM_MULTIPLY,
     "NumpadAdd": key.NUM_ADD,
     "NumpadSubtract": key.NUM_SUBTRACT,
     "NumpadDecimal": key.NUM_DECIMAL,
     "NumpadDivide": key.NUM_DIVIDE,
     "NumpadEnter": key.NUM_ENTER,
-
-    "!": key.EXCLAMATION, "@": key.AT, "#": key.HASH, "$": key.DOLLAR, "%": key.PERCENT,
-    "^": key.ASCIICIRCUM, "&": key.AMPERSAND, "*": key.ASTERISK, "(": key.PARENLEFT,
-    ")": key.PARENRIGHT, "-": key.MINUS, "_": key.UNDERSCORE, "=": key.EQUAL, "+": key.PLUS,
-    "[": key.BRACKETLEFT, "]": key.BRACKETRIGHT, "{": key.BRACELEFT, "}": key.BRACERIGHT,
-    ";": key.SEMICOLON, ":": key.COLON, "'": key.APOSTROPHE, "\"": key.DOUBLEQUOTE,
-    "\\": key.BACKSLASH, "|": key.BAR, ",": key.COMMA, ".": key.PERIOD, "/": key.SLASH,
-    "?": key.QUESTION, "`": key.GRAVE, "~": key.ASCIITILDE
+    "!": key.EXCLAMATION,
+    "@": key.AT,
+    "#": key.HASH,
+    "$": key.DOLLAR,
+    "%": key.PERCENT,
+    "^": key.ASCIICIRCUM,
+    "&": key.AMPERSAND,
+    "*": key.ASTERISK,
+    "(": key.PARENLEFT,
+    ")": key.PARENRIGHT,
+    "-": key.MINUS,
+    "_": key.UNDERSCORE,
+    "=": key.EQUAL,
+    "+": key.PLUS,
+    "[": key.BRACKETLEFT,
+    "]": key.BRACKETRIGHT,
+    "{": key.BRACELEFT,
+    "}": key.BRACERIGHT,
+    ";": key.SEMICOLON,
+    ":": key.COLON,
+    "'": key.APOSTROPHE,
+    "\"": key.DOUBLEQUOTE,
+    "\\": key.BACKSLASH,
+    "|": key.BAR,
+    ",": key.COMMA,
+    ".": key.PERIOD,
+    "/": key.SLASH,
+    "?": key.QUESTION,
+    "`": key.GRAVE,
+    "~": key.ASCIITILDE,
 }
 
 # symbol,ctrl -> motion mapping
@@ -181,7 +260,7 @@ _mouse_map = {
     JS_MOUSE_MIDDLE: mouse.MIDDLE,
     JS_MOUSE_RIGHT: mouse.RIGHT,
     JS_MOUSE_BACK: mouse.MOUSE4,
-    JS_MOUSE_FORWARD: mouse.MOUSE5
+    JS_MOUSE_FORWARD: mouse.MOUSE5,
 }
 
 
@@ -201,7 +280,7 @@ def translate_mouse_bits(buttons: int) -> int:
     return result
 
 
-def CanvasEventHandler(name: str):
+def CanvasEventHandler(name: str) -> Callable:  # noqa: ANN202
     def _event_wrapper(f: Callable) -> Callable:
         f._canvas = True
         f._platform_event = True  # noqa: SLF001
@@ -212,6 +291,9 @@ def CanvasEventHandler(name: str):
 
     return _event_wrapper
 
+# The Canvas JS object.
+class HTMLCanvasElement:
+    ...
 
 class JavascriptCursor(MouseCursor):
     api_drawable: bool = False
@@ -221,30 +303,51 @@ class JavascriptCursor(MouseCursor):
         self.name = name
 
 
-class DefaultMouseCursor(JavascriptCursor):
-
-    def __init__(self):
-        super().__init__('default')
-
-
 # Temporary
 class EmscriptenWindow(BaseWindow):
     """The HTML5 Canvas."""
+
     _mouse_cursor: JavascriptCursor
 
-    def __init__(self, width: int | None = None, height: int | None = None, caption: str | None = None,
-                 resizable: bool = False, style: str | None = None, fullscreen: bool = False,
-                 visible: bool = True, vsync: bool = True, file_drops: bool = False, display: Display | None = None,
-                 screen: Screen | None = None, config: GraphicsConfig | None = None,
-                 context: WindowGraphicsContext | None = None, mode: ScreenMode | None = None) -> None:
-        self.canvas = None
+    def __init__(
+        self,
+        width: int | None = None,
+        height: int | None = None,
+        caption: str | None = None,
+        resizable: bool = False,
+        style: str | None = None,
+        fullscreen: bool = False,
+        visible: bool = True,
+        vsync: bool = True,
+        file_drops: bool = False,
+        display: Display | None = None,
+        screen: Screen | None = None,
+        config: GraphicsConfig | None = None,
+        context: WindowGraphicsContext | None = None,
+        mode: ScreenMode | None = None,
+    ) -> None:
+        self._canvas = None
         self._event_handlers: dict[int, Callable] = {}
         self._canvas_event_handlers: dict[int, Callable] = {}
         self._keys_down = set()
 
         self._scale = js.window.devicePixelRatio
-        super().__init__(width, height, caption, resizable, style, fullscreen, visible, vsync, file_drops, display,
-                         screen, config, context, mode)
+        super().__init__(
+            width,
+            height,
+            caption,
+            resizable,
+            style,
+            fullscreen,
+            visible,
+            vsync,
+            file_drops,
+            display,
+            screen,
+            config,
+            context,
+            mode,
+        )
         self._enable_event_queue = False
 
     @property
@@ -263,8 +366,16 @@ class EmscriptenWindow(BaseWindow):
         """
         return int(self._scale * 96)
 
-    def _set_event_handlers(self):
-        assert self.canvas, "Canvas has not been created."
+    @property
+    def canvas(self) -> HTMLCanvasElement:
+        """The underlying Javascript Canvas element, if available.
+
+        Read only.
+        """
+        return self._canvas
+
+    def _set_event_handlers(self) -> None:
+        assert self._canvas, "Canvas has not been created."
         for func_name in self._platform_event_names:
             if not hasattr(self, func_name):
                 continue
@@ -274,21 +385,29 @@ class EmscriptenWindow(BaseWindow):
                 proxy = create_proxy(func)
                 if hasattr(func, '_canvas'):
                     self._canvas_event_handlers[message] = func
-                    self.canvas.addEventListener(message, proxy)
+                    self._canvas.addEventListener(message, proxy)
                 else:
                     self._event_handlers[message] = func
                     js.window.addEventListener(message, proxy)
 
         self._proxy_resize = create_proxy(self._event_resized)
         self._observer = js.ResizeObserver.new(self._proxy_resize)
-        self._observer.observe(self.canvas)
+        self._observer.observe(self._canvas)
 
-    def set_fullscreen(self, fullscreen: bool = True, _screen: Screen | None = None, mode: ScreenMode | None = None,
-                       width: int | None = None, height: int | None = None) -> None:
-        if (fullscreen == self._fullscreen and
-                (_screen is None or _screen is self._screen) and
-                (width is None or width == self._width) and
-                (height is None or height == self._height)):
+    def set_fullscreen(
+        self,
+        fullscreen: bool = True,
+        _screen: Screen | None = None,
+        mode: ScreenMode | None = None,
+        width: int | None = None,
+        height: int | None = None,
+    ) -> None:
+        if (
+            fullscreen == self._fullscreen
+            and (_screen is None or _screen is self._screen)
+            and (width is None or width == self._width)
+            and (height is None or height == self._height)
+        ):
             return
 
         if not self._fullscreen:
@@ -296,21 +415,21 @@ class EmscriptenWindow(BaseWindow):
 
         self._fullscreen = fullscreen
         if self._fullscreen:
-            self.canvas.requestFullscreen()
+            self._canvas.requestFullscreen()
         else:
             js.document.exitFullscreen()
 
     def _enter_fullscreen(self, event):
         self._fullscreen = True
         scale = js.window.devicePixelRatio
-        self.canvas.width = js.window.innerWidth
-        self.canvas.height = js.window.innerHeight
+        self._canvas.width = js.window.innerWidth
+        self._canvas.height = js.window.innerHeight
 
     def _exited_fullscreen(self, event, width: int | None = None, height: int | None = None):
         self._fullscreen = False
         self._width, self._height = self._windowed_size
-        self.canvas.width = self._width
-        self.canvas.height = self._height
+        self._canvas.width = self._width
+        self._canvas.height = self._height
         if width is not None:
             self._width = width
         if height is not None:
@@ -338,8 +457,8 @@ class EmscriptenWindow(BaseWindow):
         if isinstance(width, int) or isinstance(width, float):
             height = f"{width}px"
 
-        self.canvas.style.minWidth = width
-        self.canvas.style.minHeight = height
+        self._canvas.style.minWidth = width
+        self._canvas.style.minHeight = height
 
     def set_maximum_size(self, width: int | str, height: int | str) -> None:
         self._maximum_size = width, height
@@ -349,45 +468,45 @@ class EmscriptenWindow(BaseWindow):
         if isinstance(width, int) or isinstance(width, float):
             height = f"{width}px"
 
-        self.canvas.style.maxWidth = width
-        self.canvas.style.maxHeight = height
+        self._canvas.style.maxWidth = width
+        self._canvas.style.maxHeight = height
 
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
         self.adjust_scale(width, height)
 
     def get_size(self) -> tuple[int, int]:
-        if not self.canvas:
+        if not self._canvas:
             return self._width, self._height
 
-        return self.canvas.width, self.canvas.height
+        return self._canvas.width, self._canvas.height
 
     def set_location(self, x: int, y: int) -> None:
         # self.canvas.style.setProperty("position", "absolute")
-        self.canvas.style.setProperty("left", f"{x}px")
-        self.canvas.style.setProperty("top", f"{x}px")
+        self._canvas.style.setProperty("left", f"{x}px")
+        self._canvas.style.setProperty("top", f"{x}px")
 
     def get_location(self) -> tuple[int, int]:
-        rect = self.canvas.getBoundingClientRect()
+        rect = self._canvas.getBoundingClientRect()
         return rect.left, rect.top
 
     def activate(self) -> None:
-        self.canvas.focus()
+        self._canvas.focus()
 
     def set_visible(self, visible: bool = True) -> None:
         if visible is False:
-            if self.canvas.style.visibility != "hidden":
-                self.canvas.visibility = "hidden"
+            if self._canvas.style.visibility != "hidden":
+                self._canvas.visibility = "hidden"
         else:
-            if self.canvas.style.visibility != "visible":
-                self.canvas.visibility = "visible"
+            if self._canvas.style.visibility != "visible":
+                self._canvas.visibility = "visible"
 
     def minimize(self) -> None:
         """While minimized, events will not occur."""
-        self.canvas.style.display = "hidden"
+        self._canvas.style.display = "hidden"
 
     def maximize(self) -> None:
-        self.canvas.style.display = "block"
+        self._canvas.style.display = "block"
 
     def set_vsync(self, vsync: bool) -> None:
         """A browser does not allow this."""
@@ -418,12 +537,13 @@ class EmscriptenWindow(BaseWindow):
         return data_url
 
     def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
-        if not self.canvas:
+        if not self._canvas:
             return
 
         if platform_visible is None:
-            platform_visible = (self._mouse_visible and
-                                (not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable))
+            platform_visible = self._mouse_visible and (
+                not self._mouse_cursor.api_drawable or self._mouse_cursor.hw_drawable
+            )
 
         if platform_visible is False:
             cursor_name = "none"
@@ -433,17 +553,20 @@ class EmscriptenWindow(BaseWindow):
             cursor_name = f"url({cursor_name}) {self._mouse_cursor.hot_x} {self._mouse_cursor.hot_y}, default"
         else:
             # Restore a standard hardware cursor
-            cursor_name = self._mouse_cursor.name
+            if isinstance(self._mouse_cursor, DefaultMouseCursor):
+                cursor_name = "default"
+            elif isinstance(self._mouse_cursor, JavascriptCursor):
+                cursor_name = self._mouse_cursor.name
 
-        self.canvas.style.cursor = cursor_name
+        self._canvas.style.cursor = cursor_name
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
-        assert self.canvas
+        assert self._canvas
         # Requires a user gesture to lock it like a button.
         if exclusive is True:
-            self.canvas.requestPointerLock()
+            self._canvas.requestPointerLock()
         else:
-            self.canvas.exitPointerLock()
+            self._canvas.exitPointerLock()
 
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         """Not relevant."""
@@ -501,53 +624,50 @@ class EmscriptenWindow(BaseWindow):
 
     @CanvasEventHandler("mousedown")
     async def _event_mouse_down(self, event):
+        rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
+        pos_x = (event.clientX - rect.left) * self._scale
+        pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
         self.dispatch_event(
-            'on_mouse_press',
-            event.clientX,
-            self.height - event.clientY,
-            _mouse_map.get(event.button, 0),
-            modifiers
+            'on_mouse_press', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers
         )
 
     @CanvasEventHandler("mouseup")
     async def _event_mouse_up(self, event):
+        rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
+        pos_x = (event.clientX - rect.left) * self._scale
+        pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
         self.dispatch_event(
-            'on_mouse_release',
-            event.clientX,
-            self.height - event.clientY,
-            _mouse_map.get(event.button, 0),
-            modifiers
+            'on_mouse_release', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers
         )
 
     @CanvasEventHandler("mousemove")
     async def _event_mouse_motion(self, event):
+        rect = self._canvas.getBoundingClientRect()
         if event.buttons:
             modifiers = get_modifiers(event)
+            pos_x = (event.clientX - rect.left) * self._scale
+            pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
             self.dispatch_event(
                 'on_mouse_drag',
-                event.clientX,
-                self.height - event.clientY,
+                pos_x,
+                pos_y,
                 event.movementX,
                 event.movementY,
                 _mouse_map.get(event.button, 0),
-                modifiers
+                modifiers,
             )
         else:
+            pos_x = (event.clientX - rect.left) * self._scale
+            pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
             self.dispatch_event(
-                'on_mouse_motion',
-                                                            event.clientX,
-                                                            self.height - event.clientY,
-                                                            event.movementX,
-                                                            event.movementY
+                'on_mouse_motion', pos_x, pos_y, event.movementX, event.movementY,
             )
 
     @CanvasEventHandler("wheel")
     async def _event_mouse_scroll(self, event):
-        self.dispatch_event(
-            'on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY
-        )
+        self.dispatch_event('on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY)
 
     @CanvasEventHandler("mouseenter")
     async def _event_mouse_enter(self, event):
@@ -580,7 +700,7 @@ class EmscriptenWindow(BaseWindow):
 
     @CanvasEventHandler("fullscreenchange")
     def _event_fullscreen_change(self, event):
-        if js.document.fullscreenElement == self.canvas:
+        if js.document.fullscreenElement == self._canvas:
             self._enter_fullscreen(event)
         else:
             self._exited_fullscreen(event, *self._windowed_size)
@@ -603,34 +723,34 @@ class EmscriptenWindow(BaseWindow):
         ratio = js.window.devicePixelRatio or 1.0
 
         # The framebuffer size.
-        self.canvas.width = width * ratio
-        self.canvas.height = height * ratio
+        self._canvas.width = width * ratio
+        self._canvas.height = height * ratio
 
         # How large the canvas appears visually. Browser automatically scales based on DPI.
-        self.canvas.style.width = f"{width}px"
-        self.canvas.style.height = f"{height}px"
+        self._canvas.style.width = f"{width}px"
+        self._canvas.style.height = f"{height}px"
 
     def _create(self) -> None:
-        assert self.canvas is None
+        assert self._canvas is None
         canvas_name = "pygletCanvas"
         canvas = js.document.getElementById(canvas_name)
-        if not self.canvas:
-            self.canvas = js.document.createElement("canvas")
-            self.canvas.id = canvas_name
-            js.document.body.appendChild(self.canvas)
+        if not self._canvas:
+            self._canvas = js.document.createElement("canvas")
+            self._canvas.id = canvas_name
+            js.document.body.appendChild(self._canvas)
         else:
-            self.canvas = canvas
+            self._canvas = canvas
 
-        self.canvas.width = self._width * self.scale
-        self.canvas.height = self._height * self.scale
-        self.canvas.style.width = f"{self._width}px"
-        self.canvas.style.height = f"{self._height}px"
+        self._canvas.width = self._width * self.scale
+        self._canvas.height = self._height * self.scale
+        self._canvas.style.width = f"{self._width}px"
+        self._canvas.style.height = f"{self._height}px"
 
         if not js.document.getElementById(canvas_name):
             raise Exception(f"Canvas: {canvas_name} could not be created.")
 
         # By default, the canvas does not receive keyboard events.
-        self.canvas.setAttribute("tabindex", "0")
+        self._canvas.setAttribute("tabindex", "0")
         self._set_event_handlers()
 
         # When the canvas gets focus, it gains a white outline around it. Remove it.
@@ -644,7 +764,7 @@ class EmscriptenWindow(BaseWindow):
 
             self.context.attach(self)
 
-            rect = self.canvas.getBoundingClientRect()
+            rect = self._canvas.getBoundingClientRect()
             self.adjust_scale(rect.width, rect.height)
             self.context.start_render()
 
