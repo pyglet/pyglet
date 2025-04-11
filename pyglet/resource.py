@@ -59,12 +59,13 @@ from typing import IO, TYPE_CHECKING
 import pyglet
 
 if TYPE_CHECKING:
+    from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
     from typing import Literal
 
-    from pyglet.graphics.shader import Shader
-    from pyglet.image import _AbstractImage, Texture, TextureRegion
+    from pyglet.graphics import Shader
+    from pyglet.image import ImageData
     from pyglet.image.animation import Animation
-    from pyglet.graphics.atlas import TextureBin
+    from pyglet.graphics.atlas import TextureBin, TextureArrayBin
     from pyglet.media.codecs import Source
     from pyglet.model import Scene
     from pyglet.text.document import AbstractDocument
@@ -73,7 +74,7 @@ if TYPE_CHECKING:
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         message = (f"Resource '{name}' was not found on the path.  "
                    "Ensure that the filename has the correct capitalisation.")
         Exception.__init__(self, message)
@@ -82,7 +83,7 @@ class ResourceNotFoundException(Exception):
 class UndetectableShaderType(Exception):
     """The type of the Shader source could not be identified."""
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         message = (f"The Shader type of '{name}' could not be determined. "
                    "Ensure that your source file has a standard extension, "
                    "or provide a valid 'shader_type' parameter.")
@@ -110,22 +111,19 @@ def get_script_home() -> str:
     if meipass:
         # PyInstaller
         return meipass
-    elif frozen in ('windows_exe', 'console_exe'):
+    if frozen in ('windows_exe', 'console_exe'):
         return os.path.dirname(sys.executable)
-    elif frozen == 'macosx_app':
+    if frozen == 'macosx_app':
         # py2app
         return os.environ['RESOURCEPATH']
-    else:
-        main = sys.modules['__main__']
-        if hasattr(main, '__file__'):
-            return os.path.dirname(os.path.abspath(main.__file__))
-        else:
-            if 'python' in os.path.basename(sys.executable):
-                # interactive
-                return os.getcwd()
-            else:
-                # cx_Freeze
-                return os.path.dirname(sys.executable)
+    main = sys.modules['__main__']
+    if hasattr(main, '__file__'):
+        return os.path.dirname(os.path.abspath(main.__file__))
+    if 'python' in os.path.basename(sys.executable):
+        # interactive
+        return os.getcwd()
+    # cx_Freeze
+    return os.path.dirname(sys.executable)
 
 
 def get_settings_path(name: str) -> str:
@@ -151,17 +149,14 @@ def get_settings_path(name: str) -> str:
     if pyglet.compat_platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)
-        else:
-            return os.path.expanduser(f'~/{name}')
-    elif pyglet.compat_platform == 'darwin':
+        return os.path.expanduser(f'~/{name}')
+    if pyglet.compat_platform == 'darwin':
         return os.path.expanduser(f'~/Library/Application Support/{name}')
-    elif pyglet.compat_platform.startswith('linux'):
+    if pyglet.compat_platform.startswith('linux'):
         if 'XDG_CONFIG_HOME' in os.environ:
             return os.path.join(os.environ['XDG_CONFIG_HOME'], name)
-        else:
-            return os.path.expanduser(f'~/.config/{name}')
-    else:
-        return os.path.expanduser(f'~/.{name}')
+        return os.path.expanduser(f'~/.config/{name}')
+    return os.path.expanduser(f'~/.{name}')
 
 
 def get_data_path(name: str) -> str:
@@ -187,17 +182,14 @@ def get_data_path(name: str) -> str:
     if pyglet.compat_platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)
-        else:
-            return os.path.expanduser(f'~/{name}')
-    elif pyglet.compat_platform == 'darwin':
+        return os.path.expanduser(f'~/{name}')
+    if pyglet.compat_platform == 'darwin':
         return os.path.expanduser(f'~/Library/Application Support/{name}')
-    elif pyglet.compat_platform.startswith('linux'):
+    if pyglet.compat_platform.startswith('linux'):
         if 'XDG_DATA_HOME' in os.environ:
             return os.path.join(os.environ['XDG_DATA_HOME'], name)
-        else:
-            return os.path.expanduser(f'~/.local/share/{name}')
-    else:
-        return os.path.expanduser(f'~/.{name}')
+        return os.path.expanduser(f'~/.local/share/{name}')
+    return os.path.expanduser(f'~/.{name}')
 
 
 class Location:
@@ -238,7 +230,7 @@ class FileLocation(Location):
 class ZIPLocation(Location):
     """Location within a ZIP file."""
 
-    def __init__(self, zipfileobj: zipfile.ZipFile, directory: str | None):
+    def __init__(self, zipfileobj: zipfile.ZipFile, directory: str | None) -> None:
         """Create a location given an open ZIP file and a path within that file.
 
         Args:
@@ -251,7 +243,7 @@ class ZIPLocation(Location):
         self.zip = zipfileobj
         self.dir = directory
 
-    def open(self, filename: str, mode='rb') -> BytesIO | StringIO:
+    def open(self, filename: str, mode: str='rb') -> BytesIO | StringIO:
         """Open a file from inside the ZipFile.
 
         Args:
@@ -267,7 +259,7 @@ class ZIPLocation(Location):
             return StringIO(_bytes.decode())
         return BytesIO(_bytes)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dir='{self.dir}')"
 
 
@@ -329,13 +321,15 @@ class Loader:
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
+        self._texture_array_bins = {}
 
         # map name to image etc.
-        self._cached_textures = weakref.WeakValueDictionary()
         self._cached_images = weakref.WeakValueDictionary()
+        self._cached_textures = weakref.WeakValueDictionary()
+        self._cached_texture_arrays = weakref.WeakValueDictionary()
         self._cached_animations = weakref.WeakValueDictionary()
 
-    def _ensure_index(self):
+    def _ensure_index(self) -> None:
         if self._index is None:
             self.reindex()
 
@@ -343,7 +337,7 @@ class Loader:
         if name not in self._index:
             self._index[name] = locationobj
 
-    def reindex(self):
+    def reindex(self) -> None:
         """Refresh the file index.
 
         You must call this method if ``resource.path`` is changed,
@@ -470,7 +464,7 @@ class Loader:
         fileobj = self.file(filename)
         font.add_file(fileobj)
 
-    def _alloc_image(self, name: str, use_atlas: bool, border: int) -> _AbstractImage:
+    def _alloc_texture(self, name: str, use_atlas: bool, border: int) -> Texture | TextureRegion:
         fileobj = self.file(name)
         try:
             img = pyglet.image.load(name, file=fileobj)
@@ -486,10 +480,21 @@ class Loader:
 
         return img.get_texture()
 
+    def _get_texture_array_bin(self, width: int, height: int) -> TextureArrayBin:
+        bin_size = (width, height)
+        try:
+            texture_array_bin = self._texture_array_bins[bin_size]
+        except KeyError:
+            texture_array_bin = pyglet.graphics.atlas.TextureArrayBin(width, height)
+            self._texture_array_bins[bin_size] = texture_array_bin
+
+        return texture_array_bin
+
     def _get_texture_atlas_bin(self, width: int, height: int, border: int) -> TextureBin | None:
-        """A heuristic for determining the atlas bin to use for a given image
-        size.  Returns None if the image should not be placed in an atlas (too
-        big), otherwise the bin (a list of TextureAtlas).
+        """A heuristic for determining the atlas bin to use for a given image size.
+
+        Returns:
+             None if the image should not be placed in an atlas (too big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.graphics.texture.get_max_texture_size()
@@ -511,14 +516,27 @@ class Loader:
 
         return texture_bin
 
-    def image(self, name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
-              atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
-        """Load an image with optional transformation.
+    def image(self, name: str) -> ImageData:
+        """Load an image and decode the properties associated with it.
 
-        This is similar to `texture`, except the resulting image will be
-        packed into a :py:class:`~pyglet.image.atlas.TextureBin` (TextureAtlas)
-        if it is an appropriate size for packing. This is more efficient than
-        loading images into separate textures.
+        This data is not GPU backed, and represents the raw pixel data, format, and pitch. See :py:class:`~pyglet.image.IamgeData`
+        """
+        self._ensure_index()
+        if name in self._cached_images:
+            return self._cached_images[name]
+
+        file_obj = self.file(name)
+        img = pyglet.image.load(name, file=file_obj)
+        self._cached_images[name] = img
+        return img
+
+    def texture(self, name: str, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
+                atlas: bool = True, border: int = 1) -> Texture | TextureRegion:
+        """Loads an image into a GPU backed texture with optional transformations.
+
+        By default, the resulting texture will be packed into a
+        :py:class:`~pyglet.graphics.atlas.TextureBin` (TextureAtlas) if it is an appropriate size for packing.
+        This is more efficient than loading images into separate textures.
 
         Args:
             name:
@@ -538,15 +556,55 @@ class Loader:
                 Leaves specified pixels of blank space around each image in
                 an atlas, which may help reduce texture bleeding.
 
-        .. note:: When using ``flip_x/y`` or ``rotate``, the actual image
+        .. note:: When using ``flip_x/y`` or ``rotate``, the actual pixel
                   data is not modified. Instead, the texture coordinates
                   are manipulated to produce the desired result.
         """
         self._ensure_index()
-        if name in self._cached_images:
-            identity = self._cached_images[name]
+        if name in self._cached_textures:
+            identity = self._cached_textures[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, atlas, border)
+            identity = self._cached_textures[name] = self._alloc_texture(name, atlas, border)
+
+        if not rotate and not flip_x and not flip_y:
+            return identity
+
+        return identity.get_transform(flip_x, flip_y, rotate)
+
+    def texture_array(self, name: str, flip_x: bool = False, flip_y: bool = False,
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureArrayRegion:
+        """Loads an image into a GPU backed texture array with optional transformations.
+
+        By default, the resulting texture array will be packed into a
+        :py:class:`~pyglet.graphics.atlas.TextureArrayBin` based on the dimensions of the loaded image.
+
+        Args:
+            name:
+                The filename of the image source to load.
+            flip_x:
+                If ``True``, the returned image will be flipped horizontally.
+            flip_y:
+                If ``True``, the returned image will be flipped vertically.
+            rotate:
+                The returned image will be rotated clockwise by the given
+                number of degrees (a multiple of 90).
+
+        .. note:: When using ``flip_x/y`` or ``rotate``, the actual pixel
+                  data is not modified. Instead, the texture coordinates
+                  are manipulated to produce the desired result.
+        """
+        self._ensure_index()
+        if name in self._cached_texture_arrays:
+            identity = self._cached_texture_arrays[name]
+        else:
+            fileobj = self.file(name)
+            try:
+                img = pyglet.image.load(name, file=fileobj)
+            finally:
+                fileobj.close()
+
+            _bin = self._get_texture_array_bin(img.width, img.height)
+            identity = self._cached_texture_arrays[name] = _bin.add(img)
 
         if not rotate and not flip_x and not flip_y:
             return identity
@@ -646,23 +704,11 @@ class Loader:
                 # Don't open the file if it's streamed from disk
                 file_path = os.path.join(file_location.path, name)
                 return media.load(file_path, streaming=streaming)
-            else:
-                fileobj = file_location.open(name)
+            fileobj = file_location.open(name)
 
-                return media.load(name, file=fileobj, streaming=streaming)
+            return media.load(name, file=fileobj, streaming=streaming)
         except KeyError:
             raise ResourceNotFoundException(name)
-
-    def texture(self, name: str) -> Texture:
-        """Load an image as a single OpenGL texture."""
-        self._ensure_index()
-        if name in self._cached_textures:
-            return self._cached_textures[name]
-
-        fileobj = self.file(name)
-        textureobj = pyglet.image.load(name, file=fileobj).get_texture()
-        self._cached_textures[name] = textureobj
-        return textureobj
 
     def scene(self, name: str) -> Scene:
         """Load a 3D Scene."""
@@ -723,7 +769,7 @@ class Loader:
         if shader_type not in shader_extensions.values():
             raise UndetectableShaderType(name=name)
 
-        return pyglet.graphics.shader.Shader(source_string, shader_type)
+        return pyglet.graphics.Shader(source_string, shader_type)
 
 
 #: Default resource search path.
@@ -754,7 +800,7 @@ reindex = _default_loader.reindex
 file = _default_loader.file
 location = _default_loader.location
 add_font = _default_loader.add_font
-image = _default_loader.image
+image = _default_loader.texture
 animation = _default_loader.animation
 media = _default_loader.media
 texture = _default_loader.texture

@@ -90,7 +90,7 @@ class DepthSprite(pyglet.sprite.Sprite):
 pyglet.resource.path = ['../resources']
 pyglet.resource.reindex()
 
-image = pyglet.resource.image("pyglet.png")
+image = pyglet.resource.texture("pyglet.png")
 batch = pyglet.graphics.Batch()
 
 sprites = []

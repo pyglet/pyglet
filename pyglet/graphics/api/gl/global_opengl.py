@@ -167,11 +167,11 @@ class OpenGLBackend(BackendGlobalObject):
 
         This is a convenience method that takes one or more tuples of
         (source_string, shader_type), and returns a
-        :py:class:`~pyglet.graphics.shader.ShaderProgram` instance.
+        :py:class:`~pyglet.graphics.ShaderProgram` instance.
 
         ``source_string`` is OpenGL GLSL source code as a str, and ``shader_type``
         is the OpenGL shader type, such as "vertex" or "fragment". See
-        :py:class:`~pyglet.graphics.shader.Shader` for more information.
+        :py:class:`~pyglet.graphics.Shader` for more information.
 
         .. note:: This method is cached. Given the same shader sources, the
                   same ShaderProgram instance will be returned. For more

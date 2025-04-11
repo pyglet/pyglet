@@ -84,7 +84,7 @@ class RenderGroup(Group):
         :Parameters:
             `texture` : `~pyglet.graphics.Texture`
                 Texture to bind.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` : `~pyglet.graphics.ShaderProgram`
                 ShaderProgram to use.
             `order` : int
                 Change the order to render above or below other Groups.

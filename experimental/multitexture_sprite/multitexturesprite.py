@@ -14,12 +14,12 @@ pyglet.resource.reindex()
 # Batching allows rendering groups of objects all at once instead of drawing one by one.
 batch = pyglet.graphics.Batch()
 
-brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Gray.png", atlas=False), 1, 6)
+brick_grid = pyglet.image.ImageGrid(pyglet.resource.texture("Brick1Gray.png", atlas=False), 1, 6)
 brick_gray = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
 # Load 2 animation images for our sprites
-brick_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Blue.png"), 1, 6)
+brick_grid = pyglet.image.ImageGrid(pyglet.resource.texture("Brick1Blue.png"), 1, 6)
 brick_animation = pyglet.image.Animation.from_image_sequence(brick_grid, 1.0 / 10.0)
-crack_grid = pyglet.image.ImageGrid(pyglet.resource.image("Brick1Crack3.png"), 1, 3)
+crack_grid = pyglet.image.ImageGrid(pyglet.resource.texture("Brick1Crack3.png"), 1, 3)
 crack_animation = pyglet.image.Animation.from_image_sequence(crack_grid, 1.0, False)
 shader_images = {'brick': brick_animation, 'crack': crack_animation}
 
@@ -105,8 +105,8 @@ custom_fragment_source = """#version 150 core
     }
 """
 
-logo = pyglet.resource.image("pyglet.png")
-kitten = pyglet.resource.image("kitten.jpg")
+logo = pyglet.resource.texture("pyglet.png")
+kitten = pyglet.resource.texture("kitten.jpg")
 multi_vert_shader = pyglet.graphics.Shader(custom_vertex_source, 'vertex')
 multi_frag_shader = pyglet.graphics.Shader(custom_fragment_source, 'fragment')
 multitex_shader_program = pyglet.graphics.ShaderProgram(multi_vert_shader, multi_frag_shader)

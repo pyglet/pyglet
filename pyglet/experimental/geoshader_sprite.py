@@ -181,7 +181,7 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` : `~pyglet.graphics.ShaderProgram`
                 A custom ShaderProgram.
             `order` : int
                 Change the order to render above or below other Groups.
@@ -266,7 +266,7 @@ class Sprite(event.EventDispatcher):
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
+            `program` : `~pyglet.graphics.ShaderProgram`
                 A custom shader to use. This shader program must contain the
                 exact same attribute names and types as the default shader.
                 The class methods and properties depend on this, and will

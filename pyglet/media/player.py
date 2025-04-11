@@ -436,7 +436,7 @@ class Player(pyglet.event.EventDispatcher):
 
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
-        elif ts > time:
+        if ts > time:
             # update_texture called too early (probably manually!)
             pyglet.clock.schedule_once(self.update_texture, ts - time)
             return
@@ -447,6 +447,8 @@ class Player(pyglet.event.EventDispatcher):
             with self._context:
                 if self._texture is None:
                     self._create_texture()
+                else:
+                    self._texture.bind()
                 self._texture.upload(image, 0, 0, 0)
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")

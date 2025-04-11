@@ -71,6 +71,45 @@ class GLInfo:
         # A subset of OpenGL that is platform specific. (WGL, GLX)
         self.platform_info = None
 
+    def get(self, enum: GLenumLike, default: int=0) -> int:
+        """Get an integer limit.
+
+        Args:
+            enum: The enum to query
+            default: The default value if the query fails
+        """
+        try:
+            value = c_int()
+            gl.glGetIntegerv(enum, value)
+            return value.value
+        except pyglet.gl.lib.GLException:
+            return default
+
+    def get_float(self, enum: GLenumLike, default=0.0) -> float:
+        """Get a float limit
+
+        Args:
+            enum: The enum to query
+            default: The default value if the query fails
+        """
+        try:
+            value = c_float()
+            gl.glGetFloatv(enum, value)
+            return value.value
+        except pyglet.gl.lib.GLException:
+            return default
+
+    def get_str(self, enum: GLenumLike) -> str:
+        """Get a string limit.
+
+        Args:
+            enum: The enum to query
+        """
+        try:
+            return cast(gl.glGetString(enum), c_char_p).value.decode()  # type: ignore
+        except pyglet.gl.lib.GLException:
+            return "Unknown"
+
     def query(self) -> None:
         """Store information for the currently active context.
 
