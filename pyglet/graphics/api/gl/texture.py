@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from _ctypes import byref
 from ctypes import c_int
-from typing import Callable, Literal, Iterator, Sequence, Union
+from typing import Callable, Literal, Iterator, Union
 
 import pyglet
-from pyglet.enums import TextureType, TextureFilter, ComponentFormat
+from pyglet.enums import TextureType, TextureFilter, TextureInternalFormat, TextureDescriptor
 from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
     glGetIntegerv, GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, glBindTexture, \
@@ -18,8 +18,7 @@ from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
 from pyglet.image.base import CompressedImageData, ImageException
-from pyglet.graphics.texture import TextureInternalFormat, TextureBase, TextureRegionBase, TextureDescriptor, \
-    UniformTextureSequence, TextureArraySizeExceeded, TextureArrayDepthExceeded, TextureArray
+from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, TextureArrayDepthExceeded, TextureArray
 
 _api_internal_formats = {
     'R': 'GL_RED',
@@ -27,7 +26,7 @@ _api_internal_formats = {
     'RGB': 'GL_RGB',
     'RGBA': 'GL_RGBA',
     'D': 'GL_DEPTH_COMPONENT',
-    'DS': 'GL_DEPTH_STENCIL'
+    'DS': 'GL_DEPTH_STENCIL',
 }
 
 
@@ -351,7 +350,7 @@ class Texture(TextureBase):
 
     @classmethod
     def create_from_image(
-        cls, image_data: ImageData | ImageDataRegion, texture_descriptor: TextureDescriptor | None = None
+        cls, image_data: ImageData | ImageDataRegion, texture_descriptor: TextureDescriptor | None = None,
     ) -> Texture:
         """Create a Texture from image data.
 
@@ -1020,7 +1019,7 @@ class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
             image_grid.item_width,
             image_grid.item_height,
             image_grid.row_padding,
-            image_grid.column_padding
+            image_grid.column_padding,
         )
 
     def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegion:

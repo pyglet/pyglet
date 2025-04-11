@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, NamedTuple, Sequence, Union
+from typing import Iterator, Literal
 
 import pyglet
-from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
+from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, TextureInternalFormat, \
+    TextureDescriptor
 from pyglet.image.base import (
     _AbstractImage,
     _AbstractImageSequence,
@@ -44,62 +45,6 @@ class TextureSequence(_AbstractImageSequence):
 
     def get_texture_sequence(self) -> TextureSequence:
         return self
-
-
-class TextureInternalFormat(NamedTuple):
-    component: ComponentFormat | str
-    depth: int | None = None
-    data_type: type[float, int] | None = None
-
-
-class TextureDescriptor:
-    __slots__ = (
-        "address_mode",
-        "anisotropic_level",
-        "depth",
-        "internal_format",
-        "mag_filter",
-        "min_filter",
-        "mipmap_levels",
-        "pixel_format",
-        "tex_type",
-    )
-
-    def __init__(self,
-                 tex_type: TextureType = TextureType.TYPE_2D,
-                 min_filter: TextureFilter = TextureFilter.LINEAR,
-                 mag_filter: TextureFilter = TextureFilter.LINEAR,
-                 address_mode: AddressMode = AddressMode.REPEAT,
-                 internal_format: TextureInternalFormat | None = None,
-                 pixel_format: ComponentFormat = ComponentFormat.RGBA,
-                 anisotropic_level: int = 0,
-                 depth: int = 1,
-                 mipmap_levels: int = 1):
-        """Create a description of the texture.
-
-        Args:
-            tex_type:
-                The default texture type. Defaults to TYPE_2D.
-            min_filter:
-                The default minification filter. Defaults to LINEAR.
-            mag_filter:
-                The default magnification filter. Defaults to LINEAR.
-            address_mode:
-                The border repeat mode for textures once values fall outside 0-1.
-            internal_format:
-                The internal pixel format of the intended texture. Defaults to RGBA 8bits per channel.
-            pixel_format:
-                The pixel format order of the data that will be written. Defaults to RGBA.
-            anisotropic_level:
-                The anisotropic filtering level, 0 is disabled. Not always supported.
-        """
-        self.tex_type = tex_type
-        self.min_filter = min_filter
-        self.mag_filter = mag_filter
-        self.address_mode = address_mode
-        self.internal_format = internal_format or TextureInternalFormat(ComponentFormat.RGBA, 8)
-        self.pixel_format = pixel_format
-        self.anisotropic_level = anisotropic_level
 
 
 class TextureBase(_AbstractImage):
@@ -609,7 +554,7 @@ class TextureGridBase(_AbstractGrid):
             image_grid.item_width,
             image_grid.item_height,
             image_grid.row_padding,
-            image_grid.column_padding
+            image_grid.column_padding,
         )
 
 

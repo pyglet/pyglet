@@ -15,31 +15,31 @@ editions.
 The following subpackages are imported into this "mega" package already
 (and so are available by importing ``pyglet.gl``):
 
-``pyglet.backend.gl.gl``
+``pyglet.graphics.api.gl.gl``
     OpenGL
-``pyglet.backend.gl.gl.glext_arb``
+``pyglet.graphics.api.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
-``pyglet.backend.gl.gl.gl_compat``
+``pyglet.graphics.api.gl.gl.gl_compat``
     Deprecated OpenGL extension functions.
 
 These subpackages are also available, but are not imported into this namespace
 by default:
 
-``pyglet.backend.gl.glext_nv``
+``pyglet.graphics.api.gl.glext_nv``
     nVidia OpenGL extension functions
-``pyglet.backend.gl.agl``
+``pyglet.graphics.api.gl.agl``
     AGL (Mac OS X OpenGL context functions)
-``pyglet.backend.gl.glx``
+``pyglet.graphics.api.gl.glx``
     GLX (Linux OpenGL context functions)
-``pyglet.backend.gl.glxext_arb``
+``pyglet.graphics.api.gl.glxext_arb``
     ARB registered GLX extension functions
-``pyglet.backend.gl.glxext_nv``
+``pyglet.graphics.api.gl.glxext_nv``
     nvidia GLX extension functions
-``pyglet.backend.gl.wgl``
+``pyglet.graphics.api.gl.wgl``
     WGL (Windows OpenGL context functions)
-``pyglet.backend.gl.wglext_arb``
+``pyglet.graphics.api.gl.wglext_arb``
     ARB registered WGL extension functions
-``pyglet.backend.gl.wglext_nv``
+``pyglet.graphics.api.gl.wglext_nv``
     nvidia WGL extension functions
 
 The information modules are provided for convenience, and are documented below.

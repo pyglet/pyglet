@@ -1135,7 +1135,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         sets the current window context as the active one.
 
         In most cases, you should use this method instead of directly
-        calling :py:meth:`~pyglet.backend.gl.Context.set_current`. The latter
+        calling :py:meth:`~pyglet.graphics.api.gl.Context.set_current`. The latter
         will not perform platform-specific state management tasks for
         you.
         """

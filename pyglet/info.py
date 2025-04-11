@@ -188,7 +188,7 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.backend.gl.glx_info', dump_glx)
+    _try_dump('pyglet.graphics.api.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)
     _try_dump('pyglet.media.drivers.openal', dump_al)

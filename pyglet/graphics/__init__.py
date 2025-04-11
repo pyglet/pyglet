@@ -18,7 +18,7 @@ from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas   # 
 #
 # def _load_backend_base(name: str):
 #     if pyglet.options.backend == "opengl":
-#         backend_module = importlib.import_module("pyglet.backend.gl.graphics")
+#         backend_module = importlib.import_module("pyglet.graphics.api.gl.graphics")
 #     else:
 #         raise ValueError("Unsupported backend selected")
 #

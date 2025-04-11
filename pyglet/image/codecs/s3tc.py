@@ -45,7 +45,7 @@ class PackedImageData(_AbstractImage):
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
-        if not pyglet.backend.have_version(1, 2) or True:
+        if not pyglet.graphics.api.have_version(1, 2) or True:
             self.unpack()
 
         glTexImage2D(texture.target, texture.level,

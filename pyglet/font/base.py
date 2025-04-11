@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING, BinaryIO, ClassVar
 from pyglet.graphics import atlas
 from pyglet.enums import (
     ComponentFormat,
-    TextureFilter,
+    TextureFilter, TextureInternalFormat, TextureDescriptor,
 )
-from pyglet.graphics.texture import TextureInternalFormat, TextureDescriptor, Texture, TextureRegion
+from pyglet.graphics.texture import Texture, TextureRegion
 
 if TYPE_CHECKING:
     from pyglet.image import _AbstractImage
