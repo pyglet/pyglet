@@ -148,15 +148,15 @@ fragment_array_source = """#version 150 core
 
 
 def get_default_shader():
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
+                                                                   (geometry_source, 'geometry'),
+                                                                   (fragment_source, 'fragment'))
 
 
 def get_default_array_shader():
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'),
-                                                    (geometry_source, 'geometry'),
-                                                    (fragment_array_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'),
+                                                                   (geometry_source, 'geometry'),
+                                                                   (fragment_array_source, 'fragment'))
 
 
 class SpriteGroup(graphics.Group):

@@ -150,7 +150,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         #       force specify the glyph format to be GL_ALPHA. This format is not
         #       supported in 3.3+ core, but are present in ES because of pixel transfer
         #       limitations.
-        # if pyglet.graphics.api.global_backend.current_context.get_info().get_opengl_api() == "gles":
+        # if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
         #     GL_ALPHA = 0x1906
         #     glyph = self.font.create_glyph(img, fmt=GL_ALPHA)
         # else:

@@ -112,7 +112,7 @@ class Player(pyglet.event.EventDispatcher):
         self._playlists = deque()
         self._audio_player = None
 
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._texture = None
 
         # Desired play state (not an indication of actual state).

@@ -21,15 +21,12 @@ See the OpenGL documentation for more information on valid attachment types and 
 """
 from __future__ import annotations
 
-import weakref
 
 import pyglet
 from typing import TYPE_CHECKING
-from pyglet.graphics import global_backend
-from pyglet.graphics.api.gl import GLint, glGetIntegerv, GL_VIEWPORT, glGetFramebufferAttachmentParameteriv, \
-    GL_DRAW_FRAMEBUFFER, GL_STENCIL, GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE, GLException, GL_BACK, GLubyte, \
-    glReadBuffer, glPixelStorei, GL_PACK_ALIGNMENT, glReadPixels, GL_UNSIGNED_BYTE, GL_RGBA, GL_TEXTURE_2D, \
-    glCopyTexSubImage2D, GL_DEPTH_COMPONENT, GL_STENCIL_INDEX, GL_MAX_COLOR_ATTACHMENTS, GLuint, glGenRenderbuffers, \
+from pyglet.graphics import core
+from pyglet.graphics.api.gl import GLint, glGetIntegerv, GL_VIEWPORT, GL_BACK, GLubyte, \
+    glReadBuffer, glPixelStorei, GL_PACK_ALIGNMENT, glReadPixels, GL_UNSIGNED_BYTE, GL_RGBA, GL_MAX_COLOR_ATTACHMENTS, GLuint, glGenRenderbuffers, \
     glBindRenderbuffer, GL_RENDERBUFFER, glRenderbufferStorageMultisample, glRenderbufferStorage, glDeleteRenderbuffers, \
     GL_FRAMEBUFFER, glGenFramebuffers, glBindFramebuffer, glClear, glDeleteFramebuffers, glCheckFramebufferStatus, \
     GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_UNSUPPORTED, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT, \
@@ -74,7 +71,7 @@ def get_screenshot() -> ImageData:
 
 
 def get_max_color_attachments() -> int:
-    """Get the maximum allow Framebuffer Color attachements."""
+
     number = GLint()
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
     return number.value
@@ -85,7 +82,7 @@ class Renderbuffer:
 
     def __init__(self, width: int, height: int, internal_format: int, samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
-        self._context = global_backend.current_context
+        self._context = core.current_context
         self._id = GLuint()
         self._width = width
         self._height = height
@@ -143,7 +140,7 @@ class Framebuffer:
     """
     def __init__(self, target: int = GL_FRAMEBUFFER) -> None:
         """Create a Framebuffer Instance."""
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
         self._attachment_types = 0

@@ -219,7 +219,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     }}
     """
 
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):

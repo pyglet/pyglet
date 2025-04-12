@@ -150,8 +150,8 @@ class GLCompressedImageData(CompressedImageData):
         self.mipmap_data[level - 1] = data
 
     def _have_extension(self) -> bool:
-        from pyglet.graphics.api import global_backend
-        return self.extension is None or global_backend.have_extension(self.extension)
+        from pyglet.graphics.api import core
+        return self.extension is None or core.have_extension(self.extension)
 
     def get_texture(self) -> TextureBase:
         if self._current_texture:
@@ -316,7 +316,7 @@ class Texture(TextureBase):
         self.target = texture_map[self.descriptor.tex_type]
         self.min_filter = texture_map[self.descriptor.min_filter]
         self.mag_filter = texture_map[self.descriptor.mag_filter]
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._internal_format = _get_internal_format(descriptor.internal_format)
 
     def delete(self) -> None:
@@ -454,7 +454,7 @@ class Texture(TextureBase):
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
 
         # # TODO: Clean up this temporary hack
-        # if pyglet.graphics.api.global_backend.current_context.get_info().get_opengl_api() == "gles":
+        # if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
         #     fbo = c_uint()
         #     glGenFramebuffers(1, fbo)
         #     glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)

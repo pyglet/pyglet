@@ -11,9 +11,7 @@ _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 if TYPE_CHECKING:
     from pyglet.graphics.texture import TextureBase
     from pyglet.enums import BlendFactor
-    from pyglet.graphics import Group
-    from pyglet.graphics.shader import ShaderProgram
-    from pyglet.graphics import Texture
+    from pyglet.graphics import ShaderProgram
 
 
 vertex_source: str = """#version 150 core
@@ -88,7 +86,7 @@ def get_default_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
@@ -100,7 +98,7 @@ def get_default_array_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_sprite_array",
         (vertex_source, 'vertex'),
         (fragment_array_source, 'fragment'),

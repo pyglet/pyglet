@@ -4,13 +4,10 @@ import pyglet
 from typing import TYPE_CHECKING, ClassVar
 
 from pyglet.enums import BlendFactor
-from pyglet.graphics.api.gl import glEnable, GL_BLEND, glBlendFunc, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, glDisable, \
-    glActiveTexture, GL_TEXTURE0, glBindTexture
 from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Texture
-    from pyglet.graphics.api.gl import ShaderProgram
+    from pyglet.graphics import ShaderProgram, Texture
 
 layout_vertex_source = """#version 110
     attribute vec3 position;
@@ -21,6 +18,9 @@ layout_vertex_source = """#version 110
     attribute vec2 anchor;
     attribute float rotation;
     attribute float visible;
+
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
 
     varying vec4 text_colors;
     varying vec2 texture_coords;
@@ -42,7 +42,7 @@ layout_vertex_source = """#version 110
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * m_translate * m_anchor * m_rotation * vec4(position + 
+        gl_Position = u_projection * u_view * m_translate * m_anchor * m_rotation * vec4(position + 
         view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
@@ -104,6 +104,9 @@ decoration_vertex_source = """#version 110
     varying vec4 vert_colors;
     varying vec4 vert_position;
 
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
     void main()
     {
         mat4 m_rotation = mat4(1.0);
@@ -120,7 +123,7 @@ decoration_vertex_source = """#version 110
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * m_translate * m_anchor * m_rotation * vec4(position + 
+        gl_Position = u_projection * u_view * m_translate * m_anchor * m_rotation * vec4(position + 
         view_translation + v_anchor, 1.0) * visible;
 
         vert_position = vec4(position + translation + view_translation + v_anchor, 1.0);
@@ -149,25 +152,25 @@ decoration_fragment_source = """#version 110
 
 def get_default_layout_shader() -> ShaderProgram:
     """The default shader used for all glyphs in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_layout",
         (layout_vertex_source, "vertex"),
-        (layout_fragment_source, "fragment")
+        (layout_fragment_source, "fragment"),
     )
 
 
 def get_default_image_layout_shader() -> ShaderProgram:
     """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_image",
         (layout_vertex_source, "vertex"),
-        (layout_fragment_image_source, "fragment")
+        (layout_fragment_image_source, "fragment"),
     )
 
 
 def get_default_decoration_shader() -> ShaderProgram:
     """The default shader for underline and background decoration effects in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
@@ -181,7 +184,7 @@ class TextLayoutGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
         super().__init__(order=order, parent=parent)
         self.texture = texture
@@ -221,7 +224,7 @@ class ScrollableTextLayoutGroup(Group):
     """
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
 
         super().__init__(order=order, parent=parent)

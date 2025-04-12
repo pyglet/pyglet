@@ -1,13 +1,6 @@
 from __future__ import annotations
 import pyglet
-from pyglet.graphics.api.gl.enums import blend_factor_map
 from pyglet.graphics.draw import Group
-from pyglet.graphics.api.gl import (
-    GL_BLEND,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -25,6 +18,9 @@ vertex_source = """#version 110
     mat4 m_rotation = mat4(1.0);
     mat4 m_translate = mat4(1.0);
 
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
     void main()
     {
         m_translate[3][0] = translation.x;
@@ -34,7 +30,7 @@ vertex_source = """#version 110
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * m_translate * m_rotation * vec4(position, 0.0, 1.0);
+        gl_Position = u_projection * u_view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
         vertex_colors = colors;
     }
 """
@@ -50,7 +46,7 @@ fragment_source = """#version 150 core
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),

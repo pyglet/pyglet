@@ -177,10 +177,8 @@ class CocoaWindow(BaseWindow):
 
             self._assign_config()
             self.context.attach(self)
-            print("ATTACH!")
             if self._metal_layer:
                 self.context._nscontext = self._metal_layer
-            print("CONTEXT!", self.context._nscontext)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 

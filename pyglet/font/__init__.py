@@ -23,7 +23,7 @@ import weakref
 from typing import TYPE_CHECKING, BinaryIO, Iterable
 
 import pyglet
-from pyglet.graphics.api import global_backend
+from pyglet.graphics.api import core
 from pyglet.font.user import UserDefinedFontBase
 
 if TYPE_CHECKING:
@@ -72,7 +72,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
         raise Exception(msg)
 
     # Locate or create font cache
-    shared_object_space = global_backend.current_context.object_space
+    shared_object_space = core.current_context.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
@@ -139,7 +139,7 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, wei
 
     # Locate or create font cache
     #shared_object_space = global_backend.current_context.object_space
-    shared_object_space = global_backend.object_space
+    shared_object_space = core.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
@@ -235,4 +235,4 @@ def add_directory(directory: str) -> None:
             add_file(os.path.join(directory, file))
 
 
-__all__ = ("add_file", "add_directory", "add_user_font", "load", "have_font")
+__all__ = ("add_directory", "add_file", "add_user_font", "have_font", "load")

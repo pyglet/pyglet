@@ -50,8 +50,8 @@ def require_gl_extension(extension):
     :param str extension: Name of the extension required.
     """
 
-    from pyglet.graphics.api import global_backend
-    return pytest.mark.skipif(not global_backend.have_extension(extension),
+    from pyglet.graphics.api import core
+    return pytest.mark.skipif(not core.have_extension(extension),
                               reason=f'Tests requires GL extension {extension}')
 
 

@@ -1,18 +1,11 @@
 from __future__ import annotations
 import pyglet
-from pyglet.enums import BlendFactor
-from pyglet.graphics.api.gl.enums import blend_factor_map
 from pyglet.graphics.draw import Group
-from pyglet.graphics.api.gl import (
-    GL_BLEND,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import ShaderProgram
+    from pyglet.enums import BlendFactor
+    from pyglet.graphics.api.gl.shader import ShaderProgram
 
 vertex_source = """#version 150 core
     in vec2 position;
@@ -57,7 +50,7 @@ fragment_source = """#version 150 core
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
