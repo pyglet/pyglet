@@ -1,11 +1,67 @@
 import ctypes
 import sys
-
-from ctypes import *
-from ctypes.wintypes import *
+from ctypes import (
+    POINTER,
+    WINFUNCTYPE,
+    Structure,
+    Union,
+    c_byte,
+    c_char,
+    c_char_p,
+    c_int,
+    c_int8,
+    c_int16,
+    c_int32,
+    c_int64,
+    c_long,
+    c_short,
+    c_size_t,
+    c_ubyte,
+    c_uint,
+    c_uint8,
+    c_uint16,
+    c_uint32,
+    c_uint64,
+    c_wchar,
+    c_wchar_p,
+    cast,
+    sizeof,
+)
+from ctypes.wintypes import (
+    BOOL,
+    BYTE,
+    DOUBLE,  # noqa: F401
+    DWORD,
+    FILETIME,
+    HANDLE,
+    HBITMAP,
+    HBRUSH,
+    HDC,
+    HICON,
+    HINSTANCE,
+    HMONITOR,
+    HRGN,
+    HWND,
+    LARGE_INTEGER,
+    LONG,
+    LPARAM,
+    LPCWSTR,
+    LPOLESTR,
+    LPWSTR,
+    MSG,
+    POINT,
+    POINTL,
+    RECT,
+    UINT,
+    ULARGE_INTEGER,
+    ULONG,
+    USHORT,
+    WCHAR,
+    WORD,
+    WPARAM,
+)
 
 from . import com
-
 
 _int_types = (c_int16, c_int32)
 if hasattr(ctypes, 'c_int64'):
@@ -45,13 +101,11 @@ def POINTER_(obj):
 
 
 c_void_p = POINTER_(c_void)
-INT = c_int
-LPVOID = c_void_p
+
 HCURSOR = HANDLE
 LRESULT = LPARAM
 COLORREF = DWORD
 PVOID = c_void_p
-WCHAR = c_wchar
 BCHAR = c_wchar
 LPRECT = POINTER(RECT)
 LPPOINT = POINTER(POINT)
@@ -63,7 +117,17 @@ LPTSTR = LPWSTR
 LPSTREAM = c_void_p
 CLSID = com.GUID
 
-# Fixed in python 3.12. Is c_byte on other versions.
+INT8 = c_int8
+UINT8 = c_uint8
+INT16 = c_int16
+UINT16 = c_uint16
+INT32 = c_int32
+UINT32 = c_uint32
+INT64 = c_int64
+UINT64 = c_uint64
+VOID = None
+
+# Fixed in python 3.12. Ctypes defined BYTE as c_byte in previous versions.
 # Ensure it's the same across all versions.
 if sys.version_info < (3, 12):
     BYTE = c_ubyte

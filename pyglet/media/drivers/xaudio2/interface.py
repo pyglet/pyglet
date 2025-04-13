@@ -1,13 +1,15 @@
-from collections import namedtuple, defaultdict
 import threading
 import weakref
-
-from pyglet.media.devices.base import DeviceFlow
+from collections import defaultdict, namedtuple
+from ctypes import POINTER, byref, c_char, c_float, cast, pointer
+from ctypes.wintypes import DWORD, FLOAT
 
 import pyglet
-from pyglet.libs.win32.types import *
-from pyglet.util import debug_print
+from pyglet.libs.win32 import com
 from pyglet.media.devices import get_audio_device_manager
+from pyglet.media.devices.base import DeviceFlow
+from pyglet.util import debug_print
+
 from . import lib_xaudio2 as lib
 
 _debug = debug_print('debug_media')
@@ -15,10 +17,12 @@ _debug = debug_print('debug_media')
 
 def create_xa2_buffer(audio_data):
     """Creates a XAUDIO2_BUFFER to be used with a source voice.
-        Audio data cannot be purged until the source voice has played it; doing so will cause glitches."""
+
+    Audio data cannot be purged until the source voice has played it; doing so will cause glitches.
+    """
     buff = lib.XAUDIO2_BUFFER()
     buff.AudioBytes = audio_data.length
-    buff.pAudioData = ctypes.cast(audio_data.pointer, ctypes.POINTER(ctypes.c_char))
+    buff.pAudioData = cast(audio_data.pointer, POINTER(c_char))
     return buff
 
 
@@ -202,7 +206,7 @@ class XAudio2Driver:
         self._xaudio2 = lib.IXAudio2()
 
         try:
-            lib.XAudio2Create(ctypes.byref(self._xaudio2), 0, self.processor)
+            lib.XAudio2Create(byref(self._xaudio2), 0, self.processor)
         except OSError:
             raise ImportError("XAudio2 driver could not be initialized.")
 
@@ -215,7 +219,7 @@ class XAudio2Driver:
             debug.TraceMask = lib.XAUDIO2_LOG_ERRORS | lib.XAUDIO2_LOG_WARNINGS
             debug.BreakMask = lib.XAUDIO2_LOG_WARNINGS
 
-            self._xaudio2.SetDebugConfiguration(ctypes.byref(debug), None)
+            self._xaudio2.SetDebugConfiguration(byref(debug), None)
 
         self._xaudio2.RegisterForCallbacks(self._engine_callback)
 
@@ -305,7 +309,7 @@ class XAudio2Driver:
     @property
     def volume(self):
         vol = c_float()
-        self._master_voice.GetVolume(ctypes.byref(vol))
+        self._master_voice.GetVolume(byref(vol))
         return vol.value
 
     @volume.setter
@@ -353,7 +357,7 @@ class XAudio2Driver:
     def get_performance(self):
         """Retrieve some basic XAudio2 performance data such as memory usage and source counts."""
         pf = lib.XAUDIO2_PERFORMANCE_DATA()
-        self._xaudio2.GetPerformanceData(ctypes.byref(pf))
+        self._xaudio2.GetPerformanceData(byref(pf))
         return pf
 
     def create_listener(self):
@@ -415,8 +419,8 @@ class XAudio2Driver:
         wfx_format = create_xa2_waveformat(audio_format)
 
         callback = XAudio2VoiceCallback()
-        self._xaudio2.CreateSourceVoice(ctypes.byref(voice),
-                                        ctypes.byref(wfx_format),
+        self._xaudio2.CreateSourceVoice(byref(voice),
+                                        byref(wfx_format),
                                         0,
                                         self.max_frequency_ratio,
                                         callback,
@@ -478,19 +482,19 @@ class XA2SourceVoice:
     @property
     def buffers_queued(self):
         """Get the amount of buffers in the current voice. Adding flag for no samples played is 3x faster."""
-        self._voice.GetState(ctypes.byref(self._voice_state), lib.XAUDIO2_VOICE_NOSAMPLESPLAYED)
+        self._voice.GetState(byref(self._voice_state), lib.XAUDIO2_VOICE_NOSAMPLESPLAYED)
         return self._voice_state.BuffersQueued
 
     @property
     def samples_played(self):
         """Get the amount of samples played by the voice."""
-        self._voice.GetState(ctypes.byref(self._voice_state), 0)
+        self._voice.GetState(byref(self._voice_state), 0)
         return self._voice_state.SamplesPlayed
 
     @property
     def volume(self):
         vol = c_float()
-        self._voice.GetVolume(ctypes.byref(vol))
+        self._voice.GetVolume(byref(vol))
         return vol.value
 
     @volume.setter
@@ -615,7 +619,7 @@ class XA2SourceVoice:
         self._voice.Stop(0, 0)
 
     def submit_buffer(self, x2_buffer):
-        self._voice.SubmitSourceBuffer(ctypes.byref(x2_buffer), None)
+        self._voice.SubmitSourceBuffer(byref(x2_buffer), None)
 
 
 class XAudio2Listener:

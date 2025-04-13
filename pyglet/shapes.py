@@ -723,7 +723,7 @@ class Arc(ShapeBase):
                 The angle of the arc, in degrees. Defaults to 360.0, which is
                 a full circle.
             start_angle:
-                The start angle of the arc, in radians. Defaults to 0.
+                The start angle of the arc, in degrees. Defaults to 0.
             closed:
                 If ``True``, the ends of the arc will be connected with a line.
                 defaults to ``False``.

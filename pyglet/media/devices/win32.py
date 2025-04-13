@@ -1,9 +1,10 @@
+from ctypes import POINTER, Structure, byref, c_void_p
+from ctypes.wintypes import DWORD, LPCWSTR, LPWSTR, UINT
 from typing import List, Optional, Tuple
 
-from pyglet.libs.win32 import com
+from pyglet.libs.win32 import PROPVARIANT, com
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
-from pyglet.libs.win32.types import *
 from pyglet.media.devices import base
 from pyglet.util import debug_print
 
@@ -41,7 +42,7 @@ STGM_READWRITE = 2
 VT_LPWSTR = 0x001F
 
 
-class PROPERTYKEY(ctypes.Structure):
+class PROPERTYKEY(Structure):
     _fields_ = [
         ('fmtid', com.GUID),
         ('pid', DWORD),
@@ -180,7 +181,7 @@ class IMMDeviceEnumerator(com.pIUnknown):
         ('EnumAudioEndpoints',
          com.STDMETHOD(EDataFlow, DWORD, c_void_p)),
         ('GetDefaultAudioEndpoint',
-         com.STDMETHOD(EDataFlow, ERole, ctypes.POINTER(IMMDevice))),
+         com.STDMETHOD(EDataFlow, ERole, POINTER(IMMDevice))),
         ('GetDevice',
          com.STDMETHOD(LPCWSTR, POINTER(IMMDevice))),
         ('RegisterEndpointNotificationCallback',

@@ -165,7 +165,7 @@ def set_initial_mode(mode):
     if (display, screen) in _restorable_screens:
         return
 
-    packet = ModePacket(display, screen, mode.width, mode.height, mode.rate)
+    packet = ModePacket(display, screen, mode.width, mode.height, mode.info.dotclock)
 
     os.write(_mode_write_pipe, packet.encode())
     _restorable_screens.add((display, screen))

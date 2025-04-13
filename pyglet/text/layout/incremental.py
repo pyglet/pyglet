@@ -3,8 +3,10 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import unicodedata
+
 from pyglet.event import EventDispatcher
-from pyglet.font.base import grapheme_break
+from pyglet.font.base import grapheme_break, GlyphPosition
 from pyglet.text import runlist
 from pyglet.text.layout.base import (
     TextLayout,
@@ -119,6 +121,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.glyphs = []
 
         #: :meta private:
+        self.offsets = []
+
+        #: :meta private:
         # All lines in the document, including those hidden from view.
         self.lines = []
 
@@ -163,6 +168,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def on_insert_text(self, start: int, text: str) -> None:
         len_text = len(text)
         self.glyphs[start:start] = [None] * len_text
+        self.offsets[start:start] = [GlyphPosition(0, 0, 0, 0)] * len_text
 
         self._invalid_glyphs.insert(start, len_text)
 
@@ -186,6 +192,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     def on_delete_text(self, start: int, end: int) -> None:
         self.glyphs[start:end] = []
+        self.offsets[start:end] = []
 
         # Same requirement as on_insert_text
         if self._multiline and self._content_valign != "top":
@@ -239,6 +246,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             self.lines[0].descent = font.descent
             self.lines[0].paragraph_begin = self.lines[0].paragraph_end = True
             self._invalid_lines.invalidate(0, 1)
+            self.offsets.clear()
 
         self._update_glyphs()
         self._update_flow_glyphs()
@@ -264,16 +272,25 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if invalid_end - invalid_start <= 0:
             return
 
+
         # Find grapheme breaks and extend glyph range to encompass.
         text = self.document.text
         while invalid_start > 0:
-            if grapheme_break(text[invalid_start - 1], text[invalid_start]):
+            left = text[invalid_start - 1]
+            right = text[invalid_start]
+            right_cc = unicodedata.category(right)
+            left_cc = unicodedata.category(left)
+            if grapheme_break(left, left_cc, right, right_cc):
                 break
             invalid_start -= 1
 
         len_text = len(text)
         while invalid_end < len_text:
-            if grapheme_break(text[invalid_end - 1], text[invalid_end]):
+            left = text[invalid_end - 1]
+            right = text[invalid_end]
+            right_cc = unicodedata.category(right)
+            left_cc = unicodedata.category(left)
+            if grapheme_break(left, left_cc, right, right_cc):
                 break
             invalid_end += 1
 
@@ -284,13 +301,15 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         for start, end, (font, element) in runs.ranges(invalid_start, invalid_end):
             if element:
                 self.glyphs[start] = _InlineElementBox(element)
+                self.offsets[start] = GlyphPosition(0, 0, 0, 0)
             else:
                 text = self.document.text[start:end]
-                self.glyphs[start:end] = font.get_glyphs(text)
+                glyphs, offsets = font.get_glyphs(text)
+                self.glyphs[start:end] = glyphs
+                self.offsets[start:end] = offsets
 
         # Update owner runs
-        owner_runs = self._get_owner_runs(self.glyphs[invalid_start:invalid_end])
-        self._owner_runs.set_runs(invalid_start, invalid_end, owner_runs)
+        self._get_owner_runs(self._owner_runs, self.glyphs, invalid_start, invalid_end)
 
         # Updated glyphs need flowing
         self._invalid_flow.invalidate(invalid_start, invalid_end)
@@ -333,7 +352,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         content_width_invalid = False
         next_start = invalid_start
 
-        for line in self._flow_glyphs(self.glyphs, self._owner_runs, invalid_start, len(self._document.text)):
+        for line in self._flow_glyphs(self.glyphs, self.offsets, self._owner_runs, invalid_start, len(self._document.text)):
             try:
                 old_line = self.lines[line_index]
                 old_line.delete(self)
@@ -443,6 +462,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._anchor_left = self._get_left_anchor()
         self._anchor_bottom = self._get_bottom_anchor()
         top_anchor = self._get_top_anchor()
+        group_ct = len(self.group_cache)
 
         for line in lines:
             line.delete(self)
@@ -461,6 +481,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if update_view_translation:
             self._update_view_translation()
 
+        # Update groups with scissor areas if any groups were changed.
+        if group_ct != len(self.group_cache):
+            self._update_scissor_area()
+
     @property
     def x(self) -> float:
         return self._x
@@ -477,6 +501,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @y.setter
     def y(self, y: float) -> None:
         super()._set_y(y)
+        # Invalidate vertices, as the vertices will have changed.
+        self._invalid_vertex_lines.invalidate(0, len(self.document.text))
         self._update_scissor_area()
 
     @property
@@ -494,7 +520,11 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @position.setter
     def position(self, position: tuple[float, float, float]) -> None:
+        old_y = self._y
         super()._set_position(position)
+        # Invalidate the lines if the Y changed.
+        if self._y != old_y:
+            self._invalid_vertex_lines.invalidate(0, len(self.document.text))
         self._update_view_translation()
         self._update_scissor_area()
 
@@ -543,8 +573,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if height == self._height:
             return
         self._height = height
+        self._update_visible_lines()
         if self._update_enabled:
-            self._update_visible_lines()
             self._update_vertex_lists()
 
     @property
