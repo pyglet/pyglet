@@ -24,8 +24,8 @@ class Display:
         default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X 
         screen number to use with this display.  A pyglet display can only be 
         used with one X screen; open multiple display connections to access
-        multiple X screens.  
-        
+        multiple X screens.
+
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
@@ -51,9 +51,7 @@ class Display:
         raise NotImplementedError('abstract')
 
     def get_default_screen(self) -> Screen:
-        """Get the default (primary) screen as specified by the user's operating system
-        preferences.
-        """
+        """Get the default (primary) screen as specified by the user's operating system preferences."""
         screens = self.get_screens()
         for screen in screens:
             if screen.x == 0 and screen.y == 0:

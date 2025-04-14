@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ctypes import byref
 from pyglet.libs.win32 import _gdi32, _shcore, _user32
 from pyglet.libs.win32.constants import (
     CDS_FULLSCREEN,
@@ -19,16 +20,16 @@ from pyglet.libs.win32.types import (
     MONITORINFOEX,
     PROCESS_PER_MONITOR_DPI_AWARE,
     UINT,
-    byref,
     sizeof,
 )
 
 from .base import Display, Screen, ScreenMode
 
 
-def set_dpi_awareness():
+def set_dpi_awareness() -> None:
     """Setting DPI varies per Windows version.
-    Note: DPI awareness needs to be set before Window, Display, or Screens are initialized.
+
+    .. note:: DPI awareness needs to be set before Window, Display, or Screens are initialized.
     """
     if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
         _user32.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)

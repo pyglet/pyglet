@@ -280,7 +280,7 @@ class _DWriteTextRenderer(com.COMObject):
                             (glyph_run.glyphAdvances[i] - glyph.advance),
                             0,
                             glyph_run.glyphOffsets[i].advanceOffset,
-                            glyph_run.glyphOffsets[i].ascenderOffset
+                            glyph_run.glyphOffsets[i].ascenderOffset,
                 )
 
             else:
@@ -485,7 +485,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
                             self._brush,
                             None,
                             0,
-                            mode
+                            mode,
                         )
                 elif glyph_image_fmt & DWRITE_GLYPH_IMAGE_FORMATS_BITMAP:
                     if self._ctx_supported:
@@ -493,7 +493,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
                             glyph_image_fmt,
                             baseline_offset,
                             color_run.contents.glyphRun,
-                            self.measuring_mode
+                            self.measuring_mode,
                     )
                 else:
                     glyph_run = color_run.contents.glyphRun
@@ -690,7 +690,6 @@ class Win32DirectWriteFont(base.Font):
     _zero_glyph = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
-    texture_internalformat = pyglet.gl.GL_RGBA
 
     def __init__(self, name: str, size: float, weight: str = "normal", italic: bool | str = False,  # noqa: D107
                  stretch: bool | str = False, dpi: int | None = None, locale: str | None = None) -> None:
