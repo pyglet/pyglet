@@ -1,13 +1,34 @@
-from __future__ import annotations
+from ctypes import (
+    POINTER,
+    Structure,
+    c_buffer,
+    c_byte,
+    c_float,
+    c_long,
+    c_short,
+    c_uint32,
+    c_ulong,
+    c_void_p,
+    c_wchar,
+    c_wchar_p,
+    cast,
+    create_string_buffer,
+    memmove,
+    windll,
+    byref,
+    c_int,
+    c_uint,
+    sizeof,
+)
+from ctypes.wintypes import BOOL, BYTE, INT, UINT, ULONG
 
-from pyglet.image import ImageData
-from pyglet.image.animation import Animation, AnimationFrame
+from pyglet.image import Animation, AnimationFrame, ImageData
 from pyglet.image.codecs import ImageDecodeException, ImageDecoder
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.com import pIUnknown
-from pyglet.libs.win32.constants import *
-from pyglet.libs.win32.types import *
+from pyglet.libs.win32.constants import GMEM_MOVEABLE
+from pyglet.libs.win32.types import LONG_PTR
 
 gdiplus = windll.gdiplus
 

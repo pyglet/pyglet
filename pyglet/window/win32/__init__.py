@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unicodedata
-from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, UINT
+from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, SIZE, UINT
 from functools import lru_cache
 from typing import Callable, Sequence
 
@@ -16,8 +16,6 @@ from pyglet.libs.win32.types import (
     MINMAXINFO,
     RAWINPUT,
     RAWINPUTHEADER,
-    RECT,
-    SIZE,
     TRACKMOUSEEVENT,
     WCHAR,
 )

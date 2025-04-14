@@ -100,7 +100,9 @@ class TestWindow(pyglet.window.Window):
             self.document.insert_element(i, TestElement(60, -10, 70))
         self.margin = 2
         self.layout = IncrementalTextLayout(
-            self.document, self.width - self.margin * 2, self.height - self.margin * 2,
+            self.document,
+            width=self.width - self.margin * 2,
+            height=self.height - self.margin * 2,
             multiline=True,
             batch=self.batch)
         self.caret = caret.Caret(self.layout)

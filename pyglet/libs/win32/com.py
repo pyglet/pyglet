@@ -33,9 +33,12 @@ the return value.
 Don't forget to manually manage memory... call Release() when you're done with
 an interface.
 """
+from __future__ import annotations
 
-import sys
 import ctypes
+import re
+import sys
+from typing import Sequence
 
 from pyglet.util import debug_print
 
@@ -53,22 +56,42 @@ class GUID(ctypes.Structure):
         ('Data4', ctypes.c_ubyte * 8),
     ]
 
-    def __init__(self, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8):
+    def __init__(self, l: int, w1: int, w2: int,
+                 b1: int, b2: int, b3: int, b4: int, b5: int, b6: int, b7: int, b8: int) -> None:
         self.Data1 = l
         self.Data2 = w1
         self.Data3 = w2
         self.Data4[:] = (b1, b2, b3, b4, b5, b6, b7, b8)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         b1, b2, b3, b4, b5, b6, b7, b8 = self.Data4
-        return 'GUID(%x, %x, %x, %x, %x, %x, %x, %x, %x, %x, %x)' % (
-            self.Data1, self.Data2, self.Data3, b1, b2, b3, b4, b5, b6, b7, b8)
+        return f'GUID({self.Data1:x}, {self.Data2:x}, {self.Data3:x}, {b1:x}, {b2:x}, {b3:x}, {b4:x}, {b5:x}, {b6:x}, {b7:x}, {b8:x})'
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, GUID) and bytes(self) == bytes(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(bytes(self))
+
+    @classmethod
+    def from_string(cls, text: str) -> GUID:
+        """Convert a GUID string into a GUID object.
+
+        Valid: 'bd4ec2d2-0662-4bee-ba8e-6f29f032e096' and '{bd4ec2d2-0662-4bee-ba8e-6f29f032e096}'
+        """
+        match = re.match(
+            r'^\{?([0-9A-Fa-f]{8})-([0-9A-Fa-f]{4})-([0-9A-Fa-f]{4})-([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})-([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})\}?$', text)
+        if not match:
+            msg = f"Invalid GUID format: {text}"
+            raise ValueError(msg)
+
+        # Convert matched hex values into integers
+        d1 = int(match.group(1), 16)
+        d2 = int(match.group(2), 16)
+        d3 = int(match.group(3), 16)
+        d4 = [int(match.group(i), 16) for i in range(4, 12)]
+
+        return cls(d1, d2, d3, *d4)
 
 
 LPGUID = ctypes.POINTER(GUID)
@@ -195,7 +218,7 @@ class _pInterfaceMeta(_PointerMeta):
         # instead of
         # RegisterCallback(callback_obj)
         # could make it obsolete.
-        from ctypes import _pointer_type_cache
+        from ctypes import _pointer_type_cache  # noqa
         _pointer_type_cache[target] = pointer_type
 
         return pointer_type
@@ -204,12 +227,13 @@ class _pInterfaceMeta(_PointerMeta):
 class Interface(ctypes.Structure, metaclass=_InterfaceMeta, create_pointer_type=False):
     @classmethod
     def get_interface_inheritance(cls):
-        """Returns the types of all interfaces implemented by this interface, up to but not
-        including the base `Interface`.
+        """Return a reverse iterator over the interfaces implemented by this interface,
+        ranging from just after the base type `Interface` to this type.
         `Interface` does not represent an actual interface, but merely the base concept of
-        them, so viewing it as part of an interface's inheritance chain is meaningless.
+        them. Viewing it as part of an interface's inheritance chain is meaningless, so
+        it is excluded.
         """
-        return cls.__mro__[:cls.__mro__.index(Interface)]
+        return reversed(cls.__mro__[:cls.__mro__.index(Interface)])
 
 
 class pInterface(_DummyPointerType, metaclass=_pInterfaceMeta):
@@ -397,3 +421,32 @@ class COMObject:
             raise TypeError(f"Does not implement {interface_type}")
 
         return ctypes.byref(self._struct, offset)
+
+def is_available(interface: pInterface | Interface, guid: GUID, target_interface: pInterface | Interface,
+                 errors: Sequence[int] = (E_NOTIMPL, E_NOINTERFACE)) -> bool:
+    """
+    Determine if the target interface is available from the source.
+
+    Args:
+        interface:
+            The interface to query from.
+        guid:
+            The GUID of the target interface.
+        target_interface:
+            The interface object to query from.
+        errors:
+            Acceptable errors to consider as caught.
+
+    Returns:
+        If the query was successful, returns True. If so, the target interface object is available.
+    """
+    try:
+        interface.QueryInterface(guid, ctypes.byref(target_interface))
+        return True
+    except OSError as e:
+        for error in errors:
+            if error & 0xFFFFFFFF:  # to unsigned.
+                return False
+
+    msg = f"Failed to Query Interface {interface} with GUID: {guid}."
+    raise Exception(msg)

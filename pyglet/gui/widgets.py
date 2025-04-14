@@ -370,7 +370,12 @@ class Slider(WidgetBase):
 
     def _update_position(self) -> None:
         self._base_spr.position = self._x, self._y, 0
-        self._knob_spr.position = self._x + self._edge, self._y + self._base_img.height / 2, 0
+        self._min_knob_x = self._x + self._edge
+        self._max_knob_x = self._x + self._base_img.width - self._knob_img.width - self._edge
+        x = (self._max_knob_x - self._min_knob_x) * self._value / 100 + self._min_knob_x + self._half_knob_width
+        x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
+        y = self._y + self._base_img.height / 2
+        self._knob_spr.position = x, y, 0
 
     @property
     def value(self) -> float:

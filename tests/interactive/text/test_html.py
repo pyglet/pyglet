@@ -20,41 +20,41 @@ doctext = """
     formatted as they are described.  Here is a copyright symbol: &#169; and
     again, using hexadecimal ref: &#xa9;.</p>
 
-    <P>This paragraph has some <b>bold</b> and <i>italic</i> and <b><i>bold
-    italic</b> text. <!-- i tag does not need to be closed -->
+    <p>This paragraph has some <b>bold</b> and <i>italic</i> and <b><i>bold
+    italic</b> text. <!-- i tag does not need to be closed --></p>
 
     <p>This paragraph has some <em>emphasis</em> and <strong>strong</strong>
-    and <em><strong>emphatic strong</em> text.
+    and <em><strong>emphatic strong</em> text.</p>
 
     <p>This paragraph demonstrates superscript: a<sup>2</sup> + b<sup>2</sup>
-    = c<sup>2</sup>; and subscript: H<sub>2</sub>O.
+    = c<sup>2</sup>; and subscript: H<sub>2</sub>O.</p>
 
     <p>This paragraph uses the &lt;font&gt; element: 
     <font face="Courier New">Courier New</font>, <font size=1>size 1</font>,
     <font size=2>size 2</font>, <font size=3>size 3</font>, <font size=4>size
     4</font>, <font size=5>size 5</font>, <font size=6>size 6</font>, <font
-    size=7>size 7</font>.
+    size=7>size 7</font>.</p>
 
     <p>This paragraph uses relative sizes: <font size=5>size 5<font
-    size=-2>size 3</font><!--<font size=+1>size 6</font>--></font>
+    size=-2>size 3</font><!--<font size=+1>size 6</font>--></font></p>
 
     <p>Font color changes to <font color=red>red</font>, <font
     color=green>green</font> and <font color=#0f0fff>pastel blue using a
-    hexidecimal number</font>.
+    hexidecimal number</font>.</p>
 
     <p><u>This text is underlined</u>.  <font color=green><u>This text is
-    underlined and green.</u></font>
+    underlined and green.</u></font></p>
 
-    <h1>Heading 1
-    <h2>Heading 2
-    <h3>Heading 3
-    <h4>Heading 4
-    <h5>Heading 5
-    <h6>Heading 6
+    <h1>Heading 1</h1>
+    <h2>Heading 2</h2>
+    <h3>Heading 3</h3>
+    <h4>Heading 4</h4>
+    <h5>Heading 5</h5>
+    <h6>Heading 6</h6>
 
-    <p align=center>Centered paragraph.
+    <p align=center>Centered paragraph.</p>
 
-    <p align=right>Right-aligned paragraph.
+    <p align=right>Right-aligned paragraph.</p>
 
     <div>&lt;div&gt; element instead of paragraph.
         <div>This sentence should start a new paragraph, as the div is nested.
@@ -101,19 +101,21 @@ Hard line breaks
             dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
             exercitation ullamco laboris nisi ut aliquip ex ea commodo
             consequat.
+        </li>
         <li>
             Item 2. Lorem ipsum dolor sit amet, consectetur
             adipisicing elit, sed do eiusmod tempor incididunt ut labore et
             dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
             exercitation ullamco laboris nisi ut aliquip ex ea commodo
             consequat.
+        </li>
         <li>
             Item 3. Lorem ipsum dolor sit amet, consectetur
             adipisicing elit, sed do eiusmod tempor incididunt ut labore et
             dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
             exercitation ullamco laboris nisi ut aliquip ex ea commodo
             consequat.
-
+        </li>
             <ul>
                 <li>
                     A nested list. Lorem ipsum dolor sit amet, consectetur
@@ -121,59 +123,61 @@ Hard line breaks
                     labore et dolore magna aliqua. Ut enim ad minim veniam,
                     quis nostrud exercitation ullamco laboris nisi ut aliquip
                     ex ea commodo consequat.
+                </li>
                 <li>
                     Item 3.2.  Lorem ipsum dolor sit amet, consectetur
                     adipisicing elit, sed do eiusmod tempor incididunt ut
                     labore et dolore magna aliqua.
+                </li>
             </ul>
 
     </ul>
 
     <ul type="circle">
-        <li>Unordered list with circle bullets.
-        <li>Item 2.
+        <li>Unordered list with circle bullets.</li>
+        <li>Item 2.</li>
     </ul>
 
     <ul type="square">
-        <li>Unordered list with square bullets.
-        <li>Item 2.
+        <li>Unordered list with square bullets.</li>
+        <li>Item 2.</li>
     </ul>
 
     <ol>
-        <li>Numbered list.
-        <li>Item 2.
-        <li>Item 3.
-        <li value=10>Item 10
-        <li>Item 11
+        <li>Numbered list.</li>
+        <li>Item 2.</li>
+        <li>Item 3.</li>
+        <li value=10>Item 10</li>
+        <li>Item 11</li>
     </ol>
 
     <ol start=12>
-        <li>Numbered list starting at 12.
-        <li>Item 13.
+        <li>Numbered list starting at 12.</li>
+        <li>Item 13.</li>
     </ol>
 
     <ol type="a">
-        <li>Numbered list with "a" type
-        <li>Item 2
-        <li>Item 3
+        <li>Numbered list with "a" type</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
     </ol>
 
     <ol type="A">
-        <li>Numbered list with "A" type
-        <li>Item 2
-        <li>Item 3
+        <li>Numbered list with "A" type</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
     </ol>
 
     <ol type="i">
-        <li>Numbered list with "i" type
-        <li>Item 2
-        <li>Item 3
+        <li>Numbered list with "i" type</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
     </ol>
 
     <ol type="I">
-        <li>Numbered list with "I" type
-        <li>Item 2
-        <li>Item 3
+        <li>Numbered list with "I" type</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
     </ol>
 
     Here's a definition list:
@@ -199,7 +203,8 @@ class TestWindow(pyglet.window.Window):
         self.document = pyglet.text.decode_html(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-                                                   self.width - self.margin * 2, self.height - self.margin * 2,
+                                                   width=self.width - self.margin * 2,
+                                                   height=self.height - self.margin * 2,
                                                    multiline=True,
                                                    batch=self.batch)
         self.caret = caret.Caret(self.layout)
