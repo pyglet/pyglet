@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 
@@ -21,23 +23,31 @@ class Platform:
     """Mac OS X platforms"""
 
 
-def require_platform(platform):
+class GraphicsAPI:
+    GL3 = ("opengl", "gles3")
+    GL2 = ("gl2", "gles2")
+
+def require_platform(platform: list[str]):
     """
     Only run the test on the given platform(s), skip on other platforms.
 
-    :param list(str) platform: A list of platform identifiers as returned by
-        :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
+    Args:
+         platform:
+            A list of platform identifiers as returned by
+            :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform not in platform,
                               reason=f'requires platform: {platform!s}')
 
 
-def skip_platform(platform):
+def skip_platform(platform: list[str]):
     """
     Skip test on the given platform(s).
 
-    :param list(str) platform: A list of platform identifiers as returned by
-        :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
+    Args:
+        platform:
+            A list of platform identifiers as returned by
+            :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform in platform,
                               reason=f'not supported for platform: {platform!s}')
@@ -55,11 +65,12 @@ def require_gl_extension(extension):
                               reason=f'Tests requires GL extension {extension}')
 
 
-def require_python_version(version):
+def require_python_version(version: tuple[int, int]):
     """
     Skip test on older Python versions.
 
-    :param tuple version: The major, minor Python version as a tuple.
+    Args:
+        version: The major, minor Python version as a tuple.
     """
     return pytest.mark.skipif(sys.version_info < version,
                               reason=f"Test require at least Python version {version}")
@@ -71,3 +82,23 @@ def skip_if_continuous_integration():
     """
     return pytest.mark.skipif(any(key in os.environ for key in ['CI']),
                               reason="Test is unreliable, or unavailable under Continuous Integration ")
+
+def require_graphics_api(backend: list[str]):
+    """Specify a test is used with specific graphics API.
+
+    Args:
+        backend:
+            The graphics API backend, as used by pyglet.options.backend.
+    """
+    return pytest.mark.skipif(pyglet.options.backend not in backend,
+                              reason=f"Test requires graphics backend: '{backend}'")
+
+def skip_graphics_api(backend: list[str]):
+    """Skip the test if being run under a graphics API.
+
+    Args:
+        backend:
+            The graphics API backend, as used by pyglet.options.backend.
+    """
+    return pytest.mark.skipif(pyglet.options.backend in backend,
+                              reason=f"Not supported for graphics backend: '{backend}'")

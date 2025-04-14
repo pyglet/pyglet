@@ -8,19 +8,17 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
+from typing import BinaryIO, ClassVar
 
 import unicodedata
-from typing import TYPE_CHECKING, BinaryIO, ClassVar
 
-from pyglet.graphics import atlas
 from pyglet.enums import (
     ComponentFormat,
     TextureFilter, TextureInternalFormat, TextureDescriptor,
 )
+from pyglet.graphics import atlas
 from pyglet.graphics.texture import Texture, TextureRegion
-
-if TYPE_CHECKING:
-    from pyglet.image import _AbstractImage
+from pyglet.image import ImageData
 
 _OTHER_GRAPHEME_EXTEND = {
     chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
@@ -173,14 +171,14 @@ class GlyphTextureAtlas(atlas.TextureAtlas):
         self.texture = self.texture_class.create(width, height, descriptor)
         self.allocator = atlas.Allocator(width, height)
 
-    def add(self, img: _AbstractImage, border: int = 0) -> Glyph:
+    def add(self, img: ImageData, border: int = 0) -> Glyph:
         return super().add(img, border)
 
 
 class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: _AbstractImage, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
+    def add(self, img: ImageData, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
         for glyph_atlas in list(self.atlases):
             try:
                 return glyph_atlas.add(img, border)
@@ -354,7 +352,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, img: _AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
+    def create_glyph(self, img: ImageData, descriptor: TextureDescriptor | None = None) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -376,7 +374,7 @@ class Font:
 
         return self.texture_bin.add(img, descriptor or self.default_descriptor, border=1)
 
-    def _get_optimal_atlas_size(self, image_data: _AbstractImage) -> tuple[int, int]:
+    def _get_optimal_atlas_size(self, image_data: ImageData) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""
         # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
         # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)

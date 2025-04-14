@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import pytest
 
 import pyglet
-from pyglet import app, graphics, text, window
+from pyglet import app, text, window
 from pyglet.text import caret, layout
-from pyglet.window import key, mouse
+from pyglet.window import key
 from tests.base.interactive import InteractiveTestCase
 
 doctext = """STYLE.py test document.

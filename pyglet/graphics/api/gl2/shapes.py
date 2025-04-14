@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 vertex_source = """#version 110
     attribute vec2 position;
-    attribute vec2 translation;
+    attribute vec3 translation;
     attribute vec4 colors;
     attribute float rotation;
 
@@ -30,7 +30,7 @@ vertex_source = """#version 110
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = u_projection * u_view * m_translate * m_rotation * vec4(position, 0.0, 1.0);
+        gl_Position = u_projection * u_view * m_translate * m_rotation * vec4(position, translation.z, 1.0);
         vertex_colors = colors;
     }
 """

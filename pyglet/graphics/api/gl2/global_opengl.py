@@ -115,9 +115,10 @@ class OpenGL2Backend(OpenGLBackend):
 
         # With GLES it doesn't support glMatrixMode's and no UBO's.
         # Set the projection for each shader manually.
-        with program:
-            program["u_projection"] = tuple(self.current_context.window._matrices.projection)
-            program["u_view"] = tuple(self.current_context.window._matrices.view)
+        if not self.current_context.window._shadow:  # Do not set if it's the shadow window?  # noqa: SLF001
+            with program:
+                program["u_projection"] = tuple(self.current_context.window._matrices.projection)
+                program["u_view"] = tuple(self.current_context.window._matrices.view)
 
         return program
 

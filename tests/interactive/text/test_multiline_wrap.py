@@ -1,15 +1,11 @@
+from __future__ import annotations
+
 import pytest
 
-
-from tests.base.interactive import InteractiveTestCase
-
-from pyglet import app
-from pyglet.graphics.api import gl
-from pyglet import text
-from pyglet.text import caret
-from pyglet.text import layout
-from pyglet import window
+from pyglet import app, text, window
+from pyglet.text import caret, layout
 from pyglet.window import key
+from tests.base.interactive import InteractiveTestCase
 
 nonewline_nowrap = """{font_size 24}Multiline=False\n
 {font_size 12}This paragraph contains a lots of newlines, however\n
@@ -50,6 +46,8 @@ class BaseTestWindow(window.Window):
 
         self.set_mouse_cursor(self.get_system_mouse_cursor('text'))
 
+        self.context.set_clear_color(1, 1, 1, 1)
+
     def on_resize(self, width, height):
         super().on_resize(width, height)
         self.layout.begin_update()
@@ -65,7 +63,6 @@ class BaseTestWindow(window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 
