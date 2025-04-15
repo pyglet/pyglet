@@ -23,6 +23,7 @@ from ctypes import (
     pointer,
     sizeof,
     string_at,
+    c_float,
 )
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
@@ -30,6 +31,7 @@ from typing import TYPE_CHECKING, Sequence
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.libs.x11 import cursorfont, xlib
+from pyglet.libs.x11.xrender import XRenderFindVisualFormat
 from pyglet.util import asbytes
 from pyglet.window import (
     BaseWindow,
@@ -45,9 +47,9 @@ from pyglet.window import (
 )
 
 if TYPE_CHECKING:
+    from pyglet.libs.x11.xlib import Visual
     from _ctypes import _Pointer
-
-    from pyglet.graphics.api.gl import XlibOpenGLConfig
+    from pyglet.graphics.api.gl.xlib.context import XlibOpenGLConfig
 
 try:
     from pyglet.libs.x11 import xsync
@@ -124,7 +126,7 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow):
-    config: XlibOpenGLConfig
+    config: XlibGLWindowConfig
     _x_display: xlib.Display | None = None  # X display connection
     _x_screen_id: int | None = None  # X screen index
     _x_ic: xlib.XIC | None = None  # X input context
@@ -224,6 +226,8 @@ class XlibWindow(BaseWindow):
         self._x_display = self.display._display  # noqa: SLF001
         self._x_screen_id = self.display.x_screen
 
+        self._is_transparent = False
+
         # Create X window if not already existing.
         if not self._window:
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
@@ -233,7 +237,9 @@ class XlibWindow(BaseWindow):
                 self._assign_config()
 
                 visual_info = self.config.get_visual_info()
-                if self.style in ('transparent', 'overlay'):
+                self._is_transparent = self._is_visual_transparent(visual_info.visual)
+                if self.style == 'transparent' and not self._is_transparent:
+                    print("Warning: Visual has no alpha, transparency may not work.")
                     xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
                 visual = visual_info.visual
@@ -305,6 +311,7 @@ class XlibWindow(BaseWindow):
             # Set supported protocols
             protocols = list()
             protocols.append(xlib.XInternAtom(self._x_display, asbytes('WM_DELETE_WINDOW'), False))
+
             if self._enable_xsync:
                 protocols.append(xlib.XInternAtom(self._x_display,
                                                   asbytes('_NET_WM_SYNC_REQUEST'),
@@ -316,14 +323,34 @@ class XlibWindow(BaseWindow):
             if self._enable_xsync:
                 value = xsync.XSyncValue()
                 self._sync_counter = xlib.XID(xsync.XSyncCreateCounter(self._x_display, value))
-                atom = xlib.XInternAtom(self._x_display,
-                                        asbytes('_NET_WM_SYNC_REQUEST_COUNTER'), False)
+                atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_SYNC_REQUEST_COUNTER'), False)
                 ptr = pointer(self._sync_counter)
 
-                xlib.XChangeProperty(self._x_display, self._window,
-                                     atom, XA_CARDINAL, 32,
-                                     xlib.PropModeReplace,
-                                     cast(ptr, POINTER(c_ubyte)), 1)
+                xlib.XChangeProperty(
+                    self._x_display,
+                    self._window,
+                    atom,
+                    XA_CARDINAL,
+                    32,
+                    xlib.PropModeReplace,
+                    cast(ptr, POINTER(c_ubyte)),
+                    1,
+                )
+
+            self._alpha = c_float(0.8)
+            ptr = pointer(self._alpha)
+            atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_WINDOW_OPACITY'), False)
+            xlib.XChangeProperty(
+                self._x_display,
+                self._window,
+                atom,
+                XA_CARDINAL,
+                32,
+                xlib.PropModeReplace,
+                cast(ptr, POINTER(c_ubyte)),
+                1,
+            )
+
 
             # Atoms required for Xdnd
             self._create_xdnd_atoms(self._x_display)
@@ -444,6 +471,13 @@ class XlibWindow(BaseWindow):
         self.set_mouse_platform_visible()
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
+
+    def _is_visual_transparent(self, visual: _Pointer[Visual]) -> bool:
+        if not XRenderFindVisualFormat:
+            return False
+
+        xrender_format = XRenderFindVisualFormat(self._x_display, visual)
+        return xrender_format and xrender_format.contents.direct.alphaMask != 0
 
     def _map(self) -> None:
         if self._mapped:

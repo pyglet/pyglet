@@ -71,7 +71,7 @@ scissor_group = ScissorGroup(x=50, y=50, width=300, height=300)
 # Create a bunch of Sprites, and assign them to our custom Group. Any parts
 # of these Sprites that are outside the specified area will not be drawn.
 sprites = []
-img = pyglet.resource.image('pyglet.png')
+img = pyglet.resource.texture('pyglet.png')
 for x in range(5):
     for y in range(5):
         sprite = Sprite(img, x*img.width, y*img.height, group=scissor_group, batch=batch)

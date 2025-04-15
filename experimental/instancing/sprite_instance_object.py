@@ -16,7 +16,7 @@ pyglet.resource.reindex()
 # Load example image from resource path.
 # Avoid using pyglet.image.load as it creates multiple textures.
 # Resource will load images into a texture atlas, allowing significantly faster performance.
-image = pyglet.resource.image("pyglet.png")
+image = pyglet.resource.texture("pyglet.png")
 
 # Anchor point on an image is bottom left corner by default.
 # Set to center point with anchor properties.

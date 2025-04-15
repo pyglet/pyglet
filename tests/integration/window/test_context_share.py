@@ -12,7 +12,7 @@ from pyglet.graphics.api.gl import *
 def create_context(share):
     display = pyglet.display.get_display()
     screen = display.get_default_screen()
-    backend = pyglet.graphics.api.global_backend
+    backend = pyglet.graphics.api.core
     config = screen.get_best_config()
     return config.create_context(backend, share)
 

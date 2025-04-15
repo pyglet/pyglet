@@ -1,7 +1,7 @@
 """Group multiple small images into larger Textures.
 
 This module provides classes to efficiently pack small images into larger Textures.
-This can have major performance benefits when dealiing with a large number of images.
+This can have major performance benefits when dealing with a large number of images.
 
 :py:class:`~pyglet.image.atlas.TextureAtlas` maintains one texture; :py:class:`TextureBin`
 manages a collection of atlases of a given size. :py:class:`TextureArrayBin` works similarly
@@ -21,8 +21,8 @@ Example usage::
     boat_texture = bin.add(boat_image)
 
 The result of :py:meth:`TextureBin.add` is a :py:class:`TextureRegion`
-containing the image. Once added, an image cannot be removed from a bin (or an 
-atlas); nor can a list of images be obtained from a given bin or atlas -- it is 
+containing the image. Once added, an image cannot be removed from a bin (or an
+atlas); nor can a list of images be obtained from a given bin or atlas -- it is
 the application's responsibility to keep track of the regions returned by the
 ``add`` methods.
 
@@ -34,20 +34,18 @@ import pyglet
 
 from typing import TYPE_CHECKING
 
-import pyglet
 
 if TYPE_CHECKING:
-    from pyglet.image import _AbstractImage, ImageData, TextureRegion, TextureArrayRegion
+    from pyglet.image import ImageData, ImageDataRegion
+    from pyglet.graphics.texture import TextureRegion, TextureArrayRegion
 
 
-class AllocatorException(Exception):
-    """The allocator does not have sufficient free space for the requested
-    image size."""
-    pass
+class AllocatorException(Exception):  # noqa: N818
+    """The allocator does not have sufficient free space for the requested image size."""
 
 
 class _Strip:
-    __slots__ = 'x', 'y', 'max_height', 'y2'
+    __slots__ = 'max_height', 'x', 'y', 'y2'
 
     def __init__(self, y: int, max_height: int) -> None:
         self.x = 0
@@ -56,7 +54,7 @@ class _Strip:
         self.y2 = y
 
     def add(self, width: int, height: int) -> tuple[int, int]:
-        assert width > 0 and height > 0
+        assert width > 0 and height > 0  # noqa: PT018
         assert height <= self.max_height
 
         x, y = self.x, self.y
@@ -79,18 +77,18 @@ class Allocator:
     best when rectangles are allocated of the same size, or in decreasing
     height order.
     """
-    __slots__ = 'width', 'height', 'strips', 'used_area'
+    __slots__ = 'height', 'strips', 'used_area', 'width'
 
     def __init__(self, width: int, height: int) -> None:
         """Create an ``Allocator`` of the given size."""
-        assert width > 0 and height > 0
+        assert width > 0 and height > 0  # noqa: PT018
         self.width = width
         self.height = height
         self.strips = [_Strip(0, height)]
         self.used_area = 0
 
     def alloc(self, width: int, height: int) -> tuple[int, int]:
-        """Get the position of a free area in the allocator of the given size
+        """Get the position of a free area in the allocator of the given size.
 
         If a suitable position can be found for the requested size, the position
         will be marked as in-use and returned. (The same position will never be
@@ -112,7 +110,8 @@ class Allocator:
             self.strips.append(newstrip)
             return newstrip.add(width, height)
 
-        raise AllocatorException(f"No more space in {self} for box {width}x{height}")
+        msg = f"No more space in {self} for box {width}x{height}"
+        raise AllocatorException(msg)
 
     def get_usage(self) -> float:
         """Get the fraction of area already allocated.
@@ -122,8 +121,7 @@ class Allocator:
         return self.used_area / float(self.width * self.height)
 
     def get_fragmentation(self) -> float:
-        """Get the fraction of area that's unlikely to ever be used, based on
-        current allocation behaviour.
+        """Get the fraction of area that's unlikely to ever be used, based on current allocation behaviour.
 
         This method is useful for debugging and profiling only.
         """
@@ -173,6 +171,7 @@ class TextureAtlas:
         no room in the atlas for the image.
         """
         x, y = self.allocator.alloc(img.width + border * 2, img.height + border * 2)
+        self.texture.bind()
         self.texture.upload(img, x + border, y + border, 0)
         return self.texture.get_region(x + border, y + border, img.width, img.height)
 
@@ -180,7 +179,7 @@ class TextureAtlas:
 class TextureBin:
     """Collection of TextureAtlases.
 
-    :py:class:`~pyglet.image.atlas.TextureBin` maintains a collection
+    :py:class:`~pyglet.graphics.atlas.TextureBin` maintains a collection
     of TextureAtlases, and creates new ones as necessary to accommodate
     adding an unbound number of Images. When one TextureAltas is full,
     a new one is automatically created to fit the next ImageData.
@@ -193,7 +192,7 @@ class TextureBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img: ImageData | _AbstractImage, border: int = 0) -> TextureRegion:
+    def add(self, img: ImageData | ImageDataRegion, border: int = 0) -> TextureRegion:
         """Add an image into this texture bin.
 
         This method calls :py:meth:`~TextureAtlas.add` for the first atlas
@@ -249,6 +248,6 @@ class TextureArrayBin:
         except IndexError:
             pass
 
-        array = pyglet.graphics.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
+        array = pyglet.graphics.texture.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
         self.arrays.append(array)
         return array.add(img)

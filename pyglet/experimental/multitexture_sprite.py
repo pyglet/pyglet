@@ -126,14 +126,14 @@ class MultiTextureSpriteGroup(pyglet.graphics.Group):
 
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
-    pyglet.backend.gl.GL_TEXTURE_2D: "sampler2D",
-    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D: "sampler2D",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray",
 }
 
 # Allows the default shader to grab the correct coords based on texture type
 _SAMPLER_COORDS = {
-    pyglet.backend.gl.GL_TEXTURE_2D: ".xy",
-    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D: ".xy",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D_ARRAY: "",
 }
 
 
@@ -219,7 +219,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     }}
     """
 
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
@@ -460,7 +460,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         """
         if name in self._animations:
             return self._animations[name]
-        elif name in self._textures:
+        if name in self._textures:
             return self._textures[name]
 
         return None

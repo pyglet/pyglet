@@ -92,17 +92,17 @@ _blit_fragment_source: str = """#version 330 core
 
 def get_default_batch() -> Batch:
     """Batch used globally for objects that have no Batch specified."""
-    return pyglet.graphics.api.global_backend.get_default_batch()
+    return pyglet.graphics.api.core.get_default_batch()
     # try:
-    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+    #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
     # except AttributeError:
-    #     pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch = Batch()
-    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+    #     pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch = Batch()
+    #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
 
 
 def get_default_shader() -> ShaderProgram:
     """A default basic shader for default batches."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_graphics",
         (_vertex_source, 'vertex'),
         (_fragment_source, 'fragment'),
@@ -111,7 +111,7 @@ def get_default_shader() -> ShaderProgram:
 
 def get_default_blit_shader() -> ShaderProgram:
     """A default basic shader for blitting, provides no blending."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_blit",
         (_blit_vertex_source, 'vertex'),
         (_blit_fragment_source, 'fragment'),
@@ -235,7 +235,7 @@ class Batch(BatchBase):
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
         super().__init__()
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.

@@ -53,8 +53,7 @@ class WGLFunctionProxy:
         self.func = None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Callable:
-        from pyglet.graphics.api.gl import current_context
-        if not current_context:
+        if not pyglet.graphics.api.core:
             msg = f'Call to function "{self.name}" before GL context created'
             raise Exception(msg)
         address = wglGetProcAddress(asbytes(self.name))
@@ -84,8 +83,8 @@ def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
         fargs = (restype, *tuple(argtypes))
         ftype = ctypes.WINFUNCTYPE(*fargs)
         if _have_get_proc_address:
-            from pyglet.graphics.api import global_backend
-            if global_backend and global_backend.have_context:
+            from pyglet.graphics.api import core
+            if core and core.have_context:
                 address = wglGetProcAddress(name)
                 if address:
                     func = cast(address, ftype)

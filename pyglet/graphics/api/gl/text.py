@@ -8,7 +8,7 @@ from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
     from pyglet.graphics.texture import TextureBase
-    from pyglet.graphics.api.gl import ShaderProgram
+    from pyglet.graphics.api.gl.shader import ShaderProgram
 
 layout_vertex_source = """#version 330 core
     in vec3 position;
@@ -165,7 +165,7 @@ decoration_fragment_source = """#version 330 core
 
 def get_default_layout_shader() -> ShaderProgram:
     """The default shader used for all glyphs in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
@@ -174,7 +174,7 @@ def get_default_layout_shader() -> ShaderProgram:
 
 def get_default_image_layout_shader() -> ShaderProgram:
     """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_image",
         (layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
@@ -183,7 +183,7 @@ def get_default_image_layout_shader() -> ShaderProgram:
 
 def get_default_decoration_shader() -> ShaderProgram:
     """The default shader for underline and background decoration effects in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),

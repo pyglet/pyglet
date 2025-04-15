@@ -297,7 +297,7 @@ class Options:
 
     shader_bind_management: bool = True
     """If ``True``, this will enable internal management of Uniform Block bindings for
-     :py:class:`~pyglet.graphics.shader.ShaderProgram`'s.
+     :py:class:`~pyglet.graphics.ShaderProgram`'s.
 
     If ``False``, bindings will not be managed by Pyglet. The user will be responsible for either setting the binding
     points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.

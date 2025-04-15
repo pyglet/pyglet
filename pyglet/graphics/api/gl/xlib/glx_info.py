@@ -2,16 +2,14 @@
 
 Usage::
 
-    from pyglet.graphics.api.gl import glx_info
+    from pyglet.graphics.api.core.current_context.info import platform_info
 
-    if glx_info.have_extension('GLX_NV_float_buffer'):
+    if platform_info.have_extension('GLX_NV_float_buffer'):
         # ...
 
-Or, if using more than one display::
+Or, if using more than one Window::
 
-    from pyglet.graphics.api.gl.glx_info import GLXInfo
-
-    info = GLXInfo(window._display)
+    info = window.context.info.platform_info
     if info.get_server_vendor() == 'ATI':
         # ...
 
@@ -49,9 +47,6 @@ class GLXInfo:
         # if display and not _glx_info.display:
         #     _glx_info.set_display(display)
 
-        self.display = display
-
-    def set_display(self, display: xlib.Display) -> None:
         self.display = display
 
     def check_display(self) -> None:

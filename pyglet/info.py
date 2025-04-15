@@ -60,9 +60,9 @@ def dump_pyglet():
 
 def dump_window():
     """Dump display, window, screen and default config info."""
-    from pyglet.graphics.api import global_backend
-    if not global_backend.have_version(3):
-        print(f"Insufficient OpenGL version: {global_backend.get_info().get_version_string()}")
+    from pyglet.graphics.api import core
+    if not core.have_version(3) or not core.have_version(2):
+        print(f"Insufficient OpenGL version: {core.get_info().get_version_string()}")
         return
     import pyglet.window
     display = pyglet.display.get_display()
@@ -96,7 +96,7 @@ def dump_gl(context=None):
 def dump_glx():
     """Dump GLX info."""
     try:
-        from pyglet.graphics.api.gl import glx_info
+        from pyglet.graphics.api.gl.xlib import glx_info
     except:
         print('GLX not available.')
         return
@@ -188,7 +188,7 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.backend.gl.glx_info', dump_glx)
+    _try_dump('pyglet.graphics.api.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)
     _try_dump('pyglet.media.drivers.openal', dump_al)

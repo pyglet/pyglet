@@ -41,7 +41,7 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.shader import Attribute
 
 
@@ -60,7 +60,7 @@ class BufferObject(AbstractBuffer):
     id: int
     usage: int
     target: int
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
 
     def __init__(self, size: int, target = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage.
@@ -70,7 +70,7 @@ class BufferObject(AbstractBuffer):
         super().__init__('b', size)
         self.usage = usage
         self.target = target
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
         buffer_id = GLuint()
         glGenBuffers(1, buffer_id)
@@ -315,7 +315,7 @@ class PersistentBufferObject(AbstractBuffer):
         self.attribute_ctype = attribute.c_type
         self.vao = vao
 
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
         buffer_id = GLuint()
         glGenBuffers(1, buffer_id)

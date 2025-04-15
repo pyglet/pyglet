@@ -29,7 +29,7 @@ label = pyglet.text.Label('Press space to add a ball, backspace to remove',
 
 
 class Ball(pyglet.sprite.Sprite):
-    ball_image = pyglet.resource.image(BALL_IMAGE)
+    ball_image = pyglet.resource.texture(BALL_IMAGE)
     width = ball_image.width
     height = ball_image.height
 

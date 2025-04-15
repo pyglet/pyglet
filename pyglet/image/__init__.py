@@ -110,7 +110,7 @@ from pyglet.image.codecs import add_default_codecs as _add_default_codecs
 from pyglet.image.codecs import registry as _codec_registry
 
 
-def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> _AbstractImage:
+def load(filename: str, file: BinaryIO | None = None, decoder: ImageDecoder | None = None) -> ImageData:
     """Load an image from a file on disk, or from an open file-like object.
 
     Args:

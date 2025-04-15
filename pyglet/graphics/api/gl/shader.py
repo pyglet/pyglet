@@ -64,9 +64,9 @@ if TYPE_CHECKING:
 
     from _weakref import CallableProxyType
     from pyglet.customtypes import CTypesPointer, DataTypes
-    from pyglet.graphics.api.gl.base import OpenGLWindowContext
+    from pyglet.graphics.api.gl.base import OpenGLSurfaceContext
     from pyglet.graphics import Batch, Group
-    from pyglet.graphics.shader import CTypesDataType
+
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
@@ -665,8 +665,8 @@ class UniformBlock:
                   as the previous buffers are still bound to the old binding point.
         """
         assert binding != 0, "Binding 0 is reserved for the internal Pyglet 'WindowBlock'."
-        assert pyglet.graphics.api.global_backend.current_context is not None, "No context available."
-        manager: _UBOBindingManager = pyglet.graphics.api.global_backend.current_context.ubo_manager
+        assert pyglet.graphics.api.core.current_context is not None, "No context available."
+        manager: _UBOBindingManager = pyglet.graphics.api.core.current_context.ubo_manager
         if binding >= manager.max_value:
             msg = f"Binding value exceeds maximum allowed by hardware: {manager.max_value}"
             raise ShaderException(msg)
@@ -994,10 +994,10 @@ def _introspect_uniform_blocks(program: ShaderProgram | ComputeShaderProgram) ->
 
         uniforms: dict[int, tuple[str, GLDataType, int, int]] = {}
 
-        if not hasattr(pyglet.graphics.api.global_backend.current_context, "ubo_manager"):
-            pyglet.graphics.api.global_backend.current_context.ubo_manager = _UBOBindingManager()
+        if not hasattr(pyglet.graphics.api.core.current_context, "ubo_manager"):
+            pyglet.graphics.api.core.current_context.ubo_manager = _UBOBindingManager()
 
-        manager = pyglet.graphics.api.global_backend.current_context.ubo_manager
+        manager = pyglet.graphics.api.core.current_context.ubo_manager
 
         for block_uniform_index in indices:
             uniform_name, u_type, u_size = _query_uniform(program_id, block_uniform_index)
@@ -1065,7 +1065,7 @@ class GLShaderSource(ShaderSource):
 
         self._version = self._find_glsl_version()
 
-        if pyglet.graphics.api.global_backend.current_context.get_info().get_opengl_api() == "gles":
+        if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
             self._lines[0] = "#version 310 es"
             self._lines.insert(1, "precision mediump float;")
 
@@ -1105,7 +1105,7 @@ class Shader(ShaderBase):
     Shader objects are compiled on instantiation.
     You can reuse a Shader object in multiple ShaderPrograms.
     """
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
     _id: int | None
     type: ShaderType
 
@@ -1127,7 +1127,7 @@ class Shader(ShaderBase):
                 * ``'tessevaluation'``
         """
         super().__init__(source_string, shader_type)
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._id = None
         self.type = shader_type
 
@@ -1214,7 +1214,7 @@ class Shader(ShaderBase):
 class ShaderProgram(ShaderProgramBase):
     """OpenGL shader program."""
     _id: int | None
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, UniformBlock]
 
@@ -1224,7 +1224,7 @@ class ShaderProgram(ShaderProgramBase):
         """Initialize the ShaderProgram using at least two Shader instances."""
         super().__init__(*shaders)
         self._id = _link_program(*shaders)
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
         if _debug_api_shaders:
             print(_get_program_log(self._id))
@@ -1444,7 +1444,7 @@ class ShaderProgram(ShaderProgramBase):
 
 class ComputeShaderProgram:
     """OpenGL Compute Shader Program."""
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
     _id: int | None
     _shader: Shader
     _uniforms: dict[str, Any]
@@ -1466,7 +1466,7 @@ class ComputeShaderProgram:
             raise ShaderException(msg)
 
         self._shader = Shader(source, 'compute')
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._id = _link_program(self._shader)
 
         if _debug_api_shaders:

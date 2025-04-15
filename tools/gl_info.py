@@ -63,7 +63,7 @@ if "xlib" in globals() and isinstance(context, xlib.BaseXlibContext):
         print('GLX extensions:')
         exts = glx_info.get_extensions()
         print(' ', '\n  '.join(textwrap.wrap(' '.join(exts))))
-elif "win32" in globals() and isinstance(context, pyglet.backend.gl.win32.context.Win32Context):
+elif "win32" in globals() and isinstance(context, pyglet.graphics.api.gl.win32.context.Win32Context):
     from pyglet.graphics.api.gl import wgl_info
 
     if wgl_info.have_extension('WGL_EXT_extensions_string'):
