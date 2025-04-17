@@ -1,44 +1,45 @@
 """An example sprite previewer using Qt and pyglet together.
 
 It allows you to edit the fragment and vertex shaders, then compile them
-to get a live view. Errors and success will be printed to the console.
-A brief feature overview is located after the license notes below.
-
+to get a live view. Errors and success will be printed to the console. Users
+running GNOME on Linux may need the --use-qt-file-dialog flag to prevent invisible
+window issues. A brief feature overview is located after the license notes below.
 
 Important license notes:
 
 1. Libraries can use licenses which impose requirements beyond those of
    pyglet's BSD-style style license.
-2. This example defaults to using PySide2 by default, but can also use
-   PyQt5 due to their nearly-identical APIs.
-3. PySide2 uses the LGPL license while PyQt5 uses a GPL / commercial
+2. This example defaults to using PySide6 by default, but can also use
+   PyQt6 due to their nearly-identical APIs.
+3. PySide6 uses the LGPL license while PyQt6 uses a GPL / commercial
    dual-license approach.
 
 To the best knowledge of the contributors, this example and derivatives
 are only obligated to meet the restrictions of the LGPL because it does
-not use any PyQt5-specific features. Please see the following for more
+not use any PyQt6-specific features. Please see the following for more
 information:
 
 * The licenses and documentation for the libraries you plan to use
-* https://www.pythonguis.com/faq/pyqt5-vs-pyside2/
+* This guide for prior versions of PySide and PyQt:
+  thttps://www.pythonguis.com/faq/pyqt5-vs-pyside2/
 
-If you need additional certainty, please consult a legal professional.
+For additional certainty, please consult a legal professional.
 
 
 Example features:
 
 You can choose the current Qt binding in two ways:
 
-1. Add PySide2 or PyQt5 as the first argument after the launch command
+1. Add PySide6 or PyQt6 as the first argument after the launch command
    when running the script in the terminal
-2. Set the PYGLET_QT_BACKEND environment variable to either PySide2 or
-   PyQt5.
+2. Set the PYGLET_QT_BACKEND environment variable to either PySide6 or
+   PyQt6.
 
 The priority order is:
 
 1. positional argument
 2. environment variable
-3. default to PySide2
+3. default to PySide6
 
 To load images, choose File -> Open Image.
 
@@ -65,17 +66,17 @@ from typing import TYPE_CHECKING, Final, Mapping
 # Constants for choosing a Qt backend and summarizing their licensing
 ENV_VARIABLE: Final[str] = 'PYGLET_QT_BACKEND'
 
-PYSIDE2: Final[str] = 'PySide2'
-PYQT5: Final[str] = 'PyQt5'
+PYSIDE6: Final[str] = 'PySide6'
+PYQT6: Final[str] = 'PyQt6'
 
 valid_backends: Final[dict[str, str]] = {
-    PYSIDE2: "LGPL; may allow releasing under non-GPL licenses",
-    PYQT5: "Dual GPL / Commercial license; requires GPL or a fee",
+    PYSIDE6: "LGPL; may allow releasing under non-GPL licenses",
+    PYQT6: "Dual GPL / Commercial license; requires GPL or a fee",
 }
 
-# Default to PySide2 as part of allowing non-GPL licenses
+# Default to PySide6 as part of allowing non-GPL licenses
 # This is necessary but not sufficient to allow this.
-DEFAULT: Final[str] = PYSIDE2
+DEFAULT: Final[str] = PYSIDE6
 
 
 # Argument parser for run-time config as __main__
@@ -83,8 +84,8 @@ parser = argparse.ArgumentParser(
     description=dedent("""\
     A sprite & shader previewer using Qt and pyglet together.
 
-    It defaults to PySide2, but can run on PyQt5. The details of how may
-    be helpful to users who want to avoid spreading PyQt5's GPL license
+    It defaults to PySide6, but can run on PyQt6. The details of how may
+    be helpful to users who want to avoid spreading PyQt6's GPL license
     while using it as a fallback. See the docstrings and comments in the
     source to learn more.
     """),
@@ -138,19 +139,21 @@ print(f"Selected {backend} as the Qt binding from the {reason}'s value.")
 # Perform UI imports according to the detected configuration
 import pyglet
 
-# Use PySide2 for type checking, static analysis, tests, and linting
-# to help avoid infection by PyQt5's GPL license since tools will mark
-# uses of PyQt5-specific features as missing. For example, pyright is
+# Use PySide6 for type checking, static analysis, tests, and linting
+# to help avoid infection by PyQt6's GPL license since tools will mark
+# uses of PyQt6-specific features as missing. For example, pyright is
 # one of the strict type checking and linting tools which can help.
-if TYPE_CHECKING or backend == PYSIDE2:
-    from PySide2 import QtCore, QtWidgets
-    from PySide2.QtGui import QWheelEvent
-    from PySide2.QtWidgets import QFileDialog, QOpenGLWidget
+if TYPE_CHECKING or backend == PYSIDE6:
+    from PySide6 import QtCore, QtWidgets, QtGui
+    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtWidgets import QFileDialog
+    from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
-elif backend == PYQT5:
-    from PyQt5 import QtCore, QtWidgets
-    from PyQt5.QtGui import QWheelEvent
-    from PyQt5.QtWidgets import QFileDialog, QOpenGLWidget
+elif backend == PYQT6:
+    from PyQt6 import QtCore, QtWidgets, QtGui
+    from PyQt6.QtGui import QWheelEvent
+    from PyQt6.QtWidgets import QFileDialog
+    from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 
 else:  # Handle import edge cases
     raise ValueError(
@@ -348,7 +351,7 @@ class Ui_MainWindow:
         self.sprite = None
         self.program = None
 
-    def get_file_dialog_options(self) -> QFileDialog.Options:
+    def get_file_dialog_options(self) -> QFileDialog.Option:
         """Convert instance attributes to a file dialog options object.
 
         At the moment, it supports choosing which dialog to use. This is
@@ -358,9 +361,9 @@ class Ui_MainWindow:
         You may want to expand on this in your own application with
         additional options.
         """
-        options = QFileDialog.Options()
+        options = QFileDialog.Option()
         if not self.use_native_file_dialog:
-            options |= QFileDialog.DontUseNativeDialog
+            options |= QFileDialog.Option.DontUseNativeDialog
 
         return options
 
@@ -383,7 +386,10 @@ class Ui_MainWindow:
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.label.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignLeading
+            | QtCore.Qt.AlignmentFlag.AlignLeft
+            | QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.label.setObjectName("label")
         self.verticalLayout.addWidget(self.label)
         self.vertex_source_edit = QtWidgets.QTextEdit(self.centralwidget)
@@ -428,23 +434,23 @@ class Ui_MainWindow:
         MainWindow.setStatusBar(self.statusbar)
 
         # Add menu bar menus, entries, and hotkeys
-        self.actionOpen_Image = QtWidgets.QAction(MainWindow)
+        self.actionOpen_Image = QtGui.QAction(MainWindow)
         self.actionOpen_Image.setObjectName("actionOpen_Image")
         self.actionOpen_Image.triggered.connect(self.loadImages)
         self.actionOpen_Image.setShortcut("Ctrl+I")
 
-        self.actionOpen_Shader = QtWidgets.QAction(MainWindow)
+        self.actionOpen_Shader = QtGui.QAction(MainWindow)
         self.actionOpen_Shader.setObjectName("actionOpen_Shader")
         self.actionOpen_Shader.triggered.connect(self.loadShaders)
         self.actionOpen_Shader.setShortcut("Ctrl+O")
 
-        self.actionSave_Shader = QtWidgets.QAction(MainWindow)
+        self.actionSave_Shader = QtGui.QAction(MainWindow)
         self.actionSave_Shader.setObjectName("actionSave_Shader")
         self.actionSave_Shader.triggered.connect(self.saveShaders)
         self.actionSave_Shader.setStatusTip('Saves both Shader Files')
         self.actionSave_Shader.setShortcut("Ctrl+S")
 
-        self.actionExit = QtWidgets.QAction(MainWindow)
+        self.actionExit = QtGui.QAction(MainWindow)
         self.actionExit.triggered.connect(self.closeProgram)
         self.actionExit.setObjectName("actionExit")
         self.menuFile.addAction(self.actionOpen_Image)
@@ -457,7 +463,7 @@ class Ui_MainWindow:
 
         self.imageMenu = QtWidgets.QMenu(self.menubar)
         self.imageMenu.setObjectName("imageMenu")
-        self.noImageAction = QtWidgets.QAction(MainWindow)
+        self.noImageAction = QtGui.QAction(MainWindow)
         self.noImageAction.setDisabled(True)
         self.imageMenu.addAction(self.noImageAction)
 
@@ -518,7 +524,7 @@ class Ui_MainWindow:
             if not self.images:
                 self.imageMenu.removeAction(self.noImageAction)
 
-            action = QtWidgets.QAction(self._window)
+            action = QtGui.QAction(self._window)
             shader_name = f"sprite_texture{len(self.images)}"
             action.setText(f"{os.path.basename(fileName)} ({shader_name})")
             action.fileName = fileName
@@ -565,7 +571,7 @@ class Ui_MainWindow:
             vert_filename.write_text(self.vertex_source_edit.toPlainText())
             frag_filename.write_text(self.fragSourceEdit.toPlainText())
 
-    def removeImage(self, actionWidget: QtWidgets.QAction) -> None:
+    def removeImage(self, actionWidget: QtGui.QAction) -> None:
         if self.imageMenu:
             self.imageMenu.removeAction(actionWidget)
 
@@ -775,4 +781,4 @@ if __name__ == "__main__":
     sys.excepthook = excepthook
 
     # Start the application and return its exit code
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
