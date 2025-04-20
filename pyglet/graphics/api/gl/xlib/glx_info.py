@@ -34,7 +34,7 @@ from pyglet.graphics.api.gl.xlib.glx import (
 from pyglet.util import asstr
 
 if TYPE_CHECKING:
-    from pyglet.libs.x11 import xlib
+    from pyglet.libs.linux.x11 import xlib
 
 
 class GLXInfoException(Exception):  # noqa: N818

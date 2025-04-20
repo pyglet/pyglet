@@ -18,7 +18,8 @@ _have_cocoa = _have_win32 = _have_xlib = False
 
 if pyglet.compat_platform.startswith('linux'):
     _have_xlib = True
-    from pyglet.window.xlib import XlibEventHandler, xlib
+    from pyglet.window.xlib import XlibEventHandler
+    from pyglet.libs.linux.x11 import xlib
 
 elif pyglet.compat_platform == 'darwin':
     _have_cocoa = True

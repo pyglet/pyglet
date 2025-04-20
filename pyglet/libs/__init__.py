@@ -13,7 +13,7 @@ When documenting these modules:
 
 Simple docstrings with minimal formatting are best because:
 
-1. No web doc is built for pyglet.lib
+1. No web doc is built for pyglet.libs
 2. The docstrings will be used to debug complex platform issues
 3. IDEs mangle formatting in any hover tooltips while debugging
 """

@@ -53,7 +53,7 @@ else:
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:
-        from pyglet.app.xlib import XlibEventLoop as PlatformEventLoop
+        from pyglet.app.linux import LinuxEventLoop as PlatformEventLoop
 
 
 class AppException(Exception):

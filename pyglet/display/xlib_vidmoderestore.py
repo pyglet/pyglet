@@ -16,11 +16,11 @@ import signal
 import struct
 import threading
 
-from pyglet.libs.x11 import xlib
+from pyglet.libs.linux.x11 import xlib
 from pyglet.util import asbytes
 
 try:
-    from pyglet.libs.x11 import xf86vmode
+    from pyglet.libs.linux.x11 import xf86vmode
 except:
     # No xf86vmode... should not be switching modes.
     pass

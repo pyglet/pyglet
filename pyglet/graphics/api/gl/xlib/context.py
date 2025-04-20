@@ -12,7 +12,7 @@ from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLBackend
     from pyglet.window.xlib import XlibWindow
-    from pyglet.libs.x11.xlib import Display
+    from pyglet.libs.linux.x11 import Display
 
 
 class XlibOpenGLConfig(OpenGLConfig):

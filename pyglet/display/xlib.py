@@ -4,7 +4,7 @@ import ctypes
 from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 
 from pyglet import app
-from pyglet.app.xlib import XlibSelectDevice
+from pyglet.app.linux import LinuxSelectDevice
 from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
@@ -17,24 +17,24 @@ class NoSuchDisplayException(Exception):
     pass
 
 
-from pyglet.libs.x11 import xlib
+from pyglet.libs.linux.x11 import xlib
 
 try:
-    from pyglet.libs.x11 import xinerama
+    from pyglet.libs.linux.x11 import xinerama
 
     _have_xinerama = True
 except:
     _have_xinerama = False
 
 try:
-    from pyglet.libs.x11 import xsync
+    from pyglet.libs.linux.x11 import xsync
 
     _have_xsync = True
 except:
     _have_xsync = False
 
 try:
-    from pyglet.libs.x11 import xf86vmode
+    from pyglet.libs.linux.x11 import xf86vmode
 
     _have_xf86vmode = True
 except:
@@ -71,7 +71,7 @@ _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
 
-class XlibDisplay(XlibSelectDevice, Display):
+class XlibDisplay(LinuxSelectDevice, Display):
     _display = None  # POINTER(xlib.Display)
 
     _x_im = None  # X input method
@@ -147,7 +147,7 @@ class XlibDisplay(XlibSelectDevice, Display):
             self._screens = [screen]
         return self._screens
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self):
         return self._fileno
@@ -191,7 +191,7 @@ class XlibScreen(Screen):
                 rs_type = c_char_p()
                 value = xlib.XrmValue()
                 if xlib.XrmGetResource(db, asbytes("Xft.dpi"), asbytes("Xft.dpi"),
-                                            byref(rs_type), byref(value)):
+                                       byref(rs_type), byref(value)):
                     if value.addr and rs_type.value == b'String':
                         dpi = int(value.addr)
 

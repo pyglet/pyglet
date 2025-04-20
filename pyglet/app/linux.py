@@ -6,7 +6,7 @@ from pyglet import app
 from pyglet.app.base import PlatformEventLoop
 
 
-class XlibSelectDevice:
+class LinuxSelectDevice:
     def fileno(self):
         """Get the file handle for ``select()`` for this device.
 
@@ -31,7 +31,7 @@ class XlibSelectDevice:
         return False
 
 
-class NotificationDevice(XlibSelectDevice):
+class NotificationDevice(LinuxSelectDevice):
     def __init__(self):
         self._sync_file_read, self._sync_file_write = os.pipe()
         self._event = threading.Event()
@@ -52,7 +52,7 @@ class NotificationDevice(XlibSelectDevice):
         return self._event.is_set()
 
 
-class XlibEventLoop(PlatformEventLoop):
+class LinuxEventLoop(PlatformEventLoop):
     def __init__(self):
         super().__init__()
         self._notification_device = NotificationDevice()
