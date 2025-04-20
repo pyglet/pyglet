@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from _ctypes import _Pointer
 
 try:
-    from pyglet.libs.x11 import xsync
+    from pyglet.libs.linux.x11 import xsync
 
     _have_xsync = True
 except ImportError:
