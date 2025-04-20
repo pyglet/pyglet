@@ -16,7 +16,7 @@ import pyglet
 
 from .evdev_constants import *
 from pyglet.app.xlib import XlibSelectDevice
-from pyglet.libs.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
+from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
 from pyglet.input.controller import get_mapping, Relation, create_guid
