@@ -17,24 +17,24 @@ class NoSuchDisplayException(Exception):
     pass
 
 
-from pyglet.libs.x11 import xlib
+from pyglet.libs.linux.x11 import xlib
 
 try:
-    from pyglet.libs.x11 import xinerama
+    from pyglet.libs.linux.x11 import xinerama
 
     _have_xinerama = True
 except:
     _have_xinerama = False
 
 try:
-    from pyglet.libs.x11 import xsync
+    from pyglet.libs.linux.x11 import xsync
 
     _have_xsync = True
 except:
     _have_xsync = False
 
 try:
-    from pyglet.libs.x11 import xf86vmode
+    from pyglet.libs.linux.x11 import xf86vmode
 
     _have_xf86vmode = True
 except:
@@ -191,7 +191,7 @@ class XlibScreen(Screen):
                 rs_type = c_char_p()
                 value = xlib.XrmValue()
                 if xlib.XrmGetResource(db, asbytes("Xft.dpi"), asbytes("Xft.dpi"),
-                                            byref(rs_type), byref(value)):
+                                       byref(rs_type), byref(value)):
                     if value.addr and rs_type.value == b'String':
                         dpi = int(value.addr)
 
