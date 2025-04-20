@@ -7,6 +7,8 @@ from collections import namedtuple
 
 from .base import Display, Screen, ScreenMode, Canvas
 from ..libs.linux.egl import eglext, egl
+from pyglet.libs.linux.wayland.wayland_egl import struct_wl_egl_window, struct_wl_surface
+from pyglet.libs.linux.wayland.wayland_egl import wl_egl_window_create
 from pyglet.libs.linux.wayland.client import Client
 
 
@@ -29,22 +31,11 @@ class WaylandDisplay(Display):
 
     def __init__(self):
         super().__init__()
-        num_devices = egl.EGLint()
-        eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
-        if num_devices.value > 0:
-            headless_device = pyglet.options['headless_device']
-            if headless_device < 0 or headless_device >= num_devices.value:
-                raise ValueError(f'Invalid EGL device id: {headless_device}')
-            devices = (eglext.EGLDeviceEXT * num_devices.value)()
-            eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection = eglext.eglGetPlatformDisplayEXT(
-                eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
-        else:
-            warnings.warn('No device available for EGL device platform. Using native display type.')
-            display = egl.EGLNativeDisplayType()
-            self._display_connection = egl.eglGetDisplay(display)
 
-        egl.eglInitialize(self._display_connection, None, None)
+        # self.display_connection = egl.eglGetPlatformDisplay(eglext.EGL_PLATFORM_WAYLAND, None, None)
+        self.display_connection = egl.eglGetDisplay(egl.EGLNativeDisplayType())
+
+        assert egl.eglInitialize(self.display_connection, None, None) == egl.EGL_TRUE, "Failed to initialize Display"
 
         # Create temporary Client connection to query Screen information:
         # TODO: use the new fractional scaling Protocol if available.
@@ -103,7 +94,7 @@ class WaylandDisplay(Display):
         return self._screens
 
     def __del__(self):
-        egl.eglTerminate(self._display_connection)
+        egl.eglTerminate(self.display_connection)
 
 
 class WaylandCanvas(Canvas):

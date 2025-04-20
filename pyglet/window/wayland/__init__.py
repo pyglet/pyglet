@@ -4,7 +4,7 @@ import ctypes
 import os
 import mmap
 
-from ctypes import create_string_buffer
+from ctypes import create_string_buffer, c_char
 from typing import Sequence
 
 import pyglet
@@ -17,6 +17,7 @@ from pyglet.event import EventDispatcher
 from pyglet.libs.linux.egl import egl
 from pyglet.libs.linux.wayland import xkbcommon
 from pyglet.libs.linux.wayland.client import Client, Interface
+from pyglet.libs.linux.wayland.wayland_egl import *
 from pyglet.window import (
     BaseWindow,
     _PlatformEventHandler,
@@ -79,8 +80,9 @@ class WaylandWindow(BaseWindow):
 
         self.xkb_context = xkbcommon.xkb_context_new(xkbcommon.enum_xkb_context_flags(xkbcommon.XKB_CONTEXT_NO_FLAGS))
         self.xkb_keymap = None
-        self.xkb_state_withmod = None   # updated with modifiers
-        self.xkb_state_default = None   # not updated with modifiers
+        self.xkb_state_withmod = None   # updated when modifiers are pressed
+        self.xkb_state_default = None   # never gets updated (for reference)
+        self._text_buffer = create_string_buffer(4)
         super().__init__(*args, **kwargs)
 
     def _recreate(self, changes: Sequence[str]) -> None:
@@ -150,20 +152,7 @@ class WaylandWindow(BaseWindow):
         pass
 
     def _create(self) -> None:
-        self._egl_display_connection = self.display._display_connection  # noqa: SLF001
-
-        if not self._egl_surface:
-            pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)
-            pbuffer_attrib_array = (egl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
-            self._egl_surface = egl.eglCreatePbufferSurface(self._egl_display_connection,
-                                                            self.config._egl_config,  # noqa: SLF001
-                                                            pbuffer_attrib_array)
-
-            self.canvas = WaylandCanvas(self.display, self._egl_surface)
-
-            self.context.attach(self.canvas)
-
-            self.dispatch_event('_on_internal_resize', self._width, self._height)
+        self._egl_display_connection = self.display.display_connection  # noqa: SLF001
 
         self._dpi = self._screen.get_dpi()
         self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "stretch" else 1.0
@@ -197,6 +186,7 @@ class WaylandWindow(BaseWindow):
             self.xdg_toplevel.set_handler('configure', self.xdg_toplevel_configure_handler)
             self.xdg_toplevel.set_handler('close', self.xdg_toplevel_close_handler)
             self.xdg_toplevel.set_parent(None)
+            self.xdg_toplevel.set_app_id(self._caption)
 
             self.wl_seat = self.client.protocol_dict['wayland'].bind_interface('wl_seat')
             self.wl_pointer = self.wl_seat.get_pointer(next(self.client.oid_pool))
@@ -214,18 +204,54 @@ class WaylandWindow(BaseWindow):
             self.wl_keyboard.set_handler('enter', self.wl_keyboard_enter_handler)
             self.wl_keyboard.set_handler('leave', self.wl_keyboard_leave_handler)
 
-            # TODO: remove temporary SHM surface:
-            import os, tempfile
-            fd, name = tempfile.mkstemp()
-            _data_size = self._width * self._height * 4  # width x height x rgba
-            os.write(fd, b'\xee\x33\x33\xee' * self._width * self._height)  # BGRA
-
-            wl_shm = self.client.protocol_dict['wayland'].bind_interface('wl_shm')
-            wl_shm_pool = wl_shm.create_pool(next(self.client.oid_pool), fd, _data_size)
-            wl_buffer = wl_shm_pool.create_buffer(next(self.client.oid_pool), 0, self._width, self._height,
-                                                  self._width * 4, 0)
-            self.wl_surface.attach(wl_buffer.oid, 0, 0)
+            # # TODO: remove temporary SHM surface:
+            # import os, tempfile
+            # fd, name = tempfile.mkstemp()
+            # _data_size = self._width * self._height * 4  # width x height x rgba
+            # os.write(fd, b'\xee\x33\x33\xee' * self._width * self._height)  # BGRA
+            #
+            # wl_shm = self.client.protocol_dict['wayland'].bind_interface('wl_shm')
+            # wl_shm_pool = wl_shm.create_pool(next(self.client.oid_pool), fd, _data_size)
+            # wl_buffer = wl_shm_pool.create_buffer(next(self.client.oid_pool), 0, self._width, self._height,
+            #                                       self._width * 4, 0)
+            # self.wl_surface.attach(wl_buffer.oid, 0, 0)
             self.wl_surface.commit()
+
+        if not self._egl_surface:
+            pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)
+            pbuffer_attrib_array = (egl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
+
+            # TODO: figure out how to bind EGL to a Wayland surface
+            #       This code below doesn't work!
+            wl_surface_struct = struct_wl_surface()
+
+            # An EGL window needs to be created from a Wayland surface,
+            egl_window = wl_egl_window_create(wl_surface_struct, self._width, self._height)
+            print("egl_window:", egl_window.contents.value)
+
+
+            # This is then turned into an EGL drawing surface by the EGL call:
+            # self._egl_surface = egl.eglCreateWindowSurface(self._egl_display_connection,
+            #                                                self.config._egl_config,
+            #                                                egl_window.contents.value,
+            #                                                None)
+
+            # self._egl_surface = egl.eglCreatePlatformWindowSurface(dpy, config, gbm_surface, None)
+
+            self._egl_surface = egl.eglCreatePlatformWindowSurface(self._egl_display_connection,
+                                                                   self.config._egl_config,
+                                                                   egl_window.contents.value,
+                                                                   None)
+
+            print("egl_surface:", self._egl_surface)
+
+            # self._egl_surface = egl.eglCreatePbufferSurface(self._egl_display_connection,
+            #                                                 self.config._egl_config,  # noqa: SLF001
+            #                                                 pbuffer_attrib_array)
+
+            self.canvas = WaylandCanvas(self.display, self._egl_surface)
+            self.context.attach(self.canvas)
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
 
     # Start Wayland event handlers
 
@@ -234,11 +260,11 @@ class WaylandWindow(BaseWindow):
         self.xdg_wm_base.pong(serial)
 
     def wl_surface_preferred_buffer_scale_handler(self, factor):
-        # print(f" --> wl_surface scaling: {factor}")
+        print(f" --> wl_surface scaling: {factor}")
         pass
 
     def xdg_toplevel_configure_handler(self, width, height, states):
-        # print(" --> xdg_toplevel configure event", width, height, states)
+        print(" --> xdg_toplevel configure event", width, height, states)
         pass
 
     def xdg_toplevel_close_handler(self):
@@ -327,17 +353,16 @@ class WaylandWindow(BaseWindow):
 
     def wl_keyboard_key_handler(self, serial, time, keycode, state):
         keycode += 8    # xkbcommon expects +8
-        _buffer = create_string_buffer(4)
-        _size = xkbcommon.xkb_state_key_get_utf8(self.xkb_state_withmod, keycode, _buffer, 4)
-        character = bytes(_buffer[:_size]).decode()
         symbol = xkbcommon.xkb_state_key_get_one_sym(self.xkb_state_default, keycode)
-
         modifier = _modifier_map.get(symbol, 0)
 
         # released	0, pressed	1, repeated  2
         state_name = self.wl_keyboard.enums['key_state'][state].name
 
         if state_name == 'pressed':
+            _size = xkbcommon.xkb_state_key_get_utf8(self.xkb_state_withmod, keycode, self._text_buffer, 4)
+            character = self._text_buffer[:_size].decode()
+
             self.dispatch_event('on_text', character)
             self.dispatch_event('on_key_press', symbol, self._key_modifiers)
             self._key_modifiers |= modifier

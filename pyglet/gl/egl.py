@@ -10,7 +10,7 @@ from ..libs.linux.egl import egl
 from .base import DisplayConfig, Config, Context
 
 _fake_gl_attributes = {
-    'double_buffer': 0,
+    'double_buffer': True,
     'stereo': 0,
     'aux_buffers': 0,
     'accum_red_size': 0,
@@ -26,17 +26,27 @@ class EGLConfig(Config):  # noqa: D101
             msg = 'Canvas must be an instance of HeadlessCanvas or WaylandCanvas'
             raise RuntimeError(msg)
 
-        display_connection = canvas.display._display_connection  # noqa: SLF001
+        display_connection = canvas.display.display_connection  # noqa: SLF001
 
         # Construct array of attributes
         attrs = []
         for name, value in self.get_gl_attributes():
-            if name == 'double_buffer':
-                continue
+            # if name == 'double_buffer':
+            #     continue
             attr = EGLDisplayConfig.attribute_ids.get(name, None)
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
-        attrs.extend([egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT])
+
+        if isinstance(canvas, HeadlessCanvas):
+            attrs.extend([egl.EGL_SURFACE_TYPE, egl.EGL_PBUFFER_BIT])
+        else:
+            attrs.extend([egl.EGL_SURFACE_TYPE, egl.EGL_WINDOW_BIT])
+            attrs.extend([egl.EGL_RED_SIZE, 8])
+            attrs.extend([egl.EGL_GREEN_SIZE, 8])
+            attrs.extend([egl.EGL_BLUE_SIZE, 8])
+            attrs.extend([egl.EGL_ALPHA_SIZE, 8])
+            attrs.extend([egl.EGL_DEPTH_SIZE, 8])
+
         if self.opengl_api == "gl":
             attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
         elif self.opengl_api == "gles":
@@ -44,14 +54,14 @@ class EGLConfig(Config):  # noqa: D101
         else:
             msg = f"Unknown OpenGL API: {self.opengl_api}"
             raise ValueError(msg)
+
         attrs.extend([egl.EGL_NONE])
         attrs_list = (egl.EGLint * len(attrs))(*attrs)
 
         num_config = egl.EGLint()
         egl.eglChooseConfig(display_connection, attrs_list, None, 0, byref(num_config))
         configs = (egl.EGLConfig * num_config.value)()
-        egl.eglChooseConfig(display_connection, attrs_list, configs,
-                            num_config.value, byref(num_config))
+        egl.eglChooseConfig(display_connection, attrs_list, configs, num_config.value, byref(num_config))
 
         return [EGLDisplayConfig(canvas, c, self) for c in configs]
 
@@ -76,8 +86,8 @@ class EGLDisplayConfig(DisplayConfig):  # noqa: D101
     def __init__(self, canvas: HeadlessCanvas | WaylandCanvas, egl_config: egl.EGLConfig, config: EGLConfig) -> None:  # noqa: D107
         super().__init__(canvas, config)
         self._egl_config = egl_config
-        context_attribs = (egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
-                           egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0,
+        context_attribs = (egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 3,
+                           egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 1,
                            egl.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, config.forward_compatible or 0,
                            egl.EGL_CONTEXT_OPENGL_DEBUG, config.debug or 0,
                            egl.EGL_NONE)
@@ -85,8 +95,9 @@ class EGLDisplayConfig(DisplayConfig):  # noqa: D101
 
         for name, attr in self.attribute_ids.items():
             value = egl.EGLint()
-            egl.eglGetConfigAttrib(canvas.display._display_connection, egl_config, attr, byref(value))  # noqa: SLF001
-            setattr(self, name, value.value)
+            result = egl.eglGetConfigAttrib(canvas.display.display_connection, egl_config, attr, byref(value))  # noqa: SLF001
+            if result == egl.EGL_TRUE:
+                setattr(self, name, value.value)
 
         for name, value in _fake_gl_attributes.items():
             setattr(self, name, value)
@@ -105,7 +116,7 @@ class EGLContext(Context):  # noqa: D101
     def __init__(self, config: EGLDisplayConfig, share: EGLContext | None) -> None:  # noqa: D107
         super().__init__(config, share)
 
-        self.display_connection = config.canvas.display._display_connection  # noqa: SLF001
+        self.display_connection = config.canvas.display.display_connection  # noqa: SLF001
 
         self.egl_context = self._create_egl_context(share)
         if not self.egl_context:
@@ -122,7 +133,7 @@ class EGLContext(Context):  # noqa: D101
             egl.eglBindAPI(egl.EGL_OPENGL_API)
         elif self.config.opengl_api == "gles":
             egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
-        return egl.eglCreateContext(self.config.canvas.display._display_connection,  # noqa: SLF001
+        return egl.eglCreateContext(self.config.canvas.display.display_connection,  # noqa: SLF001
                                     self.config._egl_config, share_context,  # noqa: SLF001
                                     self.config._context_attrib_array)  # noqa: SLF001
 

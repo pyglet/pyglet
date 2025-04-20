@@ -96,7 +96,7 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def _create(self) -> None:
-        self._egl_display_connection = self.display._display_connection  # noqa: SLF001
+        self._egl_display_connection = self.display.display_connection  # noqa: SLF001
 
         if not self._egl_surface:
             pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)

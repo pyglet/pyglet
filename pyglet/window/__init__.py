@@ -1877,11 +1877,12 @@ __all__ = (
     "DefaultMouseCursor",
     "ImageMouseCursor",
     "FPSDisplay",
+    "_PlatformEventHandler",
+    "_ViewEventHandler",
     # errors
     "WindowException",
     "NoSuchScreenModeException",
     "NoSuchDisplayException",
     "NoSuchConfigException",
     "MouseCursorException",
-
 )

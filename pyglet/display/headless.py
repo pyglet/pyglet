@@ -23,20 +23,20 @@ class HeadlessDisplay(Display):
                 raise ValueError(f'Invalid EGL devide id: {headless_device}')
             devices = (eglext.EGLDeviceEXT * num_devices.value)()
             eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection = eglext.eglGetPlatformDisplayEXT(
+            self.display_connection = eglext.eglGetPlatformDisplayEXT(
                 eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
         else:
             warnings.warn('No device available for EGL device platform. Using native display type.')
             display = egl.EGLNativeDisplayType()
-            self._display_connection = egl.eglGetDisplay(display)
+            self.display_connection = egl.eglGetDisplay(display)
 
-        egl.eglInitialize(self._display_connection, None, None)
+        egl.eglInitialize(self.display_connection, None, None)
 
     def get_screens(self):
         return self._screens
 
     def __del__(self):
-        egl.eglTerminate(self._display_connection)
+        egl.eglTerminate(self.display_connection)
 
 
 class HeadlessCanvas(Canvas):
