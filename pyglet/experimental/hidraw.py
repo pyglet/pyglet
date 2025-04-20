@@ -11,7 +11,7 @@ from ctypes import create_string_buffer
 
 import pyglet
 
-from pyglet.app.xlib import XlibSelectDevice
+from pyglet.app.linux import LinuxSelectDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOWR_len
 from pyglet.input.base import Device
 from pyglet.input.base import DeviceOpenException
@@ -74,7 +74,7 @@ def get_set_bits(bytestring):
     return bits
 
 
-class HIDRawDevice(XlibSelectDevice, Device):
+class HIDRawDevice(LinuxSelectDevice, Device):
     _fileno = None
 
     def __init__(self, display, filename):
@@ -141,7 +141,7 @@ class HIDRawDevice(XlibSelectDevice, Device):
     # def ff_upload_effect(self, structure):
     #     os.write(self._fileno, structure)
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self):
         return self._fileno

@@ -15,7 +15,7 @@ from ctypes import c_int64 as _s64
 import pyglet
 
 from .evdev_constants import *
-from pyglet.app.xlib import XlibSelectDevice
+from pyglet.app.linux import LinuxSelectDevice
 from pyglet.libs.linux.ioctl import _IOR, _IOR_str, _IOR_len, _IOW
 from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from pyglet.input.base import DeviceOpenException, ControllerManager
@@ -247,7 +247,7 @@ event_types = {
 }
 
 
-class EvdevDevice(XlibSelectDevice, Device):
+class EvdevDevice(LinuxSelectDevice, Device):
     _fileno = None
 
     def __init__(self, display, filename):
@@ -345,7 +345,7 @@ class EvdevDevice(XlibSelectDevice, Device):
     def ff_upload_effect(self, structure):
         os.write(self._fileno, structure)
 
-    # XlibSelectDevice interface
+    # LinuxSelectDevice interface
 
     def fileno(self):
         return self._fileno
@@ -424,7 +424,7 @@ class FFController(Controller):
         self.device.ff_upload_effect(self._stop_strong_event)
 
 
-class EvdevControllerManager(ControllerManager, XlibSelectDevice):
+class EvdevControllerManager(ControllerManager, LinuxSelectDevice):
 
     def __init__(self, display=None):
         super().__init__()
