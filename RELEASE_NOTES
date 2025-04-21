@@ -1,3 +1,24 @@
+pyglet 2.1.4
+
+Changes
+-------
+- docs: Add shape guide crossrefs (#1291)
+- Updated the opengl torus example to work with the material updates in 3.1 (#1281)
+- Add homebrew lib search location for Apple Silicon.
+- Bump Qt example to use PySide6 and PyQt6 (#1305)
+
+Bugfixes
+--------
+- shapes.earcut: Fix int casting bug for large polygons (#1282)
+- Linux: Use dotclock instead of rate in xlib vidmoderestore (#1285)
+- tests: Fix many interactive tests, and other test fixes
+- app: Fix run(None) crashing on macOS
+- docs: Correct the docstring for the start_angle of an arc to indicate it is in degrees and not radians (#1290)
+- controller: Fix dpad bias for controller.min > 0 (#1296)
+- controller: Only use 0x1 desktop page axis for controller indexing on macOS (#1297)
+- gui: Fix the position range of the slider knob when repositioning the slider (#1299)
+
+
 pyglet 2.1.3
 
 Changes
