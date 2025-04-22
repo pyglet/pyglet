@@ -5,8 +5,8 @@ from ctypes import POINTER, byref, c_int, c_uint, cast
 from typing import TYPE_CHECKING, NoReturn
 
 from pyglet.graphics.api import gl
-from pyglet.graphics.api.gl import lib
-from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
+from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
 from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
 
 if TYPE_CHECKING:

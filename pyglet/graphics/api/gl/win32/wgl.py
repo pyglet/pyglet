@@ -7,6 +7,7 @@ from ctypes import CFUNCTYPE, POINTER, Structure, c_int
 from ctypes.wintypes import DWORD, BOOL, FLOAT, LONG, UINT, HDC, WORD, HANDLE, LPCSTR
 
 from pyglet.graphics.api.gl.lib import link_WGL as _link_function
+from pyglet.graphics.api.gl.win32.wglext_arb import WGLFunctions_ARB
 from pyglet.libs.win32.types import BYTE
 
 if not _link_function:
@@ -33,7 +34,6 @@ wglMakeCurrent = _link_function('wglMakeCurrent', BOOL, [HDC, HGLRC], None)
 wglShareLists = _link_function('wglShareLists', BOOL, [HGLRC, HGLRC], None)
 wglUseFontBitmapsA = _link_function('wglUseFontBitmapsA', BOOL, [HDC, DWORD, DWORD, DWORD], None)
 wglUseFontBitmapsW = _link_function('wglUseFontBitmapsW', BOOL, [HDC, DWORD, DWORD, DWORD], None)
-SwapBuffers = _link_function('SwapBuffers', BOOL, [HDC], None)
 
 
 class struct__POINTFLOAT(Structure):
@@ -78,6 +78,12 @@ WGL_FONT_POLYGONS = 1
 
 wglUseFontOutlinesA = _link_function('wglUseFontOutlinesA', BOOL, [HDC, DWORD, DWORD, DWORD, FLOAT, FLOAT, c_int, LPGLYPHMETRICSFLOAT], None)
 wglUseFontOutlinesW = _link_function('wglUseFontOutlinesW', BOOL, [HDC, DWORD, DWORD, DWORD, FLOAT, FLOAT, c_int, LPGLYPHMETRICSFLOAT], None)
+
+
+
+class WGLFunctions(WGLFunctions_ARB):
+    def __init__(self):
+        super().__init__()
 
 
 class struct_tagLAYERPLANEDESCRIPTOR(Structure):
@@ -298,7 +304,6 @@ __all__ = [
     'WGL_SWAP_UNDERLAY13',
     'WGL_SWAP_UNDERLAY14',
     'WGL_SWAP_UNDERLAY15',
-    'SwapBuffers',
     'wglCopyContext',
     'wglCreateContext',
     'wglCreateLayerContext',

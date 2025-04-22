@@ -25,6 +25,7 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
+import pyglet
 from _ctypes import Array
 
 from pyglet.customtypes import CType
@@ -42,12 +43,7 @@ from pyglet.graphics.api.gl import (
     GLintptr,
     GLsizei,
     GLvoid,
-    glDrawArrays,
-    glDrawArraysInstanced,
-    glDrawElements,
-    glDrawElementsInstanced,
-    glMultiDrawArrays,
-    glMultiDrawElements, vertexarray,
+    vertexarray,
 )
 from pyglet.graphics.api.gl.buffer import AttributeBufferObject, IndexedBufferObject
 from pyglet.graphics.api.gl.enums import geometry_map
@@ -290,6 +286,7 @@ class VertexDomain:
     _vertex_class: type[VertexList] = VertexList
 
     def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
+        self._context = pyglet.graphics.api.core.current_context
         self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
         self.vao = vertexarray.VertexArray()
@@ -631,7 +628,7 @@ class IndexedVertexDomain(VertexDomain):
             pass
         elif primcount == 1:
             # Common case
-            glDrawElements(mode, sizes[0], self.index_gl_type,
+            self._context.glDrawElements(mode, sizes[0], self.index_gl_type,
                            starts[0] * self.index_element_size)
         else:
             starts = [s * self.index_element_size for s in starts]

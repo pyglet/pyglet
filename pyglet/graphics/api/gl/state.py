@@ -2,9 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Generator, TYPE_CHECKING
 
+import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
-from pyglet.graphics.api.gl import glBindTexture, glActiveTexture, GL_TEXTURE0, glBlendFunc, glEnable, GL_BLEND, \
-    glDisable, glScissor, glViewport, GL_SCISSOR_TEST, GL_DEPTH_TEST, glDepthFunc
+from pyglet.graphics.api.gl import GL_TEXTURE0, GL_BLEND, GL_SCISSOR_TEST, GL_DEPTH_TEST
 from pyglet.graphics.api.gl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.state import State
 
@@ -20,7 +20,8 @@ class ActiveTextureState(State):
     sets_state: bool = True
 
     def set_state(self):
-        glActiveTexture(GL_TEXTURE0 + self.binding)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glActiveTexture(GL_TEXTURE0 + self.binding)
 
     # Technically not needed since this is a dependent state and will always be called with its parents.
     # def unset_state(self):
@@ -37,7 +38,8 @@ class TextureState(State):  # noqa: D101
     sets_state: bool = True
 
     def set_state(self) -> None:
-        glBindTexture(self.texture.target, self.texture.id)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glBindTexture(self.texture.target, self.texture.id)
 
     def generate_dependent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
@@ -74,10 +76,12 @@ class ScissorStateEnable(State):
     unsets_state: bool = True
 
     def set_state(self) -> None:
-        glEnable(GL_SCISSOR_TEST)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glEnable(GL_SCISSOR_TEST)
 
     def unset_state(self) -> None:
-        glDisable(GL_SCISSOR_TEST)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glDisable(GL_SCISSOR_TEST)
 
 @dataclass(frozen=True)
 class ScissorState(State):
@@ -99,10 +103,12 @@ class BlendStateEnable(State):
     unsets_state: bool = True
 
     def set_state(self) -> None:
-        glEnable(GL_BLEND)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glEnable(GL_BLEND)
 
     def unset_state(self) -> None:
-        glDisable(GL_BLEND)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glDisable(GL_BLEND)
 
 
 @dataclass(frozen=True)
@@ -121,7 +127,8 @@ class BlendState(State):
         #    yield GLBlendState(blend_factor_map[self.src], self.op)
 
     def set_state(self) -> None:
-        glBlendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glBlendFunc(blend_factor_map[self.src], blend_factor_map[self.dst])
 
 
 @dataclass(frozen=True)
@@ -130,10 +137,12 @@ class DepthTestStateEnable(State):
     unsets_state: bool = True
 
     def set_state(self) -> None:
-        glEnable(GL_DEPTH_TEST)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glEnable(GL_DEPTH_TEST)
 
     def unset_state(self) -> None:
-        glDisable(GL_DEPTH_TEST)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glDisable(GL_DEPTH_TEST)
 
 
 @dataclass(frozen=True)
@@ -147,7 +156,8 @@ class DepthBufferComparison(State):
         yield DepthTestStateEnable()
 
     def set_state(self) -> None:
-        glDepthFunc(compare_op_map[self.func])
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glDepthFunc(compare_op_map[self.func])
 
 
 @dataclass(frozen=True)
@@ -182,7 +192,8 @@ class ViewportState(State):
     sets_state: bool = True
 
     def set_state(self) -> None:
-        glViewport(self.x, self.y, self.width, self.height)
+        ctx = pyglet.graphics.api.core.current_context
+        ctx.glViewport(self.x, self.y, self.width, self.height)
 
 @dataclass(frozen=True)
 class UniformBufferState(State):

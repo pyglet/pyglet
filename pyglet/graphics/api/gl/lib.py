@@ -73,9 +73,10 @@ def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
             print(name)
 
     from pyglet.graphics.api import core, gl
-    if not core.current_context:
+    ctx = core.current_context
+    if not ctx:
         raise GLException('No GL context; create a Window first')
-    error = gl.glGetError()
+    error = ctx.glGetError()
     if error:
         # These are the 6 possible error codes we can get in opengl core 3.3+
         error_types = {

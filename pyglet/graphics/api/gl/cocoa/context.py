@@ -4,7 +4,8 @@ import platform
 from ctypes import byref, c_int, c_uint32
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, ContextException
+from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.libs.darwin import cocoapy, quartz
 
 if TYPE_CHECKING:

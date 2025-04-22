@@ -25,14 +25,14 @@ from __future__ import annotations
 import pyglet
 from typing import TYPE_CHECKING
 from pyglet.graphics import core
-from pyglet.graphics.api.gl import GLint, glGetIntegerv, GL_VIEWPORT, GL_BACK, GLubyte, \
-    glReadBuffer, glPixelStorei, GL_PACK_ALIGNMENT, glReadPixels, GL_UNSIGNED_BYTE, GL_RGBA, GL_MAX_COLOR_ATTACHMENTS, GLuint, glGenRenderbuffers, \
-    glBindRenderbuffer, GL_RENDERBUFFER, glRenderbufferStorageMultisample, glRenderbufferStorage, glDeleteRenderbuffers, \
-    GL_FRAMEBUFFER, glGenFramebuffers, glBindFramebuffer, glClear, glDeleteFramebuffers, glCheckFramebufferStatus, \
+from pyglet.graphics.api.gl import GLint, GL_VIEWPORT, GL_BACK, GLubyte, \
+    GL_PACK_ALIGNMENT, GL_UNSIGNED_BYTE, GL_RGBA, GL_MAX_COLOR_ATTACHMENTS, GLuint, \
+    GL_RENDERBUFFER, \
+    GL_FRAMEBUFFER, \
     GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_UNSUPPORTED, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT, \
     GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT, GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT, \
     GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER, GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, \
-    GL_COLOR_ATTACHMENT0, glFramebufferTexture, glFramebufferTextureLayer, glFramebufferRenderbuffer
+    GL_COLOR_ATTACHMENT0
 from pyglet.image.base import ImageData
 
 if TYPE_CHECKING:

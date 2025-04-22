@@ -85,13 +85,14 @@ def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
         if _have_get_proc_address:
             from pyglet.graphics.api import core
             if core and core.have_context:
-                address = wglGetProcAddress(name)
-                if address:
+                address = wglGetProcAddress(asbytes(name))
+                if cast(address, POINTER(c_int)):  # check cast because address is func
                     func = cast(address, ftype)
                     decorate_function(func, name)
                     return func
             else:
                 # Insert proxy until we have a context
+                print("MISSING FUNCTION", name)
                 return WGLFunctionProxy(name, ftype, requires, suggestions)
 
         return missing_function(name, requires, suggestions)

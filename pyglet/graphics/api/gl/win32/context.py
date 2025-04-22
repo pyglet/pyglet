@@ -4,7 +4,8 @@ from ctypes import c_int, c_uint
 
 from _ctypes import sizeof, byref
 
-from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
+from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.win32 import wglext_arb, wgl
 from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
 from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32
@@ -211,12 +212,12 @@ class _BaseWin32Context(OpenGLSurfaceContext):
 
     def get_vsync(self) -> bool:
         if self._info.have_extension('WGL_EXT_swap_control'):
-            return bool(wglext_arb.wglGetSwapIntervalEXT())
+            return bool(self.wglGetSwapIntervalEXT())
         return False
 
     def set_vsync(self, vsync: bool) -> None:
         if self._info.have_extension('WGL_EXT_swap_control'):
-            wglext_arb.wglSwapIntervalEXT(int(vsync))
+            self.wglSwapIntervalEXT(int(vsync))
 
 
 class Win32Context(_BaseWin32Context):
@@ -224,8 +225,6 @@ class Win32Context(_BaseWin32Context):
     context_share: Win32Context | None
 
     def attach(self, window: Win32Window) -> None:
-        super().attach(window)
-
         if not self._context:
             self.config.apply_format()
             self._context = wgl.wglCreateContext(window.dc)
@@ -239,6 +238,7 @@ class Win32Context(_BaseWin32Context):
                 msg = 'Unable to share contexts.'
                 raise ContextException(msg)
 
+        super().attach(window)
 
 
 class Win32ARBContext(_BaseWin32Context):

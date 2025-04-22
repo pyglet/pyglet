@@ -1,5 +1,5 @@
 import pyglet
-
+pyglet.options.shadow_window = False
 window = pyglet.window.Window()
 label = pyglet.text.Label('Hello, world!',
                           font_size=36,

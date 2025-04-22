@@ -8,13 +8,13 @@ import pyglet
 from pyglet.enums import TextureType, TextureFilter, TextureInternalFormat, TextureDescriptor
 from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
-    glGetIntegerv, GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, glBindTexture, \
-    glTexParameteri, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, glCompressedTexImage2D, glFlush, GL_TEXTURE_2D, \
-    GL_LINEAR_MIPMAP_LINEAR, glGenerateMipmap, GL_TEXTURE_3D, glCompressedTexSubImage3D, glCompressedTexSubImage2D, \
-    glDeleteTextures, GLuint, glActiveTexture, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, glBindImageTexture, \
-    glGenTextures, glTexImage2D, GLubyte, glPixelStorei, GL_PACK_ALIGNMENT, glGetTexImage, GL_UNPACK_SKIP_PIXELS, \
-    GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, glTexSubImage3D, \
-    glTexSubImage2D, glTexImage3D, GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8  # noqa: F401
+    GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, \
+    GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, \
+    GL_LINEAR_MIPMAP_LINEAR, GL_TEXTURE_3D, \
+    GLuint, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, \
+    GLubyte, GL_PACK_ALIGNMENT, GL_UNPACK_SKIP_PIXELS, \
+    GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, \
+    GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8  # noqa: F401
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
 from pyglet.image.base import CompressedImageData, ImageException
@@ -79,16 +79,12 @@ _api_pixel_formats = {
 
 def get_max_texture_size() -> int:
     """Query the maximum texture size available"""
-    size = c_int()
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
-    return size.value
+    return pyglet.graphics.api.core.current_context.get_info().MAX_TEXTURE_SIZE
 
 
 def get_max_array_texture_layers() -> int:
     """Query the maximum TextureArray depth"""
-    max_layers = c_int()
-    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
-    return max_layers.value
+    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str):
@@ -163,12 +159,12 @@ class GLCompressedImageData(CompressedImageData):
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        glBindTexture(texture.target, texture.id)
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture.min_filter)
-        glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture.mag_filter)
+        self._context.glBindTexture(texture.target, texture.id)
+        self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture.min_filter)
+        self._context.glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture.mag_filter)
 
         if self._have_extension():
-            glCompressedTexImage2D(texture.target, texture.level,
+            self._context.glCompressedTexImage2D(texture.target, texture.level,
                                    self.gl_format,
                                    self.width, self.height, 0,
                                    len(self.data), self.data)
@@ -181,7 +177,7 @@ class GLCompressedImageData(CompressedImageData):
             msg = f"No extension or fallback decoder is available to decode {self}"
             raise ImageException(msg)
 
-        glFlush()
+        self._context.glFlush()
         self._current_texture = texture
         return texture
 
@@ -200,14 +196,14 @@ class GLCompressedImageData(CompressedImageData):
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        glBindTexture(texture.target, texture.id)
+        self._context.glBindTexture(texture.target, texture.id)
 
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
 
         if not self.mipmap_data:
-            glGenerateMipmap(texture.target)
+            self._context.glGenerateMipmap(texture.target)
 
-        glCompressedTexImage2D(texture.target, texture.level,
+        self._context.glCompressedTexImage2D(texture.target, texture.level,
                                self.gl_format,
                                self.width, self.height, 0,
                                len(self.data), self.data)
@@ -218,9 +214,9 @@ class GLCompressedImageData(CompressedImageData):
             width >>= 1
             height >>= 1
             level += 1
-            glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data), data)
+            self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data), data)
 
-        glFlush()
+        self._context.glFlush()
 
         self._current_mipmap_texture = texture
         return texture
@@ -232,13 +228,13 @@ class GLCompressedImageData(CompressedImageData):
         # TODO: use glCompressedTexImage2D/3D if `internalformat` is specified.
 
         if target == GL_TEXTURE_3D:
-            glCompressedTexSubImage3D(target, level,
+            self._context.glCompressedTexSubImage3D(target, level,
                                       x - self.anchor_x, y - self.anchor_y, z,
                                       self.width, self.height, 1,
                                       self.gl_format,
                                       len(self.data), self.data)
         else:
-            glCompressedTexSubImage2D(target, level,
+            self._context.glCompressedTexSubImage2D(target, level,
                                       x - self.anchor_x, y - self.anchor_y,
                                       self.width, self.height,
                                       self.gl_format,
@@ -324,7 +320,7 @@ class Texture(TextureBase):
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        glDeleteTextures(1, GLuint(self.id))
+        self._context.glDeleteTextures(1, GLuint(self.id))
         self.id = None
 
     def __del__(self):
@@ -337,8 +333,8 @@ class Texture(TextureBase):
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
-        glActiveTexture(GL_TEXTURE0 + texture_unit)
-        glBindTexture(self.target, self.id)
+        self._context.glActiveTexture(GL_TEXTURE0 + texture_unit)
+        self._context.glBindTexture(self.target, self.id)
 
     def bind_image_texture(self, unit: int, level: int = 0, layered: bool = False,
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
@@ -346,7 +342,7 @@ class Texture(TextureBase):
 
         .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
         """
-        glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
+        self._context.glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
     def create_from_image(
@@ -362,29 +358,30 @@ class Texture(TextureBase):
             texture_descriptor:
                 Description of the Texture.
         """
+        ctx = pyglet.graphics.api.core.current_context
         desc = texture_descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
 
         tex_id = GLuint()
         target = texture_map[desc.tex_type]
-        glGenTextures(1, byref(tex_id))
-        glBindTexture(target, tex_id.value)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
+        ctx.glGenTextures(1, byref(tex_id))
+        ctx.glBindTexture(target, tex_id.value)
+        ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
+        ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         gl_pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
 
         if desc.internal_format and target != GL_TEXTURE_3D:
             image_bytes = image_data.get_bytes(desc.pixel_format, image_data.width * len(desc.pixel_format))
-            glTexImage2D(target, 0,
+            ctx.glTexImage2D(target, 0,
                          _get_internal_format(desc.internal_format),
                          image_data.width, image_data.height,
                          0,
                          gl_pfmt,
                          GL_UNSIGNED_BYTE,
                          image_bytes)
-            glFlush()
+            ctx.glFlush()
 
         return cls(image_data.width, image_data.height, tex_id.value, desc)
 
@@ -406,30 +403,31 @@ class Texture(TextureBase):
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
         """
+        ctx = pyglet.graphics.api.core.current_context
         desc = texture_descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
 
         tex_id = GLuint()
         target = texture_map[desc.tex_type]
-        glGenTextures(1, byref(tex_id))
-        glBindTexture(target, tex_id.value)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
+        ctx.glGenTextures(1, byref(tex_id))
+        ctx.glBindTexture(target, tex_id.value)
+        ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
+        ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
         # Why create this without data?
 
         if desc.internal_format and target != GL_TEXTURE_3D:
             pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
             blank = (GLubyte * (width * height * 4))() if blank_data else None
             internal_format = _get_internal_format(desc.internal_format)
-            glTexImage2D(target, 0,
+            ctx.glTexImage2D(target, 0,
                          internal_format,
                          width, height,
                          0,
                          pfmt,
                          GL_UNSIGNED_BYTE,
                          blank)
-            glFlush()
+            ctx.glFlush()
 
         return cls(width, height, tex_id.value, desc)
 
@@ -446,7 +444,7 @@ class Texture(TextureBase):
             z:
                 For 3D textures, the image slice to retrieve.
         """
-        glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.id)
 
         fmt = 'RGBA'
         gl_format = GL_RGBA
@@ -465,9 +463,9 @@ class Texture(TextureBase):
         #     glBindFramebuffer(GL_FRAMEBUFFER, 0)
         #     glDeleteFramebuffers(1, fbo)
         # else:
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
         # Some tests seem to rely on this always being RGBA
-        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+        self._context.glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
         data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
@@ -490,13 +488,13 @@ class Texture(TextureBase):
 
     def _apply_region_unpack(self, image_data: ImageData | ImageDataRegion) -> None:
         if isinstance(image_data, ImageDataRegion):
-            glPixelStorei(GL_UNPACK_SKIP_PIXELS, image_data.x)
-            glPixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
+            self._context.glPixelStorei(GL_UNPACK_SKIP_PIXELS, image_data.x)
+            self._context.glPixelStorei(GL_UNPACK_SKIP_ROWS, image_data.y)
 
     def _default_region_unpack(self, image_data: ImageData | ImageDataRegion) -> None:
         if isinstance(image_data, ImageDataRegion):
-            glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
-            glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
+            self._context.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0)
+            self._context.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0)
 
     def upload(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
         """Upload image data into the Texture at specific coordinates.
@@ -527,28 +525,28 @@ class Texture(TextureBase):
             align = 4
         row_length = data_pitch // len(data_format)
 
-        glPixelStorei(GL_UNPACK_ALIGNMENT, align)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        self._context.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
+        self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
         self._apply_region_unpack(image_data)
 
         if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
-            glTexSubImage3D(self.target, self.level,
+            self._context.glTexSubImage3D(self.target, self.level,
                             x, y, z,
                             image_data.width, image_data.height, 1,
                             fmt, gl_type,
                             data)
         else:
-            glTexSubImage2D(self.target, self.level,
+            self._context.glTexSubImage2D(self.target, self.level,
                             x, y,
                             image_data.width, image_data.height,
                             fmt, gl_type,
                             data)
 
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+        self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
         self._default_region_unpack(image_data)
 
         # Flush image upload before data gets GC'd:
-        glFlush()
+        self._context.glFlush()
 
     def get_texture(self) -> TextureBase:
         return self
@@ -700,6 +698,7 @@ class Texture3D(Texture, UniformTextureSequence):
 
     @classmethod
     def create_for_images(cls, images, descriptor: TextureDescriptor | None = None, blank_data=True):
+        ctx = pyglet.graphics.api.core.current_context
         desc = descriptor or cls.default_descriptor
         item_width = images[0].width
         item_height = images[0].height
@@ -717,8 +716,8 @@ class Texture3D(Texture, UniformTextureSequence):
         pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
 
         blank = (GLubyte * (texture.width * texture.height * texture.images * 4))() if blank_data else None
-        glBindTexture(texture.target, texture.id)
-        glTexImage3D(texture.target, texture.level,
+        ctx.glBindTexture(texture.target, texture.id)
+        ctx.glTexImage3D(texture.target, texture.level,
                      _get_internal_format(desc.internal_format),
                      texture.width, texture.height, texture.images, 0,
                      pfmt, gl_type,
@@ -729,7 +728,7 @@ class Texture3D(Texture, UniformTextureSequence):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
             texture.upload(image, image.anchor_x, image.anchor_y, z=i)
-        glFlush()
+        ctx.glFlush()
 
         texture.items = items
         texture.item_width = item_width
@@ -749,7 +748,7 @@ class Texture3D(Texture, UniformTextureSequence):
     def __setitem__(self, index, value):
         print("INDEX, VALUE", index, value)
         if type(index) is slice:
-            glBindTexture(self.target, self.id)
+            self._context.glBindTexture(self.target, self.id)
 
             for item, image in zip(self[index], value):  # Needs a test.
                 self.upload(self, image, image.anchor_x, image.anchor_y, item.z)
@@ -796,6 +795,7 @@ class TextureArray(Texture, UniformTextureSequence):
 
         .. versionadded:: 2.0
         """
+        ctx = pyglet.graphics.api.core.current_context
         desc = descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
@@ -804,20 +804,20 @@ class TextureArray(Texture, UniformTextureSequence):
         assert max_depth <= max_depth_limit, f"TextureArray max_depth supported is {max_depth_limit}."
 
         tex_id = GLuint()
-        glGenTextures(1, byref(tex_id))
-        glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id.value)
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
+        ctx.glGenTextures(1, byref(tex_id))
+        ctx.glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id.value)
+        ctx.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
+        ctx.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
 
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
+        ctx.glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
                      _get_internal_format(desc.internal_format),
                      width, height, max_depth,
                      0,
                      pfmt, gl_type,
                      0)
-        glFlush()
+        ctx.glFlush()
 
         texture = cls(width, height, tex_id.value, max_depth, desc)
         texture.min_filter = min_filter
@@ -848,7 +848,7 @@ class TextureArray(Texture, UniformTextureSequence):
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
 
-        glBindTexture(self.target, self.id)
+        self._context.glBindTexture(self.target, self.id)
 
         start_length = len(self.items)
         for i, image in enumerate(images):
@@ -873,7 +873,7 @@ class TextureArray(Texture, UniformTextureSequence):
 
     def __setitem__(self, index, value) -> None:
         if type(index) is slice:
-            glBindTexture(self.target, self.id)
+            self._context.glBindTexture(self.target, self.id)
 
             for old_item, image in zip(self[index], value):
                 self._verify_size(image)
@@ -926,12 +926,12 @@ class GLTileableTexture(Texture):
                       u2, v2, t[8],
                       u1, v2, t[11])
 
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.target, self.id)
+        self._context.glActiveTexture(GL_TEXTURE0)
+        self._context.glBindTexture(self.target, self.id)
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                      position=('f', vertices),
                                      tex_coords=('f', tex_coords))
-        glBindTexture(self.target, 0)
+        self._context.glBindTexture(self.target, 0)
 
     @classmethod
     def create_for_image(cls, image: _AbstractImage) -> TextureBase:

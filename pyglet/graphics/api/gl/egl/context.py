@@ -3,11 +3,11 @@ from __future__ import annotations
 from ctypes import byref
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, ContextException
 from pyglet.graphics.api.gl.egl import egl
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLBackend
+    from pyglet.graphics.api.gl import OpenGLBackend, OpenGLSurfaceContext
     from pyglet.window.wayland import WaylandWindow
     from pyglet.window.headless import HeadlessWindow
 

@@ -34,12 +34,11 @@ from pyglet.graphics.api.gl import (
     glGenBuffers,
     glMapBuffer,
     glMapBufferRange,
-    glUnmapBuffer,
+    glUnmapBuffer, OpenGLSurfaceContext,
 )
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.shader import Attribute
 
 

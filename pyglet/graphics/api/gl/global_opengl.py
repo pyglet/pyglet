@@ -8,13 +8,11 @@ import pyglet
 from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
 from pyglet.math import Mat4
 from pyglet.graphics.api.gl.shader import Shader, ShaderProgram
-from pyglet.graphics.api.gl.gl import glViewport
 
 if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderType
-    from pyglet.graphics.api.gl import OpenGLWindowConfig, ObjectSpace
+    from pyglet.graphics.api.gl import OpenGLWindowConfig, ObjectSpace, OpenGLSurfaceContext
     from pyglet.window import Window
-    from pyglet.graphics.api.gl import OpenGLSurfaceContext
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -210,7 +208,7 @@ class OpenGLBackend(BackendGlobalObject):
         return OpenGL3_Matrices(window, self)
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
-        glViewport(x, y, width, height)
+        self.current_context.glViewport(x, y, width, height)
 
 def _create_shadow_window() -> Window | None:
     from pyglet.window import Window

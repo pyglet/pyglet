@@ -19,7 +19,7 @@ from pyglet.graphics.api.gl import (
     glDisableVertexAttribArray,
     glEnableVertexAttribArray,
     glVertexAttribDivisor,
-    glVertexAttribPointer,
+    glVertexAttribPointer, OpenGLSurfaceContext,
 )
 from pyglet.graphics.api.gl.shader import GLDataType
 from pyglet.graphics.api.gl.shader import Shader as GLShader
@@ -28,7 +28,6 @@ from pyglet.graphics.shader import Attribute, ShaderException, ShaderSource, Sha
 
 if TYPE_CHECKING:
     from pyglet.customtypes import CType, DataTypes
-    from pyglet.graphics.api.gl.base import OpenGLSurfaceContext
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 

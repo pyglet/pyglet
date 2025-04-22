@@ -28,20 +28,11 @@ from pyglet.graphics.api.gl import (
     GL_WRITE_ONLY,
     GLubyte,
     GLuint,
-    glBindBuffer,
-    glBufferData,
-    glBufferStorage,
-    glBufferSubData,
-    glDeleteBuffers,
-    glGenBuffers,
-    glMapBuffer,
-    glMapBufferRange,
-    glUnmapBuffer,
+    OpenGLSurfaceContext,
 )
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.shader import Attribute
 
 
@@ -73,28 +64,28 @@ class BufferObject(AbstractBuffer):
         self._context = pyglet.graphics.api.core.current_context
 
         buffer_id = GLuint()
-        glGenBuffers(1, buffer_id)
+        self._context.glGenBuffers(1, buffer_id)
         self.id = buffer_id.value
 
-        glBindBuffer(self.target, self.id)
+        self._context.glBindBuffer(self.target, self.id)
         data = (GLubyte * self.size)()
-        glBufferData(self.target, self.size, data, self.usage)
+        self._context.glBufferData(self.target, self.size, data, self.usage)
 
     def get_bytes(self) -> bytes:
-        glBindBuffer(self.target, self.id)
-        ptr = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
+        self._context.glBindBuffer(self.target, self.id)
+        ptr = self._context.glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         data = ctypes.string_at(ptr, size=self.size)
-        glUnmapBuffer(self.target)
+        self._context.glUnmapBuffer(self.target)
         return data
 
     def get_bytes_region(self, offset: int, length: int) -> bytes:
         ...
 
     def get_data(self) -> ctypes.Array[CType]:
-        glBindBuffer(self.target, self.id)
-        ptr = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
+        self._context.glBindBuffer(self.target, self.id)
+        ptr = self._context.glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         data = ctypes.string_at(ptr, size=self.size)
-        glUnmapBuffer(self.target)
+        self._context.glUnmapBuffer(self.target)
         return data
 
     def get_data_region(self, start: int, length: int) -> ctypes.Array[CType]:
@@ -110,36 +101,36 @@ class BufferObject(AbstractBuffer):
         ...
 
     def invalidate(self) -> None:
-        glBufferData(self.target, self.size, None, self.usage)
+        self._context.glBufferData(self.target, self.size, None, self.usage)
 
     def bind(self) -> None:
-        glBindBuffer(self.target, self.id)
+        self._context.glBindBuffer(self.target, self.id)
 
     def unbind(self) -> None:
-        glBindBuffer(self.target, 0)
+        self._context.glBindBuffer(self.target, 0)
 
     def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
-        glBindBuffer(self.target, self.id)
-        glBufferData(self.target, self.size, data, self.usage)
+        self._context.glBindBuffer(self.target, self.id)
+        self._context.glBufferData(self.target, self.size, data, self.usage)
 
     def set_data_region(self, data: Sequence[int] | CTypesPointer, start: int, length: int) -> None:
-        glBindBuffer(self.target, self.id)
-        glBufferSubData(self.target, start, length, data)
+        self._context.glBindBuffer(self.target, self.id)
+        self._context.glBufferSubData(self.target, start, length, data)
 
     def map(self, bits=GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
-        glBindBuffer(self.target, self.id)
-        return ctypes.cast(glMapBuffer(self.target, bits),
+        self._context.glBindBuffer(self.target, self.id)
+        return ctypes.cast(self._context.glMapBuffer(self.target, bits),
                            ctypes.POINTER(ctypes.c_byte * self.size)).contents
 
     def map_range(self, start: int, size: int, ptr_type: type[CTypesPointer], bits=GL_MAP_WRITE_BIT) -> CTypesPointer:
-        glBindBuffer(self.target, self.id)
-        return ctypes.cast(glMapBufferRange(self.target, start, size, bits), ptr_type).contents
+        self._context.glBindBuffer(self.target, self.id)
+        return ctypes.cast(self._context.glMapBufferRange(self.target, start, size, bits), ptr_type).contents
 
     def unmap(self) -> None:
-        glUnmapBuffer(self.target)
+        self._context.glUnmapBuffer(self.target)
 
     def delete(self) -> None:
-        glDeleteBuffers(1, GLuint(self.id))
+        self._context.glDeleteBuffers(1, GLuint(self.id))
         self.id = None
 
     def __del__(self) -> None:
@@ -154,13 +145,13 @@ class BufferObject(AbstractBuffer):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
-        glBindBuffer(self.target, self.id)
-        data = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
+        self._context.glBindBuffer(self.target, self.id)
+        data = self._context.glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         ctypes.memmove(temp, data, min(size, self.size))
-        glUnmapBuffer(self.target)
+        self._context.glUnmapBuffer(self.target)
 
         self.size = size
-        glBufferData(self.target, self.size, temp, self.usage)
+        self._context.glBufferData(self.target, self.size, temp, self.usage)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, data_type={self.data_type}, size={self.size})"
@@ -208,13 +199,13 @@ class BackedBufferObject(BufferObject):
         if not self._dirty:
             return
 
-        glBindBuffer(self.target, self.id)
+        self._context.glBindBuffer(self.target, self.id)
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
-                glBufferData(self.target, self.size, self.data, self.usage)
+                self._context.glBufferData(self.target, self.size, self.data, self.usage)
             else:
-                glBufferSubData(self.target, self._dirty_min, size, self.data_ptr + self._dirty_min)
+                self._context.glBufferSubData(self.target, self._dirty_min, size, self.data_ptr + self._dirty_min)
 
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
@@ -291,7 +282,7 @@ class IndexedBufferObject(BackedBufferObject):
 
     def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
+        self._context.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.id)
 
 
 class PersistentBufferObject(AbstractBuffer):

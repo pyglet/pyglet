@@ -328,20 +328,9 @@ PGPU_DEVICE = POINTER(struct__GPU_DEVICE) 	# http://www.opengl.org/registry/api/
 # ARB_buffer_region (http://www.opengl.org/registry/api/wglext.h:399)
 WGL_ARB_buffer_region = 1 	# http://www.opengl.org/registry/api/wglext.h:400
 
-# http://www.opengl.org/registry/api/wglext.h:402
-wglCreateBufferRegionARB = _link_function('wglCreateBufferRegionARB', HANDLE, [HDC, c_int, UINT], 'ARB_buffer_region')
 
 VOID = None 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:45
-# http://www.opengl.org/registry/api/wglext.h:403
-wglDeleteBufferRegionARB = _link_function('wglDeleteBufferRegionARB', VOID, [HANDLE], 'ARB_buffer_region')
-
 BOOL = c_long 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:52
-# http://www.opengl.org/registry/api/wglext.h:404
-wglSaveBufferRegionARB = _link_function('wglSaveBufferRegionARB', BOOL, [HANDLE, c_int, c_int, c_int, c_int], 'ARB_buffer_region')
-
-# http://www.opengl.org/registry/api/wglext.h:405
-wglRestoreBufferRegionARB = _link_function('wglRestoreBufferRegionARB', BOOL, [HANDLE, c_int, c_int, c_int, c_int, c_int, c_int], 'ARB_buffer_region')
-
 PFNWGLCREATEBUFFERREGIONARBPROC = CFUNCTYPE(HANDLE, HDC, c_int, UINT) 	# http://www.opengl.org/registry/api/wglext.h:407
 PFNWGLDELETEBUFFERREGIONARBPROC = CFUNCTYPE(VOID, HANDLE) 	# http://www.opengl.org/registry/api/wglext.h:408
 PFNWGLSAVEBUFFERREGIONARBPROC = CFUNCTYPE(BOOL, HANDLE, c_int, c_int, c_int, c_int) 	# http://www.opengl.org/registry/api/wglext.h:409
@@ -350,20 +339,11 @@ PFNWGLRESTOREBUFFERREGIONARBPROC = CFUNCTYPE(BOOL, HANDLE, c_int, c_int, c_int, 
 WGL_ARB_multisample = 1 	# http://www.opengl.org/registry/api/wglext.h:414
 # ARB_extensions_string (http://www.opengl.org/registry/api/wglext.h:417)
 WGL_ARB_extensions_string = 1 	# http://www.opengl.org/registry/api/wglext.h:418
-# http://www.opengl.org/registry/api/wglext.h:420
-wglGetExtensionsStringARB = _link_function('wglGetExtensionsStringARB', c_char_p, [HDC], 'ARB_extensions_string')
 
 PFNWGLGETEXTENSIONSSTRINGARBPROC = CFUNCTYPE(c_char_p, HDC) 	# http://www.opengl.org/registry/api/wglext.h:422
 # ARB_pixel_format (http://www.opengl.org/registry/api/wglext.h:425)
 WGL_ARB_pixel_format = 1 	# http://www.opengl.org/registry/api/wglext.h:426
-# http://www.opengl.org/registry/api/wglext.h:428
-wglGetPixelFormatAttribivARB = _link_function('wglGetPixelFormatAttribivARB', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)], 'ARB_pixel_format')
 
-# http://www.opengl.org/registry/api/wglext.h:429
-wglGetPixelFormatAttribfvARB = _link_function('wglGetPixelFormatAttribfvARB', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)], 'ARB_pixel_format')
-
-# http://www.opengl.org/registry/api/wglext.h:430
-wglChoosePixelFormatARB = _link_function('wglChoosePixelFormatARB', BOOL, [HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)], 'ARB_pixel_format')
 
 PFNWGLGETPIXELFORMATATTRIBIVARBPROC = CFUNCTYPE(BOOL, HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:432
 PFNWGLGETPIXELFORMATATTRIBFVARBPROC = CFUNCTYPE(BOOL, HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)) 	# http://www.opengl.org/registry/api/wglext.h:433
@@ -371,30 +351,11 @@ PFNWGLCHOOSEPIXELFORMATARBPROC = CFUNCTYPE(BOOL, HDC, POINTER(c_int), POINTER(FL
 # ARB_make_current_read (http://www.opengl.org/registry/api/wglext.h:437)
 WGL_ARB_make_current_read = 1 	# http://www.opengl.org/registry/api/wglext.h:438
 HGLRC = HANDLE 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:60
-# http://www.opengl.org/registry/api/wglext.h:440
-wglMakeContextCurrentARB = _link_function('wglMakeContextCurrentARB', BOOL, [HDC, HDC, HGLRC], 'ARB_make_current_read')
-
-# http://www.opengl.org/registry/api/wglext.h:441
-wglGetCurrentReadDCARB = _link_function('wglGetCurrentReadDCARB', HDC, [], 'ARB_make_current_read')
 
 PFNWGLMAKECONTEXTCURRENTARBPROC = CFUNCTYPE(BOOL, HDC, HDC, HGLRC) 	# http://www.opengl.org/registry/api/wglext.h:443
 PFNWGLGETCURRENTREADDCARBPROC = CFUNCTYPE(HDC) 	# http://www.opengl.org/registry/api/wglext.h:444
 # ARB_pbuffer (http://www.opengl.org/registry/api/wglext.h:447)
 WGL_ARB_pbuffer = 1 	# http://www.opengl.org/registry/api/wglext.h:448
-# http://www.opengl.org/registry/api/wglext.h:450
-wglCreatePbufferARB = _link_function('wglCreatePbufferARB', HPBUFFERARB, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'ARB_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:451
-wglGetPbufferDCARB = _link_function('wglGetPbufferDCARB', HDC, [HPBUFFERARB], 'ARB_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:452
-wglReleasePbufferDCARB = _link_function('wglReleasePbufferDCARB', c_int, [HPBUFFERARB, HDC], 'ARB_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:453
-wglDestroyPbufferARB = _link_function('wglDestroyPbufferARB', BOOL, [HPBUFFERARB], 'ARB_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:454
-wglQueryPbufferARB = _link_function('wglQueryPbufferARB', BOOL, [HPBUFFERARB, c_int, POINTER(c_int)], 'ARB_pbuffer')
 
 PFNWGLCREATEPBUFFERARBPROC = CFUNCTYPE(HPBUFFERARB, HDC, c_int, c_int, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:456
 PFNWGLGETPBUFFERDCARBPROC = CFUNCTYPE(HDC, HPBUFFERARB) 	# http://www.opengl.org/registry/api/wglext.h:457
@@ -403,15 +364,6 @@ PFNWGLDESTROYPBUFFERARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB) 	# http://www.opengl.
 PFNWGLQUERYPBUFFERARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:460
 # ARB_render_texture (http://www.opengl.org/registry/api/wglext.h:463)
 WGL_ARB_render_texture = 1 	# http://www.opengl.org/registry/api/wglext.h:464
-# http://www.opengl.org/registry/api/wglext.h:466
-wglBindTexImageARB = _link_function('wglBindTexImageARB', BOOL, [HPBUFFERARB, c_int], 'ARB_render_texture')
-
-# http://www.opengl.org/registry/api/wglext.h:467
-wglReleaseTexImageARB = _link_function('wglReleaseTexImageARB', BOOL, [HPBUFFERARB, c_int], 'ARB_render_texture')
-
-# http://www.opengl.org/registry/api/wglext.h:468
-wglSetPbufferAttribARB = _link_function('wglSetPbufferAttribARB', BOOL, [HPBUFFERARB, POINTER(c_int)], 'ARB_render_texture')
-
 PFNWGLBINDTEXIMAGEARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, c_int) 	# http://www.opengl.org/registry/api/wglext.h:470
 PFNWGLRELEASETEXIMAGEARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, c_int) 	# http://www.opengl.org/registry/api/wglext.h:471
 PFNWGLSETPBUFFERATTRIBARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:472
@@ -419,26 +371,15 @@ PFNWGLSETPBUFFERATTRIBARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, POINTER(c_int)) 	# 
 WGL_ARB_pixel_format_float = 1 	# http://www.opengl.org/registry/api/wglext.h:476
 # ARB_create_context (http://www.opengl.org/registry/api/wglext.h:479)
 WGL_ARB_create_context = 1 	# http://www.opengl.org/registry/api/wglext.h:480
-# http://www.opengl.org/registry/api/wglext.h:482
-wglCreateContextAttribsARB = _link_function('wglCreateContextAttribsARB', HGLRC, [HDC, HGLRC, POINTER(c_int)], 'ARB_create_context')
 
-PFNWGLCREATECONTEXTATTRIBSARBPROC = CFUNCTYPE(HGLRC, HDC, HGLRC, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:484
+PFNWGLCREATECONTEXTATTRIBSARBPROC = CFUNCTYPE(
+    HGLRC, HDC, HGLRC, POINTER(c_int)
+)  # http://www.opengl.org/registry/api/wglext.h:484
 # EXT_display_color_table (http://www.opengl.org/registry/api/wglext.h:487)
 WGL_EXT_display_color_table = 1 	# http://www.opengl.org/registry/api/wglext.h:488
 GLboolean = c_ubyte 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:18
 GLushort = c_ushort 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:25
-# http://www.opengl.org/registry/api/wglext.h:490
-wglCreateDisplayColorTableEXT = _link_function('wglCreateDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table')
-
-GLuint = c_uint 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:26
-# http://www.opengl.org/registry/api/wglext.h:491
-wglLoadDisplayColorTableEXT = _link_function('wglLoadDisplayColorTableEXT', GLboolean, [POINTER(GLushort), GLuint], 'EXT_display_color_table')
-
-# http://www.opengl.org/registry/api/wglext.h:492
-wglBindDisplayColorTableEXT = _link_function('wglBindDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table')
-
-# http://www.opengl.org/registry/api/wglext.h:493
-wglDestroyDisplayColorTableEXT = _link_function('wglDestroyDisplayColorTableEXT', VOID, [GLushort], 'EXT_display_color_table')
+GLuint = c_uint  # C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:26
 
 PFNWGLCREATEDISPLAYCOLORTABLEEXTPROC = CFUNCTYPE(GLboolean, GLushort) 	# http://www.opengl.org/registry/api/wglext.h:495
 PFNWGLLOADDISPLAYCOLORTABLEEXTPROC = CFUNCTYPE(GLboolean, POINTER(GLushort), GLuint) 	# http://www.opengl.org/registry/api/wglext.h:496
@@ -446,36 +387,16 @@ PFNWGLBINDDISPLAYCOLORTABLEEXTPROC = CFUNCTYPE(GLboolean, GLushort) 	# http://ww
 PFNWGLDESTROYDISPLAYCOLORTABLEEXTPROC = CFUNCTYPE(VOID, GLushort) 	# http://www.opengl.org/registry/api/wglext.h:498
 # EXT_extensions_string (http://www.opengl.org/registry/api/wglext.h:501)
 WGL_EXT_extensions_string = 1 	# http://www.opengl.org/registry/api/wglext.h:502
-# http://www.opengl.org/registry/api/wglext.h:504
-wglGetExtensionsStringEXT = _link_function('wglGetExtensionsStringEXT', c_char_p, [], 'EXT_extensions_string')
 
 PFNWGLGETEXTENSIONSSTRINGEXTPROC = CFUNCTYPE(c_char_p) 	# http://www.opengl.org/registry/api/wglext.h:506
 # EXT_make_current_read (http://www.opengl.org/registry/api/wglext.h:509)
 WGL_EXT_make_current_read = 1 	# http://www.opengl.org/registry/api/wglext.h:510
-# http://www.opengl.org/registry/api/wglext.h:512
-wglMakeContextCurrentEXT = _link_function('wglMakeContextCurrentEXT', BOOL, [HDC, HDC, HGLRC], 'EXT_make_current_read')
-
-# http://www.opengl.org/registry/api/wglext.h:513
-wglGetCurrentReadDCEXT = _link_function('wglGetCurrentReadDCEXT', HDC, [], 'EXT_make_current_read')
 
 PFNWGLMAKECONTEXTCURRENTEXTPROC = CFUNCTYPE(BOOL, HDC, HDC, HGLRC) 	# http://www.opengl.org/registry/api/wglext.h:515
 PFNWGLGETCURRENTREADDCEXTPROC = CFUNCTYPE(HDC) 	# http://www.opengl.org/registry/api/wglext.h:516
 # EXT_pbuffer (http://www.opengl.org/registry/api/wglext.h:519)
 WGL_EXT_pbuffer = 1 	# http://www.opengl.org/registry/api/wglext.h:520
 # http://www.opengl.org/registry/api/wglext.h:522
-wglCreatePbufferEXT = _link_function('wglCreatePbufferEXT', HPBUFFEREXT, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'EXT_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:523
-wglGetPbufferDCEXT = _link_function('wglGetPbufferDCEXT', HDC, [HPBUFFEREXT], 'EXT_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:524
-wglReleasePbufferDCEXT = _link_function('wglReleasePbufferDCEXT', c_int, [HPBUFFEREXT, HDC], 'EXT_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:525
-wglDestroyPbufferEXT = _link_function('wglDestroyPbufferEXT', BOOL, [HPBUFFEREXT], 'EXT_pbuffer')
-
-# http://www.opengl.org/registry/api/wglext.h:526
-wglQueryPbufferEXT = _link_function('wglQueryPbufferEXT', BOOL, [HPBUFFEREXT, c_int, POINTER(c_int)], 'EXT_pbuffer')
 
 PFNWGLCREATEPBUFFEREXTPROC = CFUNCTYPE(HPBUFFEREXT, HDC, c_int, c_int, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:528
 PFNWGLGETPBUFFERDCEXTPROC = CFUNCTYPE(HDC, HPBUFFEREXT) 	# http://www.opengl.org/registry/api/wglext.h:529
@@ -484,25 +405,12 @@ PFNWGLDESTROYPBUFFEREXTPROC = CFUNCTYPE(BOOL, HPBUFFEREXT) 	# http://www.opengl.
 PFNWGLQUERYPBUFFEREXTPROC = CFUNCTYPE(BOOL, HPBUFFEREXT, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:532
 # EXT_pixel_format (http://www.opengl.org/registry/api/wglext.h:535)
 WGL_EXT_pixel_format = 1 	# http://www.opengl.org/registry/api/wglext.h:536
-# http://www.opengl.org/registry/api/wglext.h:538
-wglGetPixelFormatAttribivEXT = _link_function('wglGetPixelFormatAttribivEXT', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)], 'EXT_pixel_format')
-
-# http://www.opengl.org/registry/api/wglext.h:539
-wglGetPixelFormatAttribfvEXT = _link_function('wglGetPixelFormatAttribfvEXT', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)], 'EXT_pixel_format')
-
-# http://www.opengl.org/registry/api/wglext.h:540
-wglChoosePixelFormatEXT = _link_function('wglChoosePixelFormatEXT', BOOL, [HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)], 'EXT_pixel_format')
-
 PFNWGLGETPIXELFORMATATTRIBIVEXTPROC = CFUNCTYPE(BOOL, HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:542
 PFNWGLGETPIXELFORMATATTRIBFVEXTPROC = CFUNCTYPE(BOOL, HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)) 	# http://www.opengl.org/registry/api/wglext.h:543
 PFNWGLCHOOSEPIXELFORMATEXTPROC = CFUNCTYPE(BOOL, HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)) 	# http://www.opengl.org/registry/api/wglext.h:544
 # EXT_swap_control (http://www.opengl.org/registry/api/wglext.h:547)
 WGL_EXT_swap_control = 1 	# http://www.opengl.org/registry/api/wglext.h:548
-# http://www.opengl.org/registry/api/wglext.h:550
-wglSwapIntervalEXT = _link_function('wglSwapIntervalEXT', BOOL, [c_int], 'EXT_swap_control')
 
-# http://www.opengl.org/registry/api/wglext.h:551
-wglGetSwapIntervalEXT = _link_function('wglGetSwapIntervalEXT', c_int, [], 'EXT_swap_control')
 
 PFNWGLSWAPINTERVALEXTPROC = CFUNCTYPE(BOOL, c_int) 	# http://www.opengl.org/registry/api/wglext.h:553
 PFNWGLGETSWAPINTERVALEXTPROC = CFUNCTYPE(c_int) 	# http://www.opengl.org/registry/api/wglext.h:554
@@ -512,12 +420,6 @@ WGL_EXT_depth_float = 1 	# http://www.opengl.org/registry/api/wglext.h:558
 WGL_NV_vertex_array_range = 1 	# http://www.opengl.org/registry/api/wglext.h:562
 GLsizei = c_int 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:23
 GLfloat = c_float 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:27
-# http://www.opengl.org/registry/api/wglext.h:564
-wglAllocateMemoryNV = _link_function('wglAllocateMemoryNV', POINTER(c_void), [GLsizei, GLfloat, GLfloat, GLfloat], 'NV_vertex_array_range')
-
-# http://www.opengl.org/registry/api/wglext.h:565
-wglFreeMemoryNV = _link_function('wglFreeMemoryNV', None, [POINTER(None)], 'NV_vertex_array_range')
-
 PFNWGLALLOCATEMEMORYNVPROC = CFUNCTYPE(POINTER(c_void), GLsizei, GLfloat, GLfloat, GLfloat) 	# http://www.opengl.org/registry/api/wglext.h:567
 PFNWGLFREEMEMORYNVPROC = CFUNCTYPE(None, POINTER(None)) 	# http://www.opengl.org/registry/api/wglext.h:568
 # 3DFX_multisample (http://www.opengl.org/registry/api/wglext.h:571)
@@ -527,24 +429,6 @@ WGL_EXT_multisample = 1 	# http://www.opengl.org/registry/api/wglext.h:576
 # OML_sync_control (http://www.opengl.org/registry/api/wglext.h:579)
 WGL_OML_sync_control = 1 	# http://www.opengl.org/registry/api/wglext.h:580
 
-# http://www.opengl.org/registry/api/wglext.h:582
-wglGetSyncValuesOML = _link_function('wglGetSyncValuesOML', BOOL, [HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control')
-
-# http://www.opengl.org/registry/api/wglext.h:583
-wglGetMscRateOML = _link_function('wglGetMscRateOML', BOOL, [HDC, POINTER(INT32), POINTER(INT32)], 'OML_sync_control')
-
-# http://www.opengl.org/registry/api/wglext.h:584
-wglSwapBuffersMscOML = _link_function('wglSwapBuffersMscOML', INT64, [HDC, INT64, INT64, INT64], 'OML_sync_control')
-
-# http://www.opengl.org/registry/api/wglext.h:585
-wglSwapLayerBuffersMscOML = _link_function('wglSwapLayerBuffersMscOML', INT64, [HDC, c_int, INT64, INT64, INT64], 'OML_sync_control')
-
-# http://www.opengl.org/registry/api/wglext.h:586
-wglWaitForMscOML = _link_function('wglWaitForMscOML', BOOL, [HDC, INT64, INT64, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control')
-
-# http://www.opengl.org/registry/api/wglext.h:587
-wglWaitForSbcOML = _link_function('wglWaitForSbcOML', BOOL, [HDC, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control')
-
 PFNWGLGETSYNCVALUESOMLPROC = CFUNCTYPE(BOOL, HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)) 	# http://www.opengl.org/registry/api/wglext.h:589
 PFNWGLGETMSCRATEOMLPROC = CFUNCTYPE(BOOL, HDC, POINTER(INT32), POINTER(INT32)) 	# http://www.opengl.org/registry/api/wglext.h:590
 PFNWGLSWAPBUFFERSMSCOMLPROC = CFUNCTYPE(INT64, HDC, INT64, INT64, INT64) 	# http://www.opengl.org/registry/api/wglext.h:591
@@ -553,27 +437,12 @@ PFNWGLWAITFORMSCOMLPROC = CFUNCTYPE(BOOL, HDC, INT64, INT64, INT64, POINTER(INT6
 PFNWGLWAITFORSBCOMLPROC = CFUNCTYPE(BOOL, HDC, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)) 	# http://www.opengl.org/registry/api/wglext.h:594
 # I3D_digital_video_control (http://www.opengl.org/registry/api/wglext.h:597)
 WGL_I3D_digital_video_control = 1 	# http://www.opengl.org/registry/api/wglext.h:598
-# http://www.opengl.org/registry/api/wglext.h:600
-wglGetDigitalVideoParametersI3D = _link_function('wglGetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control')
-
-# http://www.opengl.org/registry/api/wglext.h:601
-wglSetDigitalVideoParametersI3D = _link_function('wglSetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control')
 
 PFNWGLGETDIGITALVIDEOPARAMETERSI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:603
 PFNWGLSETDIGITALVIDEOPARAMETERSI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:604
 # I3D_gamma (http://www.opengl.org/registry/api/wglext.h:607)
 WGL_I3D_gamma = 1 	# http://www.opengl.org/registry/api/wglext.h:608
 # http://www.opengl.org/registry/api/wglext.h:610
-wglGetGammaTableParametersI3D = _link_function('wglGetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma')
-
-# http://www.opengl.org/registry/api/wglext.h:611
-wglSetGammaTableParametersI3D = _link_function('wglSetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma')
-
-# http://www.opengl.org/registry/api/wglext.h:612
-wglGetGammaTableI3D = _link_function('wglGetGammaTableI3D', BOOL, [HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)], 'I3D_gamma')
-
-# http://www.opengl.org/registry/api/wglext.h:613
-wglSetGammaTableI3D = _link_function('wglSetGammaTableI3D', BOOL, [HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)], 'I3D_gamma')
 
 PFNWGLGETGAMMATABLEPARAMETERSI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:615
 PFNWGLSETGAMMATABLEPARAMETERSI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:616
@@ -581,41 +450,6 @@ PFNWGLGETGAMMATABLEI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(USHORT), POINTE
 PFNWGLSETGAMMATABLEI3DPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)) 	# http://www.opengl.org/registry/api/wglext.h:618
 # I3D_genlock (http://www.opengl.org/registry/api/wglext.h:621)
 WGL_I3D_genlock = 1 	# http://www.opengl.org/registry/api/wglext.h:622
-# http://www.opengl.org/registry/api/wglext.h:624
-wglEnableGenlockI3D = _link_function('wglEnableGenlockI3D', BOOL, [HDC], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:625
-wglDisableGenlockI3D = _link_function('wglDisableGenlockI3D', BOOL, [HDC], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:626
-wglIsEnabledGenlockI3D = _link_function('wglIsEnabledGenlockI3D', BOOL, [HDC, POINTER(BOOL)], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:627
-wglGenlockSourceI3D = _link_function('wglGenlockSourceI3D', BOOL, [HDC, UINT], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:628
-wglGetGenlockSourceI3D = _link_function('wglGetGenlockSourceI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:629
-wglGenlockSourceEdgeI3D = _link_function('wglGenlockSourceEdgeI3D', BOOL, [HDC, UINT], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:630
-wglGetGenlockSourceEdgeI3D = _link_function('wglGetGenlockSourceEdgeI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:631
-wglGenlockSampleRateI3D = _link_function('wglGenlockSampleRateI3D', BOOL, [HDC, UINT], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:632
-wglGetGenlockSampleRateI3D = _link_function('wglGetGenlockSampleRateI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:633
-wglGenlockSourceDelayI3D = _link_function('wglGenlockSourceDelayI3D', BOOL, [HDC, UINT], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:634
-wglGetGenlockSourceDelayI3D = _link_function('wglGetGenlockSourceDelayI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
-
-# http://www.opengl.org/registry/api/wglext.h:635
-wglQueryGenlockMaxSourceDelayI3D = _link_function('wglQueryGenlockMaxSourceDelayI3D', BOOL, [HDC, POINTER(UINT), POINTER(UINT)], 'I3D_genlock')
 
 PFNWGLENABLEGENLOCKI3DPROC = CFUNCTYPE(BOOL, HDC) 	# http://www.opengl.org/registry/api/wglext.h:637
 PFNWGLDISABLEGENLOCKI3DPROC = CFUNCTYPE(BOOL, HDC) 	# http://www.opengl.org/registry/api/wglext.h:638
@@ -632,18 +466,6 @@ PFNWGLQUERYGENLOCKMAXSOURCEDELAYI3DPROC = CFUNCTYPE(BOOL, HDC, POINTER(UINT), PO
 # I3D_image_buffer (http://www.opengl.org/registry/api/wglext.h:651)
 WGL_I3D_image_buffer = 1 	# http://www.opengl.org/registry/api/wglext.h:652
 
-# http://www.opengl.org/registry/api/wglext.h:654
-wglCreateImageBufferI3D = _link_function('wglCreateImageBufferI3D', LPVOID, [HDC, DWORD, UINT], 'I3D_image_buffer')
-
-# http://www.opengl.org/registry/api/wglext.h:655
-wglDestroyImageBufferI3D = _link_function('wglDestroyImageBufferI3D', BOOL, [HDC, LPVOID], 'I3D_image_buffer')
-
-# http://www.opengl.org/registry/api/wglext.h:656
-wglAssociateImageBufferEventsI3D = _link_function('wglAssociateImageBufferEventsI3D', BOOL, [HDC, POINTER(HANDLE), POINTER(LPVOID), POINTER(DWORD), UINT], 'I3D_image_buffer')
-
-# http://www.opengl.org/registry/api/wglext.h:657
-wglReleaseImageBufferEventsI3D = _link_function('wglReleaseImageBufferEventsI3D', BOOL, [HDC, POINTER(LPVOID), UINT], 'I3D_image_buffer')
-
 PFNWGLCREATEIMAGEBUFFERI3DPROC = CFUNCTYPE(LPVOID, HDC, DWORD, UINT) 	# http://www.opengl.org/registry/api/wglext.h:659
 PFNWGLDESTROYIMAGEBUFFERI3DPROC = CFUNCTYPE(BOOL, HDC, LPVOID) 	# http://www.opengl.org/registry/api/wglext.h:660
 PFNWGLASSOCIATEIMAGEBUFFEREVENTSI3DPROC = CFUNCTYPE(BOOL, HDC, POINTER(HANDLE), POINTER(LPVOID), POINTER(DWORD), UINT) 	# http://www.opengl.org/registry/api/wglext.h:661
@@ -651,16 +473,6 @@ PFNWGLRELEASEIMAGEBUFFEREVENTSI3DPROC = CFUNCTYPE(BOOL, HDC, POINTER(LPVOID), UI
 # I3D_swap_frame_lock (http://www.opengl.org/registry/api/wglext.h:665)
 WGL_I3D_swap_frame_lock = 1 	# http://www.opengl.org/registry/api/wglext.h:666
 # http://www.opengl.org/registry/api/wglext.h:668
-wglEnableFrameLockI3D = _link_function('wglEnableFrameLockI3D', BOOL, [], 'I3D_swap_frame_lock')
-
-# http://www.opengl.org/registry/api/wglext.h:669
-wglDisableFrameLockI3D = _link_function('wglDisableFrameLockI3D', BOOL, [], 'I3D_swap_frame_lock')
-
-# http://www.opengl.org/registry/api/wglext.h:670
-wglIsEnabledFrameLockI3D = _link_function('wglIsEnabledFrameLockI3D', BOOL, [POINTER(BOOL)], 'I3D_swap_frame_lock')
-
-# http://www.opengl.org/registry/api/wglext.h:671
-wglQueryFrameLockMasterI3D = _link_function('wglQueryFrameLockMasterI3D', BOOL, [POINTER(BOOL)], 'I3D_swap_frame_lock')
 
 PFNWGLENABLEFRAMELOCKI3DPROC = CFUNCTYPE(BOOL) 	# http://www.opengl.org/registry/api/wglext.h:673
 PFNWGLDISABLEFRAMELOCKI3DPROC = CFUNCTYPE(BOOL) 	# http://www.opengl.org/registry/api/wglext.h:674
@@ -669,16 +481,6 @@ PFNWGLQUERYFRAMELOCKMASTERI3DPROC = CFUNCTYPE(BOOL, POINTER(BOOL)) 	# http://www
 # I3D_swap_frame_usage (http://www.opengl.org/registry/api/wglext.h:679)
 WGL_I3D_swap_frame_usage = 1 	# http://www.opengl.org/registry/api/wglext.h:680
 # http://www.opengl.org/registry/api/wglext.h:682
-wglGetFrameUsageI3D = _link_function('wglGetFrameUsageI3D', BOOL, [POINTER(c_float)], 'I3D_swap_frame_usage')
-
-# http://www.opengl.org/registry/api/wglext.h:683
-wglBeginFrameTrackingI3D = _link_function('wglBeginFrameTrackingI3D', BOOL, [], 'I3D_swap_frame_usage')
-
-# http://www.opengl.org/registry/api/wglext.h:684
-wglEndFrameTrackingI3D = _link_function('wglEndFrameTrackingI3D', BOOL, [], 'I3D_swap_frame_usage')
-
-# http://www.opengl.org/registry/api/wglext.h:685
-wglQueryFrameTrackingI3D = _link_function('wglQueryFrameTrackingI3D', BOOL, [POINTER(DWORD), POINTER(DWORD), POINTER(c_float)], 'I3D_swap_frame_usage')
 
 PFNWGLGETFRAMEUSAGEI3DPROC = CFUNCTYPE(BOOL, POINTER(c_float)) 	# http://www.opengl.org/registry/api/wglext.h:687
 PFNWGLBEGINFRAMETRACKINGI3DPROC = CFUNCTYPE(BOOL) 	# http://www.opengl.org/registry/api/wglext.h:688
@@ -694,37 +496,13 @@ WGL_EXT_pixel_format_packed_float = 1 	# http://www.opengl.org/registry/api/wgle
 WGL_EXT_framebuffer_sRGB = 1 	# http://www.opengl.org/registry/api/wglext.h:706
 # NV_present_video (http://www.opengl.org/registry/api/wglext.h:709)
 WGL_NV_present_video = 1 	# http://www.opengl.org/registry/api/wglext.h:710
-# http://www.opengl.org/registry/api/wglext.h:712
-wglEnumerateVideoDevicesNV = _link_function('wglEnumerateVideoDevicesNV', c_int, [HDC, POINTER(HVIDEOOUTPUTDEVICENV)], 'NV_present_video')
-
-# http://www.opengl.org/registry/api/wglext.h:713
-wglBindVideoDeviceNV = _link_function('wglBindVideoDeviceNV', BOOL, [HDC, c_uint, HVIDEOOUTPUTDEVICENV, POINTER(c_int)], 'NV_present_video')
-
-# http://www.opengl.org/registry/api/wglext.h:714
-wglQueryCurrentContextNV = _link_function('wglQueryCurrentContextNV', BOOL, [c_int, POINTER(c_int)], 'NV_present_video')
 
 PFNWGLENUMERATEVIDEODEVICESNVPROC = CFUNCTYPE(c_int, HDC, POINTER(HVIDEOOUTPUTDEVICENV)) 	# http://www.opengl.org/registry/api/wglext.h:716
 PFNWGLBINDVIDEODEVICENVPROC = CFUNCTYPE(BOOL, HDC, c_uint, HVIDEOOUTPUTDEVICENV, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:717
 PFNWGLQUERYCURRENTCONTEXTNVPROC = CFUNCTYPE(BOOL, c_int, POINTER(c_int)) 	# http://www.opengl.org/registry/api/wglext.h:718
 # NV_video_out (http://www.opengl.org/registry/api/wglext.h:721)
 WGL_NV_video_out = 1 	# http://www.opengl.org/registry/api/wglext.h:722
-# http://www.opengl.org/registry/api/wglext.h:724
-wglGetVideoDeviceNV = _link_function('wglGetVideoDeviceNV', BOOL, [HDC, c_int, POINTER(HPVIDEODEV)], 'NV_video_out')
 
-# http://www.opengl.org/registry/api/wglext.h:725
-wglReleaseVideoDeviceNV = _link_function('wglReleaseVideoDeviceNV', BOOL, [HPVIDEODEV], 'NV_video_out')
-
-# http://www.opengl.org/registry/api/wglext.h:726
-wglBindVideoImageNV = _link_function('wglBindVideoImageNV', BOOL, [HPVIDEODEV, HPBUFFERARB, c_int], 'NV_video_out')
-
-# http://www.opengl.org/registry/api/wglext.h:727
-wglReleaseVideoImageNV = _link_function('wglReleaseVideoImageNV', BOOL, [HPBUFFERARB, c_int], 'NV_video_out')
-
-# http://www.opengl.org/registry/api/wglext.h:728
-wglSendPbufferToVideoNV = _link_function('wglSendPbufferToVideoNV', BOOL, [HPBUFFERARB, c_int, POINTER(c_ulong), BOOL], 'NV_video_out')
-
-# http://www.opengl.org/registry/api/wglext.h:729
-wglGetVideoInfoNV = _link_function('wglGetVideoInfoNV', BOOL, [HPVIDEODEV, POINTER(c_ulong), POINTER(c_ulong)], 'NV_video_out')
 
 PFNWGLGETVIDEODEVICENVPROC = CFUNCTYPE(BOOL, HDC, c_int, POINTER(HPVIDEODEV)) 	# http://www.opengl.org/registry/api/wglext.h:731
 PFNWGLRELEASEVIDEODEVICENVPROC = CFUNCTYPE(BOOL, HPVIDEODEV) 	# http://www.opengl.org/registry/api/wglext.h:732
@@ -734,23 +512,7 @@ PFNWGLSENDPBUFFERTOVIDEONVPROC = CFUNCTYPE(BOOL, HPBUFFERARB, c_int, POINTER(c_u
 PFNWGLGETVIDEOINFONVPROC = CFUNCTYPE(BOOL, HPVIDEODEV, POINTER(c_ulong), POINTER(c_ulong)) 	# http://www.opengl.org/registry/api/wglext.h:736
 # NV_swap_group (http://www.opengl.org/registry/api/wglext.h:739)
 WGL_NV_swap_group = 1 	# http://www.opengl.org/registry/api/wglext.h:740
-# http://www.opengl.org/registry/api/wglext.h:742
-wglJoinSwapGroupNV = _link_function('wglJoinSwapGroupNV', BOOL, [HDC, GLuint], 'NV_swap_group')
 
-# http://www.opengl.org/registry/api/wglext.h:743
-wglBindSwapBarrierNV = _link_function('wglBindSwapBarrierNV', BOOL, [GLuint, GLuint], 'NV_swap_group')
-
-# http://www.opengl.org/registry/api/wglext.h:744
-wglQuerySwapGroupNV = _link_function('wglQuerySwapGroupNV', BOOL, [HDC, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
-
-# http://www.opengl.org/registry/api/wglext.h:745
-wglQueryMaxSwapGroupsNV = _link_function('wglQueryMaxSwapGroupsNV', BOOL, [HDC, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
-
-# http://www.opengl.org/registry/api/wglext.h:746
-wglQueryFrameCountNV = _link_function('wglQueryFrameCountNV', BOOL, [HDC, POINTER(GLuint)], 'NV_swap_group')
-
-# http://www.opengl.org/registry/api/wglext.h:747
-wglResetFrameCountNV = _link_function('wglResetFrameCountNV', BOOL, [HDC], 'NV_swap_group')
 
 PFNWGLJOINSWAPGROUPNVPROC = CFUNCTYPE(BOOL, HDC, GLuint) 	# http://www.opengl.org/registry/api/wglext.h:749
 PFNWGLBINDSWAPBARRIERNVPROC = CFUNCTYPE(BOOL, GLuint, GLuint) 	# http://www.opengl.org/registry/api/wglext.h:750
@@ -759,27 +521,375 @@ PFNWGLQUERYMAXSWAPGROUPSNVPROC = CFUNCTYPE(BOOL, HDC, POINTER(GLuint), POINTER(G
 PFNWGLQUERYFRAMECOUNTNVPROC = CFUNCTYPE(BOOL, HDC, POINTER(GLuint)) 	# http://www.opengl.org/registry/api/wglext.h:753
 PFNWGLRESETFRAMECOUNTNVPROC = CFUNCTYPE(BOOL, HDC) 	# http://www.opengl.org/registry/api/wglext.h:754
 # NV_gpu_affinity (http://www.opengl.org/registry/api/wglext.h:757)
-WGL_NV_gpu_affinity = 1 	# http://www.opengl.org/registry/api/wglext.h:758
+WGL_NV_gpu_affinity = 1  # http://www.opengl.org/registry/api/wglext.h:758
 # http://www.opengl.org/registry/api/wglext.h:760
-wglEnumGpusNV = _link_function('wglEnumGpusNV', BOOL, [UINT, POINTER(HGPUNV)], 'NV_gpu_affinity')
 
-# http://www.opengl.org/registry/api/wglext.h:761
-wglEnumGpuDevicesNV = _link_function('wglEnumGpuDevicesNV', BOOL, [HGPUNV, UINT, PGPU_DEVICE], 'NV_gpu_affinity')
 
-# http://www.opengl.org/registry/api/wglext.h:762
-wglCreateAffinityDCNV = _link_function('wglCreateAffinityDCNV', HDC, [POINTER(HGPUNV)], 'NV_gpu_affinity')
+PFNWGLENUMGPUSNVPROC = CFUNCTYPE(BOOL, UINT, POINTER(HGPUNV))  # http://www.opengl.org/registry/api/wglext.h:766
+PFNWGLENUMGPUDEVICESNVPROC = CFUNCTYPE(
+    BOOL, HGPUNV, UINT, PGPU_DEVICE
+)  # http://www.opengl.org/registry/api/wglext.h:767
+PFNWGLCREATEAFFINITYDCNVPROC = CFUNCTYPE(HDC, POINTER(HGPUNV))  # http://www.opengl.org/registry/api/wglext.h:768
+PFNWGLENUMGPUSFROMAFFINITYDCNVPROC = CFUNCTYPE(
+    BOOL, HDC, UINT, POINTER(HGPUNV)
+)  # http://www.opengl.org/registry/api/wglext.h:769
+PFNWGLDELETEDCNVPROC = CFUNCTYPE(BOOL, HDC)  # http://www.opengl.org/registry/api/wglext.h:770
 
-# http://www.opengl.org/registry/api/wglext.h:763
-wglEnumGpusFromAffinityDCNV = _link_function('wglEnumGpusFromAffinityDCNV', BOOL, [HDC, UINT, POINTER(HGPUNV)], 'NV_gpu_affinity')
 
-# http://www.opengl.org/registry/api/wglext.h:764
-wglDeleteDCNV = _link_function('wglDeleteDCNV', BOOL, [HDC], 'NV_gpu_affinity')
+class WGLFunctions_ARB:
+    def __init__(self):
+        # http://www.opengl.org/registry/api/wglext.h:402
+        self.wglCreateBufferRegionARB = _link_function(
+            'wglCreateBufferRegionARB', HANDLE, [HDC, c_int, UINT], 'ARB_buffer_region'
+        )
 
-PFNWGLENUMGPUSNVPROC = CFUNCTYPE(BOOL, UINT, POINTER(HGPUNV)) 	# http://www.opengl.org/registry/api/wglext.h:766
-PFNWGLENUMGPUDEVICESNVPROC = CFUNCTYPE(BOOL, HGPUNV, UINT, PGPU_DEVICE) 	# http://www.opengl.org/registry/api/wglext.h:767
-PFNWGLCREATEAFFINITYDCNVPROC = CFUNCTYPE(HDC, POINTER(HGPUNV)) 	# http://www.opengl.org/registry/api/wglext.h:768
-PFNWGLENUMGPUSFROMAFFINITYDCNVPROC = CFUNCTYPE(BOOL, HDC, UINT, POINTER(HGPUNV)) 	# http://www.opengl.org/registry/api/wglext.h:769
-PFNWGLDELETEDCNVPROC = CFUNCTYPE(BOOL, HDC) 	# http://www.opengl.org/registry/api/wglext.h:770
+        # http://www.opengl.org/registry/api/wglext.h:403
+        self.wglDeleteBufferRegionARB = _link_function('wglDeleteBufferRegionARB', VOID, [HANDLE], 'ARB_buffer_region')
+
+        # http://www.opengl.org/registry/api/wglext.h:404
+        self.wglSaveBufferRegionARB = _link_function('wglSaveBufferRegionARB', BOOL, [HANDLE, c_int, c_int, c_int, c_int], 'ARB_buffer_region')
+
+        # http://www.opengl.org/registry/api/wglext.h:405
+        self.wglRestoreBufferRegionARB = _link_function('wglRestoreBufferRegionARB', BOOL, [HANDLE, c_int, c_int, c_int, c_int, c_int, c_int], 'ARB_buffer_region')
+
+        # http://www.opengl.org/registry/api/wglext.h:420
+        self.wglGetExtensionsStringARB = _link_function('wglGetExtensionsStringARB', c_char_p, [HDC], 'ARB_extensions_string')
+
+
+        # http://www.opengl.org/registry/api/wglext.h:428
+        self.wglGetPixelFormatAttribivARB = _link_function(
+            'wglGetPixelFormatAttribivARB',
+            BOOL,
+            [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)],
+            'ARB_pixel_format',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:429
+        self.wglGetPixelFormatAttribfvARB = _link_function(
+            'wglGetPixelFormatAttribfvARB',
+            BOOL,
+            [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)],
+            'ARB_pixel_format',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:430
+        self.wglChoosePixelFormatARB = _link_function('wglChoosePixelFormatARB', BOOL, [HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)], 'ARB_pixel_format')
+        # http://www.opengl.org/registry/api/wglext.h:440
+        self.wglMakeContextCurrentARB = _link_function('wglMakeContextCurrentARB', BOOL, [HDC, HDC, HGLRC], 'ARB_make_current_read')
+
+        # http://www.opengl.org/registry/api/wglext.h:441
+        self.wglGetCurrentReadDCARB = _link_function('wglGetCurrentReadDCARB', HDC, [], 'ARB_make_current_read')
+
+        # http://www.opengl.org/registry/api/wglext.h:450
+        self.wglCreatePbufferARB = _link_function(
+            'wglCreatePbufferARB', HPBUFFERARB, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'ARB_pbuffer'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:451
+        self.wglGetPbufferDCARB = _link_function('wglGetPbufferDCARB', HDC, [HPBUFFERARB], 'ARB_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:452
+        self.wglReleasePbufferDCARB = _link_function('wglReleasePbufferDCARB', c_int, [HPBUFFERARB, HDC], 'ARB_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:453
+        self.wglDestroyPbufferARB = _link_function('wglDestroyPbufferARB', BOOL, [HPBUFFERARB], 'ARB_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:454
+        self.wglQueryPbufferARB = _link_function(
+            'wglQueryPbufferARB', BOOL, [HPBUFFERARB, c_int, POINTER(c_int)], 'ARB_pbuffer'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:466
+        self.wglBindTexImageARB = _link_function('wglBindTexImageARB', BOOL, [HPBUFFERARB, c_int], 'ARB_render_texture')
+
+        # http://www.opengl.org/registry/api/wglext.h:467
+        self.wglReleaseTexImageARB = _link_function('wglReleaseTexImageARB', BOOL, [HPBUFFERARB, c_int], 'ARB_render_texture')
+
+        # http://www.opengl.org/registry/api/wglext.h:468
+        self.wglSetPbufferAttribARB = _link_function('wglSetPbufferAttribARB', BOOL, [HPBUFFERARB, POINTER(c_int)], 'ARB_render_texture')
+        # http://www.opengl.org/registry/api/wglext.h:482
+        self.wglCreateContextAttribsARB = _link_function('wglCreateContextAttribsARB', HGLRC, [HDC, HGLRC, POINTER(c_int)], 'ARB_create_context')
+
+
+        # http://www.opengl.org/registry/api/wglext.h:490
+        self.wglCreateDisplayColorTableEXT = _link_function(
+            'wglCreateDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:491
+        self.wglLoadDisplayColorTableEXT = _link_function('wglLoadDisplayColorTableEXT', GLboolean, [POINTER(GLushort), GLuint], 'EXT_display_color_table')
+
+        # http://www.opengl.org/registry/api/wglext.h:492
+        self.wglBindDisplayColorTableEXT = _link_function('wglBindDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table')
+
+        # http://www.opengl.org/registry/api/wglext.h:493
+        self.wglDestroyDisplayColorTableEXT = _link_function('wglDestroyDisplayColorTableEXT', VOID, [GLushort], 'EXT_display_color_table')
+
+
+        # http://www.opengl.org/registry/api/wglext.h:504
+        self.wglGetExtensionsStringEXT = _link_function('wglGetExtensionsStringEXT', c_char_p, [], 'EXT_extensions_string')
+
+        # http://www.opengl.org/registry/api/wglext.h:512
+        self.wglMakeContextCurrentEXT = _link_function('wglMakeContextCurrentEXT', BOOL, [HDC, HDC, HGLRC], 'EXT_make_current_read')
+
+        # http://www.opengl.org/registry/api/wglext.h:513
+        self.wglGetCurrentReadDCEXT = _link_function('wglGetCurrentReadDCEXT', HDC, [], 'EXT_make_current_read')
+
+
+        self.wglCreatePbufferEXT = _link_function(
+            'wglCreatePbufferEXT', HPBUFFEREXT, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'EXT_pbuffer'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:523
+        self.wglGetPbufferDCEXT = _link_function('wglGetPbufferDCEXT', HDC, [HPBUFFEREXT], 'EXT_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:524
+        self.wglReleasePbufferDCEXT = _link_function('wglReleasePbufferDCEXT', c_int, [HPBUFFEREXT, HDC], 'EXT_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:525
+        self.wglDestroyPbufferEXT = _link_function('wglDestroyPbufferEXT', BOOL, [HPBUFFEREXT], 'EXT_pbuffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:526
+        self.wglQueryPbufferEXT = _link_function(
+            'wglQueryPbufferEXT', BOOL, [HPBUFFEREXT, c_int, POINTER(c_int)], 'EXT_pbuffer'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:538
+        self.wglGetPixelFormatAttribivEXT = _link_function(
+            'wglGetPixelFormatAttribivEXT',
+            BOOL,
+            [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)],
+            'EXT_pixel_format',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:539
+        self.wglGetPixelFormatAttribfvEXT = _link_function(
+            'wglGetPixelFormatAttribfvEXT',
+            BOOL,
+            [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)],
+            'EXT_pixel_format',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:540
+        self.wglChoosePixelFormatEXT = _link_function(
+            'wglChoosePixelFormatEXT',
+            BOOL,
+            [HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)],
+            'EXT_pixel_format',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:550
+        self.wglSwapIntervalEXT = _link_function('wglSwapIntervalEXT', BOOL, [c_int], 'EXT_swap_control')
+
+        # http://www.opengl.org/registry/api/wglext.h:551
+        self.wglGetSwapIntervalEXT = _link_function('wglGetSwapIntervalEXT', c_int, [], 'EXT_swap_control')
+
+        # http://www.opengl.org/registry/api/wglext.h:564
+        self.wglAllocateMemoryNV = _link_function(
+            'wglAllocateMemoryNV', POINTER(c_void), [GLsizei, GLfloat, GLfloat, GLfloat], 'NV_vertex_array_range'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:565
+        self.wglFreeMemoryNV = _link_function('wglFreeMemoryNV', None, [POINTER(None)], 'NV_vertex_array_range')
+
+        # http://www.opengl.org/registry/api/wglext.h:582
+        self.wglGetSyncValuesOML = _link_function(
+            'wglGetSyncValuesOML', BOOL, [HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:583
+        self.wglGetMscRateOML = _link_function(
+            'wglGetMscRateOML', BOOL, [HDC, POINTER(INT32), POINTER(INT32)], 'OML_sync_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:584
+        self.wglSwapBuffersMscOML = _link_function(
+            'wglSwapBuffersMscOML', INT64, [HDC, INT64, INT64, INT64], 'OML_sync_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:585
+        self.wglSwapLayerBuffersMscOML = _link_function(
+            'wglSwapLayerBuffersMscOML', INT64, [HDC, c_int, INT64, INT64, INT64], 'OML_sync_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:586
+        self.wglWaitForMscOML = _link_function(
+            'wglWaitForMscOML',
+            BOOL,
+            [HDC, INT64, INT64, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)],
+            'OML_sync_control',
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:587
+        self.wglWaitForSbcOML = _link_function(
+            'wglWaitForSbcOML', BOOL, [HDC, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:600
+        self.wglGetDigitalVideoParametersI3D = _link_function(
+            'wglGetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:601
+        self.wglSetDigitalVideoParametersI3D = _link_function(
+            'wglSetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control'
+        )
+
+        self.wglGetGammaTableParametersI3D = _link_function(
+            'wglGetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:611
+        self.wglSetGammaTableParametersI3D = _link_function('wglSetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma')
+
+        # http://www.opengl.org/registry/api/wglext.h:612
+        self.wglGetGammaTableI3D = _link_function('wglGetGammaTableI3D', BOOL, [HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)], 'I3D_gamma')
+
+        # http://www.opengl.org/registry/api/wglext.h:613
+        self.wglSetGammaTableI3D = _link_function('wglSetGammaTableI3D', BOOL, [HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)], 'I3D_gamma')
+
+
+
+
+
+        # http://www.opengl.org/registry/api/wglext.h:624
+        self.wglEnableGenlockI3D = _link_function('wglEnableGenlockI3D', BOOL, [HDC], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:625
+        self.wglDisableGenlockI3D = _link_function('wglDisableGenlockI3D', BOOL, [HDC], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:626
+        self.wglIsEnabledGenlockI3D = _link_function('wglIsEnabledGenlockI3D', BOOL, [HDC, POINTER(BOOL)], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:627
+        self.wglGenlockSourceI3D = _link_function('wglGenlockSourceI3D', BOOL, [HDC, UINT], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:628
+        self.wglGetGenlockSourceI3D = _link_function('wglGetGenlockSourceI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:629
+        self.wglGenlockSourceEdgeI3D = _link_function('wglGenlockSourceEdgeI3D', BOOL, [HDC, UINT], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:630
+        self.wglGetGenlockSourceEdgeI3D = _link_function(
+            'wglGetGenlockSourceEdgeI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:631
+        self.wglGenlockSampleRateI3D = _link_function('wglGenlockSampleRateI3D', BOOL, [HDC, UINT], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:632
+        self.wglGetGenlockSampleRateI3D = _link_function('wglGetGenlockSampleRateI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:633
+        self.wglGenlockSourceDelayI3D = _link_function('wglGenlockSourceDelayI3D', BOOL, [HDC, UINT], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:634
+        self.wglGetGenlockSourceDelayI3D = _link_function('wglGetGenlockSourceDelayI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock')
+
+        # http://www.opengl.org/registry/api/wglext.h:635
+        self.wglQueryGenlockMaxSourceDelayI3D = _link_function('wglQueryGenlockMaxSourceDelayI3D', BOOL, [HDC, POINTER(UINT), POINTER(UINT)], 'I3D_genlock')
+
+
+        # http://www.opengl.org/registry/api/wglext.h:654
+        self.wglCreateImageBufferI3D = _link_function(
+            'wglCreateImageBufferI3D', LPVOID, [HDC, DWORD, UINT], 'I3D_image_buffer'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:655
+        self.wglDestroyImageBufferI3D = _link_function('wglDestroyImageBufferI3D', BOOL, [HDC, LPVOID], 'I3D_image_buffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:656
+        self.wglAssociateImageBufferEventsI3D = _link_function('wglAssociateImageBufferEventsI3D', BOOL, [HDC, POINTER(HANDLE), POINTER(LPVOID), POINTER(DWORD), UINT], 'I3D_image_buffer')
+
+        # http://www.opengl.org/registry/api/wglext.h:657
+        self.wglReleaseImageBufferEventsI3D = _link_function('wglReleaseImageBufferEventsI3D', BOOL, [HDC, POINTER(LPVOID), UINT], 'I3D_image_buffer')
+
+
+        self.wglEnableFrameLockI3D = _link_function('wglEnableFrameLockI3D', BOOL, [], 'I3D_swap_frame_lock')
+
+        # http://www.opengl.org/registry/api/wglext.h:669
+        self.wglDisableFrameLockI3D = _link_function('wglDisableFrameLockI3D', BOOL, [], 'I3D_swap_frame_lock')
+
+        # http://www.opengl.org/registry/api/wglext.h:670
+        self.wglIsEnabledFrameLockI3D = _link_function('wglIsEnabledFrameLockI3D', BOOL, [POINTER(BOOL)], 'I3D_swap_frame_lock')
+
+        # http://www.opengl.org/registry/api/wglext.h:671
+        self.wglQueryFrameLockMasterI3D = _link_function('wglQueryFrameLockMasterI3D', BOOL, [POINTER(BOOL)], 'I3D_swap_frame_lock')
+
+        # http://www.opengl.org/registry/api/wglext.h:712
+        self.wglEnumerateVideoDevicesNV = _link_function('wglEnumerateVideoDevicesNV', c_int, [HDC, POINTER(HVIDEOOUTPUTDEVICENV)], 'NV_present_video')
+
+        # http://www.opengl.org/registry/api/wglext.h:713
+        self.wglBindVideoDeviceNV = _link_function('wglBindVideoDeviceNV', BOOL, [HDC, c_uint, HVIDEOOUTPUTDEVICENV, POINTER(c_int)], 'NV_present_video')
+
+        # http://www.opengl.org/registry/api/wglext.h:714
+        self.wglQueryCurrentContextNV = _link_function('wglQueryCurrentContextNV', BOOL, [c_int, POINTER(c_int)], 'NV_present_video')
+
+
+        self.wglGetFrameUsageI3D = _link_function('wglGetFrameUsageI3D', BOOL, [POINTER(c_float)], 'I3D_swap_frame_usage')
+
+        # http://www.opengl.org/registry/api/wglext.h:683
+        self.wglBeginFrameTrackingI3D = _link_function('wglBeginFrameTrackingI3D', BOOL, [], 'I3D_swap_frame_usage')
+
+        # http://www.opengl.org/registry/api/wglext.h:684
+        self.wglEndFrameTrackingI3D = _link_function('wglEndFrameTrackingI3D', BOOL, [], 'I3D_swap_frame_usage')
+
+        # http://www.opengl.org/registry/api/wglext.h:685
+        self.wglQueryFrameTrackingI3D = _link_function('wglQueryFrameTrackingI3D', BOOL, [POINTER(DWORD), POINTER(DWORD), POINTER(c_float)], 'I3D_swap_frame_usage')
+
+
+        # http://www.opengl.org/registry/api/wglext.h:724
+        self.wglGetVideoDeviceNV = _link_function(
+            'wglGetVideoDeviceNV', BOOL, [HDC, c_int, POINTER(HPVIDEODEV)], 'NV_video_out'
+        )
+
+        # http://www.opengl.org/registry/api/wglext.h:725
+        self.wglReleaseVideoDeviceNV = _link_function('wglReleaseVideoDeviceNV', BOOL, [HPVIDEODEV], 'NV_video_out')
+
+        # http://www.opengl.org/registry/api/wglext.h:726
+        self.wglBindVideoImageNV = _link_function('wglBindVideoImageNV', BOOL, [HPVIDEODEV, HPBUFFERARB, c_int], 'NV_video_out')
+
+        # http://www.opengl.org/registry/api/wglext.h:727
+        self.wglReleaseVideoImageNV = _link_function('wglReleaseVideoImageNV', BOOL, [HPBUFFERARB, c_int], 'NV_video_out')
+
+        # http://www.opengl.org/registry/api/wglext.h:728
+        self.wglSendPbufferToVideoNV = _link_function('wglSendPbufferToVideoNV', BOOL, [HPBUFFERARB, c_int, POINTER(c_ulong), BOOL], 'NV_video_out')
+
+        # http://www.opengl.org/registry/api/wglext.h:729
+        self.wglGetVideoInfoNV = _link_function('wglGetVideoInfoNV', BOOL, [HPVIDEODEV, POINTER(c_ulong), POINTER(c_ulong)], 'NV_video_out')
+
+        # http://www.opengl.org/registry/api/wglext.h:742
+        self.wglJoinSwapGroupNV = _link_function('wglJoinSwapGroupNV', BOOL, [HDC, GLuint], 'NV_swap_group')
+
+        # http://www.opengl.org/registry/api/wglext.h:743
+        self.wglBindSwapBarrierNV = _link_function('wglBindSwapBarrierNV', BOOL, [GLuint, GLuint], 'NV_swap_group')
+
+        # http://www.opengl.org/registry/api/wglext.h:744
+        self.wglQuerySwapGroupNV = _link_function('wglQuerySwapGroupNV', BOOL, [HDC, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
+
+        # http://www.opengl.org/registry/api/wglext.h:745
+        self.wglQueryMaxSwapGroupsNV = _link_function('wglQueryMaxSwapGroupsNV', BOOL, [HDC, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
+
+        # http://www.opengl.org/registry/api/wglext.h:746
+        self.wglQueryFrameCountNV = _link_function('wglQueryFrameCountNV', BOOL, [HDC, POINTER(GLuint)], 'NV_swap_group')
+
+        # http://www.opengl.org/registry/api/wglext.h:747
+        self.wglResetFrameCountNV = _link_function('wglResetFrameCountNV', BOOL, [HDC], 'NV_swap_group')
+
+        self.wglEnumGpusNV = _link_function('wglEnumGpusNV', BOOL, [UINT, POINTER(HGPUNV)], 'NV_gpu_affinity')
+
+        # http://www.opengl.org/registry/api/wglext.h:761
+        self.wglEnumGpuDevicesNV = _link_function('wglEnumGpuDevicesNV', BOOL, [HGPUNV, UINT, PGPU_DEVICE], 'NV_gpu_affinity')
+
+        # http://www.opengl.org/registry/api/wglext.h:762
+        self.wglCreateAffinityDCNV = _link_function('wglCreateAffinityDCNV', HDC, [POINTER(HGPUNV)], 'NV_gpu_affinity')
+
+        # http://www.opengl.org/registry/api/wglext.h:763
+        self.wglEnumGpusFromAffinityDCNV = _link_function('wglEnumGpusFromAffinityDCNV', BOOL, [HDC, UINT, POINTER(HGPUNV)], 'NV_gpu_affinity')
+
+        # http://www.opengl.org/registry/api/wglext.h:764
+        self.wglDeleteDCNV = _link_function('wglDeleteDCNV', BOOL, [HDC], 'NV_gpu_affinity')
 
 __all__ = [
     'ERROR_INCOMPATIBLE_DEVICE_CONTEXTS_ARB',
@@ -1143,100 +1253,6 @@ __all__ = [
     'WGL_NV_vertex_array_range',
     'WGL_NV_video_out',
     'WGL_OML_sync_control',
-    'wglAllocateMemoryNV',
-    'wglAssociateImageBufferEventsI3D',
-    'wglBeginFrameTrackingI3D',
-    'wglBindDisplayColorTableEXT',
-    'wglBindSwapBarrierNV',
-    'wglBindTexImageARB',
-    'wglBindVideoDeviceNV',
-    'wglBindVideoImageNV',
-    'wglChoosePixelFormatARB',
-    'wglChoosePixelFormatEXT',
-    'wglCreateAffinityDCNV',
-    'wglCreateBufferRegionARB',
-    'wglCreateContextAttribsARB',
-    'wglCreateDisplayColorTableEXT',
-    'wglCreateImageBufferI3D',
-    'wglCreatePbufferARB',
-    'wglCreatePbufferEXT',
-    'wglDeleteBufferRegionARB',
-    'wglDeleteDCNV',
-    'wglDestroyDisplayColorTableEXT',
-    'wglDestroyImageBufferI3D',
-    'wglDestroyPbufferARB',
-    'wglDestroyPbufferEXT',
-    'wglDisableFrameLockI3D',
-    'wglDisableGenlockI3D',
-    'wglEnableFrameLockI3D',
-    'wglEnableGenlockI3D',
-    'wglEndFrameTrackingI3D',
-    'wglEnumGpuDevicesNV',
-    'wglEnumGpusFromAffinityDCNV',
-    'wglEnumGpusNV',
-    'wglEnumerateVideoDevicesNV',
-    'wglFreeMemoryNV',
-    'wglGenlockSampleRateI3D',
-    'wglGenlockSourceDelayI3D',
-    'wglGenlockSourceEdgeI3D',
-    'wglGenlockSourceI3D',
-    'wglGetCurrentReadDCARB',
-    'wglGetCurrentReadDCEXT',
-    'wglGetDigitalVideoParametersI3D',
-    'wglGetExtensionsStringARB',
-    'wglGetExtensionsStringEXT',
-    'wglGetFrameUsageI3D',
-    'wglGetGammaTableI3D',
-    'wglGetGammaTableParametersI3D',
-    'wglGetGenlockSampleRateI3D',
-    'wglGetGenlockSourceDelayI3D',
-    'wglGetGenlockSourceEdgeI3D',
-    'wglGetGenlockSourceI3D',
-    'wglGetMscRateOML',
-    'wglGetPbufferDCARB',
-    'wglGetPbufferDCEXT',
-    'wglGetPixelFormatAttribfvARB',
-    'wglGetPixelFormatAttribfvEXT',
-    'wglGetPixelFormatAttribivARB',
-    'wglGetPixelFormatAttribivEXT',
-    'wglGetSwapIntervalEXT',
-    'wglGetSyncValuesOML',
-    'wglGetVideoDeviceNV',
-    'wglGetVideoInfoNV',
-    'wglIsEnabledFrameLockI3D',
-    'wglIsEnabledGenlockI3D',
-    'wglJoinSwapGroupNV',
-    'wglLoadDisplayColorTableEXT',
-    'wglMakeContextCurrentARB',
-    'wglMakeContextCurrentEXT',
-    'wglQueryCurrentContextNV',
-    'wglQueryFrameCountNV',
-    'wglQueryFrameLockMasterI3D',
-    'wglQueryFrameTrackingI3D',
-    'wglQueryGenlockMaxSourceDelayI3D',
-    'wglQueryMaxSwapGroupsNV',
-    'wglQueryPbufferARB',
-    'wglQueryPbufferEXT',
-    'wglQuerySwapGroupNV',
-    'wglReleaseImageBufferEventsI3D',
-    'wglReleasePbufferDCARB',
-    'wglReleasePbufferDCEXT',
-    'wglReleaseTexImageARB',
-    'wglReleaseVideoDeviceNV',
-    'wglReleaseVideoImageNV',
-    'wglResetFrameCountNV',
-    'wglRestoreBufferRegionARB',
-    'wglSaveBufferRegionARB',
-    'wglSendPbufferToVideoNV',
-    'wglSetDigitalVideoParametersI3D',
-    'wglSetGammaTableI3D',
-    'wglSetGammaTableParametersI3D',
-    'wglSetPbufferAttribARB',
-    'wglSwapBuffersMscOML',
-    'wglSwapIntervalEXT',
-    'wglSwapLayerBuffersMscOML',
-    'wglWaitForMscOML',
-    'wglWaitForSbcOML',
 ]
 # END GENERATED CONTENT (do not edit above this line)
 
