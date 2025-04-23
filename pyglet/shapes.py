@@ -109,7 +109,7 @@ vertex_source = """#version 150 core
         m_rotation[1][1] =  cos(-radians(rotation));
 
         gl_Position = window.projection * window.view * m_translate * m_rotation * vec4(position, zposition, 1.0);
-        vertex_color = colors;
+        vertex_colors = colors;
     }
 """
 
@@ -120,6 +120,10 @@ fragment_source = """#version 150 core
     void main()
     {
         final_color = vertex_colors;
+        // No GL_ALPHA_TEST in core, use shader to discard.
+        if(final_color.a < 0.01){
+            discard;
+        }
     }
 """
 
