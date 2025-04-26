@@ -67,6 +67,8 @@ def test_shader_ubo_data_structure():
 
         layout(std140) uniform EntityDataBlock {
              DataStruct data[5];
+             float simple_type;
+             vec2 vec_type;
         } data_struct;
 
         uniform sampler2D sprite_texture;
@@ -90,7 +92,9 @@ def test_shader_ubo_data_structure():
     
     with ubo as block:
         block.data[0].color[1][:] = test_data
-        
+        block.simple_type = 1.0
+        block.vec_type[:] = (1.0, 2.0)
+
         # Just test a random deep node.
         assert len(block.data[3].within[2].position[:]) == 3
         

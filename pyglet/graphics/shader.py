@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 import weakref
+from _ctypes import _Pointer, _SimpleCData
 from collections import defaultdict
 from ctypes import (
     POINTER,
@@ -28,8 +29,6 @@ from ctypes import (
     string_at,
 )
 from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, Union
-
-from _ctypes import _Pointer, _SimpleCData
 
 import pyglet
 from pyglet.gl import Context, GLException, gl, gl_info
@@ -171,19 +170,19 @@ _uniform_setters: dict[int, tuple[GLDataType, GLFunc, GLFunc, int]] = {
     # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
 
     gl.GL_IMAGE_1D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
-    gl.GL_IMAGE_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
-    gl.GL_IMAGE_2D_RECT: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
-    gl.GL_IMAGE_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_2D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_2D_RECT: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_3D: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
-    gl.GL_IMAGE_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
-    gl.GL_IMAGE_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_1D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_2D_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
-    gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 2),
-    gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
+    gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 
-    gl.GL_IMAGE_BUFFER: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_BUFFER: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
     gl.GL_IMAGE_CUBE: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
-    gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 3),
+    gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, gl.glUniform1iv, gl.glProgramUniform1iv, 1),
 }
 
 _attribute_types: dict[int, tuple[int, str]] = {
@@ -332,8 +331,17 @@ class _UniformArray:
     _ptr: CTypesPointer[GLDataType]
     _idx_to_loc: dict[int, int]
 
-    __slots__ = ('_uniform', '_gl_type', '_gl_getter', '_gl_setter', '_is_matrix', '_dsa', '_c_array', '_ptr',
-                 '_idx_to_loc')
+    __slots__ = (
+        '_c_array',
+        '_dsa',
+        '_gl_getter',
+        '_gl_setter',
+        '_gl_type',
+        '_idx_to_loc',
+        '_is_matrix',
+        '_ptr',
+        '_uniform',
+    )
 
     def __init__(self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
                  dsa: bool) -> None:
@@ -362,7 +370,7 @@ class _UniformArray:
         right location.
         """
         loc = gl.glGetUniformLocation(self._uniform.program,
-                                create_string_buffer(f"{self._uniform.name}[{index}]".encode('utf-8')))
+                                create_string_buffer(f"{self._uniform.name}[{index}]".encode()))
         return loc
 
     def _get_array_loc(self, index: int) -> int:
@@ -471,7 +479,7 @@ class _Uniform:
     get: Callable[[], Array[GLDataType] | GLDataType]
     set: Callable[[float], None] | Callable[[Sequence], None]
 
-    __slots__ = 'type', 'size', 'location', 'length', 'count', 'get', 'set', 'program', 'name'
+    __slots__ = 'count', 'get', 'length', 'location', 'name', 'program', 'set', 'size', 'type'
 
     def __init__(self, program: int, name: str, uniform_type: int, size: int, location: int, dsa: bool) -> None:
         self.name = name
@@ -662,7 +670,7 @@ class UniformBlock:
     binding: int
     uniforms: dict[int, tuple[str, GLDataType, int, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'program', 'name', 'index', 'size', 'binding', 'uniforms', 'view_cls', 'uniform_count'
+    __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict[int, tuple[str, GLDataType, int, int]], uniform_count: int) -> None:
@@ -793,9 +801,15 @@ class UniformBlock:
                 if part_idx == len(parts) - 1:  # The last part is the actual type
                     if u_size > 1:
                         # If size > 1, treat as an array of type
-                        current_structure[part_name] = gl_type * length * u_size
+                        if length > 1:
+                            current_structure[part_name] = (gl_type * length) * u_size
+                        else:
+                            current_structure[part_name] = gl_type * u_size
                     else:
-                        current_structure[part_name] = gl_type * length
+                        if length > 1:
+                            current_structure[part_name] = gl_type * length
+                        else:
+                            current_structure[part_name] = gl_type
 
                     offset_size = offsets[i + 1] - offsets[i]
                     c_type_size = sizeof(current_structure[part_name])
@@ -836,7 +850,7 @@ class UniformBufferObject:
     _view_ptr: CTypesPointer[Structure]
     binding: int
     buffer: BufferObject
-    __slots__ = 'buffer', 'view', '_view_ptr', 'binding'
+    __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
 
     def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
         """Initialize the Uniform Buffer Object with the specified Structure."""
@@ -1267,7 +1281,7 @@ class ShaderProgram:
     _uniforms: dict[str, _Uniform]
     _uniform_blocks: dict[str, UniformBlock]
 
-    __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
+    __slots__ = '__weakref__', '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
     def __init__(self, *shaders: Shader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
