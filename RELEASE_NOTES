@@ -1,3 +1,12 @@
+pyglet 2.1.6
+
+Bugfixes
+--------
+shapes: revert color -> colors in default shader.
+shaders: fix UniformBlock introspection for creating an array of single types, like float.
+shaders: in compute_shader example, fix incorrect assumption that bind_image_texture used uniform location.
+
+
 pyglet 2.1.5
 
 Changes
