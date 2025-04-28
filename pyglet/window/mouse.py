@@ -73,7 +73,7 @@ class MouseStateHandler:
         return self.data.get(key, False)
     
     def __getattr__(self, item: str) -> int:
-        return self.data[item]
+        return self.data.get(item, default=0)
 
 
 def buttons_string(buttons: int) -> str:
