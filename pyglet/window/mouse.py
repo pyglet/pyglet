@@ -24,7 +24,7 @@ class MouseStateHandler:
 
 
     Mouse coordinates can be retrieved by using the ``'x'`` and ``'y'`` strings
-    or by using ``'mouse_state.x'`` and ``'mouse_state.y`` attributes
+    or by using ``'mouse_state.x'`` and ``'mouse_state.y`` attributes.
 
     For example::
 
