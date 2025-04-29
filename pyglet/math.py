@@ -191,7 +191,7 @@ class Vec2(_typing.NamedTuple):
             )
 
     def __lt__(self, other: tuple[float, float]) -> bool:
-        return self[0] ** 2 + self[0] ** 2 < other[0] ** 2 + other[1] ** 2
+        return self[0] ** 2 + self[1] ** 2 < other[0] ** 2 + other[1] ** 2
 
     @staticmethod
     def from_heading(heading: float, length: float = 1.0) -> Vec2:
@@ -823,7 +823,8 @@ class Vec4(_typing.NamedTuple):
             )
 
     def __lt__(self, other: Vec4 | tuple[float, float, float, float]) -> bool:
-        return self[0] ** 2 + self[1] ** 2 + self[2] ** 2 < other[0] ** 2 + other[1] ** 2 + other[2] ** 2
+        return (self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2 <
+                other[0] ** 2 + other[1] ** 2 + other[2] ** 2 + other[3] ** 2)
 
     def length(self) -> float:
         """Calculate the length of the vector: ``sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2)``."""
