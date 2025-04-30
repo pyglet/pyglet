@@ -120,11 +120,12 @@ from __future__ import annotations
 
 import inspect
 import os.path
+
 from functools import partial
 from typing import TYPE_CHECKING, Literal, Union
 from weakref import WeakMethod
 
-import pyglet.app
+import pyglet
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator
