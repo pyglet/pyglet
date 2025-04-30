@@ -124,6 +124,8 @@ from functools import partial
 from typing import TYPE_CHECKING, Literal, Union
 from weakref import WeakMethod
 
+import pyglet.app
+
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator
 
@@ -328,7 +330,7 @@ class EventDispatcher:
         handlers down the stack will receive this event.
 
         This method has several possible return values. If any event
-        hander has returned ``EVENT_HANDLED``, then this method will
+        handler has returned ``EVENT_HANDLED``, then this method will
         also return ``EVENT_HANDLED``. If not, this method will return
         ``EVENT_UNHANDLED``. If there were no events registered to
         receive this event, ``False`` is returned.
@@ -380,6 +382,19 @@ class EventDispatcher:
             return EVENT_UNHANDLED
 
         return False
+
+    def post_event(self, event_type: str, *args: Any) -> bool | None:
+        """Post an event to the main application thread.
+
+        Unlike the :py:meth:`~pyglet.event.EventDispatcher.dispatch_event`
+        method, this method does not dispatch events directly. Instead, it
+        hands off the dispatch call to the main application thread. This
+        ensures that any event handlers are also executed in the main thread.
+
+        This method aliases :py:meth:`~pyglet.app.PlatformEventLoop.post_event`,
+        which can be seen for more information on behavior.
+        """
+        pyglet.app.platform_event_loop.post_event(self, event_type, *args)
 
     def _raise_dispatch_exception(self, event_type: str, args: Any, handler: Callable, exception: Exception) -> None:
         # A common problem in applications is having the wrong number of

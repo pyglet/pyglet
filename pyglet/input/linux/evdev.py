@@ -471,7 +471,7 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
         if controller := self._controllers.get(name, _create_controller(device)):
             self._controllers[name] = controller
             # Dispatch event in main thread:
-            pyglet.app.platform_event_loop.post_event(self, 'on_connect', controller)
+            self.post_event('on_connect', controller)
 
     def select(self):
         """Triggered whenever the devices_file changes."""
