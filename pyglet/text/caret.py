@@ -16,18 +16,18 @@ import re
 import time
 from typing import TYPE_CHECKING, Any, Pattern
 
-from pyglet import clock, event
+from pyglet import clock, event, app
 from pyglet.window import key
+from pyglet.event import EventDispatcher
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.text.layout import IncrementalTextLayout
 
-
-class Caret:
+class Caret(EventDispatcher):
     """Visible text insertion marker for `pyglet.text.layout.IncrementalTextLayout`.
 
-    The caret is drawn as a single vertical bar at the document `position` 
+    The caret is drawn as a single vertical bar at the document `position`
     on a text layout object.  If ``mark`` is not None, it gives the unmoving
     end of the current text selection.  The visible text selection on the
     layout is updated along with ``mark`` and ``position``.
@@ -38,6 +38,9 @@ class Caret:
 
     Updates to the document (and so the layout) are automatically propagated
     to the caret.
+
+    The caret object dispatches the on_clipboard_copy event if a text is selected and then it is copied, which is then handled by the window, and will default to setting the clipboard content.
+    If a paste is triggered, it will handle it, and then dispatch the on_clipboard_paste event, which can be handled by the window.
 
     The caret object can be pushed onto a window event handler stack with
     ``Window.push_handlers``.  The caret will respond correctly to keyboard,
@@ -111,6 +114,13 @@ class Caret:
         self.visible = True
 
         layout.push_handlers(self)
+
+        for window in app.windows:
+            if window._shadow:
+                continue
+            if not hasattr(self, '_window'): # Assign _window to the first non-shadow window
+                self._window = window
+            self.push_handlers(window)
 
     @property
     def layout(self) -> IncrementalTextLayout:
@@ -467,7 +477,20 @@ class Caret:
                 self.position = 0
             else:
                 self.position = m.start()
+        elif motion == key.MOTION_COPY:
+            pos = self._position
+            mark = self._mark
+            self.dispatch_event("on_clipboard_copy", self._layout.document.text[pos:mark])
+        elif motion == key.MOTION_PASTE:
+            if self._mark is not None:
+                self._delete_selection()
 
+            text = self._window.get_clipboard_text().replace("\r", "\n")
+            pos = self._position
+            self._position += len(text)
+            self._layout.document.insert_text(pos, text, self._next_attributes)
+            self._nudge()
+            self.dispatch_event("on_clipboard_paste", text)
         if self._mark is not None and not select:
             self._mark = None
             self._layout.set_selection(0, 0)
@@ -564,3 +587,6 @@ class Caret:
         self._active = False
         self.visible = self._active
         return event.EVENT_HANDLED
+
+Caret.register_event_type("on_clipboard_copy")
+Caret.register_event_type("on_clipboard_paste")

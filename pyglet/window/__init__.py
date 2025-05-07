@@ -870,6 +870,20 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         during runtime.
         """
 
+    def on_clipboard_copy(self, text: str) -> EVENT_HANDLE_STATE:
+        """Dispatched from a Caret when text is copied.
+
+        This default handler sets the clipboard's content.
+        """
+
+        self.set_clipboard_text(text)
+
+    def on_clipboard_paste(self, text: str) -> EVENT_HANDLE_STATE:
+        """Dispatched from a Caret when text is pasted.
+
+        The default handler does nothing.
+        """
+
     @abstractmethod
     def set_caption(self, caption: str) -> None:
         """Set the window's caption.
@@ -1687,6 +1701,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             * MOTION_END_OF_FILE
             * MOTION_BACKSPACE
             * MOTION_DELETE
+            * MOTION_COPY
+            * MOTION_PASTE
 
             :event:
             """
@@ -1717,6 +1733,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             * MOTION_PREVIOUS_PAGE
             * MOTION_BEGINNING_OF_FILE
             * MOTION_END_OF_FILE
+            * MOTION_COPY
+            * MOTION_PASTE
 
             :event:
             """
@@ -1750,6 +1768,8 @@ BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_file_drop')
 BaseWindow.register_event_type('on_draw')
 BaseWindow.register_event_type('on_refresh')
+BaseWindow.register_event_type('on_clipboard_copy')
+BaseWindow.register_event_type('on_clipboard_paste')
 
 
 class FPSDisplay:
