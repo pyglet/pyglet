@@ -39,7 +39,8 @@ class Caret(EventDispatcher):
     Updates to the document (and so the layout) are automatically propagated
     to the caret.
 
-    The caret object dispatches the on_clipboard_copy event if a text is selected and then it is copied, and the on_clipboard_paste event
+    The caret object dispatches the on_clipboard_copy event if a text is selected and then it is copied, which is then handled by the window, and will default to setting the clipboard content.
+    If a paste is triggered, it will handle it, and then dispatch the on_clipboard_paste event, which can be handled by the window.
 
     The caret object can be pushed onto a window event handler stack with
     ``Window.push_handlers``.  The caret will respond correctly to keyboard,
