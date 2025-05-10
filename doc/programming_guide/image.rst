@@ -783,7 +783,7 @@ as components of the :py:class:`~pyglet.image.AbstractImage` hierarchy.
 
     The :py:class:`~pyglet.image.BufferImage` hierarchy.
 
-* One or more colour buffers, represented by
+* One or more color buffers, represented by
   :py:class:`~pyglet.image.ColorBufferImage`
 * An optional depth buffer, represented by
   :py:class:`~pyglet.image.DepthBufferImage`
