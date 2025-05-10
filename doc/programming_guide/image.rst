@@ -480,7 +480,7 @@ following table:
     = ============
 
 For example, a format string of ``"RGBA"`` corresponds to four bytes of
-colour data, in the order red, green, blue, alpha.  Note that machine
+color data, in the order red, green, blue, alpha.  Note that machine
 endianness has no impact on the interpretation of a format string.
 
 The length of a format string always gives the number of bytes per pixel.  So,
@@ -634,7 +634,7 @@ sprites from a single texture.  One problem you may encounter, however,
 is bleeding between adjacent images.
 
 When OpenGL renders a texture to the screen, by default it obtains each pixel
-colour by interpolating nearby texels.  You can disable this behaviour by
+color by interpolating nearby texels.  You can disable this behaviour by
 switching to the ``GL_NEAREST`` interpolation mode, however you then lose the
 benefits of smooth scaling, distortion, rotation and sub-pixel positioning.
 
