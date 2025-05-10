@@ -956,8 +956,8 @@ pixel art games, for example, would require sharper textures. To achieve this,
 pas ``GL_NEAREST`` to the `min_filter` and `mag_filter` parameters when
 creating a texture. It is also possible to set the default filtering by
 setting the `default_min_filter` and `default_mag_filter` class attributes
-on the `Texture` class. This will cause all textures created internally by
-pyglet to use these values::
+on the :py:class:`~pyglet.image.Texture` class. This will cause all textures
+pyglet creates to use these values::
 
     pyglet.image.Texture.default_min_filter = GL_LINEAR
     pyglet.image.Texture.default_mag_filter = GL_LINEAR
