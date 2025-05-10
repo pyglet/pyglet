@@ -856,6 +856,10 @@ For example, to bind a texture::
 
     glBindTexture(texture.target, texture.id)
 
+
+
+.. _OpenGL Programming Guide: http://www.opengl-redbook.com/
+
 Texture dimensions
 ^^^^^^^^^^^^^^^^^^
 
@@ -947,23 +951,31 @@ empty (maximal).
 Use the :py:meth:`pyglet.image.Texture.create` class method to create a texture
 with a specific internal format.
 
+
 Texture filtering
 ^^^^^^^^^^^^^^^^^
 
-By default, all textures are created with smooth (``GL_LINEAR``) filtering.
-In some cases you may wish to have different filtered applied. Retro style
-pixel art games, for example, would require sharper textures. To achieve this,
-pas ``GL_NEAREST`` to the `min_filter` and `mag_filter` parameters when
-creating a texture. It is also possible to set the default filtering by
-setting the `default_min_filter` and `default_mag_filter` class attributes
-on the :py:class:`~pyglet.image.Texture` class. This will cause all textures
-pyglet creates to use these values::
+By default, all textures are created with smooth (:py:data:`~pyglet.gl.GL_LINEAR`)
+filtering.
 
-    pyglet.image.Texture.default_min_filter = GL_LINEAR
-    pyglet.image.Texture.default_mag_filter = GL_LINEAR
+To use a different filter for a specific texture, pass the filtering constant(s)
+to the :py:attr:`pyglet.image.Texture` class via the ``min_filter`` and ``mag_filter``
+arguments.
 
+Pixel art
+"""""""""
 
-.. _OpenGL Programming Guide: http://www.opengl-redbook.com/
+To enable nearest-neighbor filtering for retro-style games, set the
+corresponding variables of :py:class:`pyglet.image.Texture` to
+:py:`~pyglet.gl.GL_NEAREST`:
+
+.. code-block:: python
+
+   pyglet.image.Texture.default_min_filter = GL_LINEAR
+   pyglet.image.Texture.default_mag_filter = GL_LINEAR
+
+Afterward, all textures pyglet creatures will default
+to the nearest-neighbor sampling.
 
 Saving an image
 ---------------
