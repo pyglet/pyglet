@@ -2,7 +2,6 @@ Images and Sprites
 ==================
 
 pyglet provides functions for loading and saving images in various formats
-# Yes, checkers exists per-document tab?
 using native operating system services.  If the `Pillow`_ library is installed,
 many additional formats can be supported.   pyglet also includes built-in
 codecs for loading PNG and BMP without external dependencies.
