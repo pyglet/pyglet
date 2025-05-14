@@ -746,7 +746,8 @@ the window::
 When animations are loaded with :py:mod:`pyglet.resource` (see
 :ref:`guide_resources`) the frames are automatically packed into a texture bin.
 
-The `GitHub repository`_ has a ``examples/programming_guide/`` folder which includes:
+The ``examples/programming_guide/`` folder of the `GitHub repository`_
+includes:
 
 * this example program  (``animation.py``)
 * a sample GIF animation file  (``dinosaur.gif``)
