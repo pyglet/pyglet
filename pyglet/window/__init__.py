@@ -877,10 +877,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     def on_clipboard_copy(self, text: str) -> EVENT_HANDLE_STATE:
         """Dispatched from a Caret when text is copied.
 
-        This default handler sets the clipboard's content.
+        This default handler does nothing.
         """
-
-        self.set_clipboard_text(text)
 
     def on_clipboard_paste(self, text: str) -> EVENT_HANDLE_STATE:
         """Dispatched from a Caret when text is pasted.
