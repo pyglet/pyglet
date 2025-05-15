@@ -249,6 +249,10 @@ _dwmapi.DwmIsCompositionEnabled.restype = c_int
 _dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]
 _dwmapi.DwmFlush.restype = c_int
 _dwmapi.DwmFlush.argtypes = []
+_dwmapi.DwmGetColorizationColor.restype = HRESULT
+_dwmapi.DwmGetColorizationColor.argtypes = [POINTER(DWORD), POINTER(BOOL)]
+_dwmapi.DwmEnableBlurBehindWindow.restype = HRESULT
+_dwmapi.DwmEnableBlurBehindWindow.argtypes = [HWND, POINTER(DWM_BLURBEHIND)]
 
 # _shell32
 _shell32.DragAcceptFiles.restype = c_void
