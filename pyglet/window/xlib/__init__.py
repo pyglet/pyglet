@@ -30,8 +30,8 @@ from typing import TYPE_CHECKING, Sequence
 
 import pyglet
 from pyglet.event import EventDispatcher
-from pyglet.libs.x11 import cursorfont, xlib
-from pyglet.libs.x11.xrender import XRenderFindVisualFormat
+from pyglet.libs.linux.x11 import cursorfont, xlib
+from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
 from pyglet.util import asbytes
 from pyglet.window import (
     BaseWindow,
@@ -47,12 +47,11 @@ from pyglet.window import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.libs.x11.xlib import Visual
+    from pyglet.libs.linux.x11 import Visual
     from _ctypes import _Pointer
-    from pyglet.graphics.api.gl.xlib.context import XlibOpenGLConfig
 
 try:
-    from pyglet.libs.x11 import xsync
+    from pyglet.libs.linux.x11 import xsync
 
     _have_xsync = True
 except ImportError:
