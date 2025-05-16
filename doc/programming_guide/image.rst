@@ -976,7 +976,7 @@ corresponding variables of :py:class:`pyglet.image.Texture` to
    pyglet.image.Texture.default_mag_filter = GL_LINEAR
 
 Afterward, all textures pyglet creatures will default
-to the nearest-neighbor sampling.
+to nearest-neighbor sampling.
 
 Saving an image
 ---------------
