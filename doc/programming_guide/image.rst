@@ -16,7 +16,7 @@ for both OpenGL textures and framebuffers:
 
 For most users, the :py:class:`~pyglet.sprite.Sprite` class is the best way
 to draw an image. One or more instances may draw the same image data with
-different position, scale, rotation, and more
+individually configured values for position, scaling, rotation, and more.
 
 .. _Pillow: https://pillow.readthedocs.io
 
