@@ -542,10 +542,10 @@ class WMFSource(Source):
             guid_compressed = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
             imfmedia.GetGUID(MF_MT_SUBTYPE, byref(guid_compressed))
 
-            if guid_compressed == MFAudioFormat_PCM or guid_compressed == MFAudioFormat_Float:
-                assert _debug(f'WMFAudioDecoder: Found Uncompressed Audio: {guid_compressed}')
+            if guid_compressed == MFAudioFormat_PCM:
+                assert _debug(f'WMFAudioDecoder: Found PCM Audio: {guid_compressed}')
             else:
-                assert _debug(f'WMFAudioDecoder: Found Compressed Audio: {guid_compressed}')
+                assert _debug(f'WMFAudioDecoder: Found Non-PCM Audio: {guid_compressed}')
                 # If audio is compressed, attempt to decompress it by forcing source reader to use PCM
                 mf_mediatype = IMFMediaType()
 
