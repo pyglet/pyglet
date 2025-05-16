@@ -6,13 +6,13 @@ using native operating system services.  If the `Pillow`_ library is installed,
 many additional formats can be supported.   pyglet also includes built-in
 codecs for loading PNG and BMP without external dependencies.
 
-In addition to loading , pyglet also supports the following operations
+In addition to loading, pyglet also supports the following operations
 for both OpenGL textures and framebuffers:
 
-* conversion to pyglet image objects
+* converting to pyglet image objects
 * saving to disk as screenshots
 * manipulation as image data
-* conversion to raw pixel :py:class:`bytes`
+* converting to :py:class:`bytes` of raw pixel data
 
 For most users, the :py:class:`~pyglet.sprite.Sprite` class is the best way
 to draw an image. One or more instances may draw the same image data with
