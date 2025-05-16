@@ -968,7 +968,7 @@ Pixel art
 
 To enable nearest-neighbor filtering for retro-style games, set the
 corresponding variables of :py:class:`pyglet.image.Texture` to
-:py:`~pyglet.gl.GL_NEAREST`:
+:py:data:`~pyglet.gl.GL_NEAREST`:
 
 .. code-block:: python
 
