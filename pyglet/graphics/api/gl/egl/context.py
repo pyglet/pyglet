@@ -3,8 +3,8 @@ from __future__ import annotations
 from ctypes import byref
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl import OpenGLWindowConfig, OpenGLConfig, OpenGLWindowContext, ContextException
-from pyglet.graphics.api.gl import egl
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl.egl import egl
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLBackend
@@ -95,7 +95,7 @@ class EGLWindowConfig(OpenGLWindowConfig):
         return HeadlessContext(opengl_backend, self._window, self, share)
 
 
-class HeadlessContext(OpenGLWindowContext):
+class HeadlessContext(OpenGLSurfaceContext):
     display_connection: egl.EGLDisplay
     config: EGLWindowConfig
 
@@ -146,7 +146,7 @@ class HeadlessContext(OpenGLWindowContext):
             return
 
         self.set_current()
-        gl.glFlush()  # needs to be in try/except?
+        #gl.glFlush()  # needs to be in try/except?
 
         super().detach()
 

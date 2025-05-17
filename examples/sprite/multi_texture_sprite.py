@@ -7,7 +7,7 @@ import pyglet
 from pyglet.enums import BlendFactor
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture, AbstractImage
+    from pyglet.graphics import Texture, AbstractImage
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
 
@@ -161,8 +161,8 @@ pyglet.resource.reindex()
 
 # Load example image from resource path.
 # Resource will load images into a texture atlas, disable atlas loading, so they can be separate textures.
-pyglet_image = pyglet.resource.image("pyglet.png", atlas=False)
-kitten_image = pyglet.resource.image("kitten.jpg", atlas=False)
+pyglet_image = pyglet.resource.texture("pyglet.png", atlas=False)
+kitten_image = pyglet.resource.texture("kitten.jpg", atlas=False)
 
 window.set_size(kitten_image.width, kitten_image.height)
 

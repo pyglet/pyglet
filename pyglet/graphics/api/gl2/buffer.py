@@ -12,9 +12,9 @@ from __future__ import annotations
 import ctypes
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, Sequence, Type
+from typing import TYPE_CHECKING, Sequence
 
-from _ctypes import Array, _Pointer, _SimpleCData
+from _ctypes import Array
 
 import pyglet
 from pyglet.customtypes import CType, CTypesPointer
@@ -39,7 +39,7 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.shader import Attribute
 
 
@@ -57,13 +57,13 @@ class BufferObject(AbstractBuffer):
     id: int
     size: int
     usage: int
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
 
     def __init__(self, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage."""
         self.size = size
         self.usage = usage
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
         buffer_id = GLuint()
         glGenBuffers(1, buffer_id)

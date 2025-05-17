@@ -1,7 +1,8 @@
 import unittest
 
-from pyglet.image import *
-from pyglet.window import *
+from pyglet.graphics import Texture3D
+from pyglet.image import ImageData, ImageGrid
+from pyglet.window import Window
 
 
 def colorbyte(color):
@@ -19,7 +20,7 @@ class TestTexture3D(unittest.TestCase):
         self.assertTrue(image.width == width)
         self.assertTrue(image.height == height)
         image = image.get_image_data()
-        data = image.get_data('R', image.width)
+        data = image.get_bytes('R', image.width)
         self.assertTrue(data == colorbyte(color) * len(data))
 
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
@@ -44,12 +45,12 @@ class TestTexture3D(unittest.TestCase):
                          itemwidth, itemheight, rowpad, colpad)
         self.grid = Texture3D.create_for_image_grid(grid)
 
-    def check_cell(self, cellimage, cellindex):
-        self.assertTrue(cellimage.width == self.grid.item_width)
-        self.assertTrue(cellimage.height == self.grid.item_height)
+    def check_cell(self, cell_texture, cellindex):
+        self.assertTrue(cell_texture.width == self.grid.item_width)
+        self.assertTrue(cell_texture.height == self.grid.item_height)
 
-        cellimage = cellimage.get_image_data()
-        data = cellimage.get_data('R', cellimage.width)
+        cellimage = cell_texture.get_image_data()
+        data = cellimage.get_bytes('R', cellimage.width)
         self.assertTrue(data == colorbyte(cellindex + 1) * len(data))
 
     def setUp(self):

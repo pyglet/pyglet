@@ -11,15 +11,15 @@ frame. You can load Animations from disk, such as from GIF files::
 Alternatively, you can create your own Animations from a sequence of images
 by using the :py:meth:`~Animation.from_image_sequence` method::
 
-    images = [pyglet.resource.image('walk_a.png'),
-              pyglet.resource.image('walk_b.png'),
-              pyglet.resource.image('walk_c.png')]
+    images = [pyglet.resource.texture('walk_a.png'),
+              pyglet.resource.texture('walk_b.png'),
+              pyglet.resource.texture('walk_c.png')]
 
     ani = pyglet.image.Animation.from_image_sequence(images, duration=0.1, loop=True)
 
 You can also use an :py:class:`pyglet.image.ImageGrid`, which is iterable::
 
-    sprite_sheet = pyglet.resource.image('my_sprite_sheet.png')
+    sprite_sheet = pyglet.resource.texture('my_sprite_sheet.png')
     image_grid = pyglet.image.ImageGrid(sprite_sheet, rows=1, columns=5)
 
     ani = pyglet.image.Animation.from_image_sequence(image_grid, duration=0.1)
@@ -28,9 +28,9 @@ In the above examples, all the Animation Frames have the same duration.
 If you wish to adjust this, you can manually create the Animation from a list of
 :py:class:`~AnimationFrame`::
 
-    image_a = pyglet.resource.image('walk_a.png')
-    image_b = pyglet.resource.image('walk_b.png')
-    image_c = pyglet.resource.image('walk_c.png')
+    image_a = pyglet.resource.texture('walk_a.png')
+    image_b = pyglet.resource.texture('walk_b.png')
+    image_c = pyglet.resource.texture('walk_c.png')
 
     frame_a = pyglet.image.AnimationFrame(image_a, duration=0.1)
     frame_b = pyglet.image.AnimationFrame(image_b, duration=0.2)
@@ -46,8 +46,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Literal
-    from pyglet.image import AbstractImage, AbstractImageSequence
-    from pyglet.image.atlas import TextureBin
+    from pyglet.image import _AbstractImage, _AbstractImageSequence
+    from pyglet.graphics.atlas import TextureBin
 
 
 class Animation:
@@ -67,7 +67,7 @@ class Animation:
         self.frames = frames
 
     def add_to_texture_bin(self, texture_bin: TextureBin, border: int = 0) -> None:
-        """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
+        """Add the images of the animation to a :py:class:`~pyglet.graphics.atlas.TextureBin`.
 
         The animation frames are modified in-place to refer to the texture bin
         regions. An optional border (in pixels) can be specified to reserve around
@@ -114,7 +114,7 @@ class Animation:
         return max([frame.image.height for frame in self.frames])
 
     @classmethod
-    def from_image_sequence(cls, sequence: AbstractImageSequence, duration: float, loop: bool = True) -> Animation:
+    def from_image_sequence(cls, sequence: _AbstractImageSequence, duration: float, loop: bool = True) -> Animation:
         """Create an animation from a list of images and a per-frame duration."""
         frames = [AnimationFrame(image, duration) for image in sequence]
         if not loop:
@@ -130,7 +130,7 @@ class AnimationFrame:
 
     __slots__ = 'image', 'duration'
 
-    def __init__(self, image: AbstractImage, duration: float | None) -> None:
+    def __init__(self, image: _AbstractImage, duration: float | None) -> None:
         """Create an animation frame from an image."""
         self.image = image
         self.duration = duration

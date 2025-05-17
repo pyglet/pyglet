@@ -23,10 +23,12 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence, Type
+from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
-from _ctypes import Array, _Pointer, _SimpleCData
+from _ctypes import Array
 
+from pyglet.customtypes import CType
+from pyglet.graphics import allocation
 from pyglet.graphics.api.gl import (
     GL_BYTE,
     GL_DOUBLE,
@@ -47,13 +49,11 @@ from pyglet.graphics.api.gl import (
     glMultiDrawArrays,
     glMultiDrawElements, vertexarray,
 )
-from pyglet.graphics import allocation
+from pyglet.graphics.api.gl.buffer import AttributeBufferObject, IndexedBufferObject
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl.shader import GLAttribute
-from pyglet.graphics.api.gl.buffer import AttributeBufferObject, IndexedBufferObject
-from pyglet.graphics.vertexdomain import _nearest_pow2
 from pyglet.graphics.shader import DataTypeTuple
-
+from pyglet.graphics.vertexdomain import _nearest_pow2
 
 if TYPE_CHECKING:
     from pyglet.graphics import GeometryMode
@@ -375,7 +375,6 @@ class VertexDomain:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-
         self.vao.bind()
         for buffer, _ in self.buffer_attributes:
             buffer.commit()
@@ -420,7 +419,7 @@ class VertexDomain:
 
 
 def _make_instance_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
+    def _attribute_getter(self: VertexInstance) -> Array[CType]:
         buffer = self.domain.attrib_name_buffers[name]
         region = buffer.get_region(self.id - 1, 1)
         buffer.invalidate_region(self.id - 1, 1)
@@ -434,7 +433,7 @@ def _make_instance_attribute_property(name: str) -> property:
 
 
 def _make_restricted_instance_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
+    def _attribute_getter(self: VertexInstance) -> Array[CType]:
         buffer = self.domain.attrib_name_buffers[name]
         return buffer.get_region(self.id - 1, 1)
 
@@ -547,7 +546,7 @@ class IndexedVertexDomain(VertexDomain):
     """
     index_allocator: Allocator
     index_gl_type: int
-    index_c_type: CTypesDataType
+    index_c_type: CType
     index_element_size: int
     index_buffer: IndexedBufferObject
     _initial_index_count = 16

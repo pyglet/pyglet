@@ -4,7 +4,7 @@ import platform
 from ctypes import byref, c_int, c_uint32
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLWindowContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLSurfaceContext, ContextException
 from pyglet.libs.darwin import cocoapy, quartz
 
 if TYPE_CHECKING:
@@ -251,7 +251,7 @@ class CocoaOpenGLWindowConfig(OpenGLWindowConfig):
         return CocoaContext(opengl_backend, self._window, self, nscontext, share)
 
 
-class CocoaContext(OpenGLWindowContext):
+class CocoaContext(OpenGLSurfaceContext):
 
     def __init__(self,
                  opengl_backend: OpenGLBackend,

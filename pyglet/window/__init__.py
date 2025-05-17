@@ -102,7 +102,7 @@ from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.base import VerifiedGraphicsConfig, WindowGraphicsContext, GraphicsConfig
+    from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
 
@@ -170,7 +170,7 @@ class ImageMouseCursor(MouseCursor):
     reasonably sized cursors will render correctly
     """
 
-    def __init__(self, image: pyglet.image.AbstractImage, hot_x: int = 0, hot_y: int = 0,
+    def __init__(self, image: pyglet.image._AbstractImage, hot_x: int = 0, hot_y: int = 0,
                  acceleration: bool = False) -> None:
         """Create a mouse cursor from an image.
 
@@ -373,7 +373,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     _file_drops: bool = False
     _screen: Screen | None = None
     _config: VerifiedGraphicsConfig | None = None
-    _context: WindowGraphicsContext | None = None
+    _context: SurfaceContext | None = None
     _projection_matrix: Mat4 = pyglet.math.Mat4()
     _view_matrix: Mat4 = pyglet.math.Mat4()
     _viewport: tuple[int, int, int, int] = 0, 0, 0, 0
@@ -421,7 +421,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  display: Display | None = None,
                  screen: Screen | None = None,
                  config: GraphicsConfig | None = None,
-                 context: WindowGraphicsContext | None = None,
+                 context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
 
@@ -557,16 +557,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 config = config.match(self)
 
             if not context:
-                from pyglet.graphics.api import global_backend
-                if global_backend:
-                    context = global_backend.get_window_backend_context(self, config)
+                from pyglet.graphics.api import core
+                if core:
+                    context = core.get_surface_context(self, config)
 
             # Set these in reverse order as above, to ensure we get user preference
             self._context = context
             self._config = self._context.config
 
     def _create_projection(self) -> None:
-        self._matrices = self.context.global_ctx.initialize_matrices(self)
+        self._matrices = self.context.core.initialize_matrices(self)
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
 
@@ -1116,7 +1116,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         self._keyboard_exclusive = exclusive
 
-    def set_icon(self, *images: pyglet.image.AbstractImage) -> None:
+    def set_icon(self, *images: pyglet.image._AbstractImage) -> None:
         """Set the window icon.
 
         If multiple images are provided, one with an appropriate size
@@ -1135,7 +1135,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         sets the current window context as the active one.
 
         In most cases, you should use this method instead of directly
-        calling :py:meth:`~pyglet.backend.gl.Context.set_current`. The latter
+        calling :py:meth:`~pyglet.graphics.api.gl.Context.set_current`. The latter
         will not perform platform-specific state management tasks for
         you.
         """
@@ -1191,7 +1191,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._config
 
     @property
-    def context(self) -> WindowGraphicsContext:
+    def context(self) -> SurfaceContext:
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
@@ -1305,7 +1305,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         pr = self.scale
         x, y, w, h = values
         if self.context:
-            self.context.global_ctx.set_viewport(self, int(x * pr), int(y * pr), int(w * pr), int(h * pr))
+            self.context.core.set_viewport(self, int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.

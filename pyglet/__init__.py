@@ -92,7 +92,7 @@ class Options:
 
     debug_graphics_batch: bool = False
     """If ``True``, prints batch information being drawn, including :py:class:`~pyglet.graphics.Group`'s, VertexDomains,
-    and :py:class:`~pyglet.image.Texture` information. This can be useful to see how many Group's are being
+    and :py:class:`~pyglet.graphics.Texture` information. This can be useful to see how many Group's are being
     consolidated."""
 
     debug_lib: bool = False
@@ -102,13 +102,17 @@ class Options:
     """If ``True``, prints more detailed media information for audio codecs and drivers. Will be very verbose."""
 
     debug_texture: bool = False
-    """If ``True``, prints information on :py:class:`~pyglet.image.Texture` size (in bytes) when they are allocated and
+    """If ``True``, prints information on :py:class:`~pyglet.graphics.Texture` size (in bytes) when they are allocated and
     deleted."""
 
     debug_trace: bool = False
     debug_trace_args: bool = False
     debug_trace_depth: int = 1
     debug_trace_flush: bool = True
+
+    debug_com: bool = False
+    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
+    that utilize COM calls. Only applies to the Windows platform."""
 
     debug_win32: bool = False
     """If ``True``, prints error messages related to Windows library calls. Usually get's information from
@@ -179,6 +183,11 @@ class Options:
     .. versionadded:: 2.0
     """
 
+    text_antialiasing: bool = True
+    """If ``True``, font renderers will improve text quality by adding antialiasing to the rendered characters. If
+    ``False``, text quality will appear pixelated.
+    """
+
     headless: bool = False
     """If ``True``, visible Windows are not created and a running desktop environment is not required. This option
     is useful when running pyglet on a headless server, or compute cluster. OpenGL drivers with ``EGL`` support are
@@ -190,14 +199,17 @@ class Options:
     GPU to use. This is only useful on multi-GPU systems.
     """
 
-    win32_disable_shaping: bool = False
-    """If ``True``, will disable the shaping process for the default Windows font renderer to offer a performance
-    speed up. If your font is simple, monospaced, or you require no advanced OpenType features, this option may be
-    useful. You can try enabling this to see if there is any impact on clarity for your font. The advance will be
-    determined by the glyph width.
+    text_shaping: Literal["platform", "harfbuzz", False] = 'platform'
+    """Determines how text is processed and displayed based on features of the font.
 
-    .. note:: Shaping is the process of determining which character glyphs to use and specific placements of those
-       glyphs when given a full string of characters.
+    Valid option names are:
+
+     * ``False``, Disables the shaping process for text. This may increase performance as it reduces the amount
+        of calls during rendering. If your font is simple, monospaced, or you require no advanced OpenType features,
+        this option may be useful.
+     * ``'platform'``, Uses platform's font system for shaping. Supported by Windows (DirectWrite) and Mac (CoreText).
+     * ``'harfbuzz'``, Utilize the harfbuzz library for font shaping. This requires an optional dependency, if not
+     found, it will fallback to platform shaping.
 
     .. versionadded:: 2.0
     """
@@ -274,7 +286,7 @@ class Options:
     rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
     of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
-    
+
     `'platform'`: A DPI aware window is created, however window sizing and framebuffer sizing is not interfered with
     by Pyglet. Final sizes are dictated by the platform the window was created on. It is up to the user to make any
     platform adjustments themselves such as sizing on a platform, mouse coordinate adjustments, or framebuffer size
@@ -285,7 +297,7 @@ class Options:
 
     shader_bind_management: bool = True
     """If ``True``, this will enable internal management of Uniform Block bindings for
-     :py:class:`~pyglet.graphics.shader.ShaderProgram`'s.
+     :py:class:`~pyglet.graphics.ShaderProgram`'s.
 
     If ``False``, bindings will not be managed by Pyglet. The user will be responsible for either setting the binding
     points through GLSL layouts (4.2 required) or manually through ``UniformBlock.set_binding``.

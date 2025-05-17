@@ -11,14 +11,12 @@ encoding.  Alpha channel is supported for 32-bit BI_RGB only.
 # http://www.fileformat.info/format/bmp/egff.htm
 
 import ctypes
+from ctypes.wintypes import DWORD, LONG, WORD
 
 from pyglet.image import ImageData
-from pyglet.image.codecs import ImageDecoder, ImageDecodeException
+from pyglet.image.codecs import ImageDecodeException, ImageDecoder
+from pyglet.libs.win32.types import BYTE
 
-BYTE = ctypes.c_ubyte
-WORD = ctypes.c_uint16
-DWORD = ctypes.c_uint32
-LONG = ctypes.c_int32
 FXPT2DOT30 = ctypes.c_uint32
 
 BI_RGB = 0

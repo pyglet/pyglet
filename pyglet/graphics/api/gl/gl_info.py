@@ -2,41 +2,21 @@
 
 Usage::
 
-    if pyglet.backend.have_extension('GL_NV_register_combiners'):
-        # ...
-
-If you are using more than one context, you can set up a separate GLInfo
-object for each context.  Call `set_active_context` after switching to the
-context::
-
-    from pyglet.graphics.api.gl.gl_info import GLInfo
-
-    info = GLInfo()
-    info.set_active_context()
-
-    if info.have_version(4, 5):
+    if pyglet.graphics.api.have_extension('GL_NV_register_combiners'):
         # ...
 
 """
 from __future__ import annotations
 
-from ctypes import c_char_p, cast
-from pyglet.graphics.api.gl.gl import GL_EXTENSIONS, GL_MAJOR_VERSION, GL_MINOR_VERSION, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, GL_NUM_EXTENSIONS, glGetString, glGetStringi
+from ctypes import c_char_p, cast, c_int, c_float
+from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.lib import GLException
 
-from pyglet.util import asstr
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
-
-
-def _get_number(parameter: int) -> int:
-    from pyglet.graphics.api.gl import glGetIntegerv
-    number = GLint()
-    glGetIntegerv(parameter, number)
-    return number.value
 
 
 class GLInfo:
@@ -57,37 +37,58 @@ class GLInfo:
     minor_version: int = 0
     opengl_api: str = 'gl'
 
-    _have_context: bool = False
-
-    # Whether the info has been queried yet. Can only be queried once it's made current.
     was_queried = False
 
     platform_info: GLXInfo | WGLInfo | None
 
-    def __init__(self) -> None:  # noqa: D107
-        super().__init__()
-        self.extensions = set()
-
-        # A subset of OpenGL that is platform specific. (WGL, GLX)
-        self.platform_info = None
-
-    def query(self) -> None:
+    def __init__(self, platform_info: GLXInfo | WGLInfo | None) -> None:
         """Store information for the currently active context.
 
         Combines any information from the platform information.
         """
-        self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
-        self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
-        self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+        super().__init__()
+        self.extensions = set()
+
+        # A subset of OpenGL that is platform specific. (WGL, GLX)
+        self.platform_info = platform_info
+
+    def query(self) -> None:
+        self.vendor = self.get_str(gl.GL_VENDOR)
+        """The vendor string. For example 'NVIDIA Corporation'"""
+
+        self.renderer = self.get_str(gl.GL_RENDERER)
+        """The graphics renderer. For example "NVIDIA GeForce RTX 2080 SUPER/PCIe/SSE2"""
+
+        self.version = self.get_str(gl.GL_VERSION)
+
+        self.MAX_ARRAY_TEXTURE_LAYERS = self.get_int(gl.GL_MAX_ARRAY_TEXTURE_LAYERS)
+        """Value indicates the maximum number of layers allowed in a texture array"""
+
+        self.MAX_TEXTURE_SIZE = self.get_int(gl.GL_MAX_TEXTURE_SIZE)
+        """The largest texture size available."""
+
+        self.MAX_COLOR_ATTACHMENTS = self.get_int(gl.GL_MAX_COLOR_ATTACHMENTS)
+        """Get the maximum allowable framebuffer color attachments."""
+
+        self.MAX_COLOR_TEXTURE_SAMPLES = self.get_int(gl.GL_MAX_COLOR_TEXTURE_SAMPLES)
+        """Maximum number of samples in a color multisample texture"""
+
+        self.MAX_TEXTURE_IMAGE_UNITS = self.get_int(gl.GL_MAX_TEXTURE_IMAGE_UNITS)
+        """Maximum number of texture units that can be used."""
+
         # NOTE: The version string requirements for gles is a lot stricter
         #       so using this to rely on detecting the API is not too unreasonable
         self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"
 
         try:
-            self.major_version = _get_number(GL_MAJOR_VERSION)
-            self.minor_version = _get_number(GL_MINOR_VERSION)
-            num_ext = _get_number(GL_NUM_EXTENSIONS)
-            extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value) for i in range(num_ext))
+            self.major_version = self.get_int(gl.GL_MAJOR_VERSION)
+            """Major version number of the OpenGL API supported by the current context."""
+
+            self.minor_version = self.get_int(gl.GL_MINOR_VERSION)
+            """Minor version number of the OpenGL API supported by the current context"""
+
+            num_ext = self.get_int(gl.GL_NUM_EXTENSIONS)
+            extensions = (self.get_str_index(gl.GL_EXTENSIONS, i) for i in range(num_ext))
             self.extensions = set(extensions)
         except GLException:
             pass  # GL3 is likely not available
@@ -154,3 +155,35 @@ class GLInfo:
         Usually ``gl`` or ``gles``.
         """
         return self.opengl_api
+
+    def get_int(self, enum: int, default: int=0) -> int | tuple[int]:
+        from pyglet.graphics.api.gl import glGetIntegerv
+        try:
+            value = c_int()
+            glGetIntegerv(enum, value)
+            return value.value
+        except GLException:
+            return default
+
+    def get_float(self, enum: int, default=0.0) -> float:
+        from pyglet.graphics.api.gl import glGetFloatv
+        try:
+            value = c_float()
+            glGetFloatv(enum, value)
+            return value.value
+        except GLException:
+            return default
+
+    def get_str(self, enum: int) -> str:
+        from pyglet.graphics.api.gl import glGetString
+        try:
+            return cast(glGetString(enum), c_char_p).value.decode()
+        except GLException:
+            return "Unknown"
+
+    def get_str_index(self, enum: int, index: int) -> str:
+        from pyglet.graphics.api.gl import glGetStringi
+        try:
+            return cast(glGetStringi(enum, index), c_char_p).value.decode()
+        except GLException:
+            return "Unknown"

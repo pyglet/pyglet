@@ -177,10 +177,8 @@ class CocoaWindow(BaseWindow):
 
             self._assign_config()
             self.context.attach(self)
-            print("ATTACH!")
             if self._metal_layer:
                 self.context._nscontext = self._metal_layer
-            print("CONTEXT!", self.context._nscontext)
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 
@@ -376,7 +374,7 @@ class CocoaWindow(BaseWindow):
         image = max_image.get_image_data()
         fmt = 'ARGB'
         bytesPerRow = len(fmt) * image.width
-        data = image.get_data(fmt, -bytesPerRow)
+        data = image.get_bytes(fmt, -bytesPerRow)
 
         # Use image data to create a data provider.
         # Using CGDataProviderCreateWithData crashes PyObjC 2.2b3, so we create

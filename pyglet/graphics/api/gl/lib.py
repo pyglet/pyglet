@@ -5,8 +5,16 @@ from typing import Any, Callable, NoReturn, Sequence
 
 import pyglet
 
-__all__ = ['link_GL', 'link_AGL', 'link_GLX', 'link_WGL',
-           'GLException', 'missing_function', 'decorate_function', 'MissingFunctionException']
+__all__ = [
+    'GLException',
+    'MissingFunctionException',
+    'decorate_function',
+    'link_AGL',
+    'link_GL',
+    'link_GLX',
+    'link_WGL',
+    'missing_function',
+]
 
 _debug_api = pyglet.options.debug_api
 _debug_api_trace = pyglet.options.debug_api_trace
@@ -64,8 +72,8 @@ def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
         else:
             print(name)
 
-    from pyglet.graphics.api import global_backend, gl
-    if not global_backend.current_context:
+    from pyglet.graphics.api import core, gl
+    if not core.current_context:
         raise GLException('No GL context; create a Window first')
     error = gl.glGetError()
     if error:

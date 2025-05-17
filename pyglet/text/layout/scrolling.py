@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
     from pyglet.text.document import AbstractDocument
 
 
@@ -124,7 +124,7 @@ class ScrollableTextLayout(TextLayout):
     _translate_x: int = 0
     _translate_y: int = 0
 
-    def __init__(self, document: AbstractDocument,
+    def __init__(self, document: AbstractDocument,  # noqa: D107
                  x: float = 0, y: float = 0, z: float = 0,
                  width: int = None, height: int = None,
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0, multiline: bool = False,

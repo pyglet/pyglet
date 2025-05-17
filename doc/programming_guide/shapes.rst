@@ -64,25 +64,99 @@ default anchor points::
 Advanced Operation
 ------------------
 
-You can use the ``in`` operator to check whether a point is inside a shape::
+.. _guide_shapes-bounding:
 
+Shape Bounding Checks
+^^^^^^^^^^^^^^^^^^^^^
+
+Some shapes can check whether an instance contains a 2D point via Python's ``in`` operator.
+
+The point can be any :py:class:`tuple` of two numbers:
+
+.. code-block:: python
+
+    from pyglet.shapes import Circle
+
+    # Create a circle
     circle = shapes.Circle(x=100, y=100, radius=50)
+
+    # Turn the circle red if (200, 200) is inside it
     if (200, 200) in circle:
         circle.color = (255, 0, 0)
 
-The following shapes have above features:
 
-- Circle
-- Ellipse
-- Sector
-- Line
-- Rectangle
-- BorderedRectangle
-- Triangle
-- Polygon
-- Star
+Bounding Checks Are In World Space
+""""""""""""""""""""""""""""""""""
 
-.. note:: pyglet now treats Star as a circle with a radius of
-          ``(outer_radius + inner_radius) / 2``.
+If you move or alter your viewport, you must account for this when
+checking coordinates from :ref:`mouse events <guide_mouse_events>`.
+You may find :py:class:`~pyglet.math.Vec2` helpful for this since
+it is a subclass of :py:class:`tuple`.
 
-It's also available for anchored and rotated shapes.
+.. _guide_shapes-bounding-supported:
+
+Which Shapes Support Bounding Checks?
+"""""""""""""""""""""""""""""""""""""
+
+Instances of the following shape classes support the ``in`` operator:
+
+- :py:class:`~pyglet.shapes.Circle`
+- :py:class:`~pyglet.shapes.Ellipse`
+- :py:class:`~pyglet.shapes.Sector`
+- :py:class:`~pyglet.shapes.Line`
+- :py:class:`~pyglet.shapes.Rectangle`
+- :py:class:`~pyglet.shapes.BorderedRectangle`
+- :py:class:`~pyglet.shapes.Triangle`
+- :py:class:`~pyglet.shapes.Polygon`
+- :py:class:`~pyglet.shapes.Star`
+  (acts like a :py:class:`~pyglet.shapes.Circle`
+  with a radius of ``(outer_radius + inner_radius) / 2``).
+
+
+.. _guide_shapes-bounding-details:
+
+How Does It Work?
+"""""""""""""""""
+
+Each of these classes implements a :py:meth:`~object.__contains__` method which
+accounts for an instance's:
+
+* :py:attr:`~pyglet.shapes.ShapeBase.rotation` angle
+* :py:attr:`~pyglet.shapes.ShapeBase.anchor_position`
+
+
+.. _guide_shapes-custom:
+
+Custom Shapes
+^^^^^^^^^^^^^
+
+.. tip:: For complex features and performance, please see :ref:`guide_graphics`.
+
+You can import and subclass :py:class:`~pyglet.shapes.ShapeBase` to create
+custom shapes:
+
+.. code-block:: python
+
+   from pyglet.shapes import ShapeBase
+
+
+   class MyCustomShape(ShapeBase):
+       """A custom shape class. Implementation details omitted."""
+       ...
+
+
+This is the base class for shapes in the :py:mod:`~pyglet.shapes` module,
+which means you can use the other shapes in the module as reference. Please
+note that this class has the following caveats:
+
+* The ``in`` operator requires you to add a :py:meth:`~object.__contains__` method which:
+
+  * accounts for the following values on an instance:
+
+    * :py:attr:`~pyglet.shapes.ShapeBase.rotation` angle
+    * :py:attr:`~pyglet.shapes.ShapeBase.anchor_position`
+
+  * returns a :py:class:`bool`
+
+* It will conflict with other metaclass-based helpers due to using :py:class:`abc.ABC`
+

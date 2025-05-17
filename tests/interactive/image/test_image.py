@@ -1,7 +1,7 @@
 from io import BytesIO
 import pytest
 
-from pyglet.graphics.api.gl import image
+from pyglet.graphics.api.gl import texture
 from pyglet.graphics.api import gl
 
 from ...annotations import Platform, require_platform, require_gl_extension
@@ -19,7 +19,7 @@ class ImageTestFixture(EventLoopFixture):
         self.left_texture = None
         self.right_texture = None
 
-        self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
+        self.checkerboard = texture.create(32, 32, texture.CheckerImagePattern())
 
     def on_draw(self):
         # Do not call super class draw, we need to split the clearing and the drawing
@@ -84,7 +84,7 @@ class ImageTestFixture(EventLoopFixture):
     def load_right_arb(self, image_file, pixel_format):
         img = image.load(image_file)
         img.format = pixel_format
-        img.get_data()  # forces conversion
+        img.get_bytes()  # forces conversion
         self.right_texture = img.get_texture()
 
     def draw_triangle_left(self):
@@ -108,17 +108,17 @@ class ImageTestFixture(EventLoopFixture):
 
     def copy_color_buffer(self):
         self.right_texture = \
-                image.get_buffer_manager().get_color_buffer().get_texture()
+                pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_color_buffer().get_texture()
 
     def save_and_load_color_buffer(self):
         stream = BytesIO()
-        image.get_buffer_manager().get_color_buffer().save('buffer.png', stream)
+        pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_color_buffer().save('buffer.png', stream)
         stream.seek(0)
         self.right_texture = image.load('buffer.png', stream)
 
     def save_and_load_depth_buffer(self):
         stream = BytesIO()
-        image.get_buffer_manager().get_depth_buffer().save('buffer.png', stream)
+        pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_depth_buffer().save('buffer.png', stream)
         stream.seek(0)
         self.right_texture = image.load('buffer.png', stream)
 

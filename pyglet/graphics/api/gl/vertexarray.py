@@ -8,19 +8,19 @@ from pyglet.graphics.api.gl import GLuint, glBindVertexArray, glDeleteVertexArra
 if TYPE_CHECKING:
     from ctypes import c_uint
 
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
 
 __all__ = ['VertexArray']
 
 
 class VertexArray:
     """OpenGL Vertex Array Object."""
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
     _id: c_uint
 
     def __init__(self) -> None:
         """Create an instance of a Vertex Array object."""
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._id = GLuint()
         glGenVertexArrays(1, self._id)
 

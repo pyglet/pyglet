@@ -5,7 +5,7 @@ from pyglet.input.linux.x11_xinput import get_devices, DeviceResponder
 
 
 try:
-    from pyglet.libs.x11 import xinput as xi
+    from pyglet.libs.linux.x11 import xinput as xi
     _have_xinput = True
 except:
     _have_xinput = False

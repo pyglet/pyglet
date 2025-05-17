@@ -15,6 +15,7 @@ pyglet will automatically load any system-installed fonts.  You can add addition
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
 """
+
 from __future__ import annotations
 
 import os
@@ -24,6 +25,7 @@ from typing import TYPE_CHECKING, BinaryIO, Iterable
 
 import pyglet
 from pyglet.font.user import UserDefinedFontBase
+from pyglet.graphics.api import core
 
 if TYPE_CHECKING:
     from pyglet.font.base import Font
@@ -36,21 +38,27 @@ def _get_system_font_class() -> type[Font]:
     """
     if pyglet.compat_platform == "darwin":
         from pyglet.font.quartz import QuartzFont
+
         _font_class = QuartzFont
 
     elif pyglet.compat_platform in ("win32", "cygwin"):
         from pyglet.libs.win32.constants import WINDOWS_7_OR_GREATER
-        if WINDOWS_7_OR_GREATER and not pyglet.options.win32_gdi_font:
-            from pyglet.font.directwrite import Win32DirectWriteFont
+
+        if WINDOWS_7_OR_GREATER and not pyglet.options["win32_gdi_font"]:
+            from pyglet.font.dwrite import Win32DirectWriteFont
+
             _font_class = Win32DirectWriteFont
         else:
             from pyglet.font.win32 import GDIPlusFont
+
             _font_class = GDIPlusFont
     elif pyglet.compat_platform == "linux":
         from pyglet.font.freetype import FreeTypeFont
+
         _font_class = FreeTypeFont
     elif pyglet.compat_platform == "emscripten":
         from pyglet.font.pyodide_js import PyodideFont
+
         _font_class = PyodideFont
 
     return _font_class
@@ -74,8 +82,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
         raise Exception(msg)
 
     # Locate or create font cache
-    from pyglet.graphics.api import global_backend
-    shared_object_space = global_backend.current_context.object_space
+    shared_object_space = core.current_context.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
@@ -108,8 +115,14 @@ def have_font(name: str) -> bool:
     return name in _user_fonts or _system_font_class.have_font(name)
 
 
-def load(name: str | Iterable[str] | None = None, size: float | None = None, weight: str = "normal",
-         italic: bool | str = False, stretch: bool | str = False, dpi: int | None = None) -> Font:
+def load(
+    name: str | Iterable[str] | None = None,
+    size: float | None = None,
+    weight: str = "normal",
+    italic: bool | str = False,
+    stretch: bool | str = False,
+    dpi: int | None = None,
+) -> Font:
     """Load a font for rendering.
 
     Args:
@@ -141,9 +154,8 @@ def load(name: str | Iterable[str] | None = None, size: float | None = None, wei
         dpi = 96
 
     # Locate or create font cache
-    #shared_object_space = global_backend.current_context.object_space
-    from pyglet.graphics.api import global_backend
-    shared_object_space = global_backend.object_space
+    # shared_object_space = global_backend.current_context.object_space
+    shared_object_space = core.object_space
     if not hasattr(shared_object_space, "pyglet_font_font_cache"):
         shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
@@ -199,7 +211,7 @@ if not getattr(sys, "is_pyglet_doc_run", False):
     _user_fonts = []
 
 
-def add_file(font: str | BinaryIO) -> None:
+def add_file(font: str | BinaryIO | bytes) -> None:
     """Add a font to pyglet's search path.
 
     In order to load a font that is not installed on the system, you must
@@ -213,7 +225,7 @@ def add_file(font: str | BinaryIO) -> None:
 
     Args:
         font:
-            Filename or file-like object to load fonts from.
+            Filename, file-like object, or bytes to load fonts from.
 
     """
     if isinstance(font, str):
@@ -239,4 +251,4 @@ def add_directory(directory: str) -> None:
             add_file(os.path.join(directory, file))
 
 
-__all__ = ("add_file", "add_directory", "add_user_font", "load", "have_font")
+__all__ = ("add_directory", "add_file", "add_user_font", "have_font", "load")

@@ -6,7 +6,7 @@ from pyglet.media.exceptions import MediaException, CannotSeekException
 from pyglet.util import next_or_equal_power_of_two
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
+    from pyglet.image import _AbstractImage
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
@@ -300,13 +300,13 @@ class Source:
         """
         pass
 
-    def get_next_video_frame(self) -> Optional['AbstractImage']:
+    def get_next_video_frame(self) -> Optional['_AbstractImage']:
         """Get the next video frame.
 
         .. versionadded:: 1.1
 
         Returns:
-            :class:`pyglet.image.AbstractImage`: The next video frame image,
+            :class:`pyglet.image._AbstractImage`: The next video frame image,
             or ``None`` if the video frame could not be decoded or there are
             no more video frames.
         """

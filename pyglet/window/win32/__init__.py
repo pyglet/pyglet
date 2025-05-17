@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unicodedata
-from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, UINT
+from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, SIZE, UINT
 from functools import lru_cache
 from typing import Callable, Sequence
 
@@ -16,8 +16,6 @@ from pyglet.libs.win32.types import (
     MINMAXINFO,
     RAWINPUT,
     RAWINPUTHEADER,
-    RECT,
-    SIZE,
     TRACKMOUSEEVENT,
     WCHAR,
 )
@@ -666,7 +664,7 @@ class Win32Window(BaseWindow):
             _user32.ReleaseDC(None, hdc)
 
             img = img.get_image_data()
-            data = img.get_data(fmt, pitch)
+            data = img.get_bytes(fmt, pitch)
             memmove(dataptr, data, len(data))
 
             mask = _gdi32.CreateBitmap(img.width, img.height, 1, 1, None)
@@ -715,7 +713,7 @@ class Win32Window(BaseWindow):
         _user32.ReleaseDC(None, hdc)
 
         image = image.get_image_data()
-        data = image.get_data(fmt, pitch)
+        data = image.get_bytes(fmt, pitch)
         memmove(dataptr, data, len(data))
 
         mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)

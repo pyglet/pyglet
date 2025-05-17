@@ -12,11 +12,11 @@ pyglet.resource.path = ['../resources']
 pyglet.resource.reindex()
 
 # Load the three main resources and get them to draw centered
-player_image = pyglet.resource.image("player.png")
+player_image = pyglet.resource.texture("player.png")
 center_image(player_image)
 
-bullet_image = pyglet.resource.image("bullet.png")
+bullet_image = pyglet.resource.texture("bullet.png")
 center_image(bullet_image)
 
-asteroid_image = pyglet.resource.image("asteroid.png")
+asteroid_image = pyglet.resource.texture("asteroid.png")
 center_image(asteroid_image)

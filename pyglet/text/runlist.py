@@ -5,6 +5,7 @@ from typing import Any, Callable, Generator, Iterable, Iterator
 
 
 class _Run:
+    __slots__ = ('count', 'value')
     def __init__(self, value: Any, count: int) -> None:
         self.value = value
         self.count = count
@@ -33,6 +34,7 @@ class RunList:
     ``set_run(2, 5, 'x')`` would change the sequence to ``aaxxxbccccc``.
     """
     runs: list[_Run]
+    __slots__ = ['runs']
 
     def __init__(self, size: int, initial: Any) -> None:
         """Create a run list of the given size and a default value.
@@ -64,7 +66,6 @@ class RunList:
         for run in self.runs:
             if i <= pos <= i + run.count:
                 run.count += length
-                break
             i += run.count
 
     def delete(self, start: int, end: int) -> None:
@@ -156,60 +157,6 @@ class RunList:
         # Delete collapsed runs
         self.runs = [r for r in self.runs if r.count > 0]
 
-    def append(self, length: int):
-        """Append characters into end of the run list.
-
-        The appended characters will take on the value immediately preceding
-        the end of run list.
-
-        Args:
-            length:
-                Number of characters to insert.
-
-        """
-        self.runs[-1].count += length
-
-    def append_run(self, count: int, value: Any) -> None:
-        """
-        Append a run to the end of the run list.
-
-        Args:
-            count:
-                Number of characters to append.
-            value:
-                Value to append.
-        """
-        if self.runs[-1].value == value:
-            self.runs[-1].count += count
-            return
-        self.runs.append(_Run(value, count))
-
-    def insert_run(self, pos: int, length: int, value: Any) -> None:
-        """
-        Insert a run into the run list.
-
-        Args:
-            pos:
-                Position to insert run.
-            length:
-                Number of characters to insert.
-            value:
-                Value to insert.
-        """
-        i = 0
-        for run_i, run in enumerate(self.runs):
-            if i <= pos <= i + run.count:
-                if run.value == value:
-                    run.count += length
-                else:
-                    self.runs.insert(run_i + 1, _Run(value, length))
-                    self.runs.insert(run_i + 2, _Run(run.value, run.count - (pos - i)))
-                    run.count = pos - i
-                    # Delete collapsed runs
-                    self.runs[run_i: run_i+2] = [r for r in self.runs[run_i: run_i+2] if r.count > 0]
-                break
-            i += run.count
-
     def __iter__(self) -> Generator[tuple[int, int, Any], Any, None]:
         i = 0
         for run in self.runs:
@@ -239,65 +186,6 @@ class RunList:
             return self.runs[-1].value
 
         raise IndexError
-
-    def set_runs(self, start: int, end: int, runs: RunList) -> None:
-        """Set a range of runs.
-
-        Args:
-            start:
-                Start index of range.
-            end:
-                End index of range, exclusive.
-            runs:
-                Runs to set.
-        """
-        if end - start <= 0:
-            return
-
-        # Find runs that need to be split
-        i = 0
-        start_i = None
-        start_trim = 0
-        end_i = None
-        end_trim = 0
-        for run_i, run in enumerate(self.runs):
-            count = run.count
-            if i < start < i + count:
-                start_i = run_i
-                start_trim = start - i
-            if i < end < i + count:
-                end_i = run_i
-                end_trim = end - i
-            i += count
-
-        # Split runs
-        if start_i is not None:
-            run = self.runs[start_i]
-            self.runs.insert(start_i, _Run(run.value, start_trim))
-            run.count -= start_trim
-            if end_i is not None:
-                if end_i == start_i:
-                    end_trim -= start_trim
-                end_i += 1
-            start_i += 1
-        if end_i is not None:
-            run = self.runs[end_i]
-            self.runs.insert(end_i, _Run(run.value, end_trim))
-            run.count -= end_trim
-            end_i += 1
-
-        self.runs[start_i: end_i] = runs.runs
-
-        # Merge adjacent runs
-        last_run = self.runs[0]
-        for run in self.runs[1:]:
-            if run.value == last_run.value:
-                run.count += last_run.count
-                last_run.count = 0
-            last_run = run
-
-        # Delete collapsed runs
-        self.runs = [r for r in self.runs if r.count > 0]
 
     def __repr__(self) -> str:
         return str(list(self))

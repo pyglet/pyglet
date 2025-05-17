@@ -23,9 +23,9 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 import ctypes
-from typing import TYPE_CHECKING, Any, Sequence, Type
+from typing import TYPE_CHECKING, Any, Sequence
 
-from _ctypes import Array, _Pointer, _SimpleCData, byref
+from _ctypes import Array
 
 from pyglet.graphics.api.gl import (
     GL_BYTE,
@@ -43,21 +43,19 @@ from pyglet.graphics.api.gl import (
     glDrawArrays,
     glDrawElements,
     glMultiDrawArrays,
-    glMultiDrawElements, glBindBuffer, GL_ARRAY_BUFFER, glGetIntegerv, GL_ARRAY_BUFFER_BINDING, glGetBufferParameteriv,
-    GL_BUFFER_SIZE, glGetProgramiv, GL_ACTIVE_ATTRIBUTES, glGetActiveAttrib, glGetAttribLocation,
+    glMultiDrawElements, glBindBuffer, GL_ARRAY_BUFFER,
 
 )
 from pyglet.graphics import allocation
 from pyglet.graphics import GeometryMode
 from pyglet.graphics.api.gl.enums import geometry_map
-from pyglet.graphics.api.gl2.shader import GLAttribute, _query_attribute
+from pyglet.graphics.api.gl2.shader import GLAttribute
 from pyglet.graphics.api.gl2.buffer import AttributeBufferObject, IndexedBufferObject
 from pyglet.graphics.vertexdomain import _nearest_pow2
 from pyglet.graphics.shader import DataTypeTuple
 
-
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import VertexArray
+    from pyglet.graphics.api.gl.vertexdomain import VertexArray
     from pyglet.graphics.allocation import Allocator
     from pyglet.graphics.shader import Attribute
 
