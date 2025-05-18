@@ -1,24 +1,24 @@
 from __future__ import annotations
 
 import weakref
-import js
+from typing import TYPE_CHECKING, Any, Callable
 
+import js
 from pyodide.ffi import create_proxy
 
-from pyglet.graphics.api.base import WindowGraphicsContext
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
-from typing import TYPE_CHECKING, Any, Callable
-
 from pyglet.graphics.api.webgl.shader import GLDataType
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
-    from pyglet.graphics.api.webgl.config import OpenGLWindowConfig
     from pyglet.graphics.api import WebGLBackend
+    from pyglet.graphics.api.webgl.config import OpenGLWindowConfig
+    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
     from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
+
 
 class ObjectSpace:
     """A container to store shared objects that are to be removed."""
@@ -33,17 +33,23 @@ class ObjectSpace:
         self.doomed_renderbuffers = []
 
 
-class OpenGLWindowContext(WindowGraphicsContext):
+class OpenGLSurfaceContext(SurfaceContext):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
+
     gl: WebGL2RenderingContext
     config: OpenGLWindowConfig
-    context_share: OpenGLWindowContext | None
+    context_share: OpenGLSurfaceContext | None
 
-    def __init__(self, global_ctx: WebGLBackend, window: EmscriptenWindow, config: OpenGLWindowConfig,  # noqa: D417
-                 context_share: OpenGLWindowContext | None = None) -> None:
+    def __init__(
+        self,
+        global_ctx: WebGLBackend,
+        window: EmscriptenWindow,
+        config: OpenGLWindowConfig,  # noqa: D417
+        context_share: OpenGLSurfaceContext | None = None,
+    ) -> None:
         """Initialize a context.
 
         This should only be created through the ``DisplayConfig.create_context`` method.
@@ -67,7 +73,6 @@ class OpenGLWindowContext(WindowGraphicsContext):
         self._info = GLInfo()
         self.object_space = ObjectSpace()
 
-
         self._draw_proxy = create_proxy(self.window.draw)
 
         self._clear_color = (0.0, 0.0, 0.0, 1.0)
@@ -85,8 +90,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
     def start_render(self):
         js.requestAnimationFrame(self._draw_proxy)
 
-    def resized(self, width, height):
-        ...
+    def resized(self, width, height): ...
 
     def detach(self):
         self.context = None
@@ -135,7 +139,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
         gl.current_context = self
 
         # Set active context.
-        #gl_info.set_active_context()
+        # gl_info.set_active_context()
 
         if not self._info.was_queried:
             self._info.query()
@@ -145,8 +149,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
         if self.object_space.doomed_buffers:
             self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
         if self.object_space.doomed_shader_programs:
-            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
-                                            gl.glDeleteProgram)
+            self._delete_objects_one_by_one(self.object_space.doomed_shader_programs, gl.glDeleteProgram)
         if self.object_space.doomed_shaders:
             self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
         if self.object_space.doomed_renderbuffers:
@@ -164,17 +167,14 @@ class OpenGLWindowContext(WindowGraphicsContext):
             gl.GL_BOOL_VEC2: (gl.GLint, self.gl.uniform2iv, 2),
             gl.GL_BOOL_VEC3: (gl.GLint, self.gl.uniform3iv, 3),
             gl.GL_BOOL_VEC4: (gl.GLint, self.gl.uniform4iv, 4),
-
             gl.GL_INT: (gl.GLint, self.gl.uniform1i, 1),
             gl.GL_INT_VEC2: (gl.GLint, self.gl.uniform2iv, 2),
             gl.GL_INT_VEC3: (gl.GLint, self.gl.uniform3iv, 3),
             gl.GL_INT_VEC4: (gl.GLint, self.gl.uniform4iv, 4),
-
             gl.GL_FLOAT: (gl.GLfloat, self.gl.uniform1f, 1),
             gl.GL_FLOAT_VEC2: (gl.GLfloat, self.gl.uniform2fv, 2),
             gl.GL_FLOAT_VEC3: (gl.GLfloat, self.gl.uniform3fv, 3),
             gl.GL_FLOAT_VEC4: (gl.GLfloat, self.gl.uniform4fv, 4),
-
             # 1D Samplers
             gl.GL_SAMPLER_1D: (gl.GLint, self.gl.uniform1i, 1),
             gl.GL_SAMPLER_1D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
@@ -182,7 +182,6 @@ class OpenGLWindowContext(WindowGraphicsContext):
             gl.GL_INT_SAMPLER_1D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_1D: (gl.GLint, self.gl.uniform1i, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
-
             # 2D Samplers
             gl.GL_SAMPLER_2D: (gl.GLint, self.gl.uniform1i, 1),
             gl.GL_SAMPLER_2D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
@@ -190,12 +189,10 @@ class OpenGLWindowContext(WindowGraphicsContext):
             gl.GL_INT_SAMPLER_2D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_2D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
-
             # Multisample
             gl.GL_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.gl.uniform1iv, 1),
-
             # Cube Samplers
             gl.GL_SAMPLER_CUBE: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_INT_SAMPLER_CUBE: (gl.GLint, self.gl.uniform1iv, 1),
@@ -203,28 +200,22 @@ class OpenGLWindowContext(WindowGraphicsContext):
             gl.GL_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.gl.uniform1iv, 1),
-
             # 3D Samplers
             gl.GL_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.gl.uniform1iv, 1),
-
             gl.GL_FLOAT_MAT2: (gl.GLfloat, self.gl.uniformMatrix2fv, 4),
             gl.GL_FLOAT_MAT3: (gl.GLfloat, self.gl.uniformMatrix3fv, 6),
             gl.GL_FLOAT_MAT4: (gl.GLfloat, self.gl.uniformMatrix4fv, 16),
-
             # Images
             gl.GL_IMAGE_1D: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_IMAGE_2D: (gl.GLint, self.gl.uniform1iv, 2),
             gl.GL_IMAGE_2D_RECT: (gl.GLint, self.gl.uniform1iv, 3),
             gl.GL_IMAGE_3D: (gl.GLint, self.gl.uniform1iv, 3),
-
             gl.GL_IMAGE_1D_ARRAY: (gl.GLint, self.gl.uniform1iv, 2),
             gl.GL_IMAGE_2D_ARRAY: (gl.GLint, self.gl.uniform1iv, 3),
-
             gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, self.gl.uniform1iv, 2),
             gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, self.gl.uniform1iv, 3),
-
             gl.GL_IMAGE_BUFFER: (gl.GLint, self.gl.uniform1iv, 3),
             gl.GL_IMAGE_CUBE: (gl.GLint, self.gl.uniform1iv, 1),
             gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, self.gl.uniform1iv, 3),

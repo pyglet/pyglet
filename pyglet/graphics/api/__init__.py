@@ -34,7 +34,7 @@ elif pyglet.options.backend in ("gl2", "gles2"):
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl import WebGLBackend
 
-    global_backend = WebGLBackend()
+    core = WebGLBackend()
 
     from pyglet.graphics.api.webgl.draw import Batch
     from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch, get_default_blit_shader

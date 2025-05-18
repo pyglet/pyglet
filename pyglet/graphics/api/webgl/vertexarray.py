@@ -5,21 +5,21 @@ from typing import TYPE_CHECKING
 import pyglet
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLVertexArrayObject
-
-    from pyglet.graphics.api.webgl import OpenGLWindowContext
 
 __all__ = ['VertexArray']
 
 
 class VertexArray:
     """OpenGL Vertex Array Object."""
-    _context: OpenGLWindowContext | None
+
+    _context: OpenGLSurfaceContext | None
     _id: WebGLVertexArrayObject
 
     def __init__(self) -> None:
         """Create an instance of a Vertex Array object."""
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
         self._id = self._gl.createVertexArray()
 

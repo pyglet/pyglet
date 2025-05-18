@@ -120,7 +120,7 @@ if pyglet.options.backend in ("opengl", "gl2", "gles2"):
     from pyglet.graphics.api.gl.image import GLTextureArrayRegion as TextureArrayRegion
     from pyglet.graphics.api.gl.image import GLTextureRegion as TextureRegion
     from pyglet.graphics.api.gl.image import get_buffer_manager, get_max_texture_size
-elif pyglet.options.backend == "webgl":
+elif pyglet.options.backend == "webglignore":
     from pyglet.graphics.api.webgl.texture import GLBufferImage as BufferImage
     from pyglet.graphics.api.webgl.texture import GLBufferImageMask as BufferImageMask
     from pyglet.graphics.api.webgl.texture import GLBufferManager as BufferManager

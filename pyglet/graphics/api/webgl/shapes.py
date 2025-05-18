@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pyglet
 from pyglet.enums import BlendFactor
 from pyglet.graphics.draw import Group
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.shader import ShaderProgram
@@ -51,12 +52,11 @@ fragment_source = """#version 300 es
 
 
 def get_default_shader() -> ShaderProgram:
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_shapes",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
     )
-
 
 
 class _ShapeGroup(Group):
@@ -65,11 +65,13 @@ class _ShapeGroup(Group):
     The group is automatically coalesced with other shape groups
     sharing the same parent group and blend parameters.
     """
+
     blend_src: int
     blend_dest: int
 
-    def __init__(self, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
-                 parent: Group | None = None) -> None:
+    def __init__(
+        self, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram, parent: Group | None = None
+    ) -> None:
         """Create a Shape group.
 
         The group is created internally. Usually you do not

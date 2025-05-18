@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-from typing import Callable, Sequence, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
-from pyglet.graphics.api.webgl.enums import geometry_map
-
-from pyglet.graphics.draw import DomainKey, BatchBase, Group
 from pyglet.graphics.api.webgl import (
-   vertexdomain,
+    vertexdomain,
 )
+from pyglet.graphics.api.webgl.enums import geometry_map
+from pyglet.graphics.draw import BatchBase, DomainKey, Group
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
-    from pyglet.graphics.state import State
     from pyglet.graphics import GeometryMode
+    from pyglet.graphics.api.gl.vertexdomain import IndexedVertexList, VertexList
     from pyglet.graphics.api.gl2.shader import ShaderProgram
-    from pyglet.graphics.api.gl.vertexdomain import VertexList, IndexedVertexList
+    from pyglet.graphics.state import State
 
 
 # Default Shader source:
@@ -91,17 +90,17 @@ _blit_fragment_source: str = """#version 330 core
 
 def get_default_batch() -> Batch:
     """Batch used globally for objects that have no Batch specified."""
-    return pyglet.graphics.api.global_backend.get_default_batch()
+    return pyglet.graphics.api.core.get_default_batch()
     # try:
-    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+    #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
     # except AttributeError:
-    #     pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch = Batch()
-    #     return pyglet.graphics.api.global_backend.current_context.pyglet_graphics_default_batch
+    #     pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch = Batch()
+    #     return pyglet.graphics.api.core.current_context.pyglet_graphics_default_batch
 
 
 def get_default_shader() -> ShaderProgram:
     """A default basic shader for default batches."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_graphics",
         (_vertex_source, 'vertex'),
         (_fragment_source, 'fragment'),
@@ -110,13 +109,11 @@ def get_default_shader() -> ShaderProgram:
 
 def get_default_blit_shader() -> ShaderProgram:
     """A default basic shader for blitting, provides no blending."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_blit",
         (_blit_vertex_source, 'vertex'),
         (_blit_fragment_source, 'fragment'),
     )
-
-
 
 
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
@@ -124,7 +121,7 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     (False, False): vertexdomain.VertexDomain,
     (True, False): vertexdomain.IndexedVertexDomain,
     (False, True): vertexdomain.InstancedVertexDomain,
-   (True, True): vertexdomain.InstancedIndexedVertexDomain,
+    (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
 
@@ -153,7 +150,7 @@ class StateManager:
                 current_state = self.active_states[state_type]
                 if state != current_state:
                     # Call unset only if the flag is enabled
-                    #if current_state.unsets_state and current_state.call_unset_on_replace:
+                    # if current_state.unsets_state and current_state.call_unset_on_replace:
                     #    unset_functions.append(current_state.unset_state)
                     if state.sets_state:
                         set_functions.append(state.set_state)
@@ -186,15 +183,14 @@ class StateManager:
 
         Clears the active states in the process. This is done at the end of the batch draw.
         """
-        unset_functions = [
-            state.unset_state for state in self.active_states.values() if state.unsets_state
-        ]
+        unset_functions = [state.unset_state for state in self.active_states.values() if state.unsets_state]
         self.active_states.clear()
         return unset_functions
 
 
 # Singleton instance for all batches. (How to cleanup state between all batches?)
 _state_manager: StateManager = StateManager()
+
 
 class Batch(BatchBase):
     """Manage a collection of drawables for batched rendering.
@@ -223,6 +219,7 @@ class Batch(BatchBase):
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
+
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
@@ -233,7 +230,7 @@ class Batch(BatchBase):
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
         super().__init__()
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
@@ -245,8 +242,9 @@ class Batch(BatchBase):
         """
         self._draw_list_dirty = True
 
-    def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                      program: ShaderProgram) -> bool:
+    def update_shader(
+        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, program: ShaderProgram
+    ) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
         The results are undefined if `mode` is not correct or if `vertex_list`
@@ -272,8 +270,10 @@ class Batch(BatchBase):
         # Formats may differ (normalization) than what is declared in the shader.
         # Make those adjustments and attempt to get a domain.
         for a_name in attributes:
-            if (a_name in vertex_list.initial_attribs and
-                    vertex_list.initial_attribs[a_name]['format'] != attributes[a_name]['format']):
+            if (
+                a_name in vertex_list.initial_attribs
+                and vertex_list.initial_attribs[a_name]['format'] != attributes[a_name]['format']
+            ):
                 attributes[a_name]['format'] = vertex_list.initial_attribs[a_name]['format']
 
         domain = self.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
@@ -285,8 +285,9 @@ class Batch(BatchBase):
 
         return True
 
-    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                batch: Batch) -> None:
+    def migrate(
+        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: Batch
+    ) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -313,10 +314,9 @@ class Batch(BatchBase):
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
         vertex_list.migrate(domain)
 
-    def _convert_to_instanced(self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain,
-                              instance_attributes: Sequence[
-                                  str]) -> (vertexdomain.InstancedVertexDomain |
-                                            vertexdomain.InstancedIndexedVertexDomain):
+    def _convert_to_instanced(
+        self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain, instance_attributes: Sequence[str]
+    ) -> vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
         """Takes a domain from inside the Batch and creates a new instanced version."""
         # Search for the existing domain.
         for group, domain_map in self.group_map.items():
@@ -335,10 +335,14 @@ class Batch(BatchBase):
         msg = "Domain was not found and could not be converted."
         raise Exception(msg)
 
-    def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> (
-            vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain |
-            vertexdomain.InstancedIndexedVertexDomain):
+    def get_domain(
+        self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group, attributes: dict[str, Any]
+    ) -> (
+        vertexdomain.VertexDomain
+        | vertexdomain.IndexedVertexDomain
+        | vertexdomain.InstancedVertexDomain
+        | vertexdomain.InstancedIndexedVertexDomain
+    ):
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES

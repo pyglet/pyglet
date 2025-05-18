@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import sys
-from typing import ClassVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
-from pyglet import event, image, clock
+from pyglet import clock, event, image
 from pyglet.graphics import Group
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
     from pyglet.enums import BlendFactor
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.image import AbstractImage, Animation, Texture
+    from pyglet.image.base import TextureBase
 
 
 vertex_source: str = """#version 150 core
@@ -89,7 +89,7 @@ def get_default_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
@@ -101,7 +101,7 @@ def get_default_array_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_sprite_array",
         (vertex_source, 'vertex'),
         (fragment_array_source, 'fragment'),
@@ -111,8 +111,14 @@ def get_default_array_shader() -> ShaderProgram:
 class SpriteGroup(Group):
     """Shared Sprite rendering Group."""
 
-    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor,
-                 program: ShaderProgram, parent: Group | None = None) -> None:
+    def __init__(
+        self,
+        texture: TextureBase,
+        blend_src: BlendFactor,
+        blend_dest: BlendFactor,
+        program: ShaderProgram,
+        parent: Group | None = None,
+    ) -> None:
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
