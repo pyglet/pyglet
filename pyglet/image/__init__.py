@@ -107,39 +107,6 @@ from pyglet.image import animation  # noqa: F401
 from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401
 from pyglet.image.base import ImageData, ImageDataRegion  # noqa: F401
 
-if pyglet.options.backend in ("opengl", "gl2", "gles2"):
-    from pyglet.graphics.api.gl.image import GLBufferImage as BufferImage
-    from pyglet.graphics.api.gl.image import GLBufferImageMask as BufferImageMask
-    from pyglet.graphics.api.gl.image import GLBufferManager as BufferManager
-    from pyglet.graphics.api.gl.image import GLDepthBufferImage as DepthBufferImage
-    from pyglet.graphics.api.gl.image import GLImageData as ImageData
-    from pyglet.graphics.api.gl.image import GLImageDataRegion as ImageDataRegion
-    from pyglet.graphics.api.gl.image import GLTexture as Texture
-    from pyglet.graphics.api.gl.image import GLTexture3D as Texture3D
-    from pyglet.graphics.api.gl.image import GLTextureArray as TextureArray
-    from pyglet.graphics.api.gl.image import GLTextureArrayRegion as TextureArrayRegion
-    from pyglet.graphics.api.gl.image import GLTextureRegion as TextureRegion
-    from pyglet.graphics.api.gl.image import get_buffer_manager, get_max_texture_size
-elif pyglet.options.backend == "webglignore":
-    from pyglet.graphics.api.webgl.texture import GLBufferImage as BufferImage
-    from pyglet.graphics.api.webgl.texture import GLBufferImageMask as BufferImageMask
-    from pyglet.graphics.api.webgl.texture import GLBufferManager as BufferManager
-    from pyglet.graphics.api.webgl.texture import GLDepthBufferImage as DepthBufferImage
-    from pyglet.graphics.api.webgl.texture import GLImageData as ImageData
-    from pyglet.graphics.api.webgl.texture import GLImageDataRegion as ImageDataRegion
-    from pyglet.graphics.api.webgl.texture import GLTexture as Texture
-    from pyglet.graphics.api.webgl.texture import GLTexture3D as Texture3D
-    from pyglet.graphics.api.webgl.texture import GLTextureArray as TextureArray
-    from pyglet.graphics.api.webgl.texture import GLTextureArrayRegion as TextureArrayRegion
-    from pyglet.graphics.api.webgl.texture import GLTextureRegion as TextureRegion
-    from pyglet.graphics.api.webgl.texture import get_buffer_manager, get_max_texture_size
-elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageData
-    from pyglet.graphics.api.vulkan.image.image_temp import VulkanImageData as ImageDataRegion
-    from pyglet.graphics.api.vulkan.texture import VulkanTexture as Texture
-    from pyglet.graphics.api.vulkan.texture import VulkanTextureRegion as TextureRegion
-    from pyglet.graphics.api.vulkan.texture import get_max_texture_size
-
 from pyglet.image.animation import Animation, AnimationFrame
 from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: F401
 from pyglet.image.codecs import ImageDecoder
