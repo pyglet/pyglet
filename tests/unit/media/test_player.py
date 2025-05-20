@@ -26,7 +26,7 @@ class PlayerTestCase(unittest.TestCase):
         self._clock_patcher = mock.patch('pyglet.clock')
         self.mock_clock = self._clock_patcher.start()
 
-        self._texture_patcher = mock.patch('pyglet.image.Texture.create')
+        self._texture_patcher = mock.patch('pyglet.graphics.Texture.create')
         self.mock_texture_create = self._texture_patcher.start()
         self.mock_texture = self.mock_texture_create.return_value
         # Need to do this as side_effect instead of return_value, or reset_mock will recurse
@@ -139,10 +139,10 @@ class PlayerTestCase(unittest.TestCase):
         self.assertFalse(self.mock_texture_create.called)
 
     def assert_texture_updated(self, frame_data):
-        self.mock_texture.blit_into.assert_called_once_with(frame_data, 0, 0, 0)
+        self.mock_texture.upload.assert_called_once_with(frame_data, 0, 0, 0)
 
     def assert_texture_not_updated(self):
-        self.assertFalse(self.mock_texture.blit_into.called)
+        self.assertFalse(self.mock_texture.upload.called)
 
     def assert_update_texture_scheduled(self):
         self.mock_clock.schedule_once.assert_called_once_with(self.player.update_texture, 0)

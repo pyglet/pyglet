@@ -5,7 +5,7 @@ import warnings
 from typing import Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.base import BackendGlobalObject, WindowGraphicsContext, UBOMatrixTransformations
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
 from pyglet.math import Mat4
 from pyglet.graphics.api.gl.shader import Shader, ShaderProgram
 from pyglet.graphics.api.gl.gl import glViewport
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderType
     from pyglet.graphics.api.gl import OpenGLWindowConfig, ObjectSpace
     from pyglet.window import Window
-    from pyglet.graphics.api.gl import OpenGLWindowContext
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -100,7 +100,7 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
         self._model = model
 
 class OpenGLBackend(BackendGlobalObject):
-    current_context: OpenGLWindowContext | None
+    current_context: OpenGLSurfaceContext | None
     _have_context: bool = False
 
     def __init__(self) -> None:
@@ -112,7 +112,6 @@ class OpenGLBackend(BackendGlobalObject):
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
         # of sharing basic information between contexts. However, in usage, the user or internals should use the
         # "real" context's information to prevent any discrepencies.
-        #self.gl_info = GLInfo()  # GL Info is a shared info space.
         super().__init__()
 
     @property
@@ -124,10 +123,10 @@ class OpenGLBackend(BackendGlobalObject):
         if pyglet.options.shadow_window and not _is_pyglet_doc_run:
             self._shadow_window = _create_shadow_window()
 
-    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLWindowContext | None):
+    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 
-    def get_window_backend_context(self, window: Window, config: OpenGLWindowConfig) -> WindowGraphicsContext:
+    def get_surface_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
         context = self.windows[window] = self.create_context(config, self.current_context)
         self._have_context = True
         return context
@@ -167,11 +166,11 @@ class OpenGLBackend(BackendGlobalObject):
 
         This is a convenience method that takes one or more tuples of
         (source_string, shader_type), and returns a
-        :py:class:`~pyglet.graphics.shader.ShaderProgram` instance.
+        :py:class:`~pyglet.graphics.ShaderProgram` instance.
 
         ``source_string`` is OpenGL GLSL source code as a str, and ``shader_type``
         is the OpenGL shader type, such as "vertex" or "fragment". See
-        :py:class:`~pyglet.graphics.shader.Shader` for more information.
+        :py:class:`~pyglet.graphics.Shader` for more information.
 
         .. note:: This method is cached. Given the same shader sources, the
                   same ShaderProgram instance will be returned. For more

@@ -25,7 +25,7 @@ from pyglet.graphics.api.gl import (
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch, Group, ShaderProgram
-    from pyglet.image import AbstractImage, Animation, Texture
+    from pyglet.image import _AbstractImage, Animation, Texture
 
 
 class MultiTextureSpriteGroup(pyglet.graphics.Group):
@@ -126,14 +126,14 @@ class MultiTextureSpriteGroup(pyglet.graphics.Group):
 
 # Allows the default shader to pick the appropriate sampler for the fragment shader
 _SAMPLER_TYPES = {
-    pyglet.backend.gl.GL_TEXTURE_2D: "sampler2D",
-    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D: "sampler2D",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D_ARRAY: "sampler2DArray",
 }
 
 # Allows the default shader to grab the correct coords based on texture type
 _SAMPLER_COORDS = {
-    pyglet.backend.gl.GL_TEXTURE_2D: ".xy",
-    pyglet.backend.gl.GL_TEXTURE_2D_ARRAY: "",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D: ".xy",
+    pyglet.graphics.api.gl.GL_TEXTURE_2D_ARRAY: "",
 }
 
 
@@ -219,7 +219,7 @@ def _get_default_mt_shader(images: dict[str, Texture]) -> ShaderProgram:
     }}
     """
 
-    return pyglet.graphics.api.global_backend.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
+    return pyglet.graphics.api.core.current_context.create_program((vertex_source, 'vertex'), (fragment_source, 'fragment'))
 
 
 class MultiTextureSprite(pyglet.sprite.Sprite):
@@ -265,7 +265,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
     group_class = MultiTextureSpriteGroup
 
     def __init__(self,
-                 images: dict[str, AbstractImage | Animation],
+                 images: dict[str, _AbstractImage | Animation],
                  x: float = 0, y: float = 0, z: float = 0,
                  blend_src: int = GL_SRC_ALPHA,
                  blend_dest: int = GL_ONE_MINUS_SRC_ALPHA,
@@ -451,7 +451,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
 
         return 0
 
-    def get_layer(self, name: str) -> AbstractImage | Animation | None:
+    def get_layer(self, name: str) -> _AbstractImage | Animation | None:
         """Return the requested layer.  If it is not found then None is returned
 
         Args:
@@ -460,12 +460,12 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         """
         if name in self._animations:
             return self._animations[name]
-        elif name in self._textures:
+        if name in self._textures:
             return self._textures[name]
 
         return None
 
-    def set_layer(self, name: str, img: AbstractImage | Animation) -> None:
+    def set_layer(self, name: str, img: _AbstractImage | Animation) -> None:
         """Sets the layer to the new image or animation.
 
         This method has no effect if name is not a valid layer.  Note: if you
@@ -516,7 +516,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         raise NotImplementedError("MultiTextureSprite does not support the image property.  Use get_layer instead.")
 
     @image.setter
-    def image(self, img: AbstractImage | Animation) -> None:
+    def image(self, img: _AbstractImage | Animation) -> None:
         raise NotImplementedError("MultiTextureSprite does not support the image property.  Use set_layer instead.")
 
     @property

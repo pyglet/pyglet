@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import pytest
 
-
-from pyglet import app, gl, graphics, text, window
+import pyglet
+from pyglet import app, text, window
 from pyglet.text import caret, layout
-from pyglet.window import key, mouse
+from pyglet.window import key
 from tests.base.interactive import InteractiveTestCase
 
 doctext = """STYLE.py test document.
@@ -12,7 +14,7 @@ doctext = """STYLE.py test document.
 
 This is 12pt text (as is everything that follows).
 
-This text has some {bold True}bold character style{bold False}, some
+This text has some {weight 'bold'}bold character style{weight 'normal'}, some
 {italic True}italic character style{italic False}, some {underline [0, 0, 0,
 255]}underlined text{underline None}, {underline [255, 0, 0, 255]}underline
 in red{underline None}, a {color [255, 0, 0, 255]}change {color [0, 255, 0,
@@ -169,7 +171,8 @@ class BaseTestWindow(window.Window):
         self.document = text.decode_attributed(doctext)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-                                                   self.width - self.margin * 2, self.height - self.margin * 2,
+                                                   width=self.width - self.margin * 2,
+                                                   height=self.height - self.margin * 2,
                                                    multiline=True,
                                                    batch=self.batch)
         self.caret = caret.Caret(self.layout)
@@ -191,7 +194,7 @@ class BaseTestWindow(window.Window):
         self.layout.view_y += scroll_y * 16
 
     def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
+        self.context.set_clear_color(1, 1, 1, 1)
         self.clear()
         self.batch.draw()
 

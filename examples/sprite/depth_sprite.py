@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group, ShaderProgram
-    from pyglet.image.base import TextureBase
+    from pyglet.graphics.texture import TextureBase
 
 # Standard projection Z is 0 to 255. Keep window within that.
 # You will have to change window projection if you wish to go beyond this.
@@ -90,7 +90,7 @@ class DepthSprite(pyglet.sprite.Sprite):
 pyglet.resource.path = ['../resources']
 pyglet.resource.reindex()
 
-image = pyglet.resource.image("pyglet.png")
+image = pyglet.resource.texture("pyglet.png")
 batch = pyglet.graphics.Batch()
 
 sprites = []

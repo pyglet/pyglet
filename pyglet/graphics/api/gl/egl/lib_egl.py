@@ -28,4 +28,4 @@ def link_EGL(name, restype, argtypes, requires=None, suggestions=None):
             func = cast(addr, ftype)
             return func
 
-    return pyglet.backend.gl.lib.missing_function(name, requires, suggestions)
+    return pyglet.graphics.api.gl.lib.missing_function(name, requires, suggestions)

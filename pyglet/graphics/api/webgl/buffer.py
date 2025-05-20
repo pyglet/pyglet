@@ -6,20 +6,22 @@ with ``glGenBuffers``. The backed buffer object is similar, but provides a
 full mirror of the data in CPU memory. This allows for delayed uploading of
 changes to GPU memory, which can improve performance is some cases.
 """
+
 from __future__ import annotations
 
-import js
-import pyodide.ffi
 import ctypes
 import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
+import js
+import pyodide.ffi
 
 import pyglet
 from pyglet.customtypes import CType, CTypesPointer
 from pyglet.graphics.api.webgl.gl import (
     GL_ARRAY_BUFFER,
+    GL_BUFFER_SIZE,
     GL_DYNAMIC_DRAW,
     GL_ELEMENT_ARRAY_BUFFER,
     GL_MAP_COHERENT_BIT,
@@ -27,17 +29,15 @@ from pyglet.graphics.api.webgl.gl import (
     GL_MAP_READ_BIT,
     GL_MAP_WRITE_BIT,
     GL_WRITE_ONLY,
-    GL_BUFFER_SIZE,
 )
-
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
     from _ctypes import Array
-    from pyglet.graphics.api.webgl import OpenGLWindowContext
-    from pyglet.graphics.shader import Attribute
 
+    from pyglet.graphics.api.webgl import OpenGLSurfaceContext
+    from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
+    from pyglet.graphics.shader import Attribute
 
 
 class BufferObject(AbstractBuffer):
@@ -54,7 +54,7 @@ class BufferObject(AbstractBuffer):
     id: WebGLBuffer
     usage: int
     target: int
-    _context: OpenGLWindowContext | None
+    _context: OpenGLSurfaceContext | None
 
     def __init__(self, size: int, target: int = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage.
@@ -64,7 +64,7 @@ class BufferObject(AbstractBuffer):
         super().__init__('b', size)
         self.usage = usage
         self.target = target
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
 
         self.id = self._gl.createBuffer()
@@ -72,23 +72,17 @@ class BufferObject(AbstractBuffer):
         self._gl.bindBuffer(self.target, self.id)
         self._gl.bufferData(self.target, self.size, self.usage)
 
-    def get_bytes(self) -> bytes:
-        ...
+    def get_bytes(self) -> bytes: ...
 
-    def get_bytes_region(self, offset: int, length: int) -> bytes:
-        ...
+    def get_bytes_region(self, offset: int, length: int) -> bytes: ...
 
-    def get_data_region(self, start: int, length: int) -> ctypes.Array[CType]:
-        ...
+    def get_data_region(self, start: int, length: int) -> ctypes.Array[CType]: ...
 
-    def set_bytes(self, data: bytes) -> None:
-        ...
+    def set_bytes(self, data: bytes) -> None: ...
 
-    def set_bytes_region(self, start: int, length: int) -> None:
-        ...
+    def set_bytes_region(self, start: int, length: int) -> None: ...
 
-    def set_data_ptr(self, offset: int, length: int, ptr: CTypesPointer) -> None:
-        ...
+    def set_data_ptr(self, offset: int, length: int, ptr: CTypesPointer) -> None: ...
 
     def get_buffer_size(self):
         return self._gl.getBufferParameter(self.target, GL_BUFFER_SIZE)
@@ -165,6 +159,7 @@ class BackedBufferObject(BufferObject):
     OpenGL calls are needed, which can increase performance at the expense of
     system memory.
     """
+
     data: CType
     data_ptr: int
     _dirty_min: int
@@ -174,8 +169,9 @@ class BackedBufferObject(BufferObject):
     count: int
     ctype: CType
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int,
-                 usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER) -> None:
+    def __init__(
+        self, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
+    ) -> None:
         super().__init__(size, target, usage)
 
         self.c_type = c_type
@@ -283,9 +279,7 @@ class AttributeBufferObject(BackedBufferObject):
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int,
-                 usage: int = GL_DYNAMIC_DRAW) -> None:
-
+    def __init__(self, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(size, c_type, stride, count, usage, GL_ELEMENT_ARRAY_BUFFER)
 
     def bind_to_index_buffer(self) -> None:

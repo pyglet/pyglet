@@ -26,8 +26,8 @@ class FixedResolution:
         self._target_area = 0, 0, 0, 0, 0
 
         self.framebuffer = pyglet.image.Framebuffer()
-        self._color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
-        self._depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
+        self._color_buffer = pyglet.graphics.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
+        self._depth_buffer = pyglet.graphics.framebuffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
         self.framebuffer.attach_texture(self._color_buffer)
         self.framebuffer.attach_renderbuffer(self._depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
 

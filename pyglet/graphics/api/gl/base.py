@@ -7,14 +7,15 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable
 
 from pyglet.graphics.api import gl
-from pyglet.graphics.api.base import WindowGraphicsContext, GraphicsConfig, VerifiedGraphicsConfig
+from pyglet.graphics.api.base import SurfaceContext, GraphicsConfig, VerifiedGraphicsConfig
 from pyglet.graphics.api.gl import gl_info, glClearColor
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
+    from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.window import Window
     from _ctypes import Array
-    from pyglet.graphics.api.gl import OpenGLBackend
-    from pyglet.graphics.api.gl import GLInfo
+    from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
 
 class OpenGLAPI(Enum):
@@ -113,7 +114,7 @@ class OpenGLWindowConfig(VerifiedGraphicsConfig):
         self.debug = base_config.debug
 
     @abc.abstractmethod
-    def create_context(self, opengl_backend: OpenGLBackend, share: OpenGLWindowContext) -> OpenGLWindowContext:
+    def create_context(self, opengl_backend: OpenGLBackend, share: OpenGLSurfaceContext) -> OpenGLSurfaceContext:
         """Create a GL context that satisfies this configuration.
 
         Args:
@@ -135,7 +136,7 @@ class ObjectSpace:
         self.doomed_renderbuffers = []
 
 
-class OpenGLWindowContext(WindowGraphicsContext):
+class OpenGLSurfaceContext(SurfaceContext):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
@@ -146,12 +147,14 @@ class OpenGLWindowContext(WindowGraphicsContext):
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
     config: OpenGLWindowConfig
-    context_share: OpenGLWindowContext | None
+    context_share: OpenGLSurfaceContext | None
 
-    def __init__(self, global_ctx: OpenGLBackend, window: Window, config: OpenGLWindowConfig, context_share: OpenGLWindowContext | None = None) -> None:
+    def __init__(self, core: OpenGLBackend,
+                 window: Window,
+                 config: OpenGLWindowConfig,
+                 platform_info: GLXInfo | WGLInfo | None = None,
+                 context_share: OpenGLSurfaceContext | None = None) -> None:
         """Initialize a context.
-
-        This should only be created through the ``DisplayConfig.create_context`` method.
 
         Args:
             config:
@@ -159,12 +162,13 @@ class OpenGLWindowContext(WindowGraphicsContext):
             context_share:
                 A context to share objects with. Use ``None`` to disable sharing.
         """
-        self.global_ctx = global_ctx
+        self._context = None
+        self.core = core
         self.window = window
         self.config = config
         self.context_share = context_share
         self.is_current = False
-        self._info = gl_info.GLInfo()
+        self._info = gl_info.GLInfo(platform_info)
 
         self.doomed_vaos = []
         self.doomed_framebuffers = []
@@ -198,6 +202,14 @@ class OpenGLWindowContext(WindowGraphicsContext):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     def attach(self, window: Window) -> None:
+        """Attaches a Window and context to the current window.
+
+        The OS specific child classes create contexts or GL related OS resources.
+
+        This mostly exists because of Xlib, as GLXWindow requires XWindow creation before the GLXWindow is created.
+        However, the GLX Context needs to be created before the XWindow, due to matching 
+        assign_config (glx_context is created) -> XWindow creation -> Create GLXWindow
+        """
         # if not self.config.compatible(canvas):
         #     msg = f'Cannot attach {canvas} to {self}'
         #     raise RuntimeError(msg)
@@ -214,14 +226,9 @@ class OpenGLWindowContext(WindowGraphicsContext):
         that were created in this Context, but have been called for
         deletion while another Context was active.
         """
-        assert self.window is not None, "Window has not been attached."
-
         # Not per-thread
-        self.global_ctx.current_context = self
+        self.core.current_context = self
         gl.current_context = self
-
-        # Set active context.
-        #gl_info.set_active_context()
 
         if not self._info.was_queried:
             self._info.query()
@@ -285,13 +292,13 @@ class OpenGLWindowContext(WindowGraphicsContext):
         """
         self.detach()
 
-        if self.global_ctx.current_context is self:
-            self.global_ctx.current_context = None
+        if self.core.current_context is self:
+            self.core.current_context = None
             #gl_info.remove_active_context()
 
             # Switch back to shadow context.
-            if self.global_ctx._shadow_window is not None:  # noqa: SLF001
-                self.global_ctx._shadow_window.switch_to()  # noqa: SLF001
+            if self.core._shadow_window is not None:  # noqa: SLF001
+                self.core._shadow_window.switch_to()  # noqa: SLF001
 
     def _safe_to_operate_on_object_space(self) -> bool:
         """Check if it's safe to interact with this context's object space.
@@ -300,7 +307,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
         object space is the same as this context's object space and this
         method is called from the main thread.
         """
-        return (self.object_space is self.global_ctx.current_context.object_space and
+        return (self.object_space is self.core.current_context.object_space and
                 threading.current_thread() is threading.main_thread())
 
     def _safe_to_operate_on(self) -> bool:
@@ -309,7 +316,7 @@ class OpenGLWindowContext(WindowGraphicsContext):
         This is considered to be the case if it's the current context and this
         method is called from the main thread.
         """
-        return self.global_ctx.current_context is self and threading.current_thread() is threading.main_thread()
+        return self.core.current_context is self and threading.current_thread() is threading.main_thread()
 
     def delete_texture(self, texture_id: int) -> None:
         """Safely delete a Texture belonging to this context's object space.

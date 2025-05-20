@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from pyglet.graphics.api.base import GraphicsConfig
-
-from pyglet.graphics.api.base import VerifiedGraphicsConfig
-from pyglet.graphics.api.webgl.context import OpenGLWindowContext
 from typing import TYPE_CHECKING
 
+from pyglet.graphics.api.base import GraphicsConfig, VerifiedGraphicsConfig
+from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+
 if TYPE_CHECKING:
-    from pyglet.window import Window
     from pyglet.graphics.api.webgl import WebGLBackend
+    from pyglet.window import Window
 
 
 class OpenGLWindowConfig(VerifiedGraphicsConfig):
@@ -27,18 +26,19 @@ class OpenGLWindowConfig(VerifiedGraphicsConfig):
         self.opengl_api = base_config.opengl_api or base_config.opengl_api
         self.debug = base_config.debug
 
-    def create_context(self, opengl_backend: WebGLBackend, share: OpenGLWindowContext) -> OpenGLWindowContext:
+    def create_context(self, opengl_backend: WebGLBackend, share: OpenGLSurfaceContext) -> OpenGLSurfaceContext:
         """Create a GL context that satisfies this configuration.
 
         Args:
             share:
                 If not ``None``, a Context with which to share objects with.
         """
-        return OpenGLWindowContext(opengl_backend, self._window, self._config, None)
+        return OpenGLSurfaceContext(opengl_backend, self._window, self._config, None)
 
 
 class OpenGLConfig(GraphicsConfig):
     """An OpenGL Graphics configuration."""
+
     #: Specify the presence of a back-buffer for every color buffer.
     double_buffer: bool
     #: Specify the presence of separate left and right buffer sets.

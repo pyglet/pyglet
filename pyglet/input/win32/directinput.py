@@ -262,7 +262,8 @@ class DIDeviceManager(EventDispatcher):
         return False
 
     def _unregister_device_events(self):
-        del self.window._event_handlers[WM_DEVICECHANGE]
+        if WM_DEVICECHANGE in self.window._event_handlers:
+            del self.window._event_handlers[WM_DEVICECHANGE]
         _user32.UnregisterDeviceNotification(self._devnotify)
         self.registered = False
         self._devnotify = None

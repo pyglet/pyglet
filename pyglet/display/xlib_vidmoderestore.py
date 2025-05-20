@@ -16,11 +16,11 @@ import signal
 import struct
 import threading
 
-from pyglet.libs.x11 import xlib
+from pyglet.libs.linux.x11 import xlib
 from pyglet.util import asbytes
 
 try:
-    from pyglet.libs.x11 import xf86vmode
+    from pyglet.libs.linux.x11 import xf86vmode
 except:
     # No xf86vmode... should not be switching modes.
     pass
@@ -165,7 +165,7 @@ def set_initial_mode(mode):
     if (display, screen) in _restorable_screens:
         return
 
-    packet = ModePacket(display, screen, mode.width, mode.height, mode.rate)
+    packet = ModePacket(display, screen, mode.width, mode.height, mode.info.dotclock)
 
     os.write(_mode_write_pipe, packet.encode())
     _restorable_screens.add((display, screen))

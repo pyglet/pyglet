@@ -113,8 +113,10 @@ class CocoaAlternateEventLoop(EventLoop):
         super().__init__()
         self.platform_event_loop = None
 
-    def run(self, interval=1/60):
-        if not interval:
+    def run(self, interval: float | None = 1/60):
+        if interval is None:
+            pass  # do not schedule redraws
+        elif not interval:
             self.clock.schedule(self._redraw_windows)
         else:
             self.clock.schedule_interval(self._redraw_windows, interval)
@@ -133,7 +135,8 @@ class CocoaAlternateEventLoop(EventLoop):
 
         self.dispatch_event('on_enter')
         self.is_running = True
-        self.platform_event_loop.nsapp_start(interval)
+
+        self.platform_event_loop.nsapp_start(interval or 0)
 
     def exit(self):
         """Safely exit the event loop at the end of the current iteration.

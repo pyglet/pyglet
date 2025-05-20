@@ -16,7 +16,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
 
     Meant to be accessed from a global level.
     """
-    windows: weakref.WeakKeyDictionary[Window, WindowGraphicsContext]
+    windows: weakref.WeakKeyDictionary[Window, SurfaceContext]
 
     def __init__(self) -> None:
         self.windows = weakref.WeakKeyDictionary()
@@ -36,7 +36,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         """
 
     @abstractmethod
-    def get_window_backend_context(self, window: Window, config) -> WindowGraphicsContext:
+    def get_surface_context(self, window: Window, config) -> SurfaceContext:
         """After a window is created, this will be called.
 
         This must return a BackendWindowObject object.
@@ -72,7 +72,7 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         with open(resource_path, 'rb') as file:
             return file.read()
 
-class WindowGraphicsContext(ABC):  # Temp name for now.
+class SurfaceContext(ABC):  # Temp name for now.
     """A container for backend resources and information that are tied to a specific Window.
 
     In OpenGL this would be something like an OpenGL Context, or in Vulkan, a Surface.
@@ -80,7 +80,7 @@ class WindowGraphicsContext(ABC):  # Temp name for now.
     clear_color = (0.2, 0.2, 0.2, 1.0)
 
     def __init__(self, global_ctx: BackendGlobalObject, window: Window, config: Any) -> None:
-        self.global_ctx = global_ctx
+        self.core = global_ctx
         self.window = window
         self.config = config
 

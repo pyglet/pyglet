@@ -12,7 +12,7 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
-    from pyglet.image import AbstractImage
+    from pyglet.image import _AbstractImage
 
 
 class WidgetBase(EventDispatcher):
@@ -194,9 +194,9 @@ class PushButton(WidgetBase):
     """
 
     def __init__(self, x: int, y: int,
-                 pressed: AbstractImage,
-                 unpressed: AbstractImage,
-                 hover: AbstractImage | None = None,
+                 pressed: _AbstractImage,
+                 unpressed: _AbstractImage,
+                 hover: _AbstractImage | None = None,
                  batch: Batch | None = None,
                  group: Group | None = None) -> None:
         """Create a push button.
@@ -294,7 +294,7 @@ class ToggleButton(PushButton):
     Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
-    def _get_release_image(self, x: int, y: int) -> AbstractImage:
+    def _get_release_image(self, x: int, y: int) -> _AbstractImage:
         return self._hover_img if self._check_hit(x, y) else self._unpressed_img
 
     def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
@@ -325,7 +325,7 @@ class Slider(WidgetBase):
     """
 
     def __init__(self, x: int, y: int,
-                 base: AbstractImage, knob: AbstractImage,
+                 base: _AbstractImage, knob: _AbstractImage,
                  edge: int = 0,
                  batch: Batch | None = None,
                  group: Group | None = None) -> None:
@@ -370,7 +370,12 @@ class Slider(WidgetBase):
 
     def _update_position(self) -> None:
         self._base_spr.position = self._x, self._y, 0
-        self._knob_spr.position = self._x + self._edge, self._y + self._base_img.height / 2, 0
+        self._min_knob_x = self._x + self._edge
+        self._max_knob_x = self._x + self._base_img.width - self._knob_img.width - self._edge
+        x = (self._max_knob_x - self._min_knob_x) * self._value / 100 + self._min_knob_x + self._half_knob_width
+        x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
+        y = self._y + self._base_img.height / 2
+        self._knob_spr.position = x, y, 0
 
     @property
     def value(self) -> float:

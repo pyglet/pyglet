@@ -1,8 +1,10 @@
 import pytest
 
 import pyglet
+from tests.annotations import skip_graphics_api, GraphicsAPI
 
 
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_ubo_data_structure():
     """Test to make sure the Structure that is created is correct for UBO's.
     
@@ -108,7 +110,7 @@ def test_shader_ubo_data_structure():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()
@@ -118,7 +120,7 @@ def test_shader_ubo_data_structure():
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
 
-
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_ubo_matrix_data_structure():
     """Test UBO structure with matrix."""
 
@@ -212,7 +214,7 @@ def test_shader_ubo_matrix_data_structure():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()
@@ -222,7 +224,7 @@ def test_shader_ubo_matrix_data_structure():
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
 
-
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_block_matrix():
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -310,7 +312,7 @@ def test_shader_uniform_block_matrix():
     # sprite = pyglet.sprite.Sprite(image, x=0, y=0, program=program)
     # 
     # fb = pyglet.image.buffer.Framebuffer()
-    # texture = pyglet.image.Texture.create(1, 1)
+    # texture = pyglet.graphics.Texture.create(1, 1)
     # fb.attach_texture(texture)
     # fb.bind()
     # sprite.draw()
@@ -320,6 +322,7 @@ def test_shader_uniform_block_matrix():
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
 
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_matrix():
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -392,7 +395,7 @@ def test_shader_uniform_matrix():
     for a, b in zip(fetched_data, tuple(test_data)):
         assert a == pytest.approx(b)
 
-
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_matrix_array():
     vertex_source: str = """#version 150 core
         in vec3 translate;
@@ -467,6 +470,7 @@ def test_shader_uniform_matrix_array():
     for a, b in zip(fetched_data[18], tuple(test_data)):
         assert a == pytest.approx(b)
 
+@skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_float_array():
     vertex_source: str = """#version 150 core
         in vec3 translate;

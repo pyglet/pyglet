@@ -286,7 +286,7 @@ class VertexDomain:
     _vertex_class: type[VertexList] = VertexList
 
     def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
-        self._context = pyglet.graphics.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._gl = self._context.gl
 
         ext = self._gl.getExtension("WEBGL_multi_draw")

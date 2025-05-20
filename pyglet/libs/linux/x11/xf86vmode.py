@@ -31,7 +31,7 @@ class c_void(Structure):
     _fields_ = [('dummy', c_int)]
 
 
-import pyglet.libs.x11.xlib
+import pyglet.libs.linux.x11.xlib
 
 X_XF86VidModeQueryVersion = 0 	# /usr/include/X11/extensions/xf86vmode.h:4885
 X_XF86VidModeGetModeLine = 1 	# /usr/include/X11/extensions/xf86vmode.h:4886
@@ -175,9 +175,9 @@ class struct_anon_97(Structure):
         'forced',
         'time',
     ]
-Display = pyglet.libs.x11.xlib.Display
-Window = pyglet.libs.x11.xlib.Window
-Time = pyglet.libs.x11.xlib.Time
+Display = pyglet.libs.linux.x11.xlib.Display
+Window = pyglet.libs.linux.x11.xlib.Window
+Time = pyglet.libs.linux.x11.xlib.Time
 struct_anon_97._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),

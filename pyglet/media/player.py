@@ -1,4 +1,5 @@
 """High-level sound and video player."""
+
 from __future__ import annotations
 
 import time
@@ -12,7 +13,7 @@ from pyglet.media.drivers import get_audio_driver
 _debug = pyglet.options.debug_media
 
 if TYPE_CHECKING:
-    from pyglet.image import Texture
+    from pyglet.graphics import Texture
 
 
 class PlaybackTimer:
@@ -95,15 +96,15 @@ class _Player(pyglet.event.EventDispatcher):
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
     _min_distance = 1.0
-    _max_distance = 100000000.
+    _max_distance = 100000000.0
 
     _position = (0, 0, 0)
     _pitch = 1.0
 
     _cone_orientation = (0, 0, 1)
-    _cone_inner_angle = 360.
-    _cone_outer_angle = 360.
-    _cone_outer_gain = 1.
+    _cone_inner_angle = 360.0
+    _cone_outer_angle = 360.0
+    _cone_outer_gain = 1.0
 
     def __init__(self) -> None:
         """Initialize the Player with a MasterClock."""
@@ -111,7 +112,7 @@ class _Player(pyglet.event.EventDispatcher):
         self._playlists = deque()
         self._audio_player = None
 
-        self._context = pyglet.graphics.api.global_backend.current_context
+        self._context = pyglet.graphics.api.core.current_context
         self._texture = None
 
         # Desired play state (not an indication of actual state).
@@ -144,8 +145,7 @@ class _Player(pyglet.event.EventDispatcher):
             try:
                 source = iter(source)
             except TypeError:
-                raise TypeError("source must be either a Source or an iterable."
-                                f" Received type {type(source)}")
+                raise TypeError(f"source must be either a Source or an iterable. Received type {type(source)}")
         self._playlists.append(source)
 
         if self.source is None:
@@ -168,7 +168,7 @@ class _Player(pyglet.event.EventDispatcher):
 
         if playing and source:
             if source.audio_format is not None:
-                if (was_created := self._audio_player is None):
+                if was_created := self._audio_player is None:
                     self._create_audio_player()
                 if self._audio_player is not None and (was_created or starting):
                     self._audio_player.prefill_audio()
@@ -336,9 +336,17 @@ class _Player(pyglet.event.EventDispatcher):
         self._audio_player = audio_driver.create_audio_player(source, self)
 
         # Set the audio player attributes
-        for attr in ('volume', 'min_distance', 'max_distance', 'position',
-                     'pitch', 'cone_orientation', 'cone_inner_angle',
-                     'cone_outer_angle', 'cone_outer_gain'):
+        for attr in (
+            'volume',
+            'min_distance',
+            'max_distance',
+            'position',
+            'pitch',
+            'cone_orientation',
+            'cone_inner_angle',
+            'cone_outer_angle',
+            'cone_outer_gain',
+        ):
             value = getattr(self, attr)
             setattr(self, attr, value)
 
@@ -360,7 +368,7 @@ class _Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self) -> None:
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height)
+        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
         self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
@@ -408,7 +416,7 @@ class _Player(pyglet.event.EventDispatcher):
             # No more video frames to show. End of video stream.
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
-        elif ts > time:
+        if ts > time:
             # update_texture called too early (probably manually!)
             pyglet.clock.schedule_once(self.update_texture, ts - time)
             return
@@ -418,7 +426,11 @@ class _Player(pyglet.event.EventDispatcher):
             with self._context:
                 if self._texture is None:
                     self._create_texture()
-                self._texture.blit_into(image, 0, 0, 0)
+                else:
+                    self._texture.bind()
+                self._texture.upload(image, 0, 0, 0)
+        elif bl.logger is not None:
+            bl.logger.log("p.P.ut.1.8")
 
         ts = source.get_next_video_timestamp()
         if ts is None:
@@ -433,15 +445,20 @@ class _Player(pyglet.event.EventDispatcher):
         if self._audio_player is None:
             self.dispatch_event("on_eos")
 
-    volume = _PlayerProperty('volume', doc="""
+    volume = _PlayerProperty(
+        'volume',
+        doc="""
     The volume level of sound playback.
 
     The nominal level is 1.0, and 0.0 is silence.
 
     The volume level is affected by the distance from the listener (if
     positioned).
-    """)
-    min_distance = _PlayerProperty('min_distance', doc="""
+    """,
+    )
+    min_distance = _PlayerProperty(
+        'min_distance',
+        doc="""
     The distance beyond which the sound volume drops by half, and within
     which no attenuation is applied.
 
@@ -450,8 +467,11 @@ class _Player(pyglet.event.EventDispatcher):
     within the min distance. By default the value is 1.0.
 
     The unit defaults to meters, but can be modified with the listener
-    properties. """)
-    max_distance = _PlayerProperty('max_distance', doc="""
+    properties. """,
+    )
+    max_distance = _PlayerProperty(
+        'max_distance',
+        doc="""
     The distance at which no further attenuation is applied.
 
     When the distance from the listener to the player is greater than this
@@ -460,49 +480,68 @@ class _Player(pyglet.event.EventDispatcher):
 
     The unit defaults to meters, but can be modified with the listener
     properties.
-    """)
-    position = _PlayerProperty('position', doc="""
+    """,
+    )
+    position = _PlayerProperty(
+        'position',
+        doc="""
     The position of the sound in 3D space.
 
     The position is given as a tuple of floats (x, y, z). The unit
     defaults to meters, but can be modified with the listener properties.
-    """)
-    pitch = _PlayerProperty('pitch', doc="""
+    """,
+    )
+    pitch = _PlayerProperty(
+        'pitch',
+        doc="""
     The pitch shift to apply to the sound.
 
     The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
     and play twice as fast. A pitch of 0.5 will sound one octave lower, and
     play twice as slow. A pitch of 0.0 is not permitted.
-    """)
-    cone_orientation = _PlayerProperty('cone_orientation', doc="""
+    """,
+    )
+    cone_orientation = _PlayerProperty(
+        'cone_orientation',
+        doc="""
     The direction of the sound in 3D space.
 
     The direction is specified as a tuple of floats (x, y, z), and has no
     unit. The default direction is (0, 0, -1). Directional effects are only
     noticeable if the other cone properties are changed from their default
     values.
-    """)
-    cone_inner_angle = _PlayerProperty('cone_inner_angle', doc="""
+    """,
+    )
+    cone_inner_angle = _PlayerProperty(
+        'cone_inner_angle',
+        doc="""
     The interior angle of the inner cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the inner cone, the sound is
     played at normal gain (see :attr:`volume`).
-    """)
-    cone_outer_angle = _PlayerProperty('cone_outer_angle', doc="""
+    """,
+    )
+    cone_outer_angle = _PlayerProperty(
+        'cone_outer_angle',
+        doc="""
     The interior angle of the outer cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the outer cone, but outside
     the volume defined by the inner cone, the gain applied is a smooth
     interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
-    """)
-    cone_outer_gain = _PlayerProperty('cone_outer_gain', doc="""
+    """,
+    )
+    cone_outer_gain = _PlayerProperty(
+        'cone_outer_gain',
+        doc="""
     The gain applied outside the cone.
 
     When the listener is positioned outside the volume defined by the outer
     cone, this gain is applied instead of :attr:`volume`.
-    """)
+    """,
+    )
 
     # Events
 
@@ -557,8 +596,17 @@ class _Player(pyglet.event.EventDispatcher):
         self._audio_player.on_driver_reset()
 
         # Voice has been changed, will need to reset all options on the voice.
-        for attr in ('volume', 'min_distance', 'max_distance', 'position', 'pitch',
-                     'cone_orientation', 'cone_inner_angle', 'cone_outer_angle', 'cone_outer_gain'):
+        for attr in (
+            'volume',
+            'min_distance',
+            'max_distance',
+            'position',
+            'pitch',
+            'cone_orientation',
+            'cone_inner_angle',
+            'cone_outer_angle',
+            'cone_outer_gain',
+        ):
             value = getattr(self, attr)
             setattr(self, attr, value)
 
@@ -584,8 +632,7 @@ class PlayerGroup:
 
     def play(self) -> None:
         """Begin playing all players in the group simultaneously."""
-        audio_players = [p._audio_player
-                         for p in self.players if p._audio_player]
+        audio_players = [p._audio_player for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._play_group(audio_players)
         for player in self.players:
@@ -593,12 +640,12 @@ class PlayerGroup:
 
     def pause(self) -> None:
         """Pause all players in the group simultaneously."""
-        audio_players = [p._audio_player
-                         for p in self.players if p._audio_player]
+        audio_players = [p._audio_player for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._stop_group(audio_players)
         for player in self.players:
             player.pause()
+
 
 if pyglet.compat_platform == "emscripten":
     # Override the player if using JS, just use their player.

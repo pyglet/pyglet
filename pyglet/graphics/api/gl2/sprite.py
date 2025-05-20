@@ -4,14 +4,11 @@ import sys
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.gl import glActiveTexture, GL_TEXTURE0, glBindTexture, glEnable, GL_BLEND, glBlendFunc, glDisable
-from pyglet.graphics import Group
 
 _is_pyglet_doc_run = hasattr(sys, 'is_pyglet_doc_run') and sys.is_pyglet_doc_run
 
 if TYPE_CHECKING:
-    from pyglet.graphics.shader import ShaderProgram
-    from pyglet.graphics.api.gl import GLTexture
+    from pyglet.graphics import ShaderProgram
 
 
 vertex_source: str = """#version 110
@@ -25,6 +22,9 @@ vertex_source: str = """#version 110
     varying vec4 vertex_colors;
     varying vec3 texture_coords;
 
+    uniform mat4 u_projection;
+    uniform mat4 u_view;
+
     mat4 m_scale = mat4(1.0);
     mat4 m_rotation = mat4(1.0);
     mat4 m_translate = mat4(1.0);
@@ -36,12 +36,12 @@ vertex_source: str = """#version 110
         m_translate[3][0] = translate.x;
         m_translate[3][1] = translate.y;
         m_translate[3][2] = translate.z;
-        m_rotation[0][0] =  cos(-radians(rotation)); 
+        m_rotation[0][0] =  cos(-radians(rotation));
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * m_translate * m_rotation * m_scale * vec4(position, 1.0);
+        gl_Position = u_projection * u_view * m_translate * m_rotation * m_scale * vec4(position, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -65,7 +65,7 @@ def get_default_shader() -> ShaderProgram:
 
     This method allows the module to be imported without an OpenGL Context.
     """
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_sprite",
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),

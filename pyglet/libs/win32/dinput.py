@@ -1,21 +1,12 @@
 from __future__ import annotations
 
 import ctypes
-from ctypes.wintypes import LONG
+from ctypes.wintypes import BOOL, DWORD, HANDLE, HWND, LONG, LPDWORD, LPVOID, UINT, WCHAR, WORD
 
 from pyglet.libs.win32 import com
 
 lib = ctypes.oledll.dinput8
 
-LPVOID = ctypes.c_void_p
-WORD = ctypes.c_uint16
-DWORD = ctypes.c_uint32
-LPDWORD = ctypes.POINTER(DWORD)
-BOOL = ctypes.c_int
-WCHAR = ctypes.c_wchar
-UINT = ctypes.c_uint
-HWND = ctypes.c_uint32
-HANDLE = LPVOID
 MAX_PATH = 260
 
 DIENUM_STOP = 0
@@ -131,8 +122,10 @@ DIDC_ALIAS = 0x00010000
 DIDC_PHANTOM = 0x00020000
 DIDC_HIDDEN = 0x00040000
 
+
 def DIDFT_GETINSTANCE(n):
-    return (n >> 8) & 0xffff
+    return (n >> 8) & 0xFFFF
+
 
 DIDFT_ALL = 0x00000000
 
@@ -213,8 +206,7 @@ DISCL_NOWINKEY = 0x00000010
 DIPROP_BUFFERSIZE = 1
 DIPROP_GUIDANDPATH = 12
 
-GUID_XAxis = \
-    com.GUID(0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00)
+GUID_XAxis = com.GUID(0xA36D02E0, 0xC9F3, 0x11CF, 0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00)
 
 
 class DIDEVICEINSTANCE(ctypes.Structure):
@@ -229,8 +221,11 @@ class DIDEVICEINSTANCE(ctypes.Structure):
         ('wUsagePage', WORD),
         ('wUsage', WORD),
     )
+
+
 LPDIDEVICEINSTANCE = ctypes.POINTER(DIDEVICEINSTANCE)
 LPDIENUMDEVICESCALLBACK = ctypes.WINFUNCTYPE(BOOL, LPDIDEVICEINSTANCE, LPVOID)
+
 
 class DIDEVICEOBJECTINSTANCE(ctypes.Structure):
     _fields_ = (
@@ -250,9 +245,11 @@ class DIDEVICEOBJECTINSTANCE(ctypes.Structure):
         ('wExponent', WORD),
         ('wReportId', WORD),
     )
+
+
 LPDIDEVICEOBJECTINSTANCE = ctypes.POINTER(DIDEVICEOBJECTINSTANCE)
-LPDIENUMDEVICEOBJECTSCALLBACK = \
-    ctypes.WINFUNCTYPE( BOOL, LPDIDEVICEOBJECTINSTANCE, LPVOID)
+LPDIENUMDEVICEOBJECTSCALLBACK = ctypes.WINFUNCTYPE(BOOL, LPDIDEVICEOBJECTINSTANCE, LPVOID)
+
 
 class DIOBJECTDATAFORMAT(ctypes.Structure):
     _fields_ = (
@@ -262,7 +259,10 @@ class DIOBJECTDATAFORMAT(ctypes.Structure):
         ('dwFlags', DWORD),
     )
     __slots__ = [n for n, t in _fields_]
+
+
 LPDIOBJECTDATAFORMAT = ctypes.POINTER(DIOBJECTDATAFORMAT)
+
 
 class DIDATAFORMAT(ctypes.Structure):
     _fields_ = (
@@ -274,7 +274,10 @@ class DIDATAFORMAT(ctypes.Structure):
         ('rgodf', LPDIOBJECTDATAFORMAT),
     )
     __slots__ = [n for n, t in _fields_]
+
+
 LPDIDATAFORMAT = ctypes.POINTER(DIDATAFORMAT)
+
 
 class DIDEVICEOBJECTDATA(ctypes.Structure):
     _fields_ = (
@@ -284,7 +287,10 @@ class DIDEVICEOBJECTDATA(ctypes.Structure):
         ('dwSequence', DWORD),
         ('uAppData', ctypes.POINTER(UINT)),
     )
+
+
 LPDIDEVICEOBJECTDATA = ctypes.POINTER(DIDEVICEOBJECTDATA)
+
 
 class DIPROPHEADER(ctypes.Structure):
     _fields_ = (
@@ -293,7 +299,10 @@ class DIPROPHEADER(ctypes.Structure):
         ('dwObj', DWORD),
         ('dwHow', DWORD),
     )
+
+
 LPDIPROPHEADER = ctypes.POINTER(DIPROPHEADER)
+
 
 class DIPROPDWORD(ctypes.Structure):
     _fields_ = (
@@ -301,137 +310,100 @@ class DIPROPDWORD(ctypes.Structure):
         ('dwData', DWORD),
     )
 
+
 # All method names in the interfaces are filled in, but unused (so far)
 # methods have no parameters.. they'll crash when we try and use them, at
 # which point we can go in and fill them in.
 
+
 # Define DIJOYSTATE2 based on the C++ struct
 class DIJOYSTATE2(ctypes.Structure):
     _fields_ = [
-        ("lX", LONG),         # X-axis
-        ("lY", LONG),         # Y-axis
-        ("lZ", LONG),         # Z-axis
-        ("lRx", LONG),        # X-axis rotation
-        ("lRy", LONG),        # Y-axis rotation
-        ("lRz", LONG),        # Z-axis rotation
+        ("lX", LONG),  # X-axis
+        ("lY", LONG),  # Y-axis
+        ("lZ", LONG),  # Z-axis
+        ("lRx", LONG),  # X-axis rotation
+        ("lRy", LONG),  # Y-axis rotation
+        ("lRz", LONG),  # Z-axis rotation
         ("rglSlider", LONG * 2),  # Two slider axes
-        ("rgdwPOV", DWORD * 4),   # Four POVs (D-pad directions)
+        ("rgdwPOV", DWORD * 4),  # Four POVs (D-pad directions)
         ("rgbButtons", ctypes.c_ubyte * 128),  # 128 buttons
-        ("lVX", LONG),        # X-axis velocity
-        ("lVY", LONG),        # Y-axis velocity
-        ("lVZ", LONG),        # Z-axis velocity
-        ("lVRx", LONG),       # Angular velocity X
-        ("lVRy", LONG),       # Angular velocity Y
-        ("lVRz", LONG),       # Angular velocity Z
+        ("lVX", LONG),  # X-axis velocity
+        ("lVY", LONG),  # Y-axis velocity
+        ("lVZ", LONG),  # Z-axis velocity
+        ("lVRx", LONG),  # Angular velocity X
+        ("lVRy", LONG),  # Angular velocity Y
+        ("lVRz", LONG),  # Angular velocity Z
         ("rglVSlider", LONG * 2),
-        ("lAX", LONG),        # Acceleration X
-        ("lAY", LONG),        # Acceleration Y
-        ("lAZ", LONG),        # Acceleration Z
-        ("lARx", LONG),       # Angular acceleration X
-        ("lARy", LONG),       # Angular acceleration Y
-        ("lARz", LONG),       # Angular acceleration Z
+        ("lAX", LONG),  # Acceleration X
+        ("lAY", LONG),  # Acceleration Y
+        ("lAZ", LONG),  # Acceleration Z
+        ("lARx", LONG),  # Angular acceleration X
+        ("lARy", LONG),  # Angular acceleration Y
+        ("lARz", LONG),  # Angular acceleration Z
         ("rglASlider", LONG * 2),
-        ("lFX", LONG),        # Force X
-        ("lFY", LONG),        # Force Y
-        ("lFZ", LONG),        # Force Z
-        ("lFRx", LONG),       # Force angular X
-        ("lFRy", LONG),       # Force angular Y
-        ("lFRz", LONG),       # Force angular Z
+        ("lFX", LONG),  # Force X
+        ("lFY", LONG),  # Force Y
+        ("lFZ", LONG),  # Force Z
+        ("lFRx", LONG),  # Force angular X
+        ("lFRy", LONG),  # Force angular Y
+        ("lFRz", LONG),  # Force angular Z
         ("rglFSlider", LONG * 2),
     ]
 
 
 # IDirect* interfaces are all Unicode (e.g. IDirectInputDevice8W).
 
+
 class IDirectInputDevice8(com.pIUnknown):
     _methods_ = [
-        ('GetCapabilities',
-         com.STDMETHOD()),
-        ('EnumObjects',
-         com.STDMETHOD(LPDIENUMDEVICEOBJECTSCALLBACK, LPVOID, DWORD)),
-        ('GetProperty',
-         com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
-        ('SetProperty',
-         com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
-        ('Acquire',
-         com.STDMETHOD()),
-        ('Unacquire',
-         com.STDMETHOD()),
-        ('GetDeviceState',
-         com.STDMETHOD(DWORD, LPVOID)),
-        ('GetDeviceData',
-         com.STDMETHOD(DWORD, LPDIDEVICEOBJECTDATA, LPDWORD, DWORD)),
-        ('SetDataFormat',
-         com.STDMETHOD(LPDIDATAFORMAT)),
-        ('SetEventNotification',
-         com.STDMETHOD(HANDLE)),
-        ('SetCooperativeLevel',
-         com.STDMETHOD(HWND, DWORD)),
-        ('GetObjectInfo',
-         com.STDMETHOD()),
-        ('GetDeviceInfo',
-         com.STDMETHOD()),
-        ('RunControlPanel',
-         com.STDMETHOD()),
-        ('Initialize',
-         com.STDMETHOD()),
-        ('CreateEffect',
-         com.STDMETHOD()),
-        ('EnumEffects',
-         com.STDMETHOD()),
-        ('GetEffectInfo',
-         com.STDMETHOD()),
-        ('GetForceFeedbackState',
-         com.STDMETHOD()),
-        ('SendForceFeedbackCommand',
-         com.STDMETHOD()),
-        ('EnumCreatedEffectObjects',
-         com.STDMETHOD()),
-        ('Escape',
-         com.STDMETHOD()),
-        ('Poll',
-         com.STDMETHOD()),
-        ('SendDeviceData',
-         com.STDMETHOD()),
-        ('EnumEffectsInFile',
-         com.STDMETHOD()),
-        ('WriteEffectToFile',
-         com.STDMETHOD()),
-        ('BuildActionMap',
-         com.STDMETHOD()),
-        ('SetActionMap',
-         com.STDMETHOD()),
-        ('GetImageInfo',
-         com.STDMETHOD()),
-     ]
+        ('GetCapabilities', com.STDMETHOD()),
+        ('EnumObjects', com.STDMETHOD(LPDIENUMDEVICEOBJECTSCALLBACK, LPVOID, DWORD)),
+        ('GetProperty', com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
+        ('SetProperty', com.STDMETHOD(LPVOID, LPDIPROPHEADER)),
+        ('Acquire', com.STDMETHOD()),
+        ('Unacquire', com.STDMETHOD()),
+        ('GetDeviceState', com.STDMETHOD(DWORD, LPVOID)),
+        ('GetDeviceData', com.STDMETHOD(DWORD, LPDIDEVICEOBJECTDATA, LPDWORD, DWORD)),
+        ('SetDataFormat', com.STDMETHOD(LPDIDATAFORMAT)),
+        ('SetEventNotification', com.STDMETHOD(HANDLE)),
+        ('SetCooperativeLevel', com.STDMETHOD(HWND, DWORD)),
+        ('GetObjectInfo', com.STDMETHOD()),
+        ('GetDeviceInfo', com.STDMETHOD()),
+        ('RunControlPanel', com.STDMETHOD()),
+        ('Initialize', com.STDMETHOD()),
+        ('CreateEffect', com.STDMETHOD()),
+        ('EnumEffects', com.STDMETHOD()),
+        ('GetEffectInfo', com.STDMETHOD()),
+        ('GetForceFeedbackState', com.STDMETHOD()),
+        ('SendForceFeedbackCommand', com.STDMETHOD()),
+        ('EnumCreatedEffectObjects', com.STDMETHOD()),
+        ('Escape', com.STDMETHOD()),
+        ('Poll', com.STDMETHOD()),
+        ('SendDeviceData', com.STDMETHOD()),
+        ('EnumEffectsInFile', com.STDMETHOD()),
+        ('WriteEffectToFile', com.STDMETHOD()),
+        ('BuildActionMap', com.STDMETHOD()),
+        ('SetActionMap', com.STDMETHOD()),
+        ('GetImageInfo', com.STDMETHOD()),
+    ]
+
 
 class IDirectInput8(com.pIUnknown):
     _methods_ = [
-        ('CreateDevice',
-         com.STDMETHOD(ctypes.POINTER(com.GUID),
-                       ctypes.POINTER(IDirectInputDevice8),
-                       ctypes.c_void_p)),
-        ('EnumDevices',
-         com.STDMETHOD(DWORD, LPDIENUMDEVICESCALLBACK, LPVOID, DWORD)),
-        ('GetDeviceStatus',
-         com.STDMETHOD()),
-        ('RunControlPanel',
-         com.STDMETHOD()),
-        ('Initialize',
-         com.STDMETHOD()),
-        ('FindDevice',
-         com.STDMETHOD()),
-        ('EnumDevicesBySemantics',
-         com.STDMETHOD()),
-        ('ConfigureDevices',
-         com.STDMETHOD()),
+        ('CreateDevice', com.STDMETHOD(ctypes.POINTER(com.GUID), ctypes.POINTER(IDirectInputDevice8), ctypes.c_void_p)),
+        ('EnumDevices', com.STDMETHOD(DWORD, LPDIENUMDEVICESCALLBACK, LPVOID, DWORD)),
+        ('GetDeviceStatus', com.STDMETHOD()),
+        ('RunControlPanel', com.STDMETHOD()),
+        ('Initialize', com.STDMETHOD()),
+        ('FindDevice', com.STDMETHOD()),
+        ('EnumDevicesBySemantics', com.STDMETHOD()),
+        ('ConfigureDevices', com.STDMETHOD()),
     ]
 
-IID_IDirectInput8W = \
-    com.GUID(0xBF798031,0x483A,0x4DA2,0xAA,0x99,0x5D,0x64,0xED,0x36,0x97,0x00)
+
+IID_IDirectInput8W = com.GUID(0xBF798031, 0x483A, 0x4DA2, 0xAA, 0x99, 0x5D, 0x64, 0xED, 0x36, 0x97, 0x00)
 
 DIRECTINPUT_VERSION = 0x0800
 DirectInput8Create = lib.DirectInput8Create
-DirectInput8Create.argtypes = \
-    (ctypes.c_void_p, DWORD, com.LPGUID, ctypes.c_void_p, ctypes.c_void_p)
-
+DirectInput8Create.argtypes = (ctypes.c_void_p, DWORD, com.LPGUID, ctypes.c_void_p, ctypes.c_void_p)

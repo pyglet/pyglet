@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, NoReturn
 
 from pyglet.graphics.api import gl
 from pyglet.graphics.api.gl import lib
-from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLWindowContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLSurfaceContext, ContextException
 from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLBackend
     from pyglet.window.xlib import XlibWindow
-    from pyglet.libs.x11.xlib import Display
+    from pyglet.libs.linux.x11 import Display
 
 
 class XlibOpenGLConfig(OpenGLConfig):
@@ -73,14 +73,14 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
         'samples': glx.GLX_SAMPLES,
 
         # Not supported in current pyglet API:
-        'render_type': glx.GLX_RENDER_TYPE,
-        'config_caveat': glx.GLX_CONFIG_CAVEAT,
-        'transparent_type': glx.GLX_TRANSPARENT_TYPE,
-        'transparent_index_value': glx.GLX_TRANSPARENT_INDEX_VALUE,
-        'transparent_red_value': glx.GLX_TRANSPARENT_RED_VALUE,
-        'transparent_green_value': glx.GLX_TRANSPARENT_GREEN_VALUE,
-        'transparent_blue_value': glx.GLX_TRANSPARENT_BLUE_VALUE,
-        'transparent_alpha_value': glx.GLX_TRANSPARENT_ALPHA_VALUE,
+        #'render_type': glx.GLX_RENDER_TYPE,
+        #'config_caveat': glx.GLX_CONFIG_CAVEAT,
+        # 'transparent_type': glx.GLX_TRANSPARENT_TYPE,
+        # 'transparent_index_value': glx.GLX_TRANSPARENT_INDEX_VALUE,
+        # 'transparent_red_value': glx.GLX_TRANSPARENT_RED_VALUE,
+        # 'transparent_green_value': glx.GLX_TRANSPARENT_GREEN_VALUE,
+        # 'transparent_blue_value': glx.GLX_TRANSPARENT_BLUE_VALUE,
+        # 'transparent_alpha_value': glx.GLX_TRANSPARENT_ALPHA_VALUE,
 
         # Used internally
         'x_renderable': glx.GLX_X_RENDERABLE,
@@ -112,7 +112,7 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
         return True
 
 
-class XlibContext(OpenGLWindowContext):
+class XlibContext(OpenGLSurfaceContext):
     x_display: Display
     glx_context: glx.GLXContext
     glx_window: glx.GLXWindow | None
@@ -131,9 +131,11 @@ class XlibContext(OpenGLWindowContext):
                  window: XlibWindow,
                  config: XlibGLWindowConfig,
                  share: XlibContext | None) -> None:
-        super().__init__(opengl_backend, window, config, share)
-
         self.x_display = window._x_display  # noqa: SLF001
+        info = glx_info.GLXInfo(self.x_display)
+        super().__init__(opengl_backend, window, config,
+                         platform_info=info,
+                         context_share=share)
 
         self.glx_context = self._create_glx_context(share)
         if not self.glx_context:
@@ -141,13 +143,10 @@ class XlibContext(OpenGLWindowContext):
             msg = 'Could not create GL context'
             raise ContextException(msg)
 
-        gl_info = glx_info.GLXInfo(self.x_display)
-        self.get_info().platform_info = gl_info
-
-        self._have_SGI_video_sync = gl_info.have_extension('GLX_SGI_video_sync')
-        self._have_SGI_swap_control = gl_info.have_extension('GLX_SGI_swap_control')
-        self._have_EXT_swap_control = gl_info.have_extension('GLX_EXT_swap_control')
-        self._have_MESA_swap_control = gl_info.have_extension('GLX_MESA_swap_control')
+        self._have_SGI_video_sync = info.have_extension('GLX_SGI_video_sync')
+        self._have_SGI_swap_control = info.have_extension('GLX_SGI_swap_control')
+        self._have_EXT_swap_control = info.have_extension('GLX_EXT_swap_control')
+        self._have_MESA_swap_control = info.have_extension('GLX_MESA_swap_control')
 
         # In order of preference:
         # 1. GLX_EXT_swap_control (more likely to work where video_sync will not)
@@ -159,7 +158,6 @@ class XlibContext(OpenGLWindowContext):
 
         # XXX Mandate that vsync defaults on across all platforms.
         self._vsync = True
-
         self.glx_window = None
 
     def is_direct(self) -> bool:
@@ -239,7 +237,7 @@ class XlibContext(OpenGLWindowContext):
 
     def set_vsync(self, vsync: bool = True) -> None:
         self._vsync = vsync
-        interval = vsync and 1 or 0
+        interval = (vsync and 1) or 0
         try:
             if not self._use_video_sync and self._have_EXT_swap_control:
                 glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)

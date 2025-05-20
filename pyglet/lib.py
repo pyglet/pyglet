@@ -146,7 +146,7 @@ class LibraryLoader:  # noqa: D101
         raise RuntimeError(msg)
 
 
-class MachOLibraryLoader(LibraryLoader):  # noqa: D101
+class MacOSLibraryLoader(LibraryLoader):  # noqa: D101
     def __init__(self) -> None:  # noqa: D107
         if 'LD_LIBRARY_PATH' in os.environ:
             self.ld_library_path = os.environ['LD_LIBRARY_PATH'].split(':')
@@ -167,6 +167,18 @@ class MachOLibraryLoader(LibraryLoader):  # noqa: D101
             self.dyld_fallback_library_path = os.environ['DYLD_FALLBACK_LIBRARY_PATH'].split(':')
         else:
             self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
+
+            # Homebrew path on Apple Silicon is no longer in local.
+            if 'HOMEBREW_PREFIX' in os.environ:
+                # if HOMEBREW_PREFIX is defined, add its lib directory.
+                brew_lib_path = os.path.join(os.environ['HOMEBREW_PREFIX'], 'lib')
+                if os.path.exists(brew_lib_path):
+                    self.dyld_fallback_library_path.append(brew_lib_path)
+            else:
+                # Check the typical path if the environmental variable is missing.
+                if os.path.exists('/opt/homebrew/lib'):
+                    self.dyld_fallback_library_path.append('/opt/homebrew/lib')
+
 
     def find_library(self, path: str) -> str | None:
         """Implements the dylib search as specified in Apple documentation:
@@ -314,7 +326,7 @@ class LinuxLibraryLoader(LibraryLoader):  # noqa: D101
 
 
 if pyglet.compat_platform == 'darwin':
-    loader = MachOLibraryLoader()
+    loader = MacOSLibraryLoader()
 elif pyglet.compat_platform.startswith('linux'):
     loader = LinuxLibraryLoader()
 else:

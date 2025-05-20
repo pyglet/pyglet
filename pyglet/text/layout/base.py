@@ -19,6 +19,7 @@ from pyglet import graphics
 from pyglet.graphics import GeometryMode
 from pyglet.graphics.draw import Group
 from pyglet.text import runlist
+from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.image import Texture, TextureDescriptor
+    from pyglet.graphics import Texture, TextureDescriptor
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
@@ -252,25 +253,26 @@ class _AbstractBox(ABC):
 class _GlyphBox(_AbstractBox):
     owner: Texture
     font: Font
-    glyphs: list[tuple[int, Glyph]]
+    glyphs: list[tuple[int, Glyph, GlyphPosition]]
     advance: int
     vertex_lists: list[_LayoutVertexList]
 
-    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph]], advance: int) -> None:
+    def __init__(self, owner: Texture, font: Font, glyphs: list[tuple[int, Glyph, GlyphPosition]], advance: int) -> None:
         """Create a run of glyphs sharing the same texture.
 
-        :Parameters:
-            `owner` : `pyglet.image.Texture`
+        Args:
+            owner:
                 Texture of all glyphs in this run.
-            `font` : `pyglet.font.base.Font`
+            font:
                 Font of all glyphs in this run.
-            `glyphs` : list of (int, `pyglet.font.base.Glyph`)
+            glyphs:
                 Pairs of ``(kern, glyph)``, where ``kern`` gives horizontal
                 displacement of the glyph in pixels (typically 0).
-            `advance` : int
+            advance:
                 Width of glyph run; must correspond to the sum of advances
                 and kerns in the glyph list.
-
+            offsets:
+                A list of all position transformations done to each glyph.
         """
         super().__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
@@ -288,7 +290,7 @@ class _GlyphBox(_AbstractBox):
               rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
         # Creates the initial attributes and vertex lists of the glyphs.
         # line_x/line_y are calculated when lines shift. To prevent having to destroy and recalculate the layout
-        # everytime we move this layout, we bake those into the vertices. This way the translate can be moved directly.
+        # everytime it moves, they are merged into the vertices. This way the translation can be moved directly.
         assert self.glyphs
         assert not self.vertex_lists
         try:
@@ -305,17 +307,19 @@ class _GlyphBox(_AbstractBox):
         for start, end, baseline_ in context.baseline_iter.ranges(i, i + n_glyphs):
             baseline = layout._parse_distance(baseline_)  # noqa: SLF001
             assert len(self.glyphs[start - i:end - i]) == end - start
-            for kern, glyph in self.glyphs[start - i:end - i]:
+            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
                 x1 += kern
                 v0, v1, v2, v3 = glyph.vertices
-                v0 += x1
-                v2 += x1
-                v1 += line_y + baseline
-                v3 += line_y + baseline
+                v0 += x1 + glyph_pos.x_offset
+                v2 += x1 + glyph_pos.x_offset
+                v1 += line_y + baseline + glyph_pos.y_offset
+                v3 += line_y + baseline + glyph_pos.y_offset
                 vertices.extend(map(round, [v0, v1, 0, v2, v1, 0, v2, v3, 0, v0, v3, 0]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
-                x1 += glyph.advance
+                x1 += glyph.advance + glyph_pos.x_advance
+                v1 += glyph_pos.y_advance
+                v3 += glyph_pos.y_advance
 
         # Text color
         colors = []
@@ -363,8 +367,8 @@ class _GlyphBox(_AbstractBox):
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
             x2 = x1
-            for kern, glyph in self.glyphs[start - i:end - i]:
-                x2 += glyph.advance + kern
+            for (kern, glyph, glyph_pos) in self.glyphs[start - i:end - i]:
+                x2 += glyph.advance + kern + glyph_pos.x_advance
 
             if bg is not None:
                 if len(bg) != 4:
@@ -466,19 +470,19 @@ class _GlyphBox(_AbstractBox):
 
     def get_point_in_box(self, position: int) -> int:
         x = 0
-        for (kern, glyph) in self.glyphs:
+        for (kern, glyph, offset) in self.glyphs:
             if position == 0:
                 break
             position -= 1
-            x += glyph.advance + kern
+            x += glyph.advance + kern + offset.x_advance
         return x
 
     def get_position_in_box(self, x: float) -> int:
         position = 0
         last_glyph_x = 0
-        for kern, glyph in self.glyphs:
+        for (kern, glyph, offset) in self.glyphs:
             last_glyph_x += kern
-            if last_glyph_x + glyph.advance // 2 > x:
+            if last_glyph_x + glyph.advance + offset.x_advance // 2 > x:
                 return position
             position += 1
             last_glyph_x += glyph.advance
@@ -667,6 +671,9 @@ elif pyglet.options.backend == "webgl":
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.text import TextDecorationGroup, TextLayoutGroup
 
+# Just have one object for empty positions in layout. It won't be modified.
+_empty_pos = GlyphPosition(0, 0, 0, 0)
+
 class TextLayout:
     """Lay out and display documents.
 
@@ -831,11 +838,6 @@ class TextLayout:
         self._initialize_groups()
         self.group_cache.clear()
         self._update()
-
-    @property
-    def dpi(self) -> float:
-        """Get DPI used by this layout."""
-        return self._dpi
 
     @property
     def document(self) -> AbstractDocument:
@@ -1224,17 +1226,12 @@ class TextLayout:
         self._update()
 
     @property
-    def dpi(self):
-        """Get DPI used by this layout.
-
-        Read-only.
-
-        :type: float
-        """
+    def dpi(self) -> float:
+        """Get DPI used by this layout."""
         return self._dpi
 
     @dpi.setter
-    def dpi(self, value):
+    def dpi(self, value: float) -> None:
         self._dpi = value
         self._update()
 
@@ -1264,7 +1261,7 @@ class TextLayout:
         # temp_pos = self.position
         # width = int(round(self._content_width))
         # height = int(round(self._content_height))
-        # texture = pyglet.image.Texture.create(width, height, texture_desc)
+        # texture = pyglet.graphics.Texture.create(width, height, texture_desc)
         # depth_buffer = pyglet.image.buffer.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
         # framebuffer.attach_texture(texture)
         # framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
@@ -1293,9 +1290,10 @@ class TextLayout:
 
     def _get_lines(self) -> list[_Line]:
         len_text = len(self._document.text)
-        glyphs = self._get_glyphs()
-        owner_runs = self._get_owner_runs(glyphs)
-        lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 0, len_text)]
+        glyphs, offsets = self._get_glyphs()
+        owner_runs = runlist.RunList(len_text, None)
+        self._get_owner_runs(owner_runs, glyphs, 0, len_text)
+        lines = list(self._flow_glyphs(glyphs, offsets, owner_runs, 0, len_text))
         self._content_width = 0
         self._line_count = len(lines)
         self._flow_lines(lines, 0, self._line_count)
@@ -1475,8 +1473,9 @@ class TextLayout:
         else:
             self._init_document()
 
-    def _get_glyphs(self) -> list[_InlineElementBox | Glyph]:
+    def _get_glyphs(self) -> tuple[list[_InlineElementBox | Glyph], list[tuple[int, int]]]:
         glyphs = []
+        offsets = []
         runs = runlist.ZipRunIterator((
             self._document.get_font_runs(dpi=self._dpi),
             self._document.get_element_runs()))
@@ -1484,28 +1483,33 @@ class TextLayout:
         for start, end, (font, element) in runs.ranges(0, len(text)):
             if element:
                 glyphs.append(_InlineElementBox(element))
+                offsets.append(_empty_pos)
             else:
-                glyphs.extend(font.get_glyphs(text[start:end]))
-        return glyphs
+                char_glyphs, char_offsets = font.get_glyphs(text[start:end])
+                glyphs.extend(char_glyphs)
+                offsets.extend(char_offsets)
 
-    def _get_owner_runs(self, glyphs: list[_InlineElementBox | Glyph]) -> runlist.RunList:
-        owner = glyphs[0].owner
-        run_start = 0
-        owner_runs = runlist.RunList(0, owner)
+        return glyphs, offsets
 
-        for i, glyph in enumerate(glyphs):
+    def _get_owner_runs(self, owner_runs: runlist.RunList, glyphs: list[_InlineElementBox | Glyph], start: int,
+                        end: int) -> None:
+        owner = glyphs[start].owner
+        run_start = start
+
+        # TODO avoid glyph slice on non-incremental
+        for i, glyph in enumerate(glyphs[start:end]):
             if owner != glyph.owner:
-                owner_runs.append_run(i - run_start, owner)
+                owner_runs.set_run(run_start, i + start, owner)
                 owner = glyph.owner
-                run_start = i
-        owner_runs.append_run(len(glyphs) - run_start, owner)
-        return owner_runs
+                run_start = i + start
+        owner_runs.set_run(run_start, end, owner)
 
-    def _flow_glyphs_wrap(self, glyphs: list[_InlineElementBox | Glyph], owner_runs: runlist.RunList, start: int,
+    def _flow_glyphs_wrap(self, glyphs: list[_InlineElementBox | Glyph],
+                          offsets: list[GlyphPosition],
+                          owner_runs: runlist.RunList, start: int,
                           end: int) -> Iterator[_Line]:
         # Word-wrap styled text into lines of fixed width.
         # Fits glyphs in range start to end into Lines which are then yielded.
-
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
@@ -1576,7 +1580,7 @@ class TextLayout:
             # Iterate over glyphs in this owner run.  `text` is the
             # corresponding character data for the glyph, and is used to find
             # whitespace and newlines.
-            for (text, glyph) in zip(self.document.text[start:end], glyphs[start:end]):
+            for (text, glyph, offset) in zip(self.document.text[start:end], glyphs[start:end], offsets[start:end]):
                 if nokern:
                     kern = 0
                     nokern = False
@@ -1602,15 +1606,15 @@ class TextLayout:
                             tab_stop = (((x + line.margin_left) // tab) + 1) * tab
                         kern = int(tab_stop - x - line.margin_left - glyph.advance)
 
-                    owner_accum.append((kern, glyph))
+                    owner_accum.append((kern, glyph, offset))
                     owner_accum_commit.extend(owner_accum)
-                    owner_accum_commit_width += owner_accum_width + glyph.advance + kern
-                    eol_ws += glyph.advance + kern
+                    owner_accum_commit_width += owner_accum_width + glyph.advance + kern + offset.x_advance
+                    eol_ws += glyph.advance + kern + offset.x_advance
 
                     owner_accum = []
                     owner_accum_width = 0
 
-                    x += glyph.advance + kern
+                    x += glyph.advance + kern + offset.x_advance
                     index += 1
 
                     # The index at which the next line will begin (the
@@ -1620,7 +1624,7 @@ class TextLayout:
                 else:
                     new_paragraph = text in "\n\u2029"
                     new_line = (text == "\u2028") or new_paragraph
-                    if (wrap and self._wrap_lines and x + kern + glyph.advance >= width) or new_line:
+                    if (wrap and self._wrap_lines and x + kern + glyph.advance + offset.x_advance >= width) or new_line:
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.
@@ -1682,11 +1686,11 @@ class TextLayout:
                             # Remove kern from first glyph of line
                             if run_accum and hasattr(run_accum, "glyphs") and run_accum.glyphs:
                                 k, g = run_accum[0].glyphs[0]
-                                run_accum[0].glyphs[0] = (0, g)
+                                run_accum[0].glyphs[0] = (0, g, _empty_pos)
                                 run_accum_width -= k
                             elif owner_accum:
-                                k, g = owner_accum[0]
-                                owner_accum[0] = (0, g)
+                                k, g, _ = owner_accum[0]
+                                owner_accum[0] = (0, g, _empty_pos)
                                 owner_accum_width -= k
                             else:
                                 nokern = True
@@ -1698,8 +1702,8 @@ class TextLayout:
                     if isinstance(glyph, _AbstractBox):
                         # Glyph is already in a box. XXX Ignore kern?
                         run_accum.append(glyph)
-                        run_accum_width += glyph.advance
-                        x += glyph.advance
+                        run_accum_width += glyph.advance + offset.x_advance
+                        x += glyph.advance + offset.x_advance
                     elif new_paragraph:
                         # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
@@ -1709,9 +1713,9 @@ class TextLayout:
                     elif not new_line:
                         # If the glyph was any non-whitespace, non-newline
                         # character, add it to the pending run.
-                        owner_accum.append((kern, glyph))
-                        owner_accum_width += glyph.advance + kern
-                        x += glyph.advance + kern
+                        owner_accum.append((kern, glyph, offset))
+                        owner_accum_width += glyph.advance + kern + offset.x_advance
+                        x += glyph.advance + kern + offset.x_advance
                     index += 1
                     eol_ws = 0
 
@@ -1737,7 +1741,9 @@ class TextLayout:
 
         yield line
 
-    def _flow_glyphs_single_line(self, glyphs: list[_InlineElementBox | Glyph], owner_runs: runlist.RunList,
+    def _flow_glyphs_single_line(self, glyphs: list[_InlineElementBox | Glyph],
+                                 offsets: list[GlyphPosition],
+                                 owner_runs: runlist.RunList,
                                  start: int, end: int) -> Iterator[_Line]:
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
@@ -1760,9 +1766,11 @@ class TextLayout:
             owner_glyphs = []
             for kern_start, kern_end, kern in kern_iterator.ranges(start, end):
                 gs = glyphs[kern_start:kern_end]
+                os = offsets[kern_start:kern_end]
                 width += sum([g.advance for g in gs])
                 width += kern * (kern_end - kern_start)
-                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs))
+                width += sum([o.x_advance for o in os])
+                owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs, os))
             if owner is None:
                 # Assume glyphs are already boxes.
                 for kern, glyph in owner_glyphs:

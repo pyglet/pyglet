@@ -11,7 +11,7 @@ from pyglet.graphics import GeometryMode
 if TYPE_CHECKING:
     from pyglet.graphics import Group
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.image import AbstractImage, Texture
+    from pyglet.image import _AbstractImage, Texture
     from pyglet.resource import Location
     from pyglet.text.document import InlineElement
     from pyglet.text.layout import TextLayout
@@ -33,7 +33,7 @@ class ImageElement(pyglet.text.document.InlineElement):
     height: int
     width: int
 
-    def __init__(self, image: AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
+    def __init__(self, image: _AbstractImage, width: int | None=None, height: int | None=None) -> None:  # noqa: D107
         self.image = image.get_texture()
         self.width = width or image.width
         self.height = height or image.height
@@ -285,7 +285,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):  # noqa: D101
                 break
 
     def add_text(self, text: str) -> None:
-        self.document.append_text(text, self.next_style)
+        self.document.insert_text(self.len_text, text, self.next_style)
         self.next_style.clear()
         self.len_text += len(text)
 

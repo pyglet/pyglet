@@ -1,24 +1,23 @@
 from __future__ import annotations
 
 import sys
-import js
 import warnings
-from typing import Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
+
+import js
 
 import pyglet
-from pyglet.graphics.api.webgl.config import OpenGLWindowConfig, OpenGLConfig
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
+from pyglet.graphics.api.webgl.config import OpenGLConfig, OpenGLWindowConfig
 from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
-from pyglet.graphics.api.base import BackendGlobalObject, WindowGraphicsContext, \
-    UBOMatrixTransformations
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.context import OpenGLWindowContext
+    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
 
 
 class OpenGL3_Matrices(UBOMatrixTransformations):
@@ -48,10 +47,10 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
      """
 
     def __init__(self, window: Window, backend: WebGLBackend):
-
         self._default_program = backend.create_shader_program(
             backend.create_shader(self._default_vertex_source, 'vertex'),
-            backend.create_shader(self._default_fragment_source, 'fragment'))
+            backend.create_shader(self._default_fragment_source, 'fragment'),
+        )
 
         window_block = self._default_program.uniform_blocks['WindowBlock']
         self.ubo = window_block.create_ubo()
@@ -115,7 +114,7 @@ class ObjectSpace:
 
 
 class WebGLBackend(BackendGlobalObject):
-    current_context: OpenGLWindowContext | None
+    current_context: OpenGLSurfaceContext | None
     _have_context: bool = False
 
     def __init__(self) -> None:
@@ -127,7 +126,7 @@ class WebGLBackend(BackendGlobalObject):
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
         # of sharing basic information between contexts. However, in usage, the user or internals should use the
         # "real" context's information to prevent any discrepencies.
-        #self.gl_info = GLInfo()  # GL Info is a shared info space.
+        # self.gl_info = GLInfo()  # GL Info is a shared info space.
         super().__init__()
 
     @property
@@ -138,16 +137,22 @@ class WebGLBackend(BackendGlobalObject):
     def post_init(self) -> None:
         pass
 
-    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLWindowContext | None):
+    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 
-    def get_window_backend_context(self, window: Window, config: OpenGLWindowConfig) -> WindowGraphicsContext:
-        """We will always only have one context in this Backend."""
-        assert self.current_context is None
+    def get_surface_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
         context = self.windows[window] = self.create_context(config, self.current_context)
         self.current_context = context
         self._have_context = True
         return context
+
+    # def get_window_backend_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
+    #     """We will always only have one context in this Backend."""
+    #     assert self.current_context is None
+    #     context = self.windows[window] = self.create_context(config, self.current_context)
+    #     self.current_context = context
+    #     self._have_context = True
+    #     return context
 
     def get_default_configs(self) -> Sequence[OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.

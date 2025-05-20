@@ -20,8 +20,9 @@ def text_window(request):
             self.layout = layout.IncrementalTextLayout(
                 self.document, 0, 0, 0, self.width, self.height, batch=self.batch)
 
+            self.context.set_clear_color(1, 1, 1, 1)
+
         def on_draw(self):
-            gl.glClearColor(1, 1, 1, 1)
             self.clear()
             self.batch.draw()
 

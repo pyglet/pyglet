@@ -9,13 +9,13 @@ import re
 
 import pyglet
 from pyglet.graphics.api.gl import *
-from pyglet.image import AbstractImage, Texture
+from pyglet.image import _AbstractImage, Texture
 
 split_8byte = re.compile('.' * 8, flags=re.DOTALL)
 split_16byte = re.compile('.' * 16, flags=re.DOTALL)
 
 
-class PackedImageData(AbstractImage):
+class PackedImageData(_AbstractImage):
     _current_texture = None
 
     def __init__(self, width, height, fmt, packed_format, data):
@@ -45,7 +45,7 @@ class PackedImageData(AbstractImage):
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
-        if not pyglet.backend.have_version(1, 2) or True:
+        if not pyglet.graphics.api.have_version(1, 2) or True:
             self.unpack()
 
         glTexImage2D(texture.target, texture.level,

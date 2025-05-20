@@ -4,7 +4,7 @@ from ctypes import c_int, c_uint
 
 from _ctypes import sizeof, byref
 
-from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLWindowContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, OpenGLSurfaceContext, ContextException
 from pyglet.graphics.api.gl.win32 import wglext_arb, wgl
 from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
 from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32
@@ -21,10 +21,10 @@ class Win32OpenGLConfig(OpenGLConfig):
 
     def match(self, window: Win32Window) -> Win32OpenGLWindowConfig | None:
         # Backend may not be done loading during the match process, load in func.
-        from pyglet.graphics.api import global_backend
+        from pyglet.graphics.api import core
 
-        if global_backend.current_context and global_backend.get_info().have_extension('WGL_ARB_pixel_format'):
-            finalized_config = self._get_arb_pixel_format_matching_configs(window, global_backend)
+        if core.current_context and core.get_info().have_extension('WGL_ARB_pixel_format'):
+            finalized_config = self._get_arb_pixel_format_matching_configs(window, core)
         else:
             finalized_config = self._get_pixel_format_descriptor_matching_configs(window)
 
@@ -186,18 +186,17 @@ class Win32ARBOpenGLWindowConfig(Win32OpenGLWindowConfig):
         return Win32Context(opengl_backend, self._window, self, share)
 
 
-class _BaseWin32Context(OpenGLWindowContext):
+class _BaseWin32Context(OpenGLSurfaceContext):
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: Win32Window,
                  config: Win32OpenGLWindowConfig,
                  share: Win32Context | Win32ARBContext) -> None:
-        super().__init__(opengl_backend, window, config, share)
-        self.get_info().platform_info = WGLInfo()
-        self._context = None
+        super().__init__(opengl_backend, window, config,
+                         platform_info=WGLInfo(), context_share=share)
 
     def set_current(self) -> None:
-        if self._context is not None and self != self.global_ctx.current_context:
+        if self._context is not None and self != self.core.current_context:
             wgl.wglMakeCurrent(self.window._dc, self._context)  # noqa: SLF001
         super().set_current()
 

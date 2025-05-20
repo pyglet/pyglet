@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import pyglet
 from typing import TYPE_CHECKING, ClassVar
 
+import pyglet
 from pyglet.enums import BlendFactor
 from pyglet.graphics.draw import Group
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureBase
     from pyglet.graphics.api.webgl import ShaderProgram
+    from pyglet.image.base import TextureBase
 
 layout_vertex_source = """#version 330 core
     in vec3 position;
@@ -165,7 +165,7 @@ decoration_fragment_source = """#version 330 core
 
 def get_default_layout_shader() -> ShaderProgram:
     """The default shader used for all glyphs in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_layout",
         (layout_vertex_source, "vertex"),
         (layout_fragment_source, "fragment"),
@@ -174,7 +174,7 @@ def get_default_layout_shader() -> ShaderProgram:
 
 def get_default_image_layout_shader() -> ShaderProgram:
     """The default shader used for an InlineElement image. Used for HTML Labels that insert images via <img> tag."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_image",
         (layout_vertex_source, "vertex"),
         (layout_fragment_image_source, "fragment"),
@@ -183,7 +183,7 @@ def get_default_image_layout_shader() -> ShaderProgram:
 
 def get_default_decoration_shader() -> ShaderProgram:
     """The default shader for underline and background decoration effects in the layout."""
-    return pyglet.graphics.api.global_backend.get_cached_shader(
+    return pyglet.graphics.api.core.get_cached_shader(
         "default_text_decoration",
         (decoration_vertex_source, "vertex"),
         (decoration_fragment_source, "fragment"),
@@ -197,14 +197,19 @@ class TextLayoutGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: Group | None = None) -> None:
+    def __init__(
+        self,
+        texture: TextureBase,
+        program: ShaderProgram,
+        order: int = 1,  # noqa: D107
+        parent: Group | None = None,
+    ) -> None:
         super().__init__(order=order, parent=parent)
         self.texture = texture
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        #self.set_shader_uniform(program, "scissor", False)
+        # self.set_shader_uniform(program, "scissor", False)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -217,16 +222,20 @@ class TextDecorationGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
-                 parent: Group | None = None) -> None:
+    def __init__(
+        self,
+        program: ShaderProgram,
+        order: int = 0,  # noqa: D107
+        parent: Group | None = None,
+    ) -> None:
         super().__init__(order=order, parent=parent)
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        #self.set_shader_uniform(program,"scissor", False)
-
+        # self.set_shader_uniform(program,"scissor", False)
 
 
 # ====== SCROLLING TEXT
+
 
 class ScrollableTextLayoutGroup(Group):
     """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
@@ -235,18 +244,23 @@ class ScrollableTextLayoutGroup(Group):
     area, and for scrolling. Because the group has internal state
     specific to the text layout, the group is never shared.
     """
+
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: Group | None = None) -> None:
-
+    def __init__(
+        self,
+        texture: TextureBase,
+        program: ShaderProgram,
+        order: int = 1,  # noqa: D107
+        parent: Group | None = None,
+    ) -> None:
         super().__init__(order=order, parent=parent)
         self.texture = texture
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        #self.set_shader_uniform(program,"scissor", True)
-        #self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        # self.set_shader_uniform(program,"scissor", True)
+        # self.set_shader_uniform(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -272,8 +286,8 @@ class ScrollableTextDecorationGroup(Group):
         self.program = program
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        #self.set_shader_uniform(program, "scissor", True)
-        #self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        # self.set_shader_uniform(program, "scissor", True)
+        # self.set_shader_uniform(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(scissor={self.scissor_area})"
