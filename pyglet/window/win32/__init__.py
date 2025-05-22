@@ -1197,7 +1197,7 @@ class Win32Window(BaseWindow):
             self.dispatch_event('on_show')
         w, h = self._get_location(lParam)
         if not self._fullscreen:
-            self._width, self._height = w, h
+            self._width, self._height = max(1, w), max(1, h)
         self._update_view_location(self._width, self._height)
 
         if self._exclusive_mouse:
