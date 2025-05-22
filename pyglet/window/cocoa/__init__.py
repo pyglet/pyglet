@@ -423,16 +423,17 @@ class CocoaWindow(BaseWindow):
         return int(bounds.size.width), int(bounds.size.height)
 
     def set_size(self, width: int, height: int) -> None:
-        super().set_size(width, height)
+        adjusted_width, adjusted_height = max(1, width), max(1, height)
+        super().set_size(adjusted_width, adjusted_height)
 
         if pyglet.options.dpi_scaling == "real":
             screen_scale = self._nswindow.backingScaleFactor()
-            frame_width, frame_height = width // screen_scale, height // screen_scale
+            frame_width, frame_height = max(1, adjusted_width // screen_scale), max(1, adjusted_height // screen_scale)
         else:
-            frame_width, frame_height = width, height
+            frame_width, frame_height = adjusted_width, adjusted_height
 
         self._set_frame_size(frame_width, frame_height)
-        self.dispatch_event('_on_internal_resize', width, height)
+        self.dispatch_event('_on_internal_resize', adjusted_width, adjusted_height)
 
     def _set_frame_size(self, width: int, height: int) -> None:
         # Move frame origin down so that top-left corner of window doesn't move.
