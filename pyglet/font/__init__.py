@@ -57,9 +57,9 @@ def _get_system_font_class() -> type[Font]:
 
         _font_class = FreeTypeFont
     elif pyglet.compat_platform == "emscripten":
-        from pyglet.font.pyodide_js import PyodideFont
+        from pyglet.font.pyodide_js import JavascriptPyodideFont
 
-        _font_class = PyodideFont
+        _font_class = JavascriptPyodideFont
 
     return _font_class
 
