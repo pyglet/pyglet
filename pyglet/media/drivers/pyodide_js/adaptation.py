@@ -24,9 +24,18 @@ class JSAudioDriver(AbstractAudioDriver):
         self._start_button = None
         self._start_button_proxy = None
         self.ctx = js.window.AudioContext.new()
-        if self.ctx.state == 'suspended':
-            # Audio requires user interaction for enablement in browsers due to abuses.
-            self._create_approval()
+        self._audio_state_proxy = create_proxy(self._update_button_state)
+        self.ctx.onstatechange = self._audio_state_proxy
+
+    def _update_button_state(self, event=None):
+        state = self.ctx.state
+        if state == "suspended":
+            if not self._start_button:
+                self._create_approval()
+            self._start_button.style.display = "block"
+        else:
+            if self._start_button:
+                self._start_button.style.display = "none"
 
     def resume_audio_context(self, event):
         if self.ctx.state == "suspended":
@@ -43,15 +52,12 @@ class JSAudioDriver(AbstractAudioDriver):
         self._start_button = None
 
     def _create_approval(self):
-        # Create a button element to resume audio
+        # Create a button element to resume audio, as browsers may block it due to abuse of page sounds.
         assert self._start_button is None
         self._start_button = js.document.createElement("button")
         self._start_button.innerHTML = "Click to Enable Audio"
-        # Optional: Style the button to be visible and centered
-        #self._start_button.style.position = "absolute"
         self._start_button.style.top = "50%"
         self._start_button.style.left = "50%"
-        #self._start_button.style.transform = "translate(-50%, -50%)"
         self._start_button.style.padding = "10px 20px"
         self._start_button.style.fontSize = "16px"
         self._start_button_proxy = create_proxy(self.resume_audio_context)
