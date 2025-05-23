@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 import pyglet
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
@@ -65,26 +65,46 @@ class JSAudioDriver(AbstractAudioDriver):
         return PyodideJSAudioPlayer(self, source, player)
 
     def get_listener(self):
-        return PyodideJSListener()
+        return PyodideJSListener(self)
 
     def delete(self):
         pass
 
+def _convert_coordinates(coordinates: tuple[float, float, float]) -> tuple[float, float, float]:
+    x, y, z = coordinates
+    return x, y, -z
 
 class PyodideJSListener(AbstractListener):
     """Not currently supported."""
 
+    def __init__(self, driver: JSAudioDriver):
+        super().__init__()
+        self._driver = driver
+        self._listener = driver.ctx.listener
+
     def _set_volume(self, volume):
         pass
 
-    def _set_position(self, position):
-        pass
+    def _set_position(self, position: tuple[float, float, float]):
+        self._position = position
+        self._listener.positionX = position[0]
+        self._listener.positionY = position[0]
+        self._listener.positionZ = position[0]
 
     def _set_forward_orientation(self, orientation):
-        pass
+        self._forward_orientation = orientation
+
+        x, y, z = _convert_coordinates(orientation)
+        self._listener.forwardX = x
+        self._listener.forwardY = y
+        self._listener.forwardZ = z
 
     def _set_up_orientation(self, orientation):
-        pass
+        self._up_orientation = orientation
+        x, y, z = _convert_coordinates(orientation)
+        self._listener.upX = x
+        self._listener.upY = y
+        self._listener.upZ = z
 
     def _set_orientation(self):
         pass
@@ -98,11 +118,17 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         self._source_player = driver.ctx.createBufferSource()
         self._source_player.buffer = source.audio_buffer
 
-        self._source_player.connect(self.driver.ctx.destination)
+        # Only create a gain node if the volume is actually adjusted.
 
-        # Create gain node later.
-        #gain_node = driver.ctx.createGain()
-        #gain_node.gain.value = volume  # Set initial volume.
+        self._gain_node = self.driver.ctx.createGain()
+        self._panner_node = self.driver.ctx.createPanner()
+        # Connect Source to Gain Node
+        self._source_player.connect(self._gain_node)
+        # Connect Gain to Panner
+        self._gain_node.connect(self._panner_node)
+
+        # Connect Panner to Destination
+        self._panner_node.connect(self.driver.ctx.destination)
 
         self._pseudo_play_cursor = 0
         self._pseudo_write_cursor = 0
@@ -121,72 +147,91 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         self._source_player.onended = on_ended
 
     def delete(self):
+        if self._gain_node:
+            self._gain_node.disconnect()
+            self._gain_node = None
+
+        if self._panner_node:
+            self._panner_node.disconnect()
+            self._panner_node = None
+
         self._source_player.disconnect()
         self._source_player.onended = None
         self._source_player = None
 
-    def play(self):
+    def play(self) -> None:
         self._playing = True
         self._source_player.start(self._start_position)
 
-    def stop(self):
+    def stop(self) -> None:
         self._source_player.stop()
         self._playing = False
 
-    def work(self):
+    def work(self) -> NoReturn:
         raise NotImplementedError("This should not be called for this player.")
 
-    def prefill_audio(self):
+    def prefill_audio(self) -> None:
         pass
 
-    def _update_play_cursor(self):
+    def _update_play_cursor(self) -> None:
         return
-        corrected_time = self.player.time - self.player.last_seek_time
-        #pc = self.source.audio_format.timestamp_to_bytes_aligned(corrected_time)
-        #assert pc >= self._pseudo_play_cursor
-        #self._pseudo_play_cursor = min(self._pseudo_write_cursor, pc)
 
-    def clear(self):
+    def clear(self) -> None:
         super().clear()
         self._pseudo_play_cursor = 0
         self._pseudo_write_cursor = 0
         self._exhausted = False
         self._dispatched_on_eos = False
 
-    def seek(self, position):
+    def seek(self, position: float) -> None:
         self._start_position = position
         if self._playing:
             self._source_player.start(position)
 
-    def get_play_cursor(self):
+    def get_play_cursor(self) -> float:
         return self._pseudo_play_cursor
 
-    def set_volume(self, volume):
-        pass
+    def set_volume(self, volume: float) -> None:
+        if self._gain_node:
+            self._gain_node.gain.value = volume
 
-    def set_position(self, position):
-        pass
+    def set_position(self, position: tuple[float, float, float]) -> None:
+        if self._panner_node:
+            x, y, z = position
+            self._panner_node.positionX.value = x
+            self._panner_node.positionY.value = y
+            self._panner_node.positionZ.value = z
 
-    def set_min_distance(self, min_distance):
-        pass
+    def set_min_distance(self, min_distance: float) -> None:
+        if self._panner_node:
+            self._panner_node.refDistance = min_distance
 
-    def set_max_distance(self, max_distance):
-        pass
+    def set_max_distance(self, max_distance: float) -> None:
+        if self._panner_node:
+            self._panner_node.maxDistance = max_distance
 
-    def set_pitch(self, pitch):
-        pass
+    def set_pitch(self, pitch: float) -> None:
+        if self._source_player:
+            self._source_player.playbackRate.value = pitch
 
-    def set_cone_orientation(self, cone_orientation):
-        pass
+    def set_cone_orientation(self, cone_orientation: tuple[float, float, float]) -> None:
+        if self._panner_node:
+            x, y, z = cone_orientation
+            self._panner_node.orientationX.value = x
+            self._panner_node.orientationY.value = y
+            self._panner_node.orientationZ.value = z
 
-    def set_cone_inner_angle(self, cone_inner_angle):
-        pass
+    def set_cone_inner_angle(self, cone_inner_angle: float) -> None:
+        if self._panner_node:
+            self._panner_node.coneInnerAngle = cone_inner_angle
 
-    def set_cone_outer_angle(self, cone_outer_angle):
-        pass
+    def set_cone_outer_angle(self, cone_outer_angle: float) -> None:
+        if self._panner_node:
+            self._panner_node.coneOuterAngle = cone_outer_angle
 
-    def set_cone_outer_gain(self, cone_outer_gain):
-        pass
+    def set_cone_outer_gain(self, cone_outer_gain: float) -> None:
+        if self._panner_node:
+            self._panner_node.coneOuterGain = cone_outer_gain
 
 
 class MediaEvent:
