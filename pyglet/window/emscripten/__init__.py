@@ -280,9 +280,10 @@ def translate_mouse_bits(buttons: int) -> int:
     return result
 
 
-def CanvasEventHandler(name: str) -> Callable:  # noqa: ANN202
+def CanvasEventHandler(name: str, passive: None| bool=None) -> Callable:  # noqa: ANN202
     def _event_wrapper(f: Callable) -> Callable:
         f._canvas = True
+        f._passive = passive
         f._platform_event = True  # noqa: SLF001
         if not hasattr(f, '_platform_event_data'):
             f._platform_event_data = []  # noqa: SLF001
@@ -385,7 +386,11 @@ class EmscriptenWindow(BaseWindow):
                 proxy = create_proxy(func)
                 if hasattr(func, '_canvas'):
                     self._canvas_event_handlers[message] = func
-                    self._canvas.addEventListener(message, proxy)
+                    if func._passive is not None:
+                        # Not sure what behavior results if we pass None to the JS event handler.
+                        self._canvas.addEventListener(message, proxy, passive=func._passive)
+                    else:
+                        self._canvas.addEventListener(message, proxy)
                 else:
                     self._event_handlers[message] = func
                     js.window.addEventListener(message, proxy)
@@ -589,7 +594,7 @@ class EmscriptenWindow(BaseWindow):
         return _motion_map.get((symbol, ctrl), None)
 
     @CanvasEventHandler("keydown")
-    async def _event_key_down(self, event):
+    def _event_key_down(self, event):
         if not event.repeat:
             text = None
             if len(event.key) == 1:
@@ -613,7 +618,7 @@ class EmscriptenWindow(BaseWindow):
                 self.dispatch_event('on_text', text)
 
     @CanvasEventHandler("keyup")
-    async def _event_key_up(self, event):
+    def _event_key_up(self, event):
         symbol, modifiers = js_key_to_pyglet(event)
         if symbol in self._keys_down:
             self._keys_down.remove(symbol)
@@ -623,7 +628,7 @@ class EmscriptenWindow(BaseWindow):
         self.dispatch_event('on_key_release', symbol, modifiers)
 
     @CanvasEventHandler("mousedown")
-    async def _event_mouse_down(self, event):
+    def _event_mouse_down(self, event):
         rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
         pos_x = (event.clientX - rect.left) * self._scale
@@ -633,7 +638,7 @@ class EmscriptenWindow(BaseWindow):
         )
 
     @CanvasEventHandler("mouseup")
-    async def _event_mouse_up(self, event):
+    def _event_mouse_up(self, event):
         rect = self._canvas.getBoundingClientRect()
         modifiers = get_modifiers(event)
         pos_x = (event.clientX - rect.left) * self._scale
@@ -665,8 +670,9 @@ class EmscriptenWindow(BaseWindow):
                 'on_mouse_motion', pos_x, pos_y, event.movementX, event.movementY,
             )
 
-    @CanvasEventHandler("wheel")
-    async def _event_mouse_scroll(self, event):
+    @CanvasEventHandler("wheel", passive=False)
+    def _event_mouse_scroll(self, event):
+        event.preventDefault()
         self.dispatch_event('on_mouse_scroll', event.clientX, event.clientY, event.deltaX, event.deltaY)
 
     @CanvasEventHandler("mouseenter")
@@ -693,7 +699,7 @@ class EmscriptenWindow(BaseWindow):
     async def _event_lose_focus(self, event):
         await pyglet.app.platform_event_loop.post_event(self, 'on_deactivate')
 
-    @CanvasEventHandler("contextmenu")
+    @CanvasEventHandler("contextmenu", passive=False)
     def _event_contextmenu(self, event):
         # Some keys or mouse presses (right click) can open the browser context menu. Disable this.
         event.preventDefault()

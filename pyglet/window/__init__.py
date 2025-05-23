@@ -1196,7 +1196,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         return self._context
 
     @property
-    def ctx(self) -> WindowGraphicsContext:
+    def ctx(self) -> SurfaceContext:
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
