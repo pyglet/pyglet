@@ -87,9 +87,6 @@ class OpenGLSurfaceContext(SurfaceContext):
         """Get the :py:class:`~GLInfo` instance for this context."""
         return self._info
 
-    def start_render(self):
-        js.requestAnimationFrame(self._draw_proxy)
-
     def resized(self, width, height): ...
 
     def detach(self):
@@ -111,7 +108,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.gl.clear(GL_COLOR_BUFFER_BIT)
 
     def flip(self):
-        js.requestAnimationFrame(self._draw_proxy)
+        pass
 
     def attach(self, window: Window) -> None:
         # if not self.config.compatible(canvas):

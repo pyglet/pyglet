@@ -80,8 +80,7 @@ def run(interval: float | None = 1 / 60) -> None:
     """
     if pyglet.compat_platform == "emscripten":
         import asyncio
-
-        task = asyncio.create_task(event_loop.run())
+        asyncio.create_task(event_loop.run(interval))  # noqa: RUF006
     else:
         event_loop.run(interval)
 

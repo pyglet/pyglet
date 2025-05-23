@@ -772,7 +772,6 @@ class EmscriptenWindow(BaseWindow):
 
             rect = self._canvas.getBoundingClientRect()
             self.adjust_scale(rect.width, rect.height)
-            self.context.start_render()
 
 
 __all__ = ['EmscriptenWindow']

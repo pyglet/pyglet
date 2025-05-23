@@ -8,6 +8,7 @@ import js
 from js import console, navigator
 from pyodide.ffi import create_proxy
 
+import pyglet
 from pyglet.input import Button, Device
 from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Control
 from pyglet.math import Vec2
@@ -345,8 +346,7 @@ class JavascriptGamepadManager(ControllerManager):
         js.window.addEventListener("gamepadconnected", self._proxy_connect)
         js.window.addEventListener("gamepaddisconnected", self._proxy_disconnect)
 
-        self._query_proxy = create_proxy(self._query_pads)
-        self._query_pads(0)
+        pyglet.clock.schedule_interval_soft(self._query_pads, 1/60.0)
 
     def on_gamepad_connected(self, event) -> None:
         console.log(f"Gamepad {event.gamepad.index} connected: {event.gamepad.id}. | Buttons: {len(event.gamepad.buttons)}, | Axis: {len(event.gamepad.axes)}")
@@ -360,15 +360,13 @@ class JavascriptGamepadManager(ControllerManager):
         if event.gamepad.index in self._controllers:
             del self._controllers[event.gamepad.index]
 
-    def _query_pads(self, ts) -> None:
+    def _query_pads(self, _dt: float) -> None:
         gamepads = navigator.getGamepads()
 
         for i in range(gamepads.length):
             gamepad = gamepads[i]
             if gamepad is not None:
                 self._controllers[i].update(gamepad)
-
-        js.window.requestAnimationFrame(self._query_proxy)
 
     @property
     def maximum_controllers(self) -> int:
