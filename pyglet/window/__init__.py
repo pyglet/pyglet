@@ -1691,6 +1691,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             * MOTION_END_OF_FILE
             * MOTION_BACKSPACE
             * MOTION_DELETE
+            * MOTION_COPY
+            * MOTION_PASTE
 
             :event:
             """
@@ -1721,6 +1723,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             * MOTION_PREVIOUS_PAGE
             * MOTION_BEGINNING_OF_FILE
             * MOTION_END_OF_FILE
+            * MOTION_COPY
+            * MOTION_PASTE
 
             :event:
             """
