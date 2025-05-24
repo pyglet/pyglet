@@ -899,8 +899,6 @@ class XlibWindow(BaseWindow):
 
             text = text_bytes.decode('utf-8')
 
-        self._clipboard_str = text
-
         xlib.XFree(data)
         return text
 
