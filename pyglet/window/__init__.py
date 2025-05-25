@@ -845,15 +845,17 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             self.dispatch_event('on_close')
 
     def _on_internal_resize(self, width: int, height: int) -> None:
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        framebuffer_size = self.get_framebuffer_size()
+        gl.glViewport(0, 0, max(framebuffer_size[0], 1), max(framebuffer_size[1], 1))
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
+        self.projection = Mat4.orthogonal_projection(0, max(w, 1), 0, max(h, 1), -8192, 8192)
         self.dispatch_event('on_resize', w, h)
 
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        framebuffer_size = self.get_framebuffer_size()
+        gl.glViewport(0, 0, max(framebuffer_size[0], 1), max(framebuffer_size[1], 1))
         w, h = self.get_size()
-        self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
+        self.projection = Mat4.orthogonal_projection(0, max(w, 1), 0, max(h, 1), -8192, 8192)
         self._mouse_cursor.scaling = scale
         self.dispatch_event('on_scale', scale, dpi)
 
