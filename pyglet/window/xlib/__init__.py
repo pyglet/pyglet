@@ -1517,7 +1517,7 @@ class XlibWindow(BaseWindow):
         """Translate mouse button values to match mouse constants.
 
         Given a Xevent.xbutton.button value, convert it to the mouse
-        contants defined in :py:module:`~pyglet.window.mouse`. This
+        contents defined in :py:module:`~pyglet.window.mouse`. This
         means shifting the value, and also skipping over values of
         4~7, which are used for boolean scrolling.
         """

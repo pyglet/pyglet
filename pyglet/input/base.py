@@ -1098,7 +1098,7 @@ class ControllerManager(EventDispatcher):
 
     def on_connect(self, controller) -> Controller:
         """A Controller has been connected. If this is
-        a previously dissconnected Controller that is
+        a previously disconnected Controller that is
         being re-connected, the same Controller instance
         will be returned.
         """
