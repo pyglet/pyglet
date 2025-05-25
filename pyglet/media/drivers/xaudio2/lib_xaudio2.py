@@ -576,7 +576,7 @@ class XAUDIO2FX_REVERB_PARAMETERS(Structure):
         ('RearDelay', UINT32),  # 7.1: [0, 20] in ms, all other: [0, 5] in ms
         ('SideDelay', UINT32),  # .1: [0, 5] in ms, all other: not used, but still validated  # WIN 10 only.
 
-        # Indexed Paremeters
+        # Indexed Parameters
         ('PositionLeft', BYTE),  # [0, 30] no units
         ('PositionRight', BYTE),  # 0, 30] no units, ignored when configured to mono
         ('PositionMatrixLeft', BYTE),  # [0, 30] no units

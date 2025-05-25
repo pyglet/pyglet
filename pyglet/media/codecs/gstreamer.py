@@ -48,7 +48,7 @@ class _MessageHandler:
         """The main message callback"""
         if message.type == Gst.MessageType.EOS:
 
-            self.source.queue.put(self.source.sentinal)
+            self.source.queue.put(self.source.sentinel)
             if not self.source.caps:
                 raise GStreamerDecodeException("Appears to be an unsupported file")
 
@@ -105,7 +105,7 @@ class _MessageHandler:
 class GStreamerSource(StreamingSource):
 
     source_instances = weakref.WeakSet()
-    sentinal = object()
+    sentinel = object()
 
     def __init__(self, filename, file=None):
         self._pipeline = Gst.Pipeline()
@@ -199,7 +199,7 @@ class GStreamerSource(StreamingSource):
         data = bytes()
         while len(data) < num_bytes:
             packet = self.queue.get()
-            if packet == self.sentinal:
+            if packet == self.sentinel:
                 self._finished.set()
                 break
             data += packet

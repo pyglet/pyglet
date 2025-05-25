@@ -1,5 +1,5 @@
 """
-Responsabilities
+Responsibilities
 
     Defines the events that modify media_player state
     Defines which events are potential defects
@@ -15,7 +15,7 @@ mp_events = {
     # <evname>: {
     #     "desc": <description used in reports to mention the event>,
     #     "update_names": <list of names of fields updated>,
-    #     "other_fields": <list of additionals fields to show when mention the event in a report>
+    #     "other_fields": <list of additional fields to show when mention the event in a report>
     #     },
 
     "crash": {

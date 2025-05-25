@@ -143,7 +143,7 @@ is written to the token list as a ``PP_IFNDEF`` token.
 ``#define`` is handled specially.  After applying it to the namespace, it is
 parsed as an expression immediately.  This is allowed (and often expected) to
 fail.  If it does not fail, a ``PP_DEFINE_CONSTANT`` token is created, and the
-value is the result of evaluatin the expression.  Otherwise, a ``PP_DEFINE``
+value is the result of evaluating the expression.  Otherwise, a ``PP_DEFINE``
 token is created, and the value is the string concatenation of the tokens
 defined.  Special handling of parseable expressions makes it simple to later
 parse constants defined as, for example::
@@ -195,7 +195,7 @@ only what pyglet (and any other ctypes-wrapping application) requires.  The
 classes in the object model are:
 
 Declaration
-    A single declaration occuring outside of a function body.  This includes
+    A single declaration occurring outside of a function body.  This includes
     type declarations, function declarations and variable declarations.  The
     attributes are ``declarator`` (see below), ``type`` (a Type object) and
     ``storage`` (for example, 'typedef', 'const', 'static', 'extern', etc).

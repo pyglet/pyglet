@@ -53,7 +53,7 @@ class AbstractListener(metaclass=ABCMeta):
         listener is facing.
 
         The orientation is given as a tuple of floats (x, y, z), and has
-        no unit.  The forward orientation should be orthagonal to the
+        no unit.  The forward orientation should be orthogonal to the
         up orientation.
 
         :type: 3-tuple of float
@@ -69,7 +69,7 @@ class AbstractListener(metaclass=ABCMeta):
         of the listener.
 
         The orientation is given as a tuple of floats (x, y, z), and has
-        no unit.  The up orientation should be orthagonal to the
+        no unit.  The up orientation should be orthogonal to the
         forward orientation.
 
         :type: 3-tuple of float

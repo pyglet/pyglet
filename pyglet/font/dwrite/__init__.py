@@ -600,7 +600,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
 
     def _create_bitmap(self, width: int, height: int) -> None:
         """Creates a bitmap using Direct2D and WIC."""
-        # Create a new bitmap, try to re-use the bitmap as much as we can to minimize creations.
+        # Create a new bitmap, try to reuse the bitmap as much as we can to minimize creations.
         if self._bitmap_dimensions[0] != width or self._bitmap_dimensions[1] != height:
             # If dimensions aren't the same, release bitmap to create new ones.
             if self._render_target:
@@ -1048,7 +1048,7 @@ class Win32DirectWriteFont(base.Font):
             if hr != 0:
                 raise Exception("This font file data is not not a font or unsupported.")
 
-            # We have to rebuild collection everytime we add a font.
+            # We have to rebuild collection every time we add a font.
             # No way to add fonts to the collection once the FontSet and Collection are created.
             # Release old one and renew.
             if cls._custom_collection:

@@ -208,7 +208,7 @@ class Decoder:
         raise NotImplementedError()
 
     def decode(self, *args, **kwargs):
-        """Read and decode the given file object and return an approprite
+        """Read and decode the given file object and return an appropriate
         pyglet object. Throws DecodeException if there is an error.
         `filename` can be a file type hint.
         """

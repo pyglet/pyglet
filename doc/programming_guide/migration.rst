@@ -33,7 +33,7 @@ you can get and set its attribute values directly via either approach below::
     # "New" 2.1 attribute-style works with type checkers
     pyglet.options.dpi_scaling = 'real'
 
-    # "Old" dict-style access is backward-compatible to helpe with porting
+    # "Old" dict-style access is backward-compatible to help with porting
     pyglet.options['dpi_scaling'] = 'real'
 
 
@@ -245,7 +245,7 @@ greater than ``1.0``. Normalizating allows concisely clamping the input to ``1.0
             player.position += vector * PLAYER_SPEED
 
 
-Accesing Vector Components
+Accessing Vector Components
 """"""""""""""""""""""""""
 You can directly access  individual :py:attr:`~pyglet.math.Vec2.x` and
 :py:attr:`~pyglet.math.Vec2.y` attributes or unpack a vector:
@@ -272,7 +272,7 @@ Widget Event Dispatching
 All widget events now dispatch the widget instance itself as the first argument.
 
 This is similar to how Controller/Joystick events are implemented. It allows
-you to re-use a single handler functions across multiple widgets without "forgetting"
+you to reuse a single handler functions across multiple widgets without "forgetting"
 which widget dispatched an event.
 
 Button Argument Names
@@ -314,8 +314,8 @@ Vector Changes
 
 The syntax for the Vec types has changed in several ways.
 Some of these changes are due to becoming :py:class:`typing.NamedTuple` subclasses, while others
-were done for general usibility. Where possible, we adopt the behavor of GLM/GLSL for most operations,
-for a more familar experience for computer graphics programmers.
+were done for general usability. Where possible, we adopt the behavior of GLM/GLSL for most operations,
+for a more familiar experience for computer graphics programmers.
 
 * The arguments for ``Vec2.from_polar`` have been reversed for consistency. The ``length`` argument also now defaults
   to 1.0. This will fail silently, so take care to correct this if you are using this method in your code::

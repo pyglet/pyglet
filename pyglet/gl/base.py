@@ -132,7 +132,7 @@ class Config:
         """Return a list of matching complete configs for the given canvas."""
 
     def create_context(self, share: Context | None) -> Context:  # noqa: ARG002
-        """Create a GL context that satisifies this configuration.
+        """Create a GL context that satisfies this configuration.
 
         Args:
             share:
@@ -183,7 +183,7 @@ class DisplayConfig(Config, abc.ABC):
 
     @abc.abstractmethod
     def compatible(self, canvas: Canvas) -> bool:
-        """Determine compatability with the canvas."""
+        """Determine compatibility with the canvas."""
 
     @abc.abstractmethod
     def create_context(self, share: Context) -> Context:
@@ -311,7 +311,7 @@ class Context:
     # For the static functions below:
     # The garbage collector introduces a race condition.
     # The provided list might be appended to (and only appended to) while this
-    # method runs, as it's a `doomed_*` list either on the context or its bject
+    # method runs, as it's a `doomed_*` list either on the context or its object
     # space. If `count` wasn't stored in a local, this method might leak objects.
     @staticmethod
     def _delete_objects(list_: list, deletion_func: Callable[[int, Array[gl.GLuint]], None]) -> None:
@@ -343,7 +343,7 @@ class Context:
     def destroy(self) -> None:
         """Release the Context.
 
-        The context will not be useable after being destroyed.  Each platform
+        The context will not be usable after being destroyed.  Each platform
         has its own convention for releasing the context and the buffer(s)
         that depend on it in the correct order; this should never be called
         by an application.

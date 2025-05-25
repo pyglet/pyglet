@@ -40,7 +40,7 @@ PALETTE_INDEX = 0
 
 
 def _unpack(fmt, file):
-    """Unpack little endian bytes fram a file-like object. """
+    """Unpack little endian bytes from a file-like object. """
     size = struct.calcsize(fmt)
     data = file.read(size)
     if len(data) < size:

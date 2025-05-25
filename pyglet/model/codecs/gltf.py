@@ -127,7 +127,7 @@ class Accessor:
         # This is a 'sparse' accessor:
         self.sparse = data.get('sparse')
         if self.sparse:
-            raise NotImplementedError("Not yet implmented")
+            raise NotImplementedError("Not yet implemented")
 
         # The Python format type:
         self.fmt = _array_types[self.component_type]

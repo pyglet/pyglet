@@ -130,7 +130,7 @@ for relatively short or unchanging documents.
 :py:class:`~pyglet.text.layout.ScrollableTextLayout` is a small extension to
 :py:func:`~pyglet.text.layout.TextLayout` that culls the
 text outside of a specified view rectangle, and allows text to be scrolled within that
-rectangle without performing the layout calculuation again.  Because of this
+rectangle without performing the layout calculation again.  Because of this
 clipping rectangle the graphics group cannot be shared with other text
 layouts, so for ideal performance
 :py:class:`~pyglet.text.layout.ScrollableTextLayout` should be used only
@@ -296,7 +296,7 @@ Attributed text
 ^^^^^^^^^^^^^^^
 
 pyglet provides two formats for decoding formatted documents from plain text.
-These are useful for loading preprepared documents such as help screens.  At
+These are useful for loading pre-prepared documents such as help screens.  At
 this time there is no facility for saving (encoding) formatted documents.
 
 The *attributed text* format is an encoding specific to pyglet that can

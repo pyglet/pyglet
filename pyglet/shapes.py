@@ -229,7 +229,7 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
     scale2 = min(scale2, 2.0 * thickness)
 
     # Make these tuples instead of Vec2 because accessing
-    # members of Vec2 is suprisingly slow
+    # members of Vec2 is surprisingly slow
     miter1_scaled_p = (v_miter1.x * scale1, v_miter1.y * scale1)
     miter2_scaled_p = (v_miter2.x * scale2, v_miter2.y * scale2)
 

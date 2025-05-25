@@ -60,7 +60,7 @@ Sprites
 
 A Sprite is a full featured class for displaying instances of Images or
 Animations in the window. Image and Animation instances are mainly concerned
-with the image data (size, pixels, etc.), wheras Sprites also include
+with the image data (size, pixels, etc.), whereas Sprites also include
 additional properties. These include x/y location, scale, rotation, opacity,
 color tint, visibility, and both horizontal and vertical scaling.
 Multiple sprites can share the same image; for example, hundreds of bullet
@@ -133,7 +133,7 @@ In addition, try to combine your images into as few textures as possible;
 for example, by loading images with :py:func:`pyglet.resource.image`
 (see :ref:`guide_resources`) or with :ref:`guide_texture-bins-and-atlases`).
 A common pitfall is to use the :py:func:`pyglet.image.load` method to load
-a large number of images.  This will cause a seperate texture to be created
+a large number of images.  This will cause a separate texture to be created
 for each image loaded, resulting in a lot of OpenGL texture binding overhead
 for each frame.
 
@@ -678,7 +678,7 @@ appropriate locations within the texture to avoid overlap.
 
 It's possible for a :py:class:`~pyglet.image.atlas.TextureAtlas` to run out
 of space for new images, so applications will need to either know the correct
-size of the texture to allocate initally, or maintain multiple atlases as
+size of the texture to allocate initially, or maintain multiple atlases as
 each one fills up.
 
 The :py:class:`~pyglet.image.atlas.TextureBin` class provides a simple means

@@ -126,7 +126,7 @@ class FFmpegException(MediaFormatException):
 def ffmpeg_get_audio_buffer_size(audio_format):
     """Return the audio buffer size
 
-    Buffer size can accomodate 1 sec of audio data.
+    Buffer size can accommodate 1 sec of audio data.
     """
     return audio_format.bytes_per_second + FF_INPUT_BUFFER_PADDING_SIZE
 

@@ -107,7 +107,7 @@ The resource module attempts to pack small images into larger texture atlases
 (which is why the return type of this function can be
 :py:class:`~pyglet.image.TextureRegion`).
 It is also advisable to use the texture atlas classes directly if you wish
-to have different achor points on multiple copies of the same image.
+to have different anchor points on multiple copies of the same image.
 This is because when loading an image more than once, you will actually get
 the **same** object back. You can still use the resource module for getting
 the image location, and described in the next section.
@@ -222,7 +222,7 @@ the operating system's convention:
 * ``~/Library/Application Support/ApplicationName`` on Mac OS X
 
 The :py:func:`pyglet.resource.get_data_path` function returns a directory
-suitable for writing arbitray data, such as save files. The directory used follows
+suitable for writing arbitrary data, such as save files. The directory used follows
 the operating system's convention:
 
 * ``~/.local/share/ApplicationName/`` on Linux (depends on `XDG_DATA_HOME` environment variable).

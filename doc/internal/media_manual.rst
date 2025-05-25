@@ -119,7 +119,7 @@ If any single measurement exceeds 280ms, an extreme desync that is noticeable
 in context of the app is assumed. If the ``AudioPlayer`` is running behind the
 master clock, all of this audio data is skipped and the measurements are reset.
 When running *ahead* by more than 280ms, nothing is done but the standard
-stretchin g of 12ms at a time.
+stretching of 12ms at a time.
 
 .. _audioplayer-play:
 
@@ -249,7 +249,7 @@ tends to be different: ::
         else:
             has_underrun = True
 
-High care must be taken to protect appropiate sections (any variables and
+High care must be taken to protect appropriate sections (any variables and
 buffers which get accessed by both callbacks and the work method) with a lock,
 otherwise the method is open to extremely unlucky issues where the callback
 is unscheduled in favor of the work method or vice versa, which may cause one

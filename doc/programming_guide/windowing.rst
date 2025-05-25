@@ -142,7 +142,7 @@ by the user with the :py:meth:`~pyglet.window.Window.set_minimum_size` and
     window.set_minimum_size(320, 200)
     window.set_maximum_size(1024, 768)
 
-The window can also be resized programatically (even if the window is not
+The window can also be resized programmatically (even if the window is not
 user-resizable) with the :py:meth:`~pyglet.window.Window.set_size` method::
 
     window.set_size(1280, 720)

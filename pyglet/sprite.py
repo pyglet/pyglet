@@ -180,7 +180,7 @@ def get_default_array_shader() -> ShaderProgram:
 class SpriteGroup(graphics.Group):
     """Shared Sprite rendering Group.
 
-    The Group defines custom ``__eq__`` ane ``__hash__`` methods, and so will
+    The Group defines custom ``__eq__`` and ``__hash__`` methods, and so will
     be automatically coalesced with other Sprite Groups sharing the same parent
     Group, Texture and blend parameters.
     """

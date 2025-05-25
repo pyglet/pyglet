@@ -195,7 +195,7 @@ Bugfixes
 - shapes: BezierCurve: fix miter artifacts from #1134. (#1155)
 - examples: Fix "more" button outline in soundspace example. (#1085)
 - tests: Fix a rarely-failing audio time test. (#1092)
-- input.controller: Fix accidentially missed mappings.
+- input.controller: Fix accidentally missed mappings.
 - graphics.shader: Add missing parent program reference in Uniforms (#1103)
 - graphics.domain: Fix VertexList.resize method.
 - text.directwrite: Fix crash with dw_legacy_naming. Check if a custom collection exists before find a font with it.
@@ -436,7 +436,7 @@ Changes and Improvements
 Bugfixes
 --------
 - gui: Prevent two TextEntry widgets from being active at the same time. #747
-- win32: Fix broken lib debug, and multiple related bugs due to depreacted functions.
+- win32: Fix broken lib debug, and multiple related bugs due to deprecated functions.
 - input: Controller mappings now indexed correctly on macOS and Windows.
 
 
@@ -577,7 +577,7 @@ Bugfixes
 - Windows - Prevent distortion with multiple XAudio2 audio sources (#515)
 - Fix frame dropping bug with FFMpeg decoder.
 - Windows - Fix Video alpha channel for WMF decoder.
-- Varios documentation and docstring fixes. Thanks everyone!
+- Various documentation and docstring fixes. Thanks everyone!
 
 
 pyglet 1.5.21
@@ -751,7 +751,7 @@ Bugfixes
 --------
 - Explicitly cast media.synthesis data to bytes to prevent issues on some audio drivers.
 - Refactor WIC module to work with new com module. (#298)
-- Prevent crash when setting `shapes.Circle.visable`. (#294)
+- Prevent crash when setting `shapes.Circle.visible`. (#294)
 - Remove deprecated `tostring` calls in PIL/PNG decoders to prevent crash on Python 3.9. (#295, #302)
 
 Improvements
@@ -829,7 +829,7 @@ Bugfix and minor feature release
 
 Bugfixes
 --------
-- Avoid WMFDecoder crash when mixing pyglet with other tookits. (#174)
+- Avoid WMFDecoder crash when mixing pyglet with other toolkits. (#174)
 - Prevent EventDispatcher subclasses from hiding AttributeError exceptions.
 
 Improvements
@@ -941,7 +941,7 @@ Bugfix and small improvement release
 Bugfixes
 --------
 - Allow creation of non-power-of-two compressed Textures. (#78)
-- Fix EventDispatchers surpressing `AttributeError`s. (#87)
+- Fix EventDispatchers suppressing `AttributeError`s. (#87)
 - Fix external lib loading on Windows under Python 3.8. (#90)
 
 Improvements
@@ -1029,7 +1029,7 @@ Of special note, is that the 1.4 release will be the last to support Python 2. I
 last release to support Legacy OpenGL (2.x). Future pyglet releases will be Python 3 only, and will
 require at least OpenGL 3 support. If you are using pyglet on legacy systems, don't worry. The 1.4
 branch will remain available for download. Bugfixes will be backported as long as someone is willing
-to do so, but new fetures on the 1.4 branch are unlikely.
+to do so, but new features on the 1.4 branch are unlikely.
 
 New features
 ------------
@@ -1060,7 +1060,7 @@ Improvements
   bundled Python Wave codec can also support loading of 24bit wave files. Please note that the
   OpenAL driver does NOT support 24bit audio playback.
 - Wave decoding is now based on the Python standard library `wave` module. This is slightly more
-  forgiving when loading slightly non-complient files.
+  forgiving when loading slightly non-compliant files.
 - Default texture min and mag filtering can be set on the Texture class. For example:
   `pyglet.image.Texture.default_min_filter = GL_LINEAR`
   `pyglet.image.Texture.default_mag_filter = GL_LINEAR`
@@ -1287,7 +1287,7 @@ Bugfixes
 - 638: Player set_pitch crashes with 'directaudio' driver
 - 653: Unsupported PNG color type: 3
 - 657: gdiplus.py : n_delays must be long, not float.
-- 659: image.save method doesnt catch correct Exception
+- 659: image.save method doesn't catch correct Exception
 - 660: platform_event_loop.post_event doesn't work for Cocoa loop
 - 661: Player.next is converted to Player.__next__ for python3
 - 662: gamepad cannot be found in linux
@@ -1314,7 +1314,7 @@ Bugfixes
 - 718: False "ImageDecodeException: Not a GIF stream" in python3.x
 - 719: .bmp files traceback with py3
 - 720: tests/image compatibility StringIO vs BytesIO
-- 721: compatibilty py3 for tests/image TEXTURE_3D.py and TEXTURE_GRID.py
+- 721: compatibility py3 for tests/image TEXTURE_3D.py and TEXTURE_GRID.py
 - 722: TypeError in graphics test suite with python3.x
 - 723: py3 compatibility in tests/image MATRIX_RGB.py, MATRIX_RGBA.py
 - 724: py3 compatibility for png s (bytes vs str)

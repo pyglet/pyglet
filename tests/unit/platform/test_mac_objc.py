@@ -66,7 +66,7 @@ class ObjCIntegrationTest(unittest.TestCase):
         self.assertEqual(len(get_cached_instances()), start_count)
 
     def test_objc_subclass_dealloc_autorelease(self):
-        """Pytest doesn't like re-using an ObjCClass in the setUpClass. Just make a new one for testing."""
+        """Pytest doesn't like reusing an ObjCClass in the setUpClass. Just make a new one for testing."""
         start_count = len(get_cached_instances())
 
         allocated = True

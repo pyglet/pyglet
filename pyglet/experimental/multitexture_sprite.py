@@ -378,7 +378,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
         if new_tex.id is not self._textures[key].id:
             # Need to make a shallow copy to allow the batch object
             # to correctly split this sprite from other sprite's groups.
-            # if not then you will be modifing all othe the other sprites
+            # if not then you will be modifying all the other sprites
             # textures dict object as well.
             self._textures = self._textures.copy()
             self._textures[key] = new_tex
@@ -467,7 +467,7 @@ class MultiTextureSprite(pyglet.sprite.Sprite):
                The Image or Animation to set
         """
         if name in self._animations:
-            # Need to stop all animations temporarly so we can swap the layer out
+            # Need to stop all animations temporarily so we can swap the layer out
             pyglet.clock.unschedule(self._animate)
             self._animations.pop(name)
 
