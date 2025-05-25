@@ -6,16 +6,17 @@ using native operating system services.  If the `Pillow`_ library is installed,
 many additional formats can be supported.   pyglet also includes built-in
 codecs for loading PNG and BMP without external dependencies.
 
-Loaded images can be efficiently provided to OpenGL as a texture, and OpenGL
-textures and framebuffers can be retrieved as pyglet images to be saved or
-otherwise manipulated.
+In addition to loading, pyglet also supports the following operations
+for both OpenGL textures and framebuffers:
 
-If you've done any game or graphics programming, you're probably familiar with
-the concept of "sprites".  pyglet also provides an efficient and comprehensive
-:py:class:`~pyglet.sprite.Sprite` class, for displaying images on the screen
-with an optional transform (such as scaling and rotation). If you're planning
-to do anything with images that involves movement and placement on screen,
-you'll likely want to use sprites.
+* converting to pyglet image objects
+* saving to disk as screenshots
+* manipulation as image data
+* converting to :py:class:`bytes` of raw pixel data
+
+For most users, the :py:class:`~pyglet.sprite.Sprite` class is the best way
+to draw an image. One or more instances may draw the same image data with
+individually configured values for position, scaling, rotation, and more.
 
 .. _Pillow: https://pillow.readthedocs.io
 
@@ -479,7 +480,7 @@ following table:
     = ============
 
 For example, a format string of ``"RGBA"`` corresponds to four bytes of
-colour data, in the order red, green, blue, alpha.  Note that machine
+color data, in the order red, green, blue, alpha.  Note that machine
 endianness has no impact on the interpretation of a format string.
 
 The length of a format string always gives the number of bytes per pixel.  So,
@@ -633,7 +634,7 @@ sprites from a single texture.  One problem you may encounter, however,
 is bleeding between adjacent images.
 
 When OpenGL renders a texture to the screen, by default it obtains each pixel
-colour by interpolating nearby texels.  You can disable this behaviour by
+color by interpolating nearby texels.  You can disable this behaviour by
 switching to the ``GL_NEAREST`` interpolation mode, however you then lose the
 benefits of smooth scaling, distortion, rotation and sub-pixel positioning.
 
@@ -745,9 +746,13 @@ the window::
 When animations are loaded with :py:mod:`pyglet.resource` (see
 :ref:`guide_resources`) the frames are automatically packed into a texture bin.
 
-This example program is located in
-`examples/programming_guide/animation.py`, along with a sample GIF animation
-file.
+The ``examples/programming_guide/`` folder of the `GitHub repository`_
+includes:
+
+* this example program  (``animation.py``)
+* a sample GIF animation file  (``dinosaur.gif``)
+
+.. _GitHub repository: https://github.com/pyglet/pyglet/
 
 
 Framebuffers
@@ -779,7 +784,7 @@ as components of the :py:class:`~pyglet.image.AbstractImage` hierarchy.
 
     The :py:class:`~pyglet.image.BufferImage` hierarchy.
 
-* One or more colour buffers, represented by
+* One or more color buffers, represented by
   :py:class:`~pyglet.image.ColorBufferImage`
 * An optional depth buffer, represented by
   :py:class:`~pyglet.image.DepthBufferImage`
@@ -851,6 +856,10 @@ texture target (for example, ``GL_TEXTURE_2D``) and
 For example, to bind a texture::
 
     glBindTexture(texture.target, texture.id)
+
+
+
+.. _OpenGL Programming Guide: http://www.opengl-redbook.com/
 
 Texture dimensions
 ^^^^^^^^^^^^^^^^^^
@@ -943,23 +952,31 @@ empty (maximal).
 Use the :py:meth:`pyglet.image.Texture.create` class method to create a texture
 with a specific internal format.
 
+
 Texture filtering
 ^^^^^^^^^^^^^^^^^
 
-By default, all textures are created with smooth (``GL_LINEAR``) filtering.
-In some cases you may wish to have different filtered applied. Retro style
-pixel art games, for example, would require sharper textures. To achieve this,
-pas ``GL_NEAREST`` to the `min_filter` and `mag_filter` parameters when
-creating a texture. It is also possible to set the default filtering by
-setting the `default_min_filter` and `default_mag_filter` class attributes
-on the `Texture` class. This will cause all textures created internally by
-pyglet to use these values::
+By default, all textures are created with smooth (:py:data:`~pyglet.gl.GL_LINEAR`)
+filtering.
 
-    pyglet.image.Texture.default_min_filter = GL_LINEAR
-    pyglet.image.Texture.default_mag_filter = GL_LINEAR
+To use a different filter for a specific texture, pass the filtering constant(s)
+to the :py:attr:`pyglet.image.Texture` class via the ``min_filter`` and ``mag_filter``
+arguments.
 
+Pixel art
+"""""""""
 
-.. _OpenGL Programming Guide: http://www.glprogramming.com/red/
+To enable nearest-neighbor filtering for retro-style games, set the
+corresponding variables of :py:class:`pyglet.image.Texture` to
+:py:data:`~pyglet.gl.GL_NEAREST`:
+
+.. code-block:: python
+
+   pyglet.image.Texture.default_min_filter = GL_LINEAR
+   pyglet.image.Texture.default_mag_filter = GL_LINEAR
+
+Afterward, all textures pyglet creates will default
+to nearest-neighbor sampling.
 
 Saving an image
 ---------------

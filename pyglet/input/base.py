@@ -672,7 +672,7 @@ class Controller(EventDispatcher):
     def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
         _vecs = (Vec2(0.0, 1.0), Vec2(1.0, 1.0), Vec2(1.0, 0.0), Vec2(1.0, -1.0),       # n, ne, e, se
-                  Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
+                 Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
         _input_map = {key: val for key, val in zip(range(int(control.min), int(control.max + 1)), _vecs)}
 
         # For some Directinput devices:
@@ -722,13 +722,15 @@ class Controller(EventDispatcher):
                 elif relation.control_type == "hat0":
                     if self._hat_control:
                         self._bind_dedicated_hat(relation, self._hat_control)
-                    else:
+                    elif self._hat_x_control and self._hat_y_control:
                         control, dpname = {1: (self._hat_y_control, 'dpup'),
                                            2: (self._hat_x_control, 'dpright'),
                                            4: (self._hat_y_control, 'dpdown'),
                                            8: (self._hat_x_control, 'dpleft')}[relation.index]
 
                         self._bind_axis_control(relation, control, dpname)
+                    else:
+                        warnings.warn(f"{relation} has no matching physical hat Control. Skipping.")
 
             except IndexError:
                 warnings.warn(f"Could not map '{relation}' to '{name}'")

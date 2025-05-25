@@ -1,3 +1,10 @@
+pyglet 2.1.7
+
+Bugfixes
+--------
+input.Controller: fix Nonetype error if a mapping points towards a non-existing HAT Control
+
+
 pyglet 2.1.6
 
 Bugfixes

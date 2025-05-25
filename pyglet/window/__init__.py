@@ -510,10 +510,15 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if not screen:
             screen = display.get_default_screen()
 
+        # Ensure the framebuffer is large enough to support transparency.
+        alpha_size = 8 if style in ('transparent', 'overlay') else None
+
         if not config:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-                                    None]:
+            for template_config in [
+                gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3, alpha_size=alpha_size),
+                gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3, alpha_size=alpha_size),
+                None,
+            ]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
@@ -522,10 +527,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             if not config:
                 msg = 'No standard config is available.'
                 raise NoSuchConfigException(msg)
-
-        # Necessary on Windows. More investigation needed:
-        if style in ('transparent', 'overlay'):
-            config.alpha = 8
+        else:
+            # Override config setting if they are requesting transparency.
+            config.alpha_size = alpha_size
 
         if not config.is_complete():
             config = screen.get_best_config(config)
