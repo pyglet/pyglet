@@ -110,6 +110,31 @@ class PygletGLWriter:
         "GLsync": "POINTER(struct___GLsync)",
         "GLDEBUGPROC": "CFUNCTYPE(None, GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar), POINTER(GLvoid))",
     }
+    # All gl types matched to python types
+    pythontypes = {
+        "GLenum": "int",
+        "GLboolean": "int",
+        "GLbitfield": "int",
+        "GLvoid": "None",
+        "GLbyte": "bytes",
+        "GLubyte": "int",
+        "GLshort": "int",
+        "GLushort": "int",
+        "GLint": "int",
+        "GLuint": "int",
+        "GLclampx": "int",
+        "GLsizei": "int",
+        "GLfloat": "float",
+        "GLclampf": "float",
+        "GLdouble": "float",
+        "GLclampd": "float",
+        "GLchar": "bytes",
+        # "GLintptr": "c_ptrdiff_t",
+        # "GLsizeiptr": "c_ptrdiff_t",
+        "GLint64": "int",
+        "GLuint64": "int",
+        "GLuint64EXT": "int",
+    }
     exclude_commands = set()
 
     def __init__(self, *, registry: Registry, out_file: Path):
@@ -117,6 +142,7 @@ class PygletGLWriter:
         self._out_file = out_file
         self._out = None
         self._all = []  # Entries for __all__
+        self._commands = []
 
     def run(self):
         """Write the file and close"""
@@ -125,6 +151,7 @@ class PygletGLWriter:
         self.write_types()
         self.write_enums()
         self.write_commands()
+        self.write_functions()
         self.write_footer()
         self._out.close()
 
@@ -177,8 +204,10 @@ class PygletGLWriter:
 
             # Arguments can be pointer and pointer-pointer
             arguments = []
+            names = []
             for param in cmd.params:
                 # print(cmd.name, param.name, param.ptype, "|", param.value)
+                names.append(param.name)
 
                 # Detect void pointers. They don't have a ptype set
                 if "void" in param.value:
@@ -201,11 +230,27 @@ class PygletGLWriter:
             # proc_name = f"PFN{cmd.name.upper()}PROC"
 
             self.write_lines([
-                f"{cmd.name} = _link_function('{cmd.name}', {restype}, [{argtypes}], requires='{requires}')",
+                f"_{cmd.name} = _link_function('{cmd.name}', {restype}, [{argtypes}], requires='{requires}')",
                 # f"{proc_name} = CFUNCTYPE({restype}, {argtypes})",
             ])
             self._all.append(cmd.name)
-            # self._all.append(proc_name)
+            self._commands.append((cmd.name, names, arguments, restype))
+
+        self.write_lines([""])
+
+    def write_functions(self) -> None:
+        """Write all functions."""
+        self.write_lines(["# GL command wrapper funcction definitions"])
+
+        for cmdname, names, arguments, restype in self._commands:
+            # Arguments can be pointer and pointer-pointer
+            argnames = ", ".join(names)
+            argannotations = ", ".join(f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in zip(names, arguments))
+
+            self.write_lines([
+                f"def {cmdname}({argannotations}) -> {restype}:",
+                f"    return _{cmdname}({argnames})"
+            ])
 
         self.write_lines([""])
 
