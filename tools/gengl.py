@@ -18,6 +18,7 @@ python gengl.py --source local
 import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from typing import TextIO, Iterable
 
 from opengl_registry import Registry, RegistryReader
 
@@ -65,11 +66,11 @@ def main() -> None:  # noqa: D103
     #     extensions=extensions,
     # )
 
-    core_writer = PygletGLWriter(registry=core_profile, out_file=DEST_PATH / "gl.py")
+    core_writer = PygletGLWriter(registry=core_profile, out_module=DEST_PATH / "gl")
     core_writer.run()
-    compat_writer = PygletGLWriter(registry=compat_profile, out_file=DEST_PATH / "gl_compat.py")
+    compat_writer = PygletGLWriter(registry=compat_profile, out_module=DEST_PATH / "gl_compat")
     compat_writer.run()
-    # es_writer = PygletGLWriter(registry=es_profile, out_file=DEST_PATH / "gl_es.py")
+    # es_writer = PygletGLWriter(registry=es_profile, out_file=DEST_PATH / "gl_es")
     # es_writer.run()
 
 
@@ -137,59 +138,60 @@ class PygletGLWriter:
     }
     exclude_commands = set()
 
-    def __init__(self, *, registry: Registry, out_file: Path):
+    def __init__(self, *, registry: Registry, out_module: Path):
         self._registry = registry
-        self._out_file = out_file
+        self._out_module = out_module
         self._out = None
+        self._stub = None
         self._all = []  # Entries for __all__
         self._commands = []
 
     def run(self):
         """Write the file and close"""
-        self._out = open(self._out_file, mode='w')
-        self.write_header()
-        self.write_types()
-        self.write_enums()
-        self.write_commands()
-        self.write_functions()
-        self.write_footer()
-        self._out.close()
+        with open(self._out_module.with_suffix(".py"), mode='w') as out:
+            self.write_template(out, REPO_ROOT / "tools" / "gl.template")
+            self.write_types(out)
+            self.write_enums(out)
+            self.write_commands(out)
+            self.write_footer(out)
 
-    def write(self, content: str):
-        """Write out a string to the out file"""
-        self._out.write(content)
+        with open(self._out_module.with_suffix(".pyi"), mode='w') as stub:
+            self.write_template(stub, REPO_ROOT / "tools" / "gl_stub.template")
+            self.write_types(stub)
+            self.write_enums(stub)
+            self.write_command_stubs(stub)
 
-    def write_lines(self, lines: str) -> None:
+    def write_lines(self, fp: TextIO, lines: Iterable[str]) -> None:
         """Write one or several lines to the out file."""
         for line in lines:
-            self._out.write(line)
-            self._out.write("\n")
+            fp.write(line)
+            fp.write("\n")
 
-    def write_header(self) -> None:
+    def write_template(self, fp: TextIO, template: Path) -> None:
         """Write the header."""
-        with open(REPO_ROOT / "tools" / "gl.template") as fd:
-            self.write(fd.read())
+        with open(template) as fd:
+            fp.write(fd.read())
 
-    def write_types(self) -> None:
+    def write_types(self, fp: TextIO) -> None:
         """Write all types."""
-        self.write_lines(["# GL type definitions"])
-        self.write_lines([f"{k} = {v}" for k, v in self.types.items()])
-        self.write_lines([""])
+        self.write_lines(fp, ["# GL type definitions"])
+        self.write_lines(fp, [f"{k} = {v}" for k, v in self.types.items()])
+        self.write_lines(fp, [""])
         self._all.extend(self.types.keys())
 
-    def write_enums(self) -> None:
+    def write_enums(self, fp: TextIO) -> None:
         """Write all enums."""
-        self.write_lines(["# GL enumerant (token) definitions"])
-        self.write_lines([
+        self.write_lines(fp, ["# GL enumerant (token) definitions"])
+        self.write_lines(fp, [
             f"{e.name} = {e.value_int}"
             for e in sorted(self._registry.enums.values())
         ])
-        self.write_lines([""])
+        self.write_lines(fp, [""])
         self._all.extend(self._registry.enums.keys())
 
-    def write_commands(self) -> None:
+    def write_commands(self, fp: TextIO) -> None:
         """Write all commands."""
-        self.write_lines(["# GL command definitions"])
+        self.write_lines(fp, ["# GL command definitions"])
 
         # _link_function params : name, restype, argtypes, requires=None, suggestions=None
         for cmd in sorted(self._registry.commands.values()):
@@ -204,10 +206,8 @@ class PygletGLWriter:
 
             # Arguments can be pointer and pointer-pointer
             arguments = []
-            names = []
             for param in cmd.params:
                 # print(cmd.name, param.name, param.ptype, "|", param.value)
-                names.append(param.name)
 
                 # Detect void pointers. They don't have a ptype set
                 if "void" in param.value:
@@ -229,39 +229,69 @@ class PygletGLWriter:
             # NOTE: PROCs are optional
             # proc_name = f"PFN{cmd.name.upper()}PROC"
 
-            self.write_lines([
-                f"_{cmd.name} = _link_function('{cmd.name}', {restype}, [{argtypes}], requires='{requires}')",
+            self.write_lines(fp, [
+                f"{cmd.name} = _link_function('{cmd.name}', {restype}, [{argtypes}], requires='{requires}')",
                 # f"{proc_name} = CFUNCTYPE({restype}, {argtypes})",
             ])
             self._all.append(cmd.name)
-            self._commands.append((cmd.name, names, arguments, restype))
 
-        self.write_lines([""])
+        self.write_lines(fp, [""])
 
-    def write_functions(self) -> None:
-        """Write all functions."""
-        self.write_lines(["# GL command wrapper funcction definitions"])
-
-        for cmdname, names, arguments, restype in self._commands:
-            # Arguments can be pointer and pointer-pointer
-            argnames = ", ".join(names)
-            argannotations = ", ".join(f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in zip(names, arguments))
-
-            self.write_lines([
-                f"def {cmdname}({argannotations}) -> {restype}:",
-                f"    return _{cmdname}({argnames})"
-            ])
-
-        self.write_lines([""])
-
-    def write_footer(self) -> None:
+    def write_footer(self, fp: TextIO) -> None:
         """Write __all__ section."""
-        self.write_lines([
+        self.write_lines(fp, [
             "",
             "__all__ = [",
             *[f"    '{name}'," for name in self._all],
             "]",
         ])
+
+    def write_command_stubs(self, fp: TextIO) -> None:
+        """Write type annotations for all commands."""
+        # _link_function params : name, restype, argtypes, requires=None, suggestions=None
+        for cmd in sorted(self._registry.commands.values()):
+            if cmd.name in self.exclude_commands:
+                continue
+
+            # Return type: If the function returns a pointer type ...
+            if "*" in cmd.proto:
+                restype = f"_Pointer[{cmd.ptype}]"
+            else:
+                restype = cmd.ptype or "None"
+
+            # Arguments can be pointer and pointer-pointer
+            arguments = []
+            names = []
+            for param in cmd.params:
+                # print(cmd.name, param.name, param.ptype, "|", param.value)
+                names.append(param.name)
+
+                # Detect void pointers. They don't have a ptype set
+                if "void" in param.value:
+                    # The exact types which are valid is hard to determine since
+                    # ctypes automatically converts arguments to the required type, so allow Any
+                    arguments.append("_Pointer[GLvoid] | Any")
+                else:
+                    # Ensure we actually know what the type is
+                    if not self.types.get(param.ptype):
+                        raise ValueError(f"ptype {param.ptype} not a known type")
+                    # Handle pointer-pointer and pointers: *, **, *const*
+                    if param.value.count("*") == 2:
+                        arguments.append(f"_Pointer[_Pointer[{param.ptype}]] | Any")
+                    elif param.value.count("*") == 1:
+                        arguments.append(f"_Pointer[{param.ptype}] | Any")
+                    else:
+                        arguments.append(param.ptype)
+
+            # Arguments can be pointer and pointer-pointer
+            argannotations = ", ".join(f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in zip(names, arguments))
+
+            self.write_lines(fp, [
+                f"def {cmd.name}({argannotations}) -> {self.pythontypes.get(restype, restype)}:\n"
+                f"    ...\n"
+            ])
+
+        self.write_lines(fp, [""])
         
 
 if __name__ == "__main__":
