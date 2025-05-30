@@ -4,7 +4,10 @@ Do not modify this file.
 """
 from __future__ import annotations
 
-from ctypes import *
+from ctypes import (
+    CFUNCTYPE, POINTER, Structure, c_char, c_double, c_float, c_int,
+    c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort
+)
 from _ctypes import _Pointer
 from pyglet.gl.lib import c_ptrdiff_t
 from typing import Any
