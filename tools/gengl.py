@@ -190,7 +190,7 @@ class PygletGLWriter:
         self._all.extend(self._registry.enums.keys())
 
     def write_enum_stubs(self, fp: TextIO) -> None:
-        """Write all enums."""
+        """Write type annotations for all enums."""
         self.write_lines(fp, ["# GL enumerant (token) definitions"])
         self.write_lines(fp, [
             f"{e.name}: int"  # assume all enums values are integers
