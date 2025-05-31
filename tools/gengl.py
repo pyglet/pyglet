@@ -158,7 +158,7 @@ class PygletGLWriter:
         with open(self._out_module.with_suffix(".pyi"), mode='w') as stub:
             self.write_template(stub, REPO_ROOT / "tools" / "gl_stub.template")
             self.write_types(stub)
-            self.write_enums(stub)
+            self.write_enum_stubs(stub)
             self.write_command_stubs(stub)
 
     def write_lines(self, fp: TextIO, lines: Iterable[str]) -> None:
@@ -188,6 +188,15 @@ class PygletGLWriter:
         ])
         self.write_lines(fp, [""])
         self._all.extend(self._registry.enums.keys())
+
+    def write_enum_stubs(self, fp: TextIO) -> None:
+        """Write all enums."""
+        self.write_lines(fp, ["# GL enumerant (token) definitions"])
+        self.write_lines(fp, [
+            f"{e.name}: int"  # assume all enums values are integers
+            for e in sorted(self._registry.enums.values())
+        ])
+        self.write_lines(fp, [""])
 
     def write_commands(self, fp: TextIO) -> None:
         """Write all commands."""
@@ -248,6 +257,8 @@ class PygletGLWriter:
 
     def write_command_stubs(self, fp: TextIO) -> None:
         """Write type annotations for all commands."""
+        self.write_lines(fp, ["# GL command definitions"])
+
         # _link_function params : name, restype, argtypes, requires=None, suggestions=None
         for cmd in sorted(self._registry.commands.values()):
             if cmd.name in self.exclude_commands:
@@ -284,15 +295,14 @@ class PygletGLWriter:
                         arguments.append(param.ptype)
 
             # Arguments can be pointer and pointer-pointer
-            argannotations = ", ".join(f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in zip(names, arguments))
+            argannotations = ", ".join(
+                f"{name}: {f'{arg} | {self.pythontypes[arg]}' if arg in self.pythontypes else arg}" for name, arg in
+                zip(names, arguments))
 
             self.write_lines(fp, [
-                f"def {cmd.name}({argannotations}) -> {self.pythontypes.get(restype, restype)}:\n"
-                f"    ...\n"
+                f"def {cmd.name}({argannotations}) -> {self.pythontypes.get(restype, restype)}: ..."
             ])
 
-        self.write_lines(fp, [""])
-        
 
 if __name__ == "__main__":
     main()

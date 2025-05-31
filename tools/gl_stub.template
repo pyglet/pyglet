@@ -12,12 +12,7 @@ from _ctypes import _Pointer
 from pyglet.gl.lib import c_ptrdiff_t
 from typing import Any
 
-class struct___GLsync(Structure):
-    __slots__ = [
-    ]
-struct___GLsync._fields_ = [
-    ('_opaque_struct', c_int)
-]
+class struct___GLsync(Structure): ...
 
 # END OF gl_stub.template
 
