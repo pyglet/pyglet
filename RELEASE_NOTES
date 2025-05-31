@@ -1,8 +1,18 @@
 pyglet 2.1.7
 
+Changes
+-------
+event: Add EventDispatcher.post_event method for posting events to main thread
+window: Clamp width and height to minimum of (1,1) in internal resize events (#1322)
+window.mouse: Add __getattr__ to the MouseStateHandler (#1311)
+
 Bugfixes
 --------
+docs: Fix outbound link, cross-refs, and formatting for programming guide image page (#1318)
 input.Controller: fix Nonetype error if a mapping points towards a non-existing HAT Control
+math: fix bugged Vec methods (#1310)
+window: Fix window transparency for Windows OS.
+window: Fix X11 clipboard selection by not setting XlibWindow._clipboard_str in self.get_clipboard_text
 
 
 pyglet 2.1.6
