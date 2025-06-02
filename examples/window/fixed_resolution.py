@@ -23,7 +23,8 @@ class FixedResolution:
         self.width = width
         self.height = height
 
-        self._target_area = 0, 0, 0, 0, 0
+        self._render_area = 0, 0, 0, 0, 0
+        self._mouse_scaling = 0, 0, 1.0, 1.0
 
         self.framebuffer = pyglet.image.Framebuffer()
         self._color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
@@ -33,10 +34,15 @@ class FixedResolution:
 
         self.window.push_handlers(self)
 
-    def on_resize(self, width, height):
-        self._target_area = self._calculate_area(*self.window.get_framebuffer_size())
+    def get_mouse_scale(self, x, y, dx, dy):
+        offset_x, offset_y, scale_w, scale_h = self._mouse_scaling
+        scaled_x = round((x - offset_x) * scale_w)
+        scaled_y = round((y - offset_y) * scale_h)
+        scaled_dx = round(dx * scale_w)
+        scaled_dy = round(dy * scale_h)
+        return scaled_x, scaled_y, scaled_dx, scaled_dy
 
-    def _calculate_area(self, new_screen_width, new_screen_height):
+    def on_resize(self, new_screen_width, new_screen_height):
         aspect_ratio = self.width / self.height
         aspect_width = new_screen_width
         aspect_height = aspect_width / aspect_ratio + 0.5
@@ -44,11 +50,21 @@ class FixedResolution:
             aspect_height = new_screen_height
             aspect_width = aspect_height * aspect_ratio + 0.5
 
-        return (int((new_screen_width / 2) - (aspect_width / 2)),       # x
-                int((new_screen_height / 2) - (aspect_height / 2)),     # y
-                0,                                                      # z
-                int(aspect_width),                                      # width
-                int(aspect_height))                                     # height
+        offset_x = int((new_screen_width / 2) - (aspect_width / 2))
+        offset_y = int((new_screen_height / 2) - (aspect_height / 2))
+        render_width = int(aspect_width)
+        render_height = int(aspect_height)
+
+        self._render_area = offset_x, offset_y, 0, render_width, render_height
+
+        # mouse resolution scaling:
+        width_scale = self.width / new_screen_width
+        height_scale = self.height / new_screen_height
+        # optional scaling for pillar/letterboxing:
+        pillar_scale = new_screen_width / render_width
+        letter_scale = new_screen_height / render_height
+
+        self._mouse_scaling = offset_x, offset_y, width_scale * pillar_scale, height_scale * letter_scale
 
     def __enter__(self):
         self.framebuffer.bind()
@@ -56,7 +72,7 @@ class FixedResolution:
 
     def __exit__(self, *unused):
         self.framebuffer.unbind()
-        self._color_buffer.blit(*self._target_area)
+        self._color_buffer.blit(*self._render_area)
 
     def begin(self):
         self.__enter__()
