@@ -90,7 +90,7 @@ class PygletGLWriter:
         "GLboolean": "c_ubyte",
         "GLbitfield": "c_uint",
         "GLvoid": "None",
-        "GLbyte": "c_char",
+        "GLbyte": "c_byte",
         "GLubyte": "c_ubyte",
         "GLshort": "c_short",
         "GLushort": "c_ushort",

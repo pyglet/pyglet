@@ -5,8 +5,8 @@ Do not modify this file.
 from __future__ import annotations
 
 from ctypes import (
-    CFUNCTYPE, POINTER, Structure, c_char, c_double, c_float, c_int,
-    c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort
+    CFUNCTYPE, POINTER, Structure, c_byte, c_char, c_double, c_float,
+    c_int, c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort
 )
 from pyglet.gl.lib import link_GL as _link_function
 from pyglet.gl.lib import c_ptrdiff_t
@@ -25,7 +25,7 @@ GLenum = c_uint
 GLboolean = c_ubyte
 GLbitfield = c_uint
 GLvoid = None
-GLbyte = c_char
+GLbyte = c_byte
 GLubyte = c_ubyte
 GLshort = c_short
 GLushort = c_ushort
