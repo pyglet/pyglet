@@ -105,12 +105,13 @@ class Camera:
         self._window.view = view_matrix
 
     def end(self):
-        # Since this is a matrix, you will need to reverse the translate after rendering otherwise
-        # it will multiply the current offset every draw update pushing it further and further away.
-
-        # Reverse scale, since that was the last transform.
+        # Since this is a matrix transformation, you need to reverse the scaling and translation
+        # after rendering. Otherwise, the transformations will accumulate with each draw call,
+        # pushing the view further and further away.
+        
+        # Reverse the scaling since it was the last transformation.
         view_matrix = self._window.view.scale((1 / self._zoom, 1 / self._zoom, 1))
-        # Reverse translate.
+        # Reverse the translation.
         view_matrix = view_matrix.translate((self.offset_x * self._zoom, self.offset_y * self._zoom, 0))
 
         self._window.view = view_matrix
