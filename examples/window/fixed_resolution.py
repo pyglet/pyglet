@@ -11,6 +11,8 @@ The method used in this example is:
 5. Unbind the Framebuffer, and blit the Texture scaled to fill the screen.
 """
 
+from math import floor
+
 import pyglet
 
 from pyglet.gl import *
@@ -36,10 +38,10 @@ class FixedResolution:
 
     def get_mouse_scale(self, x, y, dx, dy):
         offset_x, offset_y, scale_w, scale_h = self._mouse_scaling
-        scaled_x = round((x - offset_x) * scale_w)
-        scaled_y = round((y - offset_y) * scale_h)
-        scaled_dx = round(dx * scale_w)
-        scaled_dy = round(dy * scale_h)
+        scaled_x = floor((x - offset_x) * scale_w)
+        scaled_y = floor((y - offset_y) * scale_h)
+        scaled_dx = floor(dx * scale_w)
+        scaled_dy = floor(dy * scale_h)
         return scaled_x, scaled_y, scaled_dx, scaled_dy
 
     def on_resize(self, new_screen_width, new_screen_height):
