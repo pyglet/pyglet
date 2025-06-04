@@ -540,18 +540,22 @@ class WMFSource(Source):
 
             # Check sub media type, AKA what kind of codec
             guid_compressed = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            sample_size_compressed = c_uint32()
             imfmedia.GetGUID(MF_MT_SUBTYPE, byref(guid_compressed))
+            imfmedia.GetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, byref(sample_size_compressed))
 
-            if guid_compressed == MFAudioFormat_PCM:
-                assert _debug(f'WMFAudioDecoder: Found PCM Audio: {guid_compressed}')
+            if guid_compressed == MFAudioFormat_PCM and sample_size_compressed.value in (8, 16):
+                assert _debug(f'WMFAudioDecoder: Found Compatible Integer PCM Audio: {guid_compressed}')
             else:
-                assert _debug(f'WMFAudioDecoder: Found Non-PCM Audio: {guid_compressed}')
-                # If audio is compressed, attempt to decompress it by forcing source reader to use PCM
+                assert _debug(f'WMFAudioDecoder: Found Non-8/16-Bit or Non-Integer-PCM Audio: {guid_compressed}')
+                # If audio is compressed or incompatible, attempt to decompress or resample it
+                # to standard 16bit integer PCM
                 mf_mediatype = IMFMediaType()
 
                 MFCreateMediaType(byref(mf_mediatype))
                 mf_mediatype.SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio)
                 mf_mediatype.SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16)
 
                 try:
                     self._source_reader.SetCurrentMediaType(self._audio_stream_index, None, mf_mediatype)
