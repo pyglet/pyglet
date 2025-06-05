@@ -2,7 +2,7 @@ from tests import mock
 import random
 import unittest
 
-from pyglet.media.player import Player, PlayerGroup
+from pyglet.media.player import AudioPlayer, PlayerGroup
 from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
 
 
@@ -16,7 +16,7 @@ class PlayerTestCase(unittest.TestCase):
     video_format_2.frame_rate = 25
 
     def setUp(self):
-        self.player = Player()
+        self.player = AudioPlayer()
 
         self._get_audio_driver_patcher = mock.patch('pyglet.media.player.get_audio_driver')
         self.mock_get_audio_driver = self._get_audio_driver_patcher.start()

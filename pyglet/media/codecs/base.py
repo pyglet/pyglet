@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
-    from pyglet.media.player import Player
+    from pyglet.media.player import AudioPlayer
 
 
 class AudioFormat:
@@ -213,7 +213,7 @@ class Source:
     """
 
     _duration = None
-    _players: List['Player'] = []  # Players created through Source.play
+    _players: List['AudioPlayer'] = []  # Players created through Source.play
 
     audio_format = None
     video_format = None
@@ -231,7 +231,7 @@ class Source:
         """
         return self._duration
 
-    def play(self) -> 'Player':
+    def play(self) -> 'AudioPlayer':
         """Play the source.
 
         This is a convenience method which creates a Player for
@@ -240,8 +240,8 @@ class Source:
         Returns:
             :class:`.Player`
         """
-        from pyglet.media.player import Player  # XXX Nasty circular dependency
-        player = Player()
+        from pyglet.media.player import AudioPlayer  # XXX Nasty circular dependency
+        player = AudioPlayer()
         player.queue(self)
         player.play()
         Source._players.append(player)

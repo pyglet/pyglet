@@ -20,7 +20,7 @@ if not fmt:
     print('No video track in this source.')
     sys.exit(1)
 
-player = pyglet.media.Player()
+player = pyglet.media.AudioPlayer()
 player.queue(source)
 player.play()
 

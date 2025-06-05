@@ -45,7 +45,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, BinaryIO
 
 from .drivers import get_audio_driver
-from .player import Player, PlayerGroup
+from .player import AudioPlayer, PlayerGroup
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffmpeg
@@ -55,7 +55,7 @@ from . import synthesis
 if TYPE_CHECKING:
     from .codecs import MediaDecoder
 
-__all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
+__all__ = 'load', 'get_audio_driver', 'AudioPlayer', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
 def load(filename: str, file: BinaryIO | None = None,
@@ -89,7 +89,7 @@ _add_default_codecs()
 
 
 __all__ = [
-    'Player', 
+    'AudioPlayer',
     'PlayerGroup', 
     'Source', 
     'StaticSource', 

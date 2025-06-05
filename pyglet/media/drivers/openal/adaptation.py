@@ -9,7 +9,7 @@ from pyglet.media.player_worker_thread import PlayerWorkerThread
 from pyglet.util import debug_print
 
 if TYPE_CHECKING:
-    from pyglet.media import Source, Player
+    from pyglet.media import Source, AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -28,7 +28,7 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
-    def create_audio_player(self, source: 'Source', player: 'Player') -> 'OpenALAudioPlayer':
+    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'OpenALAudioPlayer':
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)
 
@@ -91,7 +91,7 @@ class OpenALListener(AbstractListener):
 
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'Player') -> None:
+    def __init__(self, driver: 'OpenALDriver', source: 'Source', player: 'AudioPlayer') -> None:
         super().__init__(source, player)
         self.driver = driver
         self.alsource = driver.context.create_source()

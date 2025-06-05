@@ -362,7 +362,7 @@ class PlayerWindow(pyglet.window.Window):
 def main(target, dbg_file, debug):
     set_logging_parameters(target, dbg_file, debug)
 
-    player = pyglet.media.Player()
+    player = pyglet.media.AudioPlayer()
     window = PlayerWindow(player)
 
     player.queue(pyglet.media.load(filename) for filename in sys.argv[1:])
