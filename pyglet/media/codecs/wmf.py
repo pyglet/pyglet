@@ -542,8 +542,13 @@ class WMFSource(Source):
             source_subtype_guid = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
             source_sample_size = c_uint32()
             source_channel_count = c_uint32()
+
             imfmedia.GetGUID(MF_MT_SUBTYPE, byref(source_subtype_guid))
-            imfmedia.GetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, byref(source_sample_size))
+            try:
+                # Some formats such as mp3 do not report this value
+                imfmedia.GetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, byref(source_sample_size))
+            except OSError:
+                source_sample_size.value = 0
             imfmedia.GetUINT32(MF_MT_AUDIO_NUM_CHANNELS, byref(source_channel_count))
 
             if (
@@ -554,15 +559,14 @@ class WMFSource(Source):
                 assert _debug(f'WMFAudioDecoder: Found compatible Integer PCM Audio: {source_subtype_guid}')
             else:
                 assert _debug(f'WMFAudioDecoder: Found incompatible Audio: {source_subtype_guid}, '
-                              f'sample size={source_sample_size.value}, channel count={source_channel_count.value}')
+                              f'sample size={source_sample_size.value}, channel count={source_channel_count.value}.'
+                              f'Attempting to decode/resample.')
                 # If audio is compressed or incompatible, attempt to decompress or resample it
                 # to standard 16bit integer PCM
-                channel_count = c_uint32()
                 samples_per_sec = c_uint32()
-                imfmedia.GetUINT32(MF_MT_AUDIO_NUM_CHANNELS, byref(channel_count))
                 imfmedia.GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, byref(samples_per_sec))
 
-                channels_out = min(2, channel_count.value)
+                channels_out = min(2, source_channel_count.value)
 
                 mf_mediatype = IMFMediaType()
                 MFCreateMediaType(byref(mf_mediatype))
