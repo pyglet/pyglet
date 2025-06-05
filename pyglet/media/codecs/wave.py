@@ -25,6 +25,9 @@ class WaveSource(StreamingSource):
 
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
+        if nchannels not in (1, 2):
+            raise WAVEDecodeException(f"incompatible channel count {nchannels}")
+
         if sampwidth not in (1, 2):
             raise WAVEDecodeException(f"incompatible sample width {sampwidth}")
 
