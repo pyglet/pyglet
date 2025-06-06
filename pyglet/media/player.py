@@ -515,10 +515,14 @@ class VideoPlayer(AudioPlayer):
 
         self._context = pyglet.graphics.api.core.current_context
 
-        # # Check if source is FFmpeg instead?
-        # from pyglet.media import have_ffmpeg
-        # if not have_ffmpeg():
-        #     raise MediaException("VideoPlayer requires FFmpeg to be installed.")
+        self._check_ffmpeg_availability()
+
+    @staticmethod
+    def _check_ffmpeg_availability() -> None:
+        # Check if a source is FFmpeg instead?
+        from pyglet.media import have_ffmpeg
+        if not have_ffmpeg():
+            raise MediaException("VideoPlayer requires FFmpeg to be installed.")
 
     @property
     def position(self) -> tuple[int, int]:

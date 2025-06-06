@@ -9,6 +9,10 @@ class TestVideoPlayer(VideoPlayer):
     def _create_sprite(self) -> None:
         pass
 
+    @staticmethod
+    def _check_ffmpeg_availability() -> None:
+        pass
+
 
 class PlayerTestCase(unittest.TestCase):
     # Default values to use
