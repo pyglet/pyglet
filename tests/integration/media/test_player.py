@@ -7,18 +7,18 @@ import pyglet
 _debug = False
 pyglet.options.debug_media = _debug
 
-from pyglet.media import Player
+from pyglet.media import AudioPlayer
 from pyglet.media.synthesis import Silence
 from .mock_player import MockPlayer
 
 
-class PlayerTest(MockPlayer, Player):
+class AudioPlayerTest(MockPlayer, AudioPlayer):
     pass
 
 
 @pytest.fixture
 def player(event_loop):
-    return PlayerTest(event_loop)
+    return AudioPlayerTest(event_loop)
 
 
 class SilentTestSource(Silence):

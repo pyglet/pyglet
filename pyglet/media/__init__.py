@@ -3,12 +3,12 @@
 pyglet can play WAV files, and if FFmpeg is installed, many other audio and
 video formats.
 
-Playback is handled by the :class:`.Player` class, which reads raw data from
+Playback is handled by the :class:`pyglet.media.player.AudioPlayer` class, which reads raw data from
 :class:`Source` objects and provides methods for pausing, seeking, adjusting
-the volume, and so on. The :class:`.Player` class implements the best
+the volume, and so on. The :class:`pyglet.media.player.AudioPlayer` class implements the best
 available audio device. ::
 
-    player = Player()
+    player = AudioPlayer()
 
 A :class:`Source` is used to decode arbitrary audio and video files. It is
 associated with a single player by "queueing" it::
@@ -16,7 +16,7 @@ associated with a single player by "queueing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the :class:`.Player` to control playback.
+Use the :class:`pyglet.media.player.AudioPlayer` to control playback.
 
 If the source contains video, the :py:meth:`Source.video_format` attribute
 will be non-None, and the :py:attr:`Player.texture` attribute will contain the
@@ -45,7 +45,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, BinaryIO
 
 from .drivers import get_audio_driver
-from .player import Player, PlayerGroup
+from .player import AudioPlayer, VideoPlayer, PlayerGroup
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs
 from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffmpeg
@@ -54,8 +54,6 @@ from . import synthesis
 
 if TYPE_CHECKING:
     from .codecs import MediaDecoder
-
-__all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
 def load(filename: str, file: BinaryIO | None = None,
@@ -87,11 +85,12 @@ def load(filename: str, file: BinaryIO | None = None,
 
 _add_default_codecs()
 
-
 __all__ = [
-    'Player', 
+    'AudioPlayer',
+    'VideoPlayer',
     'PlayerGroup', 
-    'Source', 
+    'Source',
+    'SourceGroup',
     'StaticSource', 
     'StreamingSource',
     'load', 

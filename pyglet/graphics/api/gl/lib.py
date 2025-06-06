@@ -68,7 +68,7 @@ def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
             name = repr(func)
         if _debug_api_trace_args:
             trace_args = ', '.join([repr(arg) for arg in arguments])
-            print(f'{name}({trace_args})')
+            print(f'{name}({trace_args[:255]})')
         else:
             print(name)
 

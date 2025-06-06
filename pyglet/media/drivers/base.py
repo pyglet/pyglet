@@ -409,7 +409,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         pass
 
     def set_position(self, position):
-        """See :py:attr:`~pyglet.media.Player.position`."""
+        """See :py:attr:`~pyglet.media.AudioPlayer.position`."""
         pass
 
     def set_min_distance(self, min_distance):
@@ -421,7 +421,7 @@ class AbstractAudioPlayer(metaclass=ABCMeta):
         pass
 
     def set_pitch(self, pitch):
-        """See :py:attr:`~pyglet.media.Player.pitch`."""
+        """See :py:attr:`~pyglet.media.AudioPlayer.pitch`."""
         pass
 
     def set_cone_orientation(self, cone_orientation):
@@ -459,7 +459,7 @@ class MediaEvent:
     """Representation of a media event.
 
     These events are used internally by some audio driver implementation to
-    communicate events to the :class:`~pyglet.media.player.Player`.
+    communicate events to the :class:`~pyglet.media.player.AudioPlayer`.
     One example is the ``on_eos`` event.
 
     Args:
