@@ -20,7 +20,7 @@ if not fmt:
     print('No video track in this source.')
     sys.exit(1)
 
-player = pyglet.media.AudioPlayer()
+player = pyglet.media.VideoPlayer()
 player.queue(source)
 player.play()
 
@@ -29,7 +29,7 @@ window = pyglet.window.Window(width=fmt.width, height=fmt.height)
 
 @window.event
 def on_draw():
-    player.texture.blit(0, 0)
+    player.draw()
 
 
 pyglet.app.run()

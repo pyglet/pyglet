@@ -6,12 +6,12 @@ from collections import deque
 from typing import TYPE_CHECKING, Generator, Iterable
 
 import pyglet
-from pyglet.media import buffered_logger as bl
 from pyglet.media.codecs.base import Source, SourceGroup
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.exceptions import MediaException
+from pyglet.util import debug_print
 
-_debug = pyglet.options.debug_media
+_debug = debug_print('debug_media')
 
 if TYPE_CHECKING:
     from pyglet.graphics import Texture
@@ -112,8 +112,6 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         self._source = None
         self._playlists = deque()
         self._audio_player = None
-
-        self._context = pyglet.graphics.api.core.current_context
 
         # Desired play state (not an indication of actual state).
         self._playing = False
@@ -436,8 +434,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
 
     def on_player_eos(self):
         """The player ran out of sources. The playlist is empty."""
-        if _debug:
-            print('Player.on_player_eos')
+        assert _debug('Player.on_player_eos')
 
     def on_eos(self):
         """The current source ran out of data.
@@ -448,8 +445,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         will start to play again until :meth:`next_source` is called or
         :attr:`.loop` is set to ``False``.
         """
-        if _debug:
-            print('Player.on_eos')
+        assert _debug('Player.on_eos')
 
         if self.loop:
             was_playing = self._playing
@@ -506,13 +502,56 @@ def _one_item_playlist(source: Source) -> Generator:
 
 class VideoPlayer(AudioPlayer):
     """High-level sound and video player."""
-    def __init__(self) -> None:
+    _sprite: pyglet.sprite.Sprite | None
+
+    def __init__(self, batch: pyglet.graphics.Batch | None = None) -> None:
+        super().__init__()
+        self._texture = None
+        self._sprite = None
+        self._position = (0, 0)
+        self._width = 0
+        self._height = 0
+        self.batch = batch or pyglet.graphics.get_default_batch()
+
+        self._context = pyglet.graphics.api.core.current_context
+
+        # Check if source is FFmpeg instead?
         from pyglet.media import have_ffmpeg
         if not have_ffmpeg():
             raise MediaException("VideoPlayer requires FFmpeg to be installed.")
 
-        super().__init__()
-        self._texture = None
+    @property
+    def position(self) -> tuple[int, int]:
+        """Get the position of the video player."""
+        return self._position
+
+    @position.setter
+    def position(self, value: tuple[int, int]) -> None:
+        self._position = value
+        if self._sprite:
+            self._sprite.position = (*value, 0)
+
+    @property
+    def width(self) -> int:
+        """Get the width of the video player."""
+        return self._width
+
+    @width.setter
+    def width(self, width: int) -> None:
+        self._width = width
+        if self._sprite:
+            self._sprite.width = width
+
+    @property
+    def height(self) -> int:
+        """Get the height of the video player."""
+        return self._height
+
+    @height.setter
+    def height(self, height: int) -> None:
+        self._height = height
+        if self._sprite:
+            self._sprite.height = height
 
     def _seek_player_resources(self) -> None:
         super()._seek_player_resources()
@@ -523,14 +562,31 @@ class VideoPlayer(AudioPlayer):
     def _check_resource_reuse(self, old_source: Source) -> None:
         super()._check_resource_reuse(old_source)
         if self._source.video_format != old_source.video_format:
-            self._texture = None
             pyglet.clock.unschedule(self.update_texture)
+            self._texture = None
+            self._sprite = None
 
     def _create_player_resources(self, starting: bool) -> None:
         super()._create_player_resources(starting)
         if self._source.video_format is not None:
             if self._texture is None:
-                self._create_texture()
+                with self._context:
+                    self._create_texture()
+                    self._create_sprite()
+
+    def _create_texture(self) -> pyglet.graphics.Texture:
+        video_format = self.source.video_format
+        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
+
+        # Flip coordinates so output is correct orientation.
+        self._texture = self._texture.get_transform(flip_y=True)
+        # After flipping, the anchor_y is set to the top of the image. We want to keep it at the bottom.
+        self._texture.anchor_y = 0
+        return self._texture
+
+    def _create_sprite(self) -> None:
+        if not self._sprite:
+            self._sprite = pyglet.sprite.Sprite(self._texture, x=self._position[0], y=self._position[1], batch=self.batch)
 
     def _start_player_resources(self) -> None:
         super()._start_player_resources()
@@ -540,6 +596,11 @@ class VideoPlayer(AudioPlayer):
     def _stop_player_resources(self):
         super()._stop_player_resources()
         pyglet.clock.unschedule(self.update_texture)
+
+    def draw(self):
+        assert pyglet.graphics.api.core.current_context == self._context, "Drawing in the wrong context."
+        if self._source:
+            self.batch.draw()
 
     def update_texture(self, dt: float | None = None) -> None:
         """Manually update the texture from the current source.
@@ -575,8 +636,7 @@ class VideoPlayer(AudioPlayer):
             with self._context:
                 if self._texture is None:
                     self._create_texture()
-                else:
-                    self._texture.bind()
+                self._texture.bind()
                 self._texture.upload(image, 0, 0, 0)
 
         ts = source.get_next_video_timestamp()
@@ -592,16 +652,6 @@ class VideoPlayer(AudioPlayer):
         if self._audio_player is None:
             self.dispatch_event("on_eos")
 
-    def _create_texture(self) -> pyglet.graphics.Texture:
-        video_format = self.source.video_format
-        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
-
-        # Flip coordinates so output is correct orientation.
-        self._texture = self._texture.get_transform(flip_y=True)
-        # After flipping, the anchor_y is set to the top of the image. We want to keep it at the bottom.
-        self._texture.anchor_y = 0
-        return self._texture
-
     @property
     def texture(self) -> Texture | None:
         """Get the texture for the current video frame, if any.
@@ -614,15 +664,17 @@ class VideoPlayer(AudioPlayer):
 
     def seek_next_frame(self) -> None:
         """Step forwards one video frame in the current source."""
-        time = self.source.get_next_video_timestamp()
-        if time is None:
+        ts = self.source.get_next_video_timestamp()
+        if ts is None:
             return
-        self.seek(time)
+        self.seek(ts)
 
     def delete(self) -> None:
         super().delete()
         if self._texture is not None:
             self._texture = None
+        if self._sprite is not None:
+            self._sprite = None
 
 
 class PlayerGroup:
