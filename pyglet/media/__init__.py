@@ -3,12 +3,12 @@
 pyglet can play WAV files, and if FFmpeg is installed, many other audio and
 video formats.
 
-Playback is handled by the :class:`.Player` class, which reads raw data from
+Playback is handled by the :class:`pyglet.media.player.AudioPlayer` class, which reads raw data from
 :class:`Source` objects and provides methods for pausing, seeking, adjusting
-the volume, and so on. The :class:`.Player` class implements the best
+the volume, and so on. The :class:`pyglet.media.player.AudioPlayer` class implements the best
 available audio device. ::
 
-    player = Player()
+    player = AudioPlayer()
 
 A :class:`Source` is used to decode arbitrary audio and video files. It is
 associated with a single player by "queueing" it::
@@ -16,7 +16,7 @@ associated with a single player by "queueing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the :class:`.Player` to control playback.
+Use the :class:`pyglet.media.player.AudioPlayer` to control playback.
 
 If the source contains video, the :py:meth:`Source.video_format` attribute
 will be non-None, and the :py:attr:`Player.texture` attribute will contain the
