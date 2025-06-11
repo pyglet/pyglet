@@ -126,7 +126,7 @@ class FFmpegException(MediaFormatException):
 def ffmpeg_get_audio_buffer_size(audio_format):
     """Return the audio buffer size
 
-    Buffer size can accomodate 1 sec of audio data.
+    Buffer size can accommodate 1 sec of audio data.
     """
     return audio_format.bytes_per_second + FF_INPUT_BUFFER_PADDING_SIZE
 
@@ -456,7 +456,7 @@ def ffmpeg_seek_file(file: FFmpegFile, timestamp: float) -> None:
         buf = create_string_buffer(128)
         avutil.av_strerror(result, buf, 128)
         descr = buf.value
-        raise FFmpegException('Error occured while seeking. ' +
+        raise FFmpegException('Error occurred while seeking. ' +
                               descr.decode())
 
 
@@ -660,7 +660,7 @@ class FFmpegSource(StreamingSource):
         self._events = []  # They don't seem to be used!
 
         self.audioq = deque()
-        # Make queue big enough to accomodate 1.2 sec?
+        # Make queue big enough to accommodate 1.2 sec?
         self._max_len_audioq = self.MAX_QUEUE_SIZE  # Need to figure out a correct amount
         if self.audio_format:
              # Buffer 1 sec worth of audio

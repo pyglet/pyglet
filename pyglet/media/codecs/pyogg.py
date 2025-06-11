@@ -287,7 +287,7 @@ class MemoryFLACFileStream(UnclosedFLACFileStream):
 
         metadata_status = pyogg.flac.FLAC__stream_decoder_process_until_end_of_metadata(self.decoder)
         if not metadata_status:  # error
-            raise DecodeException("An error occured when trying to decode the metadata of {}".format(path))
+            raise DecodeException("An error occurred when trying to decode the metadata of {}".format(path))
 
     def read_callback(self, decoder, buffer, size, data):
         chunk = size.contents.value

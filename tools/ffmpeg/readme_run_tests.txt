@@ -47,11 +47,11 @@ Each sample will be played and the media_player state along the play will be rec
 The raw info collected would be in <samples_dir>\testun_00\dbg (or _01, _02 ... for subsequent runs)
 This is the info a developer may ask when troubleshooting an issue, it also includes info about the OS, python version, pyglet version.
 
-Additionally, a preliminary results analysis is writen to <samples_dir>/testrun_00/reports
+Additionally, a preliminary results analysis is written to <samples_dir>/testrun_00/reports
 
 For more detail and aptions look at the manual.
 
-Windows note: In one machine has been observed that for each sample run it pop-ups an OS Message window with "C:\Windows\perf.dll not designed to run in Windows or it contains an error ..."; pressing the ok button will continue without noticeable problems. The same machine was running ok at some time; after a bunch of non-pyglet software updates this problem appeared. I will need some time to investigate this, but other than the anoying button click it seems to not cause problems.
+Windows note: In one machine has been observed that for each sample run it pop-ups an OS Message window with "C:\Windows\perf.dll not designed to run in Windows or it contains an error ..."; pressing the ok button will continue without noticeable problems. The same machine was running ok at some time; after a bunch of non-pyglet software updates this problem appeared. I will need some time to investigate this, but other than the annoying button click it seems to not cause problems.
 
 Linux note: In one machine with Ubuntu 17.04 has been observed that for some testruns it pop-ups an OS Message window with "python3.5 crashed with SIGABRT in pa_mainloop_dispatch()", pressing the ok button testing continues at next sample.
 Not always the same sample. Looks as a race condition, probably involving the code that sets a callback, because repeatdly playing a sample with media_player the console will eventually show a traceback with "Assertion 'c->callback' failed at pulsecore/socket-client.c:126, function do_call(). Aborting". The test_suite will retry to play crashed samples upto 5 times to get a clean debug reporting.

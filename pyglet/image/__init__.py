@@ -556,7 +556,7 @@ class ImageData(AbstractImage):
         Note:
              Conversion to another format is done on the CPU, and can be
              somewhat costly for larger images. Consider performing conversion
-             at load time for framerate sensitive applictions.
+             at load time for framerate sensitive applications.
         """
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
@@ -1201,7 +1201,7 @@ class Texture(AbstractImage):
                            layer: int = 0, access: int = GL_READ_WRITE, fmt: int = GL_RGBA32F):
         """Bind as an ImageTexture for use with a :py:class:`~pyglet.shader.ComputeShaderProgram`.
 
-        .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extention is required.
+        .. note:: OpenGL 4.3, or 4.2 with the GL_ARB_compute_shader extension is required.
         """
         glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
@@ -1211,7 +1211,7 @@ class Texture(AbstractImage):
                fmt: int = GL_RGBA, blank_data: bool = True) -> Texture:
         """Create a Texture
 
-        Create a Texture with the specified dimentions, target and format.
+        Create a Texture with the specified dimensions, target and format.
         On return, the texture will be bound.
 
         Args:

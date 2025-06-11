@@ -115,7 +115,7 @@ class Options:
     that utilize COM calls. Only applies to the Windows platform."""
 
     debug_win32: bool = False
-    """If ``True``, prints error messages related to Windows library calls. Usually get's information from
+    """If ``True``, prints error messages related to Windows library calls. Usually gets information from
     ``Kernel32.GetLastError``. This information is output to a file called ``debug_win32.log``."""
 
     debug_input: bool = False

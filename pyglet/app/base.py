@@ -199,7 +199,7 @@ class EventLoop(event.EventDispatcher):
         if self._interval is None:
             self._redraw_windows(dt)
 
-        # Update timout
+        # Update timeout
         timeout = self.clock.get_sleep_time(True)
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
@@ -231,7 +231,7 @@ class EventLoop(event.EventDispatcher):
         dt = self.clock.update_time()
         self.clock.call_scheduled_functions(dt)
 
-        # Update timout
+        # Update timeout
         return self.clock.get_sleep_time(True)
 
     @property

@@ -653,7 +653,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """Close the window.
 
         After closing the window, the GL context will be invalid.  The
-        window instance cannot be reused once closed. To re-use windows,
+        window instance cannot be reused once closed. To reuse windows,
         see :py:meth:`.set_visible` instead.
 
         The :py:meth:`pyglet.app.EventLoop.on_window_close` event is

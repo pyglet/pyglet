@@ -21,7 +21,7 @@ Demo:
 
 Use arrow keys to move the camera around the scene.
 Note that everything in the window can be added to the same batch, as a group is used to
-seperate things in world space from things in "UI" space.
+separate things in world space from things in "UI" space.
 """
 
 import pyglet

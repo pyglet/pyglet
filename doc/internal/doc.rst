@@ -26,7 +26,7 @@ folder are also defined in the index.rst, in order to includes them in the build
 
 API documentation
 -----------------
-The API documentation is generated direclty from the source code docstrings by `autodoc`_,
+The API documentation is generated directly from the source code docstrings by `autodoc`_,
 a plugin extension that is included with Sphinx. The generation itself is mostly automatic,
 but declaration files are necessary to instruct Sphinx how and which modules and classes
 should be included. Look through the existing files at ``pyglet/doc/modules/`` to get an
@@ -88,7 +88,7 @@ example
             """Constructor description
 
             Here is where you can describe how to make an instance of the
-            class. If any of the arguments need further explaination, that
+            class. If any of the arguments need further explanation, that
             detail can be added as necessary. For example:
             You must provide a name and a size, etc. etc.
 

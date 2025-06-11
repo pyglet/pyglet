@@ -24,7 +24,7 @@ class Frame:
 
         Args:
             window:
-                The SpatialHash will recieve events from this Window.
+                The SpatialHash will receive events from this Window.
                 Appropriate events will be passed on to all added Widgets.
             enable:
                 Whether to enable frame.
@@ -168,7 +168,7 @@ class MovableFrame(Frame):
 
         Args:
             window:
-                The SpatialHash will recieve events from this Window.
+                The SpatialHash will receive events from this Window.
                 Appropriate events will be passed on to all added Widgets.
             enable:
                 Whether to enable frame.

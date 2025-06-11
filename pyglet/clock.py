@@ -303,7 +303,7 @@ class Clock:
 
         The result is the average of a sliding window of the last "n" updates,
         where "n" is some number designed to cover approximately 1 second.
-        This is the clock frequence, **not** the Window redraw rate (fps).
+        This is the clock frequency, **not** the Window redraw rate (fps).
         """
         if not self.cumulative_time:
             return 0

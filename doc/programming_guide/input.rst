@@ -14,7 +14,7 @@ digital and/or analog inputs. For most types of games, the game controller abstr
 recommended.
 
 For advanced use cases, it is also possible to access the low-level input devices directly.
-This can be useful if you need direct accesss to the raw inputs, without normalization.
+This can be useful if you need direct access to the raw inputs, without normalization.
 For most application and games this is not required.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying

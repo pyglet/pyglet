@@ -1,7 +1,7 @@
 """OpenGL Framebuffer abstractions.
 
 This module provides classes for working with Framebuffers & Renderbuffers
-and their attachments. Attachements can be pyglet Texture objects, which allows
+and their attachments. Attachments can be pyglet Texture objects, which allows
 easily accessing their data, saving to disk, etc. Renderbuffers can be used
 if you don't need to access their data at a later time. For example::
 
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 def get_max_color_attachments() -> int:
-    """Get the maximum allow Framebuffer Color attachements."""
+    """Get the maximum allow Framebuffer Color attachments."""
     number = GLint()
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
     return number.value
@@ -144,7 +144,7 @@ class Framebuffer:
 
         Unbind should be called to prevent further rendering
         to the framebuffer, or if you wish to access data
-        from its Texture atachments.
+        from its Texture attachments.
         """
         glBindFramebuffer(self.target, 0)
 

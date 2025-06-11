@@ -391,7 +391,7 @@ def set_logging_parameters(target_file, dbg_file, debug):
     bl.logger = bl.BufferedLogger(dbg_file)
     from pyglet.media.instrumentation import mp_events
     # allow to detect crashes by prewriting a crash file, if no crash
-    # it will be overwrited by the captured data
+    # it will be overwritten by the captured data
     sample = os.path.basename(target_file)
     bl.logger.log("version", mp_events["version"])
     bl.logger.log("crash", sample)
