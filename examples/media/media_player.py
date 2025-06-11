@@ -1,80 +1,176 @@
+"""Plays the audio / video files listed as arguments.
+
+Key Controls Available:
+    Space - Play/Pause
+    ESC - Close
+    Left - Seek to beginning of source
+    Right - Next Source
 """
-Usage
+from __future__ import annotations
 
-    media_player.py [options] <filename> [<filename> ...]
-
-Plays the audio / video files listed as arguments, optionally
-collecting debug info
-
-Options
-    --debug : saves sequence of internal state as a binary *.dbg
-    --outfile : filename to store the debug info, defaults to filename.dbg
-
-The raw data captured in the .dbg can be rendered as human readable
-using the script report.py
-"""
-import os
-import sys
+import warnings
 import weakref
 
-from pyglet.graphics.api.gl import (
-    glEnable,
-    glBlendFunc,
-    GL_BLEND,
-    GL_LINE_LOOP,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-)
+import os as _os
+from functools import partial
+
 import pyglet
-from pyglet.window import key
 
 pyglet.options.debug_media = False
-# pyglet.options.audio = ('openal', 'pulse', 'silent')
-from pyglet.media import buffered_logger as bl
+
+from pyglet.media.exceptions import MediaException
+
+from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
+
+from pyglet.event import EventDispatcher as _EventDispatcher
+from pyglet.window import key
 
 
-def draw_rect(x, y, width, height, color=(1, 1, 1, 1)):
-    pyglet.graphics.draw(
-        4,
-        GL_LINE_LOOP,
-        position=('f', (x, y, 0,
-                        x + width, y, 0,
-                        x + width, y + height, 0,
-                        x, y + height, 0,
-                        ),
-                  ),
-        colors=('f', color * 4),
-    )
+
+class _Dialog(_EventDispatcher):
+    """Dialog base class
+
+    This base class sets up a ProcessPoolExecutor with a single
+    background Process. This allows the Dialog to display in
+    the background without blocking or interfering with the main
+    application Process. This also limits to a single open Dialog
+    at a time.
+    """
+
+    executor = _ProcessPoolExecutor(max_workers=1)
+    _dialog = None
+
+    @staticmethod
+    def _open_dialog(dialog):
+        import tkinter as tk
+        root = tk.Tk()
+        root.withdraw()
+        return dialog.show()
+
+    def open(self):
+        future = self.executor.submit(self._open_dialog, self._dialog)
+        future.add_done_callback(self._dispatch_event)
+
+    def _dispatch_event(self, future):
+        raise NotImplementedError
+
+
+class FileOpenDialog(_Dialog):
+    def __init__(self, title="Open File", initial_dir=_os.path.curdir, filetypes=None, multiple=False):
+        """
+        :Parameters:
+            `title` : str
+                The Dialog Window name. Defaults to "Open File".
+            `initial_dir` : str
+                The directory to start in.
+            `filetypes` : list of tuple
+                An optional list of tuples containing (name, extension) to filter by.
+                If none are given, all files will be shown and selectable.
+                For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
+            `multiple` : bool
+                True if multiple files can be selected. Defaults to False.
+        """
+        from tkinter import filedialog
+        self._dialog = filedialog.Open(title=title,
+                                       initialdir=initial_dir,
+                                       filetypes=filetypes or (),
+                                       multiple=multiple)
+
+    def _dispatch_event(self, future):
+        pyglet.app.platform_event_loop.post_event(self, "on_dialog_open", future.result())
+
+    def on_dialog_open(self, filenames):
+        """Event for filename choices"""
+
+
+FileOpenDialog.register_event_type('on_dialog_open')
 
 
 class Control(pyglet.event.EventDispatcher):
-    x = y = 0
-    width = height = 10
 
     def __init__(self, parent):
         super().__init__()
+        self._x = 0
+        self._y = 0
+        self._width = 10
+        self._height = 10
+        self.batch = parent.batch
         self.parent = weakref.proxy(parent)
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self._update_control()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self._update_control()
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+        self._update_control()
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        self._update_control()
+
+    def _update_control(self):
+        raise NotImplementedError()
 
     def hit_test(self, x, y):
         return (self.x < x < self.x + self.width and
                 self.y < y < self.y + self.height)
 
     def capture_events(self):
-        self.parent.push_handlers(self)
+        self.parent.window.push_handlers(self)
 
     def release_events(self):
-        self.parent.remove_handlers(self)
+        self.parent.window.remove_handlers(self)
 
 
 class Button(Control):
-    charged = False
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._charged = False
+        self.rect = pyglet.shapes.Rectangle(self.x, self.y, self.width, self.height, color=(255, 255, 255, 255), batch=self.batch)
 
-    def draw(self):
-        if self.charged:
-            draw_rect(self.x, self.y, self.width, self.height)
+    @property
+    def charged(self) -> bool:
+        return self._charged
+
+    @charged.setter
+    def charged(self, value: bool) -> None:
+        self._charged = value
+        self._update_control()
+
+    def _update_control(self):
+        if self._charged is True:
+            self.rect.color = (255, 255, 255)
         else:
-            draw_rect(self.x, self.y, self.width, self.height, color=(1, 0, 0, 1))
-        self.draw_label()
+            self.rect.color = (128, 128, 128)
+
+        self.rect.width = self.width
+        self.rect.height = self.height
+        self.rect.position = (self.x, self.y)
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.capture_events()
@@ -96,19 +192,19 @@ Button.register_event_type('on_press')
 class TextButton(Button):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._text = pyglet.text.Label('', anchor_x='center', anchor_y='center')
+        self._text = pyglet.text.Label('.', anchor_x='center', anchor_y='center', batch=self.batch)
 
-    def draw_label(self):
-        self._text.x = self.x + self.width / 2
-        self._text.y = self.y + self.height / 2
-        self._text.draw()
+    def _update_control(self) -> None:
+        super()._update_control()
+        self._text.position = (self.x + self.width // 2, self.y + self.height // 2, 0)
 
-    def set_text(self, text):
+    @property
+    def text(self) -> str:
+        return self._text.text
+
+    @text.setter
+    def text(self, text: str) -> None:
         self._text.text = text
-
-    text = property(lambda self: self._text.text,
-                    set_text)
-
 
 class Slider(Control):
     THUMB_WIDTH = 6
@@ -116,17 +212,41 @@ class Slider(Control):
     GROOVE_HEIGHT = 2
     RESPONSIVNESS = 0.3
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent):
+        super().__init__(parent)
         self.seek_value = None
+        self.min = 0
+        self.max = 1
+        self.value = 0.0
+        self.groove_rect = pyglet.shapes.Rectangle(self.x, self.y, self.width, self.height, color=(255, 0, 0, 255), batch=self.batch)
+        self.thumb_rect = pyglet.shapes.Rectangle(self.x, self.y, self.width, self.height, color=(255, 0, 0, 255), batch=self.batch)
 
-    def draw(self):
+    def update_timestamp(self, value: float):
+        self.value = value
+        self._update_rects()
+
+    def _update_control(self):
+        self._update_rects()
+
+    def _get_groove(self):
         center_y = self.y + self.height / 2
-        draw_rect(self.x, center_y - self.GROOVE_HEIGHT / 2,
-                  self.width, self.GROOVE_HEIGHT)
-        pos = self.x + self.value * self.width / (self.max - self.min)
-        draw_rect(pos - self.THUMB_WIDTH / 2, center_y - self.THUMB_HEIGHT / 2,
-                  self.THUMB_WIDTH, self.THUMB_HEIGHT)
+        return self.x, center_y - self.GROOVE_HEIGHT // 2, self.width, self.GROOVE_HEIGHT
+
+    def _get_thumb(self):
+        center_y = self.y + self.height // 2
+        pos = self.x + self.value * self.width // (self.max - self.min)
+        return pos - self.THUMB_WIDTH // 2, center_y - self.THUMB_HEIGHT // 2, self.THUMB_WIDTH, self.THUMB_HEIGHT
+
+    def _update_rects(self):
+        gx, gy, gw, gh = self._get_groove()
+        self.groove_rect.position = (gx, gy)
+        self.groove_rect.width = gw
+        self.groove_rect.height = gh
+
+        tx, ty, tw, th = self._get_thumb()
+        self.thumb_rect.position = (tx, ty)
+        self.thumb_rect.width = tw
+        self.thumb_rect.height = th
 
     def coordinate_to_value(self, x):
         value = float(x - self.x) / self.width * (self.max - self.min) + self.min
@@ -170,66 +290,104 @@ Slider.register_event_type('on_end_scroll')
 Slider.register_event_type('on_change')
 
 
-class PlayerWindow(pyglet.window.Window):
-    GUI_WIDTH = 400
+class MediaPlayer:
+    GUI_WIDTH = 500
     GUI_HEIGHT = 40
     GUI_PADDING = 4
     GUI_BUTTON_HEIGHT = 16
 
-    def __init__(self, player):
-        super().__init__(caption='Media Player',
-                                           visible=False,
-                                           resizable=True)
-        # We only keep a weakref to player as we are about to push ourself
-        # as a handler which would then create a circular reference between
-        # player and window.
-        self.player = weakref.proxy(player)
-        self._player_playing = False
+    def __init__(self, window: pyglet.window.Window):
+        self.window = window
+
+        self.batch = pyglet.graphics.Batch()
+
+        try:
+            self.player = pyglet.media.VideoPlayer(self.batch)
+            print("FFmpeg detected, video playback enabled.")
+        except MediaException:
+            warnings.warn('Could not create a video player, ensure FFmpeg is installed and detected.')
+            self.player = pyglet.media.AudioPlayer()
+
+        # Register this class to get callbacks from player.
         self.player.push_handlers(self)
+        self._player_playing = False
 
         self.slider = Slider(self)
         self.slider.push_handlers(self)
         self.slider.x = self.GUI_PADDING
         self.slider.y = self.GUI_PADDING * 2 + self.GUI_BUTTON_HEIGHT
 
+        self.open_button = TextButton(self)
+        self.open_button.text = 'Open Media'
+        self.open_button.x = self.GUI_PADDING
+        self.open_button.y = self.GUI_PADDING
+        self.open_button.height = self.GUI_BUTTON_HEIGHT
+        self.open_button.width = 100
+
+        audio_types = [("Common Audio Files", "*.wav *.mp3")]
+        additional_types = []
+        if isinstance(self.player, pyglet.media.VideoPlayer):
+            audio_types = [("Audio Files", "*.wav *.mp3 *.flv *.mov .*ogg")]
+            additional_types.append(("Video/Container Files", "*.mp4 *.mkv *.avi"))
+
+        file_types = audio_types + additional_types + [("All Files", "*.*")]
+        open_dialog = FileOpenDialog(filetypes=file_types, multiple=True)
+
+        @open_dialog.event
+        def on_dialog_open(filenames):
+            self.add_tracks(filenames)
+
+        self.open_button.on_press = lambda: open_dialog.open()
+
         self.play_pause_button = TextButton(self)
-        self.play_pause_button.x = self.GUI_PADDING
+        self.play_pause_button.x = self.GUI_PADDING + self.open_button.x + self.open_button.width
         self.play_pause_button.y = self.GUI_PADDING
         self.play_pause_button.height = self.GUI_BUTTON_HEIGHT
         self.play_pause_button.width = 45
         self.play_pause_button.on_press = self.on_play_pause
 
         self.window_button = TextButton(self)
-        self.window_button.x = self.play_pause_button.x + \
-                               self.play_pause_button.width + self.GUI_PADDING
+        self.window_button.x = self.play_pause_button.x + self.play_pause_button.width + self.GUI_PADDING
         self.window_button.y = self.GUI_PADDING
         self.window_button.height = self.GUI_BUTTON_HEIGHT
         self.window_button.width = 90
         self.window_button.text = 'Windowed'
-        self.window_button.on_press = lambda: self.set_fullscreen(False)
+        self.window_button.on_press = lambda: window.set_fullscreen(False)
 
         self.controls = [
+            self.open_button,
             self.slider,
             self.play_pause_button,
             self.window_button,
         ]
 
         x = self.window_button.x + self.window_button.width + self.GUI_PADDING
+
         i = 0
-        for screen in self.display.get_screens():
+        for screen in window.display.get_screens():
             screen_button = TextButton(self)
             screen_button.x = x
             screen_button.y = self.GUI_PADDING
             screen_button.height = self.GUI_BUTTON_HEIGHT
             screen_button.width = 80
             screen_button.text = f'Screen {i + 1}'
-            screen_button.on_press = lambda screen=screen: self.set_fullscreen(True, screen)
+            screen_button.on_press = partial(window.set_fullscreen, True, screen=screen)
             self.controls.append(screen_button)
             i += 1
             x += screen_button.width + self.GUI_PADDING
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    def play(self):
+        self.gui_update_source()
+        self.set_default_video_size()
+        self.player.play()
+
+    def add_tracks(self, filename_list: list[str]):
+        for filename in filename_list:
+            media = pyglet.media.load(filename)
+            self.player.queue(media)
+
+        self.gui_update_source()
+        self.set_default_video_size()
 
     def on_player_next_source(self):
         self.gui_update_state()
@@ -270,16 +428,17 @@ class PlayerWindow(pyglet.window.Window):
     def set_default_video_size(self):
         """Make the window size just big enough to show the current
         video and the GUI."""
+        if self.window.fullscreen:
+            self.window.set_fullscreen(False)
         width = self.GUI_WIDTH
         height = self.GUI_HEIGHT
         video_width, video_height = self.get_video_size()
         width = max(width, video_width)
         height += video_height
-        self.set_size(int(width), int(height))
+        self.window.set_size(int(width), int(height))
 
     def on_resize(self, width, height):
         """Position and size video image."""
-        super().on_resize(width, height)
         self.slider.width = width - self.GUI_PADDING * 2
 
         height -= self.GUI_HEIGHT
@@ -297,8 +456,13 @@ class PlayerWindow(pyglet.window.Window):
         else:
             self.video_height = height
             self.video_width = height * video_aspect
-        self.video_x = (width - self.video_width) / 2
-        self.video_y = (height - self.video_height) / 2 + self.GUI_HEIGHT
+
+        video_x = (width - self.video_width) / 2
+        video_y = (height - self.video_height) / 2 + self.GUI_HEIGHT
+
+        self.player.position = (video_x, video_y)
+        self.player.width = self.video_width
+        self.player.height = self.video_height
 
     def on_mouse_press(self, x, y, button, modifiers):
         for control in self.controls:
@@ -309,7 +473,7 @@ class PlayerWindow(pyglet.window.Window):
         if symbol == key.SPACE:
             self.on_play_pause()
         elif symbol == key.ESCAPE:
-            self.dispatch_event('on_close')
+            self.window.dispatch_event('on_close')
         elif symbol == key.LEFT:
             self.player.seek(0)
         elif symbol == key.RIGHT:
@@ -317,10 +481,10 @@ class PlayerWindow(pyglet.window.Window):
 
     def on_close(self):
         self.player.pause()
-        self.close()
+        self.window.close()
 
     def auto_close(self, dt):
-        self.close()
+        self.window.close()
 
     def on_play_pause(self):
         if self.player.playing:
@@ -332,20 +496,11 @@ class PlayerWindow(pyglet.window.Window):
         self.gui_update_state()
 
     def on_draw(self):
-        self.clear()
+        self.window.clear()
 
-        # Video
-        if self.player.source and self.player.source.video_format:
-            video_texture = self.player.texture
-            video_texture.blit(self.video_x,
-                               self.video_y,
-                               width=self.video_width,
-                               height=self.video_height)
+        self.slider.update_timestamp(self.player.time)
 
-        # GUI
-        self.slider.value = self.player.time
-        for control in self.controls:
-            control.draw()
+        self.batch.draw()
 
     def on_begin_scroll(self):
         self._player_playing = self.player.playing
@@ -359,74 +514,17 @@ class PlayerWindow(pyglet.window.Window):
             self.player.play()
 
 
-def main(target, dbg_file, debug):
-    set_logging_parameters(target, dbg_file, debug)
+def main():
+    window = pyglet.window.Window(caption="Media Player", resizable=True, visible=False)
 
-    player = pyglet.media.Player()
-    window = PlayerWindow(player)
+    media_player = MediaPlayer(window)
+    window.push_handlers(media_player)
 
-    player.queue(pyglet.media.load(filename) for filename in sys.argv[1:])
-
-    window.gui_update_source()
     window.set_visible(True)
-    window.set_default_video_size()
-
-    # this is an async call
-    player.play()
-    window.gui_update_state()
+    media_player.play()
 
     pyglet.app.run()
 
-
-def set_logging_parameters(target_file, dbg_file, debug):
-    if not debug:
-        bl.logger = None
-        return
-    if dbg_file is None:
-        dbg_file = target_file + ".dbg"
-    else:
-        dbg_dir = os.path.dirname(dbg_file)
-        if dbg_dir and not os.path.isdir(dbg_dir):
-            os.mkdir(dbg_dir)
-    bl.logger = bl.BufferedLogger(dbg_file)
-    from pyglet.media.instrumentation import mp_events
-    # allow to detect crashes by prewriting a crash file, if no crash
-    # it will be overwrited by the captured data
-    sample = os.path.basename(target_file)
-    bl.logger.log("version", mp_events["version"])
-    bl.logger.log("crash", sample)
-    bl.logger.save_log_entries_as_pickle()
-    bl.logger.clear()
-    # start the real capture data
-    bl.logger.log("version", mp_events["version"])
-    bl.logger.log("mp.im", sample)
-
-
-def usage():
-    print(__doc__)
-    sys.exit(1)
-
-
-def sysargs_to_mainargs():
-    """builds main args from sys.argv"""
-    if len(sys.argv) < 2:
-        usage()
-    debug = False
-    dbg_file = None
-    for i in range(2):
-        if sys.argv[1].startswith("--"):
-            a = sys.argv.pop(1)
-            if a.startswith("--debug"):
-                debug = True
-            elif a.startswith("--outfile="):
-                dbg_file = a[len("--outfile="):]
-            else:
-                print("Error unknown option:", a)
-                usage()
-    target_file = sys.argv[1]
-    return target_file, dbg_file, debug
-
-
 if __name__ == '__main__':
-    target_file, dbg_file, debug = sysargs_to_mainargs()
-    main(target_file, dbg_file, debug)
+    print(__doc__)
+    main()

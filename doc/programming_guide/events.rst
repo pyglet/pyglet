@@ -200,7 +200,7 @@ Creating your own event dispatcher
 ----------------------------------
 
 pyglet provides the :py:class:`~pyglet.window.Window`,
-:py:class:`~pyglet.media.player.Player`, and other event dispatchers,
+:py:class:`~pyglet.media.player.AudioPlayer`, and other event dispatchers,
 but exposes a public interface for creating and dispatching your own events.
 
 The steps for creating an event dispatcher are:
@@ -251,7 +251,7 @@ There is zero instance overhead on objects that have no event handlers
 attached (the event stack is created only when required).  This makes
 :py:class:`~pyglet.event.EventDispatcher` suitable for use even on light-weight
 objects that may not always have handlers.  For example,
-:py:class:`~pyglet.media.player.Player` is an
+:py:class:`~pyglet.media.player.AudioPlayer` is an
 :py:class:`~pyglet.event.EventDispatcher` even though potentially hundreds
 of these objects may be created and destroyed each second, and most will
 not need an event handler.

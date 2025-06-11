@@ -609,7 +609,7 @@ You can call :py:meth:`~pyglet.media.Source.play` on any
 :py:class:`~pyglet.media.StaticSource`.
 
 The return value of :py:meth:`~pyglet.media.Source.play` is a
-:py:class:`~pyglet.media.player.Player`, which can either be
+:py:class:`~pyglet.media.player.AudioPlayer`, which can either be
 discarded, or retained to maintain control over the sound's playback.
 
 .. _guide-media-controllingplayback:
@@ -618,11 +618,11 @@ Controlling playback
 --------------------
 
 You can implement many functions common to a media player using the
-:py:class:`~pyglet.media.player.Player`
+:py:class:`~pyglet.media.player.AudioPlayer`
 class. Use of this class is also necessary for video playback. There are no
 parameters to its construction::
 
-    player = pyglet.media.Player()
+    player = pyglet.media.AudioPlayer()
 
 A player will play any source that is *queued* on it. Any number of sources
 can be queued on a single player, but once queued, a source can never be
@@ -630,7 +630,7 @@ dequeued (until it is removed automatically once complete). The main use of
 this queueing mechanism is to facilitate "gapless" transitions between
 playback of media files.
 
-The :py:meth:`~pyglet.media.player.Player.queue` method is used to queue
+The :py:meth:`~pyglet.media.player.AudioPlayer.queue` method is used to queue
 a media on the player - a :py:class:`~pyglet.media.StreamingSource` or a
 :py:class:`~pyglet.media.StaticSource`. Either you pass one instance, or you
 can also pass an iterable of sources. This provides great flexibility. For
@@ -662,7 +662,7 @@ In the following example, two sounds are queued onto a player::
     player.queue(source1)
     player.queue(source2)
 
-Playback begins with the player's :py:meth:`~pyglet.media.Player.play` method
+Playback begins with the player's :py:meth:`~pyglet.media.AudioPlayer.play` method
 is called::
 
     player.play()
@@ -674,18 +674,18 @@ Standard controls for controlling playback are provided by these methods:
 
         * - Method
           - Description
-        * - :py:meth:`~pyglet.media.Player.play`
+        * - :py:meth:`~pyglet.media.AudioPlayer.play`
           - Begin or resume playback of the current source.
-        * - :py:meth:`~pyglet.media.Player.pause`
+        * - :py:meth:`~pyglet.media.AudioPlayer.pause`
           - Pause playback of the current source.
-        * - :py:meth:`~pyglet.media.Player.next_source`
+        * - :py:meth:`~pyglet.media.AudioPlayer.next_source`
           - Dequeue the current source and move to the next one immediately.
-        * - :py:meth:`~pyglet.media.Player.seek`
+        * - :py:meth:`~pyglet.media.AudioPlayer.seek`
           - Seek to a specific time within the current source.
 
 Note that there is no `stop` method. If you do not need to resume playback,
 simply pause playback and discard the player and source objects. Using the
-:meth:`~pyglet.media.Player.next_source` method does not guarantee gapless
+:meth:`~pyglet.media.AudioPlayer.next_source` method does not guarantee gapless
 playback.
 
 There are several properties that describe the player's current state:
@@ -695,20 +695,20 @@ There are several properties that describe the player's current state:
 
         * - Property
           - Description
-        * - :py:attr:`~pyglet.media.Player.time`
+        * - :py:attr:`~pyglet.media.AudioPlayer.time`
           - The current playback position within the current source, in
-            seconds. This is read-only (but see the :py:meth:`~pyglet.media.Player.seek` method).
-        * - :py:attr:`~pyglet.media.Player.playing`
+            seconds. This is read-only (but see the :py:meth:`~pyglet.media.AudioPlayer.seek` method).
+        * - :py:attr:`~pyglet.media.AudioPlayer.playing`
           - True if the player is currently playing, False if there are no
             sources queued or the player is paused. This is read-only (but
-            see the :py:meth:`~pyglet.media.Player.pause` and :py:meth:`~pyglet.media.Player.play` methods).
-        * - :py:attr:`~pyglet.media.Player.source`
+            see the :py:meth:`~pyglet.media.AudioPlayer.pause` and :py:meth:`~pyglet.media.AudioPlayer.play` methods).
+        * - :py:attr:`~pyglet.media.AudioPlayer.source`
           - A reference to the current source being played. This is
-            read-only (but see the :py:meth:`~pyglet.media.Player.queue` method).
-        * - :py:attr:`~pyglet.media.Player.volume`
+            read-only (but see the :py:meth:`~pyglet.media.AudioPlayer.queue` method).
+        * - :py:attr:`~pyglet.media.AudioPlayer.volume`
           - The audio level, expressed as a float from 0 (mute) to 1 (normal
             volume). This can be set at any time.
-        * - :py:attr:`~pyglet.media.player.Player.loop`
+        * - :py:attr:`~pyglet.media.player.AudioPlayer.loop`
           - ``True`` if the current source should be repeated when reaching
             the end. If set to ``False``, playback will continue to the next
             queued source.
@@ -719,14 +719,14 @@ There are several properties that describe the player's current state:
 Handling playback events
 ------------------------
 
-When a player reaches the end of the current source, an :py:meth:`~pyglet.media.Player.on_eos`
+When a player reaches the end of the current source, an :py:meth:`~pyglet.media.AudioPlayer.on_eos`
 (on end-of-source) event is dispatched. Players have a default handler for this event,
-which will either repeat the current source (if the :py:attr:`~pyglet.media.player.Player.loop`
+which will either repeat the current source (if the :py:attr:`~pyglet.media.player.AudioPlayer.loop`
 attribute has been set to ``True``), or move to the next queued source immediately.
-When there are no more queued sources, the :py:meth:`~pyglet.media.Player.on_player_eos`
+When there are no more queued sources, the :py:meth:`~pyglet.media.AudioPlayer.on_player_eos`
 event is dispatched, and playback stops until another source is queued.
 
-For loop control you can change the :py:attr:`~pyglet.media.player.Player.loop` attribute
+For loop control you can change the :py:attr:`~pyglet.media.player.AudioPlayer.loop` attribute
 at any time, but be aware that unless sufficient time is given for the future
 data to be decoded and buffered there may be a stutter or gap in playback.
 If set well in advance of the end of the source (say, several seconds), there
@@ -758,8 +758,8 @@ on a Player as if it was a single source.
 Incorporating video
 -------------------
 
-When a :py:class:`~pyglet.media.player.Player` is playing back a source with
-video, use the :attr:`~pyglet.media.Player.texture` property to obtain the
+When a :py:class:`~pyglet.media.player.AudioPlayer` is playing back a source with
+video, use the :attr:`~pyglet.media.AudioPlayer.texture` property to obtain the
 video frame image. This can be used to display the current video image
 syncronised with the audio track, for example::
 
@@ -782,11 +782,11 @@ pyglet includes features for positioning sound within a 3D space. This is
 particularly effective with a surround-sound setup, but is also applicable to
 stereo systems.
 
-A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position
+A :py:class:`~pyglet.media.player.AudioPlayer` in pyglet has an associated position
 in 3D space -- that is, it is equivalent to an OpenAL "source". The properties
 for setting these parameters are described in more detail in the API
-documentation; see for example :py:attr:`~pyglet.media.Player.position` and
-:py:attr:`~pyglet.media.Player.pitch`.
+documentation; see for example :py:attr:`~pyglet.media.AudioPlayer.position` and
+:py:attr:`~pyglet.media.AudioPlayer.pitch`.
 
 A "listener" object is provided by the audio driver. To obtain the listener
 for the current audio driver::
