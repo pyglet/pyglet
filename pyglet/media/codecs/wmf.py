@@ -539,19 +539,45 @@ class WMFSource(Source):
             self._source_reader.SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, True)
 
             # Check sub media type, AKA what kind of codec
-            guid_compressed = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-            imfmedia.GetGUID(MF_MT_SUBTYPE, byref(guid_compressed))
+            source_subtype_guid = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            source_sample_size = c_uint32()
+            source_channel_count = c_uint32()
 
-            if guid_compressed == MFAudioFormat_PCM or guid_compressed == MFAudioFormat_Float:
-                assert _debug(f'WMFAudioDecoder: Found Uncompressed Audio: {guid_compressed}')
+            imfmedia.GetGUID(MF_MT_SUBTYPE, byref(source_subtype_guid))
+            try:
+                # Some formats such as mp3 do not report this value
+                imfmedia.GetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, byref(source_sample_size))
+            except OSError:
+                source_sample_size.value = 0
+            imfmedia.GetUINT32(MF_MT_AUDIO_NUM_CHANNELS, byref(source_channel_count))
+
+            if (
+                source_subtype_guid == MFAudioFormat_PCM and
+                source_sample_size.value in (8, 16) and
+                source_channel_count.value in (1, 2)
+            ):
+                assert _debug(f'WMFAudioDecoder: Found compatible Integer PCM Audio: {source_subtype_guid}')
             else:
-                assert _debug(f'WMFAudioDecoder: Found Compressed Audio: {guid_compressed}')
-                # If audio is compressed, attempt to decompress it by forcing source reader to use PCM
-                mf_mediatype = IMFMediaType()
+                assert _debug(f'WMFAudioDecoder: Found incompatible Audio: {source_subtype_guid}, '
+                              f'sample size={source_sample_size.value}, channel count={source_channel_count.value}.'
+                              f'Attempting to decode/resample.')
+                # If audio is compressed or incompatible, attempt to decompress or resample it
+                # to standard 16bit integer PCM
+                samples_per_sec = c_uint32()
+                imfmedia.GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, byref(samples_per_sec))
 
+                channels_out = min(2, source_channel_count.value)
+
+                mf_mediatype = IMFMediaType()
                 MFCreateMediaType(byref(mf_mediatype))
                 mf_mediatype.SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio)
                 mf_mediatype.SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, channels_out)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, 16)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, samples_per_sec.value)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_BLOCK_ALIGNMENT, channels_out * 2)
+                mf_mediatype.SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, samples_per_sec.value * channels_out * 2)
+                mf_mediatype.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
 
                 try:
                     self._source_reader.SetCurrentMediaType(self._audio_stream_index, None, mf_mediatype)

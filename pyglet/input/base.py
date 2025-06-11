@@ -722,18 +722,16 @@ class Controller(EventDispatcher):
                 elif relation.control_type == "hat0":
                     if self._hat_control:
                         self._bind_dedicated_hat(relation, self._hat_control)
-                    elif self._hat_x_control and self._hat_y_control:
+                    else:
                         control, dpname = {1: (self._hat_y_control, 'dpup'),
                                            2: (self._hat_x_control, 'dpright'),
                                            4: (self._hat_y_control, 'dpdown'),
                                            8: (self._hat_x_control, 'dpleft')}[relation.index]
 
                         self._bind_axis_control(relation, control, dpname)
-                    else:
-                        warnings.warn(f"{relation} has no matching physical hat Control. Skipping.")
 
-            except IndexError:
-                warnings.warn(f"Could not map '{relation}' to '{name}'")
+            except (IndexError, AttributeError, KeyError):
+                warnings.warn(f"Could not map physical Control '{relation}' to '{name}'")
                 continue
 
     def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:

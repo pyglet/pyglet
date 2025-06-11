@@ -385,16 +385,6 @@ def ffmpeg_stream_info(file: FFmpegFile, stream_index: int) -> StreamAudioInfo |
             context.sample_rate,
             channel_count,
         )
-        if context.format in (AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8P):
-            info.sample_bits = 8
-        elif context.format in (AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16P,
-                                AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP):
-            info.sample_bits = 16
-        elif context.format in (AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S32P):
-            info.sample_bits = 32
-        else:
-            info.sample_format = None
-            info.sample_bits = None
     else:
         return None
     return info
@@ -634,35 +624,29 @@ class FFmpegSource(StreamingSource):
                 self._video_stream = stream
                 self._video_stream_index = i
 
-            elif isinstance(info, StreamAudioInfo) and info.sample_bits in (8, 16, 24) and self._audio_stream is None:
+            elif isinstance(info, StreamAudioInfo) and self._audio_stream is None:
                 stream = ffmpeg_open_stream(self._file, i)
 
+                channels_out = min(2, info.channels)
+                channel_input = self._get_default_channel_layout(info.channels)
+                channel_output = self._get_default_channel_layout(channels_out)
+
+                sample_bits = info.sample_bits
+                if info.sample_format in (AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8P):
+                    self.tgt_format = AV_SAMPLE_FMT_U8
+                else:
+                    # No matter the input format, produce S16 samples.
+                    sample_bits = 16
+                    self.tgt_format = AV_SAMPLE_FMT_S16
+
                 self.audio_format = AudioFormat(
-                    channels=min(2, info.channels),
-                    sample_size=info.sample_bits,
+                    channels=channels_out,
+                    sample_size=sample_bits,
                     sample_rate=info.sample_rate)
                 self._audio_stream = stream
                 self._audio_stream_index = i
 
-                channel_input = self._get_default_channel_layout(info.channels)
-                channels_out = min(2, info.channels)
-                channel_output = self._get_default_channel_layout(channels_out)
-
-                sample_rate = stream.codec_context.contents.sample_rate
-                sample_format = stream.codec_context.contents.sample_fmt
-
-                if sample_format in (AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8P):
-                    self.tgt_format = AV_SAMPLE_FMT_U8
-                elif sample_format in (AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16P):
-                    self.tgt_format = AV_SAMPLE_FMT_S16
-                elif sample_format in (AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S32P):
-                    self.tgt_format = AV_SAMPLE_FMT_S32
-                elif sample_format in (AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP):
-                    self.tgt_format = AV_SAMPLE_FMT_S16
-                else:
-                    raise FFmpegException('Audio format not supported.')
-
-                self.audio_convert_ctx = self.get_formatted_swr_context(channel_output, sample_rate, channel_input, sample_format)
+                self.audio_convert_ctx = self.get_formatted_swr_context(channel_output, info.sample_rate, channel_input, info.sample_format)
                 if not self.audio_convert_ctx:
                     swresample.swr_free(self.audio_convert_ctx)
                     raise FFmpegException('Cannot create sample rate converter.')
