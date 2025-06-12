@@ -100,7 +100,7 @@ class GLXInfo:
         self.check_display()
         return asstr(glXGetClientString(self.display, GLX_EXTENSIONS)).split()
 
-    def get_extensions(self) -> list[str]:
+    def get_extensions(self, _context) -> list[str]:
         self.check_display()
         return asstr(glXQueryExtensionsString(self.display, 0)).split()
 
@@ -108,7 +108,7 @@ class GLXInfo:
         self.check_display()
         if not self.have_version(1, 1):
             return False
-        return extension in self.get_extensions()
+        return extension in self.get_extensions(None)
 
 
 # Single instance suitable for apps that use only a single display.

@@ -34,12 +34,11 @@ from pyglet.graphics.api.gl import (
     glGenBuffers,
     glMapBuffer,
     glMapBufferRange,
-    glUnmapBuffer,
+    glUnmapBuffer, OpenGLSurfaceContext,
 )
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.shader import Attribute
 
 
@@ -59,11 +58,11 @@ class BufferObject(AbstractBuffer):
     usage: int
     _context: OpenGLSurfaceContext | None
 
-    def __init__(self, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage."""
-        self.size = size
+        super().__init__('b', size)
         self.usage = usage
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
 
         buffer_id = GLuint()
         glGenBuffers(1, buffer_id)
@@ -172,9 +171,9 @@ class BackedBufferObject(BufferObject):
     count: int
     ctype: CType
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int,
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int,
                  usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(size, usage)
+        super().__init__(context, size, usage)
 
         self.c_type = c_type
         self._ctypes_size = ctypes.sizeof(c_type)
@@ -212,7 +211,7 @@ class BackedBufferObject(BufferObject):
             self._dirty = False
 
     @lru_cache(maxsize=None)  # noqa: B019
-    def get_region(self, start: int, count: int) -> Array[CTypesDataType]:
+    def get_region(self, start: int, count: int) -> Array[CType]:
         byte_start = self.stride * start  # byte offset
         array_count = self.count * count  # number of values
         ptr_type = ctypes.POINTER(self.c_type * array_count)
@@ -268,17 +267,17 @@ class BackedBufferObject(BufferObject):
 class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, size: int, attribute: Attribute) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, attribute: Attribute) -> None:
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(context, size, attribute.c_type, attribute.stride, attribute.count)
 
 
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, size: int, c_type: CTypesDataType, stride: int, count: int,
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int,
                  usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(size, c_type, stride, count, usage)
+        super().__init__(context, size, c_type, stride, count, usage)
 
     def commit(self) -> None:
         """Commits all saved changes to the underlying buffer before drawing.
@@ -312,5 +311,5 @@ class PersistentBufferObject(AbstractBuffer):
     Unsupported by GL2.
     """
 
-    def __init__(self, size, attribute, vao):
+    def __init__(self, context, size, attribute, vao) -> None:
         raise NotImplementedError

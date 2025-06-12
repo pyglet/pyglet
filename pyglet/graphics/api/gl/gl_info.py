@@ -52,7 +52,8 @@ class GLInfo:
         # A subset of OpenGL that is platform specific. (WGL, GLX)
         self.platform_info = platform_info
 
-    def query(self) -> None:
+    def query(self, context) -> None:
+        self.context = context
         self.vendor = self.get_str(gl.GL_VENDOR)
         """The vendor string. For example 'NVIDIA Corporation'"""
 
@@ -94,7 +95,7 @@ class GLInfo:
             pass  # GL3 is likely not available
 
         if self.platform_info:
-            self.extensions.update(set(self.platform_info.get_extensions()))
+            self.extensions.update(set(self.platform_info.get_extensions(context)))
 
         self.was_queried = True
 
@@ -157,33 +158,29 @@ class GLInfo:
         return self.opengl_api
 
     def get_int(self, enum: int, default: int=0) -> int | tuple[int]:
-        from pyglet.graphics.api.gl import glGetIntegerv
         try:
             value = c_int()
-            glGetIntegerv(enum, value)
+            self.context.glGetIntegerv(enum, value)
             return value.value
         except GLException:
             return default
 
     def get_float(self, enum: int, default=0.0) -> float:
-        from pyglet.graphics.api.gl import glGetFloatv
         try:
             value = c_float()
-            glGetFloatv(enum, value)
+            self.context.glGetFloatv(enum, value)
             return value.value
         except GLException:
             return default
 
     def get_str(self, enum: int) -> str:
-        from pyglet.graphics.api.gl import glGetString
         try:
-            return cast(glGetString(enum), c_char_p).value.decode()
+            return cast(self.context.glGetString(enum), c_char_p).value.decode()
         except GLException:
             return "Unknown"
 
     def get_str_index(self, enum: int, index: int) -> str:
-        from pyglet.graphics.api.gl import glGetStringi
         try:
-            return cast(glGetStringi(enum, index), c_char_p).value.decode()
+            return cast(self.context.glGetStringi(enum, index), c_char_p).value.decode()
         except GLException:
             return "Unknown"

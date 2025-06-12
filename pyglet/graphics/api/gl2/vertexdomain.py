@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 from _ctypes import Array
 
+from pyglet.customtypes import CType
 from pyglet.graphics.api.gl import (
     GL_BYTE,
     GL_DOUBLE,
@@ -40,10 +41,7 @@ from pyglet.graphics.api.gl import (
     GLintptr,
     GLsizei,
     GLvoid,
-    glDrawArrays,
-    glDrawElements,
-    glMultiDrawArrays,
-    glMultiDrawElements, glBindBuffer, GL_ARRAY_BUFFER,
+    GL_ARRAY_BUFFER, OpenGLSurfaceContext,
 
 )
 from pyglet.graphics import allocation
@@ -322,12 +320,12 @@ class VertexDomain:
     _property_dict: dict[str, property]
     _vertexlist_class: type
 
-    _initial_count: int = 16
     _vertex_class: type[VertexList] = VertexList
 
-    def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, initial_count,  attribute_meta: dict[str, Attribute]) -> None:
+        self._context = context
         self.attribute_meta = attribute_meta
-        self.allocator = allocation.Allocator(self._initial_count)
+        self.allocator = allocation.Allocator(initial_count)
 
         self.attribute_names = {}  # name: attribute
         self.buffer_attributes = []  # list of (buffer, attribute)
@@ -343,7 +341,8 @@ class VertexDomain:
                 name, meta.location, meta.count, meta.data_type, meta.normalize, meta.instance)
 
             # Create buffer:
-            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity,
+            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(self._context,
+                                                                            attribute.stride * self.allocator.capacity,
                                                                             attribute)
 
             self.buffer_attributes.append((buffer, attribute))
@@ -410,11 +409,11 @@ class VertexDomain:
             pass
         elif primcount == 1:
             # Common case
-            glDrawArrays(mode, starts[0], sizes[0])
+            self._context.glDrawArrays(mode, starts[0], sizes[0])
         else:
             starts = (GLint * primcount)(*starts)
             sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawArrays(mode, starts, sizes, primcount)
+            self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
 
         for _, attribute in self.buffer_attributes:
             attribute.disable()
@@ -437,7 +436,7 @@ class VertexDomain:
             attribute.enable()
             attribute.set_pointer(0)
 
-        glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
+        self._context.glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
 
         for _, attribute in self.buffer_attributes:
             attribute.disable()
@@ -458,23 +457,23 @@ class IndexedVertexDomain(VertexDomain):
     """
     index_allocator: Allocator
     index_gl_type: int
-    index_c_type: CTypesDataType
+    index_c_type: CType
     index_element_size: int
     index_buffer: IndexedBufferObject
-    _initial_index_count = 16
     _vertex_class = IndexedVertexList
 
-    def __init__(self, attribute_meta: dict[str, dict[str, Any]],
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, dict[str, Any]],
                  index_gl_type: int = GL_UNSIGNED_INT) -> None:
-        super().__init__(attribute_meta)
+        super().__init__(context, initial_count, attribute_meta)
 
-        self.index_allocator = allocation.Allocator(self._initial_index_count)
+        self.index_allocator = allocation.Allocator(initial_count)
 
         self.index_gl_type = index_gl_type
         from pyglet.graphics.api.gl2.shader import _c_types
         self.index_c_type = _c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = IndexedBufferObject(self.index_allocator.capacity * self.index_element_size,
+        self.index_buffer = IndexedBufferObject(self._context,
+                                                self.index_allocator.capacity * self.index_element_size,
                                                 _c_types[index_gl_type],
                                                 self.index_element_size,
                                                 1)
@@ -543,17 +542,17 @@ class IndexedVertexDomain(VertexDomain):
             pass
         elif primcount == 1:
             # Common case
-            glDrawElements(mode, sizes[0], self.index_gl_type, starts[0] * self.index_element_size)
+            self._context.glDrawElements(mode, sizes[0], self.index_gl_type, starts[0] * self.index_element_size)
         else:
             starts = [s * self.index_element_size for s in starts]
             starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
             sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+            self._context.glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
         for buffer, attribute in self.buffer_attributes:
             attribute.disable()
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        self._context.glBindBuffer(GL_ARRAY_BUFFER, 0)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
@@ -574,10 +573,10 @@ class IndexedVertexDomain(VertexDomain):
 
         self.index_buffer.commit()
 
-        glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
+        self._context.glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
                        vertex_list.index_start * self.index_element_size)
 
         for _, attribute in self.buffer_attributes:
             attribute.disable()
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        self._context.glBindBuffer(GL_ARRAY_BUFFER, 0)

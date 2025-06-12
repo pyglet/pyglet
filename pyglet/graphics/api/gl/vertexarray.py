@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.gl import GLuint, glBindVertexArray, glDeleteVertexArrays, glGenVertexArrays
+from pyglet.graphics.api.gl import GLuint
 
 if TYPE_CHECKING:
     from ctypes import c_uint
-
-    from pyglet.graphics.api.gl import OpenGLSurfaceContext
+    from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 
 __all__ = ['VertexArray']
 
@@ -18,31 +17,30 @@ class VertexArray:
     _context: OpenGLSurfaceContext | None
     _id: c_uint
 
-    def __init__(self) -> None:
+    def __init__(self, context: OpenGLSurfaceContext) -> None:
         """Create an instance of a Vertex Array object."""
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
         self._id = GLuint()
-        glGenVertexArrays(1, self._id)
+        self._context.glGenVertexArrays(1, self._id)
 
     @property
     def id(self) -> int:
         return self._id.value
 
     def bind(self) -> None:
-        glBindVertexArray(self._id)
+        self._context.glBindVertexArray(self._id)
 
-    @staticmethod
-    def unbind() -> None:
-        glBindVertexArray(0)
+    def unbind(self) -> None:
+        self._context.glBindVertexArray(0)
 
     def delete(self) -> None:
-        glDeleteVertexArrays(1, self._id)
+        self._context.glDeleteVertexArrays(1, self._id)
         self._id = None
 
     __enter__ = bind
 
     def __exit__(self, *_) -> None:  # noqa: ANN002
-        glBindVertexArray(0)
+        self.glBindVertexArray(0)
 
     def __del__(self) -> None:
         if self._id is not None:

@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Callable, Sequence, Any, TYPE_CHECKING
 
 import pyglet
+from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl2.vertexdomain import VertexList, IndexedVertexList, VertexDomain, IndexedVertexDomain, \
     InstancedVertexDomain, InstancedIndexedVertexDomain
@@ -228,12 +229,13 @@ class Batch(BatchBase):
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, VertexDomain]]
 
-    def __init__(self) -> None:
+    def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Create a graphics batch."""
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
-        super().__init__()
-        self._context = pyglet.graphics.api.core.current_context
+        super().__init__(initial_count)
+        self._context = context or pyglet.graphics.api.core.current_context
+        assert self._context is not None, "A context needs to exist before you create this."
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
@@ -361,7 +363,7 @@ class Batch(BatchBase):
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = _domain_class_map[(indexed, instanced)](attributes)
+            domain = _domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 

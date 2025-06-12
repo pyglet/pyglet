@@ -8,7 +8,7 @@ import pyglet
 from pyglet.graphics.api.gl.lib import decorate_function, missing_function
 from pyglet.util import asbytes
 
-__all__ = ['link_GL', 'link_WGL']
+__all__ = ['link_GL', 'link_GL_proxy', 'link_WGL', 'link_WGL_proxy']
 
 _debug_trace = pyglet.options.debug_trace
 
@@ -69,8 +69,15 @@ class WGLFunctionProxy:
         return self.func(*args, **kwargs)
 
 
-def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802
+def link_GL_proxy(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802
             suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
+    """Link a GL function using a proxy address.
+
+    Most functions are not exposed in opengl32.dll, so the majority will be created via wglGetProcAddress.
+
+    If a context is not created, a proxy function will be created in its place. Through this implementation,
+    OpenGL functions can be imported globally.
+    """
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
@@ -78,15 +85,13 @@ def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
         decorate_function(func, name)
         return func
     except AttributeError:
-        # Not in opengl32.dll. Try and get a pointer from WGL.
-
         fargs = (restype, *tuple(argtypes))
         ftype = ctypes.WINFUNCTYPE(*fargs)
         if _have_get_proc_address:
             from pyglet.graphics.api import core
             if core and core.have_context:
-                address = wglGetProcAddress(name)
-                if address:
+                address = wglGetProcAddress(asbytes(name))
+                if cast(address, POINTER(c_int)):  # check cast because address is func
                     func = cast(address, ftype)
                     decorate_function(func, name)
                     return func
@@ -96,5 +101,30 @@ def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
 
         return missing_function(name, requires, suggestions)
 
+def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,  # noqa: N802
+            suggestions: Sequence[str] | None = None) -> Callable[..., Any]:
+    """Link a GL function using a proxy address.
+
+    Requires an OpenGL context to be created and current.
+    """
+    try:
+        func = getattr(gl_lib, name)
+        func.restype = restype
+        func.argtypes = argtypes
+        decorate_function(func, name)
+        return func
+    except AttributeError:
+        # Not in opengl32.dll. Try and get a pointer from WGL.
+        fargs = (restype, *tuple(argtypes))
+        ftype = ctypes.WINFUNCTYPE(*fargs)
+        if _have_get_proc_address:
+            address = wglGetProcAddress(asbytes(name))
+            if cast(address, POINTER(c_int)):  # check cast because address is func
+                func = cast(address, ftype)
+                decorate_function(func, name)
+                return func
+
+        return missing_function(name, requires, suggestions)
 
 link_WGL = link_GL
+link_WGL_proxy = link_GL_proxy

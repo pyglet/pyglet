@@ -14,7 +14,7 @@ from .interface import PulseAudioMainloop
 
 if TYPE_CHECKING:
     from pyglet.media.codecs import AudioData, AudioFormat, Source
-    from pyglet.media.player import Player
+    from pyglet.media.player import AudioPlayer
 
 
 _debug = debug_print('debug_media')
@@ -31,7 +31,7 @@ class PulseAudioDriver(AbstractAudioDriver):
         self._players = weakref.WeakSet()
         self._listener = PulseAudioListener(self)
 
-    def create_audio_player(self, source: 'Source', player: 'Player') -> 'PulseAudioPlayer':
+    def create_audio_player(self, source: 'Source', player: 'AudioPlayer') -> 'PulseAudioPlayer':
         assert self.context is not None
         player = PulseAudioPlayer(source, player, self)
         self._players.add(player)
@@ -148,7 +148,7 @@ class _AudioDataBuffer:
 
 
 class PulseAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, source: 'Source', player: 'Player', driver: 'PulseAudioDriver') -> None:
+    def __init__(self, source: 'Source', player: 'AudioPlayer', driver: 'PulseAudioDriver') -> None:
         super().__init__(source, player)
         self.driver = driver
 

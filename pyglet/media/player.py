@@ -1,5 +1,4 @@
 """High-level sound and video player."""
-
 from __future__ import annotations
 
 import time
@@ -9,8 +8,10 @@ from typing import TYPE_CHECKING, Generator, Iterable
 import pyglet
 from pyglet.media.codecs.base import Source, SourceGroup
 from pyglet.media.drivers import get_audio_driver
+from pyglet.media.exceptions import MediaException
+from pyglet.util import debug_print
 
-_debug = pyglet.options.debug_media
+_debug = debug_print('debug_media')
 
 if TYPE_CHECKING:
     from pyglet.graphics import Texture
@@ -90,8 +91,8 @@ class _PlayerProperty:
             getattr(obj._audio_player, self.setter_name)(value)
 
 
-class _Player(pyglet.event.EventDispatcher):
-    """High-level sound and video player."""
+class AudioPlayer(pyglet.event.EventDispatcher):
+    """High-level sound player."""
 
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
@@ -111,9 +112,6 @@ class _Player(pyglet.event.EventDispatcher):
         self._source = None
         self._playlists = deque()
         self._audio_player = None
-
-        self._context = pyglet.graphics.api.core.current_context
-        self._texture = None
 
         # Desired play state (not an indication of actual state).
         self._playing = False
@@ -159,6 +157,41 @@ class _Player(pyglet.event.EventDispatcher):
         else:
             self._source = new_source.get_queue_source()
 
+    def _check_resource_reuse(self, old_source: Source) -> None:
+        """Determine if a resource can be re-used based on the old source."""
+        if self._audio_player is not None:
+            # If current source format properties match the old source, then the resource can be re-used.
+            if self._source.audio_format == old_source.audio_format:
+                self._audio_player.set_source(self._source)
+            else:
+                # Delete the resource so a matching resource can be created.
+                self._audio_player.delete()
+                self._audio_player = None
+
+    def _create_player_resources(self, starting: bool):
+        """Creates driver resources for the particular format."""
+        if self._source.audio_format is not None:
+            if was_created := self._audio_player is None:
+                self._create_audio_player()
+            if self._audio_player is not None and (was_created or starting):
+                self._audio_player.prefill_audio()
+
+    def _start_player_resources(self):
+        """Start any driver related resources required for playback."""
+        if self._audio_player is not None:
+            self._audio_player.play()
+
+    def _stop_player_resources(self):
+        """Stop any driver related resources required for playback."""
+        if self._audio_player is not None:
+            self._audio_player.stop()
+
+    def _seek_player_resources(self):
+        if self._audio_player is not None:
+            # XXX: According to docstring in AbstractAudioPlayer this cannot
+            # be called when the player is not stopped
+            self._audio_player.clear()
+
     def _set_playing(self, playing: bool) -> None:
         # stopping = self._playing and not playing
         starting = not self._playing and playing
@@ -167,40 +200,22 @@ class _Player(pyglet.event.EventDispatcher):
         source = self.source
 
         if playing and source:
-            if source.audio_format is not None:
-                if was_created := self._audio_player is None:
-                    self._create_audio_player()
-                if self._audio_player is not None and (was_created or starting):
-                    self._audio_player.prefill_audio()
-
-            if source.video_format is not None:
-                if self._texture is None:
-                    self._create_texture()
-
-            if self._audio_player is not None:
-                self._audio_player.play()
-            if source.video_format is not None:
-                pyglet.clock.schedule_once(self.update_texture, 0)
-            # For audio synchronization tests, the following will
-            # add a delay to de-synchronize the audio.
-            # Negative number means audio runs ahead.
-            # self._mclock._systime += -0.3
+            self._create_player_resources(starting)
+            self._start_player_resources()
             self._timer.start()
+
+            # If the driver is silent, it will not create any players, dispatch an end event.
             if self._audio_player is None and source.video_format is None:
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
-
         else:
-            if self._audio_player is not None:
-                self._audio_player.stop()
-
-            pyglet.clock.unschedule(self.update_texture)
+            self._stop_player_resources()
             self._timer.pause()
 
     @property
     def playing(self) -> bool:
         """The current playing state.
 
-        The *playing* property is irrespective of whether or not there is
+        The *playing* property is irrespective of whether there is
         actually a source to play. If *playing* is ``True`` and a source is
         queued, it will begin to play immediately. If *playing* is ``False``,
         it is implied that the player is paused. There is no other possible
@@ -232,8 +247,6 @@ class _Player(pyglet.event.EventDispatcher):
         if self._audio_player is not None:
             self._audio_player.delete()
             self._audio_player = None
-        if self._texture is not None:
-            self._texture = None
 
     def next_source(self) -> None:
         """Move immediately to the next source in the current playlist.
@@ -276,15 +289,7 @@ class _Player(pyglet.event.EventDispatcher):
             old_source = self._source
             self._set_source(new_source)
 
-            if self._audio_player is not None:
-                if self._source.audio_format == old_source.audio_format:
-                    self._audio_player.set_source(self._source)
-                else:
-                    self._audio_player.delete()
-                    self._audio_player = None
-            if self._source.video_format != old_source.video_format:
-                self._texture = None
-                pyglet.clock.unschedule(self.update_texture)
+            self._check_resource_reuse(old_source)
 
             del old_source
 
@@ -314,13 +319,8 @@ class _Player(pyglet.event.EventDispatcher):
         self._source.seek(timestamp)
         self.last_seek_time = timestamp
 
-        if self._audio_player is not None:
-            # XXX: According to docstring in AbstractAudioPlayer this cannot
-            # be called when the player is not stopped
-            self._audio_player.clear()
-        if self.source.video_format is not None:
-            self.update_texture()
-            pyglet.clock.unschedule(self.update_texture)
+        self._seek_player_resources()
+
         self._set_playing(playing)
 
     def _create_audio_player(self) -> None:
@@ -366,99 +366,15 @@ class _Player(pyglet.event.EventDispatcher):
         """
         return self._timer.get_time()
 
-    def _create_texture(self) -> None:
-        video_format = self.source.video_format
-        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
-        self._texture = self._texture.get_transform(flip_y=True)
-        # After flipping the texture along the y axis, the anchor_y is set
-        # to the top of the image. We want to keep it at the bottom.
-        self._texture.anchor_y = 0
-        return self._texture
-
-    @property
-    def texture(self) -> Texture | None:
-        """Get the texture for the current video frame, if any.
-
-        You should query this property every time you display a frame of video,
-        as multiple textures might be used. This property will be ``None`` if
-        the current Source does not contain video.
-        """
-        return self._texture
-
-    def seek_next_frame(self) -> None:
-        """Step forwards one video frame in the current source."""
-        time = self.source.get_next_video_timestamp()
-        if time is None:
-            return
-        self.seek(time)
-
-    def update_texture(self, dt: float | None = None) -> None:
-        """Manually update the texture from the current source.
-
-        This happens automatically, so you shouldn't need to call this method.
-
-        Args:
-            dt:
-                The time elapsed since the last call to ``update_texture``.
-        """
-        source = self.source
-        time = self.time
-
-        frame_rate = source.video_format.frame_rate
-        frame_duration = 1 / frame_rate
-        ts = source.get_next_video_timestamp()
-        # Allow up to frame_duration difference
-        while ts is not None and ts + frame_duration < time:
-            source.get_next_video_frame()  # Discard frame
-            ts = source.get_next_video_timestamp()
-
-        if ts is None:
-            # No more video frames to show. End of video stream.
-            pyglet.clock.schedule_once(self._video_finished, 0)
-            return
-        if ts > time:
-            # update_texture called too early (probably manually!)
-            pyglet.clock.schedule_once(self.update_texture, ts - time)
-            return
-
-        image = source.get_next_video_frame()
-        if image is not None:
-            with self._context:
-                if self._texture is None:
-                    self._create_texture()
-                else:
-                    self._texture.bind()
-                self._texture.upload(image, 0, 0, 0)
-        elif bl.logger is not None:
-            bl.logger.log("p.P.ut.1.8")
-
-        ts = source.get_next_video_timestamp()
-        if ts is None:
-            delay = frame_duration
-        else:
-            delay = ts - time
-
-        delay = max(0.0, delay)
-        pyglet.clock.schedule_once(self.update_texture, delay)
-
-    def _video_finished(self, _dt: float) -> None:
-        if self._audio_player is None:
-            self.dispatch_event("on_eos")
-
-    volume = _PlayerProperty(
-        'volume',
-        doc="""
+    volume = _PlayerProperty('volume', doc="""
     The volume level of sound playback.
 
     The nominal level is 1.0, and 0.0 is silence.
 
     The volume level is affected by the distance from the listener (if
     positioned).
-    """,
-    )
-    min_distance = _PlayerProperty(
-        'min_distance',
-        doc="""
+    """)
+    min_distance = _PlayerProperty('min_distance', doc="""
     The distance beyond which the sound volume drops by half, and within
     which no attenuation is applied.
 
@@ -467,11 +383,8 @@ class _Player(pyglet.event.EventDispatcher):
     within the min distance. By default the value is 1.0.
 
     The unit defaults to meters, but can be modified with the listener
-    properties. """,
-    )
-    max_distance = _PlayerProperty(
-        'max_distance',
-        doc="""
+    properties. """)
+    max_distance = _PlayerProperty('max_distance', doc="""
     The distance at which no further attenuation is applied.
 
     When the distance from the listener to the player is greater than this
@@ -480,75 +393,55 @@ class _Player(pyglet.event.EventDispatcher):
 
     The unit defaults to meters, but can be modified with the listener
     properties.
-    """,
-    )
-    position = _PlayerProperty(
-        'position',
-        doc="""
+    """)
+    position = _PlayerProperty('position', doc="""
     The position of the sound in 3D space.
 
     The position is given as a tuple of floats (x, y, z). The unit
     defaults to meters, but can be modified with the listener properties.
-    """,
-    )
-    pitch = _PlayerProperty(
-        'pitch',
-        doc="""
+    """)
+    pitch = _PlayerProperty('pitch', doc="""
     The pitch shift to apply to the sound.
 
     The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
     and play twice as fast. A pitch of 0.5 will sound one octave lower, and
     play twice as slow. A pitch of 0.0 is not permitted.
-    """,
-    )
-    cone_orientation = _PlayerProperty(
-        'cone_orientation',
-        doc="""
+    """)
+    cone_orientation = _PlayerProperty('cone_orientation', doc="""
     The direction of the sound in 3D space.
 
     The direction is specified as a tuple of floats (x, y, z), and has no
     unit. The default direction is (0, 0, -1). Directional effects are only
     noticeable if the other cone properties are changed from their default
     values.
-    """,
-    )
-    cone_inner_angle = _PlayerProperty(
-        'cone_inner_angle',
-        doc="""
+    """)
+    cone_inner_angle = _PlayerProperty('cone_inner_angle', doc="""
     The interior angle of the inner cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the inner cone, the sound is
     played at normal gain (see :attr:`volume`).
-    """,
-    )
-    cone_outer_angle = _PlayerProperty(
-        'cone_outer_angle',
-        doc="""
+    """)
+    cone_outer_angle = _PlayerProperty('cone_outer_angle', doc="""
     The interior angle of the outer cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the outer cone, but outside
     the volume defined by the inner cone, the gain applied is a smooth
     interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
-    """,
-    )
-    cone_outer_gain = _PlayerProperty(
-        'cone_outer_gain',
-        doc="""
+    """)
+    cone_outer_gain = _PlayerProperty('cone_outer_gain', doc="""
     The gain applied outside the cone.
 
     When the listener is positioned outside the volume defined by the outer
     cone, this gain is applied instead of :attr:`volume`.
-    """,
-    )
+    """)
 
     # Events
 
     def on_player_eos(self):
         """The player ran out of sources. The playlist is empty."""
-        if _debug:
-            print('Player.on_player_eos')
+        assert _debug('Player.on_player_eos')
 
     def on_eos(self):
         """The current source ran out of data.
@@ -559,8 +452,7 @@ class _Player(pyglet.event.EventDispatcher):
         will start to play again until :meth:`next_source` is called or
         :attr:`.loop` is set to ``False``.
         """
-        if _debug:
-            print('Player.on_eos')
+        assert _debug('Player.on_eos')
 
         if self.loop:
             was_playing = self._playing
@@ -614,8 +506,195 @@ class _Player(pyglet.event.EventDispatcher):
             self._audio_player.play()
 
 
+AudioPlayer.register_event_type('on_eos')
+AudioPlayer.register_event_type('on_player_eos')
+AudioPlayer.register_event_type('on_player_next_source')
+AudioPlayer.register_event_type('on_driver_reset')
+
+
 def _one_item_playlist(source: Source) -> Generator:
     yield source
+
+
+class VideoPlayer(AudioPlayer):
+    """High-level sound and video player."""
+    _sprite: pyglet.sprite.Sprite | None
+
+    def __init__(self, batch: pyglet.graphics.Batch | None = None) -> None:
+        super().__init__()
+        self._texture = None
+        self._sprite = None
+        self._position = (0, 0)
+        self._width = 0
+        self._height = 0
+        self.batch = batch or pyglet.graphics.get_default_batch()
+
+        self._context = pyglet.graphics.api.core.current_context
+
+        self._check_ffmpeg_availability()
+
+    @staticmethod
+    def _check_ffmpeg_availability() -> None:
+        # Check if a source is FFmpeg instead?
+        from pyglet.media import have_ffmpeg
+        if not have_ffmpeg():
+            raise MediaException("VideoPlayer requires FFmpeg to be installed.")
+
+    @property
+    def position(self) -> tuple[int, int]:
+        """Get the position of the video player."""
+        return self._position
+
+    @position.setter
+    def position(self, value: tuple[int, int]) -> None:
+        self._position = value
+        if self._sprite:
+            self._sprite.position = (*value, 0)
+
+    @property
+    def width(self) -> int:
+        """Get the width of the video player."""
+        return self._width
+
+    @width.setter
+    def width(self, width: int) -> None:
+        self._width = width
+        if self._sprite:
+            self._sprite.width = width
+
+    @property
+    def height(self) -> int:
+        """Get the height of the video player."""
+        return self._height
+
+    @height.setter
+    def height(self, height: int) -> None:
+        self._height = height
+        if self._sprite:
+            self._sprite.height = height
+
+    def _seek_player_resources(self) -> None:
+        super()._seek_player_resources()
+        if self.source.video_format is not None:
+            self.update_texture()
+            pyglet.clock.unschedule(self.update_texture)
+
+    def _check_resource_reuse(self, old_source: Source) -> None:
+        super()._check_resource_reuse(old_source)
+        if self._source.video_format != old_source.video_format:
+            pyglet.clock.unschedule(self.update_texture)
+            self._texture = None
+            self._sprite = None
+
+    def _create_player_resources(self, starting: bool) -> None:
+        super()._create_player_resources(starting)
+        if self._source.video_format is not None:
+            if self._texture is None:
+                with self._context:
+                    self._create_texture()
+                    self._create_sprite()
+
+    def _create_texture(self) -> pyglet.graphics.Texture:
+        video_format = self.source.video_format
+        self._texture = pyglet.graphics.Texture.create(video_format.width, video_format.height)
+
+        # Flip coordinates so output is correct orientation.
+        self._texture = self._texture.get_transform(flip_y=True)
+        # After flipping, the anchor_y is set to the top of the image. We want to keep it at the bottom.
+        self._texture.anchor_y = 0
+        return self._texture
+
+    def _create_sprite(self) -> None:
+        if not self._sprite:
+            self._sprite = pyglet.sprite.Sprite(self._texture, x=self._position[0], y=self._position[1], batch=self.batch)
+
+    def _start_player_resources(self) -> None:
+        super()._start_player_resources()
+        if self._source.video_format is not None:
+            pyglet.clock.schedule_once(self.update_texture, 0)
+
+    def _stop_player_resources(self):
+        super()._stop_player_resources()
+        pyglet.clock.unschedule(self.update_texture)
+
+    def draw(self):
+        assert pyglet.graphics.api.core.current_context == self._context, "Drawing in the wrong context."
+        if self._source:
+            self.batch.draw()
+
+    def update_texture(self, dt: float | None = None) -> None:
+        """Manually update the texture from the current source.
+
+        This happens automatically, so you shouldn't need to call this method.
+
+        Args:
+            dt:
+                The time elapsed since the last call to ``update_texture``.
+        """
+        source = self.source
+        _time = self.time
+
+        frame_rate = source.video_format.frame_rate
+        frame_duration = 1 / frame_rate
+        ts = source.get_next_video_timestamp()
+        # Allow up to frame_duration difference
+        while ts is not None and ts + frame_duration < _time:
+            source.get_next_video_frame()  # Discard frame
+            ts = source.get_next_video_timestamp()
+
+        if ts is None:
+            # No more video frames to show. End of video stream.
+            pyglet.clock.schedule_once(self._video_finished, 0)
+            return
+        if ts > _time:
+            # update_texture called too early (probably manually!)
+            pyglet.clock.schedule_once(self.update_texture, ts - _time)
+            return
+
+        image = source.get_next_video_frame()
+        if image is not None:
+            with self._context:
+                if self._texture is None:
+                    self._create_texture()
+                self._texture.bind()
+                self._texture.upload(image, 0, 0, 0)
+
+        ts = source.get_next_video_timestamp()
+        if ts is None:
+            delay = frame_duration
+        else:
+            delay = ts - _time
+
+        delay = max(0.0, delay)
+        pyglet.clock.schedule_once(self.update_texture, delay)
+
+    def _video_finished(self, _dt: float) -> None:
+        if self._audio_player is None:
+            self.dispatch_event("on_eos")
+
+    @property
+    def texture(self) -> Texture | None:
+        """Get the texture for the current video frame, if any.
+
+        You should query this property every time you display a frame of video,
+        as multiple textures might be used. This property will be ``None`` if
+        the current Source does not contain video.
+        """
+        return self._texture
+
+    def seek_next_frame(self) -> None:
+        """Step forwards one video frame in the current source."""
+        ts = self.source.get_next_video_timestamp()
+        if ts is None:
+            return
+        self.seek(ts)
+
+    def delete(self) -> None:
+        super().delete()
+        if self._texture is not None:
+            self._texture = None
+        if self._sprite is not None:
+            self._sprite = None
 
 
 class PlayerGroup:
@@ -626,7 +705,7 @@ class PlayerGroup:
     All players in the group must currently not belong to any other group.
     """
 
-    def __init__(self, players: Iterable[Player]) -> None:
+    def __init__(self, players: Iterable[AudioPlayer]) -> None:
         """Initialize the PlayerGroup with the players."""
         self.players = list(players)
 
