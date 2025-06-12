@@ -3,11 +3,11 @@ from __future__ import annotations
 from ctypes import byref
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, OpenGLSurfaceContext, ContextException
+from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, ContextException
 from pyglet.graphics.api.gl.egl import egl
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLBackend
+    from pyglet.graphics.api.gl import OpenGLBackend, OpenGLSurfaceContext
     from pyglet.window.wayland import WaylandWindow
     from pyglet.window.headless import HeadlessWindow
 
@@ -93,6 +93,9 @@ class EGLWindowConfig(OpenGLWindowConfig):
 
     def create_context(self, opengl_backend: OpenGLBackend, share: HeadlessContext | None) -> HeadlessContext:
         return HeadlessContext(opengl_backend, self._window, self, share)
+
+    def apply_format(self) -> None:
+        pass
 
 
 class HeadlessContext(OpenGLSurfaceContext):

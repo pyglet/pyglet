@@ -7,7 +7,7 @@ import pyglet.lib
 from pyglet.graphics.api.gl.lib import decorate_function, missing_function
 from pyglet.util import asbytes
 
-__all__ = ['link_GL', 'link_GLX']
+__all__ = ['link_GL', 'link_GL_proxy', 'link_GLX']
 
 gl_lib = pyglet.lib.load_library('GL')
 
@@ -50,3 +50,4 @@ def link_GL(name: str, restype: Any, argtypes: Any, requires: str | None = None,
 
 
 link_GLX = link_GL  # noqa: N816
+link_GL_proxy = link_GL

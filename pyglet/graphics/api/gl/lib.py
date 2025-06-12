@@ -5,16 +5,6 @@ from typing import Any, Callable, NoReturn, Sequence
 
 import pyglet
 
-__all__ = [
-    'GLException',
-    'MissingFunctionException',
-    'decorate_function',
-    'link_AGL',
-    'link_GL',
-    'link_GLX',
-    'link_WGL',
-    'missing_function',
-]
 
 _debug_api = pyglet.options.debug_api
 _debug_api_trace = pyglet.options.debug_api_trace
@@ -73,9 +63,10 @@ def errcheck(result: Any, func: Callable, arguments: Sequence) -> Any:
             print(name)
 
     from pyglet.graphics.api import core, gl
-    if not core.current_context:
+    ctx = core.current_context
+    if not ctx:
         raise GLException('No GL context; create a Window first')
-    error = gl.glGetError()
+    error = ctx.glGetError()
     if error:
         # These are the 6 possible error codes we can get in opengl core 3.3+
         error_types = {
@@ -101,10 +92,27 @@ def decorate_function(func: Callable, name: str) -> None:
 link_AGL = None
 link_GLX = None
 link_WGL = None
+link_WGL_proxy = None
+link_GL_proxy = None
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
-    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_WGL
+    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL
 elif pyglet.compat_platform == 'darwin':
-    from pyglet.graphics.api.gl.cocoa.lib_agl import link_GL, link_AGL
+    from pyglet.graphics.api.gl.cocoa.lib_agl import link_GL, link_GL_proxy, link_AGL
+elif pyglet.compat_platform.startswith('linux'):
+    from pyglet.graphics.api.gl.xlib.lib_glx import link_GL, link_GL_proxy, link_GLX
 else:
-    from pyglet.graphics.api.gl.xlib.lib_glx import link_GL, link_GLX
+    raise Exception("Platform not available.")
+
+
+__all__ = [
+    'GLException',
+    'MissingFunctionException',
+    'decorate_function',
+    'link_AGL',
+    'link_GL',
+    'link_GLX',
+    'link_WGL',
+    'link_WGL_proxy',
+    'missing_function',
+]

@@ -273,9 +273,15 @@ class BatchBase:
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, VertexDomain]]
+    initial_count: int
 
-    def __init__(self) -> None:
-        """Create a graphics batch."""
+    def __init__(self, initial_count: int = 32) -> None:
+        """Initialize a graphics batch.
+
+        Args:
+            initial_count:
+                The initial vertex count of the buffers created by this batch.
+        """
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
@@ -290,6 +296,7 @@ class BatchBase:
         self._draw_list_dirty = False
 
         self._instance_count = 0
+        self.initial_count = initial_count
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
