@@ -382,11 +382,11 @@ class VertexDomain:
             pass
         elif primcount == 1:
             # Common case
-            glDrawArrays(mode, starts[0], sizes[0])
+            self._context.glDrawArrays(mode, starts[0], sizes[0])
         else:
             starts = (GLint * primcount)(*starts)
             sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawArrays(mode, starts, sizes, primcount)
+            self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
         """Draw a specific VertexList in the domain.
@@ -405,7 +405,7 @@ class VertexDomain:
         for buffer, _ in self.buffer_attributes:
             buffer.commit()
 
-        glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
+        self._context.glDrawArrays(geometry_map[mode], vertex_list.start, vertex_list.count)
 
     @property
     def is_empty(self) -> bool:
@@ -510,7 +510,7 @@ class InstancedVertexDomain(VertexDomain):
             buffer.commit()
 
         starts, sizes = self.allocator.get_allocated_regions()
-        glDrawArraysInstanced(mode, starts[0], sizes[0], self._instances)
+        self._context.glDrawArraysInstanced(mode, starts[0], sizes[0], self._instances)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
         """Draw a specific VertexList in the domain.
@@ -528,7 +528,7 @@ class InstancedVertexDomain(VertexDomain):
         for buffer, _ in self.buffer_attributes:
             buffer.commit()
 
-        glDrawArraysInstanced(mode, vertex_list.start, vertex_list.count, self._instances)
+        self._context.glDrawArraysInstanced(mode, vertex_list.start, vertex_list.count, self._instances)
 
     @property
     def is_empty(self) -> bool:
@@ -634,7 +634,7 @@ class IndexedVertexDomain(VertexDomain):
             starts = [s * self.index_element_size for s in starts]
             starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
             sizes = (GLsizei * primcount)(*sizes)
-            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+            self._context.glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
         """Draw a specific IndexedVertexList in the domain.
@@ -654,7 +654,7 @@ class IndexedVertexDomain(VertexDomain):
 
         self.index_buffer.commit()
 
-        glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
+        self._context.glDrawElements(geometry_map[mode], vertex_list.index_count, self.index_gl_type,
                        vertex_list.index_start * self.index_element_size)
 
 
@@ -724,7 +724,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
             buffer.commit()
 
         starts, sizes = self.index_allocator.get_allocated_regions()
-        glDrawElementsInstanced(mode, sizes[0], self.index_gl_type,
+        self._context.glDrawElementsInstanced(mode, sizes[0], self.index_gl_type,
                                 starts[0] * self.index_element_size, self._instances)
 
     def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
@@ -744,5 +744,5 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain, InstancedVertexDomain):
         for buffer, _ in self.buffer_attributes:
             buffer.commit()
 
-        glDrawElementsInstanced(mode, vertex_list.index_count, self.index_gl_type,
+        self._context.glDrawElementsInstanced(mode, vertex_list.index_count, self.index_gl_type,
                                 vertex_list.index_start * self.index_element_size, self._instances)
