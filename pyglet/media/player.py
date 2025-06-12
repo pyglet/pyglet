@@ -726,15 +726,7 @@ class PlayerGroup:
             player.pause()
 
 
-if pyglet.compat_platform == "emscripten":
-    # Override the player if using JS, just use their player.
-    # Does not provide as much control as other OS players, but required for now.
-    from pyglet.media.drivers.pyodide_js.interface import Player
-else:
-    Player = _Player
-
-
-Player.register_event_type('on_eos')
-Player.register_event_type('on_player_eos')
-Player.register_event_type('on_player_next_source')
-Player.register_event_type('on_driver_reset')
+AudioPlayer.register_event_type('on_eos')
+AudioPlayer.register_event_type('on_player_eos')
+AudioPlayer.register_event_type('on_player_next_source')
+AudioPlayer.register_event_type('on_driver_reset')

@@ -3,9 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
-from pyglet.graphics.api.webgl import (
-    vertexdomain,
-)
+from pyglet.graphics.api.webgl import vertexdomain
 from pyglet.graphics.api.webgl.enums import geometry_map
 from pyglet.graphics.draw import BatchBase, DomainKey, Group
 
@@ -13,8 +11,9 @@ _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
     from pyglet.graphics import GeometryMode
-    from pyglet.graphics.api.gl.vertexdomain import IndexedVertexList, VertexList
-    from pyglet.graphics.api.gl2.shader import ShaderProgram
+    from pyglet.graphics.api.webgl.vertexdomain import IndexedVertexList, VertexList
+    from pyglet.graphics.api.webgl.shader import ShaderProgram
+    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.state import State
 
 
@@ -224,13 +223,23 @@ class Batch(BatchBase):
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
+    initial_count: int
 
-    def __init__(self) -> None:
-        """Create a graphics batch."""
+    def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
+        """Initialize the batch for use.
+
+        Args:
+            context:
+                The OpenGL Surface context this batch will be a part of.
+            initial_count:
+                The initial count of the buffers created by the domains in the batch.
+        """
         # Mapping to find domain.
         # group -> (attributes, mode, indexed) -> domain
-        super().__init__()
-        self._context = pyglet.graphics.api.core.current_context
+        super().__init__(initial_count)
+        self._context = context or pyglet.graphics.api.core.current_context
+        assert self._context is not None, "A context needs to exist before you create this."
+
 
     def invalidate(self) -> None:
         """Force the batch to update the draw list.
@@ -365,7 +374,7 @@ class Batch(BatchBase):
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = _domain_class_map[(indexed, instanced)](attributes)
+            domain = _domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 

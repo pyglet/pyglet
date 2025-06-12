@@ -328,9 +328,9 @@ class _UniformArray:
 
         self._gl.useProgram(self._uniform.program)
         if self._is_matrix:
-            self._gl_setter(location, size, GL_FALSE, data)
+            self._gl_setter(location, GL_FALSE, data)
         else:
-            self._gl_setter(location, size, data)
+            self._gl_setter(location, data)
 
     def __repr__(self) -> str:
         data = [tuple(data) if self._uniform.length > 1 else data for data in self._c_array]
@@ -388,7 +388,7 @@ class _Uniform:
             c_array: Array[GLDataType] = (gl_type * length)()
             ptr = cast(c_array, POINTER(gl_type))
 
-            self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
+            self.get = self._create_getter_func(program, location, gl_getter, length)
             self.set = self._create_setter_func(
                 self._ctx.gl, program, location, gl_setter, c_array, length, ptr, is_matrix
             )
@@ -398,20 +398,11 @@ class _Uniform:
         program_id: int | WebGLRenderingContext,
         location: int,
         gl_getter: GLFunc,
-        c_array: Array[GLDataType],
         length: int,
     ) -> Callable[[], Array[GLDataType] | GLDataType]:
         """Factory function for creating simplified Uniform getters."""
-        if length == 1:
-
-            def getter_func() -> GLDataType:
-                gl_getter(program_id, location, c_array)
-                return c_array[0]
-        else:
-
-            def getter_func() -> Array[GLDataType]:
-                gl_getter(program_id, location, c_array)
-                return c_array[:]
+        def getter_func() -> GLDataType:
+            return gl_getter(program_id, location)
 
         return getter_func
 
@@ -431,20 +422,17 @@ class _Uniform:
 
             def setter_func(value: float) -> None:
                 gl_ctx.useProgram(program_id)
-                c_array[:] = value
-                gl_setter(location, 1, GL_FALSE, ptr)
+                gl_setter(location, GL_FALSE, value)
         elif length == 1:
 
             def setter_func(value: float) -> None:
                 gl_ctx.useProgram(program_id)
-                c_array[0] = value
-                gl_setter(location, 1, ptr)
+                gl_setter(location, value)
         elif length > 1:
 
             def setter_func(values: float) -> None:
                 gl_ctx.useProgram(program_id)
-                c_array[:] = values
-                gl_setter(location, 1, ptr)
+                gl_setter(location, values)
         else:
             msg = "Uniform type not yet supported."
             raise ShaderException(msg)
@@ -628,7 +616,7 @@ class UniformBlock:  # noqa: D101
 
     def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        return UniformBufferObject(self.view_cls, self.size, self.binding)
+        return UniformBufferObject(self.ctx, self.view_cls, self.size, self.binding)
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
@@ -656,7 +644,7 @@ class UniformBlock:  # noqa: D101
             warnings.warn(msg)
 
         self.binding = binding
-        gl.glUniformBlockBinding(self.program.id, self.index, self.binding)
+        self.ctx.gl.uniformBlockBinding(self.program.id, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
         """Introspect the block's structure and return a ctypes struct for manipulating the uniform block's members."""
@@ -739,9 +727,9 @@ class UniformBufferObject(UniformBufferObjectBase):
 
     __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
 
-    def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, view_class: type[Structure], buffer_size: int, binding: int) -> None:
         """Initialize the Uniform Buffer Object with the specified Structure."""
-        self.buffer = BufferObject(buffer_size, target=GL_UNIFORM_BUFFER)
+        self.buffer = BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
         self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.binding = binding

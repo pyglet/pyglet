@@ -56,7 +56,8 @@ class BufferObject(AbstractBuffer):
     target: int
     _context: OpenGLSurfaceContext | None
 
-    def __init__(self, size: int, target: int = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, target: int = GL_ARRAY_BUFFER,
+                 usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage.
 
         JS does not allow to directly map memory, so all of them must be backed.
@@ -64,7 +65,7 @@ class BufferObject(AbstractBuffer):
         super().__init__('b', size)
         self.usage = usage
         self.target = target
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
         self._gl = self._context.gl
 
         self.id = self._gl.createBuffer()
@@ -170,9 +171,9 @@ class BackedBufferObject(BufferObject):
     ctype: CType
 
     def __init__(
-        self, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
+        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
     ) -> None:
-        super().__init__(size, target, usage)
+        super().__init__(context, size, target, usage)
 
         self.c_type = c_type
         self._ctypes_size = ctypes.sizeof(c_type)
@@ -271,16 +272,16 @@ class BackedBufferObject(BufferObject):
 class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, size: int, attribute: Attribute) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, attribute: Attribute) -> None:
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(context, size, attribute.c_type, attribute.stride, attribute.count)
 
 
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(size, c_type, stride, count, usage, GL_ELEMENT_ARRAY_BUFFER)
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, c_type, stride, count, usage, GL_ELEMENT_ARRAY_BUFFER)
 
     def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""

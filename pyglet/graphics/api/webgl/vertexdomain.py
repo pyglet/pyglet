@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, Sequence, Type
 
 from _ctypes import Array, _Pointer, _SimpleCData
 
-import pyglet.graphics
+from pyglet.customtypes import CType
 from pyglet.graphics.api.webgl import vertexarray
 from pyglet.graphics.api.webgl.gl import (
     GL_BYTE,
@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.vertexarray import VertexArray
     from pyglet.graphics.allocation import Allocator
     from pyglet.graphics.shader import Attribute
+    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 
 _c_types = {
     GL_BYTE: ctypes.c_byte,
@@ -282,11 +283,10 @@ class VertexDomain:
     _property_dict: dict[str, property]
     _vertexlist_class: type
 
-    _initial_count: int = 16
     _vertex_class: type[VertexList] = VertexList
 
-    def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
-        self._context = pyglet.graphics.api.core.current_context
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+        self._context = context
         self._gl = self._context.gl
 
         ext = self._gl.getExtension("WEBGL_multi_draw")
@@ -298,8 +298,8 @@ class VertexDomain:
             self._multi_draw_elements = None
 
         self.attribute_meta = attribute_meta
-        self.allocator = allocation.Allocator(self._initial_count)
-        self.vao = vertexarray.VertexArray()
+        self.allocator = allocation.Allocator(initial_count)
+        self.vao = vertexarray.VertexArray(self._context)
 
         self.attribute_names = {}  # name: attribute
         self.buffer_attributes = []  # list of (buffer, attribute)
@@ -315,7 +315,8 @@ class VertexDomain:
                 name, meta.location, meta.count, meta.data_type, meta.normalize, meta.instance)
 
             # Create buffer:
-            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity,
+            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(self._context,
+                                                                            attribute.stride * self.allocator.capacity,
                                                                             attribute)
             # TODO: use persistent buffer if we have GL support for it:
             # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
@@ -432,7 +433,7 @@ class VertexDomain:
 
 
 def _make_instance_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
+    def _attribute_getter(self: VertexInstance) -> Array[CType]:
         buffer = self.domain.attrib_name_buffers[name]
         region = buffer.get_region(self.id - 1, 1)
         buffer.invalidate_region(self.id - 1, 1)
@@ -446,7 +447,7 @@ def _make_instance_attribute_property(name: str) -> property:
 
 
 def _make_restricted_instance_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexInstance) -> Array[CTypesDataType]:
+    def _attribute_getter(self: VertexInstance) -> Array[CType]:
         buffer = self.domain.attrib_name_buffers[name]
         return buffer.get_region(self.id - 1, 1)
 
@@ -559,22 +560,22 @@ class IndexedVertexDomain(VertexDomain):
     """
     index_allocator: Allocator
     index_gl_type: int
-    index_c_type: CTypesDataType
+    index_c_type: CType
     index_element_size: int
     index_buffer: IndexedBufferObject
-    _initial_index_count = 16
     _vertex_class = IndexedVertexList
 
-    def __init__(self, attribute_meta: dict[str, dict[str, Any]],
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, dict[str, Any]],
                  index_gl_type: int = GL_UNSIGNED_INT) -> None:
-        super().__init__(attribute_meta)
+        super().__init__(context, initial_count, attribute_meta)
 
-        self.index_allocator = allocation.Allocator(self._initial_index_count)
+        self.index_allocator = allocation.Allocator(initial_count)
 
         self.index_gl_type = index_gl_type
         self.index_c_type = _c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = IndexedBufferObject(self.index_allocator.capacity * self.index_element_size,
+        self.index_buffer = IndexedBufferObject(self._context,
+                                                self.index_allocator.capacity * self.index_element_size,
                                                 _c_types[index_gl_type],
                                                 self.index_element_size,
                                                 1)

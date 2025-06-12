@@ -64,7 +64,7 @@ class JavascriptWebAudioSource(Source):
         raise NotImplementedError("This is not supported and should not be called.")
 
     def seek(self, timestamp: float) -> NoReturn:
-        raise NotImplementedError("This is not supported and should not be called.")
+        """This is not supported by Javascript."""
 
 
 #########################################

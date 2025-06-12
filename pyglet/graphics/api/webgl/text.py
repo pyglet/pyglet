@@ -63,18 +63,18 @@ layout_fragment_source = """#version 330 core
     out vec4 final_colors;
 
     uniform sampler2D text;
-    //uniform bool scissor;
-    //uniform vec4 scissor_area;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
 
     void main()
     {
         final_colors = texture(text, texture_coords) * text_colors;
-        //if (scissor == true) {
-        //    if (vert_position.x < scissor_area[0]) discard;                     // left
-       //     if (vert_position.y < scissor_area[1]) discard;                     // bottom
-        //    if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-       //     if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-       // }
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
     }
 """
 layout_fragment_image_source = """#version 330 core
@@ -86,18 +86,18 @@ layout_fragment_image_source = """#version 330 core
 
     out vec4 final_colors;
 
-    //uniform bool scissor;
-    //uniform vec4 scissor_area;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
 
     void main()
     {
         final_colors = texture(image_texture, texture_coords.xy);
-        //if (scissor == true) {
-        //    if (vert_position.x < scissor_area[0]) discard;                     // left
-        //    if (vert_position.y < scissor_area[1]) discard;                     // bottom
-        //    if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-        //    if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        //}
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
     }
 """
 decoration_vertex_source = """#version 330 core
@@ -147,18 +147,18 @@ decoration_fragment_source = """#version 330 core
 
     out vec4 final_colors;
 
-    //uniform bool scissor;
-    //uniform vec4 scissor_area;
+    uniform bool scissor;
+    uniform vec4 scissor_area;
 
     void main()
     {
         final_colors = vert_colors;
-        //if (scissor == true) {
-        //    if (vert_position.x < scissor_area[0]) discard;                     // left
-        //    if (vert_position.y < scissor_area[1]) discard;                     // bottom
-        //    if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
-        //    if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
-        //}
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
     }
 """
 
@@ -231,7 +231,7 @@ class TextDecorationGroup(Group):
         super().__init__(order=order, parent=parent)
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        # self.set_shader_uniform(program,"scissor", False)
+        self.set_shader_uniform(program,"scissor", False)
 
 
 # ====== SCROLLING TEXT
@@ -259,8 +259,8 @@ class ScrollableTextLayoutGroup(Group):
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        # self.set_shader_uniform(program,"scissor", True)
-        # self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        self.set_shader_uniform(program,"scissor", True)
+        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -286,8 +286,8 @@ class ScrollableTextDecorationGroup(Group):
         self.program = program
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        # self.set_shader_uniform(program, "scissor", True)
-        # self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        self.set_shader_uniform(program, "scissor", True)
+        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(scissor={self.scissor_area})"
