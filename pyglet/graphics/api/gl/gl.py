@@ -8,6 +8,7 @@ from ctypes import (
     c_int64, c_short, c_ubyte, c_uint, c_uint64, c_ushort,
 )
 from pyglet.graphics.api.gl.lib import link_GL as _link_function
+from pyglet.graphics.api.gl.lib import link_GL_proxy as _link_function_proxy
 from pyglet.graphics.api.gl.lib import c_ptrdiff_t
 
 class struct___GLsync(Structure):
@@ -1550,7 +1551,11 @@ GL_TIMEOUT_IGNORED = 18446744073709551615
 # GL command definitions
 
 class GLFunctions:
-    def __init__(self):
+    """All the GL functions that will be available once a context is.
+
+    Note that these are not actually tied to the context, but a context does need to be created.
+    """
+    def __init__(self) -> None:
         self.glActiveShaderProgram = _link_function('glActiveShaderProgram', None, [GLuint, GLuint], requires='OpenGL 4.1')
         self.glActiveTexture = _link_function('glActiveTexture', None, [GLenum], requires='OpenGL 1.3')
         self.glAttachShader = _link_function('glAttachShader', None, [GLuint, GLuint], requires='OpenGL 2.0')
@@ -2327,6 +2332,781 @@ class GLFunctions:
         self.glViewportIndexedfv = _link_function('glViewportIndexedfv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
         self.glWaitSync = _link_function('glWaitSync', None, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')
 
+# GL command definitions
+# These functions are wrapped by Python, as they may be imported before a context is created.
+glActiveShaderProgram =   _link_function_proxy('glActiveShaderProgram', None, [GLuint, GLuint], requires='OpenGL 4.1')
+glActiveTexture =   _link_function_proxy('glActiveTexture', None, [GLenum], requires='OpenGL 1.3')
+glAttachShader =   _link_function_proxy('glAttachShader', None, [GLuint, GLuint], requires='OpenGL 2.0')
+glBeginConditionalRender =   _link_function_proxy('glBeginConditionalRender', None, [GLuint, GLenum], requires='OpenGL 3.0')
+glBeginQuery =   _link_function_proxy('glBeginQuery', None, [GLenum, GLuint], requires='OpenGL 1.5')
+glBeginQueryIndexed =   _link_function_proxy('glBeginQueryIndexed', None, [GLenum, GLuint, GLuint], requires='OpenGL 4.0')
+glBeginTransformFeedback =   _link_function_proxy('glBeginTransformFeedback', None, [GLenum], requires='OpenGL 3.0')
+glBindAttribLocation =   _link_function_proxy('glBindAttribLocation', None, [GLuint, GLuint, POINTER(GLchar)], requires='OpenGL 2.0')
+glBindBuffer =   _link_function_proxy('glBindBuffer', None, [GLenum, GLuint], requires='OpenGL 1.5')
+glBindBufferBase =   _link_function_proxy('glBindBufferBase', None, [GLenum, GLuint, GLuint], requires='OpenGL 3.1')
+glBindBufferRange =   _link_function_proxy('glBindBufferRange', None, [GLenum, GLuint, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 3.1')
+glBindBuffersBase =   _link_function_proxy('glBindBuffersBase', None, [GLenum, GLuint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.4')
+glBindBuffersRange =   _link_function_proxy('glBindBuffersRange', None, [GLenum, GLuint, GLsizei, POINTER(GLuint), POINTER(GLintptr), POINTER(GLsizeiptr)], requires='OpenGL 4.4')
+glBindFragDataLocation =   _link_function_proxy('glBindFragDataLocation', None, [GLuint, GLuint, POINTER(GLchar)], requires='OpenGL 3.0')
+glBindFragDataLocationIndexed =   _link_function_proxy('glBindFragDataLocationIndexed', None, [GLuint, GLuint, GLuint, POINTER(GLchar)], requires='OpenGL 3.3')
+glBindFramebuffer =   _link_function_proxy('glBindFramebuffer', None, [GLenum, GLuint], requires='OpenGL 3.0')
+glBindFramebufferEXT =   _link_function_proxy('glBindFramebufferEXT', None, [GLenum, GLuint], requires='None')
+glBindImageTexture =   _link_function_proxy('glBindImageTexture', None, [GLuint, GLuint, GLint, GLboolean, GLint, GLenum, GLenum], requires='OpenGL 4.2')
+glBindImageTextures =   _link_function_proxy('glBindImageTextures', None, [GLuint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.4')
+glBindProgramPipeline =   _link_function_proxy('glBindProgramPipeline', None, [GLuint], requires='OpenGL 4.1')
+glBindRenderbuffer =   _link_function_proxy('glBindRenderbuffer', None, [GLenum, GLuint], requires='OpenGL 3.0')
+glBindRenderbufferEXT =   _link_function_proxy('glBindRenderbufferEXT', None, [GLenum, GLuint], requires='None')
+glBindSampler =   _link_function_proxy('glBindSampler', None, [GLuint, GLuint], requires='OpenGL 3.3')
+glBindSamplers =   _link_function_proxy('glBindSamplers', None, [GLuint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.4')
+glBindTexture =   _link_function_proxy('glBindTexture', None, [GLenum, GLuint], requires='OpenGL 1.1')
+glBindTextureUnit =   _link_function_proxy('glBindTextureUnit', None, [GLuint, GLuint], requires='OpenGL 4.5')
+glBindTextures =   _link_function_proxy('glBindTextures', None, [GLuint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.4')
+glBindTransformFeedback =   _link_function_proxy('glBindTransformFeedback', None, [GLenum, GLuint], requires='OpenGL 4.0')
+glBindVertexArray =   _link_function_proxy('glBindVertexArray', None, [GLuint], requires='OpenGL 3.0')
+glBindVertexBuffer =   _link_function_proxy('glBindVertexBuffer', None, [GLuint, GLuint, GLintptr, GLsizei], requires='OpenGL 4.3')
+glBindVertexBuffers =   _link_function_proxy('glBindVertexBuffers', None, [GLuint, GLsizei, POINTER(GLuint), POINTER(GLintptr), POINTER(GLsizei)], requires='OpenGL 4.4')
+glBlendColor =   _link_function_proxy('glBlendColor', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.4')
+glBlendEquation =   _link_function_proxy('glBlendEquation', None, [GLenum], requires='OpenGL 1.4')
+glBlendEquationSeparate =   _link_function_proxy('glBlendEquationSeparate', None, [GLenum, GLenum], requires='OpenGL 2.0')
+glBlendEquationSeparatei =   _link_function_proxy('glBlendEquationSeparatei', None, [GLuint, GLenum, GLenum], requires='OpenGL 4.0')
+glBlendEquationi =   _link_function_proxy('glBlendEquationi', None, [GLuint, GLenum], requires='OpenGL 4.0')
+glBlendFunc =   _link_function_proxy('glBlendFunc', None, [GLenum, GLenum], requires='OpenGL 1.0')
+glBlendFuncSeparate =   _link_function_proxy('glBlendFuncSeparate', None, [GLenum, GLenum, GLenum, GLenum], requires='OpenGL 1.4')
+glBlendFuncSeparatei =   _link_function_proxy('glBlendFuncSeparatei', None, [GLuint, GLenum, GLenum, GLenum, GLenum], requires='OpenGL 4.0')
+glBlendFunci =   _link_function_proxy('glBlendFunci', None, [GLuint, GLenum, GLenum], requires='OpenGL 4.0')
+glBlitFramebuffer =   _link_function_proxy('glBlitFramebuffer', None, [GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum], requires='OpenGL 3.0')
+glBlitNamedFramebuffer =   _link_function_proxy('glBlitNamedFramebuffer', None, [GLuint, GLuint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum], requires='OpenGL 4.5')
+glBufferData =   _link_function_proxy('glBufferData', None, [GLenum, GLsizeiptr, POINTER(GLvoid), GLenum], requires='OpenGL 1.5')
+glBufferStorage =   _link_function_proxy('glBufferStorage', None, [GLenum, GLsizeiptr, POINTER(GLvoid), GLbitfield], requires='OpenGL 4.4')
+glBufferSubData =   _link_function_proxy('glBufferSubData', None, [GLenum, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 1.5')
+glCheckFramebufferStatus =   _link_function_proxy('glCheckFramebufferStatus', GLenum, [GLenum], requires='OpenGL 3.0')
+glCheckFramebufferStatusEXT =   _link_function_proxy('glCheckFramebufferStatusEXT', GLenum, [GLenum], requires='None')
+glCheckNamedFramebufferStatus =   _link_function_proxy('glCheckNamedFramebufferStatus', GLenum, [GLuint, GLenum], requires='OpenGL 4.5')
+glClampColor =   _link_function_proxy('glClampColor', None, [GLenum, GLenum], requires='OpenGL 3.0')
+glClear =   _link_function_proxy('glClear', None, [GLbitfield], requires='OpenGL 1.0')
+glClearBufferData =   _link_function_proxy('glClearBufferData', None, [GLenum, GLenum, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
+glClearBufferSubData =   _link_function_proxy('glClearBufferSubData', None, [GLenum, GLenum, GLintptr, GLsizeiptr, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
+glClearBufferfi =   _link_function_proxy('glClearBufferfi', None, [GLenum, GLint, GLfloat, GLint], requires='OpenGL 3.0')
+glClearBufferfv =   _link_function_proxy('glClearBufferfv', None, [GLenum, GLint, POINTER(GLfloat)], requires='OpenGL 3.0')
+glClearBufferiv =   _link_function_proxy('glClearBufferiv', None, [GLenum, GLint, POINTER(GLint)], requires='OpenGL 3.0')
+glClearBufferuiv =   _link_function_proxy('glClearBufferuiv', None, [GLenum, GLint, POINTER(GLuint)], requires='OpenGL 3.0')
+glClearColor =   _link_function_proxy('glClearColor', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glClearDepth =   _link_function_proxy('glClearDepth', None, [GLdouble], requires='OpenGL 1.0')
+glClearDepthf =   _link_function_proxy('glClearDepthf', None, [GLfloat], requires='OpenGL 4.1')
+glClearNamedBufferData =   _link_function_proxy('glClearNamedBufferData', None, [GLuint, GLenum, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glClearNamedBufferSubData =   _link_function_proxy('glClearNamedBufferSubData', None, [GLuint, GLenum, GLintptr, GLsizeiptr, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glClearNamedFramebufferfi =   _link_function_proxy('glClearNamedFramebufferfi', None, [GLuint, GLenum, GLint, GLfloat, GLint], requires='OpenGL 4.5')
+glClearNamedFramebufferfv =   _link_function_proxy('glClearNamedFramebufferfv', None, [GLuint, GLenum, GLint, POINTER(GLfloat)], requires='OpenGL 4.5')
+glClearNamedFramebufferiv =   _link_function_proxy('glClearNamedFramebufferiv', None, [GLuint, GLenum, GLint, POINTER(GLint)], requires='OpenGL 4.5')
+glClearNamedFramebufferuiv =   _link_function_proxy('glClearNamedFramebufferuiv', None, [GLuint, GLenum, GLint, POINTER(GLuint)], requires='OpenGL 4.5')
+glClearStencil =   _link_function_proxy('glClearStencil', None, [GLint], requires='OpenGL 1.0')
+glClearTexImage =   _link_function_proxy('glClearTexImage', None, [GLuint, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
+glClearTexSubImage =   _link_function_proxy('glClearTexSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
+glClientWaitSync =   _link_function_proxy('glClientWaitSync', GLenum, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')
+glClipControl =   _link_function_proxy('glClipControl', None, [GLenum, GLenum], requires='OpenGL 4.5')
+glColorMask =   _link_function_proxy('glColorMask', None, [GLboolean, GLboolean, GLboolean, GLboolean], requires='OpenGL 1.0')
+glColorMaski =   _link_function_proxy('glColorMaski', None, [GLuint, GLboolean, GLboolean, GLboolean, GLboolean], requires='OpenGL 3.0')
+glColorP3ui =   _link_function_proxy('glColorP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glColorP3uiv =   _link_function_proxy('glColorP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glColorP4ui =   _link_function_proxy('glColorP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glColorP4uiv =   _link_function_proxy('glColorP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glCompileShader =   _link_function_proxy('glCompileShader', None, [GLuint], requires='OpenGL 2.0')
+glCompressedTexImage1D =   _link_function_proxy('glCompressedTexImage1D', None, [GLenum, GLint, GLenum, GLsizei, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTexImage2D =   _link_function_proxy('glCompressedTexImage2D', None, [GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTexImage3D =   _link_function_proxy('glCompressedTexImage3D', None, [GLenum, GLint, GLenum, GLsizei, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTexSubImage1D =   _link_function_proxy('glCompressedTexSubImage1D', None, [GLenum, GLint, GLint, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTexSubImage2D =   _link_function_proxy('glCompressedTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTexSubImage3D =   _link_function_proxy('glCompressedTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
+glCompressedTextureSubImage1D =   _link_function_proxy('glCompressedTextureSubImage1D', None, [GLuint, GLint, GLint, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glCompressedTextureSubImage2D =   _link_function_proxy('glCompressedTextureSubImage2D', None, [GLuint, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glCompressedTextureSubImage3D =   _link_function_proxy('glCompressedTextureSubImage3D', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glCopyBufferSubData =   _link_function_proxy('glCopyBufferSubData', None, [GLenum, GLenum, GLintptr, GLintptr, GLsizeiptr], requires='OpenGL 3.1')
+glCopyImageSubData =   _link_function_proxy('glCopyImageSubData', None, [GLuint, GLenum, GLint, GLint, GLint, GLint, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei], requires='OpenGL 4.3')
+glCopyNamedBufferSubData =   _link_function_proxy('glCopyNamedBufferSubData', None, [GLuint, GLuint, GLintptr, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glCopyTexImage1D =   _link_function_proxy('glCopyTexImage1D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLint], requires='OpenGL 1.1')
+glCopyTexImage2D =   _link_function_proxy('glCopyTexImage2D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei, GLint], requires='OpenGL 1.1')
+glCopyTexSubImage1D =   _link_function_proxy('glCopyTexSubImage1D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei], requires='OpenGL 1.1')
+glCopyTexSubImage2D =   _link_function_proxy('glCopyTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.1')
+glCopyTexSubImage3D =   _link_function_proxy('glCopyTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.2')
+glCopyTextureSubImage1D =   _link_function_proxy('glCopyTextureSubImage1D', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei], requires='OpenGL 4.5')
+glCopyTextureSubImage2D =   _link_function_proxy('glCopyTextureSubImage2D', None, [GLuint, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.5')
+glCopyTextureSubImage3D =   _link_function_proxy('glCopyTextureSubImage3D', None, [GLuint, GLint, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.5')
+glCreateBuffers =   _link_function_proxy('glCreateBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateFramebuffers =   _link_function_proxy('glCreateFramebuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateProgram =   _link_function_proxy('glCreateProgram', GLuint, [], requires='OpenGL 2.0')
+glCreateProgramPipelines =   _link_function_proxy('glCreateProgramPipelines', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateQueries =   _link_function_proxy('glCreateQueries', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateRenderbuffers =   _link_function_proxy('glCreateRenderbuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateSamplers =   _link_function_proxy('glCreateSamplers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateShader =   _link_function_proxy('glCreateShader', GLuint, [GLenum], requires='OpenGL 2.0')
+glCreateShaderProgramv =   _link_function_proxy('glCreateShaderProgramv', GLuint, [GLenum, GLsizei, POINTER(POINTER(GLchar))], requires='OpenGL 4.1')
+glCreateTextures =   _link_function_proxy('glCreateTextures', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateTransformFeedbacks =   _link_function_proxy('glCreateTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCreateVertexArrays =   _link_function_proxy('glCreateVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glCullFace =   _link_function_proxy('glCullFace', None, [GLenum], requires='OpenGL 1.0')
+glDebugMessageCallback =   _link_function_proxy('glDebugMessageCallback', None, [GLDEBUGPROC, POINTER(GLvoid)], requires='OpenGL 4.3')
+glDebugMessageControl =   _link_function_proxy('glDebugMessageControl', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLuint), GLboolean], requires='OpenGL 4.3')
+glDebugMessageInsert =   _link_function_proxy('glDebugMessageInsert', None, [GLenum, GLenum, GLuint, GLenum, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glDeleteBuffers =   _link_function_proxy('glDeleteBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
+glDeleteFramebuffers =   _link_function_proxy('glDeleteFramebuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glDeleteFramebuffersEXT =   _link_function_proxy('glDeleteFramebuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glDeleteProgram =   _link_function_proxy('glDeleteProgram', None, [GLuint], requires='OpenGL 2.0')
+glDeleteProgramPipelines =   _link_function_proxy('glDeleteProgramPipelines', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glDeleteQueries =   _link_function_proxy('glDeleteQueries', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
+glDeleteRenderbuffers =   _link_function_proxy('glDeleteRenderbuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glDeleteRenderbuffersEXT =   _link_function_proxy('glDeleteRenderbuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glDeleteSamplers =   _link_function_proxy('glDeleteSamplers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.3')
+glDeleteShader =   _link_function_proxy('glDeleteShader', None, [GLuint], requires='OpenGL 2.0')
+glDeleteSync =   _link_function_proxy('glDeleteSync', None, [GLsync], requires='OpenGL 3.2')
+glDeleteTextures =   _link_function_proxy('glDeleteTextures', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.1')
+glDeleteTransformFeedbacks =   _link_function_proxy('glDeleteTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.0')
+glDeleteVertexArrays =   _link_function_proxy('glDeleteVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glDepthFunc =   _link_function_proxy('glDepthFunc', None, [GLenum], requires='OpenGL 1.0')
+glDepthMask =   _link_function_proxy('glDepthMask', None, [GLboolean], requires='OpenGL 1.0')
+glDepthRange =   _link_function_proxy('glDepthRange', None, [GLdouble, GLdouble], requires='OpenGL 1.0')
+glDepthRangeArrayv =   _link_function_proxy('glDepthRangeArrayv', None, [GLuint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
+glDepthRangeIndexed =   _link_function_proxy('glDepthRangeIndexed', None, [GLuint, GLdouble, GLdouble], requires='OpenGL 4.1')
+glDepthRangef =   _link_function_proxy('glDepthRangef', None, [GLfloat, GLfloat], requires='OpenGL 4.1')
+glDetachShader =   _link_function_proxy('glDetachShader', None, [GLuint, GLuint], requires='OpenGL 2.0')
+glDisable =   _link_function_proxy('glDisable', None, [GLenum], requires='OpenGL 1.0')
+glDisableVertexArrayAttrib =   _link_function_proxy('glDisableVertexArrayAttrib', None, [GLuint, GLuint], requires='OpenGL 4.5')
+glDisableVertexAttribArray =   _link_function_proxy('glDisableVertexAttribArray', None, [GLuint], requires='OpenGL 2.0')
+glDisablei =   _link_function_proxy('glDisablei', None, [GLenum, GLuint], requires='OpenGL 3.0')
+glDispatchCompute =   _link_function_proxy('glDispatchCompute', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
+glDispatchComputeIndirect =   _link_function_proxy('glDispatchComputeIndirect', None, [GLintptr], requires='OpenGL 4.3')
+glDrawArrays =   _link_function_proxy('glDrawArrays', None, [GLenum, GLint, GLsizei], requires='OpenGL 1.1')
+glDrawArraysIndirect =   _link_function_proxy('glDrawArraysIndirect', None, [GLenum, POINTER(GLvoid)], requires='OpenGL 4.0')
+glDrawArraysInstanced =   _link_function_proxy('glDrawArraysInstanced', None, [GLenum, GLint, GLsizei, GLsizei], requires='OpenGL 3.1')
+glDrawArraysInstancedBaseInstance =   _link_function_proxy('glDrawArraysInstancedBaseInstance', None, [GLenum, GLint, GLsizei, GLsizei, GLuint], requires='OpenGL 4.2')
+glDrawBuffer =   _link_function_proxy('glDrawBuffer', None, [GLenum], requires='OpenGL 1.0')
+glDrawBuffers =   _link_function_proxy('glDrawBuffers', None, [GLsizei, POINTER(GLenum)], requires='OpenGL 2.0')
+glDrawElements =   _link_function_proxy('glDrawElements', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid)], requires='OpenGL 1.1')
+glDrawElementsBaseVertex =   _link_function_proxy('glDrawElementsBaseVertex', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLint], requires='OpenGL 3.2')
+glDrawElementsIndirect =   _link_function_proxy('glDrawElementsIndirect', None, [GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.0')
+glDrawElementsInstanced =   _link_function_proxy('glDrawElementsInstanced', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 3.1')
+glDrawElementsInstancedBaseInstance =   _link_function_proxy('glDrawElementsInstancedBaseInstance', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLuint], requires='OpenGL 4.2')
+glDrawElementsInstancedBaseVertex =   _link_function_proxy('glDrawElementsInstancedBaseVertex', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLint], requires='OpenGL 3.2')
+glDrawElementsInstancedBaseVertexBaseInstance =   _link_function_proxy('glDrawElementsInstancedBaseVertexBaseInstance', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLint, GLuint], requires='OpenGL 4.2')
+glDrawMeshTasksIndirectNV =   _link_function_proxy('glDrawMeshTasksIndirectNV', None, [GLintptr], requires='None')
+glDrawMeshTasksNV =   _link_function_proxy('glDrawMeshTasksNV', None, [GLuint, GLuint], requires='None')
+glDrawRangeElements =   _link_function_proxy('glDrawRangeElements', None, [GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid)], requires='OpenGL 1.2')
+glDrawRangeElementsBaseVertex =   _link_function_proxy('glDrawRangeElementsBaseVertex', None, [GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid), GLint], requires='OpenGL 3.2')
+glDrawTransformFeedback =   _link_function_proxy('glDrawTransformFeedback', None, [GLenum, GLuint], requires='OpenGL 4.0')
+glDrawTransformFeedbackInstanced =   _link_function_proxy('glDrawTransformFeedbackInstanced', None, [GLenum, GLuint, GLsizei], requires='OpenGL 4.2')
+glDrawTransformFeedbackStream =   _link_function_proxy('glDrawTransformFeedbackStream', None, [GLenum, GLuint, GLuint], requires='OpenGL 4.0')
+glDrawTransformFeedbackStreamInstanced =   _link_function_proxy('glDrawTransformFeedbackStreamInstanced', None, [GLenum, GLuint, GLuint, GLsizei], requires='OpenGL 4.2')
+glEnable =   _link_function_proxy('glEnable', None, [GLenum], requires='OpenGL 1.0')
+glEnableVertexArrayAttrib =   _link_function_proxy('glEnableVertexArrayAttrib', None, [GLuint, GLuint], requires='OpenGL 4.5')
+glEnableVertexAttribArray =   _link_function_proxy('glEnableVertexAttribArray', None, [GLuint], requires='OpenGL 2.0')
+glEnablei =   _link_function_proxy('glEnablei', None, [GLenum, GLuint], requires='OpenGL 3.0')
+glEndConditionalRender =   _link_function_proxy('glEndConditionalRender', None, [], requires='OpenGL 3.0')
+glEndQuery =   _link_function_proxy('glEndQuery', None, [GLenum], requires='OpenGL 1.5')
+glEndQueryIndexed =   _link_function_proxy('glEndQueryIndexed', None, [GLenum, GLuint], requires='OpenGL 4.0')
+glEndTransformFeedback =   _link_function_proxy('glEndTransformFeedback', None, [], requires='OpenGL 3.0')
+glFenceSync =   _link_function_proxy('glFenceSync', GLsync, [GLenum, GLbitfield], requires='OpenGL 3.2')
+glFinish =   _link_function_proxy('glFinish', None, [], requires='OpenGL 1.0')
+glFlush =   _link_function_proxy('glFlush', None, [], requires='OpenGL 1.0')
+glFlushMappedBufferRange =   _link_function_proxy('glFlushMappedBufferRange', None, [GLenum, GLintptr, GLsizeiptr], requires='OpenGL 3.0')
+glFlushMappedNamedBufferRange =   _link_function_proxy('glFlushMappedNamedBufferRange', None, [GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glFramebufferParameteri =   _link_function_proxy('glFramebufferParameteri', None, [GLenum, GLenum, GLint], requires='OpenGL 4.3')
+glFramebufferRenderbuffer =   _link_function_proxy('glFramebufferRenderbuffer', None, [GLenum, GLenum, GLenum, GLuint], requires='OpenGL 3.0')
+glFramebufferRenderbufferEXT =   _link_function_proxy('glFramebufferRenderbufferEXT', None, [GLenum, GLenum, GLenum, GLuint], requires='None')
+glFramebufferTexture =   _link_function_proxy('glFramebufferTexture', None, [GLenum, GLenum, GLuint, GLint], requires='OpenGL 3.2')
+glFramebufferTexture1D =   _link_function_proxy('glFramebufferTexture1D', None, [GLenum, GLenum, GLenum, GLuint, GLint], requires='OpenGL 3.0')
+glFramebufferTexture1DEXT =   _link_function_proxy('glFramebufferTexture1DEXT', None, [GLenum, GLenum, GLenum, GLuint, GLint], requires='None')
+glFramebufferTexture2D =   _link_function_proxy('glFramebufferTexture2D', None, [GLenum, GLenum, GLenum, GLuint, GLint], requires='OpenGL 3.0')
+glFramebufferTexture2DEXT =   _link_function_proxy('glFramebufferTexture2DEXT', None, [GLenum, GLenum, GLenum, GLuint, GLint], requires='None')
+glFramebufferTexture3D =   _link_function_proxy('glFramebufferTexture3D', None, [GLenum, GLenum, GLenum, GLuint, GLint, GLint], requires='OpenGL 3.0')
+glFramebufferTexture3DEXT =   _link_function_proxy('glFramebufferTexture3DEXT', None, [GLenum, GLenum, GLenum, GLuint, GLint, GLint], requires='None')
+glFramebufferTextureLayer =   _link_function_proxy('glFramebufferTextureLayer', None, [GLenum, GLenum, GLuint, GLint, GLint], requires='OpenGL 3.0')
+glFrontFace =   _link_function_proxy('glFrontFace', None, [GLenum], requires='OpenGL 1.0')
+glGenBuffers =   _link_function_proxy('glGenBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
+glGenFramebuffers =   _link_function_proxy('glGenFramebuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glGenFramebuffersEXT =   _link_function_proxy('glGenFramebuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glGenProgramPipelines =   _link_function_proxy('glGenProgramPipelines', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glGenQueries =   _link_function_proxy('glGenQueries', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
+glGenRenderbuffers =   _link_function_proxy('glGenRenderbuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glGenRenderbuffersEXT =   _link_function_proxy('glGenRenderbuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glGenSamplers =   _link_function_proxy('glGenSamplers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.3')
+glGenTextures =   _link_function_proxy('glGenTextures', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.1')
+glGenTransformFeedbacks =   _link_function_proxy('glGenTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.0')
+glGenVertexArrays =   _link_function_proxy('glGenVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glGenerateMipmap =   _link_function_proxy('glGenerateMipmap', None, [GLenum], requires='OpenGL 3.0')
+glGenerateMipmapEXT =   _link_function_proxy('glGenerateMipmapEXT', None, [GLenum], requires='None')
+glGenerateTextureMipmap =   _link_function_proxy('glGenerateTextureMipmap', None, [GLuint], requires='OpenGL 4.5')
+glGetActiveAtomicCounterBufferiv =   _link_function_proxy('glGetActiveAtomicCounterBufferiv', None, [GLuint, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.2')
+glGetActiveAttrib =   _link_function_proxy('glGetActiveAttrib', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLint), POINTER(GLenum), POINTER(GLchar)], requires='OpenGL 2.0')
+glGetActiveSubroutineName =   _link_function_proxy('glGetActiveSubroutineName', None, [GLuint, GLenum, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.0')
+glGetActiveSubroutineUniformName =   _link_function_proxy('glGetActiveSubroutineUniformName', None, [GLuint, GLenum, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.0')
+glGetActiveSubroutineUniformiv =   _link_function_proxy('glGetActiveSubroutineUniformiv', None, [GLuint, GLenum, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.0')
+glGetActiveUniform =   _link_function_proxy('glGetActiveUniform', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLint), POINTER(GLenum), POINTER(GLchar)], requires='OpenGL 2.0')
+glGetActiveUniformBlockName =   _link_function_proxy('glGetActiveUniformBlockName', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 3.1')
+glGetActiveUniformBlockiv =   _link_function_proxy('glGetActiveUniformBlockiv', None, [GLuint, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.1')
+glGetActiveUniformName =   _link_function_proxy('glGetActiveUniformName', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 3.1')
+glGetActiveUniformsiv =   _link_function_proxy('glGetActiveUniformsiv', None, [GLuint, GLsizei, POINTER(GLuint), GLenum, POINTER(GLint)], requires='OpenGL 3.1')
+glGetAttachedShaders =   _link_function_proxy('glGetAttachedShaders', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLuint)], requires='OpenGL 2.0')
+glGetAttribLocation =   _link_function_proxy('glGetAttribLocation', GLint, [GLuint, POINTER(GLchar)], requires='OpenGL 2.0')
+glGetBooleani_v =   _link_function_proxy('glGetBooleani_v', None, [GLenum, GLuint, POINTER(GLboolean)], requires='OpenGL 3.0')
+glGetBooleanv =   _link_function_proxy('glGetBooleanv', None, [GLenum, POINTER(GLboolean)], requires='OpenGL 1.0')
+glGetBufferParameteri64v =   _link_function_proxy('glGetBufferParameteri64v', None, [GLenum, GLenum, POINTER(GLint64)], requires='OpenGL 3.2')
+glGetBufferParameteriv =   _link_function_proxy('glGetBufferParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.5')
+glGetBufferPointerv =   _link_function_proxy('glGetBufferPointerv', None, [GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.5')
+glGetBufferSubData =   _link_function_proxy('glGetBufferSubData', None, [GLenum, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 1.5')
+glGetCompressedTexImage =   _link_function_proxy('glGetCompressedTexImage', None, [GLenum, GLint, POINTER(GLvoid)], requires='OpenGL 1.3')
+glGetCompressedTextureImage =   _link_function_proxy('glGetCompressedTextureImage', None, [GLuint, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetCompressedTextureSubImage =   _link_function_proxy('glGetCompressedTextureSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetDebugMessageLog =   _link_function_proxy('glGetDebugMessageLog', GLuint, [GLuint, GLsizei, POINTER(GLenum), POINTER(GLenum), POINTER(GLuint), POINTER(GLenum), POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
+glGetDoublei_v =   _link_function_proxy('glGetDoublei_v', None, [GLenum, GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glGetDoublev =   _link_function_proxy('glGetDoublev', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
+glGetError =   _link_function_proxy('glGetError', GLenum, [], requires='OpenGL 1.0')
+glGetFloati_v =   _link_function_proxy('glGetFloati_v', None, [GLenum, GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
+glGetFloatv =   _link_function_proxy('glGetFloatv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetFragDataIndex =   _link_function_proxy('glGetFragDataIndex', GLint, [GLuint, POINTER(GLchar)], requires='OpenGL 3.3')
+glGetFragDataLocation =   _link_function_proxy('glGetFragDataLocation', GLint, [GLuint, POINTER(GLchar)], requires='OpenGL 3.0')
+glGetFramebufferAttachmentParameteriv =   _link_function_proxy('glGetFramebufferAttachmentParameteriv', None, [GLenum, GLenum, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
+glGetFramebufferAttachmentParameterivEXT =   _link_function_proxy('glGetFramebufferAttachmentParameterivEXT', None, [GLenum, GLenum, GLenum, POINTER(GLint)], requires='None')
+glGetFramebufferParameteriv =   _link_function_proxy('glGetFramebufferParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.3')
+glGetGraphicsResetStatus =   _link_function_proxy('glGetGraphicsResetStatus', GLenum, [], requires='OpenGL 4.5')
+glGetImageHandleARB =   _link_function_proxy('glGetImageHandleARB', GLuint64, [GLuint, GLint, GLboolean, GLint, GLenum], requires='None')
+glGetInteger64i_v =   _link_function_proxy('glGetInteger64i_v', None, [GLenum, GLuint, POINTER(GLint64)], requires='OpenGL 3.2')
+glGetInteger64v =   _link_function_proxy('glGetInteger64v', None, [GLenum, POINTER(GLint64)], requires='OpenGL 3.2')
+glGetIntegeri_v =   _link_function_proxy('glGetIntegeri_v', None, [GLenum, GLuint, POINTER(GLint)], requires='OpenGL 3.1')
+glGetIntegerv =   _link_function_proxy('glGetIntegerv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetInternalformati64v =   _link_function_proxy('glGetInternalformati64v', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLint64)], requires='OpenGL 4.3')
+glGetInternalformativ =   _link_function_proxy('glGetInternalformativ', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLint)], requires='OpenGL 4.2')
+glGetMultisamplefv =   _link_function_proxy('glGetMultisamplefv', None, [GLenum, GLuint, POINTER(GLfloat)], requires='OpenGL 3.2')
+glGetNamedBufferParameteri64v =   _link_function_proxy('glGetNamedBufferParameteri64v', None, [GLuint, GLenum, POINTER(GLint64)], requires='OpenGL 4.5')
+glGetNamedBufferParameteriv =   _link_function_proxy('glGetNamedBufferParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetNamedBufferPointerv =   _link_function_proxy('glGetNamedBufferPointerv', None, [GLuint, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetNamedBufferSubData =   _link_function_proxy('glGetNamedBufferSubData', None, [GLuint, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetNamedFramebufferAttachmentParameteriv =   _link_function_proxy('glGetNamedFramebufferAttachmentParameteriv', None, [GLuint, GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetNamedFramebufferParameteriv =   _link_function_proxy('glGetNamedFramebufferParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetNamedRenderbufferParameteriv =   _link_function_proxy('glGetNamedRenderbufferParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetObjectLabel =   _link_function_proxy('glGetObjectLabel', None, [GLenum, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
+glGetObjectPtrLabel =   _link_function_proxy('glGetObjectPtrLabel', None, [POINTER(GLvoid), GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
+glGetPointerv =   _link_function_proxy('glGetPointerv', None, [GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
+glGetProgramBinary =   _link_function_proxy('glGetProgramBinary', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLenum), POINTER(GLvoid)], requires='OpenGL 4.1')
+glGetProgramInfoLog =   _link_function_proxy('glGetProgramInfoLog', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 2.0')
+glGetProgramInterfaceiv =   _link_function_proxy('glGetProgramInterfaceiv', None, [GLuint, GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.3')
+glGetProgramPipelineInfoLog =   _link_function_proxy('glGetProgramPipelineInfoLog', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.1')
+glGetProgramPipelineiv =   _link_function_proxy('glGetProgramPipelineiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.1')
+glGetProgramResourceIndex =   _link_function_proxy('glGetProgramResourceIndex', GLuint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.3')
+glGetProgramResourceLocation =   _link_function_proxy('glGetProgramResourceLocation', GLint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.3')
+glGetProgramResourceLocationIndex =   _link_function_proxy('glGetProgramResourceLocationIndex', GLint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.3')
+glGetProgramResourceName =   _link_function_proxy('glGetProgramResourceName', None, [GLuint, GLenum, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
+glGetProgramResourceiv =   _link_function_proxy('glGetProgramResourceiv', None, [GLuint, GLenum, GLuint, GLsizei, POINTER(GLenum), GLsizei, POINTER(GLsizei), POINTER(GLint)], requires='OpenGL 4.3')
+glGetProgramStageiv =   _link_function_proxy('glGetProgramStageiv', None, [GLuint, GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.0')
+glGetProgramiv =   _link_function_proxy('glGetProgramiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 2.0')
+glGetQueryBufferObjecti64v =   _link_function_proxy('glGetQueryBufferObjecti64v', None, [GLuint, GLuint, GLenum, GLintptr], requires='OpenGL 4.5')
+glGetQueryBufferObjectiv =   _link_function_proxy('glGetQueryBufferObjectiv', None, [GLuint, GLuint, GLenum, GLintptr], requires='OpenGL 4.5')
+glGetQueryBufferObjectui64v =   _link_function_proxy('glGetQueryBufferObjectui64v', None, [GLuint, GLuint, GLenum, GLintptr], requires='OpenGL 4.5')
+glGetQueryBufferObjectuiv =   _link_function_proxy('glGetQueryBufferObjectuiv', None, [GLuint, GLuint, GLenum, GLintptr], requires='OpenGL 4.5')
+glGetQueryIndexediv =   _link_function_proxy('glGetQueryIndexediv', None, [GLenum, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.0')
+glGetQueryObjecti64v =   _link_function_proxy('glGetQueryObjecti64v', None, [GLuint, GLenum, POINTER(GLint64)], requires='OpenGL 3.3')
+glGetQueryObjectiv =   _link_function_proxy('glGetQueryObjectiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 1.5')
+glGetQueryObjectui64v =   _link_function_proxy('glGetQueryObjectui64v', None, [GLuint, GLenum, POINTER(GLuint64)], requires='OpenGL 3.3')
+glGetQueryObjectuiv =   _link_function_proxy('glGetQueryObjectuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 1.5')
+glGetQueryiv =   _link_function_proxy('glGetQueryiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.5')
+glGetRenderbufferParameteriv =   _link_function_proxy('glGetRenderbufferParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
+glGetRenderbufferParameterivEXT =   _link_function_proxy('glGetRenderbufferParameterivEXT', None, [GLenum, GLenum, POINTER(GLint)], requires='None')
+glGetSamplerParameterIiv =   _link_function_proxy('glGetSamplerParameterIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
+glGetSamplerParameterIuiv =   _link_function_proxy('glGetSamplerParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glGetSamplerParameterfv =   _link_function_proxy('glGetSamplerParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 3.3')
+glGetSamplerParameteriv =   _link_function_proxy('glGetSamplerParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
+glGetShaderInfoLog =   _link_function_proxy('glGetShaderInfoLog', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 2.0')
+glGetShaderPrecisionFormat =   _link_function_proxy('glGetShaderPrecisionFormat', None, [GLenum, GLenum, POINTER(GLint), POINTER(GLint)], requires='OpenGL 4.1')
+glGetShaderSource =   _link_function_proxy('glGetShaderSource', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 2.0')
+glGetShaderiv =   _link_function_proxy('glGetShaderiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 2.0')
+glGetString =   _link_function_proxy('glGetString', POINTER(GLubyte), [GLenum], requires='OpenGL 1.0')
+glGetStringi =   _link_function_proxy('glGetStringi', POINTER(GLubyte), [GLenum, GLuint], requires='OpenGL 3.0')
+glGetSubroutineIndex =   _link_function_proxy('glGetSubroutineIndex', GLuint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
+glGetSubroutineUniformLocation =   _link_function_proxy('glGetSubroutineUniformLocation', GLint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
+glGetSynciv =   _link_function_proxy('glGetSynciv', None, [GLsync, GLenum, GLsizei, POINTER(GLsizei), POINTER(GLint)], requires='OpenGL 3.2')
+glGetTexImage =   _link_function_proxy('glGetTexImage', None, [GLenum, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
+glGetTexLevelParameterfv =   _link_function_proxy('glGetTexLevelParameterfv', None, [GLenum, GLint, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetTexLevelParameteriv =   _link_function_proxy('glGetTexLevelParameteriv', None, [GLenum, GLint, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetTexParameterIiv =   _link_function_proxy('glGetTexParameterIiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
+glGetTexParameterIuiv =   _link_function_proxy('glGetTexParameterIuiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.0')
+glGetTexParameterfv =   _link_function_proxy('glGetTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetTexParameteriv =   _link_function_proxy('glGetTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetTextureHandleARB =   _link_function_proxy('glGetTextureHandleARB', GLuint64, [GLuint], requires='None')
+glGetTextureImage =   _link_function_proxy('glGetTextureImage', None, [GLuint, GLint, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetTextureLevelParameterfv =   _link_function_proxy('glGetTextureLevelParameterfv', None, [GLuint, GLint, GLenum, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetTextureLevelParameteriv =   _link_function_proxy('glGetTextureLevelParameteriv', None, [GLuint, GLint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetTextureParameterIiv =   _link_function_proxy('glGetTextureParameterIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetTextureParameterIuiv =   _link_function_proxy('glGetTextureParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 4.5')
+glGetTextureParameterfv =   _link_function_proxy('glGetTextureParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetTextureParameteriv =   _link_function_proxy('glGetTextureParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetTextureSamplerHandleARB =   _link_function_proxy('glGetTextureSamplerHandleARB', GLuint64, [GLuint, GLuint], requires='None')
+glGetTextureSubImage =   _link_function_proxy('glGetTextureSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetTransformFeedbackVarying =   _link_function_proxy('glGetTransformFeedbackVarying', None, [GLuint, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLsizei), POINTER(GLenum), POINTER(GLchar)], requires='OpenGL 3.0')
+glGetTransformFeedbacki64_v =   _link_function_proxy('glGetTransformFeedbacki64_v', None, [GLuint, GLenum, GLuint, POINTER(GLint64)], requires='OpenGL 4.5')
+glGetTransformFeedbacki_v =   _link_function_proxy('glGetTransformFeedbacki_v', None, [GLuint, GLenum, GLuint, POINTER(GLint)], requires='OpenGL 4.5')
+glGetTransformFeedbackiv =   _link_function_proxy('glGetTransformFeedbackiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetUniformBlockIndex =   _link_function_proxy('glGetUniformBlockIndex', GLuint, [GLuint, POINTER(GLchar)], requires='OpenGL 3.1')
+glGetUniformIndices =   _link_function_proxy('glGetUniformIndices', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLuint)], requires='OpenGL 3.1')
+glGetUniformLocation =   _link_function_proxy('glGetUniformLocation', GLint, [GLuint, POINTER(GLchar)], requires='OpenGL 2.0')
+glGetUniformSubroutineuiv =   _link_function_proxy('glGetUniformSubroutineuiv', None, [GLenum, GLint, POINTER(GLuint)], requires='OpenGL 4.0')
+glGetUniformdv =   _link_function_proxy('glGetUniformdv', None, [GLuint, GLint, POINTER(GLdouble)], requires='OpenGL 4.0')
+glGetUniformfv =   _link_function_proxy('glGetUniformfv', None, [GLuint, GLint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glGetUniformi64vARB =   _link_function_proxy('glGetUniformi64vARB', None, [GLuint, GLint, POINTER(GLint64)], requires='None')
+glGetUniformiv =   _link_function_proxy('glGetUniformiv', None, [GLuint, GLint, POINTER(GLint)], requires='OpenGL 2.0')
+glGetUniformui64vARB =   _link_function_proxy('glGetUniformui64vARB', None, [GLuint, GLint, POINTER(GLuint64)], requires='None')
+glGetUniformuiv =   _link_function_proxy('glGetUniformuiv', None, [GLuint, GLint, POINTER(GLuint)], requires='OpenGL 3.0')
+glGetVertexArrayIndexed64iv =   _link_function_proxy('glGetVertexArrayIndexed64iv', None, [GLuint, GLuint, GLenum, POINTER(GLint64)], requires='OpenGL 4.5')
+glGetVertexArrayIndexediv =   _link_function_proxy('glGetVertexArrayIndexediv', None, [GLuint, GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetVertexArrayiv =   _link_function_proxy('glGetVertexArrayiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glGetVertexAttribIiv =   _link_function_proxy('glGetVertexAttribIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
+glGetVertexAttribIuiv =   _link_function_proxy('glGetVertexAttribIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 3.0')
+glGetVertexAttribLdv =   _link_function_proxy('glGetVertexAttribLdv', None, [GLuint, GLenum, POINTER(GLdouble)], requires='OpenGL 4.1')
+glGetVertexAttribLui64vARB =   _link_function_proxy('glGetVertexAttribLui64vARB', None, [GLuint, GLenum, POINTER(GLuint64EXT)], requires='None')
+glGetVertexAttribPointerv =   _link_function_proxy('glGetVertexAttribPointerv', None, [GLuint, GLenum, POINTER(GLvoid)], requires='OpenGL 2.0')
+glGetVertexAttribdv =   _link_function_proxy('glGetVertexAttribdv', None, [GLuint, GLenum, POINTER(GLdouble)], requires='OpenGL 2.0')
+glGetVertexAttribfv =   _link_function_proxy('glGetVertexAttribfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 2.0')
+glGetVertexAttribiv =   _link_function_proxy('glGetVertexAttribiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 2.0')
+glGetnColorTable =   _link_function_proxy('glGetnColorTable', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnCompressedTexImage =   _link_function_proxy('glGetnCompressedTexImage', None, [GLenum, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnConvolutionFilter =   _link_function_proxy('glGetnConvolutionFilter', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnHistogram =   _link_function_proxy('glGetnHistogram', None, [GLenum, GLboolean, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnMapdv =   _link_function_proxy('glGetnMapdv', None, [GLenum, GLenum, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.5')
+glGetnMapfv =   _link_function_proxy('glGetnMapfv', None, [GLenum, GLenum, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetnMapiv =   _link_function_proxy('glGetnMapiv', None, [GLenum, GLenum, GLsizei, POINTER(GLint)], requires='OpenGL 4.5')
+glGetnMinmax =   _link_function_proxy('glGetnMinmax', None, [GLenum, GLboolean, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnPixelMapfv =   _link_function_proxy('glGetnPixelMapfv', None, [GLenum, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetnPixelMapuiv =   _link_function_proxy('glGetnPixelMapuiv', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glGetnPixelMapusv =   _link_function_proxy('glGetnPixelMapusv', None, [GLenum, GLsizei, POINTER(GLushort)], requires='OpenGL 4.5')
+glGetnPolygonStipple =   _link_function_proxy('glGetnPolygonStipple', None, [GLsizei, POINTER(GLubyte)], requires='OpenGL 4.5')
+glGetnSeparableFilter =   _link_function_proxy('glGetnSeparableFilter', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLvoid), GLsizei, POINTER(GLvoid), POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnTexImage =   _link_function_proxy('glGetnTexImage', None, [GLenum, GLint, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glGetnUniformdv =   _link_function_proxy('glGetnUniformdv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.5')
+glGetnUniformfv =   _link_function_proxy('glGetnUniformfv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.5')
+glGetnUniformi64vARB =   _link_function_proxy('glGetnUniformi64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
+glGetnUniformiv =   _link_function_proxy('glGetnUniformiv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.5')
+glGetnUniformui64vARB =   _link_function_proxy('glGetnUniformui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glGetnUniformuiv =   _link_function_proxy('glGetnUniformuiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
+glHint =   _link_function_proxy('glHint', None, [GLenum, GLenum], requires='OpenGL 1.0')
+glInvalidateBufferData =   _link_function_proxy('glInvalidateBufferData', None, [GLuint], requires='OpenGL 4.3')
+glInvalidateBufferSubData =   _link_function_proxy('glInvalidateBufferSubData', None, [GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.3')
+glInvalidateFramebuffer =   _link_function_proxy('glInvalidateFramebuffer', None, [GLenum, GLsizei, POINTER(GLenum)], requires='OpenGL 4.3')
+glInvalidateNamedFramebufferData =   _link_function_proxy('glInvalidateNamedFramebufferData', None, [GLuint, GLsizei, POINTER(GLenum)], requires='OpenGL 4.5')
+glInvalidateNamedFramebufferSubData =   _link_function_proxy('glInvalidateNamedFramebufferSubData', None, [GLuint, GLsizei, POINTER(GLenum), GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.5')
+glInvalidateSubFramebuffer =   _link_function_proxy('glInvalidateSubFramebuffer', None, [GLenum, GLsizei, POINTER(GLenum), GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.3')
+glInvalidateTexImage =   _link_function_proxy('glInvalidateTexImage', None, [GLuint, GLint], requires='OpenGL 4.3')
+glInvalidateTexSubImage =   _link_function_proxy('glInvalidateTexSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei], requires='OpenGL 4.3')
+glIsBuffer =   _link_function_proxy('glIsBuffer', GLboolean, [GLuint], requires='OpenGL 1.5')
+glIsEnabled =   _link_function_proxy('glIsEnabled', GLboolean, [GLenum], requires='OpenGL 1.0')
+glIsEnabledi =   _link_function_proxy('glIsEnabledi', GLboolean, [GLenum, GLuint], requires='OpenGL 3.0')
+glIsFramebuffer =   _link_function_proxy('glIsFramebuffer', GLboolean, [GLuint], requires='OpenGL 3.0')
+glIsFramebufferEXT =   _link_function_proxy('glIsFramebufferEXT', GLboolean, [GLuint], requires='None')
+glIsImageHandleResidentARB =   _link_function_proxy('glIsImageHandleResidentARB', GLboolean, [GLuint64], requires='None')
+glIsProgram =   _link_function_proxy('glIsProgram', GLboolean, [GLuint], requires='OpenGL 2.0')
+glIsProgramPipeline =   _link_function_proxy('glIsProgramPipeline', GLboolean, [GLuint], requires='OpenGL 4.1')
+glIsQuery =   _link_function_proxy('glIsQuery', GLboolean, [GLuint], requires='OpenGL 1.5')
+glIsRenderbuffer =   _link_function_proxy('glIsRenderbuffer', GLboolean, [GLuint], requires='OpenGL 3.0')
+glIsRenderbufferEXT =   _link_function_proxy('glIsRenderbufferEXT', GLboolean, [GLuint], requires='None')
+glIsSampler =   _link_function_proxy('glIsSampler', GLboolean, [GLuint], requires='OpenGL 3.3')
+glIsShader =   _link_function_proxy('glIsShader', GLboolean, [GLuint], requires='OpenGL 2.0')
+glIsSync =   _link_function_proxy('glIsSync', GLboolean, [GLsync], requires='OpenGL 3.2')
+glIsTexture =   _link_function_proxy('glIsTexture', GLboolean, [GLuint], requires='OpenGL 1.1')
+glIsTextureHandleResidentARB =   _link_function_proxy('glIsTextureHandleResidentARB', GLboolean, [GLuint64], requires='None')
+glIsTransformFeedback =   _link_function_proxy('glIsTransformFeedback', GLboolean, [GLuint], requires='OpenGL 4.0')
+glIsVertexArray =   _link_function_proxy('glIsVertexArray', GLboolean, [GLuint], requires='OpenGL 3.0')
+glLineWidth =   _link_function_proxy('glLineWidth', None, [GLfloat], requires='OpenGL 1.0')
+glLinkProgram =   _link_function_proxy('glLinkProgram', None, [GLuint], requires='OpenGL 2.0')
+glLogicOp =   _link_function_proxy('glLogicOp', None, [GLenum], requires='OpenGL 1.0')
+glMakeImageHandleNonResidentARB =   _link_function_proxy('glMakeImageHandleNonResidentARB', None, [GLuint64], requires='None')
+glMakeImageHandleResidentARB =   _link_function_proxy('glMakeImageHandleResidentARB', None, [GLuint64, GLenum], requires='None')
+glMakeTextureHandleNonResidentARB =   _link_function_proxy('glMakeTextureHandleNonResidentARB', None, [GLuint64], requires='None')
+glMakeTextureHandleResidentARB =   _link_function_proxy('glMakeTextureHandleResidentARB', None, [GLuint64], requires='None')
+glMapBuffer =   _link_function_proxy('glMapBuffer', POINTER(None), [GLenum, GLenum], requires='OpenGL 1.5')
+glMapBufferRange =   _link_function_proxy('glMapBufferRange', POINTER(None), [GLenum, GLintptr, GLsizeiptr, GLbitfield], requires='OpenGL 3.0')
+glMapNamedBuffer =   _link_function_proxy('glMapNamedBuffer', POINTER(None), [GLuint, GLenum], requires='OpenGL 4.5')
+glMapNamedBufferRange =   _link_function_proxy('glMapNamedBufferRange', POINTER(None), [GLuint, GLintptr, GLsizeiptr, GLbitfield], requires='OpenGL 4.5')
+glMemoryBarrier =   _link_function_proxy('glMemoryBarrier', None, [GLbitfield], requires='OpenGL 4.2')
+glMemoryBarrierByRegion =   _link_function_proxy('glMemoryBarrierByRegion', None, [GLbitfield], requires='OpenGL 4.5')
+glMinSampleShading =   _link_function_proxy('glMinSampleShading', None, [GLfloat], requires='OpenGL 4.0')
+glMultiDrawArrays =   _link_function_proxy('glMultiDrawArrays', None, [GLenum, POINTER(GLint), POINTER(GLsizei), GLsizei], requires='OpenGL 1.4')
+glMultiDrawArraysIndirect =   _link_function_proxy('glMultiDrawArraysIndirect', None, [GLenum, POINTER(GLvoid), GLsizei, GLsizei], requires='OpenGL 4.3')
+glMultiDrawArraysIndirectCount =   _link_function_proxy('glMultiDrawArraysIndirectCount', None, [GLenum, POINTER(GLvoid), GLintptr, GLsizei, GLsizei], requires='OpenGL 4.6')
+glMultiDrawElements =   _link_function_proxy('glMultiDrawElements', None, [GLenum, POINTER(GLsizei), GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 1.4')
+glMultiDrawElementsBaseVertex =   _link_function_proxy('glMultiDrawElementsBaseVertex', None, [GLenum, POINTER(GLsizei), GLenum, POINTER(GLvoid), GLsizei, POINTER(GLint)], requires='OpenGL 3.2')
+glMultiDrawElementsIndirect =   _link_function_proxy('glMultiDrawElementsIndirect', None, [GLenum, GLenum, POINTER(GLvoid), GLsizei, GLsizei], requires='OpenGL 4.3')
+glMultiDrawElementsIndirectCount =   _link_function_proxy('glMultiDrawElementsIndirectCount', None, [GLenum, GLenum, POINTER(GLvoid), GLintptr, GLsizei, GLsizei], requires='OpenGL 4.6')
+glMultiDrawMeshTasksIndirectCountNV =   _link_function_proxy('glMultiDrawMeshTasksIndirectCountNV', None, [GLintptr, GLintptr, GLsizei, GLsizei], requires='None')
+glMultiDrawMeshTasksIndirectNV =   _link_function_proxy('glMultiDrawMeshTasksIndirectNV', None, [GLintptr, GLsizei, GLsizei], requires='None')
+glMultiTexCoordP1ui =   _link_function_proxy('glMultiTexCoordP1ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
+glMultiTexCoordP1uiv =   _link_function_proxy('glMultiTexCoordP1uiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glMultiTexCoordP2ui =   _link_function_proxy('glMultiTexCoordP2ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
+glMultiTexCoordP2uiv =   _link_function_proxy('glMultiTexCoordP2uiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glMultiTexCoordP3ui =   _link_function_proxy('glMultiTexCoordP3ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
+glMultiTexCoordP3uiv =   _link_function_proxy('glMultiTexCoordP3uiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glMultiTexCoordP4ui =   _link_function_proxy('glMultiTexCoordP4ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
+glMultiTexCoordP4uiv =   _link_function_proxy('glMultiTexCoordP4uiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glNamedBufferData =   _link_function_proxy('glNamedBufferData', None, [GLuint, GLsizeiptr, POINTER(GLvoid), GLenum], requires='OpenGL 4.5')
+glNamedBufferStorage =   _link_function_proxy('glNamedBufferStorage', None, [GLuint, GLsizeiptr, POINTER(GLvoid), GLbitfield], requires='OpenGL 4.5')
+glNamedBufferSubData =   _link_function_proxy('glNamedBufferSubData', None, [GLuint, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 4.5')
+glNamedFramebufferDrawBuffer =   _link_function_proxy('glNamedFramebufferDrawBuffer', None, [GLuint, GLenum], requires='OpenGL 4.5')
+glNamedFramebufferDrawBuffers =   _link_function_proxy('glNamedFramebufferDrawBuffers', None, [GLuint, GLsizei, POINTER(GLenum)], requires='OpenGL 4.5')
+glNamedFramebufferParameteri =   _link_function_proxy('glNamedFramebufferParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 4.5')
+glNamedFramebufferReadBuffer =   _link_function_proxy('glNamedFramebufferReadBuffer', None, [GLuint, GLenum], requires='OpenGL 4.5')
+glNamedFramebufferRenderbuffer =   _link_function_proxy('glNamedFramebufferRenderbuffer', None, [GLuint, GLenum, GLenum, GLuint], requires='OpenGL 4.5')
+glNamedFramebufferTexture =   _link_function_proxy('glNamedFramebufferTexture', None, [GLuint, GLenum, GLuint, GLint], requires='OpenGL 4.5')
+glNamedFramebufferTextureLayer =   _link_function_proxy('glNamedFramebufferTextureLayer', None, [GLuint, GLenum, GLuint, GLint, GLint], requires='OpenGL 4.5')
+glNamedRenderbufferStorage =   _link_function_proxy('glNamedRenderbufferStorage', None, [GLuint, GLenum, GLsizei, GLsizei], requires='OpenGL 4.5')
+glNamedRenderbufferStorageMultisample =   _link_function_proxy('glNamedRenderbufferStorageMultisample', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 4.5')
+glNormalP3ui =   _link_function_proxy('glNormalP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glNormalP3uiv =   _link_function_proxy('glNormalP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glObjectLabel =   _link_function_proxy('glObjectLabel', None, [GLenum, GLuint, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glObjectPtrLabel =   _link_function_proxy('glObjectPtrLabel', None, [POINTER(GLvoid), GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glPatchParameterfv =   _link_function_proxy('glPatchParameterfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 4.0')
+glPatchParameteri =   _link_function_proxy('glPatchParameteri', None, [GLenum, GLint], requires='OpenGL 4.0')
+glPauseTransformFeedback =   _link_function_proxy('glPauseTransformFeedback', None, [], requires='OpenGL 4.0')
+glPixelStoref =   _link_function_proxy('glPixelStoref', None, [GLenum, GLfloat], requires='OpenGL 1.0')
+glPixelStorei =   _link_function_proxy('glPixelStorei', None, [GLenum, GLint], requires='OpenGL 1.0')
+glPointParameterf =   _link_function_proxy('glPointParameterf', None, [GLenum, GLfloat], requires='OpenGL 1.4')
+glPointParameterfv =   _link_function_proxy('glPointParameterfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.4')
+glPointParameteri =   _link_function_proxy('glPointParameteri', None, [GLenum, GLint], requires='OpenGL 1.4')
+glPointParameteriv =   _link_function_proxy('glPointParameteriv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.4')
+glPointSize =   _link_function_proxy('glPointSize', None, [GLfloat], requires='OpenGL 1.0')
+glPolygonMode =   _link_function_proxy('glPolygonMode', None, [GLenum, GLenum], requires='OpenGL 1.0')
+glPolygonOffset =   _link_function_proxy('glPolygonOffset', None, [GLfloat, GLfloat], requires='OpenGL 1.1')
+glPolygonOffsetClamp =   _link_function_proxy('glPolygonOffsetClamp', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 4.6')
+glPopDebugGroup =   _link_function_proxy('glPopDebugGroup', None, [], requires='OpenGL 4.3')
+glPrimitiveRestartIndex =   _link_function_proxy('glPrimitiveRestartIndex', None, [GLuint], requires='OpenGL 3.1')
+glProgramBinary =   _link_function_proxy('glProgramBinary', None, [GLuint, GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
+glProgramParameteri =   _link_function_proxy('glProgramParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 4.1')
+glProgramUniform1d =   _link_function_proxy('glProgramUniform1d', None, [GLuint, GLint, GLdouble], requires='OpenGL 4.1')
+glProgramUniform1dv =   _link_function_proxy('glProgramUniform1dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniform1f =   _link_function_proxy('glProgramUniform1f', None, [GLuint, GLint, GLfloat], requires='OpenGL 4.1')
+glProgramUniform1fv =   _link_function_proxy('glProgramUniform1fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniform1i =   _link_function_proxy('glProgramUniform1i', None, [GLuint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform1i64ARB =   _link_function_proxy('glProgramUniform1i64ARB', None, [GLuint, GLint, GLint64], requires='None')
+glProgramUniform1i64vARB =   _link_function_proxy('glProgramUniform1i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
+glProgramUniform1iv =   _link_function_proxy('glProgramUniform1iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
+glProgramUniform1ui =   _link_function_proxy('glProgramUniform1ui', None, [GLuint, GLint, GLuint], requires='OpenGL 4.1')
+glProgramUniform1ui64ARB =   _link_function_proxy('glProgramUniform1ui64ARB', None, [GLuint, GLint, GLuint64], requires='None')
+glProgramUniform1ui64vARB =   _link_function_proxy('glProgramUniform1ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glProgramUniform1uiv =   _link_function_proxy('glProgramUniform1uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glProgramUniform2d =   _link_function_proxy('glProgramUniform2d', None, [GLuint, GLint, GLdouble, GLdouble], requires='OpenGL 4.1')
+glProgramUniform2dv =   _link_function_proxy('glProgramUniform2dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniform2f =   _link_function_proxy('glProgramUniform2f', None, [GLuint, GLint, GLfloat, GLfloat], requires='OpenGL 4.1')
+glProgramUniform2fv =   _link_function_proxy('glProgramUniform2fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniform2i =   _link_function_proxy('glProgramUniform2i', None, [GLuint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform2i64ARB =   _link_function_proxy('glProgramUniform2i64ARB', None, [GLuint, GLint, GLint64, GLint64], requires='None')
+glProgramUniform2i64vARB =   _link_function_proxy('glProgramUniform2i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
+glProgramUniform2iv =   _link_function_proxy('glProgramUniform2iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
+glProgramUniform2ui =   _link_function_proxy('glProgramUniform2ui', None, [GLuint, GLint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform2ui64ARB =   _link_function_proxy('glProgramUniform2ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64], requires='None')
+glProgramUniform2ui64vARB =   _link_function_proxy('glProgramUniform2ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glProgramUniform2uiv =   _link_function_proxy('glProgramUniform2uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glProgramUniform3d =   _link_function_proxy('glProgramUniform3d', None, [GLuint, GLint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
+glProgramUniform3dv =   _link_function_proxy('glProgramUniform3dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniform3f =   _link_function_proxy('glProgramUniform3f', None, [GLuint, GLint, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
+glProgramUniform3fv =   _link_function_proxy('glProgramUniform3fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniform3i =   _link_function_proxy('glProgramUniform3i', None, [GLuint, GLint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform3i64ARB =   _link_function_proxy('glProgramUniform3i64ARB', None, [GLuint, GLint, GLint64, GLint64, GLint64], requires='None')
+glProgramUniform3i64vARB =   _link_function_proxy('glProgramUniform3i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
+glProgramUniform3iv =   _link_function_proxy('glProgramUniform3iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
+glProgramUniform3ui =   _link_function_proxy('glProgramUniform3ui', None, [GLuint, GLint, GLuint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform3ui64ARB =   _link_function_proxy('glProgramUniform3ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64, GLuint64], requires='None')
+glProgramUniform3ui64vARB =   _link_function_proxy('glProgramUniform3ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glProgramUniform3uiv =   _link_function_proxy('glProgramUniform3uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glProgramUniform4d =   _link_function_proxy('glProgramUniform4d', None, [GLuint, GLint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
+glProgramUniform4dv =   _link_function_proxy('glProgramUniform4dv', None, [GLuint, GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniform4f =   _link_function_proxy('glProgramUniform4f', None, [GLuint, GLint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
+glProgramUniform4fv =   _link_function_proxy('glProgramUniform4fv', None, [GLuint, GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniform4i =   _link_function_proxy('glProgramUniform4i', None, [GLuint, GLint, GLint, GLint, GLint, GLint], requires='OpenGL 4.1')
+glProgramUniform4i64ARB =   _link_function_proxy('glProgramUniform4i64ARB', None, [GLuint, GLint, GLint64, GLint64, GLint64, GLint64], requires='None')
+glProgramUniform4i64vARB =   _link_function_proxy('glProgramUniform4i64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLint64)], requires='None')
+glProgramUniform4iv =   _link_function_proxy('glProgramUniform4iv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
+glProgramUniform4ui =   _link_function_proxy('glProgramUniform4ui', None, [GLuint, GLint, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 4.1')
+glProgramUniform4ui64ARB =   _link_function_proxy('glProgramUniform4ui64ARB', None, [GLuint, GLint, GLuint64, GLuint64, GLuint64, GLuint64], requires='None')
+glProgramUniform4ui64vARB =   _link_function_proxy('glProgramUniform4ui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glProgramUniform4uiv =   _link_function_proxy('glProgramUniform4uiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
+glProgramUniformHandleui64ARB =   _link_function_proxy('glProgramUniformHandleui64ARB', None, [GLuint, GLint, GLuint64], requires='None')
+glProgramUniformHandleui64vARB =   _link_function_proxy('glProgramUniformHandleui64vARB', None, [GLuint, GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glProgramUniformMatrix2dv =   _link_function_proxy('glProgramUniformMatrix2dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix2fv =   _link_function_proxy('glProgramUniformMatrix2fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix2x3dv =   _link_function_proxy('glProgramUniformMatrix2x3dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix2x3fv =   _link_function_proxy('glProgramUniformMatrix2x3fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix2x4dv =   _link_function_proxy('glProgramUniformMatrix2x4dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix2x4fv =   _link_function_proxy('glProgramUniformMatrix2x4fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix3dv =   _link_function_proxy('glProgramUniformMatrix3dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix3fv =   _link_function_proxy('glProgramUniformMatrix3fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix3x2dv =   _link_function_proxy('glProgramUniformMatrix3x2dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix3x2fv =   _link_function_proxy('glProgramUniformMatrix3x2fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix3x4dv =   _link_function_proxy('glProgramUniformMatrix3x4dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix3x4fv =   _link_function_proxy('glProgramUniformMatrix3x4fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix4dv =   _link_function_proxy('glProgramUniformMatrix4dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix4fv =   _link_function_proxy('glProgramUniformMatrix4fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix4x2dv =   _link_function_proxy('glProgramUniformMatrix4x2dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix4x2fv =   _link_function_proxy('glProgramUniformMatrix4x2fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProgramUniformMatrix4x3dv =   _link_function_proxy('glProgramUniformMatrix4x3dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
+glProgramUniformMatrix4x3fv =   _link_function_proxy('glProgramUniformMatrix4x3fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
+glProvokingVertex =   _link_function_proxy('glProvokingVertex', None, [GLenum], requires='OpenGL 3.2')
+glPushDebugGroup =   _link_function_proxy('glPushDebugGroup', None, [GLenum, GLuint, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glQueryCounter =   _link_function_proxy('glQueryCounter', None, [GLuint, GLenum], requires='OpenGL 3.3')
+glReadBuffer =   _link_function_proxy('glReadBuffer', None, [GLenum], requires='OpenGL 1.0')
+glReadPixels =   _link_function_proxy('glReadPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
+glReadnPixels =   _link_function_proxy('glReadnPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glReleaseShaderCompiler =   _link_function_proxy('glReleaseShaderCompiler', None, [], requires='OpenGL 4.1')
+glRenderbufferStorage =   _link_function_proxy('glRenderbufferStorage', None, [GLenum, GLenum, GLsizei, GLsizei], requires='OpenGL 3.0')
+glRenderbufferStorageEXT =   _link_function_proxy('glRenderbufferStorageEXT', None, [GLenum, GLenum, GLsizei, GLsizei], requires='None')
+glRenderbufferStorageMultisample =   _link_function_proxy('glRenderbufferStorageMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 3.0')
+glResumeTransformFeedback =   _link_function_proxy('glResumeTransformFeedback', None, [], requires='OpenGL 4.0')
+glSampleCoverage =   _link_function_proxy('glSampleCoverage', None, [GLfloat, GLboolean], requires='OpenGL 1.3')
+glSampleCoverageARB =   _link_function_proxy('glSampleCoverageARB', None, [GLfloat, GLboolean], requires='None')
+glSampleMaski =   _link_function_proxy('glSampleMaski', None, [GLuint, GLbitfield], requires='OpenGL 3.2')
+glSamplerParameterIiv =   _link_function_proxy('glSamplerParameterIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
+glSamplerParameterIuiv =   _link_function_proxy('glSamplerParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glSamplerParameterf =   _link_function_proxy('glSamplerParameterf', None, [GLuint, GLenum, GLfloat], requires='OpenGL 3.3')
+glSamplerParameterfv =   _link_function_proxy('glSamplerParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 3.3')
+glSamplerParameteri =   _link_function_proxy('glSamplerParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 3.3')
+glSamplerParameteriv =   _link_function_proxy('glSamplerParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
+glScissor =   _link_function_proxy('glScissor', None, [GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.0')
+glScissorArrayv =   _link_function_proxy('glScissorArrayv', None, [GLuint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
+glScissorIndexed =   _link_function_proxy('glScissorIndexed', None, [GLuint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.1')
+glScissorIndexedv =   _link_function_proxy('glScissorIndexedv', None, [GLuint, POINTER(GLint)], requires='OpenGL 4.1')
+glSecondaryColorP3ui =   _link_function_proxy('glSecondaryColorP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glSecondaryColorP3uiv =   _link_function_proxy('glSecondaryColorP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glShaderBinary =   _link_function_proxy('glShaderBinary', None, [GLsizei, POINTER(GLuint), GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
+glShaderSource =   _link_function_proxy('glShaderSource', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLint)], requires='OpenGL 2.0')
+glShaderStorageBlockBinding =   _link_function_proxy('glShaderStorageBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
+glSpecializeShader =   _link_function_proxy('glSpecializeShader', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='OpenGL 4.6')
+glStencilFunc =   _link_function_proxy('glStencilFunc', None, [GLenum, GLint, GLuint], requires='OpenGL 1.0')
+glStencilFuncSeparate =   _link_function_proxy('glStencilFuncSeparate', None, [GLenum, GLenum, GLint, GLuint], requires='OpenGL 2.0')
+glStencilMask =   _link_function_proxy('glStencilMask', None, [GLuint], requires='OpenGL 1.0')
+glStencilMaskSeparate =   _link_function_proxy('glStencilMaskSeparate', None, [GLenum, GLuint], requires='OpenGL 2.0')
+glStencilOp =   _link_function_proxy('glStencilOp', None, [GLenum, GLenum, GLenum], requires='OpenGL 1.0')
+glStencilOpSeparate =   _link_function_proxy('glStencilOpSeparate', None, [GLenum, GLenum, GLenum, GLenum], requires='OpenGL 2.0')
+glTexBuffer =   _link_function_proxy('glTexBuffer', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.1')
+glTexBufferRange =   _link_function_proxy('glTexBufferRange', None, [GLenum, GLenum, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.3')
+glTexCoordP1ui =   _link_function_proxy('glTexCoordP1ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glTexCoordP1uiv =   _link_function_proxy('glTexCoordP1uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glTexCoordP2ui =   _link_function_proxy('glTexCoordP2ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glTexCoordP2uiv =   _link_function_proxy('glTexCoordP2uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glTexCoordP3ui =   _link_function_proxy('glTexCoordP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glTexCoordP3uiv =   _link_function_proxy('glTexCoordP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glTexCoordP4ui =   _link_function_proxy('glTexCoordP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glTexCoordP4uiv =   _link_function_proxy('glTexCoordP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glTexImage1D =   _link_function_proxy('glTexImage1D', None, [GLenum, GLint, GLint, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
+glTexImage2D =   _link_function_proxy('glTexImage2D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
+glTexImage2DMultisample =   _link_function_proxy('glTexImage2DMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLboolean], requires='OpenGL 3.2')
+glTexImage3D =   _link_function_proxy('glTexImage3D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.2')
+glTexImage3DMultisample =   _link_function_proxy('glTexImage3DMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean], requires='OpenGL 3.2')
+glTexParameterIiv =   _link_function_proxy('glTexParameterIiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 3.0')
+glTexParameterIuiv =   _link_function_proxy('glTexParameterIuiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.0')
+glTexParameterf =   _link_function_proxy('glTexParameterf', None, [GLenum, GLenum, GLfloat], requires='OpenGL 1.0')
+glTexParameterfv =   _link_function_proxy('glTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexParameteri =   _link_function_proxy('glTexParameteri', None, [GLenum, GLenum, GLint], requires='OpenGL 1.0')
+glTexParameteriv =   _link_function_proxy('glTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glTexStorage1D =   _link_function_proxy('glTexStorage1D', None, [GLenum, GLsizei, GLenum, GLsizei], requires='OpenGL 4.2')
+glTexStorage2D =   _link_function_proxy('glTexStorage2D', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 4.2')
+glTexStorage2DMultisample =   _link_function_proxy('glTexStorage2DMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLboolean], requires='OpenGL 4.3')
+glTexStorage3D =   _link_function_proxy('glTexStorage3D', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei], requires='OpenGL 4.2')
+glTexStorage3DMultisample =   _link_function_proxy('glTexStorage3DMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean], requires='OpenGL 4.3')
+glTexSubImage1D =   _link_function_proxy('glTexSubImage1D', None, [GLenum, GLint, GLint, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.1')
+glTexSubImage2D =   _link_function_proxy('glTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.1')
+glTexSubImage3D =   _link_function_proxy('glTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.2')
+glTextureBarrier =   _link_function_proxy('glTextureBarrier', None, [], requires='OpenGL 4.5')
+glTextureBuffer =   _link_function_proxy('glTextureBuffer', None, [GLuint, GLenum, GLuint], requires='OpenGL 4.5')
+glTextureBufferRange =   _link_function_proxy('glTextureBufferRange', None, [GLuint, GLenum, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glTextureParameterIiv =   _link_function_proxy('glTextureParameterIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glTextureParameterIuiv =   _link_function_proxy('glTextureParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 4.5')
+glTextureParameterf =   _link_function_proxy('glTextureParameterf', None, [GLuint, GLenum, GLfloat], requires='OpenGL 4.5')
+glTextureParameterfv =   _link_function_proxy('glTextureParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 4.5')
+glTextureParameteri =   _link_function_proxy('glTextureParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 4.5')
+glTextureParameteriv =   _link_function_proxy('glTextureParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
+glTextureStorage1D =   _link_function_proxy('glTextureStorage1D', None, [GLuint, GLsizei, GLenum, GLsizei], requires='OpenGL 4.5')
+glTextureStorage2D =   _link_function_proxy('glTextureStorage2D', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 4.5')
+glTextureStorage2DMultisample =   _link_function_proxy('glTextureStorage2DMultisample', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei, GLboolean], requires='OpenGL 4.5')
+glTextureStorage3D =   _link_function_proxy('glTextureStorage3D', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei, GLsizei], requires='OpenGL 4.5')
+glTextureStorage3DMultisample =   _link_function_proxy('glTextureStorage3DMultisample', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean], requires='OpenGL 4.5')
+glTextureSubImage1D =   _link_function_proxy('glTextureSubImage1D', None, [GLuint, GLint, GLint, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glTextureSubImage2D =   _link_function_proxy('glTextureSubImage2D', None, [GLuint, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glTextureSubImage3D =   _link_function_proxy('glTextureSubImage3D', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
+glTextureView =   _link_function_proxy('glTextureView', None, [GLuint, GLenum, GLuint, GLenum, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 4.3')
+glTransformFeedbackBufferBase =   _link_function_proxy('glTransformFeedbackBufferBase', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
+glTransformFeedbackBufferRange =   _link_function_proxy('glTransformFeedbackBufferRange', None, [GLuint, GLuint, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glTransformFeedbackVaryings =   _link_function_proxy('glTransformFeedbackVaryings', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), GLenum], requires='OpenGL 3.0')
+glUniform1d =   _link_function_proxy('glUniform1d', None, [GLint, GLdouble], requires='OpenGL 4.0')
+glUniform1dv =   _link_function_proxy('glUniform1dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniform1f =   _link_function_proxy('glUniform1f', None, [GLint, GLfloat], requires='OpenGL 2.0')
+glUniform1fv =   _link_function_proxy('glUniform1fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniform1i =   _link_function_proxy('glUniform1i', None, [GLint, GLint], requires='OpenGL 2.0')
+glUniform1i64ARB =   _link_function_proxy('glUniform1i64ARB', None, [GLint, GLint64], requires='None')
+glUniform1i64vARB =   _link_function_proxy('glUniform1i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
+glUniform1iv =   _link_function_proxy('glUniform1iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
+glUniform1ui =   _link_function_proxy('glUniform1ui', None, [GLint, GLuint], requires='OpenGL 3.0')
+glUniform1ui64ARB =   _link_function_proxy('glUniform1ui64ARB', None, [GLint, GLuint64], requires='None')
+glUniform1ui64vARB =   _link_function_proxy('glUniform1ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glUniform1uiv =   _link_function_proxy('glUniform1uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glUniform2d =   _link_function_proxy('glUniform2d', None, [GLint, GLdouble, GLdouble], requires='OpenGL 4.0')
+glUniform2dv =   _link_function_proxy('glUniform2dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniform2f =   _link_function_proxy('glUniform2f', None, [GLint, GLfloat, GLfloat], requires='OpenGL 2.0')
+glUniform2fv =   _link_function_proxy('glUniform2fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniform2i =   _link_function_proxy('glUniform2i', None, [GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform2i64ARB =   _link_function_proxy('glUniform2i64ARB', None, [GLint, GLint64, GLint64], requires='None')
+glUniform2i64vARB =   _link_function_proxy('glUniform2i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
+glUniform2iv =   _link_function_proxy('glUniform2iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
+glUniform2ui =   _link_function_proxy('glUniform2ui', None, [GLint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform2ui64ARB =   _link_function_proxy('glUniform2ui64ARB', None, [GLint, GLuint64, GLuint64], requires='None')
+glUniform2ui64vARB =   _link_function_proxy('glUniform2ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glUniform2uiv =   _link_function_proxy('glUniform2uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glUniform3d =   _link_function_proxy('glUniform3d', None, [GLint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.0')
+glUniform3dv =   _link_function_proxy('glUniform3dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniform3f =   _link_function_proxy('glUniform3f', None, [GLint, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
+glUniform3fv =   _link_function_proxy('glUniform3fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniform3i =   _link_function_proxy('glUniform3i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform3i64ARB =   _link_function_proxy('glUniform3i64ARB', None, [GLint, GLint64, GLint64, GLint64], requires='None')
+glUniform3i64vARB =   _link_function_proxy('glUniform3i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
+glUniform3iv =   _link_function_proxy('glUniform3iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
+glUniform3ui =   _link_function_proxy('glUniform3ui', None, [GLint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform3ui64ARB =   _link_function_proxy('glUniform3ui64ARB', None, [GLint, GLuint64, GLuint64, GLuint64], requires='None')
+glUniform3ui64vARB =   _link_function_proxy('glUniform3ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glUniform3uiv =   _link_function_proxy('glUniform3uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glUniform4d =   _link_function_proxy('glUniform4d', None, [GLint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.0')
+glUniform4dv =   _link_function_proxy('glUniform4dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniform4f =   _link_function_proxy('glUniform4f', None, [GLint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
+glUniform4fv =   _link_function_proxy('glUniform4fv', None, [GLint, GLsizei, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniform4i =   _link_function_proxy('glUniform4i', None, [GLint, GLint, GLint, GLint, GLint], requires='OpenGL 2.0')
+glUniform4i64ARB =   _link_function_proxy('glUniform4i64ARB', None, [GLint, GLint64, GLint64, GLint64, GLint64], requires='None')
+glUniform4i64vARB =   _link_function_proxy('glUniform4i64vARB', None, [GLint, GLsizei, POINTER(GLint64)], requires='None')
+glUniform4iv =   _link_function_proxy('glUniform4iv', None, [GLint, GLsizei, POINTER(GLint)], requires='OpenGL 2.0')
+glUniform4ui =   _link_function_proxy('glUniform4ui', None, [GLint, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glUniform4ui64ARB =   _link_function_proxy('glUniform4ui64ARB', None, [GLint, GLuint64, GLuint64, GLuint64, GLuint64], requires='None')
+glUniform4ui64vARB =   _link_function_proxy('glUniform4ui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glUniform4uiv =   _link_function_proxy('glUniform4uiv', None, [GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
+glUniformBlockBinding =   _link_function_proxy('glUniformBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 3.1')
+glUniformHandleui64ARB =   _link_function_proxy('glUniformHandleui64ARB', None, [GLint, GLuint64], requires='None')
+glUniformHandleui64vARB =   _link_function_proxy('glUniformHandleui64vARB', None, [GLint, GLsizei, POINTER(GLuint64)], requires='None')
+glUniformMatrix2dv =   _link_function_proxy('glUniformMatrix2dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix2fv =   _link_function_proxy('glUniformMatrix2fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniformMatrix2x3dv =   _link_function_proxy('glUniformMatrix2x3dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix2x3fv =   _link_function_proxy('glUniformMatrix2x3fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformMatrix2x4dv =   _link_function_proxy('glUniformMatrix2x4dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix2x4fv =   _link_function_proxy('glUniformMatrix2x4fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformMatrix3dv =   _link_function_proxy('glUniformMatrix3dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix3fv =   _link_function_proxy('glUniformMatrix3fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniformMatrix3x2dv =   _link_function_proxy('glUniformMatrix3x2dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix3x2fv =   _link_function_proxy('glUniformMatrix3x2fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformMatrix3x4dv =   _link_function_proxy('glUniformMatrix3x4dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix3x4fv =   _link_function_proxy('glUniformMatrix3x4fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformMatrix4dv =   _link_function_proxy('glUniformMatrix4dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix4fv =   _link_function_proxy('glUniformMatrix4fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.0')
+glUniformMatrix4x2dv =   _link_function_proxy('glUniformMatrix4x2dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix4x2fv =   _link_function_proxy('glUniformMatrix4x2fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformMatrix4x3dv =   _link_function_proxy('glUniformMatrix4x3dv', None, [GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.0')
+glUniformMatrix4x3fv =   _link_function_proxy('glUniformMatrix4x3fv', None, [GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 2.1')
+glUniformSubroutinesuiv =   _link_function_proxy('glUniformSubroutinesuiv', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 4.0')
+glUnmapBuffer =   _link_function_proxy('glUnmapBuffer', GLboolean, [GLenum], requires='OpenGL 1.5')
+glUnmapNamedBuffer =   _link_function_proxy('glUnmapNamedBuffer', GLboolean, [GLuint], requires='OpenGL 4.5')
+glUseProgram =   _link_function_proxy('glUseProgram', None, [GLuint], requires='OpenGL 2.0')
+glUseProgramStages =   _link_function_proxy('glUseProgramStages', None, [GLuint, GLbitfield, GLuint], requires='OpenGL 4.1')
+glValidateProgram =   _link_function_proxy('glValidateProgram', None, [GLuint], requires='OpenGL 2.0')
+glValidateProgramPipeline =   _link_function_proxy('glValidateProgramPipeline', None, [GLuint], requires='OpenGL 4.1')
+glVertexArrayAttribBinding =   _link_function_proxy('glVertexArrayAttribBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
+glVertexArrayAttribFormat =   _link_function_proxy('glVertexArrayAttribFormat', None, [GLuint, GLuint, GLint, GLenum, GLboolean, GLuint], requires='OpenGL 4.5')
+glVertexArrayAttribIFormat =   _link_function_proxy('glVertexArrayAttribIFormat', None, [GLuint, GLuint, GLint, GLenum, GLuint], requires='OpenGL 4.5')
+glVertexArrayAttribLFormat =   _link_function_proxy('glVertexArrayAttribLFormat', None, [GLuint, GLuint, GLint, GLenum, GLuint], requires='OpenGL 4.5')
+glVertexArrayBindingDivisor =   _link_function_proxy('glVertexArrayBindingDivisor', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
+glVertexArrayElementBuffer =   _link_function_proxy('glVertexArrayElementBuffer', None, [GLuint, GLuint], requires='OpenGL 4.5')
+glVertexArrayVertexBuffer =   _link_function_proxy('glVertexArrayVertexBuffer', None, [GLuint, GLuint, GLuint, GLintptr, GLsizei], requires='OpenGL 4.5')
+glVertexArrayVertexBuffers =   _link_function_proxy('glVertexArrayVertexBuffers', None, [GLuint, GLuint, GLsizei, POINTER(GLuint), POINTER(GLintptr), POINTER(GLsizei)], requires='OpenGL 4.5')
+glVertexAttrib1d =   _link_function_proxy('glVertexAttrib1d', None, [GLuint, GLdouble], requires='OpenGL 2.0')
+glVertexAttrib1dv =   _link_function_proxy('glVertexAttrib1dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 2.0')
+glVertexAttrib1f =   _link_function_proxy('glVertexAttrib1f', None, [GLuint, GLfloat], requires='OpenGL 2.0')
+glVertexAttrib1fv =   _link_function_proxy('glVertexAttrib1fv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glVertexAttrib1s =   _link_function_proxy('glVertexAttrib1s', None, [GLuint, GLshort], requires='OpenGL 2.0')
+glVertexAttrib1sv =   _link_function_proxy('glVertexAttrib1sv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 2.0')
+glVertexAttrib2d =   _link_function_proxy('glVertexAttrib2d', None, [GLuint, GLdouble, GLdouble], requires='OpenGL 2.0')
+glVertexAttrib2dv =   _link_function_proxy('glVertexAttrib2dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 2.0')
+glVertexAttrib2f =   _link_function_proxy('glVertexAttrib2f', None, [GLuint, GLfloat, GLfloat], requires='OpenGL 2.0')
+glVertexAttrib2fv =   _link_function_proxy('glVertexAttrib2fv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glVertexAttrib2s =   _link_function_proxy('glVertexAttrib2s', None, [GLuint, GLshort, GLshort], requires='OpenGL 2.0')
+glVertexAttrib2sv =   _link_function_proxy('glVertexAttrib2sv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 2.0')
+glVertexAttrib3d =   _link_function_proxy('glVertexAttrib3d', None, [GLuint, GLdouble, GLdouble, GLdouble], requires='OpenGL 2.0')
+glVertexAttrib3dv =   _link_function_proxy('glVertexAttrib3dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 2.0')
+glVertexAttrib3f =   _link_function_proxy('glVertexAttrib3f', None, [GLuint, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
+glVertexAttrib3fv =   _link_function_proxy('glVertexAttrib3fv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glVertexAttrib3s =   _link_function_proxy('glVertexAttrib3s', None, [GLuint, GLshort, GLshort, GLshort], requires='OpenGL 2.0')
+glVertexAttrib3sv =   _link_function_proxy('glVertexAttrib3sv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 2.0')
+glVertexAttrib4Nbv =   _link_function_proxy('glVertexAttrib4Nbv', None, [GLuint, POINTER(GLbyte)], requires='OpenGL 2.0')
+glVertexAttrib4Niv =   _link_function_proxy('glVertexAttrib4Niv', None, [GLuint, POINTER(GLint)], requires='OpenGL 2.0')
+glVertexAttrib4Nsv =   _link_function_proxy('glVertexAttrib4Nsv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 2.0')
+glVertexAttrib4Nub =   _link_function_proxy('glVertexAttrib4Nub', None, [GLuint, GLubyte, GLubyte, GLubyte, GLubyte], requires='OpenGL 2.0')
+glVertexAttrib4Nubv =   _link_function_proxy('glVertexAttrib4Nubv', None, [GLuint, POINTER(GLubyte)], requires='OpenGL 2.0')
+glVertexAttrib4Nuiv =   _link_function_proxy('glVertexAttrib4Nuiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 2.0')
+glVertexAttrib4Nusv =   _link_function_proxy('glVertexAttrib4Nusv', None, [GLuint, POINTER(GLushort)], requires='OpenGL 2.0')
+glVertexAttrib4bv =   _link_function_proxy('glVertexAttrib4bv', None, [GLuint, POINTER(GLbyte)], requires='OpenGL 2.0')
+glVertexAttrib4d =   _link_function_proxy('glVertexAttrib4d', None, [GLuint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 2.0')
+glVertexAttrib4dv =   _link_function_proxy('glVertexAttrib4dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 2.0')
+glVertexAttrib4f =   _link_function_proxy('glVertexAttrib4f', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 2.0')
+glVertexAttrib4fv =   _link_function_proxy('glVertexAttrib4fv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 2.0')
+glVertexAttrib4iv =   _link_function_proxy('glVertexAttrib4iv', None, [GLuint, POINTER(GLint)], requires='OpenGL 2.0')
+glVertexAttrib4s =   _link_function_proxy('glVertexAttrib4s', None, [GLuint, GLshort, GLshort, GLshort, GLshort], requires='OpenGL 2.0')
+glVertexAttrib4sv =   _link_function_proxy('glVertexAttrib4sv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 2.0')
+glVertexAttrib4ubv =   _link_function_proxy('glVertexAttrib4ubv', None, [GLuint, POINTER(GLubyte)], requires='OpenGL 2.0')
+glVertexAttrib4uiv =   _link_function_proxy('glVertexAttrib4uiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 2.0')
+glVertexAttrib4usv =   _link_function_proxy('glVertexAttrib4usv', None, [GLuint, POINTER(GLushort)], requires='OpenGL 2.0')
+glVertexAttribBinding =   _link_function_proxy('glVertexAttribBinding', None, [GLuint, GLuint], requires='OpenGL 4.3')
+glVertexAttribDivisor =   _link_function_proxy('glVertexAttribDivisor', None, [GLuint, GLuint], requires='OpenGL 3.3')
+glVertexAttribFormat =   _link_function_proxy('glVertexAttribFormat', None, [GLuint, GLint, GLenum, GLboolean, GLuint], requires='OpenGL 4.3')
+glVertexAttribI1i =   _link_function_proxy('glVertexAttribI1i', None, [GLuint, GLint], requires='OpenGL 3.0')
+glVertexAttribI1iv =   _link_function_proxy('glVertexAttribI1iv', None, [GLuint, POINTER(GLint)], requires='OpenGL 3.0')
+glVertexAttribI1ui =   _link_function_proxy('glVertexAttribI1ui', None, [GLuint, GLuint], requires='OpenGL 3.0')
+glVertexAttribI1uiv =   _link_function_proxy('glVertexAttribI1uiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 3.0')
+glVertexAttribI2i =   _link_function_proxy('glVertexAttribI2i', None, [GLuint, GLint, GLint], requires='OpenGL 3.0')
+glVertexAttribI2iv =   _link_function_proxy('glVertexAttribI2iv', None, [GLuint, POINTER(GLint)], requires='OpenGL 3.0')
+glVertexAttribI2ui =   _link_function_proxy('glVertexAttribI2ui', None, [GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glVertexAttribI2uiv =   _link_function_proxy('glVertexAttribI2uiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 3.0')
+glVertexAttribI3i =   _link_function_proxy('glVertexAttribI3i', None, [GLuint, GLint, GLint, GLint], requires='OpenGL 3.0')
+glVertexAttribI3iv =   _link_function_proxy('glVertexAttribI3iv', None, [GLuint, POINTER(GLint)], requires='OpenGL 3.0')
+glVertexAttribI3ui =   _link_function_proxy('glVertexAttribI3ui', None, [GLuint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glVertexAttribI3uiv =   _link_function_proxy('glVertexAttribI3uiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 3.0')
+glVertexAttribI4bv =   _link_function_proxy('glVertexAttribI4bv', None, [GLuint, POINTER(GLbyte)], requires='OpenGL 3.0')
+glVertexAttribI4i =   _link_function_proxy('glVertexAttribI4i', None, [GLuint, GLint, GLint, GLint, GLint], requires='OpenGL 3.0')
+glVertexAttribI4iv =   _link_function_proxy('glVertexAttribI4iv', None, [GLuint, POINTER(GLint)], requires='OpenGL 3.0')
+glVertexAttribI4sv =   _link_function_proxy('glVertexAttribI4sv', None, [GLuint, POINTER(GLshort)], requires='OpenGL 3.0')
+glVertexAttribI4ubv =   _link_function_proxy('glVertexAttribI4ubv', None, [GLuint, POINTER(GLubyte)], requires='OpenGL 3.0')
+glVertexAttribI4ui =   _link_function_proxy('glVertexAttribI4ui', None, [GLuint, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 3.0')
+glVertexAttribI4uiv =   _link_function_proxy('glVertexAttribI4uiv', None, [GLuint, POINTER(GLuint)], requires='OpenGL 3.0')
+glVertexAttribI4usv =   _link_function_proxy('glVertexAttribI4usv', None, [GLuint, POINTER(GLushort)], requires='OpenGL 3.0')
+glVertexAttribIFormat =   _link_function_proxy('glVertexAttribIFormat', None, [GLuint, GLint, GLenum, GLuint], requires='OpenGL 4.3')
+glVertexAttribIPointer =   _link_function_proxy('glVertexAttribIPointer', None, [GLuint, GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 3.0')
+glVertexAttribL1d =   _link_function_proxy('glVertexAttribL1d', None, [GLuint, GLdouble], requires='OpenGL 4.1')
+glVertexAttribL1dv =   _link_function_proxy('glVertexAttribL1dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glVertexAttribL1ui64ARB =   _link_function_proxy('glVertexAttribL1ui64ARB', None, [GLuint, GLuint64EXT], requires='None')
+glVertexAttribL1ui64vARB =   _link_function_proxy('glVertexAttribL1ui64vARB', None, [GLuint, POINTER(GLuint64EXT)], requires='None')
+glVertexAttribL2d =   _link_function_proxy('glVertexAttribL2d', None, [GLuint, GLdouble, GLdouble], requires='OpenGL 4.1')
+glVertexAttribL2dv =   _link_function_proxy('glVertexAttribL2dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glVertexAttribL3d =   _link_function_proxy('glVertexAttribL3d', None, [GLuint, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
+glVertexAttribL3dv =   _link_function_proxy('glVertexAttribL3dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glVertexAttribL4d =   _link_function_proxy('glVertexAttribL4d', None, [GLuint, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 4.1')
+glVertexAttribL4dv =   _link_function_proxy('glVertexAttribL4dv', None, [GLuint, POINTER(GLdouble)], requires='OpenGL 4.1')
+glVertexAttribLFormat =   _link_function_proxy('glVertexAttribLFormat', None, [GLuint, GLint, GLenum, GLuint], requires='OpenGL 4.3')
+glVertexAttribLPointer =   _link_function_proxy('glVertexAttribLPointer', None, [GLuint, GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.1')
+glVertexAttribP1ui =   _link_function_proxy('glVertexAttribP1ui', None, [GLuint, GLenum, GLboolean, GLuint], requires='OpenGL 3.3')
+glVertexAttribP1uiv =   _link_function_proxy('glVertexAttribP1uiv', None, [GLuint, GLenum, GLboolean, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexAttribP2ui =   _link_function_proxy('glVertexAttribP2ui', None, [GLuint, GLenum, GLboolean, GLuint], requires='OpenGL 3.3')
+glVertexAttribP2uiv =   _link_function_proxy('glVertexAttribP2uiv', None, [GLuint, GLenum, GLboolean, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexAttribP3ui =   _link_function_proxy('glVertexAttribP3ui', None, [GLuint, GLenum, GLboolean, GLuint], requires='OpenGL 3.3')
+glVertexAttribP3uiv =   _link_function_proxy('glVertexAttribP3uiv', None, [GLuint, GLenum, GLboolean, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexAttribP4ui =   _link_function_proxy('glVertexAttribP4ui', None, [GLuint, GLenum, GLboolean, GLuint], requires='OpenGL 3.3')
+glVertexAttribP4uiv =   _link_function_proxy('glVertexAttribP4uiv', None, [GLuint, GLenum, GLboolean, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexAttribPointer =   _link_function_proxy('glVertexAttribPointer', None, [GLuint, GLint, GLenum, GLboolean, GLsizei, POINTER(GLvoid)], requires='OpenGL 2.0')
+glVertexBindingDivisor =   _link_function_proxy('glVertexBindingDivisor', None, [GLuint, GLuint], requires='OpenGL 4.3')
+glVertexP2ui =   _link_function_proxy('glVertexP2ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glVertexP2uiv =   _link_function_proxy('glVertexP2uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexP3ui =   _link_function_proxy('glVertexP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glVertexP3uiv =   _link_function_proxy('glVertexP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexP4ui =   _link_function_proxy('glVertexP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
+glVertexP4uiv =   _link_function_proxy('glVertexP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glViewport =   _link_function_proxy('glViewport', None, [GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.0')
+glViewportArrayv =   _link_function_proxy('glViewportArrayv', None, [GLuint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
+glViewportIndexedf =   _link_function_proxy('glViewportIndexedf', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
+glViewportIndexedfv =   _link_function_proxy('glViewportIndexedfv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
+glWaitSync =   _link_function_proxy('glWaitSync', None, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')
 
 __all__ = [  # noqa: RUF022
     'GLDEBUGPROC',
@@ -3853,4 +4633,777 @@ __all__ = [  # noqa: RUF022
     'GL_FLOAT_MAT3x4',
     'GL_FLOAT_MAT4x2',
     'GL_FLOAT_MAT4x3',
+    'glActiveShaderProgram',
+    'glActiveTexture',
+    'glAttachShader',
+    'glBeginConditionalRender',
+    'glBeginQuery',
+    'glBeginQueryIndexed',
+    'glBeginTransformFeedback',
+    'glBindAttribLocation',
+    'glBindBuffer',
+    'glBindBufferBase',
+    'glBindBufferRange',
+    'glBindBuffersBase',
+    'glBindBuffersRange',
+    'glBindFragDataLocation',
+    'glBindFragDataLocationIndexed',
+    'glBindFramebuffer',
+    'glBindFramebufferEXT',
+    'glBindImageTexture',
+    'glBindImageTextures',
+    'glBindProgramPipeline',
+    'glBindRenderbuffer',
+    'glBindRenderbufferEXT',
+    'glBindSampler',
+    'glBindSamplers',
+    'glBindTexture',
+    'glBindTextureUnit',
+    'glBindTextures',
+    'glBindTransformFeedback',
+    'glBindVertexArray',
+    'glBindVertexBuffer',
+    'glBindVertexBuffers',
+    'glBlendColor',
+    'glBlendEquation',
+    'glBlendEquationSeparate',
+    'glBlendEquationSeparatei',
+    'glBlendEquationi',
+    'glBlendFunc',
+    'glBlendFuncSeparate',
+    'glBlendFuncSeparatei',
+    'glBlendFunci',
+    'glBlitFramebuffer',
+    'glBlitNamedFramebuffer',
+    'glBufferData',
+    'glBufferStorage',
+    'glBufferSubData',
+    'glCheckFramebufferStatus',
+    'glCheckFramebufferStatusEXT',
+    'glCheckNamedFramebufferStatus',
+    'glClampColor',
+    'glClear',
+    'glClearBufferData',
+    'glClearBufferSubData',
+    'glClearBufferfi',
+    'glClearBufferfv',
+    'glClearBufferiv',
+    'glClearBufferuiv',
+    'glClearColor',
+    'glClearDepth',
+    'glClearDepthf',
+    'glClearNamedBufferData',
+    'glClearNamedBufferSubData',
+    'glClearNamedFramebufferfi',
+    'glClearNamedFramebufferfv',
+    'glClearNamedFramebufferiv',
+    'glClearNamedFramebufferuiv',
+    'glClearStencil',
+    'glClearTexImage',
+    'glClearTexSubImage',
+    'glClientWaitSync',
+    'glClipControl',
+    'glColorMask',
+    'glColorMaski',
+    'glColorP3ui',
+    'glColorP3uiv',
+    'glColorP4ui',
+    'glColorP4uiv',
+    'glCompileShader',
+    'glCompressedTexImage1D',
+    'glCompressedTexImage2D',
+    'glCompressedTexImage3D',
+    'glCompressedTexSubImage1D',
+    'glCompressedTexSubImage2D',
+    'glCompressedTexSubImage3D',
+    'glCompressedTextureSubImage1D',
+    'glCompressedTextureSubImage2D',
+    'glCompressedTextureSubImage3D',
+    'glCopyBufferSubData',
+    'glCopyImageSubData',
+    'glCopyNamedBufferSubData',
+    'glCopyTexImage1D',
+    'glCopyTexImage2D',
+    'glCopyTexSubImage1D',
+    'glCopyTexSubImage2D',
+    'glCopyTexSubImage3D',
+    'glCopyTextureSubImage1D',
+    'glCopyTextureSubImage2D',
+    'glCopyTextureSubImage3D',
+    'glCreateBuffers',
+    'glCreateFramebuffers',
+    'glCreateProgram',
+    'glCreateProgramPipelines',
+    'glCreateQueries',
+    'glCreateRenderbuffers',
+    'glCreateSamplers',
+    'glCreateShader',
+    'glCreateShaderProgramv',
+    'glCreateTextures',
+    'glCreateTransformFeedbacks',
+    'glCreateVertexArrays',
+    'glCullFace',
+    'glDebugMessageCallback',
+    'glDebugMessageControl',
+    'glDebugMessageInsert',
+    'glDeleteBuffers',
+    'glDeleteFramebuffers',
+    'glDeleteFramebuffersEXT',
+    'glDeleteProgram',
+    'glDeleteProgramPipelines',
+    'glDeleteQueries',
+    'glDeleteRenderbuffers',
+    'glDeleteRenderbuffersEXT',
+    'glDeleteSamplers',
+    'glDeleteShader',
+    'glDeleteSync',
+    'glDeleteTextures',
+    'glDeleteTransformFeedbacks',
+    'glDeleteVertexArrays',
+    'glDepthFunc',
+    'glDepthMask',
+    'glDepthRange',
+    'glDepthRangeArrayv',
+    'glDepthRangeIndexed',
+    'glDepthRangef',
+    'glDetachShader',
+    'glDisable',
+    'glDisableVertexArrayAttrib',
+    'glDisableVertexAttribArray',
+    'glDisablei',
+    'glDispatchCompute',
+    'glDispatchComputeIndirect',
+    'glDrawArrays',
+    'glDrawArraysIndirect',
+    'glDrawArraysInstanced',
+    'glDrawArraysInstancedBaseInstance',
+    'glDrawBuffer',
+    'glDrawBuffers',
+    'glDrawElements',
+    'glDrawElementsBaseVertex',
+    'glDrawElementsIndirect',
+    'glDrawElementsInstanced',
+    'glDrawElementsInstancedBaseInstance',
+    'glDrawElementsInstancedBaseVertex',
+    'glDrawElementsInstancedBaseVertexBaseInstance',
+    'glDrawMeshTasksIndirectNV',
+    'glDrawMeshTasksNV',
+    'glDrawRangeElements',
+    'glDrawRangeElementsBaseVertex',
+    'glDrawTransformFeedback',
+    'glDrawTransformFeedbackInstanced',
+    'glDrawTransformFeedbackStream',
+    'glDrawTransformFeedbackStreamInstanced',
+    'glEnable',
+    'glEnableVertexArrayAttrib',
+    'glEnableVertexAttribArray',
+    'glEnablei',
+    'glEndConditionalRender',
+    'glEndQuery',
+    'glEndQueryIndexed',
+    'glEndTransformFeedback',
+    'glFenceSync',
+    'glFinish',
+    'glFlush',
+    'glFlushMappedBufferRange',
+    'glFlushMappedNamedBufferRange',
+    'glFramebufferParameteri',
+    'glFramebufferRenderbuffer',
+    'glFramebufferRenderbufferEXT',
+    'glFramebufferTexture',
+    'glFramebufferTexture1D',
+    'glFramebufferTexture1DEXT',
+    'glFramebufferTexture2D',
+    'glFramebufferTexture2DEXT',
+    'glFramebufferTexture3D',
+    'glFramebufferTexture3DEXT',
+    'glFramebufferTextureLayer',
+    'glFrontFace',
+    'glGenBuffers',
+    'glGenFramebuffers',
+    'glGenFramebuffersEXT',
+    'glGenProgramPipelines',
+    'glGenQueries',
+    'glGenRenderbuffers',
+    'glGenRenderbuffersEXT',
+    'glGenSamplers',
+    'glGenTextures',
+    'glGenTransformFeedbacks',
+    'glGenVertexArrays',
+    'glGenerateMipmap',
+    'glGenerateMipmapEXT',
+    'glGenerateTextureMipmap',
+    'glGetActiveAtomicCounterBufferiv',
+    'glGetActiveAttrib',
+    'glGetActiveSubroutineName',
+    'glGetActiveSubroutineUniformName',
+    'glGetActiveSubroutineUniformiv',
+    'glGetActiveUniform',
+    'glGetActiveUniformBlockName',
+    'glGetActiveUniformBlockiv',
+    'glGetActiveUniformName',
+    'glGetActiveUniformsiv',
+    'glGetAttachedShaders',
+    'glGetAttribLocation',
+    'glGetBooleani_v',
+    'glGetBooleanv',
+    'glGetBufferParameteri64v',
+    'glGetBufferParameteriv',
+    'glGetBufferPointerv',
+    'glGetBufferSubData',
+    'glGetCompressedTexImage',
+    'glGetCompressedTextureImage',
+    'glGetCompressedTextureSubImage',
+    'glGetDebugMessageLog',
+    'glGetDoublei_v',
+    'glGetDoublev',
+    'glGetError',
+    'glGetFloati_v',
+    'glGetFloatv',
+    'glGetFragDataIndex',
+    'glGetFragDataLocation',
+    'glGetFramebufferAttachmentParameteriv',
+    'glGetFramebufferAttachmentParameterivEXT',
+    'glGetFramebufferParameteriv',
+    'glGetGraphicsResetStatus',
+    'glGetImageHandleARB',
+    'glGetInteger64i_v',
+    'glGetInteger64v',
+    'glGetIntegeri_v',
+    'glGetIntegerv',
+    'glGetInternalformati64v',
+    'glGetInternalformativ',
+    'glGetMultisamplefv',
+    'glGetNamedBufferParameteri64v',
+    'glGetNamedBufferParameteriv',
+    'glGetNamedBufferPointerv',
+    'glGetNamedBufferSubData',
+    'glGetNamedFramebufferAttachmentParameteriv',
+    'glGetNamedFramebufferParameteriv',
+    'glGetNamedRenderbufferParameteriv',
+    'glGetObjectLabel',
+    'glGetObjectPtrLabel',
+    'glGetPointerv',
+    'glGetProgramBinary',
+    'glGetProgramInfoLog',
+    'glGetProgramInterfaceiv',
+    'glGetProgramPipelineInfoLog',
+    'glGetProgramPipelineiv',
+    'glGetProgramResourceIndex',
+    'glGetProgramResourceLocation',
+    'glGetProgramResourceLocationIndex',
+    'glGetProgramResourceName',
+    'glGetProgramResourceiv',
+    'glGetProgramStageiv',
+    'glGetProgramiv',
+    'glGetQueryBufferObjecti64v',
+    'glGetQueryBufferObjectiv',
+    'glGetQueryBufferObjectui64v',
+    'glGetQueryBufferObjectuiv',
+    'glGetQueryIndexediv',
+    'glGetQueryObjecti64v',
+    'glGetQueryObjectiv',
+    'glGetQueryObjectui64v',
+    'glGetQueryObjectuiv',
+    'glGetQueryiv',
+    'glGetRenderbufferParameteriv',
+    'glGetRenderbufferParameterivEXT',
+    'glGetSamplerParameterIiv',
+    'glGetSamplerParameterIuiv',
+    'glGetSamplerParameterfv',
+    'glGetSamplerParameteriv',
+    'glGetShaderInfoLog',
+    'glGetShaderPrecisionFormat',
+    'glGetShaderSource',
+    'glGetShaderiv',
+    'glGetString',
+    'glGetStringi',
+    'glGetSubroutineIndex',
+    'glGetSubroutineUniformLocation',
+    'glGetSynciv',
+    'glGetTexImage',
+    'glGetTexLevelParameterfv',
+    'glGetTexLevelParameteriv',
+    'glGetTexParameterIiv',
+    'glGetTexParameterIuiv',
+    'glGetTexParameterfv',
+    'glGetTexParameteriv',
+    'glGetTextureHandleARB',
+    'glGetTextureImage',
+    'glGetTextureLevelParameterfv',
+    'glGetTextureLevelParameteriv',
+    'glGetTextureParameterIiv',
+    'glGetTextureParameterIuiv',
+    'glGetTextureParameterfv',
+    'glGetTextureParameteriv',
+    'glGetTextureSamplerHandleARB',
+    'glGetTextureSubImage',
+    'glGetTransformFeedbackVarying',
+    'glGetTransformFeedbacki64_v',
+    'glGetTransformFeedbacki_v',
+    'glGetTransformFeedbackiv',
+    'glGetUniformBlockIndex',
+    'glGetUniformIndices',
+    'glGetUniformLocation',
+    'glGetUniformSubroutineuiv',
+    'glGetUniformdv',
+    'glGetUniformfv',
+    'glGetUniformi64vARB',
+    'glGetUniformiv',
+    'glGetUniformui64vARB',
+    'glGetUniformuiv',
+    'glGetVertexArrayIndexed64iv',
+    'glGetVertexArrayIndexediv',
+    'glGetVertexArrayiv',
+    'glGetVertexAttribIiv',
+    'glGetVertexAttribIuiv',
+    'glGetVertexAttribLdv',
+    'glGetVertexAttribLui64vARB',
+    'glGetVertexAttribPointerv',
+    'glGetVertexAttribdv',
+    'glGetVertexAttribfv',
+    'glGetVertexAttribiv',
+    'glGetnColorTable',
+    'glGetnCompressedTexImage',
+    'glGetnConvolutionFilter',
+    'glGetnHistogram',
+    'glGetnMapdv',
+    'glGetnMapfv',
+    'glGetnMapiv',
+    'glGetnMinmax',
+    'glGetnPixelMapfv',
+    'glGetnPixelMapuiv',
+    'glGetnPixelMapusv',
+    'glGetnPolygonStipple',
+    'glGetnSeparableFilter',
+    'glGetnTexImage',
+    'glGetnUniformdv',
+    'glGetnUniformfv',
+    'glGetnUniformi64vARB',
+    'glGetnUniformiv',
+    'glGetnUniformui64vARB',
+    'glGetnUniformuiv',
+    'glHint',
+    'glInvalidateBufferData',
+    'glInvalidateBufferSubData',
+    'glInvalidateFramebuffer',
+    'glInvalidateNamedFramebufferData',
+    'glInvalidateNamedFramebufferSubData',
+    'glInvalidateSubFramebuffer',
+    'glInvalidateTexImage',
+    'glInvalidateTexSubImage',
+    'glIsBuffer',
+    'glIsEnabled',
+    'glIsEnabledi',
+    'glIsFramebuffer',
+    'glIsFramebufferEXT',
+    'glIsImageHandleResidentARB',
+    'glIsProgram',
+    'glIsProgramPipeline',
+    'glIsQuery',
+    'glIsRenderbuffer',
+    'glIsRenderbufferEXT',
+    'glIsSampler',
+    'glIsShader',
+    'glIsSync',
+    'glIsTexture',
+    'glIsTextureHandleResidentARB',
+    'glIsTransformFeedback',
+    'glIsVertexArray',
+    'glLineWidth',
+    'glLinkProgram',
+    'glLogicOp',
+    'glMakeImageHandleNonResidentARB',
+    'glMakeImageHandleResidentARB',
+    'glMakeTextureHandleNonResidentARB',
+    'glMakeTextureHandleResidentARB',
+    'glMapBuffer',
+    'glMapBufferRange',
+    'glMapNamedBuffer',
+    'glMapNamedBufferRange',
+    'glMemoryBarrier',
+    'glMemoryBarrierByRegion',
+    'glMinSampleShading',
+    'glMultiDrawArrays',
+    'glMultiDrawArraysIndirect',
+    'glMultiDrawArraysIndirectCount',
+    'glMultiDrawElements',
+    'glMultiDrawElementsBaseVertex',
+    'glMultiDrawElementsIndirect',
+    'glMultiDrawElementsIndirectCount',
+    'glMultiDrawMeshTasksIndirectCountNV',
+    'glMultiDrawMeshTasksIndirectNV',
+    'glMultiTexCoordP1ui',
+    'glMultiTexCoordP1uiv',
+    'glMultiTexCoordP2ui',
+    'glMultiTexCoordP2uiv',
+    'glMultiTexCoordP3ui',
+    'glMultiTexCoordP3uiv',
+    'glMultiTexCoordP4ui',
+    'glMultiTexCoordP4uiv',
+    'glNamedBufferData',
+    'glNamedBufferStorage',
+    'glNamedBufferSubData',
+    'glNamedFramebufferDrawBuffer',
+    'glNamedFramebufferDrawBuffers',
+    'glNamedFramebufferParameteri',
+    'glNamedFramebufferReadBuffer',
+    'glNamedFramebufferRenderbuffer',
+    'glNamedFramebufferTexture',
+    'glNamedFramebufferTextureLayer',
+    'glNamedRenderbufferStorage',
+    'glNamedRenderbufferStorageMultisample',
+    'glNormalP3ui',
+    'glNormalP3uiv',
+    'glObjectLabel',
+    'glObjectPtrLabel',
+    'glPatchParameterfv',
+    'glPatchParameteri',
+    'glPauseTransformFeedback',
+    'glPixelStoref',
+    'glPixelStorei',
+    'glPointParameterf',
+    'glPointParameterfv',
+    'glPointParameteri',
+    'glPointParameteriv',
+    'glPointSize',
+    'glPolygonMode',
+    'glPolygonOffset',
+    'glPolygonOffsetClamp',
+    'glPopDebugGroup',
+    'glPrimitiveRestartIndex',
+    'glProgramBinary',
+    'glProgramParameteri',
+    'glProgramUniform1d',
+    'glProgramUniform1dv',
+    'glProgramUniform1f',
+    'glProgramUniform1fv',
+    'glProgramUniform1i',
+    'glProgramUniform1i64ARB',
+    'glProgramUniform1i64vARB',
+    'glProgramUniform1iv',
+    'glProgramUniform1ui',
+    'glProgramUniform1ui64ARB',
+    'glProgramUniform1ui64vARB',
+    'glProgramUniform1uiv',
+    'glProgramUniform2d',
+    'glProgramUniform2dv',
+    'glProgramUniform2f',
+    'glProgramUniform2fv',
+    'glProgramUniform2i',
+    'glProgramUniform2i64ARB',
+    'glProgramUniform2i64vARB',
+    'glProgramUniform2iv',
+    'glProgramUniform2ui',
+    'glProgramUniform2ui64ARB',
+    'glProgramUniform2ui64vARB',
+    'glProgramUniform2uiv',
+    'glProgramUniform3d',
+    'glProgramUniform3dv',
+    'glProgramUniform3f',
+    'glProgramUniform3fv',
+    'glProgramUniform3i',
+    'glProgramUniform3i64ARB',
+    'glProgramUniform3i64vARB',
+    'glProgramUniform3iv',
+    'glProgramUniform3ui',
+    'glProgramUniform3ui64ARB',
+    'glProgramUniform3ui64vARB',
+    'glProgramUniform3uiv',
+    'glProgramUniform4d',
+    'glProgramUniform4dv',
+    'glProgramUniform4f',
+    'glProgramUniform4fv',
+    'glProgramUniform4i',
+    'glProgramUniform4i64ARB',
+    'glProgramUniform4i64vARB',
+    'glProgramUniform4iv',
+    'glProgramUniform4ui',
+    'glProgramUniform4ui64ARB',
+    'glProgramUniform4ui64vARB',
+    'glProgramUniform4uiv',
+    'glProgramUniformHandleui64ARB',
+    'glProgramUniformHandleui64vARB',
+    'glProgramUniformMatrix2dv',
+    'glProgramUniformMatrix2fv',
+    'glProgramUniformMatrix2x3dv',
+    'glProgramUniformMatrix2x3fv',
+    'glProgramUniformMatrix2x4dv',
+    'glProgramUniformMatrix2x4fv',
+    'glProgramUniformMatrix3dv',
+    'glProgramUniformMatrix3fv',
+    'glProgramUniformMatrix3x2dv',
+    'glProgramUniformMatrix3x2fv',
+    'glProgramUniformMatrix3x4dv',
+    'glProgramUniformMatrix3x4fv',
+    'glProgramUniformMatrix4dv',
+    'glProgramUniformMatrix4fv',
+    'glProgramUniformMatrix4x2dv',
+    'glProgramUniformMatrix4x2fv',
+    'glProgramUniformMatrix4x3dv',
+    'glProgramUniformMatrix4x3fv',
+    'glProvokingVertex',
+    'glPushDebugGroup',
+    'glQueryCounter',
+    'glReadBuffer',
+    'glReadPixels',
+    'glReadnPixels',
+    'glReleaseShaderCompiler',
+    'glRenderbufferStorage',
+    'glRenderbufferStorageEXT',
+    'glRenderbufferStorageMultisample',
+    'glResumeTransformFeedback',
+    'glSampleCoverage',
+    'glSampleCoverageARB',
+    'glSampleMaski',
+    'glSamplerParameterIiv',
+    'glSamplerParameterIuiv',
+    'glSamplerParameterf',
+    'glSamplerParameterfv',
+    'glSamplerParameteri',
+    'glSamplerParameteriv',
+    'glScissor',
+    'glScissorArrayv',
+    'glScissorIndexed',
+    'glScissorIndexedv',
+    'glSecondaryColorP3ui',
+    'glSecondaryColorP3uiv',
+    'glShaderBinary',
+    'glShaderSource',
+    'glShaderStorageBlockBinding',
+    'glSpecializeShader',
+    'glStencilFunc',
+    'glStencilFuncSeparate',
+    'glStencilMask',
+    'glStencilMaskSeparate',
+    'glStencilOp',
+    'glStencilOpSeparate',
+    'glTexBuffer',
+    'glTexBufferRange',
+    'glTexCoordP1ui',
+    'glTexCoordP1uiv',
+    'glTexCoordP2ui',
+    'glTexCoordP2uiv',
+    'glTexCoordP3ui',
+    'glTexCoordP3uiv',
+    'glTexCoordP4ui',
+    'glTexCoordP4uiv',
+    'glTexImage1D',
+    'glTexImage2D',
+    'glTexImage2DMultisample',
+    'glTexImage3D',
+    'glTexImage3DMultisample',
+    'glTexParameterIiv',
+    'glTexParameterIuiv',
+    'glTexParameterf',
+    'glTexParameterfv',
+    'glTexParameteri',
+    'glTexParameteriv',
+    'glTexStorage1D',
+    'glTexStorage2D',
+    'glTexStorage2DMultisample',
+    'glTexStorage3D',
+    'glTexStorage3DMultisample',
+    'glTexSubImage1D',
+    'glTexSubImage2D',
+    'glTexSubImage3D',
+    'glTextureBarrier',
+    'glTextureBuffer',
+    'glTextureBufferRange',
+    'glTextureParameterIiv',
+    'glTextureParameterIuiv',
+    'glTextureParameterf',
+    'glTextureParameterfv',
+    'glTextureParameteri',
+    'glTextureParameteriv',
+    'glTextureStorage1D',
+    'glTextureStorage2D',
+    'glTextureStorage2DMultisample',
+    'glTextureStorage3D',
+    'glTextureStorage3DMultisample',
+    'glTextureSubImage1D',
+    'glTextureSubImage2D',
+    'glTextureSubImage3D',
+    'glTextureView',
+    'glTransformFeedbackBufferBase',
+    'glTransformFeedbackBufferRange',
+    'glTransformFeedbackVaryings',
+    'glUniform1d',
+    'glUniform1dv',
+    'glUniform1f',
+    'glUniform1fv',
+    'glUniform1i',
+    'glUniform1i64ARB',
+    'glUniform1i64vARB',
+    'glUniform1iv',
+    'glUniform1ui',
+    'glUniform1ui64ARB',
+    'glUniform1ui64vARB',
+    'glUniform1uiv',
+    'glUniform2d',
+    'glUniform2dv',
+    'glUniform2f',
+    'glUniform2fv',
+    'glUniform2i',
+    'glUniform2i64ARB',
+    'glUniform2i64vARB',
+    'glUniform2iv',
+    'glUniform2ui',
+    'glUniform2ui64ARB',
+    'glUniform2ui64vARB',
+    'glUniform2uiv',
+    'glUniform3d',
+    'glUniform3dv',
+    'glUniform3f',
+    'glUniform3fv',
+    'glUniform3i',
+    'glUniform3i64ARB',
+    'glUniform3i64vARB',
+    'glUniform3iv',
+    'glUniform3ui',
+    'glUniform3ui64ARB',
+    'glUniform3ui64vARB',
+    'glUniform3uiv',
+    'glUniform4d',
+    'glUniform4dv',
+    'glUniform4f',
+    'glUniform4fv',
+    'glUniform4i',
+    'glUniform4i64ARB',
+    'glUniform4i64vARB',
+    'glUniform4iv',
+    'glUniform4ui',
+    'glUniform4ui64ARB',
+    'glUniform4ui64vARB',
+    'glUniform4uiv',
+    'glUniformBlockBinding',
+    'glUniformHandleui64ARB',
+    'glUniformHandleui64vARB',
+    'glUniformMatrix2dv',
+    'glUniformMatrix2fv',
+    'glUniformMatrix2x3dv',
+    'glUniformMatrix2x3fv',
+    'glUniformMatrix2x4dv',
+    'glUniformMatrix2x4fv',
+    'glUniformMatrix3dv',
+    'glUniformMatrix3fv',
+    'glUniformMatrix3x2dv',
+    'glUniformMatrix3x2fv',
+    'glUniformMatrix3x4dv',
+    'glUniformMatrix3x4fv',
+    'glUniformMatrix4dv',
+    'glUniformMatrix4fv',
+    'glUniformMatrix4x2dv',
+    'glUniformMatrix4x2fv',
+    'glUniformMatrix4x3dv',
+    'glUniformMatrix4x3fv',
+    'glUniformSubroutinesuiv',
+    'glUnmapBuffer',
+    'glUnmapNamedBuffer',
+    'glUseProgram',
+    'glUseProgramStages',
+    'glValidateProgram',
+    'glValidateProgramPipeline',
+    'glVertexArrayAttribBinding',
+    'glVertexArrayAttribFormat',
+    'glVertexArrayAttribIFormat',
+    'glVertexArrayAttribLFormat',
+    'glVertexArrayBindingDivisor',
+    'glVertexArrayElementBuffer',
+    'glVertexArrayVertexBuffer',
+    'glVertexArrayVertexBuffers',
+    'glVertexAttrib1d',
+    'glVertexAttrib1dv',
+    'glVertexAttrib1f',
+    'glVertexAttrib1fv',
+    'glVertexAttrib1s',
+    'glVertexAttrib1sv',
+    'glVertexAttrib2d',
+    'glVertexAttrib2dv',
+    'glVertexAttrib2f',
+    'glVertexAttrib2fv',
+    'glVertexAttrib2s',
+    'glVertexAttrib2sv',
+    'glVertexAttrib3d',
+    'glVertexAttrib3dv',
+    'glVertexAttrib3f',
+    'glVertexAttrib3fv',
+    'glVertexAttrib3s',
+    'glVertexAttrib3sv',
+    'glVertexAttrib4Nbv',
+    'glVertexAttrib4Niv',
+    'glVertexAttrib4Nsv',
+    'glVertexAttrib4Nub',
+    'glVertexAttrib4Nubv',
+    'glVertexAttrib4Nuiv',
+    'glVertexAttrib4Nusv',
+    'glVertexAttrib4bv',
+    'glVertexAttrib4d',
+    'glVertexAttrib4dv',
+    'glVertexAttrib4f',
+    'glVertexAttrib4fv',
+    'glVertexAttrib4iv',
+    'glVertexAttrib4s',
+    'glVertexAttrib4sv',
+    'glVertexAttrib4ubv',
+    'glVertexAttrib4uiv',
+    'glVertexAttrib4usv',
+    'glVertexAttribBinding',
+    'glVertexAttribDivisor',
+    'glVertexAttribFormat',
+    'glVertexAttribI1i',
+    'glVertexAttribI1iv',
+    'glVertexAttribI1ui',
+    'glVertexAttribI1uiv',
+    'glVertexAttribI2i',
+    'glVertexAttribI2iv',
+    'glVertexAttribI2ui',
+    'glVertexAttribI2uiv',
+    'glVertexAttribI3i',
+    'glVertexAttribI3iv',
+    'glVertexAttribI3ui',
+    'glVertexAttribI3uiv',
+    'glVertexAttribI4bv',
+    'glVertexAttribI4i',
+    'glVertexAttribI4iv',
+    'glVertexAttribI4sv',
+    'glVertexAttribI4ubv',
+    'glVertexAttribI4ui',
+    'glVertexAttribI4uiv',
+    'glVertexAttribI4usv',
+    'glVertexAttribIFormat',
+    'glVertexAttribIPointer',
+    'glVertexAttribL1d',
+    'glVertexAttribL1dv',
+    'glVertexAttribL1ui64ARB',
+    'glVertexAttribL1ui64vARB',
+    'glVertexAttribL2d',
+    'glVertexAttribL2dv',
+    'glVertexAttribL3d',
+    'glVertexAttribL3dv',
+    'glVertexAttribL4d',
+    'glVertexAttribL4dv',
+    'glVertexAttribLFormat',
+    'glVertexAttribLPointer',
+    'glVertexAttribP1ui',
+    'glVertexAttribP1uiv',
+    'glVertexAttribP2ui',
+    'glVertexAttribP2uiv',
+    'glVertexAttribP3ui',
+    'glVertexAttribP3uiv',
+    'glVertexAttribP4ui',
+    'glVertexAttribP4uiv',
+    'glVertexAttribPointer',
+    'glVertexBindingDivisor',
+    'glVertexP2ui',
+    'glVertexP2uiv',
+    'glVertexP3ui',
+    'glVertexP3uiv',
+    'glVertexP4ui',
+    'glVertexP4uiv',
+    'glViewport',
+    'glViewportArrayv',
+    'glViewportIndexedf',
+    'glViewportIndexedfv',
+    'glWaitSync',
 ]

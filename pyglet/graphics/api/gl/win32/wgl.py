@@ -7,7 +7,7 @@ from ctypes import CFUNCTYPE, POINTER, Structure, c_int
 from ctypes.wintypes import DWORD, BOOL, FLOAT, LONG, UINT, HDC, WORD, HANDLE, LPCSTR
 
 from pyglet.graphics.api.gl.lib import link_WGL as _link_function
-from pyglet.graphics.api.gl.win32.wglext_arb import WGLFunctions_ARB
+from pyglet.graphics.api.gl.win32.wglext_arb import WGLFunctionsARB
 from pyglet.libs.win32.types import BYTE
 
 if not _link_function:
@@ -81,7 +81,7 @@ wglUseFontOutlinesW = _link_function('wglUseFontOutlinesW', BOOL, [HDC, DWORD, D
 
 
 
-class WGLFunctions(WGLFunctions_ARB):
+class WGLFunctions(WGLFunctionsARB):
     def __init__(self):
         super().__init__()
 

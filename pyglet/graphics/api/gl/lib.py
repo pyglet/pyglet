@@ -5,16 +5,6 @@ from typing import Any, Callable, NoReturn, Sequence
 
 import pyglet
 
-__all__ = [
-    'GLException',
-    'MissingFunctionException',
-    'decorate_function',
-    'link_AGL',
-    'link_GL',
-    'link_GLX',
-    'link_WGL',
-    'missing_function',
-]
 
 _debug_api = pyglet.options.debug_api
 _debug_api_trace = pyglet.options.debug_api_trace
@@ -102,10 +92,26 @@ def decorate_function(func: Callable, name: str) -> None:
 link_AGL = None
 link_GLX = None
 link_WGL = None
+link_WGL_proxy = None
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
-    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_WGL
+    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL, link_WGL_proxy
 elif pyglet.compat_platform == 'darwin':
     from pyglet.graphics.api.gl.cocoa.lib_agl import link_GL, link_AGL
-else:
+elif pyglet.compat_platform.startswith('linux'):
     from pyglet.graphics.api.gl.xlib.lib_glx import link_GL, link_GLX
+else:
+    raise Exception("Platform not available.")
+
+
+__all__ = [
+    'GLException',
+    'MissingFunctionException',
+    'decorate_function',
+    'link_AGL',
+    'link_GL',
+    'link_GLX',
+    'link_WGL',
+    'link_WGL_proxy',
+    'missing_function',
+]
