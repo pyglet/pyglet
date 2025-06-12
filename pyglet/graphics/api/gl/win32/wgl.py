@@ -323,4 +323,5 @@ __all__ = [
     'wglUseFontBitmapsW',
     'wglUseFontOutlinesA',
     'wglUseFontOutlinesW',
+    'WGLFunctions',
 ]

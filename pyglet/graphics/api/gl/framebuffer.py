@@ -32,7 +32,7 @@ from pyglet.graphics.api.gl import GLint, GL_VIEWPORT, GL_BACK, GLubyte, \
     GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_UNSUPPORTED, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT, \
     GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT, GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT, \
     GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER, GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, \
-    GL_COLOR_ATTACHMENT0
+    GL_COLOR_ATTACHMENT0, OpenGLSurfaceContext
 from pyglet.image.base import ImageData
 
 if TYPE_CHECKING:
@@ -80,23 +80,23 @@ def get_max_color_attachments() -> int:
 class Renderbuffer:
     """OpenGL Renderbuffer Object."""
 
-    def __init__(self, width: int, height: int, internal_format: int, samples: int = 1) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, internal_format: int, samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
-        self._context = core.current_context
+        self._context = context or core.current_context
         self._id = GLuint()
         self._width = width
         self._height = height
         self._internal_format = internal_format
 
-        glGenRenderbuffers(1, self._id)
-        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        self._context.glGenRenderbuffers(1, self._id)
+        self._context.glBindRenderbuffer(GL_RENDERBUFFER, self._id)
 
         if samples > 1:
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
+            self._context.glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
         else:
-            glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+            self._context.glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
 
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+        self._context.glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     @property
     def id(self) -> int:
@@ -111,14 +111,13 @@ class Renderbuffer:
         return self._height
 
     def bind(self) -> None:
-        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        self._context.glBindRenderbuffer(GL_RENDERBUFFER, self._id)
 
-    @staticmethod
-    def unbind() -> None:
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+    def unbind(self) -> None:
+        self._context.glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     def delete(self) -> None:
-        glDeleteRenderbuffers(1, self._id)
+        self._context.glDeleteRenderbuffers(1, self._id)
         self._id = None
 
     def __del__(self) -> None:
@@ -138,11 +137,10 @@ class Framebuffer:
 
     .. versionadded:: 2.0
     """
-    def __init__(self, target: int = GL_FRAMEBUFFER) -> None:
-        """Create a Framebuffer Instance."""
-        self._context = pyglet.graphics.api.core.current_context
+    def __init__(self, context: OpenGLSurfaceContext, target: int = GL_FRAMEBUFFER) -> None:
+        self._context = context or core.current_context
         self._id = GLuint()
-        glGenFramebuffers(1, self._id)
+        self._context.glGenFramebuffers(1, self._id)
         self._attachment_types = 0
         self._width = 0
         self._height = 0
@@ -168,7 +166,7 @@ class Framebuffer:
 
         This ctivates it as the current drawing target.
         """
-        glBindFramebuffer(self.target, self._id)
+        self._context.glBindFramebuffer(self.target, self._id)
 
     def unbind(self) -> None:
         """Unbind the Framebuffer.
@@ -177,18 +175,18 @@ class Framebuffer:
         to the framebuffer, or if you wish to access data
         from its Texture atachments.
         """
-        glBindFramebuffer(self.target, 0)
+        self._context.glBindFramebuffer(self.target, 0)
 
     def clear(self) -> None:
         """Clear the attachments."""
         if self._attachment_types:
             self.bind()
-            glClear(self._attachment_types)
+            self._context.glClear(self._attachment_types)
             self.unbind()
 
     def delete(self) -> None:
         """Explicitly delete the Framebuffer."""
-        glDeleteFramebuffers(1, self._id)
+        self._context.glDeleteFramebuffers(1, self._id)
         self._id = None
 
     def __del__(self) -> None:
@@ -202,10 +200,9 @@ class Framebuffer:
     @property
     def is_complete(self) -> bool:
         """True if the framebuffer is 'complete', else False."""
-        return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
+        return self._context.glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
 
-    @staticmethod
-    def get_status() -> str:
+    def get_status(self) -> str:
         """Get the current Framebuffer status, as a string.
 
         If ``Framebuffer.is_complete`` is ``False``, this method
@@ -221,7 +218,7 @@ class Framebuffer:
                   GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: "Framebuffer incomplete read buffer.",
                   GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete."}
 
-        gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+        gl_status = self._context.glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
         return states.get(gl_status, "Unknown error")
 
@@ -243,7 +240,7 @@ class Framebuffer:
                 GL_DEPTH_STENCIL_ATTACHMENT.
         """
         self.bind()
-        glFramebufferTexture(target, attachment, texture.id, texture.level)
+        self._context.glFramebufferTexture(target, attachment, texture.id, texture.level)
         self._attachment_types |= attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -271,7 +268,7 @@ class Framebuffer:
                 GL_DEPTH_STENCIL_ATTACHMENT.
         """
         self.bind()
-        glFramebufferTextureLayer(target, attachment, texture.id, level, layer)
+        self._context.glFramebufferTextureLayer(target, attachment, texture.id, level, layer)
         self._attachment_types |= attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
@@ -295,7 +292,7 @@ class Framebuffer:
                 GL_DEPTH_STENCIL_ATTACHMENT.
         """
         self.bind()
-        glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, renderbuffer.id)
+        self._context.glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, renderbuffer.id)
         self._attachment_types |= attachment
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)

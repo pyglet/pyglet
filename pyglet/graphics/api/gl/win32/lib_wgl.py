@@ -75,7 +75,8 @@ def link_GL_proxy(name: str, restype: Any, argtypes: Any, requires: str | None =
 
     Most functions are not exposed in opengl32.dll, so the majority will be created via wglGetProcAddress.
 
-    If a context is not created, a proxy function will be created in its place to be called.
+    If a context is not created, a proxy function will be created in its place. Through this implementation,
+    OpenGL functions can be imported globally.
     """
     try:
         func = getattr(gl_lib, name)

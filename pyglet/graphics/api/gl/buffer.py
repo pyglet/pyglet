@@ -53,7 +53,7 @@ class BufferObject(AbstractBuffer):
     target: int
     _context: OpenGLSurfaceContext | None
 
-    def __init__(self, size: int, target = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, target = GL_ARRAY_BUFFER, usage: int = GL_DYNAMIC_DRAW) -> None:
         """Initialize the BufferObject with the given size and draw usage.
 
         Buffer data is cleared on creation.
@@ -61,7 +61,7 @@ class BufferObject(AbstractBuffer):
         super().__init__('b', size)
         self.usage = usage
         self.target = target
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
 
         buffer_id = GLuint()
         self._context.glGenBuffers(1, buffer_id)
@@ -174,9 +174,9 @@ class BackedBufferObject(BufferObject):
     count: int
     ctype: CType
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int,
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int,
                  usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(size, GL_ARRAY_BUFFER, usage)
+        super().__init__(context, size, GL_ARRAY_BUFFER, usage)
 
         self.c_type = c_type
         self._ctypes_size = ctypes.sizeof(c_type)
@@ -268,17 +268,17 @@ class BackedBufferObject(BufferObject):
 class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, size: int, attribute: Attribute) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, attribute: Attribute) -> None:
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(context, size, attribute.c_type, attribute.stride, attribute.count)
 
 
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, size: int, c_type: CType, stride: int, count: int,
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int,
                  usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(size, c_type, stride, count, usage)
+        super().__init__(context, size, c_type, stride, count, usage)
 
     def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""
@@ -293,7 +293,7 @@ class PersistentBufferObject(AbstractBuffer):
     without the need to map or unmap.
     """
 
-    def __init__(self, size, attribute, vao):
+    def __init__(self, context, size, attribute, vao):
         # TODO: Persistent buffers cannot be resized. A new buffer is created, and the
         #       data is copied over. Therefore, unlike other buffers, they currently
         #       require s reference to an attribute so the attribute pointer can be reset
@@ -306,21 +306,21 @@ class PersistentBufferObject(AbstractBuffer):
         self.attribute_ctype = attribute.c_type
         self.vao = vao
 
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
 
         buffer_id = GLuint()
-        glGenBuffers(1, buffer_id)
+        self._context.glGenBuffers(1, buffer_id)
         self.id = buffer_id.value
-        glBindBuffer(GL_ARRAY_BUFFER, self.id)
+        self._context.glBindBuffer(GL_ARRAY_BUFFER, self.id)
 
         self.flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
         data = (GLubyte * size)()
-        glBufferStorage(GL_ARRAY_BUFFER, size, data, self.flags)
+        self._context.glBufferStorage(GL_ARRAY_BUFFER, size, data, self.flags)
 
         # size is the allocator size * attribute.stride
         number = size // attribute.element_size
         ptr = ctypes.POINTER(attribute.c_type * number)
-        self.data = ctypes.cast(glMapBufferRange(GL_ARRAY_BUFFER, 0, size, self.flags), ptr).contents
+        self.data = ctypes.cast(self._context.glMapBufferRange(GL_ARRAY_BUFFER, 0, size, self.flags), ptr).contents
 
     def set_data(self, data: Sequence[int] | CTypesPointer) -> None:
         raise NotImplementedError("Not yet implemented")
@@ -329,10 +329,10 @@ class PersistentBufferObject(AbstractBuffer):
         raise NotImplementedError("Not yet implemented")
 
     def bind(self, target=GL_ARRAY_BUFFER):
-        glBindBuffer(target, self.id)
+        self._context.glBindBuffer(target, self.id)
 
     def unbind(self):
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        self._context.glBindBuffer(GL_ARRAY_BUFFER, 0)
 
     def map(self) -> CTypesPointer[ctypes.c_ubyte]:
         raise NotImplementedError("PersistentBufferObjects are always mapped.")
@@ -344,7 +344,7 @@ class PersistentBufferObject(AbstractBuffer):
         raise NotImplementedError("PersistentBufferObjects cannot be unmapped.")
 
     def delete(self) -> None:
-        glDeleteBuffers(1, GLuint(self.id))
+        self._context.glDeleteBuffers(1, GLuint(self.id))
         self.id = None
 
     @lru_cache(maxsize=None)
@@ -364,11 +364,11 @@ class PersistentBufferObject(AbstractBuffer):
         # Create temporary copy of current data
         temp = (GLubyte * size)()
         ctypes.memmove(temp, self.data, min(size, self.size))
-        glDeleteBuffers(1, GLuint(self.id))
+        self._context.glDeleteBuffers(1, GLuint(self.id))
 
         # Generate new buffer
         buffer_id = GLuint()
-        glGenBuffers(1, buffer_id)
+        self._context.glGenBuffers(1, buffer_id)
         self.id = buffer_id.value
 
         # Link attributes to new buffer:
@@ -378,7 +378,7 @@ class PersistentBufferObject(AbstractBuffer):
         self.attribute.set_pointer(self.ptr)
 
         # Initialize the new buffer with the old data, and map it:
-        glBufferStorage(GL_ARRAY_BUFFER, size, temp, self.flags)
+        self._context.glBufferStorage(GL_ARRAY_BUFFER, size, temp, self.flags)
 
         ptr_type = self.attribute.c_type * (size // self.attribute.element_size)
         self.data = self.map_range(0, size, ctypes.POINTER(ptr_type), self.flags)

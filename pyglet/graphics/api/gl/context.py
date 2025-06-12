@@ -7,7 +7,7 @@ from typing import Callable, TYPE_CHECKING
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl import gl_info, ObjectSpace, OpenGLWindowConfig
-from pyglet.graphics.api.gl.gl import GLFunctions
+from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 from pyglet.graphics.api.gl.win32.wgl import WGLFunctions
 
 if TYPE_CHECKING:
@@ -83,7 +83,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         self.glClearColor(r, g, b, a)
 
     def clear(self) -> None:
-        self.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        self.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def attach(self, window: Window) -> None:
         """Attaches a Window and context to the current window.
@@ -122,21 +122,21 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
             self._info.query(self)
 
         if self.object_space.doomed_textures:
-            self._delete_objects(self.object_space.doomed_textures, gl.glDeleteTextures)
+            self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)
         if self.object_space.doomed_buffers:
-            self._delete_objects(self.object_space.doomed_buffers, gl.glDeleteBuffers)
+            self._delete_objects(self.object_space.doomed_buffers, self.glDeleteBuffers)
         if self.object_space.doomed_shader_programs:
             self._delete_objects_one_by_one(self.object_space.doomed_shader_programs,
-                                            gl.glDeleteProgram)
+                                            self.glDeleteProgram)
         if self.object_space.doomed_shaders:
-            self._delete_objects_one_by_one(self.object_space.doomed_shaders, gl.glDeleteShader)
+            self._delete_objects_one_by_one(self.object_space.doomed_shaders, self.glDeleteShader)
         if self.object_space.doomed_renderbuffers:
-            self._delete_objects(self.object_space.doomed_renderbuffers, gl.glDeleteRenderbuffers)
+            self._delete_objects(self.object_space.doomed_renderbuffers, self.glDeleteRenderbuffers)
 
         if self.doomed_vaos:
-            self._delete_objects(self.doomed_vaos, gl.glDeleteVertexArrays)
+            self._delete_objects(self.doomed_vaos, self.glDeleteVertexArrays)
         if self.doomed_framebuffers:
-            self._delete_objects(self.doomed_framebuffers, gl.glDeleteFramebuffers)
+            self._delete_objects(self.doomed_framebuffers, self.glDeleteFramebuffers)
 
     # For the static functions below:
     # The garbage collector introduces a race condition.
@@ -144,7 +144,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
     # method runs, as it's a `doomed_*` list either on the context or its bject
     # space. If `count` wasn't stored in a local, this method might leak objects.
     @staticmethod
-    def _delete_objects(list_: list, deletion_func: Callable[[int, Array[gl.GLuint]], None]) -> None:
+    def _delete_objects(list_: list, deletion_func: Callable[[int, Array[GLuint]], None]) -> None:
         """Release all OpenGL objects in the given list.
 
         Uses the supplied deletion function with the signature ``(GLuint count, GLuint *names)``.
@@ -153,10 +153,10 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         to_delete = list_[:count]
         del list_[:count]
 
-        deletion_func(count, (gl.GLuint * count)(*to_delete))
+        deletion_func(count, (GLuint * count)(*to_delete))
 
     @staticmethod
-    def _delete_objects_one_by_one(list_: list, deletion_func: Callable[[gl.GLuint], None]) -> None:
+    def _delete_objects_one_by_one(list_: list, deletion_func: Callable[[GLuint], None]) -> None:
         """Release all OpenGL objects in the given list.
 
         Similar to ``_delete_objects``, but assumes the deletion function's signature to be ``(GLuint name)``.
@@ -168,7 +168,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         del list_[:count]
 
         for name in to_delete:
-            deletion_func(gl.GLuint(name))
+            deletion_func(GLuint(name))
 
     def destroy(self) -> None:
         """Release the Context.
@@ -219,7 +219,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         This makes it safe to call from anywhere, including other threads.
         """
         if self._safe_to_operate_on_object_space():
-            gl.glDeleteTextures(1, gl.GLuint(texture_id))
+            self.glDeleteTextures(1, GLuint(texture_id))
         else:
             self.object_space.doomed_textures.append(texture_id)
 
@@ -230,7 +230,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
         """
         if self._safe_to_operate_on_object_space():
-            gl.glDeleteBuffers(1, gl.GLuint(buffer_id))
+            self.glDeleteBuffers(1, GLuint(buffer_id))
         else:
             self.object_space.doomed_buffers.append(buffer_id)
 
@@ -241,7 +241,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteProgram`` instead of ``glDeleteTextures``.
         """
         if self._safe_to_operate_on_object_space():
-            gl.glDeleteProgram(gl.GLuint(program_id))
+            self.glDeleteProgram(GLuint(program_id))
         else:
             self.object_space.doomed_shader_programs.append(program_id)
 
@@ -252,7 +252,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteShader`` instead of ``glDeleteTextures``.
         """
         if self._safe_to_operate_on_object_space():
-            gl.glDeleteShader(gl.GLuint(shader_id))
+            self.glDeleteShader(GLuint(shader_id))
         else:
             self.object_space.doomed_shaders.append(shader_id)
 
@@ -263,7 +263,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteRenderbuffers`` instead of ``glDeleteTextures``.
         """
         if self._safe_to_operate_on_object_space():
-            gl.glDeleteRenderbuffers(1, gl.GLuint(rbo_id))
+            self.glDeleteRenderbuffers(1, GLuint(rbo_id))
         else:
             self.object_space.doomed_renderbuffers.append(rbo_id)
 
@@ -278,7 +278,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteVertexArrays``.
         """
         if self._safe_to_operate_on():
-            gl.glDeleteVertexArrays(1, gl.GLuint(vao_id))
+            self.glDeleteVertexArrays(1, GLuint(vao_id))
         else:
             self.doomed_vaos.append(vao_id)
 
@@ -289,7 +289,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         ``glDeleteFramebuffers`` instead of ``glDeleteVertexArrays``.
         """
         if self._safe_to_operate_on():
-            gl.glDeleteFramebuffers(1, gl.GLuint(fbo_id))
+            self.glDeleteFramebuffers(1, GLuint(fbo_id))
         else:
             self.doomed_framebuffers.append(fbo_id)
 

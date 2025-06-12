@@ -365,7 +365,7 @@ class _Uniform:
             ptr = cast(c_array, POINTER(gl_type))
 
             self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
-            self.set = self._create_setter_func(program, location, gl_setter, c_array, length, ptr, is_matrix, dsa)
+            self.set = self._create_setter_func(ctx, program, location, gl_setter, c_array, length, ptr, is_matrix, dsa)
 
     @staticmethod
     def _create_getter_func(program_id: int, location: int, gl_getter: GLFunc, c_array: Array[GLDataType],
@@ -383,8 +383,9 @@ class _Uniform:
         return getter_func
 
     @staticmethod
-    def _create_setter_func(program_id: int, location: int, gl_setter: GLFunc, c_array: Array[GLDataType], length: int,
-                            ptr: CTypesPointer[GLDataType], is_matrix: bool, dsa: bool) -> Callable[[float], None]:
+    def _create_setter_func(context: OpenGLSurfaceContext,program_id: int, location: int, gl_setter: GLFunc,
+                            c_array: Array[GLDataType], length: int, ptr: CTypesPointer[GLDataType],
+                            is_matrix: bool, dsa: bool) -> Callable[[float], None]:
         """Factory function for creating simplified Uniform setters."""
         if dsa:  # Bindless updates:
 
@@ -409,17 +410,17 @@ class _Uniform:
 
         if is_matrix:
             def setter_func(value: float) -> None:
-                glUseProgram(program_id)
+                context.glUseProgram(program_id)
                 c_array[:] = value
                 gl_setter(location, 1, GL_FALSE, ptr)
         elif length == 1:
             def setter_func(value: float) -> None:
-                glUseProgram(program_id)
+                context.glUseProgram(program_id)
                 c_array[0] = value
                 gl_setter(location, 1, ptr)
         elif length > 1:
             def setter_func(values: float) -> None:
-                glUseProgram(program_id)
+                context.glUseProgram(program_id)
                 c_array[:] = values
                 gl_setter(location, 1, ptr)
         else:
@@ -553,7 +554,7 @@ class UniformBlock:
 
     def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        return UniformBufferObject(self.view_cls, self.size, self.binding)
+        return UniformBufferObject(self._context, self.view_cls, self.size, self.binding)
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
@@ -711,9 +712,10 @@ class UniformBufferObject(UniformBufferObjectBase):
 
     __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
 
-    def __init__(self, view_class: type[Structure], buffer_size: int, binding: int) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, view_class: type[Structure], buffer_size: int, binding: int) -> None:
         """Initialize the Uniform Buffer Object with the specified Structure."""
-        self.buffer = BufferObject(buffer_size, target=GL_UNIFORM_BUFFER)
+        self._context = context
+        self.buffer = BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
         self.view = view_class()
         self._view_ptr = pointer(self.view)
         self.binding = binding
@@ -1399,17 +1401,16 @@ class ComputeShaderProgram:
         gl.glGetIntegerv(parameter, byref(val))
         return val.value
 
-    @staticmethod
-    def dispatch(x: int = 1, y: int = 1, z: int = 1, barrier: int = gl.GL_ALL_BARRIER_BITS) -> None:
+    def dispatch(self, x: int = 1, y: int = 1, z: int = 1, barrier: int = gl.GL_ALL_BARRIER_BITS) -> None:
         """Launch one or more compute work groups.
 
         The ComputeShaderProgram should be active (bound) before calling
         this method. The x, y, and z parameters specify the number of local
         work groups that will be  dispatched in the X, Y and Z dimensions.
         """
-        glDispatchCompute(x, y, z)
+        self._context.glDispatchCompute(x, y, z)
         if barrier:
-            glMemoryBarrier(barrier)
+            self._context.glMemoryBarrier(barrier)
 
     @property
     def id(self) -> int:
@@ -1424,21 +1425,20 @@ class ComputeShaderProgram:
         return self._uniform_blocks
 
     def use(self) -> None:
-        glUseProgram(self._id)
+        self._context.glUseProgram(self._id)
 
-    @staticmethod
-    def stop() -> None:
-        glUseProgram(0)
+    def stop(self) -> None:
+        self._context.glUseProgram(0)
 
     __enter__ = use
     bind = use
     unbind = stop
 
     def __exit__(self, *_) -> None:  # noqa: ANN002
-        glUseProgram(0)
+        self._context.glUseProgram(0)
 
     def delete(self) -> None:
-        glDeleteProgram(self._id)
+        self._context.glDeleteProgram(self._id)
         self._id = None
 
     def __del__(self) -> None:

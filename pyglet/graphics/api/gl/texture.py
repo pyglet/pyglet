@@ -6,6 +6,7 @@ from typing import Callable, Literal, Iterator, Union
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, TextureInternalFormat, TextureDescriptor
+from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
     GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, \
@@ -18,7 +19,8 @@ from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
 from pyglet.image.base import CompressedImageData, ImageException
-from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, TextureArrayDepthExceeded, TextureArray
+from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
+    TextureArrayDepthExceeded, TextureArray
 
 _api_internal_formats = {
     'R': 'GL_RED',
@@ -97,7 +99,7 @@ def _get_gl_format_and_type(fmt: str):
 
 class GLCompressedImageData(CompressedImageData):
     """Compressed image data suitable for direct uploading to GPU."""
-    #TODO: Finish compressed.
+    # TODO: Finish compressed.
 
     _current_texture = None
     _current_mipmap_texture = None
@@ -165,9 +167,9 @@ class GLCompressedImageData(CompressedImageData):
 
         if self._have_extension():
             self._context.glCompressedTexImage2D(texture.target, texture.level,
-                                   self.gl_format,
-                                   self.width, self.height, 0,
-                                   len(self.data), self.data)
+                                                 self.gl_format,
+                                                 self.width, self.height, 0,
+                                                 len(self.data), self.data)
         elif self.decoder:
             image = self.decoder(self.data, self.width, self.height)
             texture = image.get_texture()
@@ -204,9 +206,9 @@ class GLCompressedImageData(CompressedImageData):
             self._context.glGenerateMipmap(texture.target)
 
         self._context.glCompressedTexImage2D(texture.target, texture.level,
-                               self.gl_format,
-                               self.width, self.height, 0,
-                               len(self.data), self.data)
+                                             self.gl_format,
+                                             self.width, self.height, 0,
+                                             len(self.data), self.data)
 
         width, height = self.width, self.height
         level = 0
@@ -214,7 +216,8 @@ class GLCompressedImageData(CompressedImageData):
             width >>= 1
             height >>= 1
             level += 1
-            self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data), data)
+            self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data),
+                                                 data)
 
         self._context.glFlush()
 
@@ -229,16 +232,16 @@ class GLCompressedImageData(CompressedImageData):
 
         if target == GL_TEXTURE_3D:
             self._context.glCompressedTexSubImage3D(target, level,
-                                      x - self.anchor_x, y - self.anchor_y, z,
-                                      self.width, self.height, 1,
-                                      self.gl_format,
-                                      len(self.data), self.data)
+                                                    x - self.anchor_x, y - self.anchor_y, z,
+                                                    self.width, self.height, 1,
+                                                    self.gl_format,
+                                                    len(self.data), self.data)
         else:
             self._context.glCompressedTexSubImage2D(target, level,
-                                      x - self.anchor_x, y - self.anchor_y,
-                                      self.width, self.height,
-                                      self.gl_format,
-                                      len(self.data), self.data)
+                                                    x - self.anchor_x, y - self.anchor_y,
+                                                    self.width, self.height,
+                                                    self.gl_format,
+                                                    len(self.data), self.data)
 
     def get_image_data(self) -> CompressedImageData:
         return self
@@ -307,12 +310,13 @@ class Texture(TextureBase):
     y: int = 0
     z: int = 0
 
-    def __init__(self, width: int, height: int, tex_id: int, descriptor: TextureDescriptor | None = None) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int,
+                 descriptor: TextureDescriptor | None = None) -> None:
         super().__init__(width, height, tex_id, descriptor)
         self.target = texture_map[self.descriptor.tex_type]
         self.min_filter = texture_map[self.descriptor.min_filter]
         self.mag_filter = texture_map[self.descriptor.mag_filter]
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
         self._internal_format = _get_internal_format(descriptor.internal_format)
 
     def delete(self) -> None:
@@ -345,9 +349,11 @@ class Texture(TextureBase):
         self._context.glBindImageTexture(unit, self.id, level, layered, layer, access, fmt)
 
     @classmethod
-    def create_from_image(
-        cls, image_data: ImageData | ImageDataRegion, texture_descriptor: TextureDescriptor | None = None,
-    ) -> Texture:
+    def create_from_image(cls,
+                          image_data: ImageData | ImageDataRegion,
+                          texture_descriptor: TextureDescriptor | None = None,
+                          context: OpenGLSurfaceContext | None = None,
+                          ) -> Texture:
         """Create a Texture from image data.
 
         On return, the texture will be bound.
@@ -358,7 +364,7 @@ class Texture(TextureBase):
             texture_descriptor:
                 Description of the Texture.
         """
-        ctx = pyglet.graphics.api.core.current_context
+        ctx = context or pyglet.graphics.api.core.current_context
         desc = texture_descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
@@ -375,19 +381,19 @@ class Texture(TextureBase):
         if desc.internal_format and target != GL_TEXTURE_3D:
             image_bytes = image_data.get_bytes(desc.pixel_format, image_data.width * len(desc.pixel_format))
             ctx.glTexImage2D(target, 0,
-                         _get_internal_format(desc.internal_format),
-                         image_data.width, image_data.height,
-                         0,
-                         gl_pfmt,
-                         GL_UNSIGNED_BYTE,
-                         image_bytes)
+                             _get_internal_format(desc.internal_format),
+                             image_data.width, image_data.height,
+                             0,
+                             gl_pfmt,
+                             GL_UNSIGNED_BYTE,
+                             image_bytes)
             ctx.glFlush()
 
-        return cls(image_data.width, image_data.height, tex_id.value, desc)
+        return cls(ctx, image_data.width, image_data.height, tex_id.value, desc)
 
     @classmethod
     def create(cls, width: int, height: int, texture_descriptor: TextureDescriptor | None = None,
-               blank_data: bool = True) -> TextureBase:
+               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> TextureBase:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, target and format.
@@ -402,8 +408,10 @@ class Texture(TextureBase):
                 Description of the Texture.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            context:
+                A specific OpenGL Surface context, otherwise the current active context.
         """
-        ctx = pyglet.graphics.api.core.current_context
+        ctx = context or pyglet.graphics.api.core.current_context
         desc = texture_descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
@@ -421,15 +429,15 @@ class Texture(TextureBase):
             blank = (GLubyte * (width * height * 4))() if blank_data else None
             internal_format = _get_internal_format(desc.internal_format)
             ctx.glTexImage2D(target, 0,
-                         internal_format,
-                         width, height,
-                         0,
-                         pfmt,
-                         GL_UNSIGNED_BYTE,
-                         blank)
+                             internal_format,
+                             width, height,
+                             0,
+                             pfmt,
+                             GL_UNSIGNED_BYTE,
+                             blank)
             ctx.glFlush()
 
-        return cls(width, height, tex_id.value, desc)
+        return cls(ctx, width, height, tex_id.value, desc)
 
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
@@ -531,16 +539,16 @@ class Texture(TextureBase):
 
         if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
             self._context.glTexSubImage3D(self.target, self.level,
-                            x, y, z,
-                            image_data.width, image_data.height, 1,
-                            fmt, gl_type,
-                            data)
+                                          x, y, z,
+                                          image_data.width, image_data.height, 1,
+                                          fmt, gl_type,
+                                          data)
         else:
             self._context.glTexSubImage2D(self.target, self.level,
-                            x, y,
-                            image_data.width, image_data.height,
-                            fmt, gl_type,
-                            data)
+                                          x, y,
+                                          image_data.width, image_data.height,
+                                          fmt, gl_type,
+                                          data)
 
         self._context.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
         self._default_region_unpack(image_data)
@@ -630,7 +638,7 @@ class TextureRegion(Texture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
-        super().__init__(width, height, owner.id, owner.descriptor)
+        super().__init__(owner._context, width, height, owner.id, owner.descriptor)
 
         self.x = x
         self.y = y
@@ -679,7 +687,9 @@ class TextureRegion(Texture):
     def __del__(self):
         pass
 
+
 Texture.region_class = TextureRegion
+
 
 class Texture3D(Texture, UniformTextureSequence):
     """A texture with more than one image slice.
@@ -697,8 +707,9 @@ class Texture3D(Texture, UniformTextureSequence):
     )
 
     @classmethod
-    def create_for_images(cls, images, descriptor: TextureDescriptor | None = None, blank_data=True):
-        ctx = pyglet.graphics.api.core.current_context
+    def create_for_images(cls, images, descriptor: TextureDescriptor | None = None, blank_data=True,
+                          context: OpenGLSurfaceContext | None = None) -> Texture3D:
+        ctx = context or pyglet.graphics.api.core.current_context
         desc = descriptor or cls.default_descriptor
         item_width = images[0].width
         item_height = images[0].height
@@ -718,10 +729,10 @@ class Texture3D(Texture, UniformTextureSequence):
         blank = (GLubyte * (texture.width * texture.height * texture.images * 4))() if blank_data else None
         ctx.glBindTexture(texture.target, texture.id)
         ctx.glTexImage3D(texture.target, texture.level,
-                     _get_internal_format(desc.internal_format),
-                     texture.width, texture.height, texture.images, 0,
-                     pfmt, gl_type,
-                     blank)
+                         _get_internal_format(desc.internal_format),
+                         texture.width, texture.height, texture.images, 0,
+                         pfmt, gl_type,
+                         blank)
 
         items = []
         for i, image in enumerate(images):
@@ -765,19 +776,23 @@ class TextureArrayRegion(TextureRegion):
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
+
 class TextureArray(Texture, UniformTextureSequence):
     default_descriptor = TextureDescriptor(
         tex_type=TextureType.TYPE_2D_ARRAY,
         min_filter=TextureFilter.LINEAR,
         mag_filter=TextureFilter.LINEAR,
     )
-    def __init__(self, width, height, tex_id, max_depth, descriptor: TextureDescriptor | None = None):
-        super().__init__(width, height, tex_id, descriptor or self.default_descriptor)
+
+    def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
+                 descriptor: TextureDescriptor | None = None):
+        super().__init__(context, width, height, tex_id, descriptor or self.default_descriptor)
         self.max_depth = max_depth
         self.items = []
 
     @classmethod
-    def create(cls, width: int, height: int, descriptor: TextureDescriptor | None = None, max_depth: int = 256) -> TextureArray:
+    def create(cls, width: int, height: int, descriptor: TextureDescriptor | None = None, max_depth: int = 256,
+               context: OpenGLSurfaceContext | None = None) -> TextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -792,10 +807,11 @@ class TextureArray(Texture, UniformTextureSequence):
                 Texture description.
             max_depth:
                 The number of layers in the texture array.
-
+            context:
+                A specific OpenGL Surface context, otherwise the current active context.
         .. versionadded:: 2.0
         """
-        ctx = pyglet.graphics.api.core.current_context
+        ctx = context or pyglet.graphics.api.core.current_context
         desc = descriptor or cls.default_descriptor
         min_filter = texture_map[desc.min_filter]
         mag_filter = texture_map[desc.mag_filter]
@@ -812,14 +828,14 @@ class TextureArray(Texture, UniformTextureSequence):
         pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
 
         ctx.glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                     _get_internal_format(desc.internal_format),
-                     width, height, max_depth,
-                     0,
-                     pfmt, gl_type,
-                     0)
+                         _get_internal_format(desc.internal_format),
+                         width, height, max_depth,
+                         0,
+                         pfmt, gl_type,
+                         0)
         ctx.glFlush()
 
-        texture = cls(width, height, tex_id.value, max_depth, desc)
+        texture = cls(ctx, width, height, tex_id.value, max_depth, desc)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
 
@@ -971,6 +987,7 @@ class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
         images = texture_grid[(1,1):(3,3)]
 
     """
+
     def __init__(self, texture: Texture | TextureRegion, rows: int, columns: int, item_width: int,
                  item_height: int, row_padding: int = 0, column_padding: int = 0) -> None:
         """Construct a grid for the given image.

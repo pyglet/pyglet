@@ -17,9 +17,9 @@ class VertexArray:
     _context: OpenGLSurfaceContext | None
     _id: c_uint
 
-    def __init__(self) -> None:
+    def __init__(self, context: OpenGLSurfaceContext) -> None:
         """Create an instance of a Vertex Array object."""
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = context
         self._id = GLuint()
         self._context.glGenVertexArrays(1, self._id)
 

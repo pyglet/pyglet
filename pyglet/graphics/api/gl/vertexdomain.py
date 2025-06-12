@@ -43,7 +43,7 @@ from pyglet.graphics.api.gl import (
     GLintptr,
     GLsizei,
     GLvoid,
-    vertexarray,
+    vertexarray, OpenGLSurfaceContext,
 )
 from pyglet.graphics.api.gl.buffer import AttributeBufferObject, IndexedBufferObject
 from pyglet.graphics.api.gl.enums import geometry_map
@@ -282,14 +282,13 @@ class VertexDomain:
     _property_dict: dict[str, property]
     _vertexlist_class: type
 
-    _initial_count: int = 16
     _vertex_class: type[VertexList] = VertexList
 
-    def __init__(self, attribute_meta: dict[str, Attribute]) -> None:
-        self._context = pyglet.graphics.api.core.current_context
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+        self._context = context or pyglet.graphics.api.core.current_context
         self.attribute_meta = attribute_meta
-        self.allocator = allocation.Allocator(self._initial_count)
-        self.vao = vertexarray.VertexArray()
+        self.allocator = allocation.Allocator(initial_count)
+        self.vao = vertexarray.VertexArray(self._context)
 
         self.attribute_names = {}  # name: attribute
         self.buffer_attributes = []  # list of (buffer, attribute)
@@ -305,7 +304,8 @@ class VertexDomain:
                 name, meta.location, meta.count, meta.data_type, meta.normalize, meta.instance)
 
             # Create buffer:
-            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(attribute.stride * self.allocator.capacity,
+            self.attrib_name_buffers[name] = buffer = AttributeBufferObject(self._context,
+                                                                            attribute.stride * self.allocator.capacity,
                                                                             attribute)
             # TODO: use persistent buffer if we have GL support for it:
             # attribute.buffer = PersistentBufferObject(attribute.stride * self.allocator.capacity, attribute, self.vao)
@@ -447,10 +447,10 @@ class InstancedVertexDomain(VertexDomain):
     _instance_properties: dict[str, property]
     _vertexinstance_class: type
 
-    def __init__(self, attribute_meta: dict[str, dict[str, Any]]) -> None:
-        super().__init__(attribute_meta)
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, dict[str, Any]]) -> None:
+        super().__init__(context, initial_count, attribute_meta)
         self._instances = 1
-        self.instance_allocator = allocation.Allocator(self._initial_count)
+        self.instance_allocator = allocation.Allocator(initial_count)
 
         self._instance_properties = {}
         for name, attribute in self.attribute_names.items():
@@ -546,19 +546,19 @@ class IndexedVertexDomain(VertexDomain):
     index_c_type: CType
     index_element_size: int
     index_buffer: IndexedBufferObject
-    _initial_index_count = 16
     _vertex_class = IndexedVertexList
 
-    def __init__(self, attribute_meta: dict[str, dict[str, Any]],
+    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, dict[str, Any]],
                  index_gl_type: int = GL_UNSIGNED_INT) -> None:
-        super().__init__(attribute_meta)
+        super().__init__(context, initial_count, attribute_meta)
 
-        self.index_allocator = allocation.Allocator(self._initial_index_count)
+        self.index_allocator = allocation.Allocator(initial_count)  # Just use initial count of regular buffer.
 
         self.index_gl_type = index_gl_type
         self.index_c_type = _c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = IndexedBufferObject(self.index_allocator.capacity * self.index_element_size,
+        self.index_buffer = IndexedBufferObject(self._context,
+                                                self.index_allocator.capacity * self.index_element_size,
                                                 _c_types[index_gl_type],
                                                 self.index_element_size,
                                                 1)

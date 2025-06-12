@@ -793,6 +793,7 @@ class TextLayout:
 
         if batch is None:
             batch = pyglet.graphics.Batch()
+            # Create a batch as some text elements may require being drawn together.
             self._own_batch = True
         self._batch = batch
 

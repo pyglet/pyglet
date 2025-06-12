@@ -5406,4 +5406,5 @@ __all__ = [  # noqa: RUF022
     'glViewportIndexedf',
     'glViewportIndexedfv',
     'glWaitSync',
+    'GLFunctions',
 ]
