@@ -5,11 +5,9 @@ import io
 from typing import TYPE_CHECKING, BinaryIO, List, Optional, Union
 
 from pyglet.graphics import Texture
-from pyglet.graphics.api.gl.texture import TextureRegion
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 if TYPE_CHECKING:
-    from pyglet.image import _AbstractImage
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
@@ -75,15 +73,20 @@ class AudioFormat:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, AudioFormat):
-            return (self.channels == other.channels and
-                    self.sample_size == other.sample_size and
-                    self.sample_rate == other.sample_rate)
+            return (
+                self.channels == other.channels
+                and self.sample_size == other.sample_size
+                and self.sample_rate == other.sample_rate
+            )
         return NotImplemented
 
     def __repr__(self) -> str:
         return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__, self.channels, self.sample_size,
-            self.sample_rate)
+            self.__class__.__name__,
+            self.channels,
+            self.sample_size,
+            self.sample_rate,
+        )
 
 
 class VideoFormat:
@@ -97,6 +100,7 @@ class VideoFormat:
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
     """
+
     width: int
     height: int
     sample_aspect: float
@@ -124,10 +128,12 @@ class VideoFormat:
 
     def __eq__(self, other) -> bool:
         if isinstance(other, VideoFormat):
-            return (self.width == other.width and
-                    self.height == other.height and
-                    self.sample_aspect == other.sample_aspect and
-                    self.frame_rate == other.frame_rate)
+            return (
+                self.width == other.width
+                and self.height == other.height
+                and self.sample_aspect == other.sample_aspect
+                and self.frame_rate == other.frame_rate
+            )
         return False
 
 
@@ -139,12 +145,14 @@ class AudioData:
 
     __slots__ = 'data', 'length', 'timestamp', 'duration', 'events', 'pointer'
 
-    def __init__(self,
-                 data: Union[bytes, ctypes.Array],
-                 length: int,
-                 timestamp: float = 0.0,
-                 duration: float = 0.0,
-                 events: list[MediaEvent] | None = None) -> None:
+    def __init__(
+        self,
+        data: Union[bytes, ctypes.Array],
+        length: int,
+        timestamp: float = 0.0,
+        duration: float = 0.0,
+        events: list[MediaEvent] | None = None,
+    ) -> None:
         """
         events (List[:class:`pyglet.media.drivers.base.MediaEvent`]):
 
@@ -263,6 +271,7 @@ class Source:
             :class:`.Player`
         """
         from pyglet.media.player import AudioPlayer  # XXX Nasty circular dependency
+
         player = AudioPlayer()
         player.queue(self)
         player.play()
@@ -291,6 +300,7 @@ class Source:
         .. versionadded:: 1.1
         """
         from pyglet.image import Animation, AnimationFrame
+
         if not self.video_format:
             # XXX: This causes an assertion in the constructor of Animation
             return Animation([])
@@ -318,22 +328,18 @@ class Source:
         """
         pass
 
-    def get_next_video_frame(self) -> Texture | TextureRegion | None:
+    def get_next_video_frame(self) -> Texture | None:
         """Get the next video frame.
 
-        .. versionadded:: 1.1
-
         Returns:
-            :class:`pyglet.image._AbstractImage`: The next video frame image,
-            or ``None`` if the video frame could not be decoded or there are
+            The next video frame image, or ``None`` if the video frame could not be decoded or there are
             no more video frames.
+
+        .. versionadded:: 1.1
         """
         pass
 
-    def save(self,
-             filename: str,
-             file: BinaryIO | None= None,
-             encoder: MediaEncoder | None = None) -> None:
+    def save(self, filename: str, file: BinaryIO | None = None, encoder: MediaEncoder | None = None) -> None:
         """Save this Source to a file.
 
         Args:
@@ -352,6 +358,7 @@ class Source:
             return encoder.encode(self, filename, file)
         else:
             import pyglet.media.codecs
+
             return pyglet.media.codecs.registry.encode(self, filename, file)
 
     # Internal methods that Player calls on the source:
@@ -596,7 +603,7 @@ class SourceGroup:
         self.audio_format = self.audio_format or source.audio_format
         self.info = self.info or source.info
         source = source.get_queue_source()
-        assert (source.audio_format == self.audio_format), "Sources must share the same audio format."
+        assert source.audio_format == self.audio_format, "Sources must share the same audio format."
         self._sources.append(source)
         self.duration += source.duration
 
