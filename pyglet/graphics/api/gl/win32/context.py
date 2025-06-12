@@ -93,7 +93,9 @@ class Win32OpenGLConfig(OpenGLConfig):
 
         pformats = (c_int * 16)()
         nformats = c_uint(16)
-        wglext_arb.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
+
+        from pyglet.graphics.api import core
+        core.current_context.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
 
         # Only choose the first format, because these are in order of best matching from driver.
         # (Maybe not always the case?)
@@ -168,8 +170,9 @@ class Win32ARBOpenGLWindowConfig(Win32OpenGLWindowConfig):
         attrs = list(self.attribute_ids.values())
         attrs = (c_int * len(attrs))(*attrs)
         values = (c_int * len(attrs))()
+        from pyglet.graphics.api import core
 
-        wglext_arb.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
+        core.current_context.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
 
         for name, value in zip(names, values):
             setattr(self, name, value)
@@ -271,5 +274,7 @@ class Win32ARBContext(_BaseWin32Context):
         attribs = (c_int * len(attribs))(*attribs)
 
         self.config.apply_format()
-        self._context = wglext_arb.wglCreateContextAttribsARB(window.dc, share, attribs)
+
+        from pyglet.graphics.api import core
+        self._context = core.current_context.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)
