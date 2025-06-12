@@ -114,6 +114,13 @@ class JavascriptPyodideFont(base.Font):
         self.ascent = metrics.fontBoundingBoxAscent
         self.descent = -metrics.fontBoundingBoxDescent
 
+    def get_text_size(self, text: str) -> tuple[int, int]:
+        _font_context.font = self.js_name
+        metrics = _font_context.measureText(text)
+        w = max(1, int(math.ceil(metrics.width)))
+        h = max(1, int(math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)))
+        return w, h
+
     @classmethod
     def add_font_data(cls, data: bytes) -> Task:
         ttf_info = TruetypeInfoBytes(data)
