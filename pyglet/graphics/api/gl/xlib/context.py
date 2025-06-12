@@ -108,6 +108,9 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
     def _create_glx_context(self, _share: None) -> NoReturn:
         raise NotImplementedError
 
+    def apply_format(self) -> None:
+        pass
+
     def is_complete(self) -> bool:
         return True
 

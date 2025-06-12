@@ -94,6 +94,9 @@ class EGLWindowConfig(OpenGLWindowConfig):
     def create_context(self, opengl_backend: OpenGLBackend, share: HeadlessContext | None) -> HeadlessContext:
         return HeadlessContext(opengl_backend, self._window, self, share)
 
+    def apply_format(self) -> None:
+        pass
+
 
 class HeadlessContext(OpenGLSurfaceContext):
     display_connection: egl.EGLDisplay

@@ -93,13 +93,14 @@ link_AGL = None
 link_GLX = None
 link_WGL = None
 link_WGL_proxy = None
+link_GL_proxy = None
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
-    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL, link_WGL_proxy
+    from pyglet.graphics.api.gl.win32.lib_wgl import link_GL, link_GL_proxy, link_WGL
 elif pyglet.compat_platform == 'darwin':
-    from pyglet.graphics.api.gl.cocoa.lib_agl import link_GL, link_AGL
+    from pyglet.graphics.api.gl.cocoa.lib_agl import link_GL, link_GL_proxy, link_AGL
 elif pyglet.compat_platform.startswith('linux'):
-    from pyglet.graphics.api.gl.xlib.lib_glx import link_GL, link_GLX
+    from pyglet.graphics.api.gl.xlib.lib_glx import link_GL, link_GL_proxy, link_GLX
 else:
     raise Exception("Platform not available.")
 

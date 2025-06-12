@@ -7,6 +7,7 @@ from _ctypes import sizeof, byref
 from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
 from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.win32 import wglext_arb, wgl
+from pyglet.graphics.api.gl.win32.wgl import WGLFunctions
 from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
 from pyglet.libs.win32 import PIXELFORMATDESCRIPTOR, _gdi32
 from pyglet.libs.win32.constants import PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, PFD_DOUBLEBUFFER, \
@@ -95,7 +96,7 @@ class Win32OpenGLConfig(OpenGLConfig):
         nformats = c_uint(16)
 
         from pyglet.graphics.api import core
-        core.current_context.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
+        core.current_context.platform_func.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
 
         # Only choose the first format, because these are in order of best matching from driver.
         # (Maybe not always the case?)
@@ -172,7 +173,7 @@ class Win32ARBOpenGLWindowConfig(Win32OpenGLWindowConfig):
         values = (c_int * len(attrs))()
         from pyglet.graphics.api import core
 
-        core.current_context.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
+        core.current_context.platform_func.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
 
         for name, value in zip(names, values):
             setattr(self, name, value)
@@ -197,7 +198,7 @@ class _BaseWin32Context(OpenGLSurfaceContext):
                  config: Win32OpenGLWindowConfig,
                  share: Win32Context | Win32ARBContext) -> None:
         super().__init__(opengl_backend, window, config,
-                         platform_info=WGLInfo(), context_share=share)
+                         platform_info=WGLInfo(), context_share=share, platform_func_class=WGLFunctions)
 
     def set_current(self) -> None:
         if self._context is not None and self != self.core.current_context:
@@ -215,12 +216,12 @@ class _BaseWin32Context(OpenGLSurfaceContext):
 
     def get_vsync(self) -> bool:
         if self._info.have_extension('WGL_EXT_swap_control'):
-            return bool(self.wglGetSwapIntervalEXT())
+            return bool(self.platform_func.wglGetSwapIntervalEXT())
         return False
 
     def set_vsync(self, vsync: bool) -> None:
         if self._info.have_extension('WGL_EXT_swap_control'):
-            self.wglSwapIntervalEXT(int(vsync))
+            self.platform_func.wglSwapIntervalEXT(int(vsync))
 
 
 class Win32Context(_BaseWin32Context):
@@ -276,5 +277,5 @@ class Win32ARBContext(_BaseWin32Context):
         self.config.apply_format()
 
         from pyglet.graphics.api import core
-        self._context = core.current_context.wglCreateContextAttribsARB(window.dc, share, attribs)
+        self._context = core.current_context.platform_func.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)

@@ -251,6 +251,9 @@ class CocoaOpenGLWindowConfig(OpenGLWindowConfig):
 
         return CocoaContext(opengl_backend, self._window, self, nscontext, share)
 
+    def apply_format(self) -> None:
+        pass
+
 
 class CocoaContext(OpenGLSurfaceContext):
 

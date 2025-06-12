@@ -8,7 +8,7 @@ from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.gl import gl_info, ObjectSpace, OpenGLWindowConfig
 from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
-from pyglet.graphics.api.gl.win32.wgl import WGLFunctions
+
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.shader import GLDataType, GLFunc
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
 
-class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
+class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
     """A base OpenGL context for drawing.
 
     Use ``DisplayConfig.create_context`` to create a context.
@@ -36,7 +36,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
                  window: Window,
                  config: OpenGLWindowConfig,
                  platform_info: GLXInfo | WGLInfo | None = None,
-                 context_share: OpenGLSurfaceContext | None = None) -> None:
+                 context_share: OpenGLSurfaceContext | None = None,
+                 platform_func_class: type | None = None) -> None:
         """Initialize a context.
 
         Args:
@@ -53,6 +54,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         self.context_share = context_share
         self.is_current = False
         self._info = gl_info.GLInfo(platform_info)
+        self.platform_func_class = platform_func_class
+        self.platform_func = None
 
         self.doomed_vaos = []
         self.doomed_framebuffers = []
@@ -117,7 +120,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions, WGLFunctions):
         if not self._info.was_queried:
             GLFunctions.__init__(self)
             # Move this later to a better platform implementation.
-            WGLFunctions.__init__(self)
+            if not self.platform_func and self.platform_func_class:
+                self.platform_func = self.platform_func_class()
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
 
