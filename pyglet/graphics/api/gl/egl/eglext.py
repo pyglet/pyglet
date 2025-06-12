@@ -1,7 +1,7 @@
 from __future__ import annotations
 from ctypes import *
-from pyglet.graphics.api.gl import egl
-from pyglet.graphics.api.gl import link_EGL as _link_function
+from pyglet.graphics.api.gl.egl import egl
+from pyglet.graphics.api.gl.egl.lib_egl import link_EGL as _link_function
 
 
 EGL_PLATFORM_GBM_MESA = 12759

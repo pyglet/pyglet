@@ -5,7 +5,7 @@ import pytest
 
 import pyglet
 pyglet.options.debug_media = False
-from pyglet.media.player import Player
+from pyglet.media.player import AudioPlayer
 from pyglet.media import synthesis
 from pyglet.media.codecs.base import StaticSource
 
@@ -13,7 +13,7 @@ from pyglet.media.codecs.base import StaticSource
 @pytest.mark.requires_user_validation
 def test_playback(event_loop, test_data):
     """Test playing back sound files."""
-    player = Player()
+    player = AudioPlayer()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.play()
 
@@ -49,7 +49,7 @@ def test_playback_fire_and_forget(event_loop, test_data):
 def test_play_queue(event_loop):
     """Test playing a single sound on the queue."""
     source = synthesis.WhiteNoise(1.0)
-    player = Player()
+    player = AudioPlayer()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.play()
     player.queue(source)
@@ -61,7 +61,7 @@ def test_play_queue(event_loop):
 def test_queue_play(event_loop):
     """Test putting a single sound on the queue and then starting the player."""
     source = synthesis.WhiteNoise(1.0)
-    player = Player()
+    player = AudioPlayer()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source)
     player.play()
@@ -73,7 +73,7 @@ def test_queue_play(event_loop):
 def test_pause_queue(event_loop):
     """Test the queue is not played when player is paused."""
     source = synthesis.WhiteNoise(1.0)
-    player = Player()
+    player = AudioPlayer()
     player.pause()
     player.queue(source)
 
@@ -86,7 +86,7 @@ def test_pause_queue(event_loop):
 def test_pause_sound(event_loop):
     """Test that a playing sound can be paused."""
     source = synthesis.WhiteNoise(60.0)
-    player = Player()
+    player = AudioPlayer()
     player.queue(source)
     player.play()
 
@@ -106,7 +106,7 @@ def test_next_on_end_of_stream(event_loop):
     """Test that multiple items on the queue are played after each other."""
     source1 = synthesis.WhiteNoise(1.0)
     source2 = synthesis.Sine(1.0)
-    player = Player()
+    player = AudioPlayer()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source1)
     player.queue(source2)
@@ -122,7 +122,7 @@ def test_static_source_wrapping(event_loop):
     source = synthesis.WhiteNoise(1.0)
     source = StaticSource(source)
     source = StaticSource(source)
-    player = Player()
+    player = AudioPlayer()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source)
     player.play()

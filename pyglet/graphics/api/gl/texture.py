@@ -667,7 +667,7 @@ class TextureRegion(Texture):
 
     def upload(self, source: _AbstractImage, x: int, y: int, z: int) -> None:
         assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
-        self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
+        self.owner.upload(source, x + self.x, y + self.y, z + self.z)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(id={self.id},"
