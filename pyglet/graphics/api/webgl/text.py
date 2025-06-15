@@ -201,7 +201,7 @@ class TextLayoutGroup(Group):
         self,
         texture: TextureBase,
         program: ShaderProgram,
-        order: int = 1,  # noqa: D107
+        order: int = 1,
         parent: Group | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
@@ -209,7 +209,7 @@ class TextLayoutGroup(Group):
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        # self.set_shader_uniform(program, "scissor", False)
+        self.set_shader_uniform(program, "scissor", False)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -225,7 +225,7 @@ class TextDecorationGroup(Group):
     def __init__(
         self,
         program: ShaderProgram,
-        order: int = 0,  # noqa: D107
+        order: int = 0,
         parent: Group | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)
@@ -251,7 +251,7 @@ class ScrollableTextLayoutGroup(Group):
         self,
         texture: TextureBase,
         program: ShaderProgram,
-        order: int = 1,  # noqa: D107
+        order: int = 1,
         parent: Group | None = None,
     ) -> None:
         super().__init__(order=order, parent=parent)

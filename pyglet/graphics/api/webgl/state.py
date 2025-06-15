@@ -11,8 +11,8 @@ from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group
-    from pyglet.graphics.api.gl.shader import ShaderProgram
-    from pyglet.image.base import TextureBase
+    from pyglet.graphics.api.webgl.shader import ShaderProgram
+    from pyglet.graphics.texture import TextureBase
 
 
 @dataclass(frozen=True)
