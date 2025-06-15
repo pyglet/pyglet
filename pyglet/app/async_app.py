@@ -99,8 +99,7 @@ class AsyncEventLoop(event.EventDispatcher):
                 while not self._has_exit_event.is_set():
                     timeout = self.idle()
                     await platform_event_loop.dispatch_posted_events()
-                    await asyncio.sleep(timeout)
-
+                    await asyncio.sleep(0 if timeout is None else timeout)
 
             self.is_running = False
             self.dispatch_event('on_exit')
