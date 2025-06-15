@@ -13,6 +13,12 @@ core = None
 
 resource_manager = ResourceManagement()
 
+
+# Enforce WebGL if emscripten is detected.
+# Create better fallback/choosing system later.
+if pyglet.compat_platform == "emscripten":
+    pyglet.options.backend = "webgl"
+
 if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 

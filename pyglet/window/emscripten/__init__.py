@@ -725,7 +725,7 @@ class EmscriptenWindow(BaseWindow):
     # copy, cut, paste, dragenter, dragleave,dragover, drop
     # touchmove, touchstart, touchend, touchcancel
 
-    def adjust_scale(self, width, height):
+    def adjust_scale(self, width: int, height: int) -> None:
         ratio = js.window.devicePixelRatio or 1.0
 
         # The framebuffer size.
@@ -738,7 +738,7 @@ class EmscriptenWindow(BaseWindow):
 
     def _create(self) -> None:
         assert self._canvas is None
-        canvas_name = "pygletCanvas"
+        canvas_name = pyglet.options.pyodide.canvas_id
         canvas = js.document.getElementById(canvas_name)
         if not self._canvas:
             self._canvas = js.document.createElement("canvas")
@@ -753,7 +753,8 @@ class EmscriptenWindow(BaseWindow):
         self._canvas.style.height = f"{self._height}px"
 
         if not js.document.getElementById(canvas_name):
-            raise Exception(f"Canvas: {canvas_name} could not be created.")
+            msg = f"Canvas: {canvas_name} could not be created."
+            raise Exception(msg)
 
         # By default, the canvas does not receive keyboard events.
         self._canvas.setAttribute("tabindex", "0")
@@ -765,13 +766,12 @@ class EmscriptenWindow(BaseWindow):
         js.document.head.appendChild(style)
 
         # Context must be created after window is created.
-        if pyglet.options.backend == "webgl":
-            self._assign_config()
+        self._assign_config()
 
-            self.context.attach(self)
+        self.context.attach(self)
 
-            rect = self._canvas.getBoundingClientRect()
-            self.adjust_scale(rect.width, rect.height)
+        rect = self._canvas.getBoundingClientRect()
+        self.adjust_scale(rect.width, rect.height)
 
 
 __all__ = ['EmscriptenWindow']
