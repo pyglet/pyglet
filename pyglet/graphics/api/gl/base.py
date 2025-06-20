@@ -62,6 +62,8 @@ class OpenGLConfig(GraphicsConfig):
     opengl_api: str = "gl"
     #: Debug mode.
     debug: bool
+    #: If the framebuffer should be transparent.
+    transparent_framebuffer: bool
 
     @property
     def finalized_config(self) -> OpenGLWindowConfig | None:

@@ -542,16 +542,16 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
             if not config:
                 for template_config in pyglet.graphics.api.get_default_configs():
+                    if self._style in ('transparent', 'overlay'):
+                        template_config.alpha_size = 8
+                        template_config.transparent_framebuffer = True
+
                     if config := template_config.match(self):
                         break
 
                 if not config:
                     msg = 'No standard config is available.'
                     raise NoSuchConfigException(msg)
-
-            # Necessary on Windows. More investigation needed:
-            if self._style in ('transparent', 'overlay'):
-                config.alpha = 8
 
             if not config.is_finalized:
                 config = config.match(self)
