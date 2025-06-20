@@ -102,6 +102,7 @@ def dump_glx():
         return
     import pyglet
     window = pyglet.window.Window(visible=False)
+    glx_info = window.context._info.platform_info
     print('context.is_direct():', window.context.is_direct())
     window.close()
 
@@ -119,7 +120,7 @@ def dump_glx():
         for name in glx_info.get_client_extensions():
             print('  ', name)
         print('glx_info.get_extensions():')
-        for name in glx_info.get_extensions():
+        for name in glx_info.get_extensions(window.context):
             print('  ', name)
 
 
