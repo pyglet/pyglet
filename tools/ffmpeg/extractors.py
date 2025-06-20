@@ -1,5 +1,5 @@
 """
-Responsabilities
+Responsibilities
 
 Containers with helper functions to analyze media_player recording(s)
 

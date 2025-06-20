@@ -286,7 +286,7 @@ and FLAC codecs.
 
 If the PyOgg module is installed in your site packages, pyglet will optionally detect
 and use it. Since not all operating systems can decode the same audio formats natively,
-it can often be a hassle to choose an audio format that is truely cross platform with
+it can often be a hassle to choose an audio format that is truly cross platform with
 a small footprint. This wrapper was created to help with that issue.
 
 Supports the following formats:
@@ -570,7 +570,7 @@ and then pass it into the constructor of any of the above waveforms.
 The same envelope instance can be passed to any number of waveforms,
 reducing duplicate code when creating multiple sounds.
 If no envelope is used, all waveforms will default to the FlatEnvelope
-of maximum amplitude, which esentially has no effect on the sound.
+of maximum amplitude, which essentially has no effect on the sound.
 Check the module documentation of each Envelope to see which parameters
 are available.
 
@@ -761,7 +761,7 @@ Incorporating video
 When a :py:class:`~pyglet.media.player.AudioPlayer` is playing back a source with
 video, use the :attr:`~pyglet.media.AudioPlayer.texture` property to obtain the
 video frame image. This can be used to display the current video image
-syncronised with the audio track, for example::
+synchronised with the audio track, for example::
 
     @window.event
     def on_draw():

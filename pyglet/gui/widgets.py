@@ -601,7 +601,7 @@ class TextEntry(WidgetBase):
             self._caret.on_text_motion_select(motion)
 
     def on_commit(self, widget: TextEntry, text: str) -> None:
-        """Event: dispatches the current text when commited via Enter/Return key."""
+        """Event: dispatches the current text when committed via Enter/Return key."""
 
 
 TextEntry.register_event_type('on_commit')

@@ -33,7 +33,7 @@ class ScissorGroup(pyglet.graphics.Group):
     fall outside the specified area will not be drawn.
     NOTE: You should use the same exact group instance
     for every object that will use the group, equal groups
-    will still be kept seperate.
+    will still be kept separate.
 
     :Parameters:
         `x` : int

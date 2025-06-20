@@ -14,7 +14,7 @@ def test_window_caption():
 
 
 def test_window_caption_from_argv():
-    """Test that the window caption is set from sys.argv[0], if none is explicity set. """
+    """Test that the window caption is set from sys.argv[0], if none is explicitly set. """
     for test_caption in window_captions:
 
         # Override sys.argv[0] so that the file name appears to be the caption:

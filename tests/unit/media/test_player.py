@@ -199,7 +199,7 @@ class PlayerTestCase(unittest.TestCase):
 
     def test_queue_multiple_audio_sources_different_format_and_play_and_skip(self):
         """Queue multiple audio sources having different formats and start playing. Different
-        formats should be played by seperate driver players."""
+        formats should be played by separate driver players."""
         mock_source1 = self.create_mock_source(self.audio_format_1, None)
         mock_source2 = self.create_mock_source(self.audio_format_2, None)
         mock_source3 = self.create_mock_source(self.audio_format_3, None)

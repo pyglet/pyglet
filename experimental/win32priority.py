@@ -1,4 +1,4 @@
-# Utilies to patch Pyglet to provide more precise event timing on Windows.
+# Utilities to patch Pyglet to provide more precise event timing on Windows.
 # HighTimerResolution is generally the most important of the bunch,
 # since most 60+fps games in Windows will not work right without
 # changing the timer resolution for the app

@@ -36,7 +36,7 @@ should be written to accept these two values. For example::
     def on_resize(width, height):
         pass
 
-There are a few different ways in which event handlers can be attached to recieve them.
+There are a few different ways in which event handlers can be attached to receive them.
 The simplest way is to directly attach the event handler to the corresponding attribute
 on the object.  This will completely replace the default event handler::
 
@@ -91,7 +91,7 @@ or if your handler has a different name, pass the event name to the decorator::
 
 
 In most simple cases, the :py:class:`~pyglet.event.EventDispatcher.event`
-decorator is most convienent.  One limitation of using the decorator,
+decorator is most convenient.  One limitation of using the decorator,
 however, is that you can only add one additional event handler.
 If you want to add multiple additional event handlers, the next section
 describes how to accomplish that.

@@ -185,7 +185,7 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
     scale2 = min(scale2, 2.0 * thickness)
 
     # Make these tuples instead of Vec2 because accessing
-    # members of Vec2 is suprisingly slow
+    # members of Vec2 is surprisingly slow
     miter1_scaled_p = (v_miter1.x * scale1, v_miter1.y * scale1)
     miter2_scaled_p = (v_miter2.x * scale2, v_miter2.y * scale2)
 
@@ -285,7 +285,7 @@ class ShapeBase(ABC):
     def _update_color(self) -> None:
         """Send the new colors for each vertex to the GPU.
 
-        This method must set the contents of `self._vertex_list.color`
+        This method must set the contents of `self._vertex_list.colors`
         using a list or tuple that contains the RGBA color components
         for each vertex in the shape. This is usually done by repeating
         `self._rgba` for each vertex.

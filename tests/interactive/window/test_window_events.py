@@ -261,7 +261,7 @@ class TextWindowEventsTest(WindowEventsTestCase):
         self._update_question()
 
     def _update_question(self):
-        self.question = """Please type the followin character exactly.
+        self.question = """Please type the following character exactly.
 Use <Shift> if needed.
 
 {}
@@ -379,7 +379,7 @@ class CloseWindowEventsTest(WindowEventsTestCase):
         self.pass_test()
 
     def test_on_close_event(self):
-        """Test the on_close event triggerred when closing the window."""
+        """Test the on_close event triggered when closing the window."""
         self.question = "Please close this window by\nclicking the close button."
         self._test_main()
 

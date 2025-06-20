@@ -284,7 +284,7 @@ class _GlyphBox(_AbstractBox):
               rotation: float, visible: bool, anchor_x: float, anchor_y: float, context: _LayoutContext) -> None:
         # Creates the initial attributes and vertex lists of the glyphs.
         # line_x/line_y are calculated when lines shift. To prevent having to destroy and recalculate the layout
-        # everytime it moves, they are merged into the vertices. This way the translation can be moved directly.
+        # every time it moves, they are merged into the vertices. This way the translation can be moved directly.
         assert self.glyphs
         assert not self.vertex_lists
         try:

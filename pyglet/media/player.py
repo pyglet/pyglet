@@ -66,7 +66,7 @@ class _PlayerProperty:
 
     We want the Player to have attributes like volume, pitch, etc. These are
     actually implemented by the AudioPlayer. So this descriptor will forward
-    an assignement to one of the attributes to the AudioPlayer. For example
+    an assignment to one of the attributes to the AudioPlayer. For example
     `player.volume = 0.5` will call `player._audio_player.set_volume(0.5)`.
 
     The Player class has default values at the class level which are retrieved
@@ -94,7 +94,7 @@ class _PlayerProperty:
 class AudioPlayer(pyglet.event.EventDispatcher):
     """High-level sound player."""
 
-    # Spacialisation attributes, preserved between audio players
+    # Specialisation attributes, preserved between audio players
     _volume = 1.0
     _min_distance = 1.0
     _max_distance = 100000000.

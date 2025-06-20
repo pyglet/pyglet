@@ -71,7 +71,7 @@ class Device:
         Args:
             window:
                 Optional window to associate with the device.  The behaviour
-                of this parameter is device and operating system dependant.
+                of this parameter is device and operating system dependent.
                 It can usually be omitted for most devices.
             exclusive:
                 If ``True`` the device will be opened exclusively so that no
@@ -103,7 +103,7 @@ class Device:
         string. This is generated from the hardware identifiers,
         and is in the same format as was popularized by SDL2.
         GUIDs differ between platforms, but are generally 32
-        hexidecimal characters.
+        hexadecimal characters.
         """
         raise NotImplementedError('abstract')
 
@@ -506,7 +506,7 @@ class Controller(EventDispatcher):
     """
 
     def __init__(self, device: Device, mapping: dict):
-        """Create a Controller instace mapped to a Device.
+        """Create a Controller instance mapped to a Device.
 
         .. versionadded:: 2.0
         """
@@ -575,7 +575,7 @@ class Controller(EventDispatcher):
             A string, currently one of "PS", "XB", or "GENERIC".
         """
         product_id = None
-        # TODO: add more checks for vender hardware ids.
+        # TODO: add more checks for vendor hardware ids.
 
         # Windows
         if self.name == 'XINPUTCONTROLLER':
@@ -672,7 +672,7 @@ class Controller(EventDispatcher):
     def _bind_dedicated_hat(self, relation: Relation, control: AbsoluteAxis) -> None:
         # 8-directional hat encoded as a single control (Windows/Mac)
         _vecs = (Vec2(0.0, 1.0), Vec2(1.0, 1.0), Vec2(1.0, 0.0), Vec2(1.0, -1.0),       # n, ne, e, se
-                  Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
+                 Vec2(0.0, -1.0), Vec2(-1.0, -1.0), Vec2(-1.0, 0.0), Vec2(-1.0, 1.0))   # s, sw, w, nw
         _input_map = {key: val for key, val in zip(range(int(control.min), int(control.max + 1)), _vecs)}
 
         # For some Directinput devices:
@@ -730,8 +730,8 @@ class Controller(EventDispatcher):
 
                         self._bind_axis_control(relation, control, dpname)
 
-            except IndexError:
-                warnings.warn(f"Could not map '{relation}' to '{name}'")
+            except (IndexError, AttributeError, KeyError):
+                warnings.warn(f"Could not map physical Control '{relation}' to '{name}'")
                 continue
 
     def open(self, window: None | BaseWindow = None, exclusive: bool = False) -> None:
@@ -1096,7 +1096,7 @@ class ControllerManager(EventDispatcher):
 
     def on_connect(self, controller) -> Controller:
         """A Controller has been connected. If this is
-        a previously dissconnected Controller that is
+        a previously disconnected Controller that is
         being re-connected, the same Controller instance
         will be returned.
         """

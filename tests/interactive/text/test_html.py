@@ -40,7 +40,7 @@ doctext = """
 
     <p>Font color changes to <font color=red>red</font>, <font
     color=green>green</font> and <font color=#0f0fff>pastel blue using a
-    hexidecimal number</font>.</p>
+    hexadecimal number</font>.</p>
 
     <p><u>This text is underlined</u>.  <font color=green><u>This text is
     underlined and green.</u></font></p>

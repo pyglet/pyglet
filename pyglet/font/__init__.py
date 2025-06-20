@@ -68,7 +68,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
         Exception: If font provided is not derived from :py:class:`~pyglet.font.user.UserDefinedFontBase`.
     """
     if not isinstance(font, UserDefinedFontBase):
-        msg = "Font is not must be created fromm the UserDefinedFontBase."
+        msg = "Font must be created from the UserDefinedFontBase."
         raise Exception(msg)
 
     # Locate or create font cache

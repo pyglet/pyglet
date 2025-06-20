@@ -100,7 +100,7 @@ If a Frame is introduced, the following occurs:
 2. Set the Frame as a handler for Window events.
 3. Make one or more Widget instances.
 4. Add your widget instances to the Frame.
-5. Only Widgets near the mouse pointer will recieve Window events.
+5. Only Widgets near the mouse pointer will receive Window events.
 
 This works quite well for most cases, but has some limitations. When using the
 TextEntry widget, for instance, the widget may become unresponsive if you use

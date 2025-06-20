@@ -24,7 +24,7 @@ class PlayerWorkerThread(threading.Thread):
     to keep their buffers filled (and perform event dispatching tasks), but
     does not block the main thread.
 
-    This thread will sleep for a small period betwen updates, but provides a
+    This thread will sleep for a small period between updates, but provides a
     :py:meth:`~notify` method to allow waking it immediately. A :py:meth:`~stop`
     method is provided to terminate the thread, but under normal operation it
     will exit cleanly on interpreter shutdown.

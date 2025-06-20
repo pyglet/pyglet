@@ -96,7 +96,7 @@ Keep in mind that some raw data will be stale or misleading:
 
 The reports using that stale raw data will obviously report stale data.
 
-So it is a good idea to switch to a normal workflow as soon as posible
+So it is a good idea to switch to a normal workflow as soon as possible
 (simply creating a new session and deleting the special session).
 
 
@@ -112,7 +112,7 @@ If a ``playlist_file`` is specified, then it should contain one sample name
 per line; a sanity check will be performed ensuring no blacklisted extension
 is used, and that the sample exists in samples_dir.
 
-Once the ``playlist_file`` is used in ``configure.py new`` a copy is writen to
+Once the ``playlist_file`` is used in ``configure.py new`` a copy is written to
 the session raw data directory, and this copy will be the authoritative
 playlist for the session; ``playlist_file`` can be deleted if desired.
 
@@ -234,7 +234,7 @@ policies:
 Code Layout and conventions
 ===========================
 
-The emerging separation of responsabilities goes like
+The emerging separation of responsibilities goes like
 
 Scripts (commands)
 ------------------
@@ -255,7 +255,7 @@ Structured as:
 
 When two scripts use some related but not identical functionality, these parts
 can be moved to another module. Example: at first ``summarize`` had the code to
-collect defects stats, later, when ``compare`` was writen, the module
+collect defects stats, later, when ``compare`` was written, the module
 ``extractors`` was added and the defect collection stats code moved to that
 module.
 
@@ -599,7 +599,7 @@ The files in that directory will be
 etc (as captured at session creation).
 
 ``04_pyglet_hg_revision.txt`` , pyglet hg revision if running from a repo
-clone, non writen if no repo (as captured at session creation).
+clone, non written if no repo (as captured at session creation).
 
 ``sample_name.all.txt`` and ``sample_name.anomalies.txt`` for each sample that
 played non perfect.

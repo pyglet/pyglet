@@ -201,7 +201,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 Font size. Should be in pixels. This value will affect scaling if enabled.
             mappings:
                 A dict or dict-like object with a ``get`` function.
-                The ``get`` function must take a string character, and output :py:class:`~pyglet.iamge.ImageData` if
+                The ``get`` function must take a string character, and output :py:class:`~pyglet.image.ImageData` if
                 found. It also must return ``None`` if no character is found.
             ascent:
                 Maximum ascent above the baseline, in pixels. If None, the image height is used.

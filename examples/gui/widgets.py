@@ -50,7 +50,7 @@ def text_entry_handler(widget, text):
 # Create some Widget instances:
 ###############################
 
-# A Frame instance to hold all widgets, and provide spacial
+# A Frame instance to hold all widgets, and provide special
 # hashing to avoid sending all the Window events to every widget:
 frame = pyglet.gui.Frame(window, order=4)
 

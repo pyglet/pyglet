@@ -352,7 +352,7 @@ def sine_operator(sample_rate: int = 44800, frequency: float = 440, index: float
 def composite_operator(*operators: Generator) -> Generator:
     """Combine the output from multiple generators.
 
-    This does a simple sum & devision of the output of
+    This does a simple sum & division of the output of
     two or more generators. A new generator is returned.
     """
     return (sum(samples) / len(samples) for samples in zip(*operators))

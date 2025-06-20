@@ -215,7 +215,7 @@ created based on the values of these properties:
     ``accum_red_size``, ``accum_blue_size``, ``accum_green_size``, ``accum_alpha_size``
         The accumulation buffer can be used for simple antialiasing,
         depth-of-field, motion blur and other compositing operations.  Its use
-        nowadays is being superceded by the use of floating-point textures,
+        nowadays is being superseded by the use of floating-point textures,
         however it is still a practical solution for implementing these
         effects on older hardware.
 

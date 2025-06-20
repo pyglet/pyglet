@@ -18,17 +18,18 @@ from typing import TYPE_CHECKING, Any, Pattern
 
 from pyglet import clock, event
 from pyglet.window import key
+from pyglet.event import EventDispatcher
 from pyglet.graphics import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch
+    from pyglet.window import Window
     from pyglet.text.layout import IncrementalTextLayout
 
-
-class Caret:
+class Caret(EventDispatcher):
     """Visible text insertion marker for `pyglet.text.layout.IncrementalTextLayout`.
 
-    The caret is drawn as a single vertical bar at the document `position` 
+    The caret is drawn as a single vertical bar at the document `position`
     on a text layout object.  If ``mark`` is not None, it gives the unmoving
     end of the current text selection.  The visible text selection on the
     layout is updated along with ``mark`` and ``position``.
@@ -39,6 +40,9 @@ class Caret:
 
     Updates to the document (and so the layout) are automatically propagated
     to the caret.
+
+    If the window argument is supplied, the caret object dispatches the on_clipboard_copy event when copying text and copies the text.
+    Pasting also works, which will dispatch the on_clipboard_paste event, and pastes the text to the current position of the caret, overriding selection.
 
     The caret object can be pushed onto a window event handler stack with
     ``Window.push_handlers``.  The caret will respond correctly to keyboard,
@@ -71,7 +75,7 @@ class Caret:
     _next_attributes: dict[str, Any]
 
     def __init__(self, layout: IncrementalTextLayout, batch: Batch | None = None,
-                 color: tuple[int, int, int, int] = (0, 0, 0, 255)) -> None:
+                 color: tuple[int, int, int, int] = (0, 0, 0, 255), window: Window | None = None) -> None:
         """Create a caret for a layout.
 
         By default the layout's batch is used, so the caret does not need to
@@ -85,7 +89,8 @@ class Caret:
             `color` : (int, int, int, int)
                 An RGBA or RGB tuple with components in the range [0, 255].
                 RGB colors will be treated as having an opacity of 255.
-
+            `window` : `~pyglet.window.Window`
+                For the clipboard feature to work, a window object is needed to be passed in to access and set clipboard content.
         """
         self._layout = layout
 
@@ -116,6 +121,7 @@ class Caret:
 
         self.visible = True
 
+        self._window = window
         layout.push_handlers(self)
 
     @property
@@ -472,7 +478,26 @@ class Caret:
                 self.position = 0
             else:
                 self.position = m.start()
+        elif motion == key.MOTION_COPY and self._window:
+            pos = self._position
+            mark = self._mark
+            if pos > mark:
+                text = self._layout.document.text[mark:pos]
+            else:
+                text = self._layout.document.text[pos:mark]
 
+            self._window.set_clipboard_text(text)
+            self.dispatch_event("on_clipboard_copy", text)
+        elif motion == key.MOTION_PASTE and self._window:
+            if self._mark is not None:
+                self._delete_selection()
+
+            text = self._window.get_clipboard_text().replace("\r", "\n")
+            pos = self._position
+            self._position += len(text)
+            self._layout.document.insert_text(pos, text, self._next_attributes)
+            self._nudge()
+            self.dispatch_event("on_clipboard_paste", text)
         if self._mark is not None and not select:
             self._mark = None
             self._layout.set_selection(0, 0)
@@ -569,3 +594,17 @@ class Caret:
         self._active = False
         self.visible = self._active
         return event.EVENT_HANDLED
+
+    def on_clipboard_copy(self, text: str) -> bool:
+        """Dispatched when text is copied.
+        This default handler does nothing.
+        """
+        return event.EVENT_HANDLED
+    def on_clipboard_paste(self, text: str) -> bool:
+        """Dispatched when text is pasted.
+        The default handler does nothing.
+        """
+        return event.EVENT_HANDLED
+
+Caret.register_event_type("on_clipboard_copy")
+Caret.register_event_type("on_clipboard_paste")

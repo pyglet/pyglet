@@ -9,7 +9,7 @@ and manipulating colored shapes, such as rectangles, circles, and
 lines. Shapes can be resized, positioned, and rotated where applicable,
 and their color and opacity can be changed. All shapes are implemented
 using OpenGL primitives, so they can be drawn efficiently with :ref:`guide_batched-rendering`.
-In the following examples `Batch` will be ommitted for brevity, but in
+In the following examples `Batch` will be omitted for brevity, but in
 general you always want to use Batched rendering for performance.
 
 For drawing more complex shapes, see the :ref:`guide_graphics` module.

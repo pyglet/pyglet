@@ -1049,7 +1049,7 @@ class IDWriteFactory(com.pIUnknown):
         ("CreateCustomRenderingParams",
          com.STDMETHOD(FLOAT, FLOAT, FLOAT, UINT, UINT, POINTER(IDWriteRenderingParams))),
         ("RegisterFontFileLoader",
-         com.STDMETHOD(c_void_p)),  # Ambigious as newer is a pIUnknown and legacy is IUnknown.
+         com.STDMETHOD(c_void_p)),  # Ambiguous as newer is a pIUnknown and legacy is IUnknown.
         ("UnregisterFontFileLoader",
          com.STDMETHOD(POINTER(IDWriteFontFileLoader_LI))),
         ("CreateTextFormat",

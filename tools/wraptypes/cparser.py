@@ -1325,7 +1325,7 @@ class CParser(object):
     # ----------------------------------------------------------------------
 
     def handle_error(self, message, filename, lineno):
-        '''A parse error occured.  
+        '''A parse error occurred.  
         
         The default implementation prints `lineno` and `message` to stderr.
         The parser will try to recover from errors by synchronising at the

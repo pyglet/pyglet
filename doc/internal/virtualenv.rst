@@ -28,7 +28,7 @@ To build packages for distribution you need to install:
 It is preferred to create a Python virtual environment to develop in.
 This allows you to easily test on all Python versions supported by pyglet,
 not pollute your local system with pyglet development dependencies,
-and not have your local system interfere with pyglet developement.
+and not have your local system interfere with pyglet development.
 All dependencies you install while inside an activated virtual
 environment will remain isolated inside that environment.
 When you're finished, you can simply delete it.

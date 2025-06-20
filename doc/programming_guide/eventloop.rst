@@ -101,7 +101,7 @@ for input indefinitely.
 Creating a Custom Event Loop
 ----------------------------
 
-Many windowing toolkits requie the application developer to write their own
+Many windowing toolkits require the application developer to write their own
 event loop. This is also possible in pyglet, but is usually just an inconvenience
 compared to :py:func:`pyglet.app.run`. It can be necessary in some situations,
 such as when combining pyglet with other toolkits, but is strongly discouraged

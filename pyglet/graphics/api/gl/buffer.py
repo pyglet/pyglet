@@ -1,6 +1,6 @@
 """OpenGL Buffer Objects.
 
-:py:class:`~BufferObject` and a :py:class:`~BackedBufferObject` are provied.
+:py:class:`~BufferObject` and a :py:class:`~BackedBufferObject` are provided.
 The first is a lightweight abstraction over an OpenGL buffer, as created
 with ``glGenBuffers``. The backed buffer object is similar, but provides a
 full mirror of the data in CPU memory. This allows for delayed uploading of
