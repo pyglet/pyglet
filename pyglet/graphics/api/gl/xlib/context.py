@@ -8,6 +8,7 @@ from pyglet.graphics.api import gl
 from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
 from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
+from pyglet.libs.linux.x11 import xlib
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLBackend
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
 class XlibOpenGLConfig(OpenGLConfig):
 
     def match(self, window: XlibWindow) -> XlibGLWindowConfig | None:
-
         x_display = window._x_display  # noqa: SLF001
         x_screen = window._x_screen_id  # noqa: SLF001
 
@@ -42,6 +42,10 @@ class XlibOpenGLConfig(OpenGLConfig):
         configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
 
         result = [XlibGLWindowConfig(window, c, self) for c in configs]
+
+        # If we intend to have a transparent framebuffer.
+        if self.transparent_framebuffer:
+            result = [fb_cf for fb_cf in result if fb_cf.transparent]
 
         # Can't free array until all XlibGLConfig's are GC'd.  Too much
         # hassle, live with leak. XXX
@@ -73,8 +77,9 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
         'samples': glx.GLX_SAMPLES,
 
         # Not supported in current pyglet API:
-        #'render_type': glx.GLX_RENDER_TYPE,
-        #'config_caveat': glx.GLX_CONFIG_CAVEAT,
+        # 'render_type': glx.GLX_RENDER_TYPE,
+        # 'drawable_type': glx.GLX_DRAWABLE_TYPE,
+        # 'config_caveat': glx.GLX_CONFIG_CAVEAT,
         # 'transparent_type': glx.GLX_TRANSPARENT_TYPE,
         # 'transparent_index_value': glx.GLX_TRANSPARENT_INDEX_VALUE,
         # 'transparent_red_value': glx.GLX_TRANSPARENT_RED_VALUE,
@@ -90,6 +95,8 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
                  config: XlibOpenGLConfig) -> None:
         super().__init__(window, config)
 
+        self.transparent = False
+
         self._fbconfig = fbconfig
 
         for name, attr in self.attribute_ids.items():
@@ -98,6 +105,15 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
                                               byref(value))
             if result >= 0:
                 setattr(self, name, value.value)
+
+        # If user intends for a transparent framebuffer, the visual info needs to be
+        # queried for it. Even if a config supports alpha_size 8 and depth_size 32, there is no
+        # guarantee the visual info supports that same configuration.
+        if config.transparent_framebuffer:
+            xvi_ptr = glx.glXGetVisualFromFBConfig(self._window._x_display, self._fbconfig)  # noqa: SLF001
+            if xvi_ptr:
+                self.transparent = window._is_visual_transparent(xvi_ptr.contents.visual)  # noqa: SLF001
+                xlib.XFree(xvi_ptr)
 
     def get_visual_info(self) -> glx.XVisualInfo:
         return glx.glXGetVisualFromFBConfig(self._window._x_display, self._fbconfig).contents  # noqa: SLF001

@@ -232,25 +232,25 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             # In OpenGL, it requires you to query GLX for the visual info.
-            if "gl" in pyglet.options.backend:
-                self._assign_config()
+            if pyglet.options.backend is not None:
+                if "gl" in pyglet.options.backend:
+                    self._assign_config()
 
-                visual_info = self.config.get_visual_info()
-                self._is_transparent = self._is_visual_transparent(visual_info.visual)
-                if self.style == 'transparent' and not self._is_transparent:
-                    print("Warning: Visual has no alpha, transparency may not work.")
-                    xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
+                    visual_info = self.config.get_visual_info()
 
-                visual = visual_info.visual
-                depth = visual_info.depth
+                    visual = visual_info.visual
+                    depth = visual_info.depth
 
-            # Vulkan just uses the default visual ID
-            elif pyglet.options.backend == "vulkan":
+                # Vulkan just uses the default visual ID
+                elif pyglet.options.backend == "vulkan":
+                    visual = xlib.XDefaultVisual(self._x_display, self._x_screen_id)
+                    depth = xlib.XDefaultDepth(self._x_display, self._x_screen_id)
+                else:
+                    msg = f"{pyglet.options.backend} Backend not supported."
+                    raise Exception(msg)
+            else:
                 visual = xlib.XDefaultVisual(self._x_display, self._x_screen_id)
                 depth = xlib.XDefaultDepth(self._x_display, self._x_screen_id)
-            else:
-                msg = f"{pyglet.options.backend} Backend not supported."
-                raise Exception(msg)
 
             window_attributes = xlib.XSetWindowAttributes()
             window_attributes.colormap = xlib.XCreateColormap(self._x_display, root,
@@ -302,10 +302,13 @@ class XlibWindow(BaseWindow):
             if pyglet.options.backend == "vulkan":
                 self._assign_config()
 
-            self.context.attach(self)
-            self.context.set_vsync(self._vsync)  # XXX ?VulkanWindowConfig
+            if self.context:
+                self.context.attach(self)
+                self.context.set_vsync(self._vsync)  # XXX ?VulkanWindowConfig
 
-            self._enable_xsync = self.display._enable_xsync and self.config.double_buffer
+                self._enable_xsync = self.display._enable_xsync and self.config.double_buffer
+            else:
+                self._enable_xsync = False
 
             # Set supported protocols
             protocols = list()
@@ -335,21 +338,6 @@ class XlibWindow(BaseWindow):
                     cast(ptr, POINTER(c_ubyte)),
                     1,
                 )
-
-            self._alpha = c_float(0.8)
-            ptr = pointer(self._alpha)
-            atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_WINDOW_OPACITY'), False)
-            xlib.XChangeProperty(
-                self._x_display,
-                self._window,
-                atom,
-                XA_CARDINAL,
-                32,
-                xlib.PropModeReplace,
-                cast(ptr, POINTER(c_ubyte)),
-                1,
-            )
-
 
             # Atoms required for Xdnd
             self._create_xdnd_atoms(self._x_display)
