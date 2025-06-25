@@ -5,6 +5,7 @@ from collections import OrderedDict
 from ctypes import CDLL, Structure, Union, byref, c_char_p, c_double, c_int, c_uint, c_void_p, POINTER
 from typing import TYPE_CHECKING
 
+from pyglet.enums import Style
 from pyglet.font.base import FontException
 from pyglet.lib import load_library
 from pyglet.util import asbytes, asstr
@@ -200,7 +201,9 @@ class FontConfig:
         return result.weight, result.italic, result.stretch
 
     def find_font(self, name: str, size: float = 12, weight: str = "normal",
-                  italic: bool = False, stretch: str = "normal") -> FontConfigSearchResult:
+                  italic: str = "normal", stretch: str = "normal") -> FontConfigSearchResult:
+        assert isinstance(weight, str)
+        assert isinstance(italic, str)
         if result := self._get_from_search_cache(name, size, weight, italic, stretch):
             return result
 
@@ -239,7 +242,7 @@ class FontConfig:
             self._search_cache.popitem(last=False)[1].dispose()
 
     def _get_from_search_cache(self, name: str, size: float, weight: str,
-                               italic: bool, stretch: str) -> FontConfigSearchResult | None:
+                               italic: str, stretch: str) -> FontConfigSearchResult | None:
         result = self._search_cache.get((name, size, weight, italic, stretch), None)
 
         if result and result.is_valid:
@@ -295,8 +298,13 @@ class FontConfigPattern:
         self._pattern = None
 
     @staticmethod
-    def _italic_to_slant(italic: bool) -> int:
-        return FC_SLANT_ITALIC if italic else FC_SLANT_ROMAN
+    def _italic_to_slant(italic: str) -> int:
+        if italic == Style.ITALIC:
+            return FC_SLANT_ITALIC
+        if italic == Style.OBLIQUE:
+            return FC_SLANT_OBLIQUE
+
+        return FC_SLANT_ROMAN
 
     def _set_string(self, name: bytes, value: str) -> None:
         assert self._pattern
@@ -377,7 +385,7 @@ class FontConfigPattern:
 
 class FontConfigSearchPattern(FontConfigPattern):
     size: float | None
-    italic: bool
+    italic: str
     weight: str
     name: str | None
     stretch: str
@@ -387,7 +395,7 @@ class FontConfigSearchPattern(FontConfigPattern):
 
         self.name = None
         self.weight = "normal"
-        self.italic = False
+        self.italic = "normal"
         self.size = None
         self.stretch = 'normal'
 

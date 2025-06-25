@@ -263,7 +263,7 @@ class CocoaContext(OpenGLSurfaceContext):
                  config: CocoaOpenGLWindowConfig,
                  nscontext: NSOpenGLContext,
                  share: CocoaContext | None) -> None:
-        super().__init__(opengl_backend, window, config, share)
+        super().__init__(opengl_backend, window, config, platform_info=None, context_share=share)
         self.config = config
         self._nscontext = nscontext
 

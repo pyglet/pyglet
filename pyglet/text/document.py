@@ -571,8 +571,8 @@ class UnformattedDocument(AbstractDocument):
         font_name = self.styles.get("font_name")
         font_size = self.styles.get("font_size")
         weight = self.styles.get("weight", "normal")
-        italic = self.styles.get("italic", False)
-        stretch = self.styles.get("stretch", False)
+        italic = self.styles.get("italic", "normal")
+        stretch = self.styles.get("stretch", "normal")
         return font.load(font_name, font_size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self) -> runlist.ConstRunIterator:
@@ -678,13 +678,13 @@ class _FontStyleRunsRangeIterator(runlist.RunIterator):
         from pyglet import font
         for start_, end_, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, weight, italic, stretch = styles
-            ft = font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
+            ft = font.load(font_name, font_size, weight=weight, italic=italic, stretch=stretch, dpi=self.dpi)
             yield start_, end_, ft
 
     def __getitem__(self, index: int) -> Font:
         from pyglet import font
         font_name, font_size, weight, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size, weight=weight, italic=bool(italic), stretch=stretch, dpi=self.dpi)
+        return font.load(font_name, font_size, weight=weight, italic=italic, stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator(runlist.RunIterator):

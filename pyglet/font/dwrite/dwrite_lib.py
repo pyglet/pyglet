@@ -168,6 +168,28 @@ DWRITE_FONT_FACE_TYPE_UNKNOWN = 6
 DWRITE_FONT_FACE_TYPE_RAW_CFF = 7
 DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION = 8
 
+DWRITE_FONT_PROPERTY_ID = UINT
+DWRITE_FONT_PROPERTY_ID_NONE = 0
+DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FAMILY_NAME = 1
+DWRITE_FONT_PROPERTY_ID_TYPOGRAPHIC_FAMILY_NAME = 2
+DWRITE_FONT_PROPERTY_ID_WEIGHT_STRETCH_STYLE_FACE_NAME = 3
+DWRITE_FONT_PROPERTY_ID_FULL_NAME = 4
+DWRITE_FONT_PROPERTY_ID_WIN32_FAMILY_NAME = 5
+DWRITE_FONT_PROPERTY_ID_POSTSCRIPT_NAME = 6
+DWRITE_FONT_PROPERTY_ID_DESIGN_SCRIPT_LANGUAGE_TAG = 7
+DWRITE_FONT_PROPERTY_ID_SUPPORTED_SCRIPT_LANGUAGE_TAG = 8
+DWRITE_FONT_PROPERTY_ID_SEMANTIC_TAG = 9
+DWRITE_FONT_PROPERTY_ID_WEIGHT = 10
+DWRITE_FONT_PROPERTY_ID_STRETCH = 11
+DWRITE_FONT_PROPERTY_ID_STYLE = 12
+DWRITE_FONT_PROPERTY_ID_TYPOGRAPHIC_FACE_NAME = 13
+DWRITE_FONT_PROPERTY_ID_TOTAL = 14
+DWRITE_FONT_PROPERTY_ID_TOTAL_RS3 = 15
+DWRITE_FONT_PROPERTY_ID_PREFERRED_FAMILY_NAME = 16
+DWRITE_FONT_PROPERTY_ID_FAMILY_NAME = 17
+DWRITE_FONT_PROPERTY_ID_FACE_NAME = 18
+
+
 def repr_func(self):
     field_values = []
     for field_value in self._fields_:
@@ -368,7 +390,7 @@ class IDWriteFontFace(com.pIUnknown):
         ("GetIndex",
          com.METHOD(UINT32)),
         ("GetSimulations",
-         com.STDMETHOD()),
+         com.METHOD(UINT32)),
         ("IsSymbolFont",
          com.METHOD(BOOL)),
         ("GetMetrics",
@@ -682,7 +704,7 @@ class IDWriteFont(com.pIUnknown):
         ("GetInformationalStrings",
          com.STDMETHOD(DWRITE_INFORMATIONAL_STRING_ID, POINTER(IDWriteLocalizedStrings), POINTER(BOOL))),
         ("GetSimulations",
-         com.STDMETHOD()),
+         com.METHOD(UINT32)),
         ("GetMetrics",
          com.STDMETHOD()),
         ("HasCharacter",
@@ -1155,11 +1177,11 @@ class IDWriteFontSet(com.pIUnknown):
         ("FindFontFace",
          com.STDMETHOD()),
         ("GetPropertyValues__",
-         com.STDMETHOD()),
+         com.STDMETHOD(UINT32, DWRITE_FONT_PROPERTY_ID, POINTER(BOOL), POINTER(IDWriteLocalizedStrings))),
         ("GetPropertyValues_",
-         com.STDMETHOD()),
+         com.STDMETHOD(DWRITE_FONT_PROPERTY_ID, c_wchar_p, c_void_p)),
         ("GetPropertyValues",
-         com.STDMETHOD()),
+         com.STDMETHOD(DWRITE_FONT_PROPERTY_ID, c_void_p)),
         ("GetPropertyOccurrenceCount",
          com.STDMETHOD()),
         ("GetMatchingFonts_",
