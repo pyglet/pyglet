@@ -131,7 +131,7 @@ if _is_pyglet_doc_run:
     from .base import OpenGLConfig
 
 elif _pyglet.options.headless:
-    from .egl.context import HeadlessContext as OpenGLConfig
+    from .egl.context import HeadlessOpenGLConfig as OpenGLConfig
 elif compat_platform in ('win32', 'cygwin'):
     from .win32.context import Win32OpenGLConfig as OpenGLConfig
 elif compat_platform.startswith('linux'):

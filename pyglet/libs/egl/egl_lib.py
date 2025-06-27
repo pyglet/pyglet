@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from ctypes import *
+from typing import Sequence, Callable, NoReturn
+
+import pyglet
+import pyglet.util
 """Wrapper for /usr/include/EGL/egl
 
 Generated with:
-wrap.py -o lib_egl.py /usr/include/EGL/egl.h
+wrap.py -o egl_lib.py /usr/include/EGL/egl.h
 
 Do not modify this file.
 """
-from ctypes import *
+from ctypes import POINTER, c_uint, CFUNCTYPE, c_int32, c_ulong, Structure, c_int, c_char_p, c_long, c_uint64
 
 import pyglet.lib
 
@@ -492,7 +499,7 @@ __all__ = ['__egl_h_', 'EGL_EGL_PROTOTYPES', 'EGL_VERSION_1_0', 'EGLBoolean', 'E
 'EGL_SURFACE_TYPE', 'EGL_TRANSPARENT_BLUE_VALUE',
 'EGL_TRANSPARENT_GREEN_VALUE', 'EGL_TRANSPARENT_RED_VALUE',
 'EGL_TRANSPARENT_RGB', 'EGL_TRANSPARENT_TYPE', 'EGL_TRUE', 'EGL_VENDOR',
-'EGL_VERSION', 'EGL_WIDTH', 'EGL_WINDOW_BIT', 'PFNEGLCHOOSECONFIGPROC',
+'EGL_VERSION', 'EGL_WIDTH', 'EGL_WINDOW_BIT', 'EGLNativeDisplayType', 'PFNEGLCHOOSECONFIGPROC',
 'PFNEGLCOPYBUFFERSPROC', 'PFNEGLCREATECONTEXTPROC',
 'PFNEGLCREATEPBUFFERSURFACEPROC', 'PFNEGLCREATEPIXMAPSURFACEPROC',
 'PFNEGLCREATEWINDOWSURFACEPROC', 'PFNEGLDESTROYCONTEXTPROC',
@@ -566,3 +573,4 @@ __all__ = ['__egl_h_', 'EGL_EGL_PROTOTYPES', 'EGL_VERSION_1_0', 'EGLBoolean', 'E
 'eglCreateImage', 'eglDestroyImage', 'eglGetPlatformDisplay',
 'eglCreatePlatformWindowSurface', 'eglCreatePlatformPixmapSurface',
 'eglWaitSync']
+

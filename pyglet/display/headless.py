@@ -5,8 +5,8 @@ from ctypes import byref
 
 import pyglet
 
-#from pyglet.graphics.api.gl import egl, eglext
 from .base import Display, Screen
+from pyglet.libs import egl
 
 
 class HeadlessDisplay(Display):
@@ -17,15 +17,15 @@ class HeadlessDisplay(Display):
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
 
         num_devices = egl.EGLint()
-        eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
+        egl.eglQueryDevicesEXT(0, None, byref(num_devices))
         if num_devices.value > 0:
             headless_device = pyglet.options.headless_device
             if headless_device < 0 or headless_device >= num_devices.value:
-                raise ValueError(f'Invalid EGL devide id: {headless_device}')
-            devices = (eglext.EGLDeviceEXT * num_devices.value)()
-            eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection = eglext.eglGetPlatformDisplayEXT(
-                eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
+                raise ValueError(f'Invalid EGL device id: {headless_device}')
+            devices = (egl.EGLDeviceEXT * num_devices.value)()
+            egl.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
+            self._display_connection = egl.eglGetPlatformDisplayEXT(
+                egl.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
         else:
             warnings.warn('No device available for EGL device platform. Using native display type.')
             display = egl.EGLNativeDisplayType()
