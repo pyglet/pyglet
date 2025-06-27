@@ -229,8 +229,6 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
-            if self.style in ('transparent', 'overlay'):
-                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -302,6 +300,11 @@ class XlibWindow(BaseWindow):
                                                   False))
             protocols = (c_ulong * len(protocols))(*protocols)
             xlib.XSetWMProtocols(self._x_display, self._window, protocols, len(protocols))
+
+            # Overlay should allow mouse to pass through and stay on top.
+            if self._style == "overlay":
+                self._set_mouse_passthrough(True)
+                self._set_wm_state("_NET_WM_STATE_ABOVE")
 
             # Create window resize sync counter
             if self._enable_xsync:
@@ -435,6 +438,16 @@ class XlibWindow(BaseWindow):
         self.set_mouse_platform_visible()
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
+
+    def _set_mouse_passthrough(self, state: bool) -> None:
+        """Sets the clickable area in the application to an empty region if enabled."""
+        if state:
+            region = xlib.XCreateRegion()
+            xsync.XShapeCombineRegion(self._x_display, self._window, xsync.ShapeInput, 0, 0, region, xsync.ShapeSet)
+            xlib.XDestroyRegion(region)
+        else:
+            # Reset input shape to default
+            xsync.XShapeCombineMask(self._x_display, self._window, xsync.ShapeInput, 0, 0, 0, xsync.ShapeSet)
 
     def _map(self) -> None:
         if self._mapped:

@@ -89,6 +89,7 @@ class Config:
         'forward_compatible',
         'opengl_api',
         'debug',
+        'transparent_framebuffer',
     )
 
     #: The OpenGL major version.
@@ -101,6 +102,8 @@ class Config:
     opengl_api: str
     #: Debug mode.
     debug: bool
+    #: If the framebuffer should be transparent.
+    transparent_framebuffer: bool
 
     def __init__(self, **kwargs: float) -> None:
         """Create a template config with the given attributes.
@@ -180,6 +183,7 @@ class DisplayConfig(Config, abc.ABC):
         self.forward_compatible = base_config.forward_compatible
         self.opengl_api = base_config.opengl_api or self.opengl_api
         self.debug = base_config.debug
+        self.transparent_framebuffer = base_config.transparent_framebuffer
 
     @abc.abstractmethod
     def compatible(self, canvas: Canvas) -> bool:

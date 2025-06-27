@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from _ctypes import _Pointer
 from ctypes import POINTER, byref, c_int, c_uint, cast
 from typing import TYPE_CHECKING, NoReturn
 
@@ -13,6 +14,8 @@ from pyglet.gl import lib
 from pyglet.gl.base import Config, DisplayConfig, Context
 
 from pyglet.display.xlib import XlibCanvas
+from pyglet.libs.x11 import xlib
+from pyglet.libs.x11.xrender import XRenderFindVisualFormat
 
 if TYPE_CHECKING:
     from pyglet.libs.x11.xlib import Display
@@ -51,6 +54,10 @@ class XlibConfig(Config):  # noqa: D101
         configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
 
         result = [XlibDisplayConfig(canvas, info, c, self) for c in configs]
+
+        # If we intend to have a transparent framebuffer.
+        if self.transparent_framebuffer:
+            result = [fb_cf for fb_cf in result if fb_cf.transparent]
 
         # Can't free array until all XlibGLConfig's are GC'd.  Too much
         # hassle, live with leak. XXX
@@ -102,6 +109,7 @@ class XlibDisplayConfig(DisplayConfig):  # noqa: D101
 
         self.glx_info = info
         self.fbconfig = fbconfig
+        self.transparent = False
 
         for name, attr in self.attribute_ids.items():
             value = c_int()
@@ -109,6 +117,22 @@ class XlibDisplayConfig(DisplayConfig):  # noqa: D101
                                               byref(value))
             if result >= 0:
                 setattr(self, name, value.value)
+
+        # If user intends for a transparent framebuffer, the visual info needs to be
+        # queried for it. Even if a config supports alpha_size 8 and depth_size 32, there is no
+        # guarantee the visual info supports that same configuration.
+        if config.transparent_framebuffer:
+            xvi_ptr = glx.glXGetVisualFromFBConfig(canvas.display._display, self.fbconfig)  # noqa: SLF001
+            if xvi_ptr:
+                self.transparent = self._is_visual_transparent(xvi_ptr.contents.visual)  # noqa: SLF001
+                xlib.XFree(xvi_ptr)
+
+    def _is_visual_transparent(self, visual: _Pointer[xlib.Visual]) -> bool:
+        if not XRenderFindVisualFormat:
+            return False
+
+        xrender_format = XRenderFindVisualFormat(self.canvas.display._display, visual)
+        return xrender_format and xrender_format.contents.direct.alphaMask != 0
 
     def get_visual_info(self) -> glx.XVisualInfo:
         return glx.glXGetVisualFromFBConfig(self.canvas.display._display, self.fbconfig).contents  # noqa: SLF001
