@@ -27,11 +27,11 @@ from typing import TYPE_CHECKING, BinaryIO, Iterable, Sequence, Any
 
 import pyglet
 from pyglet.enums import Weight, Style, Stretch
-from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.font.user import UserDefinedFontBase
 from pyglet.graphics.api import core
 
 if TYPE_CHECKING:
+    from pyglet.event import EVENT_HANDLE_STATE
     from pyglet.font.base import Font
     from pyglet.graphics.api.base import SurfaceContext
 

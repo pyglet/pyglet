@@ -168,7 +168,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
                 self._audio_player.delete()
                 self._audio_player = None
 
-    def _create_player_resources(self, starting: bool):
+    def _create_player_resources(self, starting: bool) -> None:
         """Creates driver resources for the particular format."""
         if self._source.audio_format is not None:
             if was_created := self._audio_player is None:
@@ -176,17 +176,17 @@ class AudioPlayer(pyglet.event.EventDispatcher):
             if self._audio_player is not None and (was_created or starting):
                 self._audio_player.prefill_audio()
 
-    def _start_player_resources(self):
+    def _start_player_resources(self) -> None:
         """Start any driver related resources required for playback."""
         if self._audio_player is not None:
             self._audio_player.play()
 
-    def _stop_player_resources(self):
+    def _stop_player_resources(self) -> None:
         """Stop any driver related resources required for playback."""
         if self._audio_player is not None:
             self._audio_player.stop()
 
-    def _seek_player_resources(self):
+    def _seek_player_resources(self) -> None:
         if self._audio_player is not None:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped

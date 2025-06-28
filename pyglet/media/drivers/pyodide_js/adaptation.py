@@ -117,12 +117,19 @@ class PyodideJSListener(AbstractListener):
 
 
 class PyodideJSAudioPlayer(AbstractAudioPlayer):
-    def __init__(self, driver: JSAudioDriver, source: JavascriptWebAudioSource, player: Player):
+    def __init__(self, driver: JSAudioDriver, source: JavascriptWebAudioSource, player: Player) -> None:
         super().__init__(source, player)
         self.driver = driver
+        self._buffer_loaded = False
 
         self._source_player = driver.ctx.createBufferSource()
-        self._source_player.buffer = source.audio_buffer
+        # Audio buffer has not been loaded yet.
+        if not source.audio_buffer:
+            self._buffer_loaded = False
+            source.add_player(self)
+        else:
+            self._buffer_loaded = True
+            self._source_player.buffer = source.audio_buffer
 
         # Only create a gain node if the volume is actually adjusted.
 
@@ -145,14 +152,21 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
         self._dispatched_on_eos = False
 
         # Optionally, you can set up an "onended" event:
-        def on_ended(_):
+        def on_ended(_) -> None:  # noqa: ANN001
             self._playing = False
             # Dispatch EOS event if needed.
             asyncio.create_task(MediaEvent('on_eos').sync_dispatch_to_player(self.player))
 
         self._source_player.onended = on_ended
 
-    def delete(self):
+    def on_source_finished_loading(self, source: JavascriptWebAudioSource) -> None:
+        self._source_player.buffer = source.audio_buffer
+        self._buffer_loaded = True
+
+    def __del__(self) -> None:
+        self.delete()
+
+    def delete(self) -> None:
         if self._gain_node:
             self._gain_node.disconnect()
             self._gain_node = None
@@ -161,9 +175,10 @@ class PyodideJSAudioPlayer(AbstractAudioPlayer):
             self._panner_node.disconnect()
             self._panner_node = None
 
-        self._source_player.disconnect()
-        self._source_player.onended = None
-        self._source_player = None
+        if self._source_player:
+            self._source_player.disconnect()
+            self._source_player.onended = None
+            self._source_player = None
 
     def play(self) -> None:
         self._playing = True
