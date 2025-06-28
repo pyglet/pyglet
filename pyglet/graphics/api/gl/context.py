@@ -102,7 +102,6 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         #     raise RuntimeError(msg)
         self.window = window
 
-
     def before_draw(self) -> None:
         self.set_current()
 

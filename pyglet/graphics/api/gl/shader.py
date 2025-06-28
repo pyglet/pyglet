@@ -616,7 +616,9 @@ class UniformBlock:
         dynamic_structs = {}
         p_count = 0
 
-        rep_func = lambda s: str(dict(s._fields_))
+        def rep_func(s):
+            names_fields = f", ".join((f"{k}={v.__name__}" for k, v in dict(s._fields_).items()))
+            return f"UBOView({names_fields})"
 
         def build_ctypes_struct(name: str, struct_dict: dict) -> type:
             fields = []
@@ -667,9 +669,15 @@ class UniformBlock:
                 if part_idx == len(parts) - 1:  # The last part is the actual type
                     if u_size > 1:
                         # If size > 1, treat as an array of type
-                        current_structure[part_name] = gl_type * length * u_size
+                        if length > 1:
+                            current_structure[part_name] = (gl_type * length) * u_size
+                        else:
+                            current_structure[part_name] = gl_type * u_size
                     else:
-                        current_structure[part_name] = gl_type * length
+                        if length > 1:
+                            current_structure[part_name] = gl_type * length
+                        else:
+                            current_structure[part_name] = gl_type
 
                     offset_size = offsets[i + 1] - offsets[i]
                     c_type_size = sizeof(current_structure[part_name])

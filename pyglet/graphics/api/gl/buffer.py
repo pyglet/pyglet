@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import Attribute
 
 
-
 class BufferObject(AbstractBuffer):
     """Lightweight representation of an OpenGL Buffer Object.
 
