@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Sequence
 
-#from pyglet.graphics.api.gl import egl
-
+import pyglet
 # from pyglet.window import key
 # from pyglet.window import mouse
 from pyglet.event import EventDispatcher
+from pyglet.libs.egl import eglCreatePbufferSurface, EGLint, EGL_WIDTH, EGL_HEIGHT, EGL_NONE
 from pyglet.window import (
     BaseWindow,
     _PlatformEventHandler,
@@ -94,14 +94,13 @@ class HeadlessWindow(BaseWindow):
 
     def _create(self) -> None:
         self._egl_display_connection = self.display._display_connection  # noqa: SLF001
-
-        if not self._egl_surface:
-            pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)
-            pbuffer_attrib_array = (egl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
-            self._egl_surface = egl.eglCreatePbufferSurface(self._egl_display_connection,
+        if pyglet.options.backend and not self._egl_surface:
+            self._assign_config()
+            pbuffer_attribs = (EGL_WIDTH, self._width, EGL_HEIGHT, self._height, EGL_NONE)
+            pbuffer_attrib_array = (EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
+            self._egl_surface = eglCreatePbufferSurface(self._egl_display_connection,
                                                             self.config._egl_config,  # noqa: SLF001
                                                             pbuffer_attrib_array)
-
             self.context.attach(self)
 
             self.dispatch_event('_on_internal_resize', self._width, self._height)

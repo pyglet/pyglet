@@ -526,7 +526,8 @@ class XlibWindow(BaseWindow):
         if not self._window:
             return
 
-        self.context.destroy()
+        if self.context:
+            self.context.destroy()
         self._unmap()
         if self._window:
             xlib.XDestroyWindow(self._x_display, self._window)
