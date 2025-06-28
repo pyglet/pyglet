@@ -3,11 +3,12 @@ from __future__ import annotations
 from ctypes import byref
 from typing import TYPE_CHECKING
 
+from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import OpenGLWindowConfig, OpenGLConfig, ContextException
-from pyglet.graphics.api.gl.egl import egl
+from pyglet.libs import egl
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import OpenGLBackend, OpenGLSurfaceContext
+    from pyglet.graphics.api.gl.base import OpenGLBackend
     from pyglet.window.wayland import WaylandWindow
     from pyglet.window.headless import HeadlessWindow
 
@@ -25,6 +26,7 @@ _fake_gl_attributes = {
 class HeadlessOpenGLConfig(OpenGLConfig):
     def match(self, window: HeadlessWindow | WaylandWindow) -> EGLWindowConfig:
         display_connection = window._egl_display_connection  # noqa: SLF001
+        assert display_connection is not None
 
         # Construct array of attributes
         attrs = []
@@ -131,9 +133,6 @@ class HeadlessContext(OpenGLSurfaceContext):
                                     self.config._context_attrib_array)  # noqa: SLF001
 
     def attach(self, window: HeadlessWindow | WaylandWindow) -> None:
-        if window is self.window:
-            return
-
         super().attach(window)
 
         self.egl_surface = window._egl_surface  # noqa: SLF001

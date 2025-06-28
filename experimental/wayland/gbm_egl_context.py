@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 
+from pyglet.libs.egl import *
 from pyglet.libs.linux.wayland.gbm import *
-from pyglet.graphics.api.gl.egl.egl import *
-from pyglet.graphics.api.gl.egl.eglext import *
 
 assert eglBindAPI(EGL_OPENGL_API) == EGL_TRUE
 
