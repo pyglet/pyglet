@@ -12,10 +12,7 @@ from typing import BinaryIO, ClassVar
 
 import unicodedata
 
-from pyglet.enums import (
-    ComponentFormat,
-    TextureFilter, TextureInternalFormat, TextureDescriptor,
-)
+from pyglet.enums import TextureFilter
 from pyglet.graphics import atlas
 from pyglet.graphics.texture import Texture, TextureRegion
 from pyglet.image import ImageData
@@ -166,9 +163,9 @@ class GlyphTextureAtlas(atlas.TextureAtlas):
     """A texture atlas containing many glyphs."""
     texture_class = GlyphTexture
 
-    def __init__(self, width: int = 2048, height: int = 2048, descriptor: TextureDescriptor | None = None) -> None:
+    def __init__(self, width: int = 2048, height: int = 2048, filters: TextureFilter = TextureFilter.LINEAR) -> None:
         super().__init__(width, height)
-        self.texture = self.texture_class.create(width, height, descriptor)
+        self.texture = self.texture_class.create(width, height, filters=filters)
         self.allocator = atlas.Allocator(width, height)
 
     def add(self, img: ImageData, border: int = 0) -> Glyph:
@@ -178,7 +175,7 @@ class GlyphTextureAtlas(atlas.TextureAtlas):
 class GlyphTextureBin(atlas.TextureBin):
     """Same as a TextureBin but allows you to specify filter of Glyphs."""
 
-    def add(self, img: ImageData, descriptor: TextureDescriptor | None = None, border: int = 0) -> Glyph:
+    def add(self, img: ImageData, filters: TextureFilter, border: int = 0) -> Glyph:
         for glyph_atlas in list(self.atlases):
             try:
                 return glyph_atlas.add(img, border)
@@ -188,7 +185,7 @@ class GlyphTextureBin(atlas.TextureBin):
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(glyph_atlas)
 
-        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, descriptor)
+        glyph_atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, filters)
         self.atlases.append(glyph_atlas)
         return glyph_atlas.add(img, border)
 
@@ -264,11 +261,7 @@ class Font:
     optimize_fit: int = True
     glyph_fit: int = 100
 
-    default_descriptor = TextureDescriptor(
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-        internal_format=TextureInternalFormat(ComponentFormat.RGBA),
-    )
+    filters = TextureFilter.LINEAR
 
     # These should also be set by subclass when known
     ascent: int = 0
@@ -352,7 +345,7 @@ class Font:
         """
         return True
 
-    def create_glyph(self, img: ImageData, descriptor: TextureDescriptor | None = None) -> Glyph:
+    def create_glyph(self, img: ImageData) -> Glyph:
         """Create a glyph using the given image.
 
         This is used internally by `Font` subclasses to add glyph data
@@ -372,7 +365,7 @@ class Font:
                 self.texture_width, self.texture_height = self._get_optimal_atlas_size(img)
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
-        return self.texture_bin.add(img, descriptor or self.default_descriptor, border=1)
+        return self.texture_bin.add(img, self.filters, border=1)
 
     def _get_optimal_atlas_size(self, image_data: ImageData) -> tuple[int, int]:
         """Retrieves the optimal atlas size to fit ``image_data`` with ``glyph_fit`` number of glyphs."""

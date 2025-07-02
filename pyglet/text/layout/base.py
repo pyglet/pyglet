@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.graphics.vertexdomain import VertexList
-    from pyglet.graphics import Texture, TextureDescriptor
+    from pyglet.graphics import Texture
     from pyglet.text.document import AbstractDocument, InlineElement
     from pyglet.text.runlist import AbstractRunIterator, RunIterator
 
@@ -1236,7 +1236,7 @@ class TextLayout:
         self._vertex_lists.clear()
         self._boxes.clear()
 
-    def get_as_texture(self, texture_desc: TextureDescriptor | None = None) -> Texture:
+    def get_as_texture(self) -> Texture:
         """Utilizes a :py:class:`~pyglet.image.framebuffer.Framebuffer` to draw the current layout into a texture.
 
         .. warning:: Usage is recommended only if you understand how texture generation affects your application.
