@@ -14,52 +14,52 @@ except ImportError:
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_file_name,font_name,weight,italic', [
+@pytest.mark.parametrize('font_file_name,font_name,weight,style', [
     ('action_man.ttf', 'Action Man', Weight.NORMAL, Style.NORMAL),
     ('action_man_bold.ttf', 'Action Man', Weight.BOLD, Style.NORMAL),
     ('action_man_bold_italic.ttf', 'Action Man', Weight.BOLD, Style.ITALIC),
     ('action_man_italic.ttf', 'Action Man', Weight.NORMAL, Style.ITALIC),
 ])
-def test_face_from_file(test_data, font_file_name, font_name, weight, italic):
+def test_face_from_file(test_data, font_file_name, font_name, weight, style):
     """Test loading a font face directly from file."""
     face = FreeTypeFace.from_file(test_data.get_file('fonts', font_file_name))
 
     assert face.name == font_name
     assert face.family_name == font_name
     assert face.weight == weight
-    assert face.style == italic
+    assert face.style == style
 
     del face
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_name,weight,italic', [
+@pytest.mark.parametrize('font_name,weight,style', [
     ('Arial', Weight.NORMAL, Style.NORMAL),
     ('Arial', Weight.BOLD, Style.NORMAL),
     ('Arial', Weight.NORMAL, Style.ITALIC),
     ('Arial', Weight.BOLD, Style.ITALIC),
 ])
-def test_face_from_fontconfig(font_name, weight, italic):
+def test_face_from_fontconfig(font_name, weight, style):
     """Test loading a font face from the system using font config."""
-    match = get_fontconfig().find_font(font_name, 16, weight, italic)
+    match = get_fontconfig().find_font(font_name, 16, weight, style)
     assert match is not None
 
     face = FreeTypeFace.from_fontconfig(match)
 
     assert face.weight == weight
-    assert face.style == italic
+    assert face.style == style
 
     del face
 
 
 @require_platform(Platform.LINUX)
-@pytest.mark.parametrize('font_file_name,font_name,weight,italic', [
+@pytest.mark.parametrize('font_file_name,font_name,weight,style', [
     ('action_man.ttf', 'Action Man', Weight.NORMAL, Style.NORMAL),
     ('action_man_bold.ttf', 'Action Man', Weight.BOLD, Style.NORMAL),
     ('action_man_bold_italic.ttf', 'Action Man', Weight.BOLD, Style.ITALIC),
     ('action_man_italic.ttf', 'Action Man', Weight.NORMAL, Style.ITALIC),
 ])
-def test_memory_face(test_data, font_file_name, font_name, weight, italic):
+def test_memory_face(test_data, font_file_name, font_name, weight, style):
     """Test loading a font into memory using FreeTypeMemoryFont."""
     with open(test_data.get_file('fonts', font_file_name), 'rb') as font_file:
         font_data = font_file.read()
@@ -67,7 +67,7 @@ def test_memory_face(test_data, font_file_name, font_name, weight, italic):
 
     assert font.name == font_name
     assert font.weight == weight
-    assert font.style == italic
+    assert font.style == style
     assert font.ft_face is not None
 
     del font

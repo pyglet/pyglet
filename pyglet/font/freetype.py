@@ -274,9 +274,9 @@ class FreeTypeFont(base.Font):
 
     def __init__(self, name: str, size: float,
                  weight: str = "normal",
-                 italic: str = "normal",
+                 style: str = "normal",
                  stretch: str = "normal", dpi: int | None = None) -> None:
-        super().__init__(name, size, weight, italic, stretch, dpi)
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
@@ -326,12 +326,12 @@ class FreeTypeFont(base.Font):
         return self.face.get_glyph_slot(glyph_index)
 
     def _load_font_face(self) -> None:
-        self.face = self._memory_faces.get(self._name, self.weight, self.italic, self.stretch)
+        self.face = self._memory_faces.get(self._name, self.weight, self.style, self.stretch)
         if self.face is None:
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self) -> None:
-        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.italic, self.stretch)
+        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.style, self.stretch)
         if not match:
             msg = f"Could not match font '{self._name}'"
             raise base.FontException(msg)

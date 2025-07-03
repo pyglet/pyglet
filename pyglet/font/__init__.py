@@ -83,6 +83,18 @@ class FontManager(pyglet.event.EventDispatcher):
         # A mapping of sequence to the resulting font name.
         self.resolved_names = {}
 
+    def _invalidate(self) -> None:
+        """Invalidates all caches.
+
+        Used for tests.
+        """
+        self._font_contexts.clear()
+        self._hold.clear()
+        self._added_families.clear()
+        self._added_faces.clear()
+        self._user_font_names.clear()
+        self.resolved_names.clear()
+
     @staticmethod
     def _get_key_name(name: str | Sequence[str]) -> tuple[str, ...]:
         if isinstance(name, list):
@@ -148,9 +160,9 @@ class FontManager(pyglet.event.EventDispatcher):
 
     def _add_user_font(self, font: UserDefinedFontBase) -> None:
         self._user_font_names.add(font.name)
-        self.dispatch_event("on_font_loaded", font.name, font.weight, font.italic, font.stretch)
+        self.dispatch_event("on_font_loaded", font.name, font.weight, font.style, font.stretch)
 
-    def _add_loaded_font(self, fonts: set[str]) -> None:
+    def _add_loaded_font(self, fonts: set[tuple[str, str, str, str]]) -> None:
         old = self._added_faces
         new_fonts = fonts - old
         self._added_faces.update(fonts)
@@ -161,7 +173,7 @@ class FontManager(pyglet.event.EventDispatcher):
         for new_font in new_fonts:
             self.dispatch_event("on_font_loaded", *new_font)
 
-    def on_font_loaded(self, family_name: str, weight: str, italic: str, stretch: str) -> EVENT_HANDLE_STATE:
+    def on_font_loaded(self, family_name: str, weight: str, style: str, stretch: str) -> EVENT_HANDLE_STATE:
         """When a font is loaded this event will be dispatched with the family name and style of the font.
 
         On some platforms, a custom added font may not be available immediately after adding the data. In these cases,
@@ -230,7 +242,7 @@ def add_user_font(font: UserDefinedFontBase) -> None:
     font_context = manager._get_context_data(core.current_context)  # noqa: SLF001
 
     # Look for font name in font cache
-    descriptor = (font.name, font.size, font.weight, font.italic, font.stretch, font.dpi)
+    descriptor = (font.name, font.size, font.weight, font.style, font.stretch, font.dpi)
     if descriptor in font_context.cache:
         msg = f"A font with parameters {descriptor} has already been created. Use a more unique name."
         raise Exception(msg)
@@ -251,7 +263,7 @@ def load(
     name: str | Iterable[str] | None = None,
     size: float | None = None,
     weight: str | None = "normal",
-    italic: str | None = "normal",
+    style: str | None = "normal",
     stretch: str | None = "normal",
     dpi: int | None = None,
 ) -> Font:
@@ -268,13 +280,15 @@ def load(
             match or the closest available.
         weight:
             If set, a specific weight variant is returned if one exists for the given font
-            family and size. The weight is provided as a string. For example: "bold" or "light".
-        italic:
-            If True, an italic variant is returned, if one exists for the given family and size. For some Font
-            renderers, italics may have an "oblique" variation which can be specified as a string.
+            family and size. For example, "bold" can be specified. Refer to :py:class:`~pyglet.enums.Weight`
+            for valid options.
+        style:
+            If specified, an italic variant can be returned if one exists for the given family and size. If a font is
+            oblique, or italic, either will fallback to choose that variation. Refer to :py:class:`~pyglet.enums.Style`
+            for valid options.
         stretch:
-            If True, a stretch variant is returned, if one exists for the given family and size.  Currently only
-            supported by Windows through the ``DirectWrite`` font renderer. For example, "condensed" or "expanded".
+            If specified a stretch variant is returned, if one exists for the given family and size. Refer to
+            :py:class:`~pyglet.enums.Stretch` for valid options.
         dpi: int
             The assumed resolution of the display device, for the purposes of
             determining the pixel size of the font.  Defaults to 96.
@@ -283,7 +297,7 @@ def load(
     size = size or 12  # Arbitrary default size
     dpi = dpi or 96
     weight = weight or Weight.NORMAL
-    italic = italic or Style.NORMAL
+    style = style or Style.NORMAL
     stretch = stretch or Stretch.NORMAL
 
     if name is None:
@@ -293,15 +307,18 @@ def load(
     name = manager.get_resolved_name(name)
 
     # Look for font name in font cache
-    descriptor = (name, size, weight, italic, stretch, dpi)
+    descriptor = (name, size, weight, style, stretch, dpi)
     if descriptor in font_context.cache:
         return font_context.cache[descriptor]
 
-    font = _system_font_class(name, size, weight=weight, italic=italic, stretch=stretch, dpi=dpi)
+    assert weight is not None
+    assert style is not None
+    assert stretch is not None
+    font = _system_font_class(name, size, weight=weight, style=style, stretch=stretch, dpi=dpi)
 
     # Font system changed the name. Create two descriptors for it, so both can be used.
     if font.name != name:
-        fs_descriptor = (font.name, size, weight, italic, stretch, dpi)
+        fs_descriptor = (font.name, size, weight, style, stretch, dpi)
         font_context.add(fs_descriptor, font)
 
     # Cache font in weak-ref dictionary to avoid reloading while still in use

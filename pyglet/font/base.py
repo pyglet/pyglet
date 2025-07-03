@@ -14,7 +14,12 @@ import unicodedata
 
 from pyglet.enums import (
     ComponentFormat,
-    TextureFilter, TextureInternalFormat, TextureDescriptor, Weight, Stretch,
+    TextureFilter,
+    TextureInternalFormat,
+    TextureDescriptor,
+    Weight,
+    Stretch,
+    Style,
 )
 from pyglet.graphics import atlas
 from pyglet.graphics.texture import Texture, TextureRegion
@@ -298,7 +303,8 @@ class Font:
     # The size of the font in pixels.
     pixel_size: float
 
-    def __init__(self, name: str, size: float, weight: str | bool, italic: str | bool, stretch: str | bool, dpi: int | None) -> None:
+    def __init__(self, name: str, size: float, weight: str | Weight, style: str | Style, stretch: str | Stretch,
+                 dpi: int | None) -> None:
         """Initialize a font that can be used with Pyglet.
 
         Args:
@@ -313,7 +319,7 @@ class Font:
             weight:
                 If set, a specific weight variant is returned if one exists for the given font
                 family and size. The weight is provided as a string. For example: "bold" or "light".
-            italic:
+            style:
                 If True, an italic variant is returned, if one exists for the given family and size. For some Font
                 renderers, italics may have an "oblique" variation which can be specified as a string.
             stretch:
@@ -326,7 +332,7 @@ class Font:
         self._name = name
         self.size = size
         self.weight = weight
-        self.italic = italic
+        self.style = style
         self.stretch = stretch
         self.dpi = dpi
 

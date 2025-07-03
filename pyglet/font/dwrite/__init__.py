@@ -874,14 +874,14 @@ class Win32DirectWriteFont(base.Font):
         name: str,
         size: float,
         weight: str = "normal",
-        italic: bool | str = False,
-        stretch: bool | str = False,
+        style: str = "normal",
+        stretch: str = "normal",
         dpi: int | None = None,
         locale: str | None = None,
     ) -> None:
         self._filename: str | None = None
 
-        super().__init__(name, size, weight, italic, stretch, dpi)
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         self.buffers = []
         self.locale = locale
@@ -893,9 +893,9 @@ class Win32DirectWriteFont(base.Font):
 
         self._weight = name_to_weight[self.weight]
 
-        if self.italic:
-            if isinstance(self.italic, str):
-                self._style = name_to_style[self.italic]
+        if self.style:
+            if isinstance(self.style, str):
+                self._style = name_to_style[self.style]
             else:
                 self._style = DWRITE_FONT_STYLE_ITALIC
         else:
@@ -1316,7 +1316,7 @@ class Win32DirectWriteFont(base.Font):
 
     @classmethod
     def find_font_face(
-        cls, font_name: str, weight: str, italic: bool | str, stretch: bool | str
+        cls, font_name: str, weight: str, italic: str, stretch: str
     ) -> tuple[IDWriteFont | None, IDWriteFontCollection | None]:
         """Search font collections for legacy RBIZ names.
 
@@ -1390,7 +1390,7 @@ class Win32DirectWriteFont(base.Font):
         collection: IDWriteFontCollection,
         font_name: str,
         weight: str,
-        italic: bool | str,
+        style: bool | str,
         stretch: bool | str,
         full_debug: bool = False,
     ) -> IDWriteFont | None:
@@ -1464,7 +1464,7 @@ class Win32DirectWriteFont(base.Font):
 
             # If we have matches, we've already parsed through the proper family. Now try to match.
             if matches:
-                write_font = Win32DirectWriteFont.match_closest_font(matches, weight, italic, stretch)
+                write_font = Win32DirectWriteFont.match_closest_font(matches, weight, style, stretch)
 
                 # Cleanup other matches not used.
                 for match in matches:

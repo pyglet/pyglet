@@ -97,10 +97,10 @@ class JavascriptPyodideFont(base.Font):
     _font_data_cache: ClassVar[dict] = {}
     _name_font_cache: ClassVar[dict] = {}
 
-    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False, stretch: bool = False,
+    def __init__(self, name: str, size: float, weight: str = "normal", style: str = "normal", stretch: str = "normal",
                  dpi: int | None = None) -> None:
         self._glyph_renderer = None
-        super().__init__(name, size, weight, italic, stretch, dpi)
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         if isinstance(weight, str):
             self._weight = name_to_weight.get(weight.lower(), "normal")
@@ -112,7 +112,7 @@ class JavascriptPyodideFont(base.Font):
         else:
             self._stretch = "normal"
 
-        self._italic = "italic" if italic is True else "normal"
+        self._italic = "italic" if style is True else "normal"
 
         self.js_name = f"{self._italic} {self._weight} {self.pixel_size}px '{name}'"
 

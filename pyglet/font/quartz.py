@@ -409,18 +409,18 @@ class QuartzFont(base.Font):
         name: str,
         size: float,
         weight: str = "normal",
-        italic: str = "normal",
-        stretch: str | bool = "normal",
+        style: str = "normal",
+        stretch: str = "normal",
         dpi: int | None = None,
     ) -> None:
-        super().__init__(name, size, weight, italic, stretch, dpi)
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         # Weight value
         self._weight = name_to_weight[weight]
 
         # Construct traits value for italics/obliques.
         self._italic = 0
-        if italic != "normal" and italic is not False:
+        if style != "normal" and style is not False:
             self._italic |= cocoapy.kCTFontItalicTrait
 
         self._stretch = name_to_stretch[stretch]
@@ -429,7 +429,7 @@ class QuartzFont(base.Font):
         # MacOS protects default fonts from being queried by name, it has to be done by an enumeration and loaded
         # using a separate function.
         if name == "System Default":
-            self.ctFont = self._get_system_default(weight, italic)
+            self.ctFont = self._get_system_default(weight, style)
         else:
             result = self._lookup_font_with_family_and_traits(name, self._italic)
             if result:
@@ -456,7 +456,7 @@ class QuartzFont(base.Font):
             self._cg_font = None
             self.hb_resource = get_resource_from_ct_font(self)
 
-    def _get_system_default(self, weight: str, italic: bool | str):
+    def _get_system_default(self, weight: str, italic_style: str) -> c_void_p:
         if weight == "bold":
             font_enum = kCTFontUIFontEmphasizedSystem
         else:
@@ -464,7 +464,7 @@ class QuartzFont(base.Font):
 
         base_ft = ct.CTFontCreateUIFontForLanguage(font_enum, float(self.pixel_size), None)
         final_ft = base_ft
-        if italic is not False:
+        if italic_style != "normal":
             italic_font = ct.CTFontCreateCopyWithSymbolicTraits(
                 base_ft,
                 0.0,
@@ -478,7 +478,7 @@ class QuartzFont(base.Font):
         ct_font = c_void_p(final_ft)
         return ct_font
 
-    def _get_hb_face(self):
+    def _get_hb_face(self) -> None:
         assert self._cg_font is None
 
         # Create a CGFont from the CTFont for the face.

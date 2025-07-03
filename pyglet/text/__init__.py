@@ -307,7 +307,7 @@ class DocumentLabel(layout.TextLayout):
             "font_name": font.name,
             "font_size": font.size,
             "weight": font.weight,
-            "italic": font.italic,
+            "italic": font.style,
             "stretch": font.stretch,
         })
 
@@ -380,7 +380,7 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            weight: str = "normal", italic: str = "normal", stretch: str = "normal",
+            weight: str = "normal", style: str = "normal", stretch: str = "normal",
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
@@ -424,7 +424,7 @@ class Label(DocumentLabel):
             weight:
                 The 'weight' of the font (boldness). See the :py:class:`~pyglet.enums.Weight`
                 enum for valid cross-platform weight names.
-            italic:
+            style:
                 Italic font style. See the :py:class:`~pyglet.enums.Style` enum for valid cross-platform style names.
             stretch:
                  Stretch font style. See the :py:class:`~pyglet.enums.Stretch` enum for valid cross-platform
@@ -454,7 +454,7 @@ class Label(DocumentLabel):
             "font_name": font_name,
             "font_size": font_size,
             "weight": weight,
-            "italic": italic,
+            "style": style,
             "stretch": stretch,
             "color": rgba,
             "align": align,
