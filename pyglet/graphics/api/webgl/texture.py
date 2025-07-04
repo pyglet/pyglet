@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ctypes import byref
 from typing import TYPE_CHECKING, Callable, Iterator, Literal, Union
 
 import js
@@ -637,6 +636,8 @@ class Texture(TextureBase):
         # in, unless that's an obscure format, upside-down or the driver is old).
         data = image_data.convert(data_format, data_pitch)
 
+        js_array = js.Uint8Array.new(data)
+
         if data_pitch & 0x1:
             align = 1
         elif data_pitch & 0x2:
@@ -652,10 +653,10 @@ class Texture(TextureBase):
 
         if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
             gl.texSubImage3D(
-                self.target, self.level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, data
+                self.target, self.level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
             )
         else:
-            gl.texSubImage2D(self.target, self.level, x, y, image_data.width, image_data.height, fmt, gl_type, data)
+            gl.texSubImage2D(self.target, self.level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array)
 
         gl.pixelStorei(GL_UNPACK_ROW_LENGTH, 0)
         self._default_region_unpack(image_data)
