@@ -3,8 +3,8 @@
 Applications
 ------------
 
-Most applications need only call :func:`run` after creating one or more 
-windows to begin processing events.  For example, a simple application 
+Most applications need only call :func:`run` after creating one or more
+windows to begin processing events.  For example, a simple application
 consisting of one window is::
 
     import pyglet
@@ -28,17 +28,16 @@ default policy is to wait until all windows are closed)::
 
 .. versionadded:: 1.1
 """
+
 from __future__ import annotations
 
+import platform
 import sys
 import weakref
-import platform
 
 import pyglet
-
 from pyglet import compat_platform
 from pyglet.app.base import EventLoop
-
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -52,8 +51,11 @@ else:
             from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
-    else:
+    elif compat_platform == 'linux':
         from pyglet.app.linux import LinuxEventLoop as PlatformEventLoop
+    elif compat_platform == 'emscripten':
+        from pyglet.app.async_app import AsyncEventLoop as EventLoop
+        from pyglet.app.async_app import AsyncPlatformEventLoop as PlatformEventLoop
 
 
 class AppException(Exception):
@@ -76,7 +78,11 @@ def run(interval: float | None = 1 / 60) -> None:
         pyglet.app.event_loop.run(interval)
 
     """
-    event_loop.run(interval)
+    if pyglet.compat_platform == "emscripten":
+        import asyncio
+        asyncio.create_task(event_loop.run(interval))  # noqa: RUF006
+    else:
+        event_loop.run(interval)
 
 
 def exit() -> None:
@@ -91,11 +97,16 @@ def exit() -> None:
         pyglet.app.event_loop.exit()
 
     """
-    event_loop.exit()
+    if pyglet.compat_platform == "emscripten":
+        import asyncio
+
+        asyncio.create_task(event_loop.exit())
+    else:
+        event_loop.exit()
 
 
 #: The global event loop. Applications can replace this
-#: with their own subclass of :class:`EventLoop` before calling 
+#: with their own subclass of :class:`EventLoop` before calling
 #: :meth:`EventLoop.run`.
 event_loop = EventLoop()
 

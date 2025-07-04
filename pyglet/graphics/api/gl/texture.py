@@ -757,7 +757,6 @@ class Texture3D(Texture, UniformTextureSequence):
         return self.items[index]
 
     def __setitem__(self, index, value):
-        print("INDEX, VALUE", index, value)
         if type(index) is slice:
             self._context.glBindTexture(self.target, self.id)
 

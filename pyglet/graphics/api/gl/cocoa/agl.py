@@ -5,7 +5,7 @@ Do not modify this file.
 """
 
 from ctypes import Structure, POINTER, c_int, c_long, c_ubyte, c_ulong
-from pyglet.graphics.api.gl import link_AGL as _link_function
+from pyglet.graphics.api.gl.lib import link_AGL as _link_function
 
 if not _link_function:
     raise ImportError('AGL framework is not available.')

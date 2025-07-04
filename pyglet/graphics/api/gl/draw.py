@@ -230,7 +230,7 @@ class Batch(BatchBase):
     group_children: dict[Group, list[Group]]
     group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
 
-    def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 16) -> None:
+    def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use.
 
         Args:

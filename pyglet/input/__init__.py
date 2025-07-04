@@ -150,6 +150,13 @@ else:
         from .macos import get_tablets
         from .macos import ControllerManager
 
+    elif compat_platform == "emscripten":
+        from .emscripten import get_devices
+        from .emscripten import get_joysticks
+        from .emscripten import get_controllers
+        from .emscripten import get_tablets
+        from .emscripten import ControllerManager
+
 __all__ = [
     'get_devices',
     'get_joysticks',

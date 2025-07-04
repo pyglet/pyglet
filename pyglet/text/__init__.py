@@ -38,12 +38,12 @@ creating scrollable layouts.
 from __future__ import annotations
 
 from abc import abstractmethod
-from enum import Enum
 from os.path import dirname as _dirname
 from os.path import splitext as _splitext
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal
 
 import pyglet
+from pyglet.font import base
 
 from pyglet.text import caret, document, layout  # noqa: F401
 
@@ -77,48 +77,6 @@ class DocumentDecoder:
 
 
 SupportedMimeTypes = Literal["text/plain", "text/html", "text/vnd.pyglet-attributed"]
-
-
-class Weight(str, Enum):
-    """An :py:class:`~enum.Enum` of known cross-platform font weight strings.
-
-    Each value is both an :py:class:`~enum.Enum` and a :py:class:`str`.
-    This is not a built-in Python :py:class:`~enum.StrEnum` to ensure
-    compatibility with Python < 3.11.
-
-    .. important:: Fonts will use the closest match if they lack a weight!
-
-    The values of this enum imitate the string names for font weights
-    as used in CSS and the OpenType specification. Numerical font weights
-    are not supported because:
-
-    * Integer font weight support and behavior varies by back-end
-    * Some font renderers do not support or round :py:class:`float` values
-    * Some font renderers lack support for variable-width fonts
-
-    Additional weight strings may be supported by certain font-rendering
-    back-ends. To learn more, please see your platform's API documentation
-    and the following:
-
-    #. `The MDN article on CSS font weights <https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight>`_
-    #. `The OpenType specification <https://learn.microsoft.com/en-us/typography/opentype/spec/os2#usweightclass>`_
-
-    """
-
-    THIN = 'thin'
-    EXTRALIGHT = 'extralight'
-    LIGHT = 'light'
-    NORMAL = 'normal'
-    """The default weight for a font."""
-    MEDIUM = 'medium'
-    SEMIBOLD = 'semibold'
-    BOLD = 'bold'
-    """The default **bold** style for a font."""
-    EXTRABOLD = 'extrabold'
-    ULTRABOLD = 'ultrabold'
-
-    def __str__(self) -> str:
-        return self.value
 
 
 def get_decoder(filename: str | None, mimetype: SupportedMimeTypes | None = None) -> DocumentDecoder:
@@ -318,17 +276,40 @@ class DocumentLabel(layout.TextLayout):
             self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
-    def font_name(self) -> str | list[str]:
-        """Font family name.
+    def font_name(self) -> str:
+        """The current font family name.
+
+        The value is read from the beginning of this document.
 
         The font name, as passed to :py:func:`pyglet.font.load`.  A list of names can
         optionally be given: the first matching font will be used.
         """
-        return self.document.get_style("font_name")
+        return self.document.get_font(0).name
 
     @font_name.setter
     def font_name(self, font_name: str | list[str]) -> None:
-        self.document.set_style(0, len(self.document.text), {"font_name": font_name})
+        resolved_font_name = pyglet.font.manager.get_resolved_name(font_name)
+        self.document.set_style(0, len(self.document.text), {"font_name": resolved_font_name})
+
+    @property
+    def font(self) -> base.Font:
+        """The current font object used at the beginning of the text.
+
+        Setting this property will change the font for the entire document.
+
+        .. versionadded:: 3.0
+        """
+        return self.document.get_font(0)
+
+    @font.setter
+    def font(self, font: base.Font) -> None:
+        self.document.set_style(0, len(self.document.text), {
+            "font_name": font.name,
+            "font_size": font.size,
+            "weight": font.weight,
+            "italic": font.style,
+            "stretch": font.stretch,
+        })
 
     @property
     def font_size(self) -> float:
@@ -399,7 +380,7 @@ class Label(DocumentLabel):
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
             font_name: str | None = None, font_size: float | None = None,
-            weight: str = "normal", italic: bool | str = False, stretch: bool | str = False,
+            weight: str = "normal", style: str = "normal", stretch: str = "normal",
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
             batch: Batch | None = None, group: Group | None = None,
@@ -441,12 +422,13 @@ class Label(DocumentLabel):
             font_size:
                 Font size, in points.
             weight:
-                The 'weight' of the font (boldness). See the :py:class:`~Weight`
+                The 'weight' of the font (boldness). See the :py:class:`~pyglet.enums.Weight`
                 enum for valid cross-platform weight names.
-            italic:
-                Italic font style.
+            style:
+                Italic font style. See the :py:class:`~pyglet.enums.Style` enum for valid cross-platform style names.
             stretch:
-                 Stretch font style.
+                 Stretch font style. See the :py:class:`~pyglet.enums.Stretch` enum for valid cross-platform
+                 style names.
             color:
                 Font color as RGBA or RGB components, each within
                 ``0 <= component <= 255``.
@@ -472,7 +454,7 @@ class Label(DocumentLabel):
             "font_name": font_name,
             "font_size": font_size,
             "weight": weight,
-            "italic": italic,
+            "style": style,
             "stretch": stretch,
             "color": rgba,
             "align": align,

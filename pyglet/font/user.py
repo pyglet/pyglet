@@ -108,7 +108,7 @@ class UserDefinedFontBase(base.Font):
 
     def __init__(
             self, name: str, default_char: str, size: int, ascent: int | None = None, descent: int | None = None,
-            weight: str = "normal", italic: bool = False, stretch: bool = False, dpi: int = 96, locale: str | None = None,
+            weight: str = "normal", style: str = "normal", stretch: str = "normal", dpi: int = 96, locale: str | None = None,
     ) -> None:
         """Initialize a user defined font.
 
@@ -126,7 +126,7 @@ class UserDefinedFontBase(base.Font):
                 Maximum descent below the baseline, in pixels. Usually negative.
             weight:
                 The font weight, as a string. Defaults to "normal".
-            italic:
+            style:
                 If True, this font will be used when ``italic`` is enabled for the font name.
             stretch:
                 If True, this font will be used when ``stretch`` is enabled for the font name.
@@ -136,16 +136,10 @@ class UserDefinedFontBase(base.Font):
             locale:
                 Used to specify the locale of this font.
         """
-        super().__init__()
-        self._name = name
+        super().__init__(name, size, weight, style, stretch, dpi)
         self.default_char = default_char
         self.ascent = ascent
         self.descent = descent
-        self.size = size
-        self.weight = weight
-        self.italic = italic
-        self.stretch = stretch
-        self.dpi = dpi
         self.locale = locale
 
         self._base_size = 0

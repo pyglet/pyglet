@@ -581,5 +581,16 @@ if pyglet.options.backend in ("opengl", "gl2", "gles2"):
         get_max_texture_size,
         get_max_array_texture_layers,
     )
+elif pyglet.options.backend in ("webgl"):
+    from pyglet.graphics.api.webgl.texture import (
+        Texture,
+        TextureRegion,
+        Texture3D,
+        TextureArray,
+        TextureArrayRegion,
+        TextureGrid,
+        get_max_texture_size,
+        get_max_array_texture_layers
+    )
 elif pyglet.options.backend == "vulkan":
     pass

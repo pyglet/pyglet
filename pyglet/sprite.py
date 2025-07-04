@@ -81,6 +81,9 @@ if pyglet.options.backend == "opengl":
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl.sprite import SpriteGroup
     from pyglet.graphics.api.gl2.sprite import get_default_array_shader, get_default_shader
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.sprite import SpriteGroup
+    from pyglet.graphics.api.webgl.sprite import get_default_array_shader, get_default_shader
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.sprite import SpriteGroup
     from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader

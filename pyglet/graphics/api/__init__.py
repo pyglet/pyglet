@@ -13,6 +13,12 @@ core = None
 
 resource_manager = ResourceManagement()
 
+
+# Enforce WebGL if emscripten is detected.
+# Create better fallback/choosing system later.
+if pyglet.compat_platform == "emscripten":
+    pyglet.options.backend = "webgl"
+
 if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
@@ -30,6 +36,15 @@ elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.draw import Batch
     from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch, get_default_blit_shader
     from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
+
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl import WebGLBackend
+
+    core = WebGLBackend()
+
+    from pyglet.graphics.api.webgl.draw import Batch
+    from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.webgl.shader import ShaderProgram, Shader, ComputeShaderProgram
 
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.instance import VulkanGlobal

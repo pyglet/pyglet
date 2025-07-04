@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from ctypes import POINTER, byref, c_ubyte, cast, memmove
-from typing import NamedTuple, Sequence
+from ctypes import POINTER, byref, c_ubyte, cast, memmove, string_at, Array
+from typing import NamedTuple, Sequence, TYPE_CHECKING
 
 import pyglet
 from pyglet import image
@@ -26,13 +26,35 @@ from pyglet.font.freetype_lib import (
     FT_Set_Char_Size,
     f26p6_to_float,
     float_to_f26p6,
-    ft_get_library, FT_LOAD_TARGET_MONO, FT_LOAD_COLOR, FT_FACE_FLAG_SCALABLE, FT_FACE_FLAG_FIXED_SIZES,
-    FT_FACE_FLAG_COLOR, FT_Select_Size, FT_PIXEL_MODE_BGRA, FT_Get_Char_Index, FT_FACE_FLAG_KERNING, FT_Vector,
-    FT_Get_Kerning, FT_KERNING_DEFAULT, FT_LOAD_NO_BITMAP, FT_Load_Char
+    ft_get_library,
+    FT_LOAD_TARGET_MONO,
+    FT_LOAD_COLOR,
+    FT_FACE_FLAG_SCALABLE,
+    FT_FACE_FLAG_FIXED_SIZES,
+    FT_FACE_FLAG_COLOR,
+    FT_Select_Size,
+    FT_PIXEL_MODE_BGRA,
+    FT_Get_Char_Index,
+    FT_FACE_FLAG_KERNING,
+    FT_Vector,
+    FT_Get_Kerning,
+    FT_KERNING_DEFAULT,
+    FT_LOAD_NO_BITMAP,
+    FT_Load_Char,
+    FT_FACE_FLAG_SFNT,
+    FT_SfntName,
+    FT_Get_Sfnt_Name_Count,
+    FT_Get_Sfnt_Name,
+    TT_NAME_ID_FULL_NAME,
+    TT_NAME_ID_FONT_FAMILY,
 )
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ft_font, get_harfbuzz_shaped_glyphs
-from pyglet.util import asbytes, asstr
+from pyglet.util import asbytes, asstr, debug_print
 
+_debug_font = debug_print("debug_font")
+
+if TYPE_CHECKING:
+    from pyglet.font import FontManager
 
 class FreeTypeGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font: FreeTypeFont) -> None:
@@ -223,21 +245,22 @@ class FreeTypeFontMetrics(NamedTuple):
 
 
 class MemoryFaceStore:
-    _dict: dict[tuple[str, str, bool], FreeTypeMemoryFace]
+    _dict: dict[tuple[str, str, str, str], FreeTypeMemoryFace]
 
     def __init__(self) -> None:
         self._dict = {}
 
     def add(self, face: FreeTypeMemoryFace) -> None:
-        self._dict[face.name.lower(), face.weight, face.italic] = face
+        self._dict[face.name, face.weight, face.style, face.stretch] = face
 
     def contains(self, name: str) -> bool:
-        lname = name and name.lower() or ""
-        return len([name for name, _, _ in self._dict if name == lname]) > 0
+        return len([fn_name for fn_name, _, _, _ in self._dict if name.lower() == fn_name.lower()]) > 0
 
-    def get(self, name: str, weight: str, italic: bool) -> FreeTypeMemoryFace | None:
-        lname = name and name.lower() or ""
-        return self._dict.get((lname, weight, italic), None)
+    def get(self, name: str, weight: str, style: str, stretch: str) -> FreeTypeMemoryFace | None:
+        return self._dict.get((name, weight, style, stretch), None)
+
+    def all_keys(self) -> list[tuple[str, str, str, str]]:
+        return list(self._dict.keys())
 
 
 class FreeTypeFont(base.Font):
@@ -249,20 +272,11 @@ class FreeTypeFont(base.Font):
     face: FreeTypeFace
     fallbacks: list[FreeTypeFont]
 
-    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool = False,
-                 stretch: bool | str = False, dpi: int | None = None) -> None:
-
-        if stretch:
-            warnings.warn("The current font render does not support stretching.")
-
-        super().__init__()
-        self._name = name
-        self.size = size
-        self.weight = weight
-        self.italic = italic
-        self.stretch = stretch
-        self.dpi = dpi or 96
-        self.pixel_size = (self.size * self.dpi) // 72
+    def __init__(self, name: str, size: float,
+                 weight: str = "normal",
+                 style: str = "normal",
+                 stretch: str = "normal", dpi: int | None = None) -> None:
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
@@ -312,12 +326,12 @@ class FreeTypeFont(base.Font):
         return self.face.get_glyph_slot(glyph_index)
 
     def _load_font_face(self) -> None:
-        self.face = self._memory_faces.get(self._name, self.weight, self.italic)
+        self.face = self._memory_faces.get(self._name, self.weight, self.style, self.stretch)
         if self.face is None:
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self) -> None:
-        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.italic, self.stretch)
+        match = get_fontconfig().find_font(self._name, self.size, self.weight, self.style, self.stretch)
         if not match:
             msg = f"Could not match font '{self._name}'"
             raise base.FontException(msg)
@@ -332,7 +346,7 @@ class FreeTypeFont(base.Font):
         return get_fontconfig().have_font(name)
 
     @classmethod
-    def add_font_data(cls: type[FreeTypeFont], data: bytes) -> None:
+    def add_font_data(cls: type[FreeTypeFont], data: bytes, manager: FontManager) -> None:
         font_data = (FT_Byte * len(data))()
         memmove(font_data, data, len(data))
 
@@ -345,7 +359,10 @@ class FreeTypeFont(base.Font):
                 face = FreeTypeMemoryFace(font_data, i)
                 cls._memory_faces.add(face)
 
-    def render_glyph_indices(self, indices: Sequence[int]):
+        all_fonts = cls._memory_faces.all_keys()
+        manager._add_loaded_font(set(all_fonts))  # noqa: SLF001
+
+    def render_glyph_indices(self, indices: Sequence[int]) -> None:
         # Process any glyphs that have not been rendered.
         self._initialize_renderer()
 
@@ -371,18 +388,18 @@ class FreeTypeFont(base.Font):
         self._initialize_renderer()
         if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
             return get_harfbuzz_shaped_glyphs(self, text)
-        else:
-            glyphs = []  # glyphs that are committed.
-            for idx, c in enumerate(text):
-                # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-                # boxes)
-                if c == "\t":
-                    c = " "  # noqa: PLW2901
-                if c not in self.glyphs:
-                    self.glyphs[c] = self._glyph_renderer.render(c)
-                glyphs.append(self.glyphs[c])
 
-            return glyphs, [GlyphPosition(0, 0, 0, 0)] * len(text)
+        glyphs = []  # glyphs that are committed.
+        for idx, c in enumerate(text):
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
+            # boxes)
+            if c == "\t":
+                c = " "  # noqa: PLW2901
+            if c not in self.glyphs:
+                self.glyphs[c] = self._glyph_renderer.render(c)
+            glyphs.append(self.glyphs[c])
+
+        return glyphs, [GlyphPosition(0, 0, 0, 0)] * len(text)
 
     def get_text_size(self, text: str) -> tuple[int, int]:
         width = 0
@@ -424,9 +441,11 @@ class FreeTypeFace:
         self._get_best_name()
 
         self._italic = self.style_flags & FT_STYLE_FLAG_ITALIC != 0
+        self._style = "italic" if self._italic else "normal"
         bold = self.style_flags & FT_STYLE_FLAG_BOLD != 0
         if bold:
             self._weight = "bold"
+            self._stretch = "normal"
         else:
             # Sometimes it may have a weight, but FT_STYLE_FLAG_BOLD is not accurate. Check the font config.
             config = get_fontconfig()
@@ -450,11 +469,11 @@ class FreeTypeFace:
         if match.face is not None:
             FT_Reference_Face(match.face)
             return cls(match.face)
-        else:
-            if not match.file:
-                msg = f'No filename for "{match.name}"'
-                raise base.FontException(msg)
-            return cls.from_file(match.file)
+
+        if not match.file:
+            msg = f'No filename for "{match.name}"'
+            raise base.FontException(msg)
+        return cls.from_file(match.file)
 
     @property
     def name(self) -> str:
@@ -483,6 +502,14 @@ class FreeTypeFace:
     @property
     def italic(self) -> bool:
         return self._italic
+
+    @property
+    def stretch(self) -> str:
+        return self._stretch
+
+    @property
+    def style(self) -> str:
+        return self._style
 
     @property
     def face_flags(self) -> int:
@@ -551,36 +578,46 @@ class FreeTypeFace:
         i = self.get_character_index("X")
         self.get_glyph_slot(i)
         ascent = self.ft_face.contents.available_sizes.contents.height
-        return FreeTypeFontMetrics(ascent=ascent,
-                                   descent=-ascent // 4)  # arbitrary.
+        return FreeTypeFontMetrics(ascent=ascent, descent=-ascent // 4)  # arbitrary.
 
     def _get_best_name(self) -> None:
         self._name = asstr(self.ft_face.contents.family_name)
-        self._get_font_family_from_ttf()
 
-    def _get_font_family_from_ttf(self) -> None:
         # Replace Freetype's generic family name with TTF/OpenType specific
         # name if we can find one; there are some instances where Freetype
         # gets it wrong.
+        if (ttf_name := self._get_ttf_string(TT_NAME_ID_FONT_FAMILY)) and ttf_name != self._name:
+            assert _debug_font(f"FreeType name: {self._name} does not match header name: {ttf_name}")
 
-        return  # FIXME: This is broken
-
+    def _get_ttf_string(self, name_id: int) -> str | None:
+        """Return the value from the TTF/OTF/AAT font table for the specified TT_NAME_ID."""
         if self.face_flags & FT_FACE_FLAG_SFNT:
-            name = FT_SfntName()
-            for i in range(FT_Get_Sfnt_Name_Count(self.ft_face)):
-                try:
-                    FT_Get_Sfnt_Name(self.ft_face, i, name)
-                    if not (name.platform_id == TT_PLATFORM_MICROSOFT and
-                            name.encoding_id == TT_MS_ID_UNICODE_CS):
-                        continue
-                    # name.string is not 0 terminated! use name.string_len
-                    self._name = name.string.decode("utf-16be", "ignore")
-                except:
-                    continue
+            name_count = FT_Get_Sfnt_Name_Count(self.ft_face)
+            for i in range(name_count):
+                name = FT_SfntName()
+                FT_Get_Sfnt_Name(self.ft_face, i, name)
+                if name.platform_id == name_id:
+                    raw = string_at(name.string, name.string_len)
+
+                    # First try decoding with UTF-16BE (used by Windows name table)
+                    try:
+                        full_name = raw.decode("utf-16-be")
+                    except UnicodeDecodeError:
+                        full_name = raw.decode("latin1", errors="replace")
+
+                    return full_name
+
+        return None
+
+    def _get_full_name(self) -> str | None:
+        """Checks the font naming table."""
+        return self._get_ttf_string(TT_NAME_ID_FULL_NAME)
+
+
 
 
 class FreeTypeMemoryFace(FreeTypeFace):
-    def __init__(self, data: bytes, face_index: int = 0) -> None:
+    def __init__(self, data: Array, face_index: int = 0) -> None:
         self.font_data = data
         ft_library = ft_get_library()
         ft_face = FT_Face()

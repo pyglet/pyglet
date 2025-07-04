@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar, Sequence
 
 import pyglet
 import pyglet.image
-from pyglet.font import base
+from pyglet.font import base, FontManager
 from pyglet.image.codecs.gdiplus import BitmapData, ImageLockModeRead, PixelFormat32bppARGB, Rect, gdiplus
 from pyglet.libs.win32 import _gdi32 as gdi32
 from pyglet.libs.win32 import _user32 as user32
@@ -18,6 +18,7 @@ from pyglet.libs.win32.types import ABC, BYTE, LOGFONTW, TEXTMETRIC
 
 if TYPE_CHECKING:
     from pyglet.font.base import Glyph
+
 
 
 DriverStringOptionsCmapLookup = 1
@@ -221,7 +222,7 @@ class GDIPlusGlyphRenderer(base.GlyphRenderer):
             # This hack bumps up the width if the font is italic;
             # this compensates for some common fonts.  It's also a stupid
             # waste of texture memory.
-            if self.font.italic:
+            if self.font.style:
                 width += width // 2
                 # Do not enlarge more than the _rect width.
                 width = min(width, self._rect.Width)
@@ -270,12 +271,15 @@ class Win32Font(base.Font):
     def __init__(
             self,
             name: str, size: float,
-            weight: str = "normal", italic: bool = False, stretch: bool = False,
+            weight: str = "normal",
+            style: str = "normal",
+            stretch: str = "normal",
             dpi: int | None = None,
     ) -> None:
-        super().__init__()
+        super().__init__(name, size, weight, style, stretch, dpi)
 
-        bold = weight if weight in (None, True, False) else "bold" in weight
+        bold = weight != "normal"
+        italic = style != "normal"
 
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
         self.hfont = gdi32.CreateFontIndirectW(ctypes.byref(self.logfont))
@@ -341,6 +345,15 @@ def _get_font_families(font_collection: ctypes.c_void_p) -> Sequence[ctypes.c_vo
 
     return gpfamilies
 
+def _get_font_family_names(font_collection: ctypes.c_void_p) -> set[str]:
+    names = set()
+    font_name = ctypes.create_unicode_buffer(32)
+    for gpfamily in _get_font_families(font_collection):
+        gdiplus.GdipGetFamilyName(gpfamily, font_name, "\0")
+        names.add(font_name.value)
+
+    return names
+
 def _font_exists_in_collection(font_collection: ctypes.c_void_p, name: str) -> bool:
     font_name = ctypes.create_unicode_buffer(32)
     for gpfamily in _get_font_families(font_collection):
@@ -359,17 +372,15 @@ class GDIPlusFont(Win32Font):
 
     _default_name = "Arial"
 
-    def __init__(self, name: str, size: float, weight: str = "normal", italic: bool=False, stretch: bool=False,
+    def __init__(self, name: str, size: float, weight: str = "normal", style: str = "normal", stretch: str= "normal",
                  dpi: int | None=None) -> None:
         if not name:
             name = self._default_name
 
-        if stretch:
-            warnings.warn("The current font render does not support stretching.")  # noqa: B028
+        if stretch != "normal":
+            warnings.warn("The current font render does not support the stretch argument.")
 
-        bold = weight if weight in (None, True, False) else "bold" in weight
-
-        super().__init__(name, size, bold, italic, stretch, dpi)
+        super().__init__(name, size, weight, style, stretch, dpi)
 
         self._name = name
 
@@ -406,13 +417,13 @@ class GDIPlusFont(Win32Font):
             size = (size * dpi) // 72
             self.dpi = dpi
 
-        style = 0
-        if bold:
-            style |= FontStyleBold
-        if italic:
-            style |= FontStyleItalic
+        gdip_style = 0
+        if weight != "normal":
+            gdip_style |= FontStyleBold
+        if style != "normal":
+            gdip_style |= FontStyleItalic
         self._gdipfont = ctypes.c_void_p()
-        gdiplus.GdipCreateFont(family, ctypes.c_float(size), style, unit, ctypes.byref(self._gdipfont))
+        gdiplus.GdipCreateFont(family, ctypes.c_float(size), gdip_style, unit, ctypes.byref(self._gdipfont))
         gdiplus.GdipDeleteFontFamily(family)
 
     @property
@@ -424,7 +435,7 @@ class GDIPlusFont(Win32Font):
         gdiplus.GdipDeleteFont(self._gdipfont)
 
     @classmethod
-    def add_font_data(cls: type[GDIPlusFont], data: bytes) -> None:
+    def add_font_data(cls: type[GDIPlusFont], data: bytes, manager: FontManager) -> None:
         numfonts = ctypes.c_uint32()
         _handle = gdi32.AddFontMemResourceEx(data, len(data), 0, ctypes.byref(numfonts))
 
@@ -433,10 +444,23 @@ class GDIPlusFont(Win32Font):
             raise ctypes.WinError()
 
         if not cls._private_collection:
+            _loaded_families = set()
             cls._private_collection = ctypes.c_void_p()
-            gdiplus.GdipNewPrivateFontCollection(
-                ctypes.byref(cls._private_collection))
+            gdiplus.GdipNewPrivateFontCollection(ctypes.byref(cls._private_collection))
+        else:
+            _loaded_families = _get_font_family_names(cls._private_collection)
+
         gdiplus.GdipPrivateAddMemoryFont(cls._private_collection, data, len(data))
+
+        current_families = _get_font_family_names(cls._private_collection)
+
+        new_font = current_families - _loaded_families
+        if len(new_font) > 0:
+            font_name = list(new_font)[0]
+            manager._add_loaded_font({(font_name, "normal", "normal", "normal")})
+
+        # Loaded a variant?
+
 
     @classmethod
     def have_font(cls: type[GDIPlusFont], name: str) -> bool:

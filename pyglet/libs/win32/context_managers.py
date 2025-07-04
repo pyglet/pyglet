@@ -27,15 +27,20 @@ After::
         return result
 
 """
+from __future__ import annotations
+
 from contextlib import contextmanager
-from typing import Optional, Generator
-from ctypes.wintypes import HANDLE
+from typing import Generator, TYPE_CHECKING
 from ctypes import WinError
 from pyglet.libs.win32 import _user32 as user32
 
+if TYPE_CHECKING:
+    from pyglet.libs.win32.com import COMObject
+    from ctypes.wintypes import HANDLE
+
 
 @contextmanager
-def device_context(window_handle: Optional[int] = None) -> Generator[HANDLE, None, None]:
+def device_context(window_handle: int | None = None) -> Generator[HANDLE, None, None]:
     """
     A Windows device context wrapped as a context manager.
 
@@ -55,3 +60,15 @@ def device_context(window_handle: Optional[int] = None) -> Generator[HANDLE, Non
     finally:
         if not user32.ReleaseDC(None, _dc):
             raise WinError()
+
+
+@contextmanager
+def com_context(com_object: COMObject) -> Generator[COMObject, None, None]:
+    """A simple context manager for a COM object.
+
+    This can help reduce missed release calls leading to leaks.
+    """
+    try:
+        yield com_object
+    finally:
+        com_object.Release()

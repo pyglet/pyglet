@@ -46,6 +46,10 @@ NSZoneEncoding = b'{_NSZone=}'
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
     _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(x={self.x}, y={self.y})"
+
 CGPoint = NSPoint
 
 class NSSize(Structure):

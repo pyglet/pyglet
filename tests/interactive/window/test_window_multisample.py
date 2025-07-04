@@ -37,7 +37,7 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
     samples = 2
 
     # This test does not work on all hardware, unless rendered to texture.
-    texture = pyglet.graphics.TextureBase.create(width, height, GL_TEXTURE_RECTANGLE)
+    texture = pyglet.graphics.Texture.create(width, height, GL_TEXTURE_RECTANGLE)
 
     def set_window(self):
         oldwindow = self.win

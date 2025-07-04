@@ -234,10 +234,10 @@ class Group:
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
     # Indexed, Instanced : Domain
-    #(False, False): vertexdomain.VertexDomain,
+   #  (False, False): vertexdomain.VertexDomain,
    # (True, False): vertexdomain.IndexedVertexDomain,
-#    (False, True): vertexdomain.InstancedVertexDomain,
-    #(True, True): vertexdomain.InstancedIndexedVertexDomain,
+   # (False, True): vertexdomain.InstancedVertexDomain,
+   #  (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 DomainKey = Tuple[bool, int, GeometryMode, str]
 
