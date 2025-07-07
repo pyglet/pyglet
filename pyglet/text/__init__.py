@@ -197,6 +197,7 @@ class DocumentLabel(layout.TextLayout):
             multiline: bool = False, dpi: int | None = None,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
+            shaping: bool = True,
             init_document: bool = True,
     ) -> None:
         """Create a label for a given document.
@@ -226,13 +227,16 @@ class DocumentLabel(layout.TextLayout):
             batch: Optional graphics batch to add the label to.
             group: Optional graphics group to use.
             program: Optional graphics shader to use. Will affect all glyphs.
+            shaping:
+                If the text should use proper positioning and typography according to the font and global
+                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             init_document:
                 If ``True``, the document will be initialized. If you
                 are passing an already-initialized document, then you can
                 avoid duplicating work by setting this to ``False``.
         """
         super().__init__(document, x, y, z, width, height, anchor_x, anchor_y, rotation,
-                         multiline, dpi, batch, group, program, init_document=init_document)
+                         multiline, dpi, batch, group, program, shaping=shaping, init_document=init_document)
 
     @property
     def text(self) -> str:
@@ -383,6 +387,7 @@ class Label(DocumentLabel):
             weight: str = "normal", style: str = "normal", stretch: str = "normal",
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: ContentVAlign = "left",
+            shaping: bool = True,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,
     ) -> None:
@@ -436,6 +441,9 @@ class Label(DocumentLabel):
                 Horizontal alignment of text on a line, only applies if
                 a width is supplied. One of ``"left"``, ``"center"``
                 or ``"right"``.
+            shaping:
+                If the text should use proper positioning and typography according to the font and global
+                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             batch:
                 Optional graphics batch to add the label to.
             group:

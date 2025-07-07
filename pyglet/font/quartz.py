@@ -9,7 +9,7 @@ from typing import BinaryIO, TYPE_CHECKING
 import pyglet.image
 from pyglet.enums import Weight, Stretch
 from pyglet.font import base
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, CGPoint
+from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, get_harfbuzz_shaped_glyphs
 
 if TYPE_CHECKING:
@@ -190,7 +190,7 @@ if harfbuzz_available():
         # Create a blob that references this table data.
         data_ptr_char = cast(data_ptr, c_char_p)
         blob = hb_lib.hb_blob_create(
-            data_ptr_char, length, HB_MEMORY_MODE_READONLY, table_data, py_coretext_table_data_destroy_c
+            data_ptr_char, length, HB_MEMORY_MODE_READONLY, table_data, py_coretext_table_data_destroy_c,
         )
         return blob
 
@@ -241,7 +241,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
                 bytes_per_row,
                 colorSpace,
                 cocoapy.kCGImageAlphaPremultipliedLast,
-            )
+            ),
         )
 
         # Draw text to bitmap context.
@@ -292,7 +292,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         # Create an attributed string using text and font.
         attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 2, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+            cf.CFDictionaryCreateMutable(None, 2, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks),
         )
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTForegroundColorFromContextAttributeName, cocoapy.kCFBooleanTrue)
@@ -352,7 +352,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
                 bytes_per_row,
                 colorSpace,
                 cocoapy.kCGImageAlphaPremultipliedLast,
-            )
+            ),
         )
 
         # Transform the context to a top-left origin.
@@ -470,7 +470,7 @@ class QuartzFont(base.Font):
                 0.0,
                 None,
                 cocoapy.kCTFontItalicTrait,
-                cocoapy.kCTFontItalicTrait
+                cocoapy.kCTFontItalicTrait,
             )
             final_ft = italic_font
             cf.CFRelease(base_ft)
@@ -558,11 +558,11 @@ class QuartzFont(base.Font):
         return list(fonts.values())[0]
 
     def _create_font_descriptor(
-        self, family_name: str, italic_traits: int, weight: float | None = None, stretch: float | None = None
+        self, family_name: str, italic_traits: int, weight: float | None = None, stretch: float | None = None,
     ) -> c_void_p:
         # Create an attribute dictionary.
         attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+            cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks),
         )
         # Add family name to attributes.
         cfname = cocoapy.CFSTR(family_name)
@@ -576,8 +576,8 @@ class QuartzFont(base.Font):
             # Construct a dictionary to hold the traits values.
             traitsDict = c_void_p(
                 cf.CFDictionaryCreateMutable(
-                    None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks
-                )
+                    None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks,
+                ),
             )
             if traitsDict:
                 if weight is not None:
@@ -676,7 +676,7 @@ class QuartzFont(base.Font):
         ctFont = self.ctFont
 
         attributes = c_void_p(
-            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks),
         )
         cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
         cf_str = cocoapy.CFSTR(text)
@@ -718,7 +718,7 @@ class QuartzFont(base.Font):
         for glyph_indice in missing:
             self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -727,11 +727,14 @@ class QuartzFont(base.Font):
         Args:
             text:
                 Text to render.
+            shaping:
+                If the text will be shaped using the global option.
         """
         self._initialize_renderer()
 
-        if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
-            return get_harfbuzz_shaped_glyphs(self, text)
+        if shaping:
+            if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
+                return get_harfbuzz_shaped_glyphs(self, text)
 
         glyphs = []  # glyphs that are committed.
         offsets = []

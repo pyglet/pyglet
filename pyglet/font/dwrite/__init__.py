@@ -272,7 +272,7 @@ class _DWriteTextRenderer(com.COMObject):
 
     def DrawGlyphRun(
         self,
-        drawing_context: c_void_p,  # noqa: N802
+        drawing_context: c_void_p,
         _baseline_x: float,
         _baseline_y: float,
         mode: int,
@@ -344,7 +344,7 @@ _renderer = _DWriteTextRenderer()
 
 
 def get_glyph_metrics(
-    font_face: IDWriteFontFace, indices: Array[UINT16], count: int
+    font_face: IDWriteFontFace, indices: Array[UINT16], count: int,
 ) -> list[tuple[float, float, float, float, float]]:
     """Obtain metrics for the specific string.
 
@@ -443,7 +443,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         return wic.extract_image_data(bitmap, wic_fmt)
 
     def render_single_glyph(
-        self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int
+        self, font_face: IDWriteFontFace, indice: int, metrics: tuple[float, float, float, float, float], mode: int,
     ) -> base.Glyph:
         """Renders a single glyph indice using Direct2D."""
         glyph_width, glyph_height, glyph_lsb, glyph_advance, glyph_bsb = metrics
@@ -558,7 +558,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):  # noqa: D101
         return glyph
 
     def _get_color_enumerator(
-        self, dwrite_run: DWRITE_GLYPH_RUN
+        self, dwrite_run: DWRITE_GLYPH_RUN,
     ) -> IDWriteColorGlyphRunEnumerator | IDWriteColorGlyphRunEnumerator1 | None:
         """Obtain a color enumerator if possible."""
         try:
@@ -1095,7 +1095,7 @@ class Win32DirectWriteFont(base.Font):
 
             for idx, glyph_indice in enumerate(missing):
                 glyph = self._glyph_renderer.render_single_glyph(
-                    self.font_face, glyph_indice, metrics[idx], self._glyph_renderer.measuring_mode
+                    self.font_face, glyph_indice, metrics[idx], self._glyph_renderer.measuring_mode,
                 )
                 self.glyphs[glyph_indice] = glyph
 
@@ -1113,22 +1113,23 @@ class Win32DirectWriteFont(base.Font):
 
         return self.glyphs[0]
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[base.GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         self._initialize_renderer()
 
-        if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
-            return get_harfbuzz_shaped_glyphs(self, text)
+        if shaping:
+            if pyglet.options.text_shaping == 'harfbuzz' and harfbuzz_available():
+                return get_harfbuzz_shaped_glyphs(self, text)
 
-        if pyglet.options.text_shaping == 'platform':
-            self._glyph_renderer.current_glyphs.clear()
-            self._glyph_renderer.current_offsets.clear()
-            text_layout = self.create_text_layout(text)
+            if pyglet.options.text_shaping == 'platform':
+                self._glyph_renderer.current_glyphs.clear()
+                self._glyph_renderer.current_offsets.clear()
+                text_layout = self.create_text_layout(text)
 
-            ptr = cast(id(self._glyph_renderer), c_void_p)
-            text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
-            text_layout.Release()
+                ptr = cast(id(self._glyph_renderer), c_void_p)
+                text_layout.Draw(ptr, _renderer.as_interface(IDWriteTextRenderer), 0, 0)
+                text_layout.Release()
 
-            return self._glyph_renderer.current_glyphs, self._glyph_renderer.current_offsets
+                return self._glyph_renderer.current_glyphs, self._glyph_renderer.current_offsets
 
         glyphs = []
         offsets = []
@@ -1230,7 +1231,7 @@ class Win32DirectWriteFont(base.Font):
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             font_file = IDWriteFontFile()
             cls._font_loader.CreateInMemoryFontFileReference(
-                cls._write_factory, data, len(data), None, byref(font_file)
+                cls._write_factory, data, len(data), None, byref(font_file),
             )
 
             hr = cls._font_builder.AddFontFile(font_file)
@@ -1296,7 +1297,7 @@ class Win32DirectWriteFont(base.Font):
         # Check custom loaded font collections.
         if cls._custom_collection:
             cls._custom_collection.FindFamilyName(
-                create_unicode_buffer(name), byref(font_index), byref(font_exists)
+                create_unicode_buffer(name), byref(font_index), byref(font_exists),
             )
 
             if font_exists.value:
@@ -1316,7 +1317,7 @@ class Win32DirectWriteFont(base.Font):
 
     @classmethod
     def find_font_face(
-        cls, font_name: str, weight: str, italic: str, stretch: str
+        cls, font_name: str, weight: str, italic: str, stretch: str,
     ) -> tuple[IDWriteFont | None, IDWriteFontCollection | None]:
         """Search font collections for legacy RBIZ names.
 
@@ -1439,7 +1440,7 @@ class Win32DirectWriteFont(base.Font):
                 compat_names = IDWriteLocalizedStrings()
                 exists = BOOL()
                 temp_ft.GetInformationalStrings(
-                    DWRITE_INFORMATIONAL_STRING_WIN32_FAMILY_NAMES, byref(compat_names), byref(exists)
+                    DWRITE_INFORMATIONAL_STRING_WIN32_FAMILY_NAMES, byref(compat_names), byref(exists),
                 )
 
                 # Successful in finding GDI name.
@@ -1449,7 +1450,7 @@ class Win32DirectWriteFont(base.Font):
                         if compat_name == font_name:
                             assert _debug_print(
                                 f"Found legacy name '{font_name}' as '{family_name}' in font face '{j}' (collection "
-                                f"id #{i})."
+                                f"id #{i}).",
                             )
 
                             match_found = True
@@ -1477,7 +1478,7 @@ class Win32DirectWriteFont(base.Font):
 
     @staticmethod
     def match_closest_font(
-        font_list: list[tuple[int, int, int, IDWriteFont]], weight: str, italic: int, stretch: int
+        font_list: list[tuple[int, int, int, IDWriteFont]], weight: str, italic: int, stretch: int,
     ) -> IDWriteFont | None:
         """Match the closest font to the parameters specified.
 
@@ -1491,7 +1492,7 @@ class Win32DirectWriteFont(base.Font):
             # Found perfect match, no need for the rest.
             if f_weight == weight and f_style == italic and f_stretch == stretch:
                 _debug_print(
-                    f"directwrite: full match found. (weight: {f_weight}, italic: {f_style}, stretch: {f_stretch})"
+                    f"directwrite: full match found. (weight: {f_weight}, italic: {f_style}, stretch: {f_stretch})",
                 )
                 return writefont
 
@@ -1524,7 +1525,7 @@ class Win32DirectWriteFont(base.Font):
             closest_match = closest[0]
             _debug_print(
                 f"directwrite: falling back to partial match. "
-                f"(weight: {closest_match[2]}, italic: {closest_match[3]}, stretch: {closest_match[4]})"
+                f"(weight: {closest_match[2]}, italic: {closest_match[3]}, stretch: {closest_match[4]})",
             )
             return closest_match[5]
 

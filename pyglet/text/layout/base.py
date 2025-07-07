@@ -36,26 +36,24 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.text import (
         get_default_decoration_shader,
-        get_default_layout_shader,
         get_default_image_layout_shader,
+        get_default_layout_shader,
     )
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.text import (
         get_default_decoration_shader,
+        get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
-        get_default_image_layout_shader,
     )
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.text import (
         get_default_decoration_shader,
         get_default_layout_shader,
-        get_default_image_layout_shader,
     )
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.text import (
         get_default_decoration_shader,
         get_default_layout_shader,
-        get_default_image_layout_shader,
     )
 
 class _LayoutVertexList(Protocol):
@@ -727,7 +725,7 @@ class TextLayout:
                  anchor_x: AnchorX = 'left', anchor_y: AnchorY = 'bottom', rotation: float = 0,
                  multiline: bool = False, dpi: float | None = None, batch: Batch | None = None,
                  group: graphics.Group | None = None, program: ShaderProgram | None = None,
-                 wrap_lines: bool = True, init_document: bool = True) -> None:
+                 wrap_lines: bool = True, shaping: bool = True, init_document: bool = True) -> None:
         """Create a text layout.
 
         Args:
@@ -767,6 +765,9 @@ class TextLayout:
                 Optional graphics shader to use. Will affect all glyphs in the layout.
             wrap_lines:
                 If True and `multiline` is True, the text is word-wrapped using the specified width.
+            shaping:
+                If the text should use proper positioning and typography according to the font and global
+                ``pyglet.options.text_shaping`` option. If ``False``, metrics will instead be tied to the glyph sizes.
             init_document:
                 If True the document will be initialized. If subclassing then
                 you may want to avoid duplicate initializations by changing to False.
@@ -781,6 +782,7 @@ class TextLayout:
         self._rotation = rotation
         self._multiline = multiline
         self._dpi = dpi or 96
+        self._shaping = shaping
 
         self._content_width = 0
         self._content_height = 0
@@ -1486,7 +1488,7 @@ class TextLayout:
                 glyphs.append(_InlineElementBox(element))
                 offsets.append(_empty_pos)
             else:
-                char_glyphs, char_offsets = font.get_glyphs(text[start:end])
+                char_glyphs, char_offsets = font.get_glyphs(text[start:end], self._shaping)
                 glyphs.extend(char_glyphs)
                 offsets.extend(char_offsets)
 

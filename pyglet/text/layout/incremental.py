@@ -304,7 +304,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
                 self.offsets[start] = GlyphPosition(0, 0, 0, 0)
             else:
                 text = self.document.text[start:end]
-                glyphs, offsets = font.get_glyphs(text)
+                glyphs, offsets = font.get_glyphs(text, self._shaping)
                 self.glyphs[start:end] = glyphs
                 self.offsets[start:end] = offsets
 

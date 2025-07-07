@@ -35,10 +35,6 @@ from pyglet.font.freetype_lib import (
     FT_Select_Size,
     FT_PIXEL_MODE_BGRA,
     FT_Get_Char_Index,
-    FT_FACE_FLAG_KERNING,
-    FT_Vector,
-    FT_Get_Kerning,
-    FT_KERNING_DEFAULT,
     FT_LOAD_NO_BITMAP,
     FT_Load_Char,
     FT_FACE_FLAG_SFNT,
@@ -375,7 +371,7 @@ class FreeTypeFont(base.Font):
         for glyph_indice in missing:
             self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
 
-    def get_glyphs(self, text: str) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[base.Glyph], list[base.GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -384,15 +380,17 @@ class FreeTypeFont(base.Font):
         Args:
             text:
                 Text to render.
+            shaping:
+                If the text will be shaped using the global option.
         """
         self._initialize_renderer()
-        if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
+
+        if shaping and pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
             return get_harfbuzz_shaped_glyphs(self, text)
 
         glyphs = []  # glyphs that are committed.
         for idx, c in enumerate(text):
-            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-            # boxes)
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render boxes)
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:

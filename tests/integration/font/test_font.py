@@ -158,7 +158,7 @@ def test_user_font(test_data):
     assert action_man_font.size == 13
     assert action_man_font.mappings.get("a") is not None
     assert isinstance(action_man_font.mappings.get("a"), pyglet.image.ImageDataRegion)
-    result = action_man_font.get_glyphs("ABC")
+    result = action_man_font.get_glyphs("ABC", False)
     assert len(result) == 2  # Should be a tuple of Glyph, GlyphPosition
     assert isinstance(result[0][0], pyglet.font.base.Glyph)
     assert isinstance(result[1][0], pyglet.font.base.GlyphPosition)

@@ -76,7 +76,7 @@ def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
         return False
 
     # GB9b: Do not break after Prepend characters
-    if left in _LOGICAL_ORDER_EXCEPTION:  # noqa: SIM103
+    if left in _LOGICAL_ORDER_EXCEPTION:
         return False
 
     # GB999: Default to break
@@ -446,7 +446,7 @@ class Font:
 
         return atlas_size
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this
@@ -455,14 +455,16 @@ class Font:
         Args:
             text:
                 Text to render.
+            shaping:
+                If the text will be shaped using the global option. If ``False``, no text shaping will occur and
+                positioning will instead be based on glyph dimensions.
         """
         glyph_renderer = None
 
         glyphs = []  # glyphs that are committed.
         offsets = []
         for c in get_grapheme_clusters(str(text)):
-            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-            # boxes)
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render boxes)
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:

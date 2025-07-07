@@ -235,11 +235,11 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 The base size is used to calculate the ratio between new sizes and the original.
         """
         super().enable_scaling(base_size)
-        glyphs, offsets = self.get_glyphs(self.default_char)
+        glyphs, offsets = self.get_glyphs(self.default_char, False)
         self.ascent = glyphs[0].height
         self.descent = 0
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+    def get_glyphs(self, text: str, shaping: bool = False) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
 
         If any characters do not have a known glyph representation in this font, a substitution will be made with

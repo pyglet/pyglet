@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import math
-import weakref
 from asyncio import Task
 from typing import TYPE_CHECKING, ClassVar
 
@@ -187,7 +186,7 @@ class JavascriptPyodideFont(base.Font):
             # if family != fullname:
             #     try:
             #         await full_font.load()
-            #     except Exception as e:  # noqa: BLE001
+            #     except Exception as e:
             #         print("Exception occurred loading Name Font:", e)
             #         return False
             #     js.document.fonts.add(full_font)
@@ -201,14 +200,13 @@ class JavascriptPyodideFont(base.Font):
     def create_glyph(self, img: AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
         return super().create_glyph(img, descriptor)
 
-    def get_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
-        if not self._glyph_renderer:
-            self._glyph_renderer = self.glyph_renderer_class(self)
+    def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
+        self._initialize_renderer()
+
         glyphs = []  # glyphs that are committed.
         offsets = []
         for c in base.get_grapheme_clusters(str(text)):
-            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
-            # boxes)
+            # Get the glyph for 'c'.  Hide tabs (Windows and Linux render boxes)
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
@@ -236,7 +234,7 @@ class JavascriptPyodideFont(base.Font):
         match_sans_serif_name = f"'{name}', sans-serif"
 
         # Check if the font matches our serif.
-        if (_measure_font_width(match_serif_name) == cls._default_serif_width and  # noqa: SIM103
+        if (_measure_font_width(match_serif_name) == cls._default_serif_width and
             # Font might actually be the fallback serif, check if it matches a sans serif.
             _measure_font_width(match_sans_serif_name) == cls._default_sans_serif_width):
                 return False

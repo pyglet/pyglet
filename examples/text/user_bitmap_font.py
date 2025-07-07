@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pyglet
+pyglet.font.Font.text
 from pyglet.font.user import UserDefinedMappingFont, get_scaled_user_font
 
 # Add our resource path that includes the font atlas.
