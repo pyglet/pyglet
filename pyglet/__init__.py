@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import os
 import sys
-from collections.abc import ItemsView, Sequence
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Literal, Sequence
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -45,6 +44,17 @@ _OPTION_TYPE_VALIDATORS = {
     "int": lambda x: isinstance(x, int),
 }
 
+
+@dataclass
+class PyodideOptions:
+    """Dataclass for Pyodide related options."""
+
+    canvas_id: str = "pygletCanvas"
+    """Pyglet will need to target a specific canvas ID to use for javascript canvas detection.
+
+    If the ID is not detected, a canvas will be created with the above. If you have a canvas already embedded in your
+    page, and do not want to alter your code, then modify this option.
+    """
 
 @dataclass
 class Options:
@@ -307,6 +317,9 @@ class Options:
 
     backend: str | None = "opengl"
     """Specify the graphics API backend."""
+
+    pyodide: PyodideOptions = field(default_factory=PyodideOptions)
+    """Pyodide specific options."""
 
     def get(self, item: str, default: Any = None) -> Any:
         return self.__dict__.get(item, default)

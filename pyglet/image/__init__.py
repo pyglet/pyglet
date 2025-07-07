@@ -93,18 +93,22 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, BinaryIO, Sequence
+
+import pyglet
 
 if TYPE_CHECKING:
     from pyglet.image.base import _AbstractImage
 
 from pyglet.image import animation  # noqa: F401
+from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401
 from pyglet.image.base import ImageData, ImageDataRegion  # noqa: F401
-from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401, TC001
 
-from pyglet.image.base import ImagePattern, ImageGrid, _color_as_bytes  # noqa: F401
+from pyglet.image.animation import Animation, AnimationFrame
+from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: F401
 from pyglet.image.codecs import ImageDecoder
 from pyglet.image.codecs import add_default_codecs as _add_default_codecs
 from pyglet.image.codecs import registry as _codec_registry
@@ -175,7 +179,6 @@ def create(width: int, height: int, pattern: ImagePattern | None = None) -> _Abs
     return pattern.create_image(width, height)
 
 
-
 class SolidColorImagePattern(ImagePattern):
     """Creates an image filled with a solid RGBA color."""
 
@@ -197,8 +200,11 @@ class SolidColorImagePattern(ImagePattern):
 class CheckerImagePattern(ImagePattern):
     """Create an image with a tileable checker image."""
 
-    def __init__(self, color1: Sequence[int, int, int, int] = (150, 150, 150, 255),
-                 color2: Sequence[int, int, int, int] = (200, 200, 200, 255)):
+    def __init__(
+        self,
+        color1: Sequence[int, int, int, int] = (150, 150, 150, 255),
+        color2: Sequence[int, int, int, int] = (200, 200, 200, 255),
+    ):
         """Initialise with the given colors.
 
         Args:
@@ -221,6 +227,7 @@ class CheckerImagePattern(ImagePattern):
         row2 = self.color2 * hw + self.color1 * hw
         data = row1 * hh + row2 * hh
         return ImageData(width, height, 'RGBA', data)
+
 
 # Initialise default codecs
 _add_default_codecs()

@@ -137,7 +137,7 @@ def get_settings_path(name: str) -> str:
     returned (usually under ``~/.config``).
 
     On Windows (including under Cygwin) the ``name`` directory in the user's
-    ``Application Settings`` directory is returned.
+    ``Application Settings`` (AppData) directory is returned.
 
     On Mac OS X the ``name`` directory under ``~/Library/Application Support``
     is returned.
@@ -146,6 +146,9 @@ def get_settings_path(name: str) -> str:
               should use ``os.path.exists`` and ``os.makedirs`` to construct
               the directory if desired.
     """
+    # In Pyodide (browser) use IDBFS-mounted directory
+    if sys.platform == "emscripten":
+        return f"/data/{name}"
     if pyglet.compat_platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)
@@ -170,7 +173,7 @@ def get_data_path(name: str) -> str:
     (usually under ``~/.local/share``).
 
     On Windows (including under Cygwin) the ``name`` directory in the user's
-    ``Application Settings`` directory is returned.
+    ``Application Settings`` (AppData) directory is returned.
 
     On Mac OS X the ``name`` directory under ``~/Library/Application Support``
     is returned.
@@ -179,6 +182,9 @@ def get_data_path(name: str) -> str:
               should use ``os.path.exists`` and ``os.makedirs`` to construct
               the directory if desired.
     """
+    # In Pyodide (browser) use IDBFS-mounted directory
+    if sys.platform == "emscripten":
+        return f"/data/{name}"
     if pyglet.compat_platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)

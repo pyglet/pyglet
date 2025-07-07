@@ -97,15 +97,15 @@ class AudioPlayer(pyglet.event.EventDispatcher):
     # Specialisation attributes, preserved between audio players
     _volume = 1.0
     _min_distance = 1.0
-    _max_distance = 100000000.
+    _max_distance = 100000000.0
 
     _position = (0, 0, 0)
     _pitch = 1.0
 
     _cone_orientation = (0, 0, 1)
-    _cone_inner_angle = 360.
-    _cone_outer_angle = 360.
-    _cone_outer_gain = 1.
+    _cone_inner_angle = 360.0
+    _cone_outer_angle = 360.0
+    _cone_outer_gain = 1.0
 
     def __init__(self) -> None:
         """Initialize the Player with a MasterClock."""
@@ -143,8 +143,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
             try:
                 source = iter(source)
             except TypeError:
-                raise TypeError("source must be either a Source or an iterable."
-                                f" Received type {type(source)}")
+                raise TypeError(f"source must be either a Source or an iterable. Received type {type(source)}")
         self._playlists.append(source)
 
         if self.source is None:
@@ -169,7 +168,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
                 self._audio_player.delete()
                 self._audio_player = None
 
-    def _create_player_resources(self, starting: bool):
+    def _create_player_resources(self, starting: bool) -> None:
         """Creates driver resources for the particular format."""
         if self._source.audio_format is not None:
             if was_created := self._audio_player is None:
@@ -177,17 +176,17 @@ class AudioPlayer(pyglet.event.EventDispatcher):
             if self._audio_player is not None and (was_created or starting):
                 self._audio_player.prefill_audio()
 
-    def _start_player_resources(self):
+    def _start_player_resources(self) -> None:
         """Start any driver related resources required for playback."""
         if self._audio_player is not None:
             self._audio_player.play()
 
-    def _stop_player_resources(self):
+    def _stop_player_resources(self) -> None:
         """Stop any driver related resources required for playback."""
         if self._audio_player is not None:
             self._audio_player.stop()
 
-    def _seek_player_resources(self):
+    def _seek_player_resources(self) -> None:
         if self._audio_player is not None:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped
@@ -337,9 +336,17 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         self._audio_player = audio_driver.create_audio_player(source, self)
 
         # Set the audio player attributes
-        for attr in ('volume', 'min_distance', 'max_distance', 'position',
-                     'pitch', 'cone_orientation', 'cone_inner_angle',
-                     'cone_outer_angle', 'cone_outer_gain'):
+        for attr in (
+            'volume',
+            'min_distance',
+            'max_distance',
+            'position',
+            'pitch',
+            'cone_orientation',
+            'cone_inner_angle',
+            'cone_outer_angle',
+            'cone_outer_gain',
+        ):
             value = getattr(self, attr)
             setattr(self, attr, value)
 
@@ -470,7 +477,7 @@ class AudioPlayer(pyglet.event.EventDispatcher):
     def on_driver_reset(self):
         """The audio driver has been reset.
 
-        By default this will kill the current audio player, create a new one,
+        By default, this will kill the current audio player, create a new one,
         and requeue the buffers. Any buffers that may have been queued in a
         player will be resubmitted. It will continue from the last buffers
         submitted, not played, and may cause sync issues if using video.
@@ -481,8 +488,17 @@ class AudioPlayer(pyglet.event.EventDispatcher):
         self._audio_player.on_driver_reset()
 
         # Voice has been changed, will need to reset all options on the voice.
-        for attr in ('volume', 'min_distance', 'max_distance', 'position', 'pitch',
-                     'cone_orientation', 'cone_inner_angle', 'cone_outer_angle', 'cone_outer_gain'):
+        for attr in (
+            'volume',
+            'min_distance',
+            'max_distance',
+            'position',
+            'pitch',
+            'cone_orientation',
+            'cone_inner_angle',
+            'cone_outer_angle',
+            'cone_outer_gain',
+        ):
             value = getattr(self, attr)
             setattr(self, attr, value)
 
@@ -695,8 +711,7 @@ class PlayerGroup:
 
     def play(self) -> None:
         """Begin playing all players in the group simultaneously."""
-        audio_players = [p._audio_player
-                         for p in self.players if p._audio_player]
+        audio_players = [p._audio_player for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._play_group(audio_players)
         for player in self.players:
@@ -704,9 +719,14 @@ class PlayerGroup:
 
     def pause(self) -> None:
         """Pause all players in the group simultaneously."""
-        audio_players = [p._audio_player
-                         for p in self.players if p._audio_player]
+        audio_players = [p._audio_player for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._stop_group(audio_players)
         for player in self.players:
             player.pause()
+
+
+AudioPlayer.register_event_type('on_eos')
+AudioPlayer.register_event_type('on_player_eos')
+AudioPlayer.register_event_type('on_player_next_source')
+AudioPlayer.register_event_type('on_driver_reset')

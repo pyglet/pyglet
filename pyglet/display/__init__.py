@@ -44,6 +44,9 @@ else:
     elif compat_platform == 'linux':
         from pyglet.display.xlib import XlibDisplay as Display
         from pyglet.display.xlib import XlibScreen as Screen
+    elif compat_platform == 'emscripten':
+        from pyglet.display.emscripten import EmscriptenDisplay as Display
+        from pyglet.display.emscripten import EmscriptenScreen as Screen
     else:
         msg = f"A display interface for '{compat_platform}' is not yet implemented."
         raise NotImplementedError(msg)

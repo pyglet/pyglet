@@ -126,3 +126,71 @@ class TextureDescriptor:
         self.internal_format = internal_format or TextureInternalFormat(ComponentFormat.RGBA, 8)
         self.pixel_format = pixel_format
         self.anisotropic_level = anisotropic_level
+
+
+class Weight(str, Enum):
+    """An :py:class:`~enum.Enum` of known cross-platform font weight strings.
+
+    Each value is both an :py:class:`~enum.Enum` and a :py:class:`str`.
+    This is not a built-in Python :py:class:`~enum.StrEnum` to ensure
+    compatibility with Python < 3.11.
+
+    .. important:: Fonts will use the closest match if they lack a weight.
+
+    The values of this enum imitate the string names for font weights
+    as used in CSS and the OpenType specification. Numerical font weights
+    are not supported because:
+
+    * Integer font weight support and behavior varies by back-end
+    * Some font renderers do not support or round :py:class:`float` values
+    * Some font renderers lack support for variable-width fonts
+
+    Additional weight strings may be supported by certain font-rendering
+    back-ends. To learn more, please see your platform's API documentation
+    and the following:
+
+    #. `The MDN article on CSS font weights <https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight>`_
+    #. `The OpenType specification <https://learn.microsoft.com/en-us/typography/opentype/spec/os2#usweightclass>`_
+
+    """
+
+    THIN = 'thin'
+    EXTRALIGHT = 'extralight'
+    LIGHT = 'light'
+    NORMAL = 'normal'
+    """The default weight for a font."""
+    MEDIUM = 'medium'
+    SEMIBOLD = 'semibold'
+    BOLD = 'bold'
+    """The default **bold** style for a font."""
+    EXTRABOLD = 'extrabold'
+    BLACK = 'black'
+    EXTRABLACK = 'extrablack'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class Stretch(str, Enum):
+    """The stretch or width class of the font."""
+    ULTRACONDENSED = 'ultracondensed'
+    EXTRACONDENSED = 'extracondensed'
+    CONDENSED = 'condensed'
+    SEMICONDENSED = 'semicondensed'
+    NORMAL = 'normal'
+    """The default stretch for a font."""
+    SEMIEXPANDED = 'semiexpanded'
+    EXPANDED = 'expanded'
+    EXTRAEXPANDED = 'extraexpanded'
+    ULTRAEXPANDED = 'ultraexpanded'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class Style(str, Enum):
+    """The slant style of the font."""
+    NORMAL = 'normal'
+    """The default style for a font."""
+    ITALIC = 'italic'
+    OBLIQUE = 'oblique'

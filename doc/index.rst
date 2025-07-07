@@ -65,6 +65,7 @@ If you are migrating from an older version of pyglet, please read through
    programming_guide/options
    programming_guide/debug
    programming_guide/migration
+   programming_guide/pyodide
 
 .. toctree::
    :maxdepth: 3

@@ -15,7 +15,7 @@ doctext = """STYLE.py test document.
 This is 12pt text (as is everything that follows).
 
 This text has some {weight 'bold'}bold character style{weight 'normal'}, some
-{italic True}italic character style{italic False}, some {underline [0, 0, 0,
+{style 'italic'}italic character style{italic 'normal'}, some {underline [0, 0, 0,
 255]}underlined text{underline None}, {underline [255, 0, 0, 255]}underline
 in red{underline None}, a {color [255, 0, 0, 255]}change {color [0, 255, 0,
 255]}in {color [0, 0, 255, 255]}color{color None}, and in 

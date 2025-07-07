@@ -30,6 +30,10 @@ env: str
 value: str
 
 @dataclass
+class PyodideOptions:
+    canvas_id: str
+
+@dataclass
 class Options:
     audio: Sequence[str]
     debug_font: bool
@@ -66,6 +70,7 @@ class Options:
     dpi_scaling: Literal["real", "scaled", "stretch"]
     shader_bind_management: bool
     backend: str | None
+    pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:
         ...

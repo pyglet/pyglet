@@ -468,7 +468,7 @@ class MediaEvent:
         *args: Any required positional argument to go along with this event.
     """
 
-    __slots__ = 'event', 'timestamp', 'args'
+    __slots__ = 'args', 'event', 'timestamp'
 
     def __init__(self, event, timestamp=0.0, *args):
         # Meaning of timestamp is dependent on context; and not seen by application.

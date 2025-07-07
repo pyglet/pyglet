@@ -187,7 +187,7 @@ class ImageMouseCursor(MouseCursor):
                 If ``True``, draw the cursor natively instead of using the graphics API.
                 The image may be downsampled or color reduced to fit the platform limitations.
         """
-        self.texture = image.get_texture()
+        self.texture = image
         self.hot_x = hot_x
         self.hot_y = hot_y
         self.scaling = 1.0
@@ -1195,6 +1195,11 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """The graphical context attached to this window.  Read-only."""
         return self._context
 
+    @property
+    def ctx(self) -> SurfaceContext:
+        """The graphical context attached to this window.  Read-only."""
+        return self._context
+
     # These are the only properties that can be set
     @property
     def width(self) -> int:
@@ -1830,8 +1835,10 @@ else:
         from pyglet.window.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
-    else:
+    elif pyglet.compat_platform == 'linux':
         from pyglet.window.xlib import XlibWindow as Window
+    elif pyglet.compat_platform == 'emscripten':
+        from pyglet.window.emscripten import EmscriptenWindow as Window
 
 
 

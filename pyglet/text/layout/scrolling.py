@@ -96,6 +96,8 @@ if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 

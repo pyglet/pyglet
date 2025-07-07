@@ -8,17 +8,25 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
-from typing import BinaryIO, ClassVar
+from typing import BinaryIO, ClassVar, TYPE_CHECKING
 
 import unicodedata
 
 from pyglet.enums import (
     ComponentFormat,
-    TextureFilter, TextureInternalFormat, TextureDescriptor,
+    TextureFilter,
+    TextureInternalFormat,
+    TextureDescriptor,
+    Weight,
+    Stretch,
+    Style,
 )
 from pyglet.graphics import atlas
 from pyglet.graphics.texture import Texture, TextureRegion
 from pyglet.image import ImageData
+
+if TYPE_CHECKING:
+    from pyglet.font import FontManager
 
 _OTHER_GRAPHEME_EXTEND = {
     chr(x) for x in [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
@@ -256,6 +264,9 @@ class Font:
             The default Texture description of the atlas and font.
     """
     #: :meta private:
+    texture_bin: None | GlyphTextureBin
+
+    #: :meta private:
     glyphs: dict[str | int, Glyph]
 
     texture_width: int = 512
@@ -292,8 +303,42 @@ class Font:
     # The size of the font in pixels.
     pixel_size: float
 
-    def __init__(self) -> None:
-        """Initialize a font that can be used with Pyglet."""
+    def __init__(self, name: str, size: float, weight: str | Weight, style: str | Style, stretch: str | Stretch,
+                 dpi: int | None) -> None:
+        """Initialize a font that can be used with Pyglet.
+
+        Args:
+            name:
+                Font family, for example, "Times New Roman".  If a list of names
+                is provided, the first one matching a known font is used.  If no
+                font can be matched to the name(s), a default font is used. The default font
+                will be platform dependent.
+            size:
+                Size of the font, in points.  The returned font may be an exact
+                match or the closest available.
+            weight:
+                If set, a specific weight variant is returned if one exists for the given font
+                family and size. The weight is provided as a string. For example: "bold" or "light".
+            style:
+                If True, an italic variant is returned, if one exists for the given family and size. For some Font
+                renderers, italics may have an "oblique" variation which can be specified as a string.
+            stretch:
+                If True, a stretch variant is returned, if one exists for the given family and size.  Currently only
+                supported by Windows through the ``DirectWrite`` font renderer. For example, "condensed" or "expanded".
+            dpi: int
+                The assumed resolution of the display device, for the purposes of
+                determining the pixel size of the font.  Defaults to 96.
+        """
+        self._name = name
+        self.size = size
+        self.weight = weight
+        self.style = style
+        self.stretch = stretch
+        self.dpi = dpi
+
+        # From DPI to DIP (Device Independent Pixels)
+        self.pixel_size = (self.size * self.dpi) // 72
+
         self.texture_bin = None
         self.hb_resource =  None
         self._glyph_renderer = None
@@ -325,12 +370,13 @@ class Font:
         self.fallbacks.remove(font)
 
     @property
-    @abc.abstractmethod
     def name(self) -> str:
         """Return the Family Name of the font as a string."""
+        return self._name
 
     @classmethod
-    def add_font_data(cls: type[Font], data: BinaryIO) -> None:
+    @abc.abstractmethod
+    def add_font_data(cls: type[Font], data: BinaryIO, manager: FontManager) -> None:
         """Add font data to the font loader.
 
         This is a class method and affects all fonts loaded.  Data must be
@@ -343,6 +389,7 @@ class Font:
         """
 
     @classmethod
+    @abc.abstractmethod
     def have_font(cls: type[Font], name: str) -> bool:
         """Determine if a font with the given name is installed.
 
@@ -350,7 +397,6 @@ class Font:
             name:
                 Name of a font to search for.
         """
-        return True
 
     def create_glyph(self, img: ImageData, descriptor: TextureDescriptor | None = None) -> Glyph:
         """Create a glyph using the given image.
@@ -491,4 +537,31 @@ class Font:
         return glyphs
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self.name}')"
+        return f"{self.__class__.__name__}('name={self.name}, size={self.size})')"
+
+
+# Font Table Mappings
+_weight_class_to_weight = {
+    100: Weight.THIN,
+    200: Weight.EXTRALIGHT,  # Ultralight
+    300: Weight.LIGHT,
+    400: Weight.NORMAL,  # REGULAR
+    500: Weight.MEDIUM,
+    600: Weight.SEMIBOLD,  # DEMIBOLD
+    700: Weight.BOLD,
+    800: Weight.EXTRABOLD,  # ULTRABOLD
+    900: Weight.BLACK,  # HEAVY
+    950: Weight.EXTRABLACK,
+}
+
+_width_class_to_stretch = {
+    1: Stretch.ULTRACONDENSED,
+    2: Stretch.EXTRACONDENSED,
+    3: Stretch.CONDENSED,
+    4: Stretch.SEMICONDENSED,
+    5: Stretch.NORMAL,
+    6: Stretch.SEMIEXPANDED,
+    7: Stretch.EXPANDED,
+    8: Stretch.EXTRAEXPANDED,
+    9: Stretch.ULTRAEXPANDED,
+}

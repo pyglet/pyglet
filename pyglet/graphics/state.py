@@ -45,8 +45,12 @@ class State:
         when the draw list is being processed.
         """
 
-if "gl" in pyglet.options.backend:
+if pyglet.options.backend in ("opengl", "gles"):
     from pyglet.graphics.api.gl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401
+                                              ShaderUniformState,
+                                              UniformBufferState, DepthBufferComparison, ScissorState)
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401
                                               ShaderUniformState,
                                               UniformBufferState, DepthBufferComparison, ScissorState)
 elif pyglet.options.backend == "vulkan":

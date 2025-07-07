@@ -24,6 +24,7 @@ CFURLRef = c_void_p
 CFStringRef = c_void_p
 CFURLPathStyle = c_int
 CFDataRef = c_void_p
+CTRunRef = c_void_p
 
 cf.CFStringCreateWithCString.restype = c_void_p
 cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
@@ -45,6 +46,9 @@ cf.CFStringGetTypeID.argtypes = []
 
 cf.CFAttributedStringCreate.restype = c_void_p
 cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
+
+cf.CFShow.restype = None
+cf.CFShow.argtypes = [c_void_p]
 
 # Core Foundation type to Python type conversion functions
 
@@ -647,6 +651,15 @@ ct.CTFontCopyFamilyName.argtypes = [c_void_p]
 ct.CTFontCopyFullName.restype = c_void_p
 ct.CTFontCopyFullName.argtypes = [c_void_p]
 
+ct.CTFontCopyPostScriptName.restype = c_void_p
+ct.CTFontCopyPostScriptName.argtypes = [c_void_p]
+
+ct.CTFontCreateUIFontForLanguage.restype = c_void_p
+ct.CTFontCreateUIFontForLanguage.argtypes = [c_uint32, c_double, c_void_p]
+
+ct.CTFontCreateCopyWithSymbolicTraits.restype = c_void_p
+ct.CTFontCreateCopyWithSymbolicTraits.argtypes = [c_void_p, CGFloat, c_void_p, c_uint32, c_uint32]
+
 ct.CTFontCreateWithFontDescriptor.restype = c_void_p
 ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
 
@@ -664,6 +677,21 @@ ct.CTFontDescriptorCreateMatchingFontDescriptor.argtypes = [c_void_p, c_void_p]
 
 ct.CTFontCopyTraits.restype = c_void_p
 ct.CTFontCopyTraits.argtypes = [c_void_p]
+
+ct.CTLineGetGlyphRuns.restype = c_void_p  # CFArrayRef
+ct.CTLineGetGlyphRuns.argtypes = [c_void_p]  # CTLineRef
+
+ct.CTRunGetGlyphCount.restype = CFIndex
+ct.CTRunGetGlyphCount.argtypes = [CTRunRef]
+
+ct.CTRunGetGlyphs.restype = None
+ct.CTRunGetGlyphs.argtypes = [CTRunRef, CFRange, POINTER(CGGlyph)]
+
+ct.CTRunGetPositions.restype = None
+ct.CTRunGetPositions.argtypes = [CTRunRef, CFRange, POINTER(CGPoint)]
+
+ct.CTRunGetAttributes.restype = c_void_p
+ct.CTRunGetAttributes.argtypes = [CTRunRef]
 
 kCTFontURLAttribute = c_void_p.in_dll(ct, 'kCTFontURLAttribute')
 

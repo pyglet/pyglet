@@ -235,7 +235,6 @@ class VertexDomain:
     _property_dict: dict[str, property]
     _vertexlist_class: type
 
-    _initial_count: int = 16
     _vertex_class: type[VertexList] = VertexList
 
     def __init__(self, attribute_meta: dict[str, dict[str, Any]]) -> None:  # noqa: D107

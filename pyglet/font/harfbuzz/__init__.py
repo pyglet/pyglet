@@ -51,7 +51,7 @@ elif sys.maxunicode == 0xFFFF:  # UTF-16
 
 def get_resource_from_ct_font(font: QuartzFont):
     """Get a harfbuzz resource object from a CoreText (Mac) font."""
-    key = (font.name, font.weight, font.italic, font.stretch)
+    key = (font.name, font.weight, font.style, font.stretch)
     if key in _hb_cache:
         return _hb_cache[key]
 
@@ -64,7 +64,7 @@ def get_resource_from_ct_font(font: QuartzFont):
 
 def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
     """Get a harfbuzz resource object from a DirectWrite (Windows) font."""
-    key = (font.name, font.weight, font.italic, font.stretch)
+    key = (font.name, font.weight, font.style, font.stretch)
     if key in _hb_cache:
         return _hb_cache[key]
 
@@ -79,7 +79,7 @@ def get_resource_from_dw_font(font: Win32DirectWriteFont) -> _HarfbuzzResources:
 
 def get_resource_from_ft_font(font: FreeTypeFont) -> _HarfbuzzResources:
     """Get a harfbuzz resource object from a FreeType (Linux) font."""
-    key = (font.name, font.weight, font.italic, font.stretch)
+    key = (font.name, font.weight, font.style, font.stretch)
     if key in _hb_cache:
         return _hb_cache[key]
 
