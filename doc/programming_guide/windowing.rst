@@ -172,9 +172,9 @@ Window style
 ^^^^^^^^^^^^
 
 Non-fullscreen windows can be created in one of six styles: default, dialog,
-tool, borderless, transparent, or overlay. Transparent and overlay windows are
-only implemented for Windows, not Mac OS X. Examples of the appearances of each 
-of these styles under Windows and Mac OS X 13.2 are shown below.
+tool, borderless, transparent, or overlay. Transparent and overlay windows both
+set a transparent framebuffer if the graphics card and windowing system both allow it.
+
 
     .. list-table::
         :header-rows: 1
@@ -196,24 +196,30 @@ of these styles under Windows and Mac OS X 13.2 are shown below.
           - .. image:: img/window_osx_borderless.png
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TRANSPARENT`
           - .. image:: img/window_xp_transparent.png
-          - <Not Implemented>
+          - Implemented, not pictured.
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_OVERLAY`
           - .. image:: img/window_xp_overlay.png
-          - <Not Implemented>
+          - Implemented, not pictured.
 
 Non-resizable variants of these window styles may appear slightly different
 (for example, the maximize button will either be disabled or absent).
 
 Besides the change in appearance, the window styles affect how the window
 behaves.  For example, tool windows do not usually appear in the task bar and
-cannot receive keyboard focus.  Dialog windows cannot be minimized. Overlay's
-require custom sizing and moving of the respective window.
-the appropriate window style for your windows means your application will
-behave correctly for the platform on which it is running, however that
-behaviour may not be consistent across Windows, Linux and Mac OS X.
+cannot receive keyboard focus.  Dialog windows cannot be minimized.
+
+Choosing the appropriate window style for your window means your application should
+behave correctly for the platform on which it is running. However, keep in mind, certain window
+behaviour is ultimately controlled by the underlying operating system and may have unexpected behavior
+depending on your usage. It would be pragmatic to test your u case on all operating systems you plan to
+support with your application.
 
 The appearance and behaviour of windows in Linux will vary greatly depending
 on the distribution, window manager and user preferences.
+
+Overlay windows (:py:attr:`~pyglet.window.Window.WINDOW_STYLE_OVERLAY`)
+require custom sizing and moving of the respective window. By default, overlay's are always on top,
+and do not accept mouse clicks.
 
 Borderless windows (:py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`)
 are not decorated by the operating system at all, and have no way to be resized
