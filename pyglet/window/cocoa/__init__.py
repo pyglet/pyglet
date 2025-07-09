@@ -174,7 +174,7 @@ class CocoaWindow(BaseWindow):
                 self._nswindow.setHasShadow_(False)
 
                 if self._style == "overlay":
-                    self._set_mouse_passthrough(True)
+                    self.set_mouse_passthrough(True)
                     self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
 
             self._nswindow.setContentView_(self._nsview)
@@ -232,7 +232,7 @@ class CocoaWindow(BaseWindow):
 
         return 1.0
 
-    def _set_mouse_passthrough(self, state: bool) -> None:
+    def set_mouse_passthrough(self, state: bool) -> None:
         with AutoReleasePool():
             self._nswindow.setIgnoresMouseEvents_(state)
 
