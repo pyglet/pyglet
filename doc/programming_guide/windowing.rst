@@ -211,7 +211,7 @@ cannot receive keyboard focus.  Dialog windows cannot be minimized.
 Choosing the appropriate window style for your window means your application should
 behave correctly for the platform on which it is running. However, keep in mind, certain window
 behaviour is ultimately controlled by the underlying operating system and may have unexpected behavior
-depending on your usage. It would be pragmatic to test your u case on all operating systems you plan to
+depending on your usage. It would be pragmatic to test your use case on all operating systems you plan to
 support with your application.
 
 The appearance and behaviour of windows in Linux will vary greatly depending
