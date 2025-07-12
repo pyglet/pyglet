@@ -406,6 +406,49 @@ XSyncGetPriority = _lib.XSyncGetPriority
 XSyncGetPriority.restype = c_int
 XSyncGetPriority.argtypes = [POINTER(Display), XID, POINTER(c_int)]
 
+# Shape kind
+ShapeBounding = 0
+ShapeClip = 1
+ShapeInput = 2
+
+# Shape operation
+ShapeSet = 0
+ShapeUnion = 1
+ShapeIntersect = 2
+ShapeSubtract = 3
+ShapeInvert = 4
+
+XShapeCombineRegion = _lib.XShapeCombineRegion
+XShapeCombineRegion.argtypes = [
+    POINTER(Display),
+    c_void_p,
+    ctypes.c_int,  # shape kind
+    ctypes.c_int, ctypes.c_int,  # x, y offset
+    c_void_p,
+    ctypes.c_int   # ShapeOp
+]
+
+XShapeCombineMask = _lib.XShapeCombineMask
+XShapeCombineMask.argtypes = [
+    Display,       # *display
+    c_void_p,        # dest window
+    ctypes.c_int,  # shape_kind (e.g., ShapeInput)
+    ctypes.c_int,  # x offset
+    ctypes.c_int,  # y offset
+    ctypes.c_ulong,  # Pixmap (can be 0 for None)
+    ctypes.c_int   # ShapeOp (e.g., ShapeSet)
+]
+XShapeCombineMask.restype = None
+
+XShapeQueryExtension = _lib.XShapeQueryExtension
+XShapeQueryExtension.argtypes = [Display, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
+XShapeQueryExtension.restype = Bool
+
+def has_shape_support(display: Display) -> bool:
+    event_base = ctypes.c_int()
+    error_base = ctypes.c_int()
+    return XShapeQueryExtension(display, ctypes.byref(event_base), ctypes.byref(error_base))
+
 
 __all__ = ['SYNC_MAJOR_VERSION', 'SYNC_MINOR_VERSION', 'X_SyncInitialize',
 'X_SyncListSystemCounters', 'X_SyncCreateCounter', 'X_SyncSetCounter',

@@ -5,6 +5,7 @@ from ctypes import Structure, c_ushort, c_ulong, c_int, c_void_p, POINTER
 import pyglet.lib
 from pyglet.libs.linux.x11.xlib import Visual
 
+lib = None
 try:
     lib = pyglet.lib.load_library("Xrender")
 except ImportError:

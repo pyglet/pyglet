@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from _ctypes import _Pointer
 from ctypes import POINTER, byref, c_int, c_uint, cast
 from typing import TYPE_CHECKING, NoReturn
 
@@ -9,6 +10,8 @@ from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
 from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
 from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
 from pyglet.libs.linux.x11 import xlib
+from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
+
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLBackend
@@ -42,6 +45,10 @@ class XlibOpenGLConfig(OpenGLConfig):
         configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
 
         result = [XlibGLWindowConfig(window, c, self) for c in configs]
+
+        # If we intend to have a transparent framebuffer.
+        if self.transparent_framebuffer:
+            result = [fb_cf for fb_cf in result if fb_cf.transparent]
 
         # If we intend to have a transparent framebuffer.
         if self.transparent_framebuffer:
@@ -95,13 +102,12 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
                  config: XlibOpenGLConfig) -> None:
         super().__init__(window, config)
 
+        self.fbconfig = fbconfig
         self.transparent = False
-
-        self._fbconfig = fbconfig
 
         for name, attr in self.attribute_ids.items():
             value = c_int()
-            result = glx.glXGetFBConfigAttrib(self._window._x_display, self._fbconfig, attr,  # noqa: SLF001
+            result = glx.glXGetFBConfigAttrib(self._window._x_display, self.fbconfig, attr,  # noqa: SLF001
                                               byref(value))
             if result >= 0:
                 setattr(self, name, value.value)
@@ -110,13 +116,20 @@ class XlibGLWindowConfig(OpenGLWindowConfig):
         # queried for it. Even if a config supports alpha_size 8 and depth_size 32, there is no
         # guarantee the visual info supports that same configuration.
         if config.transparent_framebuffer:
-            xvi_ptr = glx.glXGetVisualFromFBConfig(self._window._x_display, self._fbconfig)  # noqa: SLF001
+            xvi_ptr = glx.glXGetVisualFromFBConfig(self._window._x_display, self.fbconfig)  # noqa: SLF001
             if xvi_ptr:
                 self.transparent = window._is_visual_transparent(xvi_ptr.contents.visual)  # noqa: SLF001
                 xlib.XFree(xvi_ptr)
 
+    def _is_visual_transparent(self, visual: _Pointer[xlib.Visual]) -> bool:
+        if not XRenderFindVisualFormat:
+            return False
+
+        xrender_format = XRenderFindVisualFormat(self.canvas.display._display, visual)
+        return xrender_format and xrender_format.contents.direct.alphaMask != 0
+
     def get_visual_info(self) -> glx.XVisualInfo:
-        return glx.glXGetVisualFromFBConfig(self._window._x_display, self._fbconfig).contents  # noqa: SLF001
+        return glx.glXGetVisualFromFBConfig(self._window._x_display, self.fbconfig).contents  # noqa: SLF001
 
     def create_context(self, opengl_backend: OpenGLBackend, share: XlibContext | None) -> XlibContext:
         return XlibContext(opengl_backend, self._window, self, share)
@@ -210,7 +223,7 @@ class XlibContext(OpenGLSurfaceContext):
         attribs.append(0)
         attribs = (c_int * len(attribs))(*attribs)
 
-        return glxext_arb.glXCreateContextAttribsARB(self.window._x_display, self.config._fbconfig,  # noqa: SLF001
+        return glxext_arb.glXCreateContextAttribsARB(self.window._x_display, self.config.fbconfig,  # noqa: SLF001
                                                      share_context, True, attribs)
 
     def attach(self, window: XlibWindow) -> None:
@@ -220,7 +233,7 @@ class XlibContext(OpenGLSurfaceContext):
         super().attach(window)
 
         self.glx_window = glx.glXCreateWindow(self.x_display,
-                                              self.config._fbconfig, self.window._x_window,  # noqa: SLF001
+                                              self.config.fbconfig, self.window._x_window,  # noqa: SLF001
                                               None)
         self.set_current()
         self.attached = True

@@ -165,13 +165,17 @@ class Win32Window(BaseWindow):
         else:
             styles = {
                 self.WINDOW_STYLE_DEFAULT: (constants.WS_OVERLAPPEDWINDOW, 0),
-                self.WINDOW_STYLE_DIALOG: (constants.WS_OVERLAPPED | constants.WS_CAPTION | constants.WS_SYSMENU,
-                                           constants.WS_EX_DLGMODALFRAME),
-                self.WINDOW_STYLE_TOOL: (constants.WS_OVERLAPPED | constants.WS_CAPTION | constants.WS_SYSMENU,
-                                         constants.WS_EX_TOOLWINDOW),
+                self.WINDOW_STYLE_DIALOG: (
+                    constants.WS_OVERLAPPED | constants.WS_CAPTION | constants.WS_SYSMENU,
+                    constants.WS_EX_DLGMODALFRAME,
+                ),
+                self.WINDOW_STYLE_TOOL: (
+                    constants.WS_OVERLAPPED | constants.WS_CAPTION | constants.WS_SYSMENU,
+                    constants.WS_EX_TOOLWINDOW,
+                ),
                 self.WINDOW_STYLE_BORDERLESS: (constants.WS_POPUP, 0),
-                self.WINDOW_STYLE_TRANSPARENT: (constants.WS_OVERLAPPEDWINDOW, 0),
-                self.WINDOW_STYLE_OVERLAY: (constants.WS_POPUP, constants.WS_EX_TRANSPARENT),
+                self.WINDOW_STYLE_TRANSPARENT: (constants.WS_OVERLAPPEDWINDOW, constants.WS_EX_LAYERED),
+                self.WINDOW_STYLE_OVERLAY: (constants.WS_POPUP, constants.WS_EX_LAYERED | constants.WS_EX_TRANSPARENT),
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
 
@@ -397,6 +401,8 @@ class Win32Window(BaseWindow):
 
         _dwmapi.DwmEnableBlurBehindWindow(self._hwnd, byref(bb))
         _gdi32.DeleteObject(region)
+
+        _user32.SetLayeredWindowAttributes(self._hwnd, 0, 255, constants.LWA_ALPHA)
 
     def flip(self) -> None:
         self.draw_mouse_cursor()
