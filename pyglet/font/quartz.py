@@ -8,12 +8,11 @@ from typing import BinaryIO, TYPE_CHECKING
 
 import pyglet.image
 from pyglet.enums import Weight, Stretch
-from pyglet.font import base
-from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number
+from pyglet.font.base import Glyph, GlyphPosition, GlyphRenderer, Font, get_grapheme_clusters
+from pyglet.libs.darwin import CGFloat, cocoapy, kCTFontURLAttribute, cfnumber_to_number, CGPoint, CFRange
 from pyglet.font.harfbuzz import harfbuzz_available, get_resource_from_ct_font, get_harfbuzz_shaped_glyphs
 
 if TYPE_CHECKING:
-    from pyglet.font.base import Glyph, GlyphPosition
     from pyglet.font import FontManager
 
 
@@ -198,24 +197,24 @@ if harfbuzz_available():
     _destroy_callback_null = cast(None, hb_destroy_func_t)
 
 
-class QuartzGlyphRenderer(base.GlyphRenderer):
+class QuartzGlyphRenderer(GlyphRenderer):
     font: QuartzFont
 
     def __init__(self, font: QuartzFont) -> None:
         super().__init__(font)
         self.font = font
 
-    def render_index(self, ctFont: c_void_p, glyph_index: int):
+    def render_index(self, ct_font: c_void_p, glyph_index: int) -> None:
         # Create an attributed string using text and font.
         # Determine the glyphs involved for the text (if any)
         # Get a bounding rectangle for glyphs in string.
         count = 1
         glyphs = (cocoapy.CGGlyph * count)(glyph_index)
 
-        rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
+        rect = ct.CTFontGetBoundingRectsForGlyphs(ct_font, 0, glyphs, None, count)
 
         # Get advance for all glyphs in string.
-        advance = ct.CTFontGetAdvancesForGlyphs(ctFont, 0, glyphs, None, count)
+        advance = ct.CTFontGetAdvancesForGlyphs(ct_font, 0, glyphs, None, count)
 
         # Set image parameters:
         # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
@@ -248,13 +247,13 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         quartz.CGContextSetShouldAntialias(bitmap_context, pyglet.options.text_antialiasing)
         quartz.CGContextSetTextPosition(bitmap_context, -lsb, baseline)
         quartz.CGContextSetRGBFillColor(bitmap_context, 1, 1, 1, 1)
-        quartz.CGContextSetFont(bitmap_context, ctFont)
+        quartz.CGContextSetFont(bitmap_context, ct_font)
         quartz.CGContextSetFontSize(bitmap_context, self.font.pixel_size)
         quartz.CGContextTranslateCTM(bitmap_context, 0, height)  # Move origin to top-left
         quartz.CGContextScaleCTM(bitmap_context, 1, -1)  # Flip vertically
 
         positions = (cocoapy.CGPoint * 1)(*[cocoapy.CGPoint(0, 0)])
-        quartz.CTFontDrawGlyphs(ctFont, glyphs, positions, 1, bitmap_context)
+        quartz.CTFontDrawGlyphs(ct_font, glyphs, positions, 1, bitmap_context)
 
         # Create an image to get the data out.
         image_ref = c_void_p(quartz.CGBitmapContextCreateImage(bitmap_context))
@@ -281,7 +280,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         raise Exception("CG Image buffer could not be read.")
 
-    def render(self, text: str) -> base.Glyph:
+    def render(self, text: str) -> Glyph:
         # Using CTLineDraw seems to be the only way to make sure that the text
         # is drawn with the specified font when that font is a graphics font loaded from
         # memory.  For whatever reason, [NSAttributedString drawAtPoint:] ignores
@@ -400,8 +399,8 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         raise Exception("CG Image buffer could not be read.")
 
 
-class QuartzFont(base.Font):
-    glyph_renderer_class: type[base.GlyphRenderer] = QuartzGlyphRenderer
+class QuartzFont(Font):
+    glyph_renderer_class: type[GlyphRenderer] = QuartzGlyphRenderer
     _loaded_CGFont_table: dict[str, dict[int, tuple[c_void_p, bytes]]] = {}
 
     def __init__(
@@ -442,8 +441,6 @@ class QuartzFont(base.Font):
                 self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, self.pixel_size, None))
                 cf.CFRelease(descriptor)
                 assert self.ctFont, "Couldn't load font: " + name
-
-        print(self._get_font_style_traits(self.ctFont))
 
         string = c_void_p(ct.CTFontCopyFamilyName(self.ctFont))
         self._family_name = str(cocoapy.cfstring_to_string(string))
@@ -609,7 +606,6 @@ class QuartzFont(base.Font):
     @classmethod
     def have_font(cls: type[QuartzFont], name: str) -> bool:
         name = str(name)
-        print("cls._loaded_CGFont_table", cls._loaded_CGFont_table.keys())
         if name in cls._loaded_CGFont_table:
             return True
 
@@ -705,18 +701,86 @@ class QuartzFont(base.Font):
                 True if font_style != 0 else False,
                 _quartz_font_stretch_to_enum(font_width))
 
-    def render_glyph_indices(self, indices: list[int]) -> None:
+    def render_glyph_indices(self, ct_font: c_void_p, font_name: str, indices: list[int]) -> None:
         # Process any glyphs that have not been rendered.
         self._initialize_renderer()
 
         missing = set()
         for glyph_indice in set(indices):
-            if glyph_indice not in self.glyphs:
+            dict_key = (font_name, glyph_indice)
+            if dict_key not in self.glyphs:
                 missing.add(glyph_indice)
 
         # Missing glyphs, get their info.
         for glyph_indice in missing:
-            self.glyphs[glyph_indice] = self._glyph_renderer.render_index(glyph_indice)
+            self.glyphs[(font_name, glyph_indice)] = self._glyph_renderer.render_index(ct_font, glyph_indice)
+
+    def _get_shaped_glyphs(self, text: str) -> tuple[list[Glyph], list[GlyphPosition]]:
+        attributes = c_void_p(
+            cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks)
+        )
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, self.ctFont)
+        cf_str = cocoapy.CFSTR(text)
+        string = c_void_p(cf.CFAttributedStringCreate(None, cf_str, attributes))
+
+        line = c_void_p(ct.CTLineCreateWithAttributedString(string))
+        run_array = c_void_p(ct.CTLineGetGlyphRuns(line))
+        all_glyphs = []
+        all_positions = []
+        if run_array:
+            for run in cocoapy.cfarray_to_list(run_array):
+                count = ct.CTRunGetGlyphCount(run)
+
+                glyph_array = (cocoapy.CGGlyph * count)()
+                position_array = (CGPoint * count)()
+
+                run_attributes = c_void_p(ct.CTRunGetAttributes(run))
+
+                # Store Glyph by (font name, index ID), as run's can contain more than 1 font.
+                run_ft = c_void_p(cf.CFDictionaryGetValue(run_attributes, cocoapy.kCTFontAttributeName))
+                cfstring = c_void_p(ct.CTFontCopyPostScriptName(run_ft))
+                font_name = str(cocoapy.cfstring_to_string(cfstring))
+
+                ct.CTRunGetGlyphs(run, cocoapy.CFRange(0, 0), glyph_array)
+                ct.CTRunGetPositions(run, cocoapy.CFRange(0, 0), position_array)
+
+                # Get the offset of the run inside the full line
+                run_start_x = position_array[0].x
+                run_start_y = position_array[0].y
+
+                run_glyphs = []
+                run_positions = []
+
+                # Ensure all glyphs are rendered and stored.
+                self.render_glyph_indices(run_ft, font_name, list(glyph_array))
+
+                for i in range(count):
+                    glyph_index = glyph_array[i]
+
+                    glyph = self._glyph_renderer.render_index(run_ft, glyph_index)
+                    run_glyphs.append(glyph)
+                    current_x = position_array[i].x - run_start_x
+                    current_y = position_array[i].y - run_start_y
+
+                    if i + 1 < count:
+                        next_x = position_array[i + 1].x - run_start_x
+                        next_y = position_array[i + 1].y - run_start_y
+                        kerning_x = next_x - current_x - run_glyphs[i].advance
+                        kerning_y = next_y - current_y
+                    else:
+                        kerning_x = 0
+                        kerning_y = 0
+
+                    run_positions.append(GlyphPosition(kerning_x, kerning_y, 0, 0))
+
+                all_glyphs.extend(run_glyphs)
+                all_positions.extend(run_positions)
+
+        cf.CFRelease(string)
+        cf.CFRelease(attributes)
+        cf.CFRelease(cf_str)
+        cf.CFRelease(line)
+        return all_glyphs, all_positions
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
         """Create and return a list of Glyphs for `text`.
@@ -733,17 +797,20 @@ class QuartzFont(base.Font):
         self._initialize_renderer()
 
         if shaping:
+            if pyglet.options.text_shaping == "platform":
+                return self._get_shaped_glyphs(text)
+
             if pyglet.options.text_shaping == "harfbuzz" and harfbuzz_available():
                 return get_harfbuzz_shaped_glyphs(self, text)
 
         glyphs = []  # glyphs that are committed.
         offsets = []
-        for c in base.get_grapheme_clusters(str(text)):
+        for c in get_grapheme_clusters(str(text)):
             if c == "\t":
                 c = " "  # noqa: PLW2901
             if c not in self.glyphs:
                 self.glyphs[c] = self._glyph_renderer.render(c)
             glyphs.append(self.glyphs[c])
-            offsets.append(base.GlyphPosition(0, 0, 0, 0))
+            offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return glyphs, offsets
