@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import abc
+from typing import TYPE_CHECKING, Literal
 
 from pyglet import gl
 from pyglet import app
@@ -71,7 +72,7 @@ class Display:
         return [win for win in app.windows if win.display is self]
 
 
-class Screen:
+class Screen(abc.ABC):
     """A virtual monitor that supports fullscreen windows.
 
     Screens typically map onto a physical display such as a
@@ -208,7 +209,7 @@ class Screen:
     def set_mode(self, mode: ScreenMode) -> None:
         """Set the display mode for this screen.
 
-        The mode must be one previously returned by :meth:`get_mode` or 
+        The mode must be one previously returned by :meth:`get_mode` or
         :meth:`get_modes`.
         """
         raise NotImplementedError('abstract')
@@ -219,18 +220,33 @@ class Screen:
         raise NotImplementedError('abstract')
 
     def get_dpi(self):
-        """Get the DPI of the screen.
-
-        :rtype: int
-        """
+        """Get the DPI of the screen."""
         raise NotImplementedError('abstract')
 
-    def get_scale(self):
-        """Get the pixel scale ratio of the screen.
-
-        :rtype: float
-        """
+    def get_scale(self) -> float:
+        """Get the pixel scale ratio of the screen."""
         raise NotImplementedError('abstract')
+
+    @abc.abstractmethod
+    def get_display_id(self) -> str | int:
+        """Get a unique identifier for the screen.
+
+        .. versionadded: 2.1.8
+        """
+
+    @abc.abstractmethod
+    def get_monitor_name(self) -> str | Literal["Unknown"]:
+        """Get a friendly name for the screen if available.
+
+        Windows and Mac OSX report what the system will see the screen as.
+
+        On Linux, there is no API for retrieving the monitor name, other than manually decoding the EDID information.
+        Instead, it will return the connection name.
+
+        If no name can be queried, a default name of Unknown will be returned.
+
+        .. versionadded: 2.1.8
+        """
 
 
 class ScreenMode:

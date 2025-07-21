@@ -36,6 +36,11 @@ class CocoaScreen(Screen):
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
         self._ns_screen = self.get_nsscreen()
+        self._friendly_name = "Unknown"
+        if self._ns_screen is not None:
+            screen_name = self._ns_screen.localizedName()
+            if screen_name:
+                self._friendly_name = cfstring_to_string(screen_name)
 
     def get_nsscreen(self):
         """Returns the NSScreen instance that matches our CGDirectDisplayID."""
@@ -107,6 +112,16 @@ class CocoaScreen(Screen):
     def release_display(self):
         quartz.CGDisplayRelease(self._cg_display_id)
 
+    def get_display_id(self) -> str:
+        """Get a unique identifier for the screen."""
+        return self._cg_display_id
+
+    def get_monitor_name(self) -> str:
+        """Get a friendly name, if available.
+
+        For example, the make and model of the screen: Dell S2716DG
+        """
+        return self._friendly_name
 
 class CocoaScreenMode(ScreenMode):
 

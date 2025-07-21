@@ -1,3 +1,4 @@
+import ctypes
 from ctypes import byref, sizeof
 
 from pyglet.libs.win32 import _gdi32, _shcore, _user32
@@ -11,6 +12,9 @@ from pyglet.libs.win32.constants import (
     WINDOWS_8_1_OR_GREATER,
     WINDOWS_10_CREATORS_UPDATE_OR_GREATER,
     WINDOWS_VISTA_OR_GREATER,
+    QDC_ONLY_ACTIVE_PATHS,
+    DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
+    DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME,
 )
 from pyglet.libs.win32.context_managers import device_context
 from pyglet.libs.win32.types import (
@@ -20,6 +24,11 @@ from pyglet.libs.win32.types import (
     MONITORINFOEX,
     PROCESS_PER_MONITOR_DPI_AWARE,
     UINT,
+    DISPLAY_DEVICEW,
+    DISPLAYCONFIG_PATH_INFO,
+    UINT32,
+    DISPLAYCONFIG_SOURCE_DEVICE_NAME,
+    DISPLAYCONFIG_TARGET_DEVICE_NAME,
 )
 
 from .base import Canvas, Display, Screen, ScreenMode
@@ -64,6 +73,75 @@ class Win32Screen(Screen):
     def __init__(self, display, handle, x, y, width, height):
         super().__init__(display, x, y, width, height)
         self._handle = handle
+        self._device_name = self.get_device_name()  # \\.\DISPLAY1
+        self._friendly_name = self._get_friendly_name()
+
+    def _get_friendly_name_display_config_api(self) -> str:
+        """Get the friendly name of a monitor using the newer Display Configuration API.
+
+        This API is meant to replace EnumDisplayDevicesW, and should be more accurate.
+
+        Requires Windows Vista or higher."""
+
+        path_count = UINT32()
+        mode_count = UINT32()
+
+        result = _user32.GetDisplayConfigBufferSizes(
+            QDC_ONLY_ACTIVE_PATHS, ctypes.byref(path_count), ctypes.byref(mode_count)
+        )
+        if result != 0:
+            return f"Unknown"
+
+        paths = (DISPLAYCONFIG_PATH_INFO * path_count.value)()
+        modes = ctypes.create_string_buffer(64 * mode_count.value)  # dummy buffer
+
+        result = _user32.QueryDisplayConfig(
+            QDC_ONLY_ACTIVE_PATHS, ctypes.byref(path_count), paths, ctypes.byref(mode_count), modes, 0
+        )
+        if result != 0:
+            return "Unknown"
+
+        for i in range(path_count.value):
+            path = paths[i]
+
+            source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME()
+            source_name.header.adapterId = path.sourceInfo.adapterId
+            source_name.header.id = path.sourceInfo.id
+            source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME
+            source_name.header.size = ctypes.sizeof(source_name)
+
+            result = _user32.DisplayConfigGetDeviceInfo(ctypes.byref(source_name.header))
+            if result != 0:
+                continue
+
+            if source_name.viewGdiDeviceName != self._device_name:
+                continue
+
+            if not path.targetInfo.targetAvailable:
+                  continue
+
+            target_name = DISPLAYCONFIG_TARGET_DEVICE_NAME()
+
+            target_name.header.adapterId = path.targetInfo.adapterId
+            target_name.header.id = path.targetInfo.id
+            target_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME
+            target_name.header.size = ctypes.sizeof(target_name)
+
+            if _user32.DisplayConfigGetDeviceInfo(ctypes.byref(target_name.header)) == 0:
+                return target_name.monitorFriendlyDeviceName
+
+        return f"Unknown"
+
+    def _get_friendly_name(self) -> str:
+        if WINDOWS_VISTA_OR_GREATER:
+            return self._get_friendly_name_display_config_api()
+        else:
+            dd = DISPLAY_DEVICEW()
+            dd.cb = ctypes.sizeof(dd)
+            if _user32.EnumDisplayDevicesW(self._device_name, 0, ctypes.byref(dd), 0):
+                return dd.DeviceString
+
+        return "Unknown"
 
     def get_matching_configs(self, template):
         with device_context(None) as hdc:
@@ -75,10 +153,20 @@ class Win32Screen(Screen):
 
         return configs
 
-    def get_device_name(self):
+    def _get_monitor_info(self) -> MONITORINFOEX:
         info = MONITORINFOEX()
         info.cbSize = sizeof(MONITORINFOEX)
         _user32.GetMonitorInfoW(self._handle, byref(info))
+        return info
+
+    def get_display_id(self) -> str:
+        return self.get_device_name()
+
+    def get_monitor_name(self) -> str:
+        return self._friendly_name
+
+    def get_device_name(self):
+        info = self._get_monitor_info()
         return info.szDevice
 
     def get_dpi(self):
