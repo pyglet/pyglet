@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ctypes
+import pyglet
+import warnings
 from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast, _Pointer
 from typing import TYPE_CHECKING
 
@@ -60,8 +62,6 @@ def _error_handler(display, event):
     # driver bugs (and so the reports are useless).  Nevertheless, set
     # environment variable PYGLET_DEBUG_X11 to 1 to get dumps of the error
     # and a traceback (execution will continue).
-    import pyglet
-
     if pyglet.options['debug_x11']:
         event = event.contents
         buf = c_buffer(1024)
@@ -155,7 +155,6 @@ class XlibDisplay(XlibSelectDevice, Display):
 
                     crtc_info: xrandr.XRRCrtcInfo = crtc_info_ptr.contents
 
-                    print(ctypes.string_at(output_info.name, output_info.nameLen).decode())
                     self._screens.append(
                         XlibScreenXrandr(
                             self,
@@ -165,6 +164,7 @@ class XlibDisplay(XlibSelectDevice, Display):
                             crtc_info.height,
                             output_info.crtc,
                             output_id,
+                            ctypes.string_at(output_info.name, output_info.nameLen).decode(),
                         )
                     )
 
@@ -376,7 +376,7 @@ class XlibScreenXrandr(XlibScreen):
             crtc_info_ptr = xrandr.XRRGetCrtcInfo(self.display._display, res_ptr, self.crtc_id)
             if crtc_info_ptr:
                 crtc_info = crtc_info_ptr.contents
-                xrandr.XRRSetCrtcConfig(
+                status = xrandr.XRRSetCrtcConfig(
                     self.display._display,
                     res_ptr,
                     self.crtc_id,
@@ -388,6 +388,9 @@ class XlibScreenXrandr(XlibScreen):
                     crtc_info.outputs,
                     crtc_info.noutput,
                 )
+                if status != 0 and pyglet.options['debug_x11']:
+                    warnings.warn(f"Could not set screen mode: {status}")
+                xlib.XFlush(self.display._display)
 
                 self.width = mode.width
                 self.height = mode.height

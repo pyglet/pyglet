@@ -28,7 +28,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.display.xlib import XlibCanvas
+from pyglet.display.xlib import XlibCanvas, XlibScreenXinerama
 from pyglet.event import EventDispatcher
 from pyglet.libs.x11 import cursorfont, xlib
 from pyglet.util import asbytes
@@ -743,7 +743,10 @@ class XlibWindow(BaseWindow):
                 y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
-            elif self._fullscreen and not self.screen._xinerama:  # noqa: SLF001
+            elif self._fullscreen:  # noqa: SLF001
+                if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
+                    return
+
                 # Restrict to fullscreen area (prevent viewport scrolling)
                 self.set_mouse_position(0, 0)
                 r = xlib.XGrabPointer(self._x_display, self._view,
