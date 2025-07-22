@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 import ctypes
-import pyglet
 import warnings
-from ctypes import c_int, c_char_p, c_buffer, POINTER, byref, cast, _Pointer
+from ctypes import POINTER, byref, c_buffer, c_char_p, c_int, cast
 from typing import TYPE_CHECKING
 
-from pyglet.util import asbytes
-
+import pyglet
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
-
+from pyglet.libs.x11 import xlib
+from pyglet.util import asbytes
 
 from . import xlib_vidmoderestore
 from .base import Canvas, Display, Screen, ScreenMode
-
-from pyglet.libs.x11 import xlib
 
 if TYPE_CHECKING:
     from pyglet.gl import Config
@@ -89,9 +86,11 @@ class XlibDisplay(XlibSelectDevice, Display):
     _x_im = None  # X input method
     # TODO close _x_im when display connection closed.
     _enable_xsync = False
-    _screens = None  # Cache of get_screens()
+    _screens: list[XlibScreen | XlibScreenXrandr | XlibScreenXinerama]
 
     def __init__(self, name=None, x_screen=None):
+        self._screens = []
+
         if x_screen is None:
             x_screen = 0
 
@@ -126,10 +125,17 @@ class XlibDisplay(XlibSelectDevice, Display):
         # Add to event loop select list.  Assume we never go away.
         app.platform_event_loop.select_devices.add(self)
 
-    def get_screens(self) -> list[XlibScreen]:
-        if self._screens:
-            return self._screens
+    def get_default_screen(self) -> Screen:
+        screens = self.get_screens()
+        if _have_xrandr:
+            for screen in screens:
+                if screen.is_primary:
+                    return screen
 
+        # Couldn't find a default screen, use the first in the list.
+        return self._screens[0]
+
+    def get_screens(self) -> list[XlibScreen]:
         self._screens = []
 
         # Use XRandr if available, as it appears more maintained and widely supported.
@@ -138,6 +144,8 @@ class XlibDisplay(XlibSelectDevice, Display):
 
             res_ptr = xrandr.XRRGetScreenResources(self._display, root)
             if res_ptr:
+                primary = xrandr.XRRGetOutputPrimary(self._display, root)
+
                 res = res_ptr.contents
                 for i in range(res.noutput):
                     output_id = res.outputs[i]
@@ -165,9 +173,9 @@ class XlibDisplay(XlibSelectDevice, Display):
                             output_info.crtc,
                             output_id,
                             ctypes.string_at(output_info.name, output_info.nameLen).decode(),
-                        )
+                            output_id == primary,
+                        ),
                     )
-
                     xrandr.XRRFreeCrtcInfo(crtc_info_ptr)
                     xrandr.XRRFreeOutputInfo(output_info_ptr)
 
@@ -181,7 +189,7 @@ class XlibDisplay(XlibSelectDevice, Display):
             using_xinerama = number.value > 1
             for idx, info in enumerate(infos):
                 self._screens.append(
-                    XlibScreenXinerama(self, info.x_org, info.y_org, info.width, info.height, using_xinerama, idx)
+                    XlibScreenXinerama(self, info.x_org, info.y_org, info.width, info.height, using_xinerama, idx),
                 )
             xlib.XFree(infos)
         elif not self._screens:
@@ -193,10 +201,10 @@ class XlibDisplay(XlibSelectDevice, Display):
 
     # XlibSelectDevice interface
 
-    def fileno(self):
+    def fileno(self) -> int:
         return self._fileno
 
-    def select(self):
+    def select(self) -> None:
         e = xlib.XEvent()
         while xlib.XPending(self._display):
             xlib.XNextEvent(self._display, e)
@@ -213,7 +221,7 @@ class XlibDisplay(XlibSelectDevice, Display):
 
             dispatch(e)
 
-    def poll(self):
+    def poll(self) -> int:
         return xlib.XPending(self._display)
 
 
@@ -350,11 +358,17 @@ class XlibScreenXrandr(XlibScreen):
         crtc_id: int,
         output_id: int,
         name: str,
+        is_primary: bool,
     ):
         super().__init__(display, x, y, width, height)
         self.crtc_id = crtc_id
         self.output_id = output_id
         self.name = name
+        self._is_primary = is_primary
+
+    @property
+    def is_primary(self):
+        return self._is_primary
 
     @staticmethod
     def _get_mode_info(resource: xrandr.XRRScreenResources, rrmode_id: int) -> xrandr.XRRModeInfo | None:

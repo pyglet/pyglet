@@ -3,10 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Literal
 
-from pyglet import gl
-from pyglet import app
-from pyglet import window
-from pyglet import display
+from pyglet import app, display, gl, window
 
 if TYPE_CHECKING:
     from pyglet.gl import Config
@@ -56,9 +53,7 @@ class Display:
         raise NotImplementedError('abstract')
 
     def get_default_screen(self) -> Screen:
-        """Get the default (primary) screen as specified by the user's operating system
-        preferences.
-        """
+        """Get the default (primary) screen as specified by the user's operating system preferences."""
         screens = self.get_screens()
         for screen in screens:
             if screen.x == 0 and screen.y == 0:
@@ -85,12 +80,12 @@ class Screen(abc.ABC):
     give the global location of the top-left corner of the screen.  This is 
     useful for determining if screens are arranged above or next to one 
     another.
-    
+
     Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
     to obtain an instance of this class.
     """
 
-    def __init__(self, display: Display, x: int, y: int, width: int, height: int):
+    def __init__(self, display: Display, x: int, y: int, width: int, height: int) -> None:
         self.display = display
         """Display this screen belongs to."""
         self.x = x
@@ -215,8 +210,7 @@ class Screen(abc.ABC):
         raise NotImplementedError('abstract')
 
     def restore_mode(self) -> None:
-        """Restore the screen mode to the user's default.
-        """
+        """Restore the screen mode to the user's default."""
         raise NotImplementedError('abstract')
 
     def get_dpi(self):
