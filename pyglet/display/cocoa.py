@@ -19,8 +19,17 @@ class CocoaDisplay(Display):
         activeDisplays = (CGDirectDisplayID * maxDisplays)()
         count = c_uint32()
         quartz.CGGetActiveDisplayList(maxDisplays, activeDisplays, byref(count))
-        return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[:count.value]]
+        return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[: count.value]]
 
+    def get_default_screen(self) -> Screen:
+        main_id = quartz.CGMainDisplayID()
+
+        screens = self.get_screens()
+        for screen in screens:
+            if screen.get_display_id() == main_id:
+                return screen
+
+        return screens[0]
 
 class CocoaScreen(Screen):
 
