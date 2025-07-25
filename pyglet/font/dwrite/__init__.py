@@ -1158,7 +1158,7 @@ class Win32DirectWriteFont(base.Font):
         metrics = DWRITE_TEXT_METRICS()
         layout.GetMetrics(byref(metrics))
         layout.Release()
-        return round(metrics.width), round(metrics.height)
+        return round(metrics.widthIncludingTrailingWhitespace), round(metrics.height)
 
     @classmethod
     def have_font(cls: type[Win32DirectWriteFont], name: str) -> bool:
