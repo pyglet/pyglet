@@ -303,7 +303,7 @@ class XlibWindow(BaseWindow):
 
             # Overlay should allow mouse to pass through and stay on top.
             if self._style == "overlay":
-                self._set_mouse_passthrough(True)
+                self.set_mouse_passthrough(True)
                 self._set_wm_state("_NET_WM_STATE_ABOVE")
 
             # Create window resize sync counter
@@ -439,7 +439,7 @@ class XlibWindow(BaseWindow):
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
 
-    def _set_mouse_passthrough(self, state: bool) -> None:
+    def set_mouse_passthrough(self, state: bool) -> None:
         """Sets the clickable area in the application to an empty region if enabled."""
         if state:
             region = xlib.XCreateRegion()
