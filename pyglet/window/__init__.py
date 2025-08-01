@@ -864,7 +864,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         gl.glViewport(0, 0, max(framebuffer_size[0], 1), max(framebuffer_size[1], 1))
         w, h = self.get_size()
         self.projection = Mat4.orthogonal_projection(0, max(w, 1), 0, max(h, 1), -8192, 8192)
-        self._mouse_cursor.scaling = scale
+        self._mouse_cursor.scaling = self._get_mouse_scale()
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
@@ -1132,8 +1132,15 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if cursor is None:
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
-        self._mouse_cursor.scaling = self.scale
+        self._mouse_cursor.scaling = self._get_mouse_scale()
         self.set_mouse_platform_visible()
+
+    def _get_mouse_scale(self):
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return self.scale
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
         """Hide the mouse cursor and direct all mouse events to this window.

@@ -216,6 +216,13 @@ class CocoaWindow(BaseWindow):
 
         return 1.0
 
+    def _get_mouse_scale(self) -> float:
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return 1.0
+
     def _set_nice_window_location(self) -> None:
         # Construct a list of all visible windows that aren't us.
         visible_windows = [win for win in pyglet.app.windows if
