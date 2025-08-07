@@ -114,17 +114,19 @@ class TestElement(document.InlineElement):
 class BaseTestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.batch = pyglet.graphics.Batch()
-        self.document = pyglet.text.decode_attributed(doctext)
-        for i in range(0, len(doctext), 300):
-            self.document.insert_element(i, TestElement(60, -10, 70))
         self.margin = 2
+        self.batch = pyglet.graphics.Batch()
+
+    def create_layout(self, text: str, multiline: bool = True):
+        self.document = pyglet.text.decode_attributed(text)
+        for i in range(0, len(text), 300):
+            self.document.insert_element(i, TestElement(60, -10, 70))
+
         self.layout = IncrementalTextLayout(
             self.document,
             width=self.width - self.margin * 2,
             height=self.height - self.margin * 2,
-            multiline=True,
+            multiline=multiline,
             batch=self.batch)
         self.caret = caret.Caret(self.layout)
         self.push_handlers(self.caret)
@@ -156,7 +158,7 @@ class BaseTestWindow(pyglet.window.Window):
 
 
 @pytest.mark.requires_user_action
-class InlineElementTestCase(InteractiveTestCase):
+class InlineElementMultilineTestCase(InteractiveTestCase):
     """Test that inline elements are positioned correctly and are repositioned
     within an incremental layout.
 
@@ -170,6 +172,7 @@ class InlineElementTestCase(InteractiveTestCase):
         self.window = None
         try:
             self.window = BaseTestWindow(resizable=True, visible=False)
+            self.window.create_layout(doctext, multiline=True)
             self.window.set_visible()
             pyglet.app.run()
             self.user_verify('Pass test?', take_screenshot=False)
@@ -177,3 +180,25 @@ class InlineElementTestCase(InteractiveTestCase):
             if self.window:
                 self.window.close()
 
+@pytest.mark.requires_user_action
+class InlineElementSingleLineTestCase(InteractiveTestCase):
+    """Test that inline elements are positioned correctly and are repositioned
+    within an incremental layout.
+
+    Examine and type over the text in the window that appears.  There are several
+    elements drawn with grey boxes.  These should maintain their sizes and
+    relative document positions as the text is scrolled and edited.
+
+    Press ESC to exit the test.
+    """
+    def test_inline_elements(self):
+        self.window = None
+        try:
+            self.window = BaseTestWindow(resizable=True, visible=False)
+            self.window.create_layout("Lorem ipsum dolor sit amet.", multiline=False)
+            self.window.set_visible()
+            pyglet.app.run()
+            self.user_verify('Pass test?', take_screenshot=False)
+        finally:
+            if self.window:
+                self.window.close()
