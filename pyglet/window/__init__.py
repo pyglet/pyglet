@@ -825,6 +825,21 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         raise NotImplementedError
 
+    def set_mouse_passthrough(self, state: bool) -> None:
+        """Set whether the operating system will ignore mouse input from this window.
+
+        Behavior may differ across operating systems. This is typically used in window overlays with
+        transparent frame buffers.
+
+        Args:
+            state:
+                ``True`` will allow mouse input to pass through the window to anything behind it. Otherwise, ``False``
+                allows the window to accept focus again.
+
+        .. versionadded:: 2.1.8
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def minimize(self) -> None:
         """Minimize the window."""

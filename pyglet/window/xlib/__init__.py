@@ -28,7 +28,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
-from pyglet.display.xlib import XlibCanvas
+from pyglet.display.xlib import XlibCanvas, XlibScreenXinerama
 from pyglet.event import EventDispatcher
 from pyglet.libs.x11 import cursorfont, xlib
 from pyglet.util import asbytes
@@ -303,7 +303,7 @@ class XlibWindow(BaseWindow):
 
             # Overlay should allow mouse to pass through and stay on top.
             if self._style == "overlay":
-                self._set_mouse_passthrough(True)
+                self.set_mouse_passthrough(True)
                 self._set_wm_state("_NET_WM_STATE_ABOVE")
 
             # Create window resize sync counter
@@ -439,7 +439,7 @@ class XlibWindow(BaseWindow):
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
 
-    def _set_mouse_passthrough(self, state: bool) -> None:
+    def set_mouse_passthrough(self, state: bool) -> None:
         """Sets the clickable area in the application to an empty region if enabled."""
         if state:
             region = xlib.XCreateRegion()
@@ -743,7 +743,10 @@ class XlibWindow(BaseWindow):
                 y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
-            elif self._fullscreen and not self.screen._xinerama:  # noqa: SLF001
+            elif self._fullscreen:  # noqa: SLF001
+                if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
+                    return
+
                 # Restrict to fullscreen area (prevent viewport scrolling)
                 self.set_mouse_position(0, 0)
                 r = xlib.XGrabPointer(self._x_display, self._view,
