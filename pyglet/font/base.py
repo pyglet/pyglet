@@ -7,10 +7,9 @@ classes as a documented interface to the concrete classes.
 from __future__ import annotations
 
 import abc
-from dataclasses import dataclass
-
 import unicodedata
-from typing import BinaryIO, ClassVar
+from dataclasses import dataclass
+from typing import Any, BinaryIO, ClassVar
 
 from pyglet import image
 from pyglet.gl import GL_LINEAR, GL_RGBA, GL_TEXTURE_2D
@@ -63,7 +62,7 @@ def grapheme_break(left: str, left_cc: str, right: str, right_cc: str) -> bool:
         return False
 
     # GB9b: Do not break after Prepend characters
-    if left in _LOGICAL_ORDER_EXCEPTION:  # noqa: SIM103
+    if left in _LOGICAL_ORDER_EXCEPTION:
         return False
 
     # GB999: Default to break
@@ -259,7 +258,11 @@ class Font:
             ``GL_NEAREST`` to prevent aliasing with pixelated fonts.
     """
     #: :meta private:
-    glyphs: dict[str | int, Glyph]
+    glyphs: dict[str | int | tuple[Any, int], Glyph]
+    # Glyphs can be cached in various ways:
+    # str: if no text shaping
+    # int: glyph index, if no fallback behavior.
+    # tuple: with a unique font identifier and glyph index
 
     texture_width: int = 512
     texture_height: int = 512

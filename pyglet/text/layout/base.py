@@ -15,6 +15,7 @@ from typing import (
 
 import pyglet
 from pyglet import graphics
+from pyglet.font.base import GlyphPosition
 from pyglet.gl import (
     GL_BLEND,
     GL_DEPTH_ATTACHMENT,
@@ -33,7 +34,6 @@ from pyglet.gl import (
 )
 from pyglet.graphics import Group
 from pyglet.text import runlist
-from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
@@ -1918,7 +1918,7 @@ class TextLayout:
                 owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs, os))
             if owner is None:
                 # Assume glyphs are already boxes.
-                for kern, glyph in owner_glyphs:
+                for _, glyph, _ in owner_glyphs:
                     line.add_box(glyph)
             else:
                 line.add_box(_GlyphBox(owner, font, owner_glyphs, width))

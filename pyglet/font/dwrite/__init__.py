@@ -207,10 +207,12 @@ class _DWriteTextRenderer(com.COMObject):
         self.pixels_per_dip = 1.0
         self.dmatrix = DWRITE_MATRIX()
 
-    def _get_font_reference(self, font_face: IDWriteFontFace) -> tuple[c_void_p, int]:
+    @staticmethod
+    def _get_font_reference(font_face: IDWriteFontFace) -> tuple[int, int]:
         """Unique identifier for each font face."""
         font_file = _get_font_file(font_face)
-        return _get_font_ref(font_file, release_file=True)
+        ptr, size = _get_font_ref(font_file, release_file=True)
+        return ptr.value, size
 
     def DrawUnderline(self, *_args) -> int:  # noqa: ANN002, N802
         return com.E_NOTIMPL
@@ -247,6 +249,9 @@ class _DWriteTextRenderer(com.COMObject):
         glyph_renderer: DirectWriteGlyphRenderer = cast(drawing_context, py_object).value
         glyph_run = glyph_run_ptr.contents
 
+        # Font reference to cache glyphs otherwise cache misses may occur with other glyph indices.
+        font_ref = self._get_font_reference(glyph_run.fontFace)
+
         if glyph_run.glyphCount == 0:
             glyph = glyph_renderer.font._zero_glyph  # noqa: SLF001
             glyph_renderer.current_glyphs.append(glyph)
@@ -257,7 +262,7 @@ class _DWriteTextRenderer(com.COMObject):
         missing = []
         for i in range(glyph_run.glyphCount):
             glyph_indice = glyph_run.glyphIndices[i]
-            if glyph_indice not in glyph_renderer.font.glyphs and glyph_indice not in missing:
+            if (font_ref, glyph_indice) not in glyph_renderer.font.glyphs and glyph_indice not in missing:
                 missing.append(glyph_indice)
 
         # Missing glyphs, get their info.
@@ -266,13 +271,13 @@ class _DWriteTextRenderer(com.COMObject):
 
             for idx, glyph_indice in enumerate(missing):
                 glyph = glyph_renderer.render_single_glyph(glyph_run.fontFace, glyph_indice, metrics[idx], mode)
-                glyph_renderer.font.glyphs[glyph_indice] = glyph
+                glyph_renderer.font.glyphs[(font_ref, glyph_indice)] = glyph
 
         # Set glyphs for run.
         current = []
         for i in range(glyph_run.glyphCount):
             glyph_indice = glyph_run.glyphIndices[i]
-            glyph = glyph_renderer.font.glyphs[glyph_indice]
+            glyph = glyph_renderer.font.glyphs[(font_ref, glyph_indice)]
             current.append(glyph)
             # In some cases (italics) the offsets may be NULL.
             if glyph_run.glyphOffsets:
