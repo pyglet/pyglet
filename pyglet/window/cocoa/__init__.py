@@ -232,6 +232,13 @@ class CocoaWindow(BaseWindow):
 
         return 1.0
 
+    def _get_mouse_scale(self) -> float:
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return 1.0
+
     def set_mouse_passthrough(self, state: bool) -> None:
         with AutoReleasePool():
             self._nswindow.setIgnoresMouseEvents_(state)
