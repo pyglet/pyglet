@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import sys
 import warnings
-from collections.abc import ItemsView, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
@@ -40,11 +40,6 @@ if compat_platform == "cygwin":
     ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
-
-
-_enable_optimisations = not __debug__
-if getattr(sys, "frozen", None):
-    _enable_optimisations = True
 
 
 @dataclass
@@ -332,6 +327,11 @@ for _option_name, _type_str in options.__annotations__.items():
             setattr(options, _option_name, _value)
         else:
             warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
+
+
+if (__debug__ is False) or getattr(sys, "frozen", False):
+    options.debug_gl = False
+
 
 # Call tracing
 # ------------
