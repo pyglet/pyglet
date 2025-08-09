@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import os
 import sys
+import warnings
 from collections.abc import ItemsView, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
-
 if TYPE_CHECKING:
     from types import FrameType
     from typing import Any, Callable, ItemsView, Sized
@@ -331,7 +331,7 @@ for _option_name, _type_str in options.__annotations__.items():
         elif 'Literal' in _type_str and _value in _type_str:
             setattr(options, _option_name, _value)
         else:
-            print(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
+            warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
 
 # Call tracing
 # ------------
