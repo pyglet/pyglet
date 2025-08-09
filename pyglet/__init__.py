@@ -30,20 +30,21 @@ compat_platform = sys.platform
 if "bsd" in compat_platform:
     compat_platform = "linux-compat"
 
+if compat_platform == "cygwin":
+    # This hack pretends that the posix-like ctypes provides windows
+    # functionality.  COM does not work with this hack, so there is no
+    # DirectSound support.
+    import ctypes
+
+    ctypes.windll = ctypes.cdll
+    ctypes.oledll = ctypes.cdll
+    ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
+    ctypes.HRESULT = ctypes.c_long
+
+
 _enable_optimisations = not __debug__
 if getattr(sys, "frozen", None):
     _enable_optimisations = True
-
-
-_SPECIAL_OPTION_VALIDATORS = {
-    "audio": lambda x: isinstance(x, Sequence),
-    "vsync": lambda x: x is None or isinstance(x, bool),
-}
-
-_OPTION_TYPE_VALIDATORS = {
-    "bool": lambda x: isinstance(x, bool),
-    "int": lambda x: isinstance(x, int),
-}
 
 
 @dataclass
@@ -311,42 +312,26 @@ class Options:
         return self.__dict__[item]
 
     def __setitem__(self, key: str, value: Any) -> None:
-        assert key in self.__annotations__, f"Invalid option name: '{key}'"
-        assert (_SPECIAL_OPTION_VALIDATORS.get(key) or _OPTION_TYPE_VALIDATORS[self.__annotations__[key]])(value), \
-            f"Invalid type: '{type(value)}' for '{key}'"
         self.__dict__[key] = value
 
 
 #: Instance of :py:class:`~pyglet.Options` used to set runtime options.
 options: Options = Options()
 
-_OPTION_TYPE_REMAPS = {
-    "audio": "sequence",
-    "vsync": "bool",
-}
 
-for _key, _type in options.__annotations__.items():
+for _option_name, _type_str in options.__annotations__.items():
     """Check Environment Variables for pyglet options"""
-    if _value := os.environ.get(f"PYGLET_{_key.upper()}"):
-        _type = _OPTION_TYPE_REMAPS.get(_key, _type)
-        if _type == 'sequence':
-            options[_key] = _value.split(",")
-        elif _type == 'bool':
-            options[_key] = _value in ("true", "TRUE", "True", "1")
-        elif _type == 'int':
-            options[_key] = int(_value)
-
-
-if compat_platform == "cygwin":
-    # This hack pretends that the posix-like ctypes provides windows
-    # functionality.  COM does not work with this hack, so there is no
-    # DirectSound support.
-    import ctypes
-
-    ctypes.windll = ctypes.cdll
-    ctypes.oledll = ctypes.cdll
-    ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
-    ctypes.HRESULT = ctypes.c_long
+    if _value := os.environ.get(f"PYGLET_{_option_name.upper()}"):
+        if 'Sequence' in _type_str:
+            setattr(options, _option_name, _value.split(","))
+        elif 'bool' in _type_str:
+            setattr(options, _option_name, _value in ("true", "TRUE", "True", "1"))
+        elif 'int' in _type_str:
+            setattr(options, _option_name, int(_value))
+        elif 'Literal' in _type_str and _value in _type_str:
+            setattr(options, _option_name, _value)
+        else:
+            print(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")
 
 # Call tracing
 # ------------
