@@ -440,6 +440,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  style: str | None = WINDOW_STYLE_DEFAULT,
                  fullscreen: bool = False,
                  visible: bool = True,
+                 minimized: bool = False,
                  vsync: bool = True,
                  file_drops: bool = False,
                  display: Display | None = None,
@@ -483,6 +484,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                 creation.  Defaults to True.  Set this to False if you
                 would like to change attributes of the window before
                 having it appear to the user.
+            minimized:
+                Determines if the window is minimized immediately to the taskbar after
+                creation.  Defaults to False.
             vsync:
                 If True, buffer flips are synchronised to the primary screen's
                 vertical retrace, eliminating flicker.
@@ -595,6 +599,9 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if visible:
             self.set_visible(True)
             self.activate()
+
+        if minimized:
+            self.minimize()
 
     def _create_projection(self) -> None:
         self._default_program = shader.ShaderProgram(
