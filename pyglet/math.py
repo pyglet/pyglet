@@ -301,8 +301,7 @@ class Vec2(_typing.NamedTuple):
         This simply means the vector will have a length of 1.0. If the vector
         has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2)
-        if d:
+        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
@@ -873,8 +872,7 @@ class Vec4(_typing.NamedTuple):
         This means that the vector will have the same direction, but a length of 1.0.
         If the vector has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
-        if d:
+        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
@@ -1358,7 +1356,26 @@ class Mat4(_typing.NamedTuple):
     def __matmul__(self, other: Mat4) -> Mat4: ...
 
     def __matmul__(self, other):
-        if isinstance(other, Vec4):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
+            b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
+            # Multiply and sum rows * columns:
+            return Mat4(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
+                a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
+                a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
+                a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
+                # Column 4
+                a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
+                a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
+            )
+        except (ValueError, TypeError):
             x, y, z, w = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
@@ -1369,28 +1386,6 @@ class Mat4(_typing.NamedTuple):
                 x * a14 + y * a24 + z * a34 + w * a44,
             )
 
-        if not isinstance(other, Mat4):
-            msg = "Can only multiply with Mat4 or Vec4 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
-        b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
-        # Multiply and sum rows * columns:
-        return Mat4(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
-            a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
-            a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
-            a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
-            # Column 4
-            a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
-            a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
-        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
