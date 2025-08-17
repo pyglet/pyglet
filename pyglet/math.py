@@ -1052,7 +1052,21 @@ class Mat3(_typing.NamedTuple):
     def __matmul__(self, other: Mat3) -> Mat3: ...
 
     def __matmul__(self, other) -> Vec3 | Mat3:
-        if isinstance(other, Vec3):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+            b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
+
+            # Multiply and sum rows * columns
+            return Mat3(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
+            )
+        except ValueError:
             x, y, z = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
@@ -1061,24 +1075,6 @@ class Mat3(_typing.NamedTuple):
                 a12 * x + a22 * y + a32 * z,
                 a13 * x + a23 * y + a33 * z,
             )
-
-        if not isinstance(other, Mat3):
-            msg = "Can only multiply with Mat3 or Vec3 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
-        b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
-
-        # Multiply and sum rows * columns
-        return Mat3(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
-        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
@@ -1375,7 +1371,7 @@ class Mat4(_typing.NamedTuple):
                 a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
                 a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
             )
-        except (ValueError, TypeError):
+        except ValueError:
             x, y, z, w = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
@@ -1385,7 +1381,6 @@ class Mat4(_typing.NamedTuple):
                 x * a13 + y * a23 + z * a33 + w * a43,
                 x * a14 + y * a24 + z * a34 + w * a44,
             )
-
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
