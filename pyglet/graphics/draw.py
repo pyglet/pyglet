@@ -210,6 +210,28 @@ class Group:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(order={self._order})"
 
+    def set_state_all(self) -> None:
+        """Call all state setting functions involved in this group."""
+        for state in self.states:
+            if state.dependents:
+                for dependant_state in state.generate_dependent_states():
+                    if dependant_state.sets_state:
+                        dependant_state.set_state()
+
+            if state.sets_state:
+                state.set_state()
+
+    def unset_state_all(self) -> None:
+        """Call all unstate setting functions involved in this group."""
+        for state in self.states:
+            if state.unsets_state:
+                state.unset_state()
+
+            if state.dependents:
+                for dependant_state in state.generate_dependent_states():
+                    if dependant_state.unsets_state:
+                        dependant_state.unset_state()
+
     def set_state_recursive(self) -> None:
         """Set this group and its ancestry.
 
@@ -219,14 +241,14 @@ class Group:
         """
         if self.parent:
             self.parent.set_state_recursive()
-        self.set_state()
+        self.set_state_all()
 
     def unset_state_recursive(self) -> None:
         """Unset this group and its ancestry.
 
         The inverse of ``set_state_recursive``.
         """
-        self.unset_state()
+        self.unset_state_all()
         if self.parent:
             self.parent.unset_state_recursive()
 
