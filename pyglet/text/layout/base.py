@@ -36,7 +36,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 if pyglet.options.backend == "opengl":
     from pyglet.graphics.api.gl.text import (
         get_default_decoration_shader,
-        get_default_image_layout_shader,
+        get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
     )
 elif pyglet.options.backend in ("gl2", "gles2"):
@@ -48,6 +48,7 @@ elif pyglet.options.backend in ("gl2", "gles2"):
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.text import (
         get_default_decoration_shader,
+        get_default_image_layout_shader,  # noqa: F401
         get_default_layout_shader,
     )
 elif pyglet.options.backend == "vulkan":

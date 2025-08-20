@@ -505,6 +505,7 @@ if TYPE_CHECKING:
         clock,
         customtypes,
         display,
+        enums,
         event,
         font,
         graphics,
@@ -526,6 +527,7 @@ else:
     clock = _ModuleProxy("clock")  # type: ignore
     customtypes = _ModuleProxy("customtypes")  # type: ignore
     display = _ModuleProxy("display")  # type: ignore
+    enums = _ModuleProxy("enums")   # type: ignore
     event = _ModuleProxy("event")  # type: ignore
     font = _ModuleProxy("font")  # type: ignore
     graphics = _ModuleProxy("graphics")  # type: ignore
