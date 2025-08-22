@@ -13,10 +13,7 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-from _ctypes import Array
 
-import pyglet
-from pyglet.customtypes import CType, CTypesPointer
 from pyglet.graphics.api.gl import (
     GL_ARRAY_BUFFER,
     GL_DYNAMIC_DRAW,
@@ -33,8 +30,9 @@ from pyglet.graphics.api.gl import (
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from pyglet.graphics.shader import Attribute
-
+    from pyglet.customtypes import CType, CTypesPointer
+    from pyglet.graphics.shader import Attribute, GraphicsAttribute
+    from ctypes import Array, _SimpleCData
 
 class BufferObject(AbstractBuffer):
     """Lightweight representation of an OpenGL Buffer Object.
@@ -164,16 +162,16 @@ class BackedBufferObject(BufferObject):
     OpenGL calls are needed, which can increase performance at the expense of
     system memory.
     """
-    data: CType
+    data: Array[CType] | Array[_SimpleCData]
     data_ptr: int
     _dirty_min: int
     _dirty_max: int
     _dirty: bool
     stride: int
-    count: int
+    element_count: int
     ctype: CType
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int,
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int,
                  usage: int = GL_DYNAMIC_DRAW) -> None:
         super().__init__(context, size, GL_ARRAY_BUFFER, usage)
 
@@ -188,7 +186,7 @@ class BackedBufferObject(BufferObject):
         self._dirty = False
 
         self.stride = stride
-        self.count = count
+        self.element_count = element_count
 
     def commit(self) -> None:
         """Commits all saved changes to the underlying buffer before drawing.
@@ -213,13 +211,13 @@ class BackedBufferObject(BufferObject):
     @lru_cache(maxsize=None)  # noqa: B019
     def get_region(self, start: int, count: int) -> Array[CType]:
         byte_start = self.stride * start  # byte offset
-        array_count = self.count * count  # number of values
+        array_count = self.element_count * count  # number of values
         ptr_type = ctypes.POINTER(self.c_type * array_count)
         return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float]) -> None:
-        array_start = self.count * start
-        array_end = self.count * count + array_start
+        array_start = self.element_count * start
+        array_end = self.element_count * count + array_start
 
         self.data[array_start:array_end] = data
 
@@ -267,9 +265,11 @@ class BackedBufferObject(BufferObject):
 class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, attribute: Attribute) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, graphics_attr: GraphicsAttribute) -> None:
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(context, size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(context, size, graphics_attr.attribute.c_type,
+                         graphics_attr.view.stride,
+                         graphics_attr.attribute.fmt.components)
 
 
 class IndexedBufferObject(BackedBufferObject):
@@ -301,7 +301,7 @@ class PersistentBufferObject(AbstractBuffer):
         self.size = size
         self.attribute = attribute
         self.attribute_stride = attribute.stride
-        self.attribute_count = attribute.count
+        self.attribute_count = attribute.element_count
         self.attribute_ctype = attribute.c_type
         self.vao = vao
 
