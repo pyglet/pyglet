@@ -58,6 +58,7 @@ from pyglet.gl.gl import (
     glUnmapBuffer,
     glUseProgram,
     glVertexAttribDivisor,
+    glVertexAttribIPointer,
     glVertexAttribPointer,
 )
 from pyglet.graphics.vertexbuffer import AttributeBufferObject, BufferObject
@@ -257,6 +258,9 @@ class Attribute:
         self.element_size = sizeof(self.c_type)
         self.stride = count * self.element_size
 
+        self._is_int = gl_type in (gl.GL_INT, gl.GL_SHORT, gl.GL_BYTE, gl.GL_UNSIGNED_INT,
+                                   gl.GL_UNSIGNED_SHORT, gl.GL_UNSIGNED_BYTE) and self.normalize is False
+
     def enable(self) -> None:
         """Enable the attribute."""
         glEnableVertexAttribArray(self.location)
@@ -271,7 +275,10 @@ class Attribute:
                 Pointer offset to the currently bound buffer for this attribute.
 
         """
-        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
+        if self._is_int:
+            glVertexAttribIPointer(self.location, self.count, self.gl_type, self.stride, ptr)
+        else:
+            glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
 
     def set_divisor(self) -> None:
         glVertexAttribDivisor(self.location, 1)
