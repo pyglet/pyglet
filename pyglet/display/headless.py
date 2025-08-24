@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Literal
+
 import pyglet
 import warnings
 
@@ -69,3 +73,10 @@ class HeadlessScreen(Screen):
 
     def restore_mode(self):
         pass
+
+    def get_display_id(self) -> str | int:
+        # No real unique ID is available, just hash together the properties.
+        return hash((self.x, self.y, self.width, self.height))
+
+    def get_monitor_name(self) -> str | Literal["Unknown"]:
+        return "Headless"
