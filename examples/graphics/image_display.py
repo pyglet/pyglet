@@ -1,18 +1,15 @@
-#!/usr/bin/env python
 """Display an image.
 
 Usage::
 
     display.py <filename>
 
-A checkerboard background is visible behind any transparent areas.
+A grey background is visible behind any transparent areas.
 """
 import sys
 
 import pyglet
 
-from pyglet.image import CheckerImagePattern
-from pyglet.graphics import Texture
 
 window = pyglet.window.Window(visible=False, resizable=True)
 
@@ -42,25 +39,16 @@ if __name__ == '__main__':
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 
+    # Make a batch to contain all drawable objects.
+    # In this case, only a single Sprite will be in it:
     batch = pyglet.graphics.Batch()
-    image_group = pyglet.graphics.Group(order=1)
-    background_group = pyglet.graphics.Group(order=0)
+    # Make a Sprite so that the image can be displayed & manipulated:
+    image_sprite = pyglet.sprite.Sprite(img=img, batch=batch)
 
-    # Create a background texture using ImageData with a simple checkered pattern:
-    background_texture = Texture.create_from_image(image_data=pyglet.image.create(32, 32, CheckerImagePattern()))
-
-    # TODO: remove this hack:
-    background_texture.tex_coords = [c * 100 for c in background_texture.tex_coords]
-
-    # Make Sprites so the background and image data can be displayed & manipulated:
-    image_sprite = pyglet.sprite.Sprite(img=img, batch=batch, group=image_group)
-    background_sprite = pyglet.sprite.Sprite(img=background_texture, batch=batch, group=background_group)
-
-    # TODO: remove this hack:
-    background_sprite.scale = 100
-
+    # Set the initial Window size to match the image:
     window.width = img.width
     window.height = img.height
     window.set_visible()
+    window.context.set_clear_color(0.4, 0.4, 0.4, 1.0)
 
     pyglet.app.run()
