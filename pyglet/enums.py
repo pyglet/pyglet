@@ -19,6 +19,7 @@ class BlendFactor(Enum):
     CONSTANT_ALPHA = "CONSTANT_ALPHA"
     ONE_MINUS_CONSTANT_ALPHA = "ONE_MINUS_CONSTANT_ALPHA"
 
+
 class BlendOp(Enum):
     ADD = "ADD"
     SUBTRACT = "SUBTRACT"
@@ -26,15 +27,18 @@ class BlendOp(Enum):
     MIN = "MIN"
     MAX = "MAX"
 
+
 class TextureFilter(Enum):
     LINEAR = auto()
     NEAREST = auto()
+
 
 class AddressMode(Enum):
     REPEAT = auto()
     MIRRORED_REPEAT = auto()
     CLAMP_TO_EDGE = auto()
     CLAMP_TO_BORDER = auto()
+
 
 class TextureWrapping(Enum):
     WRAP_S = auto()

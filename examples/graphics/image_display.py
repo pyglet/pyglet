@@ -7,26 +7,28 @@ Usage::
 
 A checkerboard background is visible behind any transparent areas.
 """
-
-
 import sys
 
 import pyglet
-from pyglet.graphics.api.gl import (
-    glEnable,
-    glBlendFunc,
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-)
+
+from pyglet.image import CheckerImagePattern
+from pyglet.graphics import Texture
 
 window = pyglet.window.Window(visible=False, resizable=True)
 
 
 @window.event
 def on_draw():
-    background.blit_tiled(0, 0, 0, window.width, window.height)
-    img.blit(window.width // 2, window.height // 2, 0)
+    window.clear()
+    batch.draw()
+
+
+@window.event
+def on_resize(width, height):
+    # Scale the image Sprite to fit inside the Window dimensions:
+    image_sprite.scale = min(height / img.height, width / img.width)
+    # Make sure the image Sprite is centered in the Window:
+    image_sprite.position = width // 2, height // 2, image_sprite.z
 
 
 if __name__ == '__main__':
@@ -40,12 +42,22 @@ if __name__ == '__main__':
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 
-    checks = pyglet.image.create(32, 32, pyglet.image.CheckerImagePattern())
-    background = pyglet.image.TileableTexture.create_for_image(checks)
+    batch = pyglet.graphics.Batch()
+    image_group = pyglet.graphics.Group(order=1)
+    background_group = pyglet.graphics.Group(order=0)
 
-    # Enable alpha blending, required for image.blit.
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    # Create a background texture using ImageData with a simple checkered pattern:
+    background_texture = Texture.create_from_image(image_data=pyglet.image.create(32, 32, CheckerImagePattern()))
+
+    # TODO: remove this hack:
+    background_texture.tex_coords = [c * 100 for c in background_texture.tex_coords]
+
+    # Make Sprites so the background and image data can be displayed & manipulated:
+    image_sprite = pyglet.sprite.Sprite(img=img, batch=batch, group=image_group)
+    background_sprite = pyglet.sprite.Sprite(img=background_texture, batch=batch, group=background_group)
+
+    # TODO: remove this hack:
+    background_sprite.scale = 100
 
     window.width = img.width
     window.height = img.height
