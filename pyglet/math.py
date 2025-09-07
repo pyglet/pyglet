@@ -1415,7 +1415,7 @@ class Quaternion(_typing.NamedTuple):
         raise NotImplementedError
 
     def to_mat4(self) -> Mat4:
-        """Calculate a 4 by 4 transform matrix which applies a rotation."""
+        """Calculate a 4x4 transform matrix which applies a rotation."""
 
         w = self.w
         x = self.x
@@ -1442,7 +1442,7 @@ class Quaternion(_typing.NamedTuple):
         return Mat4(a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0)
 
     def to_mat3(self) -> Mat3:
-        """Convert the quaternion to a 3 by 3 rotation matrix."""
+        """Create a 3x3 rotation matrix."""
 
         w = self.w
         x = self.x
@@ -1473,7 +1473,7 @@ class Quaternion(_typing.NamedTuple):
         return _math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
 
     def conjugate(self) -> Quaternion:
-        """Return the conjugate of this quaternion.
+        """Calculate the conjugate of this quaternion.
 
         This operation:
         #. leaves the :py:attr:`.w` component alone
