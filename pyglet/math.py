@@ -1396,7 +1396,7 @@ class Mat4(_typing.NamedTuple):
 
 
 class Quaternion(_typing.NamedTuple):
-    """Quaternion
+    """Quaternion.
 
     Quaternions are 4-dimensional complex numbers, useful for describing 3D rotations.
     """
