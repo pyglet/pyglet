@@ -1483,10 +1483,7 @@ class Quaternion(_typing.NamedTuple):
         return Quaternion(self.w, -self.x, -self.y, -self.z)
 
     def dot(self, other: Quaternion) -> float:
-        """Calculate the dot product with another quaternion.
-
-        """
-
+        """Calculate the dot product with another quaternion."""
         a, b, c, d = self
         e, f, g, h = other
         return a * e + b * f + c * g + d * h
@@ -1499,7 +1496,6 @@ class Quaternion(_typing.NamedTuple):
 
         * a length of ``1``
         * the same relative of its components
-
         """
         m = self.length()
         if m == 0:
