@@ -1396,16 +1396,9 @@ class Mat4(_typing.NamedTuple):
 
 
 class Quaternion(_typing.NamedTuple):
-    """Quaternions are special 4-dimensional vectors useful for 3D rotations.
+    """Quaternion
 
-    This type is separate from the :py:class:`Vec4` type for clarity when:
-
-    * organizing helper methods
-    * annotating types
-
-    .. tip:: Store method results if you will need them more than once.
-
-             Otherwise, you will be re-calculating values wastefully.
+    Quaternions are 4-dimensional complex numbers, useful for describing 3D rotations.
     """
 
     w: float = 1.0
