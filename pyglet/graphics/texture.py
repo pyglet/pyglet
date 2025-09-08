@@ -452,28 +452,6 @@ class Texture3D(TextureBase, UniformTextureSequence):
         return iter(self.items)
 
 
-class TileableTexture(TextureBase):
-    """A texture that can be tiled efficiently.
-
-    Use :py:class:`~pyglet.image.create_for_image` classmethod to construct.
-    """
-
-    def get_region(self, x: int, y: int, width: int, height: int):
-        raise ImageException(f"Cannot get region of {self}")
-
-    def blit_tiled(self, x: int, y: int, z: int, width: int, height: int) -> None:
-        """Blit this texture tiled over the given area.
-
-        The image will be tiled with the bottom-left corner of the destination
-        rectangle aligned with the anchor point of this texture.
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def create_for_image(cls, image: _AbstractImage) -> TextureBase:
-        raise NotImplementedError
-
-
 class TextureGridBase(_AbstractGrid):
     """A texture containing a regular grid of texture regions.
 

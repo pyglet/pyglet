@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from _ctypes import byref
-from ctypes import c_int
 from typing import Callable, Literal, Iterator, Union
 
 import pyglet
@@ -9,8 +8,7 @@ from pyglet.enums import TextureType, TextureFilter, TextureInternalFormat, Text
 from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
-    GL_MAX_TEXTURE_SIZE, GL_MAX_ARRAY_TEXTURE_LAYERS, GL_UNSIGNED_BYTE, \
-    GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, \
+    GL_UNSIGNED_BYTE, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, \
     GL_LINEAR_MIPMAP_LINEAR, GL_TEXTURE_3D, \
     GLuint, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, \
     GLubyte, GL_PACK_ALIGNMENT, GL_UNPACK_SKIP_PIXELS, \
@@ -907,51 +905,6 @@ class TextureArray(Texture, UniformTextureSequence):
 
 TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
-
-
-class GLTileableTexture(Texture):
-    """A texture that can be tiled efficiently.
-
-    Use :py:class:`~pyglet.image.create_for_image` classmethod to construct.
-    """
-
-    def get_region(self, x: int, y: int, width: int, height: int):
-        raise ImageException(f"Cannot get region of {self}")
-
-    def blit_tiled(self, x: int, y: int, z: int, width: int, height: int) -> None:
-        """Blit this texture tiled over the given area.
-
-        The image will be tiled with the bottom-left corner of the destination
-        rectangle aligned with the anchor point of this texture.
-        """
-        u1 = self.anchor_x / self.width
-        v1 = self.anchor_y / self.height
-        u2 = u1 + width / self.width
-        v2 = v1 + height / self.height
-        w, h = width, height
-        t = self.tex_coords
-
-        vertices = (x, y, z,
-                    x + w, y, z,
-                    x + w, y + h, z,
-                    x, y + h, z)
-
-        tex_coords = (u1, v1, t[2],
-                      u2, v1, t[5],
-                      u2, v2, t[8],
-                      u1, v2, t[11])
-
-        self._context.glActiveTexture(GL_TEXTURE0)
-        self._context.glBindTexture(self.target, self.id)
-        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     position=('f', vertices),
-                                     tex_coords=('f', tex_coords))
-        self._context.glBindTexture(self.target, 0)
-
-    @classmethod
-    def create_for_image(cls, image: _AbstractImage) -> TextureBase:
-        image = image.get_image_data()
-        return image.create_texture(cls)
 
 
 class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
