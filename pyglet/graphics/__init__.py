@@ -13,7 +13,7 @@ from pyglet.graphics.base import GeometryMode  # noqa: F401
 from pyglet.graphics import api  # noqa: F401
 from pyglet.graphics.draw import Group, ShaderGroup  # noqa: F401
 from pyglet.graphics.api import Batch, get_default_shader, get_default_batch, core, Shader, ShaderProgram, ComputeShaderProgram  # noqa: F401
-from pyglet.graphics.texture import Texture, TextureGrid, Texture3D   # noqa: F401
+from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureDescriptor   # noqa: F401
 from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas   # noqa: F401
 #
 # def _load_backend_base(name: str):

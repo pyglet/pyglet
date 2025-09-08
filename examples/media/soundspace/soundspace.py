@@ -41,7 +41,6 @@ import pyglet
 # # Default to OpenAL if available:
 # pyglet.options.audio = 'openal', 'pulse', 'directsound', 'silent'
 
-from pyglet.graphics.api.gl import glClearColor
 from pyglet.graphics import Group
 from pyglet.math import Mat4, Vec3
 
@@ -500,6 +499,8 @@ class SoundSpaceWindow(pyglet.window.Window):
         kwargs.setdefault("resizable", True)
         super().__init__(**kwargs)
 
+        self.context.set_clear_color(.8, .8, .8, 1.0)
+
         # pixels per unit
         self.zoom = 40
         self.tx = self.width/2
@@ -584,7 +585,6 @@ class SoundSpaceWindow(pyglet.window.Window):
         return None, None
 
     def on_draw(self):
-        glClearColor(.8, .8, .8, 1)
         self.clear()
 
         for handle in self.handles + self.more_handles:

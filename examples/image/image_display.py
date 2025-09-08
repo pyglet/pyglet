@@ -1,32 +1,31 @@
-#!/usr/bin/env python
 """Display an image.
 
 Usage::
 
     display.py <filename>
 
-A checkerboard background is visible behind any transparent areas.
+A grey background is visible behind any transparent areas.
 """
-
-
 import sys
 
 import pyglet
-from pyglet.graphics.api.gl import (
-    glEnable,
-    glBlendFunc,
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-)
+
 
 window = pyglet.window.Window(visible=False, resizable=True)
 
 
 @window.event
 def on_draw():
-    background.blit_tiled(0, 0, 0, window.width, window.height)
-    img.blit(window.width // 2, window.height // 2, 0)
+    window.clear()
+    batch.draw()
+
+
+@window.event
+def on_resize(width, height):
+    # Scale the image Sprite to fit inside the Window dimensions:
+    image_sprite.scale = min(height / img.height, width / img.width)
+    # Make sure the image Sprite is centered in the Window:
+    image_sprite.position = width // 2, height // 2, image_sprite.z
 
 
 if __name__ == '__main__':
@@ -40,15 +39,16 @@ if __name__ == '__main__':
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 
-    checks = pyglet.image.create(32, 32, pyglet.image.CheckerImagePattern())
-    background = pyglet.image.TileableTexture.create_for_image(checks)
+    # Make a batch to contain all drawable objects.
+    # In this case, only a single Sprite will be in it:
+    batch = pyglet.graphics.Batch()
+    # Make a Sprite so that the image can be displayed & manipulated:
+    image_sprite = pyglet.sprite.Sprite(img=img, batch=batch)
 
-    # Enable alpha blending, required for image.blit.
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
+    # Set the initial Window size to match the image:
     window.width = img.width
     window.height = img.height
     window.set_visible()
+    window.context.set_clear_color(0.4, 0.4, 0.4, 1.0)
 
     pyglet.app.run()

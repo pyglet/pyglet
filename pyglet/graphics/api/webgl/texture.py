@@ -1030,29 +1030,6 @@ TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
 
 
-class TileableTexture(Texture):
-    """A texture that can be tiled efficiently.
-
-    Use :py:class:`~pyglet.image.create_for_image` classmethod to construct.
-    """
-
-    def get_region(self, x: int, y: int, width: int, height: int):
-        raise ImageException(f"Cannot get region of {self}")
-
-    def blit_tiled(self, x: int, y: int, z: int, width: int, height: int) -> None:
-        """Blit this texture tiled over the given area.
-
-        The image will be tiled with the bottom-left corner of the destination
-        rectangle aligned with the anchor point of this texture.
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def create_for_image(cls, image: _AbstractImage) -> TextureBase:
-        image = image.get_image_data()
-        return image.create_texture(cls)
-
-
 class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
     """A texture containing a regular grid of texture regions.
 

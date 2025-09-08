@@ -660,6 +660,9 @@ ct.CTFontCreateUIFontForLanguage.argtypes = [c_uint32, c_double, c_void_p]
 ct.CTFontCreateCopyWithSymbolicTraits.restype = c_void_p
 ct.CTFontCreateCopyWithSymbolicTraits.argtypes = [c_void_p, CGFloat, c_void_p, c_uint32, c_uint32]
 
+ct.CTFontCreateCopyWithAttributes.restype = c_void_p
+ct.CTFontCreateCopyWithAttributes.argtypes = [c_void_p, c_double, c_void_p, c_void_p]
+
 ct.CTFontCreateWithFontDescriptor.restype = c_void_p
 ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
 
