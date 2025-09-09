@@ -103,18 +103,18 @@ class Group:
     def set_depth_test(self, func: CompareOp) -> None:
         self._add_state(DepthBufferComparison(func))
 
-    def set_depth_write(self, flag):
-        self._add_state(DepthWriteState(flag))
+    # def set_depth_write(self, flag):
+    #     self._add_state(DepthWriteState(flag))
+    #
+    # def set_stencil(self, func, ref, mask, fail, zfail, zpass):
+    #     self._add_state("stencil_func", func, ref, mask)
+    #     self._add_state("stencil_op", fail, zfail, zpass)
+    #
+    # def set_polygon_mode(self, face, mode):
+    #     self._add_state("polygon_mode", face, mode)
 
-    def set_stencil(self, func, ref, mask, fail, zfail, zpass):
-        self._add_state("stencil_func", func, ref, mask)
-        self._add_state("stencil_op", fail, zfail, zpass)
-
-    def set_polygon_mode(self, face, mode):
-        self._add_state("polygon_mode", face, mode)
-
-    def set_viewport(self, x, y, width, height):
-        self._add_state(ViewportState(x, y, width, height))
+    # def set_viewport(self, x, y, width, height):
+    #     self._add_state(ViewportState(x, y, width, height))
 
     def set_shader_program(self, program: ShaderProgramBase):
         self._add_state(ShaderProgramState(program))
@@ -211,7 +211,7 @@ class Group:
         return f"{self.__class__.__name__}(order={self._order})"
 
     def set_state_all(self) -> None:
-        """Call all state setting functions involved in this group."""
+        """Calls all set states of the underlying Group."""
         for state in self.states:
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
@@ -222,15 +222,15 @@ class Group:
                 state.set_state()
 
     def unset_state_all(self) -> None:
-        """Call all unstate setting functions involved in this group."""
+        """Calls all unset states of the underlying Group."""
         for state in self.states:
-            if state.unsets_state:
-                state.unset_state()
-
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
                     if dependant_state.unsets_state:
                         dependant_state.unset_state()
+
+            if state.unsets_state:
+                state.unset_state()
 
     def set_state_recursive(self) -> None:
         """Set this group and its ancestry.

@@ -15,8 +15,7 @@ import ctypes
 from abc import abstractmethod
 from functools import lru_cache
 from typing import Sequence, TYPE_CHECKING
-from pyglet.graphics.shader import _data_type_to_ctype
-
+from pyglet.graphics.shader import _data_type_to_ctype, GraphicsAttribute
 
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes, CType, CTypesPointer
@@ -176,9 +175,9 @@ class BackedBufferObjectBase(AbstractBuffer):
 class AttributeBufferObject(BackedBufferObjectBase):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, size: int, attribute: Attribute) -> None:  # noqa: D107
+    def __init__(self, size: int, shader_attr: GraphicsAttribute) -> None:  # noqa: D107
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(size, shader_attr.attribute.c_type, shader_attr.view.stride, shader_attr.attribute.fmt.components)
 
 
 class IndexedBufferObject(BackedBufferObjectBase):

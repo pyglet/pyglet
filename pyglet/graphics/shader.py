@@ -3,12 +3,12 @@ from __future__ import annotations
 import ctypes
 import weakref
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
 
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes, CType
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
     from pyglet.graphics import GeometryMode, Batch, Group
     from _weakref import CallableProxyType
 
@@ -128,7 +128,7 @@ class ShaderProgramBase(ABC):
 
     def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
                             instances: Sequence[str] | None = None, batch: Batch = None, group: Group = None,
-                            **data: Any) -> VertexList | IndexedVertexList:
+                            **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         raise NotImplementedError
 
     def vertex_list(self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None,
@@ -153,8 +153,8 @@ class ShaderProgramBase(ABC):
         """
         return self._vertex_list_create(count, mode, None, None, batch=batch, group=group, **data)
 
-    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: Sequence[str], batch: Batch = None,
-                              group: Group = None, **data: Any) -> VertexList:
+    def vertex_list_instanced(self, count: int, mode: GeometryMode, instance_attributes: dict[str, int], batch: Batch = None,
+                              group: Group = None, **data: Any) -> InstanceVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, None, instance_attributes, batch=batch, group=group, **data)
 
@@ -181,9 +181,9 @@ class ShaderProgramBase(ABC):
         """
         return self._vertex_list_create(count, mode, indices, None, batch=batch, group=group, **data)
 
-    def vertex_list_instanced_indexed(self, count: int, mode: GeometryMode, indices: Sequence[int],
+    def vertex_list_instanced_indexed(self, count: int, *, mode: GeometryMode, indices: Sequence[int],
                                       instance_attributes: Sequence[str], batch: Batch = None, group: Group = None,
-                                      **data: Any) -> IndexedVertexList:
+                                      **data: Any) -> InstanceIndexedVertexList:
         assert len(instance_attributes) > 0, "You must provide at least one attribute name to be instanced."
         return self._vertex_list_create(count, mode, indices, instance_attributes, batch=batch, group=group, **data)
 
@@ -242,20 +242,35 @@ _data_type_to_ctype = {
     'Q': ctypes.c_ulonglong,    # unsigned long long
 }
 
+@dataclass(frozen=True)
+class AttributeFormat:
+    """A format describing the properties of an Attribute."""
+    name: str
+    components: int  # for example: 4 for vec4
+    data_type: DataTypes
+    normalized: bool
+    divisor: int            # 0 = per-vertex, 1> = per-instance
+
+    @property
+    def is_instanced(self) -> bool:
+        return self.divisor != 0
+
+@dataclass(frozen=True)
+class AttributeView:
+    """Describes a view of the attribute at its bound buffer."""
+    offset: int  # Offset start of element to this attribute
+    stride: int  # Size from one element to the next
+
 
 class Attribute:
-    """Abstract accessor for an attribute in a mapped buffer."""
-    stride: int
+    """Describes an attribute in a shader."""
+    fmt: AttributeFormat
     element_size: int
     c_type: CType
-    instance: bool
-    normalize: bool
-    count: int
     location: int
-    name: str
 
     def __init__(self, name: str, location: int, components: int, data_type: DataTypes, normalize: bool = False,
-                 instance: bool = False) -> None:
+                 divisor: int = 0) -> None:
         """Create the attribute accessor.
 
         Args:
@@ -269,34 +284,37 @@ class Attribute:
                 Data type intended for use with the attribute.
             normalize:
                 True if OpenGL should normalize the values
-            instance:
-                True if OpenGL should treat this as an instanced attribute.
+            divisor:
+                The divisor value if this is an instanced attribute.
 
         """
-        self.name = name
-        self.data_type = data_type
+        self.fmt = AttributeFormat(name, components, data_type, normalize, divisor)
         self.location = location
-        self.count = components
-        self.normalize = normalize
-        self.instance = instance
 
-        self.c_type = _data_type_to_ctype[self.data_type]
+        self.c_type = _data_type_to_ctype[self.fmt.data_type]
         self.element_size = ctypes.sizeof(self.c_type)
-        self.stride = components * self.element_size
 
-    def set_data_type(self, data_type: DataTypes, normalize: bool):
-        """Set data type to a new format.
+    def set_data_type(self, data_type: DataTypes, normalize: bool) -> None:
+        """Set datatype to a new format and normalization.
 
-        Must be done before you render anything, or may cause unexpected behavior.
-
-        This is done to normalize certain data types after a shader is loaded or inspected.
+        Must be done before this attribute is used, or may cause unexpected behavior.
         """
-        self.data_type = data_type
-        self.normalize = normalize
-
-        self.c_type = _data_type_to_ctype[self.data_type]
+        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, data_type, normalize, self.fmt.divisor)
+        self.c_type = _data_type_to_ctype[self.fmt.data_type]
         self.element_size = ctypes.sizeof(self.c_type)
-        self.stride = self.count * self.element_size
+
+    def set_divisor(self, divisor: int) -> None:
+        self.fmt = AttributeFormat(self.fmt.name, self.fmt.components, self.fmt.data_type, self.fmt.normalized, divisor)
+
+    def __repr__(self) -> str:
+        return f"Attribute(location={self.location}, fmt={self.fmt}')"
+
+
+class GraphicsAttribute:
+    """A combination of format and view to give the overall attribute information."""
+    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
+        self.attribute = attribute
+        self.view = view
 
     def enable(self) -> None:
         """Enable the attribute."""
@@ -306,23 +324,13 @@ class Attribute:
         """Disable the attribute."""
         raise NotImplementedError
 
-    def set_pointer(self, ptr: int) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset.
-
-        ``offset`` should be based on the currently bound buffer's ``ptr`` member.
-
-        Args:
-            ptr:
-                Pointer offset to the currently bound buffer for this attribute.
-
-        """
+    def set_pointer(self) -> None:
+        """Setup this attribute to point to the currently bound buffer at the given offset."""
         raise NotImplementedError
 
     def set_divisor(self) -> None:
         raise NotImplementedError
 
-    def __repr__(self) -> str:
-        return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 class UniformBufferObjectBase:
     @abstractmethod
