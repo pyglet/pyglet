@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
     from pyglet.graphics import Batch
     from pyglet.graphics.shader import ShaderProgram
-    from pyglet.graphics import Texture
     from pyglet.text.document import AbstractDocument
 
 
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 #     """
 #     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 #
-#     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
+#     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
 #                  parent: Group | None = None) -> None:
 #
 #         super().__init__(order=order, parent=parent)
@@ -65,7 +64,7 @@ if TYPE_CHECKING:
 #
 #     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 #
-#     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
+#     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
 #         super().__init__(order=order, parent=parent)
 #         self.program = program
 #
@@ -92,7 +91,7 @@ if TYPE_CHECKING:
 #         return id(self)
 
 
-if pyglet.options.backend == "opengl":
+if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup

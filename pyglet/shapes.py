@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.shader import ShaderProgram
 
 
-if pyglet.options.backend == "opengl":
+if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.shapes import _ShapeGroup, get_default_shader
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.shapes import _ShapeGroup, get_default_shader

@@ -667,10 +667,10 @@ class IndexedVertexDomain(VertexDomain):
         self.index_type = index_type
         super().__init__(context, initial_count, attribute_meta)
         self._supports_base_vertex = self._context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
-
+        mixin = _LocalIndexSupport if self._supports_base_vertex else _RunningIndexSupport
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
-        self._vertexlist_class = type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
-                                      self.vertex_buffers._property_dict)
+        self._vertexlist_class = type(self._vertex_class.__name__, (mixin, self._vertex_class),
+                                      self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_streams(self, size: int) -> None:
         super()._create_streams(size)
@@ -763,10 +763,6 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
     def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, dict[str, Any]],
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
-        self.supports_base_vertex = False
-        mixin = _LocalIndexSupport if self.supports_base_vertex else _RunningIndexSupport
-        self._vertexlist_class = type(self._vertex_class.__name__, (mixin, self._vertex_class),
-                                      self.vertex_buffers._property_dict)  # noqa: SLF001
         self.instance_domain = GLInstanceDomainElements(self, initial_count, index_stream=self.index_stream)
 
     def _create_vao(self) -> None:
@@ -790,7 +786,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
             first_index=index_start,
             index_count=index_count,
             index_type=self.index_type,
-            base_vertex=start if self.supports_base_vertex else 0,
+            base_vertex=start if self._supports_base_vertex else 0,
         )
         vertex_list = self._vertexlist_class(self, start, count, index_start, index_count, bucket)
         vertex_list.indices = indices

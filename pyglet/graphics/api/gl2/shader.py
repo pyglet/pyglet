@@ -15,18 +15,13 @@ from typing import TYPE_CHECKING
 
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
-from pyglet.graphics.api.gl import (
-    glDisableVertexAttribArray,
-    glEnableVertexAttribArray,
-    glVertexAttribDivisor,
-    glVertexAttribPointer, OpenGLSurfaceContext,
-)
 from pyglet.graphics.api.gl.shader import GLDataType
 from pyglet.graphics.api.gl.shader import Shader as GLShader
 from pyglet.graphics.api.gl.shader import ShaderProgram as GLShaderProgram
-from pyglet.graphics.shader import Attribute, ShaderException, ShaderSource, ShaderType
+from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.customtypes import CType, DataTypes
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
@@ -79,57 +74,6 @@ class UniformBufferObject:
         raise NotImplementedError
 
 
-class GLAttribute(Attribute):
-    """Abstract accessor for an attribute in a mapped buffer."""
-
-    gl_type: int
-    """OpenGL type enumerant; for example, ``GL_FLOAT``"""
-
-    def __init__(
-        self, name: str, location: int, components: int, data_type: DataTypes, normalize: bool, instance: bool,
-    ) -> None:
-        """Create the attribute accessor.
-
-        Args:
-            name:
-                Name of the vertex attribute.
-            location:
-                Location (index) of the vertex attribute.
-            components:
-                Number of components in the attribute.
-            normalize:
-                True if OpenGL should normalize the values
-            instance:
-                True if OpenGL should treat this as an instanced attribute.
-
-        """
-        super().__init__(name, location, components, data_type, normalize, instance)
-        self.gl_type = _data_type_to_gl_type[self.data_type]
-
-    def enable(self) -> None:
-        """Enable the attribute."""
-        glEnableVertexAttribArray(self.location)
-
-    def disable(self):
-        glDisableVertexAttribArray(self.location)
-
-    def set_pointer(self, ptr: int) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset.
-
-        ``offset`` should be based on the currently bound buffer's ``ptr`` member.
-
-        Args:
-            ptr:
-                Pointer offset to the currently bound buffer for this attribute.
-
-        """
-        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
-
-    def set_divisor(self) -> None:
-        glVertexAttribDivisor(self.location, 1)
-
-    def __repr__(self) -> str:
-        return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 
 # Shader & program classes:
@@ -227,6 +171,10 @@ class Shader(GLShader):
     @classmethod
     def supported_shaders(cls) -> tuple[ShaderType, ...]:
         return 'vertex', 'fragment'
+
+    @staticmethod
+    def get_string_class() -> type[GLShaderSource]:
+        return GLShaderSource
 
 
 class ShaderProgram(GLShaderProgram):  # noqa: D101

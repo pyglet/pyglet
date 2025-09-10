@@ -542,14 +542,14 @@ TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
 
 
-if pyglet.options.backend in ("opengl", "gl2", "gles2"):
+if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
         Framebuffer,
         Renderbuffer,
         get_max_color_attachments,
         get_screenshot,
     )
-    from pyglet.graphics.api.gl.texture import (  # noqa: F401
+    from pyglet.graphics.api.gl.texture import (
         Texture,
         TextureRegion,
         Texture3D,
@@ -563,12 +563,12 @@ elif pyglet.options.backend in ("webgl"):
     from pyglet.graphics.api.webgl.texture import (
         Texture,
         TextureRegion,
-        Texture3D,
+        Texture3D,  # noqa: F401
         TextureArray,
         TextureArrayRegion,
-        TextureGrid,
-        get_max_texture_size,
-        get_max_array_texture_layers
+        TextureGrid,  # noqa: F401
+        get_max_texture_size,  # noqa: F401
+        get_max_array_texture_layers,  # noqa: F401
     )
 elif pyglet.options.backend == "vulkan":
     pass

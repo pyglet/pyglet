@@ -278,6 +278,12 @@ WGL_ERROR_INCOMPATIBLE_AFFINITY_MASKS_NV = 8400 	# http://www.opengl.org/registr
 WGL_ERROR_MISSING_AFFINITY_MASK_NV = 8401 	# http://www.opengl.org/registry/api/wglext.h:368
 # ARB_pbuffer (http://www.opengl.org/registry/api/wglext.h:374)
 
+WGL_CONTEXT_PROFILE_MASK_ARB = 0x9126
+WGL_CONTEXT_CORE_PROFILE_BIT_ARB =  0x00000001
+WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB = 0x00000002
+WGL_CONTEXT_ES2_PROFILE_BIT_EXT = 0x00000004
+WGL_CONTEXT_ES_PROFILE_BIT_EXT = 0x00000004
+
 HPBUFFERARB = HANDLE 	# http://www.opengl.org/registry/api/wglext.h:375
 # EXT_pbuffer (http://www.opengl.org/registry/api/wglext.h:377)
 HPBUFFEREXT = HANDLE 	# http://www.opengl.org/registry/api/wglext.h:378
@@ -784,7 +790,7 @@ class WGLFunctionsARB:
     def __init__(self):
         # http://www.opengl.org/registry/api/wglext.h:402
         self.wglCreateBufferRegionARB = _link_function(
-            'wglCreateBufferRegionARB', HANDLE, [HDC, c_int, UINT], 'ARB_buffer_region'
+            'wglCreateBufferRegionARB', HANDLE, [HDC, c_int, UINT], 'ARB_buffer_region',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:403
@@ -826,7 +832,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:450
         self.wglCreatePbufferARB = _link_function(
-            'wglCreatePbufferARB', HPBUFFERARB, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'ARB_pbuffer'
+            'wglCreatePbufferARB', HPBUFFERARB, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'ARB_pbuffer',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:451
@@ -840,7 +846,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:454
         self.wglQueryPbufferARB = _link_function(
-            'wglQueryPbufferARB', BOOL, [HPBUFFERARB, c_int, POINTER(c_int)], 'ARB_pbuffer'
+            'wglQueryPbufferARB', BOOL, [HPBUFFERARB, c_int, POINTER(c_int)], 'ARB_pbuffer',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:466
@@ -857,7 +863,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:490
         self.wglCreateDisplayColorTableEXT = _link_function(
-            'wglCreateDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table'
+            'wglCreateDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:491
@@ -881,7 +887,7 @@ class WGLFunctionsARB:
 
 
         self.wglCreatePbufferEXT = _link_function(
-            'wglCreatePbufferEXT', HPBUFFEREXT, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'EXT_pbuffer'
+            'wglCreatePbufferEXT', HPBUFFEREXT, [HDC, c_int, c_int, c_int, POINTER(c_int)], 'EXT_pbuffer',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:523
@@ -895,7 +901,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:526
         self.wglQueryPbufferEXT = _link_function(
-            'wglQueryPbufferEXT', BOOL, [HPBUFFEREXT, c_int, POINTER(c_int)], 'EXT_pbuffer'
+            'wglQueryPbufferEXT', BOOL, [HPBUFFEREXT, c_int, POINTER(c_int)], 'EXT_pbuffer',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:538
@@ -930,7 +936,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:564
         self.wglAllocateMemoryNV = _link_function(
-            'wglAllocateMemoryNV', POINTER(c_void), [GLsizei, GLfloat, GLfloat, GLfloat], 'NV_vertex_array_range'
+            'wglAllocateMemoryNV', POINTER(c_void), [GLsizei, GLfloat, GLfloat, GLfloat], 'NV_vertex_array_range',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:565
@@ -938,22 +944,22 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:582
         self.wglGetSyncValuesOML = _link_function(
-            'wglGetSyncValuesOML', BOOL, [HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control'
+            'wglGetSyncValuesOML', BOOL, [HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:583
         self.wglGetMscRateOML = _link_function(
-            'wglGetMscRateOML', BOOL, [HDC, POINTER(INT32), POINTER(INT32)], 'OML_sync_control'
+            'wglGetMscRateOML', BOOL, [HDC, POINTER(INT32), POINTER(INT32)], 'OML_sync_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:584
         self.wglSwapBuffersMscOML = _link_function(
-            'wglSwapBuffersMscOML', INT64, [HDC, INT64, INT64, INT64], 'OML_sync_control'
+            'wglSwapBuffersMscOML', INT64, [HDC, INT64, INT64, INT64], 'OML_sync_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:585
         self.wglSwapLayerBuffersMscOML = _link_function(
-            'wglSwapLayerBuffersMscOML', INT64, [HDC, c_int, INT64, INT64, INT64], 'OML_sync_control'
+            'wglSwapLayerBuffersMscOML', INT64, [HDC, c_int, INT64, INT64, INT64], 'OML_sync_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:586
@@ -966,21 +972,21 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:587
         self.wglWaitForSbcOML = _link_function(
-            'wglWaitForSbcOML', BOOL, [HDC, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control'
+            'wglWaitForSbcOML', BOOL, [HDC, INT64, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:600
         self.wglGetDigitalVideoParametersI3D = _link_function(
-            'wglGetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control'
+            'wglGetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:601
         self.wglSetDigitalVideoParametersI3D = _link_function(
-            'wglSetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control'
+            'wglSetDigitalVideoParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_digital_video_control',
         )
 
         self.wglGetGammaTableParametersI3D = _link_function(
-            'wglGetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma'
+            'wglGetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:611
@@ -1016,7 +1022,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:630
         self.wglGetGenlockSourceEdgeI3D = _link_function(
-            'wglGetGenlockSourceEdgeI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock'
+            'wglGetGenlockSourceEdgeI3D', BOOL, [HDC, POINTER(UINT)], 'I3D_genlock',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:631
@@ -1037,7 +1043,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:654
         self.wglCreateImageBufferI3D = _link_function(
-            'wglCreateImageBufferI3D', LPVOID, [HDC, DWORD, UINT], 'I3D_image_buffer'
+            'wglCreateImageBufferI3D', LPVOID, [HDC, DWORD, UINT], 'I3D_image_buffer',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:655
@@ -1085,7 +1091,7 @@ class WGLFunctionsARB:
 
         # http://www.opengl.org/registry/api/wglext.h:724
         self.wglGetVideoDeviceNV = _link_function(
-            'wglGetVideoDeviceNV', BOOL, [HDC, c_int, POINTER(HPVIDEODEV)], 'NV_video_out'
+            'wglGetVideoDeviceNV', BOOL, [HDC, c_int, POINTER(HPVIDEODEV)], 'NV_video_out',
         )
 
         # http://www.opengl.org/registry/api/wglext.h:725

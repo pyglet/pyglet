@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import abc
 import ctypes
 import weakref
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
 
 if TYPE_CHECKING:
@@ -190,7 +191,7 @@ class ShaderProgramBase(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id})"
 
-class ShaderSource:
+class ShaderSource(abc.ABC):
     """String source of shader used during load of a Shader instance."""
 
     @abstractmethod
@@ -198,7 +199,7 @@ class ShaderSource:
         """Return the validated shader source."""
 
 
-class ShaderBase:
+class ShaderBase(abc.ABC):
     """Graphics shader.
 
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
@@ -222,9 +223,13 @@ class ShaderBase:
 
     @classmethod
     @abstractmethod
-    def supported_shaders(cls) -> tuple[ShaderType, ...]:
+    def supported_shaders(cls: type[ShaderBase]) -> tuple[ShaderType, ...]:
         """Return the supported shader types for this shader class."""
 
+    @staticmethod
+    @abstractmethod
+    def get_string_class() -> type[ShaderSource]:
+        """Return the proper ShaderSource class used to validate the shader."""
 
 DataTypeTuple = ('?', 'f', 'i', 'I', 'h',  'H', 'b', 'B', 'q','Q')
 

@@ -76,7 +76,7 @@ from pyglet.enums import BlendFactor
 from pyglet.graphics.texture import TextureBase, TextureArrayRegion
 from pyglet.image.base import _AbstractImage, Animation
 
-if pyglet.options.backend == "opengl":
+if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.sprite import SpriteGroup, get_default_array_shader, get_default_shader
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl.sprite import SpriteGroup

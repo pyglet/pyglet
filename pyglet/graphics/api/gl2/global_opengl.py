@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import sys
-from typing import Sequence, TYPE_CHECKING, Literal
+from typing import Sequence, TYPE_CHECKING
 
 import pyglet
 from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
@@ -68,10 +68,6 @@ class OpenGL2_Matrices(WindowTransformations):
         self._model = model
 
 class OpenGL2Backend(OpenGLBackend):
-
-    def __init__(self, gl_api: Literal["gl", "gles"] = "gl") -> None:
-        self.gl_api = gl_api
-        super().__init__()
 
     def get_default_configs(self) -> Sequence[pyglet.graphics.api.gl.OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.

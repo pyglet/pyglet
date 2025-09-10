@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence, TYPE_CHECKING, Literal
 
 import pyglet
 from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
@@ -98,10 +98,12 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
         self._model = model
 
 class OpenGLBackend(BackendGlobalObject):
+    gl_api: Literal["gl", "gles"]
     current_context: OpenGLSurfaceContext | None
     _have_context: bool = False
 
-    def __init__(self) -> None:
+    def __init__(self, gl_api: Literal["gl", "gles"] = "gl") -> None:
+        self.gl_api = gl_api
         self.initialized = False
         self.current_context = None
         self._shadow_window = None
@@ -134,10 +136,22 @@ class OpenGLBackend(BackendGlobalObject):
 
         These will be used during Window creation.
         """
-        return [
-            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-        ]
+        # On Windows if you specify GLES but set 3.3 as major/minor version, it will upgrade to a full context.
+        # Version 3.2 needs to be specified explicitly.
+        if self.gl_api == "gles":
+            configs = [
+                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=2,
+                                                    opengl_api=self.gl_api),
+                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=2,
+                                                    opengl_api=self.gl_api),
+            ]
+        else:
+            configs = [
+                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+            ]
+
+        return configs
 
     def get_config(self, **kwargs: float | str | None) -> pyglet.graphics.api.gl.OpenGLConfig:
         return pyglet.graphics.api.gl.OpenGLConfig(**kwargs)

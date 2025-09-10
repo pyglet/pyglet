@@ -142,6 +142,9 @@ class GLAttribute(GraphicsAttribute):
         """Enable the attribute."""
         self._context.glEnableVertexAttribArray(self.attribute.location)
 
+    def disable(self) -> None:
+        self._context.glDisableVertexAttribArray(self.attribute.location)
+
     def set_pointer(self) -> None:
         """Setup this attribute to point to the currently bound buffer at the given offset."""
         if self._is_int:
@@ -187,7 +190,7 @@ class _UniformArray:
     )
 
     def __init__(
-        self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool, dsa: bool
+        self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool, dsa: bool,
     ) -> None:
         self._context = pyglet.graphics.api.core.current_context
         self._uniform = uniform
@@ -604,7 +607,7 @@ class UniformBlock:
         p_count = 0
 
         def rep_func(s):
-            names_fields = f", ".join((f"{k}={v.__name__}" for k, v in dict(s._fields_).items()))
+            names_fields = ", ".join((f"{k}={v.__name__}" for k, v in dict(s._fields_).items()))
             return f"UBOView({names_fields})"
 
         def build_ctypes_struct(name: str, struct_dict: dict) -> type:
@@ -1034,7 +1037,7 @@ class Shader(ShaderBase):
         self.type = shader_type
 
         shader_gl_type = _shader_types[shader_type]
-        source_string = GLShaderSource(source_string, shader_gl_type).validate()
+        source_string = self.get_string_class()(source_string, shader_gl_type).validate()
         shader_source_utf8 = source_string.encode("utf8")
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
@@ -1063,8 +1066,12 @@ class Shader(ShaderBase):
         if _debug_api_shaders:
             print(self._get_shader_log(shader_id))
 
+    @staticmethod
+    def get_string_class() -> type[GLShaderSource]:
+        return GLShaderSource
+
     @classmethod
-    def supported_shaders(cls) -> tuple[ShaderType, ...]:
+    def supported_shaders(cls: type[Shader]) -> tuple[ShaderType, ...]:
         return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
     @property
