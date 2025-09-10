@@ -23,7 +23,7 @@ primitives of the same OpenGL primitive mode.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence, Type, Protocol, Iterable, NoReturn
+from typing import TYPE_CHECKING, Any, Sequence, Protocol, Iterable, NoReturn
 
 from pyglet.graphics import allocation
 from pyglet.graphics.shader import Attribute, AttributeView, GraphicsAttribute, DataTypeTuple
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.instance import InstanceBucket, VertexInstanceBase
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
     from pyglet.graphics import GeometryMode
-    from pyglet.graphics.allocation import Allocator, AllocatorMemoryException
+    from pyglet.graphics.allocation import Allocator
 
 
 def _nearest_pow2(v: int) -> int:
@@ -176,8 +176,8 @@ class _LocalIndexSupport:
     index_start: int
 
     @property
-    def indices(self) -> list[int]:  # type: ignore[override]
-        return self.domain.index_stream.get_region(self.index_start, self.index_count)
+    def indices(self) -> list[int]:
+        return self.domain.index_stream.get_region(self.index_start, self.index_count)[:]
 
     @indices.setter
     def indices(self, local: Sequence[int]) -> None:  # type: ignore[override]
@@ -691,7 +691,6 @@ class IndexStream(BaseStream):
 
 
 class VertexArrayProtocol(Protocol):
-    ...
     def bind(self): ...
     def unbind(self): ...
 

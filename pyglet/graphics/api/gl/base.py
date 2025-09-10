@@ -106,7 +106,7 @@ class OpenGLWindowConfig(VerifiedGraphicsConfig):
         self.major_version = base_config.major_version
         self.minor_version = base_config.minor_version
         self.forward_compatible = base_config.forward_compatible
-        self.opengl_api = base_config.opengl_api or base_config.opengl_api
+        self.opengl_api = base_config.opengl_api
         self.debug = base_config.debug
 
     @abc.abstractmethod

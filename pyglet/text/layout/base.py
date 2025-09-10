@@ -33,16 +33,16 @@ if TYPE_CHECKING:
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-if pyglet.options.backend == "opengl":
+if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.text import (
         get_default_decoration_shader,
-        get_default_image_layout_shader,  # noqa: F401
+        get_default_image_layout_shader,
         get_default_layout_shader,
     )
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.text import (
         get_default_decoration_shader,
-        get_default_image_layout_shader,  # noqa: F401
+        get_default_image_layout_shader,
         get_default_layout_shader,
     )
 elif pyglet.options.backend == "webgl":
@@ -663,7 +663,7 @@ class TextDecorationGroup(Group):
     #     glDisable(GL_BLEND)
     #     self.program.stop()
 
-if pyglet.options.backend in ("opengl", "gles2", "gl2"):
+if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.text import TextDecorationGroup, TextLayoutGroup
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.text import TextDecorationGroup, TextLayoutGroup

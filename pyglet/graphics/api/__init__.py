@@ -19,10 +19,10 @@ resource_manager = ResourceManagement()
 if pyglet.compat_platform == "emscripten":
     pyglet.options.backend = "webgl"
 
-if pyglet.options.backend == "opengl":
+if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
 
-    core = OpenGLBackend()
+    core = OpenGLBackend("gles" if pyglet.options.backend == "gles3" else "gl")
 
     from pyglet.graphics.api.gl.draw import Batch
     from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch, get_default_blit_shader
