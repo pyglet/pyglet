@@ -393,8 +393,6 @@ class VertexDomain:
     vao: GLVertexArrayBinding
     attribute_names: dict[str, Attribute]
     attrib_name_buffers: dict[str, GLVertexStream]
-
-    _property_dict: dict[str, property]
     _vertexlist_class: type
 
     _vertex_class: type[VertexList] = VertexList
@@ -415,14 +413,13 @@ class VertexDomain:
 
         self._create_streams(initial_count)
         self._create_vao()
-        self._property_dict = {}  # name: property(_getter, _setter)
 
         for name, attrib in attribute_meta.items():
             if not attrib.fmt.is_instanced:
                 self.attrib_name_buffers[name] = self.vertex_buffers
 
         # Make a custom VertexList class w/ properties for each attribute
-        self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,), self._property_dict)
+        self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
     def _create_vao(self) -> None:
         self.vao = GLVertexArrayBinding(self._context, self.streams)
@@ -559,12 +556,12 @@ class GLInstanceDomainElements(BaseInstanceDomain):
         if vertex_list.start:
             self._ctx.glDrawElementsInstancedBaseVertex(
                 mode, vertex_list.index_count, self._index_gl_type, byte_offset,
-                vertex_list.bucket.instance_count, vertex_list.start
+                vertex_list.bucket.instance_count, vertex_list.start,
             )
         else:
             self._ctx.glDrawElementsInstanced(
                 mode, vertex_list.index_count, self._index_gl_type, byte_offset,
-                vertex_list.bucket.instance_count
+                vertex_list.bucket.instance_count,
             )
 
     def draw(self, mode: int) -> None:
@@ -578,12 +575,12 @@ class GLInstanceDomainElements(BaseInstanceDomain):
             if base_vertex:
                 self._ctx.glDrawElementsInstancedBaseVertex(
                     mode, index_count, self._index_gl_type, byte_offset,
-                    bucket.instance_count, base_vertex
+                    bucket.instance_count, base_vertex,
                 )
             else:
                 self._ctx.glDrawElementsInstanced(
                     mode, index_count, self._index_gl_type, byte_offset,
-                    bucket.instance_count
+                    bucket.instance_count,
                 )
 
 class InstancedVertexDomain(VertexDomain):
@@ -793,7 +790,7 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
             first_index=index_start,
             index_count=index_count,
             index_type=self.index_type,
-            base_vertex=start if self.supports_base_vertex else 0
+            base_vertex=start if self.supports_base_vertex else 0,
         )
         vertex_list = self._vertexlist_class(self, start, count, index_start, index_count, bucket)
         vertex_list.indices = indices
