@@ -126,11 +126,10 @@ if __name__ == "__main__":
     for filename in source_files:
         move_file(filename)
 
-    if ENSURE_PYODIDE_RUNNING:
-        if not is_server_running():
-            print("HTTP server not detected.")
-        else:
-            print("HTTP server already running.")
+    if not is_server_running():
+        print("HTTP server not detected.")
+    else:
+        print("HTTP server already running.")
 
     if LAUNCH_BROWSER_AFTER:
         launch_browser(SCRIPT_FILENAME)
