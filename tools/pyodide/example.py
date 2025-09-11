@@ -7,7 +7,13 @@ window = pyglet.window.Window()
 
 batch = pyglet.graphics.Batch()
 
-print("YO")
+label = pyglet.text.Label('Press Any Key To Add A Sprite!',
+                          font_size=24,
+                          x=window.width // 2,
+                          y=window.height // 2,
+                          anchor_x='center',
+                          anchor_y='center',
+                          batch=batch)
 
 try:
     # Will be found in the pyodide VFS.
@@ -25,9 +31,11 @@ sprites = [pyglet.sprite.Sprite(image,
 
 @window.event
 def on_key_press(symbol, modifiers):
-    sprites.append(pyglet.sprite.Sprite(image,
-                                        x=random.randint(0, window.width),
-                                        y=random.randint(0, window.height), batch=batch))
+    sprite = pyglet.sprite.Sprite(
+        image, x=random.randint(0, window.width), y=random.randint(0, window.height), batch=batch
+    )
+    sprite.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    sprites.append(sprite)
 
 
 @window.event

@@ -49,6 +49,8 @@ from pyglet.graphics.shader import (
     ShaderSource,
     ShaderType,
     UniformBufferObjectBase,
+    AttributeView,
+    GraphicsAttribute,
 )
 
 try:
@@ -135,62 +137,56 @@ _attribute_types: dict[int, tuple[int, DataTypes]] = {
 
 # Accessor classes:
 
-
-class GLAttribute(Attribute):
+class GLAttribute(GraphicsAttribute):
     """Abstract accessor for an attribute in a mapped buffer."""
-
     gl_type: int
     """OpenGL type enumerant; for example, ``GL_FLOAT``"""
 
-    def __init__(
-        self,
-        name: str,
-        location: int,
-        components: int,
-        data_type: DataTypes,
-        normalize: bool,  # noqa: D417
-        instance: bool,
-    ) -> None:
+    def __init__(self, attribute: Attribute, view: AttributeView) -> None:
         """Create the attribute accessor.
 
         Args:
-            name:
-                Name of the vertex attribute.
-            location:
-                Location (index) of the vertex attribute.
-            components:
-                Number of components in the attribute.
-            normalize:
-                True if OpenGL should normalize the values
-            instance:
-                True if OpenGL should treat this as an instanced attribute.
-
+            attribute: The base shader Attribute object.
+            view: The view intended for the buffer of this Attribute.
         """
-        super().__init__(name, location, components, data_type, normalize, instance)
         self._gl = pyglet.graphics.api.core.current_context.gl
-        self.gl_type = _data_type_to_gl_type[self.data_type]
+        super().__init__(attribute, view)
+        data_type = self.attribute.fmt.data_type
+        self.gl_type = _data_type_to_gl_type[data_type]
+
+        # If the data type is not normalized and is not a float, consider it an int pointer.
+        self._is_int = data_type != "f" and self.attribute.fmt.normalized is False
 
     def enable(self) -> None:
         """Enable the attribute."""
-        self._gl.enableVertexAttribArray(self.location)
+        self._gl.enableVertexAttribArray(self.attribute.location)
 
-    def set_pointer(self, ptr: int) -> None:
-        """Setup this attribute to point to the currently bound buffer at the given offset.
+    def disable(self) -> None:
+        self._gl.disableVertexAttribArray(self.attribute.location)
 
-        ``offset`` should be based on the currently bound buffer's ``ptr`` member.
-
-        Args:
-            ptr:
-                Pointer offset to the currently bound buffer for this attribute.
-
-        """
-        self._gl.vertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, ptr)
+    def set_pointer(self) -> None:
+        """Setup this attribute to point to the currently bound buffer at the given offset."""
+        if self._is_int:
+            self._gl.vertexAttribIPointer(
+                self.attribute.location,
+                self.attribute.fmt.components,
+                self.gl_type,
+                self.view.stride,
+                self.view.offset,
+            )
+        else:
+            self._gl.vertexAttribPointer(
+                self.attribute.location,
+                self.attribute.fmt.components,
+                self.gl_type,
+                self.attribute.fmt.normalized,
+                self.view.stride,
+                self.view.offset,
+            )
 
     def set_divisor(self) -> None:
-        self._gl.vertexAttribDivisor(self.location, 1)
+        self._gl.vertexAttribDivisor(self.attribute.location, self.attribute.fmt.divisor)
 
-    def __repr__(self) -> str:
-        return f"Attribute(name='{self.name}', location={self.location}, count={self.count})"
 
 
 class _UniformArray:
@@ -1022,7 +1018,7 @@ class Shader(ShaderBase):
         self.type = shader_type
 
         shader_gl_type = _shader_types[shader_type]
-        source_string = GLShaderSource(source_string, shader_gl_type).validate()
+        source_string = self.get_string_class()(source_string, shader_gl_type).validate()
         # shader_source_utf8 = source_string.encode("utf8")
         # source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         # source_length = c_int(len(shader_source_utf8))
@@ -1052,6 +1048,10 @@ class Shader(ShaderBase):
 
         if _debug_api_shaders:
             print(self._get_shader_log(shader_id))
+
+    @staticmethod
+    def get_string_class() -> type[GLShaderSource]:
+        return GLShaderSource
 
     @classmethod
     def supported_shaders(cls) -> tuple[ShaderType, ...]:
@@ -1208,21 +1208,14 @@ class ShaderProgram(ShaderProgramBase):
         except GLException as err:
             raise ShaderException from err
 
-    def _vertex_list_create(
-        self,
-        count: int,
-        mode: GeometryMode,
-        indices: Sequence[int] | None = None,
-        instances: Sequence[str] | None = None,
-        batch: Batch = None,
-        group: Group = None,
-        **data: Any,
-    ) -> VertexList | IndexedVertexList:
+
+    def _vertex_list_create(self, count: int, mode: GeometryMode, indices: Sequence[int] | None = None,
+                            instances: dict[str, int] | None = None, batch: Batch = None, group: Group = None,
+                            **data: Any) -> VertexList | InstanceVertexList | IndexedVertexList | InstanceIndexedVertexList:
         assert isinstance(mode, GeometryMode), f"Mode {mode} is not geometry mode."
         attributes = {}
         initial_arrays = []
 
-        instanced = instances is not None
         indexed = indices is not None
 
         # Probably just remove all of this?
@@ -1232,54 +1225,44 @@ class ShaderProgram(ShaderProgramBase):
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
                     initial_arrays.append((name, array))
-                    current_attrib.data_type = fmt[0]
-                    if len(fmt) == 2:
-                        current_attrib.normalize = True
+                    normalize = len(fmt) == 2
+                    current_attrib.set_data_type(fmt[0], normalize)
 
-                assert len(array) == current_attrib.count * count, (
-                    f"Array size for attribute '{name}' is incorrect. Expected {current_attrib.count * count}. Received: {len(array)}"
-                )
-
-                attributes[name] = (
-                    current_attrib  # , 'format': fmt, 'instance': name in instances if instances else False}
-                )
+                attributes[name] = current_attrib#, 'format': fmt, 'instance': name in instances if instances else False}
             except KeyError:
                 if _debug_api_shaders:
-                    msg = (
-                        f"The attribute `{name}` was not found in the Shader Program.\n"
-                        f"Please check the spelling, or it may have been optimized out by the OpenGL driver.\n"
-                        f"Valid names: {list(attributes)}"
-                    )
+                    msg = (f"The attribute `{name}` was not found in the Shader Program.\n"
+                           f"Please check the spelling, or it may have been optimized out by the OpenGL driver.\n"
+                           f"Valid names: {list(attributes)}")
                     warnings.warn(msg)
                 continue
 
+        if instances:
+            for name, divisor in instances.items():
+                attributes[name].set_divisor(divisor)
+
         if _debug_api_shaders:
             if missing_data := [key for key in attributes if key not in data]:
-                msg = f"No data was supplied for the following found attributes: `{missing_data}`.\n"
+                msg = (
+                    f"No data was supplied for the following found attributes: `{missing_data}`.\n"
+                )
                 warnings.warn(msg)
 
         batch = batch or pyglet.graphics.get_default_batch()
         group = group or pyglet.graphics.ShaderGroup(program=self)
-        domain = batch.get_domain(indexed, instanced, mode, group, attributes)
+        domain = batch.get_domain(indexed, bool(instances), mode, group, attributes)
 
         # Create vertex list and initialize
         if indexed:
-            vlist = domain.create(count, len(indices))
-            start = vlist.start
-            vlist.indices = [i + start for i in indices]
+            vlist = domain.create(count, indices)
         else:
             vlist = domain.create(count)
 
         for name, array in initial_arrays:
-            try:
-                vlist.set_attribute_data(name, array)
-            except KeyError:  # noqa: PERF203
-                continue
-
-        if instanced:
-            vlist.instanced = True
+            vlist.set_attribute_data(name, array)
 
         return vlist
+
 
     def vertex_list(
         self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None, **data: Any

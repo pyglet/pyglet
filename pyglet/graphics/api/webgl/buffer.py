@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
-    from pyglet.graphics.shader import Attribute
+    from pyglet.graphics.shader import Attribute, GraphicsAttribute
 
 
 class BufferObject(AbstractBuffer):
@@ -167,11 +167,11 @@ class BackedBufferObject(BufferObject):
     _dirty_max: int
     _dirty: bool
     stride: int
-    count: int
+    element_count: int
     ctype: CType
 
     def __init__(
-        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
+        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
     ) -> None:
         super().__init__(context, size, target, usage)
 
@@ -186,7 +186,7 @@ class BackedBufferObject(BufferObject):
         self._dirty = False
 
         self.stride = stride
-        self.count = count
+        self.element_count = element_count
 
     def commit(self) -> None:
         """Commits all saved changes to the underlying buffer before drawing.
@@ -218,13 +218,13 @@ class BackedBufferObject(BufferObject):
     @lru_cache(maxsize=None)  # noqa: B019
     def get_region(self, start: int, count: int) -> Array[CType]:
         byte_start = self.stride * start  # byte offset
-        array_count = self.count * count  # number of values
+        array_count = self.element_count * count  # number of values
         ptr_type = ctypes.POINTER(self.c_type * array_count)
         return ctypes.cast(self.data_ptr + byte_start, ptr_type).contents
 
     def set_region(self, start: int, count: int, data: Sequence[float]) -> None:
-        array_start = self.count * start
-        array_end = self.count * count + array_start
+        array_start = self.element_count * start
+        array_end = self.element_count * count + array_start
 
         self.data[array_start:array_end] = data
 
@@ -272,16 +272,20 @@ class BackedBufferObject(BufferObject):
 class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, attribute: Attribute) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, size: int, graphics_attr: GraphicsAttribute) -> None:
         # size is the allocator size * attribute.stride (buffer size)
-        super().__init__(context, size, attribute.c_type, attribute.stride, attribute.count)
+        super().__init__(context, size, graphics_attr.attribute.c_type,
+                         graphics_attr.view.stride,
+                         graphics_attr.attribute.fmt.components)
+
 
 
 class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
-    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, count: int, usage: int = GL_DYNAMIC_DRAW) -> None:
-        super().__init__(context, size, c_type, stride, count, usage, GL_ELEMENT_ARRAY_BUFFER)
+    def __init__(self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int,
+                 usage: int = GL_DYNAMIC_DRAW) -> None:
+        super().__init__(context, size, c_type, stride, element_count, usage, GL_ELEMENT_ARRAY_BUFFER)
 
     def bind_to_index_buffer(self) -> None:
         """Binds this buffer as an index buffer on the active vertex array."""

@@ -323,35 +323,9 @@ class Batch(BatchBase):
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
         vertex_list.migrate(domain)
 
-    def _convert_to_instanced(
-        self, domain: vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain, instance_attributes: Sequence[str]
-    ) -> vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
-        """Takes a domain from inside the Batch and creates a new instanced version."""
-        # Search for the existing domain.
-        for group, domain_map in self.group_map.items():
-            for key, mapped_domain in domain_map.items():
-                if domain == mapped_domain:
-                    # Set instance attributes.
-                    new_attributes = mapped_domain.attribute_meta.copy()
-                    for name, attribute_dict in new_attributes.items():
-                        if name in instance_attributes:
-                            attribute_dict['instance'] = True
-                    dindexed, dinstanced, dmode, _ = key
 
-                    assert dinstanced == 0, "Cannot convert an instanced domain."
-                    return self.get_domain(dindexed, True, dmode, group, new_attributes)
-
-        msg = "Domain was not found and could not be converted."
-        raise Exception(msg)
-
-    def get_domain(
-        self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group, attributes: dict[str, Any]
-    ) -> (
-        vertexdomain.VertexDomain
-        | vertexdomain.IndexedVertexDomain
-        | vertexdomain.InstancedVertexDomain
-        | vertexdomain.InstancedIndexedVertexDomain
-    ):
+    def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
+                   attributes: dict[str, Any]) -> vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -363,12 +337,8 @@ class Batch(BatchBase):
         domain_map = self.group_map[group]
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        if instanced:
-            self._instance_count += 1
-            key = (indexed, self._instance_count, mode, str(attributes))
-        else:
-            # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, str(attributes))
+        # Find domain given formats, indices and mode
+        key = (indexed, instanced, mode, str(attributes))
 
         try:
             domain = domain_map[key]
@@ -377,7 +347,6 @@ class Batch(BatchBase):
             domain = _domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
-
         return domain
 
     def _add_group(self, group: Group) -> None:
