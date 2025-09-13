@@ -101,7 +101,7 @@ class PygletDelegate_Implementation:
             self.did_pause_exclusive_mouse = False
             self._window._nswindow.setMovable_(True)  # Mac OS 10.6  # noqa: SLF001
         # Restore previous mouse visibility settings.
-        self._window.set_mouse_platform_visible()
+        self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_activate')
 
     @PygletDelegate.method('v@')
@@ -115,7 +115,7 @@ class PygletDelegate_Implementation:
             # the window is reactivated by clicking on its title bar.
             self._window._nswindow.setMovable_(False)  # Mac OS X 10.6  # noqa: SLF001
         # Make sure that cursor is visible.
-        self._window.set_mouse_platform_visible(True)
+        self._window.set_mouse_cursor_platform_visible(True)
         self._window.dispatch_event('on_deactivate')
 
     @PygletDelegate.method('v@')

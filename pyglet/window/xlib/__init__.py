@@ -460,7 +460,7 @@ class XlibWindow(BaseWindow):
         if self._visible:
             self.set_visible(True)
 
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
 
@@ -724,7 +724,7 @@ class XlibWindow(BaseWindow):
 
         return cursor
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         if not self._window:
             return
         if platform_visible is None:
@@ -763,7 +763,7 @@ class XlibWindow(BaseWindow):
 
         if mouse_exclusive != self._applied_mouse_exclusive:
             if mouse_exclusive:
-                self.set_mouse_platform_visible(False)
+                self.set_mouse_cursor_platform_visible(False)
 
                 # Restrict to client area
                 xlib.XGrabPointer(self._x_display, self._window,
@@ -794,11 +794,11 @@ class XlibWindow(BaseWindow):
                     # Failed to grab, try again later
                     self._applied_mouse_exclusive = None
                     return
-                self.set_mouse_platform_visible()
+                self.set_mouse_cursor_platform_visible()
             else:
                 # Unclip
                 xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
-                self.set_mouse_platform_visible()
+                self.set_mouse_cursor_platform_visible()
 
             self._applied_mouse_exclusive = mouse_exclusive
 

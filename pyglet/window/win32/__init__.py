@@ -350,7 +350,7 @@ class Win32Window(BaseWindow):
             super().close()
             return
 
-        self.set_mouse_platform_visible(True)
+        self.set_mouse_cursor_platform_visible(True)
 
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._view_window_class.lpszClassName, 0)
@@ -456,7 +456,7 @@ class Win32Window(BaseWindow):
             _user32.ShowWindow(self._hwnd, constants.SW_HIDE)
             self.dispatch_event('on_hide')
         self._visible = visible
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
 
     def minimize(self) -> None:
         _user32.ShowWindow(self._hwnd, constants.SW_MINIMIZE)
@@ -475,7 +475,7 @@ class Win32Window(BaseWindow):
         self._caption = caption
         _user32.SetWindowTextW(self._hwnd, c_wchar_p(caption))
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
@@ -563,7 +563,7 @@ class Win32Window(BaseWindow):
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
-        self.set_mouse_platform_visible(not exclusive)
+        self.set_mouse_cursor_platform_visible(not exclusive)
 
     def set_mouse_position(self, x: int, y: int, absolute: bool = False) -> None:
         if not absolute:
@@ -1045,7 +1045,7 @@ class Win32Window(BaseWindow):
             # to determine when to recreate the tracking structure after
             # re-entering (to track the next WM_MOUSELEAVE).
             self._mouse_in_window = True
-            self.set_mouse_platform_visible()
+            self.set_mouse_cursor_platform_visible()
             self.dispatch_event('on_mouse_enter', x / self._mouse_scale, y / self._mouse_scale)
             self._tracking = True
             track = TRACKMOUSEEVENT()
@@ -1094,7 +1094,7 @@ class Win32Window(BaseWindow):
         y = self._height - point.y
         self._tracking = False
         self._mouse_in_window = False
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
         self.dispatch_event('on_mouse_leave', x / self._mouse_scale, y / self._mouse_scale)
         return 0
 

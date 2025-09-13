@@ -1051,23 +1051,23 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         self._vsync = vsync
 
-    def set_mouse_visible(self, visible: bool = True) -> None:
+    def set_mouse_cursor_visible(self, visible: bool = True) -> None:
         """Show or hide the mouse cursor.
 
         The mouse cursor will only be hidden while it is positioned within
         this window.  Mouse events will still be processed as usual.
         """
         self._mouse_visible = visible
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         """Set the platform-drawn mouse cursor visibility.
 
         This is called automatically after changing the mouse cursor or exclusive mode.
 
         Applications should not normally need to call this method.
 
-        :see: :py:meth:`~pyglet.window.Window.set_mouse_visible` instead.
+        :see: :py:meth:`~pyglet.window.Window.set_mouse_cursor_visible` instead.
 
         Args:
             platform_visible:
@@ -1093,7 +1093,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
         self._mouse_cursor.scaling = self.scale
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
         """Hide the mouse cursor and direct all mouse events to this window.

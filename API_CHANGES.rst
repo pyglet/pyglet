@@ -40,3 +40,7 @@ pyglet.graphics.group
 ---------------------
 *Changed*: Groups now set their state by set of connector ``pyglet.graphics.state`` objects. This allows for better
 optimization and optimized to operate the same between multiple backends.
+
+pyglet.window
+-------------
+*Changed*: Window.set_mouse_visible has been renamed to Window.set_mouse_cursor_visible, and Window.set_mouse_platform_visible has been renamed to Window.set_mouse_cursor_platform_visible.

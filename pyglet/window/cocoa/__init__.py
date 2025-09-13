@@ -264,7 +264,7 @@ class CocoaWindow(BaseWindow):
 
         with AutoReleasePool():
             # Restore cursor visibility
-            self.set_mouse_platform_visible(True)
+            self.set_mouse_cursor_platform_visible(True)
             self.set_exclusive_mouse(False)
             self.set_exclusive_keyboard(False)
 
@@ -524,7 +524,7 @@ class CocoaWindow(BaseWindow):
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return cocoapy.foundation.NSMouseInRect(point, rect, False)
 
-    def set_mouse_platform_visible(self, platform_visible: int | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: int | None = None) -> None:
         # When the platform_visible argument is supplied with a boolean, then this
         # method simply sets whether or not the platform mouse cursor is visible.
         if platform_visible is not None:
@@ -548,7 +548,7 @@ class CocoaWindow(BaseWindow):
             # If we are in the window, then what we do depends on both
             # the current pyglet-set visibility setting for the mouse and
             # the type of the mouse cursor.  If the cursor has been hidden
-            # in the window with set_mouse_visible() then don't show it.
+            # in the window with set_mouse_cursor_visible() then don't show it.
             elif not self._mouse_visible:
                 SystemCursor.hide()
             # If the mouse is set as a system-defined cursor, then we
@@ -632,7 +632,7 @@ class CocoaWindow(BaseWindow):
             quartz.CGAssociateMouseAndMouseCursorPosition(True)
 
         # Update visibility of mouse cursor.
-        self.set_mouse_platform_visible()
+        self.set_mouse_cursor_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive: bool = True) -> None:
         # http://developer.apple.com/mac/library/technotes/tn2002/tn2062.html

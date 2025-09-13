@@ -73,7 +73,7 @@ class HeadlessWindow(BaseWindow):
     def set_vsync(self, vsync: bool) -> None:
         pass
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         pass
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:

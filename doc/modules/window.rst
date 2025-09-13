@@ -44,8 +44,8 @@ Classes
   .. automethod:: set_maximum_size
   .. automethod:: set_minimum_size
   .. automethod:: set_mouse_cursor
-  .. automethod:: set_mouse_platform_visible
-  .. automethod:: set_mouse_visible
+  .. automethod:: set_mouse_cursor_platform_visible
+  .. automethod:: set_mouse_cursor_visible
   .. automethod:: set_size
   .. automethod:: set_visible
   .. automethod:: switch_to

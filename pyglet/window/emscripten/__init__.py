@@ -541,7 +541,7 @@ class EmscriptenWindow(BaseWindow):
         canvas.remove()
         return data_url
 
-    def set_mouse_platform_visible(self, platform_visible: bool | None = None) -> None:
+    def set_mouse_cursor_platform_visible(self, platform_visible: bool | None = None) -> None:
         if not self._canvas:
             return
 

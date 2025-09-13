@@ -341,7 +341,7 @@ class PygletView_Implementation:
     def mouseEntered_(self, nsevent: cocoapy.ObjCInstance) -> None:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = True  # noqa: SLF001
-        # Don't call self._window.set_mouse_platform_visible() from here.
+        # Don't call self._window.set_mouse_cursor_platform_visible() from here.
         # Better to do it from cursorUpdate:
         self._window.dispatch_event('on_mouse_enter', x, y)
 
@@ -350,7 +350,7 @@ class PygletView_Implementation:
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = False  # noqa: SLF001
         if not self._window._mouse_exclusive:  # noqa: SLF001
-            self._window.set_mouse_platform_visible()
+            self._window.set_mouse_cursor_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
     @PygletView.method('v@')
@@ -364,7 +364,7 @@ class PygletView_Implementation:
         # to the default arrow and screw up our cursor tracking.
         self._window._mouse_in_window = True  # noqa: SLF001
         if not self._window._mouse_exclusive:  # noqa: SLF001
-            self._window.set_mouse_platform_visible()
+            self._window.set_mouse_cursor_platform_visible()
 
     @PygletView.method('Q@')
     def draggingEntered_(self, draginfo: cocoapy.ObjCInstance) -> int:
