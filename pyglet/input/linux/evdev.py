@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 import ctypes
+import select
 import warnings
 import threading
 
@@ -248,7 +249,8 @@ event_types = {
 
 
 class EvdevDevice(XlibSelectDevice, Device):
-    _fileno = None
+    _fileno: int | None
+    _poll: "select.poll | None"
 
     def __init__(self, display, filename):
         self._filename = filename
@@ -304,6 +306,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         self.controls.sort(key=lambda c: c.event_code)
         os.close(fileno)
 
+        self._poll = select.poll()
         self._event_size = ctypes.sizeof(InputEvent)
         self._event_buffer = (InputEvent * 64)()
 
@@ -321,6 +324,7 @@ class EvdevDevice(XlibSelectDevice, Device):
     def open(self, window=None, exclusive=False):
         try:
             self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
+            self._poll.register(self._fileno, select.POLLIN | select.POLLPRI)
         except OSError as e:
             raise DeviceOpenException(e)
 
@@ -332,6 +336,9 @@ class EvdevDevice(XlibSelectDevice, Device):
 
         if not self._fileno:
             return
+
+        if self._poll:
+            self._poll.unregister(self._fileno)
 
         pyglet.app.platform_event_loop.select_devices.remove(self)
         os.close(self._fileno)
@@ -351,12 +358,9 @@ class EvdevDevice(XlibSelectDevice, Device):
         return self._fileno
 
     def poll(self):
-        return False
+        return True if self._poll.poll(0) else False
 
     def select(self):
-        if not self._fileno:
-            return
-
         try:
             bytes_read = _readv(self._fileno, self._event_buffer)
         except OSError:
