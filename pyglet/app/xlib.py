@@ -2,6 +2,9 @@ import os
 import select
 import threading
 
+from time import CLOCK_MONOTONIC
+from select import POLLIN
+
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop
 
@@ -22,14 +25,6 @@ class XlibSelectDevice:
         """
         raise NotImplementedError('abstract')
 
-    def poll(self):
-        """Check if the device has events ready to process.
-
-        :rtype: bool
-        :return: True if there are events to process, False otherwise.
-        """
-        return False
-
 
 class NotificationDevice(XlibSelectDevice):
     def __init__(self):
@@ -48,16 +43,40 @@ class NotificationDevice(XlibSelectDevice):
         os.read(self._sync_file_read, 1)
         app.platform_event_loop.dispatch_posted_events()
 
-    def poll(self):
-        return self._event.is_set()
+
+class TimerDevice(XlibSelectDevice):
+    def __init__(self):
+        self.fd = os.timerfd_create(CLOCK_MONOTONIC)
+
+    def fileno(self):
+        return self.fd
+
+    def select(self):
+        os.read(self.fd, 1024)
+
+    def set_timer(self, value):
+        os.timerfd_settime(self.fd, initial=value)
 
 
 class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
         super().__init__()
         self._notification_device = NotificationDevice()
-        self.select_devices = set()
-        self.select_devices.add(self._notification_device)
+        self._timer_device = TimerDevice()
+
+        self.monitored_devices = {}
+        self.epoll = select.epoll()
+
+        self.register(self._notification_device, POLLIN)
+        self.register(self._timer_device, POLLIN)
+
+    def register(self, device, eventmask=POLLIN):
+        self.epoll.register(device, eventmask)
+        self.monitored_devices[device.fileno()] = device
+
+    def unregister(self, device):
+        self.epoll.unregister(device)
+        del self.monitored_devices[device.fileno()]
 
     def notify(self):
         self._notification_device.set()
@@ -66,23 +85,16 @@ class XlibEventLoop(PlatformEventLoop):
         # Timeout is from EventLoop.idle(). Return after that timeout or directly
         # after receiving a new event. None means: block for user input.
 
-        # Poll devices to check for already pending events (select.select is not enough)
-        pending_devices = []
-        for device in self.select_devices:
-            if device.poll():
-                pending_devices.append(device)
+        # The TimerDevice file descriptor will wake the poll:
+        self._timer_device.set_timer(timeout)
 
-        # If no devices were ready, wait until one gets ready
-        if not pending_devices:
-            pending_devices, _, _ = select.select(self.select_devices, (), (), timeout)
+        # At least one event will be returned (a real event, or the timer event)
+        events = self.epoll.poll(None)
 
-        if not pending_devices:
-            # Notify caller that timeout expired without incoming events
+        if len(events) == 1 and (self._timer_device.fd, 1) in events:
             return False
 
-        # Dispatch activity on matching devices
-        for device in pending_devices:
-            device.select()
+        for fd, _ in events:
+            self.monitored_devices[fd].select()
 
-        # Notify caller that events were handled before timeout expired
         return True

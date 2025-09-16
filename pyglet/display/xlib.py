@@ -123,7 +123,7 @@ class XlibDisplay(XlibSelectDevice, Display):
                     self._enable_xsync = True
 
         # Add to event loop select list.  Assume we never go away.
-        app.platform_event_loop.select_devices.add(self)
+        app.platform_event_loop.register(self)
 
     def get_default_screen(self) -> Screen:
         screens = self.get_screens()
@@ -220,9 +220,6 @@ class XlibDisplay(XlibSelectDevice, Display):
                 continue
 
             dispatch(e)
-
-    def poll(self) -> int:
-        return xlib.XPending(self._display)
 
 
 class XlibScreen(Screen):
