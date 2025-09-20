@@ -7,11 +7,12 @@ import select
 import warnings
 import threading
 
-from ctypes import c_uint16 as _u16, c_byte
+from ctypes import c_uint16 as _u16
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
 from ctypes import c_int32 as _s32
 from ctypes import c_int64 as _s64
+from ctypes import c_byte as _c_byte
 
 import pyglet
 
@@ -177,9 +178,7 @@ def EVIOCGABS(fileno, abs):
     return _IOR_len('E', 0x40 + abs)(fileno, buffer)
 
 
-def get_key_state(fileno, event_code):
-    nbytes = (KEY_MAX // 8) + 1
-    buffer = (c_byte * nbytes)()
+def get_key_state(fileno, event_code, buffer):
     buffer = EVIOCGKEY(fileno, buffer)
     return bool(buffer[event_code // 8] & (1 << (event_code % 8)))
 
@@ -363,9 +362,12 @@ class EvdevDevice(XlibSelectDevice, Device):
         will be dispatched. This is a somewhat expensive operation, but it is necessary
         to perform in some cases (such as when a SYN_DROPPED event is received).
         """
+        nbytes = (KEY_MAX // 8) + 1
+        key_buffer = (_c_byte * nbytes)()
+
         for control in self.control_map.values():
             if isinstance(control, Button):
-                control.value = get_key_state(self._fileno, control.event_code)
+                control.value = get_key_state(self._fileno, control.event_code, key_buffer)
             if isinstance(control, AbsoluteAxis):
                 absinfo = EVIOCGABS(self._fileno, control.event_code)
                 control.value = absinfo.value
