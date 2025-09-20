@@ -7,7 +7,7 @@ import select
 import warnings
 import threading
 
-from ctypes import c_uint16 as _u16
+from ctypes import c_uint16 as _u16, c_byte
 from ctypes import c_int16 as _s16
 from ctypes import c_uint32 as _u32
 from ctypes import c_int32 as _s32
@@ -165,6 +165,7 @@ EVIOCGNAME = _IOR_str('E', 0x06)
 EVIOCGPHYS = _IOR_str('E', 0x07)
 EVIOCGUNIQ = _IOR_str('E', 0x08)
 EVIOCSFF = _IOW('E', 0x80, FFEvent)
+EVIOCGKEY = _IOR_len('E', 0x18)
 
 
 def EVIOCGBIT(fileno, ev, buffer):
@@ -174,6 +175,13 @@ def EVIOCGBIT(fileno, ev, buffer):
 def EVIOCGABS(fileno, abs):
     buffer = InputABSInfo()
     return _IOR_len('E', 0x40 + abs)(fileno, buffer)
+
+
+def get_key_state(fileno, event_code):
+    nbytes = (KEY_MAX // 8) + 1
+    buffer = (c_byte * nbytes)()
+    buffer = EVIOCGKEY(fileno, buffer)
+    return bool(buffer[event_code // 8] & (1 << (event_code % 8)))
 
 
 def get_set_bits(bytestring):
@@ -218,10 +226,8 @@ def _create_control(fileno, event_type, event_code):
         value = absinfo.value
         minimum = absinfo.minimum
         maximum = absinfo.maximum
-        control = AbsoluteAxis(name, minimum, maximum, raw_name)
+        control = AbsoluteAxis(name, minimum, maximum, raw_name, inverted=name == 'hat_y')
         control.value = value
-        if name == 'hat_y':
-            control.inverted = True
     elif event_type == EV_REL:
         raw_name = rel_raw_names.get(event_code, f'EV_REL({event_code:x})')
         name = _rel_names.get(event_code)
@@ -303,12 +309,14 @@ class EvdevDevice(XlibSelectDevice, Device):
                         self.control_map[(event_type, event_code)] = control
                         self.controls.append(control)
 
-        self.controls.sort(key=lambda c: c.event_code)
+        self.controls.sort(key=lambda ctrl: ctrl.event_code)
         os.close(fileno)
 
         self._poll = select.poll()
         self._event_size = ctypes.sizeof(InputEvent)
         self._event_buffer = (InputEvent * 64)()
+        self._syn_dropped = False
+        self._event_queue = []
 
         super().__init__(display, name)
 
@@ -347,6 +355,21 @@ class EvdevDevice(XlibSelectDevice, Device):
     def get_controls(self):
         return self.controls
 
+    def _resync_control_state(self):
+        """Manually resync all Control state.
+
+        This method queries and resets the state of each Control using the appropriate
+        ioctl calls. If this causes the Control value to change, the associated events
+        will be dispatched. This is a somewhat expensive operation, but it is necessary
+        to perform in some cases (such as when a SYN_DROPPED event is received).
+        """
+        for control in self.control_map.values():
+            if isinstance(control, Button):
+                control.value = get_key_state(self._fileno, control.event_code)
+            if isinstance(control, AbsoluteAxis):
+                absinfo = EVIOCGABS(self._fileno, control.event_code)
+                control.value = absinfo.value
+
     # Force Feedback methods
 
     def ff_upload_effect(self, structure):
@@ -361,19 +384,50 @@ class EvdevDevice(XlibSelectDevice, Device):
         return True if self._poll.poll(0) else False
 
     def select(self):
+        """When the file descriptor is ready, read and process InputEvents.
+
+        This method has the following behavior:
+        - Read and queue all incoming input events.
+        - When a SYN_REPORT event is received, dispatch all queued events.
+        - If a SYN_DROPPED event is received, set a flag. When the next
+          SYN_REPORT event appears, drop all queued events & manually resync
+          all Control state.
+        """
         try:
             bytes_read = _readv(self._fileno, self._event_buffer)
+            n_events = bytes_read // self._event_size
         except OSError:
             self.close()
             return
 
-        n_events = bytes_read // self._event_size
-
         for event in self._event_buffer[:n_events]:
-            try:
-                self.control_map[(event.type, event.code)].value = event.value
-            except KeyError:
-                pass
+
+            # Mark the current chain of events as invalid and continue:
+            if (event.type, event.code) == (EV_SYN, SYN_DROPPED):
+                self._syn_dropped = True
+                continue
+
+            # Dispatch queued events when SYN_REPORT comes in:
+            if (event.type, event.code) == (EV_SYN, SYN_REPORT):
+
+                # Unless a SYN_DROPPED event has been received,
+                # in which case discard all queued events and resync:
+                if self._syn_dropped:
+                    self._event_queue.clear()
+                    self._syn_dropped = False
+                    self._resync_control_state()
+
+                # Dispatch all queued events, then clear the queue:
+                for queued_event in self._event_queue:
+                    try:
+                        self.control_map[(queued_event.type, queued_event.code)].value = queued_event.value
+                    except KeyError:
+                        pass
+                self._event_queue.clear()
+
+            # This is not a SYN_REPORT or SYN_DROPPED event, so it is probably
+            # an input event. Queue it until the next SYN_REPORT event comes in:
+            self._event_queue.append(event)
 
 
 class FFController(Controller):
