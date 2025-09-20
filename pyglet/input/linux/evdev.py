@@ -250,7 +250,6 @@ event_types = {
 
 class EvdevDevice(XlibSelectDevice, Device):
     _fileno: int | None
-    _poll: "select.poll | None"
 
     def __init__(self, display, filename):
         self._filename = filename
@@ -306,7 +305,6 @@ class EvdevDevice(XlibSelectDevice, Device):
         self.controls.sort(key=lambda c: c.event_code)
         os.close(fileno)
 
-        self._poll = select.poll()
         self._event_size = ctypes.sizeof(InputEvent)
         self._event_buffer = (InputEvent * 64)()
 
@@ -324,11 +322,10 @@ class EvdevDevice(XlibSelectDevice, Device):
     def open(self, window=None, exclusive=False):
         try:
             self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
-            self._poll.register(self._fileno, select.POLLIN | select.POLLPRI)
         except OSError as e:
             raise DeviceOpenException(e)
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        pyglet.app.platform_event_loop.register(self)
         super().open(window, exclusive)
 
     def close(self):
@@ -337,10 +334,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         if not self._fileno:
             return
 
-        if self._poll:
-            self._poll.unregister(self._fileno)
-
-        pyglet.app.platform_event_loop.select_devices.remove(self)
+        pyglet.app.platform_event_loop.unregister(self)
         os.close(self._fileno)
         self._fileno = None
 
@@ -356,9 +350,6 @@ class EvdevDevice(XlibSelectDevice, Device):
 
     def fileno(self):
         return self._fileno
-
-    def poll(self):
-        return True if self._poll.poll(0) else False
 
     def select(self):
         try:
