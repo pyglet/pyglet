@@ -33,6 +33,9 @@ except ImportError:
         return c.read(fd, buffers, 3072)
 
 
+KeyMaxArray = _c_byte * ((KEY_MAX // 8) + 1)
+
+
 # Structures from /linux/blob/master/include/uapi/linux/input.h
 
 class Timeval(ctypes.Structure):
@@ -160,25 +163,25 @@ class FFEvent(ctypes.Structure):
     )
 
 
+# Helper "macros" for file io:
 EVIOCGVERSION = _IOR('E', 0x01, ctypes.c_int)
 EVIOCGID = _IOR('E', 0x02, InputID)
 EVIOCGNAME = _IOR_str('E', 0x06)
 EVIOCGPHYS = _IOR_str('E', 0x07)
 EVIOCGUNIQ = _IOR_str('E', 0x08)
-EVIOCSFF = _IOW('E', 0x80, FFEvent)
 EVIOCGKEY = _IOR_len('E', 0x18)
+EVIOCSFF = _IOW('E', 0x80, FFEvent)
 
 
 def EVIOCGBIT(fileno, ev, buffer):
     return _IOR_len('E', 0x20 + ev)(fileno, buffer)
 
 
-def EVIOCGABS(fileno, abs):
-    buffer = InputABSInfo()
+def EVIOCGABS(fileno, abs, buffer=InputABSInfo()):
     return _IOR_len('E', 0x40 + abs)(fileno, buffer)
 
 
-def get_key_state(fileno, event_code, buffer):
+def get_key_state(fileno, event_code, buffer=KeyMaxArray()):
     buffer = EVIOCGKEY(fileno, buffer)
     return bool(buffer[event_code // 8] & (1 << (event_code % 8)))
 
@@ -421,10 +424,8 @@ class EvdevDevice(XlibSelectDevice, Device):
 
                 # Dispatch all queued events, then clear the queue:
                 for queued_event in self._event_queue:
-                    try:
-                        self.control_map[(queued_event.type, queued_event.code)].value = queued_event.value
-                    except KeyError:
-                        pass
+                    if control := self.control_map.get((queued_event.type, queued_event.code)):
+                        control.value = queued_event.value
                 self._event_queue.clear()
 
             # This is not a SYN_REPORT or SYN_DROPPED event, so it is probably

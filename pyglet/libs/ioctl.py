@@ -64,7 +64,7 @@ _IOC_READ = 2
 # 'code' instead of 'type' to indicate the ioctl "magic number" ('H', 'E', etc.).
 
 
-def _IOC(io_dir: _IOC_NONE | _IOC_READ | _IOC_WRITE, code: int, nr: int, size: int) -> int:
+def _IOC(io_dir: Union[_IOC_NONE, _IOC_READ, _IOC_WRITE], code: int, nr: int, size: int) -> int:
     return (io_dir << _IOC_DIRSHIFT) | (code << _IOC_TYPESHIFT) | (nr << _IOC_NRSHIFT) | (size << _IOC_SIZESHIFT)
 
 
