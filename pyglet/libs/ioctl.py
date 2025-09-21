@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ctypes import Structure, c_int, c_uint
     from typing import Callable, Union
-    c_data = Union[type[Structure], c_int, c_uint]
+    c_data = type[Structure] | type[c_int] | type[c_uint]
 
 
 _IOC_NRBITS = 8

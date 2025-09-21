@@ -36,6 +36,21 @@ except ImportError:
 KeyMaxArray = _c_byte * ((KEY_MAX // 8) + 1)
 
 
+class EvdevButton(Button):
+    event_type: int
+    event_code: int
+
+
+class EvdevAbsoluteAxis(AbsoluteAxis):
+    event_type: int
+    event_code: int
+
+
+class EvdevRelativeAxis(RelativeAxis):
+    event_type: int
+    event_code: int
+
+
 # Structures from /linux/blob/master/include/uapi/linux/input.h
 
 class Timeval(ctypes.Structure):
@@ -177,8 +192,9 @@ def EVIOCGBIT(fileno, ev, buffer):
     return _IOR_len('E', 0x20 + ev)(fileno, buffer)
 
 
-def EVIOCGABS(fileno, abs, buffer=InputABSInfo()):
-    return _IOR_len('E', 0x40 + abs)(fileno, buffer)
+def EVIOCGABS(fileno, ev, buffer=InputABSInfo()):
+    print("absbuffer instance:", buffer)
+    return _IOR_len('E', 0x40 + ev)(fileno, buffer)
 
 
 def get_key_state(fileno, event_code, buffer=KeyMaxArray()):
@@ -228,16 +244,16 @@ def _create_control(fileno, event_type, event_code):
         value = absinfo.value
         minimum = absinfo.minimum
         maximum = absinfo.maximum
-        control = AbsoluteAxis(name, minimum, maximum, raw_name, inverted=name == 'hat_y')
+        control = EvdevAbsoluteAxis(name, minimum, maximum, raw_name, inverted=name == 'hat_y')
         control.value = value
     elif event_type == EV_REL:
         raw_name = rel_raw_names.get(event_code, f'EV_REL({event_code:x})')
         name = _rel_names.get(event_code)
-        control = RelativeAxis(name, raw_name)
+        control = EvdevRelativeAxis(name, raw_name)
     elif event_type == EV_KEY:
         raw_name = key_raw_names.get(event_code, f'EV_KEY({event_code:x})')
         name = None
-        control = Button(name, raw_name)
+        control = EvdevButton(name, raw_name)
     else:
         return None
     control.event_type = event_type
@@ -365,15 +381,11 @@ class EvdevDevice(XlibSelectDevice, Device):
         will be dispatched. This is a somewhat expensive operation, but it is necessary
         to perform in some cases (such as when a SYN_DROPPED event is received).
         """
-        nbytes = (KEY_MAX // 8) + 1
-        key_buffer = (_c_byte * nbytes)()
-
         for control in self.control_map.values():
-            if isinstance(control, Button):
-                control.value = get_key_state(self._fileno, control.event_code, key_buffer)
-            if isinstance(control, AbsoluteAxis):
-                absinfo = EVIOCGABS(self._fileno, control.event_code)
-                control.value = absinfo.value
+            if isinstance(control, EvdevButton):
+                control.value = get_key_state(self._fileno, control.event_code)
+            if isinstance(control, EvdevAbsoluteAxis):
+                control.value = EVIOCGABS(self._fileno, control.event_code).value
 
     # Force Feedback methods
 
@@ -612,8 +624,8 @@ def _detect_controller_mapping(device):
                 ABS_Z: 'lefttrigger', ABS_RZ: 'righttrigger',
                 ABS_X: 'leftx', ABS_Y: 'lefty', ABS_RX: 'rightx', ABS_RY: 'righty'}
 
-    button_controls = [control for control in device.controls if isinstance(control, Button)]
-    axis_controls = [control for control in device.controls if isinstance(control, AbsoluteAxis)]
+    button_controls = [control for control in device.controls if isinstance(control, EvdevButton)]
+    axis_controls = [control for control in device.controls if isinstance(control, EvdevAbsoluteAxis)]
     hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
 
     for i, control in enumerate(button_controls):
