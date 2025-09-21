@@ -1,3 +1,19 @@
+pyglet 2.1.9
+
+Changes
+-------
+docs: Improve missing or underdeveloped math doc (#1295)
+input: Add new Controller properties for polling - Controller.dpad, Controller.leftanalog, Controller.rightanalog Vec2s.
+
+
+Bugfixes
+-------
+input.linux.evdev: Add support for the SYN_DROPPED event, to prevent "stuck" controls when events are lost.
+input.linux.evdev: Implement missing EvdevDevice.poll method.
+graphics.shaders: Fix attribute pointer issue for integers. (#1351)
+window.headless: Add missing abstract methods to HeadlessScreen (#1350)
+
+
 pyglet 2.1.8
 
 Changes
