@@ -91,6 +91,7 @@ from __future__ import annotations
 
 import sys
 from abc import abstractmethod
+from collections import deque
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
@@ -502,7 +503,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         """
         EventDispatcher.__init__(self)
-        self._event_queue = []
+        self._event_queue = deque()
 
         if not display:
             display = pyglet.display.get_display()
@@ -677,7 +678,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._context = None
         if app.event_loop:
             app.event_loop.dispatch_event('on_window_close', self)
-        self._event_queue = []
+        self._event_queue = deque()
 
     def dispatch_event(self, *args: Any) -> None:
         if not self._enable_event_queue or self._allow_dispatch_event:
