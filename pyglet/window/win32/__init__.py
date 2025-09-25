@@ -846,7 +846,7 @@ class Win32Window(BaseWindow):
     def dispatch_pending_events(self) -> None:
         """Legacy or manual dispatch."""
         while self._event_queue:
-            event = self._event_queue.pop(0)
+            event = self._event_queue.popleft()
             if isinstance(event[0], str):
                 # pyglet event
                 EventDispatcher.dispatch_event(self, *event)
