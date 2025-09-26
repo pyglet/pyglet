@@ -33,7 +33,7 @@ except ImportError:
         return c.read(fd, buffers, 3072)
 
 
-KeyMaxArray = _c_byte * ((KEY_MAX // 8) + 1)
+KeyMaxArray = _c_byte * (KEY_MAX // 8 + 1)
 
 
 class EvdevButton(Button):
@@ -193,7 +193,6 @@ def EVIOCGBIT(fileno, ev, buffer):
 
 
 def EVIOCGABS(fileno, ev, buffer=InputABSInfo()):
-    print("absbuffer instance:", buffer)
     return _IOR_len('E', 0x40 + ev)(fileno, buffer)
 
 
