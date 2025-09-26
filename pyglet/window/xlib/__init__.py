@@ -1036,7 +1036,7 @@ class XlibWindow(BaseWindow):
 
     def dispatch_pending_events(self) -> None:
         while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.popleft())
 
         # Dispatch any context-related events
         if self._lost_context:
