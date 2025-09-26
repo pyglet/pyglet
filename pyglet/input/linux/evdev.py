@@ -36,19 +36,21 @@ except ImportError:
 KeyMaxArray = _c_byte * (KEY_MAX // 8 + 1)
 
 
-class EvdevButton(Button):
+class _EvdevInfo:
     event_type: int
     event_code: int
 
 
-class EvdevAbsoluteAxis(AbsoluteAxis):
-    event_type: int
-    event_code: int
+class EvdevButton(Button, _EvdevInfo):
+    pass
 
 
-class EvdevRelativeAxis(RelativeAxis):
-    event_type: int
-    event_code: int
+class EvdevAbsoluteAxis(AbsoluteAxis, _EvdevInfo):
+    pass
+
+
+class EvdevRelativeAxis(RelativeAxis, _EvdevInfo):
+    pass
 
 
 # Structures from /linux/blob/master/include/uapi/linux/input.h
@@ -539,10 +541,9 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
         else:
             return  # No device could be created
 
-        # Reuse existing controller instance if it exists, or create a new one:
-        if controller := self._controllers.get(name, _create_controller(device)):
+        if controller := _create_controller(device):
             self._controllers[name] = controller
-            # Dispatch event in main thread:
+            # Post the event in the main thread:
             self.post_event('on_connect', controller)
 
     def select(self):
@@ -558,6 +559,7 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
 
         for name in disappeared:
             if controller := self._controllers.get(name):
+                del self._controllers[name]
                 self.dispatch_event('on_disconnect', controller)
 
     def get_controllers(self) -> list[Controller]:
