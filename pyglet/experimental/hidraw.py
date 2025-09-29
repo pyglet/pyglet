@@ -130,7 +130,7 @@ class HIDRawDevice(XlibSelectDevice, Device):
         except OSError as e:
             raise DeviceOpenException(e)
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        pyglet.app.platform_event_loop.register(self)
 
     def close(self):
         super().close()
@@ -138,7 +138,7 @@ class HIDRawDevice(XlibSelectDevice, Device):
         if not self._fileno:
             return
 
-        pyglet.app.platform_event_loop.select_devices.remove(self)
+        pyglet.app.platform_event_loop.unregister(self)
         os.close(self._fileno)
         self._fileno = None
 
@@ -154,9 +154,6 @@ class HIDRawDevice(XlibSelectDevice, Device):
 
     def fileno(self):
         return self._fileno
-
-    def poll(self):
-        return False
 
     def select(self):
         if not self._fileno:
