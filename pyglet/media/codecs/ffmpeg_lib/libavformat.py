@@ -14,8 +14,8 @@ _debug = debug_print('debug_media')
 
 avformat = pyglet.lib.load_library(
     'avformat',
-    win32=('avformat-61', 'avformat-60', 'avformat-59', 'avformat-58'),
-    darwin=('avformat.61', 'avformat.60', 'avformat.59', 'avformat.58')
+    win32=('avformat-62', 'avformat-61', 'avformat-60', 'avformat-59', 'avformat-58'),
+    darwin=('avformat.62', 'avformat.61', 'avformat.60', 'avformat.59', 'avformat.58')
 )
 
 avformat.avformat_version.restype = c_int
@@ -147,7 +147,7 @@ compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=(
 compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
                            removals=('av_class', 'codec', 'recommended_encoder_configuration', 'info'))
 
-for compat_ver in (60, 61):
+for compat_ver in (60, 61, 62):
     compat.add_version_changes('avformat', compat_ver, AVStream, AVStream_Fields,
                                removals=('codec', 'recommended_encoder_configuration', 'info'),
                                repositions=(compat.Reposition("codecpar", "id"),))
@@ -318,8 +318,8 @@ if avformat_version >= 61:
         ('io_close2', CFUNCTYPE(c_int, POINTER(AVFormatContext), POINTER(AVIOContext)))  # Added in 59.
     ]
 
-    compat.add_version_changes('avformat', 61, AVFormatContext, AVFormatContext_Fields, removals=None)
-
+    for compat_ver in (61, 62):
+        compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields, removals=None)
 
 else:
     AVFormatContext_Fields = [
@@ -410,7 +410,7 @@ else:
     compat.add_version_changes('avformat', 58, AVFormatContext, AVFormatContext_Fields,
                                removals=('skip_estimate_duration_from_pts', 'max_probe_packets', 'io_close2'))
 
-    for compat_ver in (59, 60):
+    for compat_ver in (59, 60, 61, 62):
         compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields,
                                    removals=('filename', 'internal'))
 

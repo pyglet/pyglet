@@ -7,6 +7,7 @@ from ctypes import (
     POINTER,
     Array,
     Structure,
+    _Pointer,
     addressof,
     byref,
     c_char_p,
@@ -18,20 +19,20 @@ from ctypes import (
     memmove,
 )
 from dataclasses import dataclass
-from typing import BinaryIO, TYPE_CHECKING, Iterator, Sequence
-
-from _ctypes import _Pointer
+from typing import TYPE_CHECKING, BinaryIO, Iterator, Sequence
 
 import pyglet
 import pyglet.lib
 from pyglet import image
+from pyglet.media.exceptions import MediaFormatException
 from pyglet.util import asbytes, asstr
+
 from . import MediaDecoder
 from .base import AudioData, AudioFormat, SourceInfo, StaticSource, StreamingSource, VideoFormat
 from .ffmpeg_lib import (
     AV_CODEC_ID_VP8,
     AV_CODEC_ID_VP9,
-    FF_INPUT_BUFFER_PADDING_SIZE,
+    AV_INPUT_BUFFER_PADDING_SIZE,
     SWS_FAST_BILINEAR,
     AVPacket,
     SwrContext,
@@ -63,7 +64,6 @@ from .ffmpeg_lib.libavutil import (
     avutil,
 )
 from .ffmpeg_lib.libswresample import swresample, swresample_version
-from ..exceptions import MediaFormatException
 
 if TYPE_CHECKING:
     from .ffmpeg_lib.libavformat import AVStream
@@ -128,7 +128,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 
     Buffer size can accommodate 1 sec of audio data.
     """
-    return audio_format.bytes_per_second + FF_INPUT_BUFFER_PADDING_SIZE
+    return audio_format.bytes_per_second + AV_INPUT_BUFFER_PADDING_SIZE
 
 
 def ffmpeg_init():
@@ -489,10 +489,7 @@ def ffmpeg_get_packet_pts(file: FFmpegFile, packet: _Pointer[AVPacket]) -> float
 
 def ffmpeg_get_frame_ts(stream: FFmpegStream) -> float:
     ts = stream.frame.contents.best_effort_timestamp
-    timestamp = avutil.av_rescale_q(ts,
-                                    stream.time_base,
-                                    AV_TIME_BASE_Q)
-    return timestamp
+    return avutil.av_rescale_q(ts, stream.time_base, AV_TIME_BASE_Q)
 
 
 def ffmpeg_init_packet() -> _Pointer[AVPacket]:
@@ -847,7 +844,7 @@ class FFmpegSource(StreamingSource):
         # more packets are in stream.
         return ffmpeg_read(self._file, self._packet)
 
-    def _process_packet(self) -> AudioPacket | VideoPacket:
+    def _process_packet(self) -> AudioPacket | VideoPacket | None:
         """Process the packet that has been just read.
 
         Determines whether it's a video or audio packet and queue it in the
@@ -859,18 +856,18 @@ class FFmpegSource(StreamingSource):
 
         if self._packet.contents.stream_index == self._video_stream_index:
             video_packet = VideoPacket(self._packet, timestamp)
-
             if _debug:
                 print('Created and queued packet %d (%f)' % (video_packet.id, video_packet.timestamp))
 
             self.videoq.append(video_packet)
             return video_packet
 
-        elif self.audio_format and self._packet.contents.stream_index == self._audio_stream_index:
+        if self.audio_format and self._packet.contents.stream_index == self._audio_stream_index:
             audio_packet = AudioPacket(self._packet, timestamp)
 
             self.audioq.append(audio_packet)
             return audio_packet
+        return None
 
     def get_audio_data(self, num_bytes: int, compensation_time: float=0.0) -> AudioData | None:
         data = b''
@@ -1040,9 +1037,8 @@ class FFmpegSource(StreamingSource):
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 4
-        # https://ffmpeg.org/doxygen/3.3/group__lavc__decoding.html#ga8f5b632a03ce83ac8e025894b1fc307a
-        nbytes = (pitch * height + FF_INPUT_BUFFER_PADDING_SIZE)
-        buffer = (c_uint8 * nbytes)()
+        buf_size = avutil.av_image_get_buffer_size(AV_PIX_FMT_RGBA, width, height, 1)
+        buffer = (c_uint8 * buf_size)()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet, buffer)
         except FFmpegException:
@@ -1070,11 +1066,8 @@ class FFmpegSource(StreamingSource):
         stream = self._video_stream
         rgba_ptrs = (POINTER(c_uint8) * 4)()
         rgba_stride = (c_int * 4)()
-        width = stream.codec_context.contents.width
-        height = stream.codec_context.contents.height
         if stream.type != AVMEDIA_TYPE_VIDEO:
             raise FFmpegException('Trying to decode video on a non-video stream.')
-
         sent_result = avcodec.avcodec_send_packet(
             stream.codec_context,
             packet,
@@ -1096,6 +1089,9 @@ class FFmpegSource(StreamingSource):
             avutil.av_strerror(receive_result, buf, 128)
             descr = buf.value
             raise FFmpegException(f'Video: Error occurred receiving frame. {descr.decode()}')
+
+        width = stream.frame.contents.width
+        height = stream.frame.contents.height
 
         avutil.av_image_fill_arrays(rgba_ptrs, rgba_stride, data_out,
                                     AV_PIX_FMT_RGBA, width, height, 1)
@@ -1141,7 +1137,7 @@ class FFmpegSource(StreamingSource):
             ts = None
 
         if _debug:
-            print('Next video timestamp is', ts)
+            print(f'Next video packet timestamp is: {ts}')
         return ts
 
     def get_next_video_frame(self, skip_empty_frame: bool=True) -> int | None:
