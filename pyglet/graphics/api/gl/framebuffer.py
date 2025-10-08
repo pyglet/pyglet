@@ -71,10 +71,8 @@ def get_screenshot() -> ImageData:
 
 
 def get_max_color_attachments() -> int:
-
-    number = GLint()
-    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
-    return number.value
+    """Return the maximum number of color attachments supported by the current context."""
+    return pyglet.graphics.api.core.current_context.get_info().MAX_COLOR_ATTACHMENTS
 
 
 class Renderbuffer:

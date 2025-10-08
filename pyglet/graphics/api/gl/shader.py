@@ -425,10 +425,7 @@ class _Uniform:
 
 def get_maximum_binding_count() -> int:
     """The maximum binding value that can be used for this hardware."""
-    ctx = pyglet.graphics.api.core.current_context
-    val = gl.GLint()
-    ctx.glGetIntegerv(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS, byref(val))
-    return val.value
+    return pyglet.graphics.api.core.current_context.get_info().MAX_UNIFORM_BUFFER_BINDINGS
 
 
 class _UBOBindingManager:

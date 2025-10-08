@@ -135,14 +135,11 @@ _api_pixel_formats = {
 
 def get_max_texture_size() -> int:
     """Query the maximum texture size available"""
-    gl = pyglet.graphics.api.core.current_context.gl
-    return gl.getParameter(GL_MAX_TEXTURE_SIZE)
+    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
 
 
 def get_max_array_texture_layers() -> int:
-    """Query the maximum TextureArray depth"""
-    gl = pyglet.graphics.api.core.current_context.gl
-    return gl.getParameter(GL_MAX_ARRAY_TEXTURE_LAYERS)
+    return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
 
 
 def _get_gl_format_and_type(fmt: str):
