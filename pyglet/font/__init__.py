@@ -71,7 +71,7 @@ class FontManager(pyglet.event.EventDispatcher):
 
     resolved_names: dict[tuple[str, ...], str]
 
-    _font_groups: dict[int, FontGroup]
+    _font_groups: dict[str, FontGroup]
     _user_font_names: set[str]
     _font_contexts: weakref.WeakKeyDictionary[SurfaceContext, _FontContext]
 
@@ -181,15 +181,16 @@ class FontManager(pyglet.event.EventDispatcher):
         self.resolved_names.clear()
 
         for new_font in new_fonts:
+            self._added_families.add(new_font[0])
             self.dispatch_event("on_font_loaded", *new_font)
 
     def on_font_loaded(self, family_name: str, weight: str, style: str, stretch: str) -> EVENT_HANDLE_STATE:
-        """When a font is loaded this event will be dispatched with the family name and style of the font.
+        """When a font is loaded, this event will be dispatched with the family name and style of the font.
 
         On some platforms, a custom added font may not be available immediately after adding the data. In these cases,
         you can set a handler on this event to get notified when it's available.
 
-        Not currently supported by GDI.
+        .. note:: Not currently supported by GDI.
         """
 
 
@@ -391,5 +392,12 @@ def add_directory(directory: str) -> None:
         if file[-4:].lower() == ".ttf":
             add_file(os.path.join(directory, file))
 
+def get_custom_font_names() -> tuple[str, ...]:
+    """The names of font families added to pyglet via :py:func:`~pyglet.font.add_file`.
 
-__all__ = ("add_directory", "add_file", "add_user_font", "have_font", "load", "manager")
+    .. versionadded:: 3.0
+    """
+    return tuple(manager._added_families)  # noqa: SLF001
+
+
+__all__ = ("add_directory", "add_file", "add_user_font", "get_custom_font_names", "have_font", "load", "manager")

@@ -20,6 +20,8 @@ class FontGroup:
     """A collection of fonts that can be used like a single font.
 
     Each font can be assigned a range of Unicode values that it is set to handle.
+
+    .. versionadded:: 3.0
     """
     _instance_cache: dict[tuple[float,  str | Weight, str | Style, str | Stretch, int], FontGroupInstance]
     _ranges: list[_RangeEntry]
@@ -83,7 +85,8 @@ class FontGroup:
                 return r.family
         return None
 
-class FontGroupInstance(base.Font):  # noqa: D101
+class FontGroupInstance(base.Font):
+    """A font instance based off the FontGroup."""
     _child_cache: dict[str, base.Font]
 
     def __init__(self, group: FontGroup, size: float, weight: str | Weight, style: str | Style,  # noqa: D107
@@ -155,7 +158,7 @@ class FontGroupInstance(base.Font):  # noqa: D101
         run_font: base.Font | None = None
         run_text: list[str] = []
 
-        def flush():
+        def flush() -> None:
             nonlocal total_w, max_ascent, max_descent, run_font, run_text
             if run_font and run_text:
                 w, _ = run_font.get_text_size("".join(run_text))
