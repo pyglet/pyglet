@@ -171,7 +171,8 @@ class BackedBufferObject(BufferObject):
     ctype: CType
 
     def __init__(
-        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int, usage: int = GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
+        self, context: OpenGLSurfaceContext, size: int, c_type: CType, stride: int, element_count: int,
+            usage: int = GL_DYNAMIC_DRAW, target: int=GL_ARRAY_BUFFER,
     ) -> None:
         super().__init__(context, size, target, usage)
 
