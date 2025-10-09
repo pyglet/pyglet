@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, BinaryIO, Iterable, Sequence, Any
 
 import pyglet
 from pyglet.enums import Weight, Style, Stretch
+from pyglet.font.group import FontGroup
 from pyglet.font.user import UserDefinedFontBase
 from pyglet.graphics.api import core
 
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class FontContext:
+class _FontContext:
     """A container for data specific to a graphics context.
 
     Glyph textures can only be used in their respective graphics context.
@@ -70,8 +71,9 @@ class FontManager(pyglet.event.EventDispatcher):
 
     resolved_names: dict[tuple[str, ...], str]
 
+    _font_groups: dict[int, FontGroup]
     _user_font_names: set[str]
-    _font_contexts: weakref.WeakKeyDictionary[SurfaceContext, FontContext]
+    _font_contexts: weakref.WeakKeyDictionary[SurfaceContext, _FontContext]
 
     def __init__(self) -> None:
         self._font_contexts = weakref.WeakKeyDictionary()
@@ -79,6 +81,7 @@ class FontManager(pyglet.event.EventDispatcher):
         self._added_families = set()
         self._added_faces = set()
         self._user_font_names = set()
+        self._font_groups = {}
 
         # A mapping of sequence to the resulting font name.
         self.resolved_names = {}
@@ -106,6 +109,10 @@ class FontManager(pyglet.event.EventDispatcher):
 
         return key_names
 
+    def get_group(self, name: str) -> FontGroup | None:
+        """Check if the specified name is a font group."""
+        return self._font_groups.get(name)
+
     def get_resolved_name(self, name: str | Sequence[str]) -> str | None:
         """Return the name of the first font found for a name or list of names.
 
@@ -122,7 +129,7 @@ class FontManager(pyglet.event.EventDispatcher):
             return self.resolved_names[key_names]
 
         for font_name in key_names:
-            if font_name in self._user_font_names or _system_font_class.have_font(font_name):
+            if font_name in self._user_font_names or font_name in self._font_groups or _system_font_class.have_font(font_name):
                 self.resolved_names[key_names] = font_name
                 return font_name
 
@@ -144,23 +151,26 @@ class FontManager(pyglet.event.EventDispatcher):
         msg = f"Unsupported platform: {pyglet.compat_platform}"
         raise Exception(msg)
 
-    def _get_context_data(self, context: SurfaceContext | None = None) -> FontContext:
+    def _get_context_data(self, context: SurfaceContext | None = None) -> _FontContext:
         """Get a font context based on the current graphics context."""
         graphics_ctx = context or core.current_context
         try:
             return self._font_contexts[graphics_ctx]
         except KeyError:
-            font_context = FontContext(graphics_ctx, weakref.WeakValueDictionary(), collections.deque(maxlen=3))
+            font_context = _FontContext(graphics_ctx, weakref.WeakValueDictionary(), collections.deque(maxlen=3))
             self._font_contexts[graphics_ctx] = font_context
             return font_context
 
     def have_font(self, name: str) -> bool:
         """Check if specified font name is available in the system database or user font database."""
-        return name in self._user_font_names or self._get_key_name(name) in self.resolved_names or _system_font_class.have_font(name)
+        return name in self._font_groups or name in self._user_font_names or self._get_key_name(name) in self.resolved_names or _system_font_class.have_font(name)
 
     def _add_user_font(self, font: UserDefinedFontBase) -> None:
         self._user_font_names.add(font.name)
         self.dispatch_event("on_font_loaded", font.name, font.weight, font.style, font.stretch)
+
+    def _add_font_group(self, group: FontGroup) -> None:
+        self._font_groups[group.name] = group
 
     def _add_loaded_font(self, fonts: set[tuple[str, str, str, str]]) -> None:
         old = self._added_faces
@@ -220,6 +230,15 @@ def _get_system_font_class() -> type[Font]:
 
     return _font_class
 
+def add_group(font_group: FontGroup) -> None:
+    """Add a font group to pyglet's list of font groups."""
+    assert isinstance(font_group, FontGroup), "Added group must be based on a FontGroup class."
+
+    if _system_font_class.have_font(font_group.name):
+        msg = f"Cannot use FontGroup, name '{font_group.name}' already exists within the system or loaded fonts."
+        raise Exception(msg)
+
+    manager._add_font_group(font_group)  # noqa: SLF001
 
 def add_user_font(font: UserDefinedFontBase) -> None:
     """Add a custom font created by the user.
@@ -314,7 +333,10 @@ def load(
     assert weight is not None
     assert style is not None
     assert stretch is not None
-    font = _system_font_class(name, size, weight=weight, style=style, stretch=stretch, dpi=dpi)
+    if font_group := manager.get_group(name):
+        font = font_group.get_font(size, weight=weight, style=style, stretch=stretch, dpi=dpi)
+    else:
+        font = _system_font_class(name, size, weight=weight, style=style, stretch=stretch, dpi=dpi)
 
     # Font system changed the name. Create two descriptors for it, so both can be used.
     if font.name != name:

@@ -266,7 +266,6 @@ class FreeTypeFont(base.Font):
     # Map font (name, weight, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
     face: FreeTypeFace
-    fallbacks: list[FreeTypeFont]
 
     def __init__(self, name: str, size: float,
                  weight: str = "normal",
@@ -292,32 +291,12 @@ class FreeTypeFont(base.Font):
     def descent(self) -> int:
         return self.metrics.descent
 
-    def add_fallback(self, font):
-        self.fallbacks.append(font)
-
-    def _get_slot_from_fallbacks(self, character: str) -> FT_GlyphSlot | None:
-        """Checks all fallback fonts in order to find a valid glyph index."""
-        # Check if fallback has this glyph, if so.
-        for fallback_font in self.fallbacks:
-            fb_index = fallback_font.face.get_character_index(character)
-            if fb_index:
-                fallback_font.face.set_char_size(self.size, self.dpi)
-                return fallback_font.get_glyph_slot(character)
-
-        return None
-
     def get_glyph_slot_index(self, glyph_index: int) -> FT_GlyphSlot:
         self.face.set_char_size(self.size, self.dpi)
         return self.face.get_glyph_slot(glyph_index)
 
     def get_glyph_slot(self, character: str) -> FT_GlyphSlot:
         glyph_index = self.face.get_character_index(character)
-        # Glyph index does not exist, so check fallback fonts.
-        if glyph_index == 0 and (self.name not in self.fallbacks):
-            glyph_slot = self._get_slot_from_fallbacks(character)
-            if glyph_slot is not None:
-                return glyph_slot
-
         self.face.set_char_size(self.size, self.dpi)
         return self.face.get_glyph_slot(glyph_index)
 

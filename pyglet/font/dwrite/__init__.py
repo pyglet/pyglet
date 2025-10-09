@@ -1099,19 +1099,6 @@ class Win32DirectWriteFont(base.Font):
                 )
                 self.glyphs[glyph_indice] = glyph
 
-    def _get_fallback_glyph(self, text: str) -> base.Glyph:
-        for fallback in self.fallbacks:
-            indices, missing = fallback.get_glyph_indices(text)
-            # If the amount of indices match what's missing, nothing was retrieved.
-            if len(indices) == len(missing):
-                continue
-            # Fallback should render the glyphs it found.
-            fallback.render_glyph_indices(indices)
-            for indice in indices:
-                if indice != 0:
-                    return fallback.glyphs[indice]
-
-        return self.glyphs[0]
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[base.GlyphPosition]]:
         self._initialize_renderer()
@@ -1136,11 +1123,7 @@ class Win32DirectWriteFont(base.Font):
         indices, missing = self.get_glyph_indices(text)
         self.render_glyph_indices(indices)
         for i, indice in enumerate(indices):
-            if indice == 0:
-                glyph = self._get_fallback_glyph(missing[i])
-                glyphs.append(glyph)
-            else:
-                glyphs.append(self.glyphs[indice])
+            glyphs.append(self.glyphs[indice])
             offsets.append(GlyphPosition(0, 0, 0, 0))
 
         return glyphs, offsets
