@@ -11,26 +11,26 @@ def colorbyte(color):
 class ImageGridTestCase(unittest.TestCase):
     """Test the ImageGrid for textures."""
 
-    def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
+    def set_grid_image(self, item_width: int, item_height: int, rows: int, cols: int, rowpad: int, colpad: int):
         data = b''
         color = 1
-        width = itemwidth * cols + colpad * (cols - 1)
-        height = itemheight * rows + rowpad * (rows - 1)
+        width = item_width * cols + colpad * (cols - 1)
+        height = item_height * rows + rowpad * (rows - 1)
         for row in range(rows):
             rowdata = b''
             for col in range(cols):
-                rowdata += colorbyte(color) * itemwidth
+                rowdata += colorbyte(color) * item_width
                 if col < cols - 1:
                     rowdata += b'\0' * colpad
                 color += 1
 
-            data += rowdata * itemheight
+            data += rowdata * item_height
             if row < rows - 1:
                 data += (width * b'\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'R', data)
         self.grid = ImageGrid(self.image, rows, cols,
-                              itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
+                              item_width, item_height, rowpad, colpad).get_texture_sequence()
 
     def check_cell(self, cell_texture, cellindex):
         self.assertTrue(cell_texture.width == self.grid.item_width)

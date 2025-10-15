@@ -148,7 +148,7 @@ class ImageData(_AbstractImage):
 
     _current_texture = None
 
-    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None) -> None:
+    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None, data_type = "B") -> None:
         """Initialise image data.
 
         Args:
@@ -162,12 +162,14 @@ class ImageData(_AbstractImage):
                 A sequence of bytes containing the raw image data.
             pitch:
                 If specified, the number of bytes per row.  Negative values
-                indicate a top-to-bottom arrangement.  Defaults to
-                ``width * len(format)``.
+                indicate a top-to-bottom arrangement.  Defaults to ``width * len(format)``.
+            data_type:
+                The data type of the underlying data. Defaults to unsigned bytes.
         """
         super().__init__(width, height)
 
         self._current_format = self._desired_format = fmt.upper()
+        self._data_type = data_type
         self._current_data = data
         self.pitch = pitch or width * len(fmt)
         self._current_pitch = self.pitch
@@ -180,8 +182,13 @@ class ImageData(_AbstractImage):
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
+            '_data_type': self._data_type,
             'pitch': self.pitch,
         }
+
+    @property
+    def data_type(self) -> str:
+        return self._data_type
 
     def get_image_data(self) -> ImageData:
         return self
@@ -290,7 +297,7 @@ class ImageData(_AbstractImage):
         return ImageDataRegion(x, y, width, height, self)
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
-        raise NotImplementedError("This is no longer supported.")
+        raise NotImplementedError("This is no longer supported. Check documentation for 3.0 migration.")
 
     def convert(self, fmt: str, pitch: int) -> bytes:
         """Convert data to the desired format.

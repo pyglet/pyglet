@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal
+from abc import abstractmethod
+from typing import Iterator, Literal, TYPE_CHECKING
 
 import pyglet
-from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType, TextureInternalFormat, \
-    TextureDescriptor
+from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
 from pyglet.image.base import (
     _AbstractImage,
     _AbstractImageSequence,
@@ -14,6 +14,9 @@ from pyglet.image.base import (
     ImageGrid,
     _AbstractGrid,
 )
+
+if TYPE_CHECKING:
+    from pyglet.graphics.api.base import SurfaceContext
 
 
 class TextureArraySizeExceeded(ImageException):
@@ -82,20 +85,30 @@ class TextureBase(_AbstractImage):
     y: int = 0
     z: int = 0
 
-    # Default image descriptor used. This is a backend agnostic implementation.
-    default_descriptor = TextureDescriptor(
-        tex_type=TextureType.TYPE_2D,
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-        address_mode=AddressMode.REPEAT,
-        internal_format=TextureInternalFormat(ComponentFormat.RGBA, 8),
-        pixel_format=ComponentFormat.RGBA,
-    )
-
-    def __init__(self, width: int, height: int, tex_id: int, descriptor: TextureDescriptor | None) -> None:
+    def __init__(self, width: int, height: int, tex_id: int,
+                 tex_type: TextureType = TextureType.TYPE_2D,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0,
+                 ) -> None:
         super().__init__(width, height)
         self.id = tex_id
-        self.descriptor = descriptor or self.default_descriptor
+        self.tex_type = tex_type
+
+        if isinstance(filters, TextureFilter):
+            self.min_filter = filters
+            self.mag_filter = filters
+        else:
+            self.min_filter, self.mag_filter = filters
+
+        self.address_mode = address_mode
+        self.internal_format = internal_format
+        self.internal_format_size = internal_format_size
+        self.internal_format_type = internal_format_type
+        self.anisotropic_level = anisotropic_level
 
     def delete(self) -> None:
         """Delete this texture and the memory it occupies.
@@ -120,11 +133,18 @@ class TextureBase(_AbstractImage):
     #     raise NotImplementedError
 
     @classmethod
-    def create(cls, width: int, height: int, descriptor: TextureDescriptor | None = None,
-               blank_data: bool = True) -> TextureBase:
+    def create(cls, width: int, height: int,
+               tex_type: TextureType = TextureType.TYPE_2D,
+               internal_format: ComponentFormat = ComponentFormat.RGBA,
+               data_type: str = "b",
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               address_mode: AddressMode = AddressMode.REPEAT,
+               anisotropic_level: int = 0,
+               blank_data: bool = True,
+               context: SurfaceContext | None = None) -> TextureBase:
         """Create a Texture.
 
-        Create a Texture with the specified dimentions, target and format.
+        Create a Texture with the specified dimensions, target and format.
         On return, the texture will be bound.
 
         Args:
@@ -132,15 +152,35 @@ class TextureBase(_AbstractImage):
                 Width of texture in pixels.
             height:
                 Height of texture in pixels.
-            descriptor:
-                The descriptor information of the intended texture.
+            tex_type:
+                The type of texture.
+            internal_format:
+                The components of the internal format.
+            data_type:
+                The data type of the internal format, as a struct string value.
+            filters:
+                The texture filter for the min and mag filters. If a single value is passed, both values will
+                be used as the filter.
+            address_mode:
+                The wrapping address mode of the texture.
+            anisotropic_level:
+                The anisotropic level of the texture.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            context:
+                If multiple contexts are being used, a specified context the texture is tied to.
         """
         raise NotImplementedError
 
     @classmethod
-    def create_from_image(cls, image_data: ImageData | ImageDataRegion, texture_descriptor: TextureDescriptor | None = None) -> TextureBase:
+    def create_from_image(cls, image_data: ImageData | ImageDataRegion,
+                          tex_type: TextureType = TextureType.TYPE_2D,
+                          internal_format_size: int = 8,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: SurfaceContext | None = None,
+                          ) -> TextureBase:
         """Create a Texture from image data.
 
         On return, the texture will be bound.
@@ -148,8 +188,19 @@ class TextureBase(_AbstractImage):
         Args:
             image_data:
                 The image instance.
-            texture_descriptor:
-                Description of the Texture.
+            tex_type:
+                The type of texture.
+            internal_format_size:
+                The bit size of the internal format.
+            filters:
+                The texture filter for the min and mag filters. If a single value is passed, both values will
+                be used as the filter.
+            address_mode:
+                The wrapping address mode of the texture.
+            anisotropic_level:
+                The anisotropic level of the texture.
+            context:
+                If multiple contexts are being used, a specified context the texture will be tied to.
         """
 
     def get_image_data(self, z: int = 0) -> ImageData:
@@ -162,17 +213,10 @@ class TextureBase(_AbstractImage):
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
         """Blit the texture to the screen.
 
-        This is a costly operation, and should not be used for performance critical
-        code. Blitting a texture requires binding it, setting up throwaway buffers,
-        creating a VAO, uploading attribute data, and then making a single draw call.
-        This is quite wasteful and slow, so blitting should not be used for more than
-        a few images. This method is provided to assist with debugging, but not intended
-        for drawing of multiple images.
-
-        Instead, consider creating a :py:class:`~pyglet.sprite.Sprite` with the Texture,
+        Removed as of 3.0. Instead, consider creating a :py:class:`~pyglet.sprite.Sprite` with the Texture,
         and drawing it as part of a larger :py:class:`~pyglet.graphics.Batch`.
         """
-        raise NotImplementedError
+        raise NotImplementedError("This method has been removed. See the 3.0 migration documentation.")
 
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture by reading pixel data back from the GPU.
@@ -271,6 +315,16 @@ class TextureBase(_AbstractImage):
         tex_coords = self.tex_coords
         return tex_coords[0], tex_coords[1], tex_coords[3], tex_coords[7]
 
+    @property
+    def filters(self) -> tuple[TextureFilter, TextureFilter]:
+        """The current Texture filters.
+
+        Providing a single TextureFilter will adjust both minification and magnification filters. Otherwise, a tuple
+        can be provided to adjust each individually.
+        """
+        return self.min_filter, self.mag_filter
+
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height})"
 
@@ -336,26 +390,36 @@ class UniformTextureSequence(TextureSequence):
     """Interface for a sequence of textures, each with the same dimensions."""
 
 
-class TextureArrayRegion(TextureRegionBase):
+class TextureArrayRegionBase(TextureRegionBase):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class TextureArray(TextureBase, UniformTextureSequence):
-    default_descriptor = TextureDescriptor(
-        tex_type=TextureType.TYPE_2D_ARRAY,
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-    )
-    def __init__(self, width, height, tex_id, max_depth, descriptor: TextureDescriptor | None = None):
-        super().__init__(width, height, tex_id, descriptor or self.default_descriptor)
+class TextureArrayBase(TextureBase, UniformTextureSequence):
+    def __init__(self, width, height, tex_id, max_depth,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0,
+                 ):
+        super().__init__(width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
+                  internal_format_type, filters, address_mode, anisotropic_level)
         self.max_depth = max_depth
         self.items = []
 
     @classmethod
-    def create(cls, width: int, height: int, descriptor: TextureDescriptor | None = None, max_depth: int = 256) -> TextureArray:
+    def create(cls, width: int, height: int,
+               internal_format: ComponentFormat = ComponentFormat.RGBA,
+               internal_format_size: int = 8,
+               internal_format_type: str = "b",
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               address_mode: AddressMode = AddressMode.REPEAT,
+               anisotropic_level: int = 0,
+               max_depth: int = 256) -> TextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -398,10 +462,9 @@ class TextureArray(TextureBase, UniformTextureSequence):
         raise NotImplementedError
 
     @classmethod
-    def create_for_image_grid(cls, grid, descriptor: TextureDescriptor | None = None) -> TextureArray:
-        texture_array = cls.create(grid[0].width, grid[0].height, descriptor, max_depth=len(grid))
-        texture_array.allocate(*grid[:])
-        return texture_array
+    @abstractmethod
+    def create_for_image_grid(cls, grid) -> TextureArray:
+        ...
 
     def __len__(self) -> int:
         return len(self.items)
@@ -425,19 +488,27 @@ class Texture3D(TextureBase, UniformTextureSequence):
     item_width: int = 0
     item_height: int = 0
     items: tuple
-    default_descriptor = TextureDescriptor(
-        tex_type=TextureType.TYPE_3D,
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-    )
 
     @classmethod
-    def create_for_images(cls, images, descriptor: TextureDescriptor | None = None, blank_data=True):
+    def create_for_images(cls, images,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0, blank_data=True):
         raise NotImplementedError
 
     @classmethod
-    def create_for_image_grid(cls, grid, descriptor: TextureDescriptor | None = None):
-        return cls.create_for_images(grid[:], descriptor)
+    def create_for_image_grid(cls, grid,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0):
+        return cls.create_for_images(grid[:], internal_format, internal_format_size, internal_format_type,
+                 filters, address_mode, anisotropic_level)
 
     def __len__(self):
         return len(self.items)
@@ -450,6 +521,7 @@ class Texture3D(TextureBase, UniformTextureSequence):
 
     def __iter__(self) -> Iterator[TextureRegionBase]:
         return iter(self.items)
+
 
 
 class TextureGridBase(_AbstractGrid):
@@ -538,8 +610,8 @@ class TextureGridBase(_AbstractGrid):
 
 TextureBase.region_class = TextureRegionBase
 
-TextureArray.region_class = TextureArrayRegion
-TextureArrayRegion.region_class = TextureArrayRegion
+TextureArrayBase.region_class = TextureArrayRegionBase
+TextureArrayRegionBase.region_class = TextureArrayRegionBase
 
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
