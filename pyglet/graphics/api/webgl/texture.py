@@ -48,14 +48,8 @@ from pyglet.graphics.api.webgl.gl import (
     GLubyte,
     GLuint,
 )
-from pyglet.graphics.texture import (
-    TextureArray,
-    TextureArrayDepthExceeded,
-    TextureArraySizeExceeded,
-    TextureBase,
-    TextureRegionBase,
-    UniformTextureSequence,
-)
+from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
+    TextureArrayDepthExceeded, TextureArrayBase
 from pyglet.image.base import (
     CompressedImageData,
     ImageData,
