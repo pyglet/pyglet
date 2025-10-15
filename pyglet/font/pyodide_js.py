@@ -22,7 +22,6 @@ from pyglet.font.base import Glyph, FontException, GlyphPosition
 from pyglet.image import ImageData
 
 if TYPE_CHECKING:
-    from pyglet.image.base import TextureDescriptor
     from pyglet.image import AbstractImage
 
 
@@ -49,9 +48,9 @@ class PyodideGlyphRenderer(base.GlyphRenderer):
         _font_canvas.width = w
         _font_canvas.height = h
         _font_context.imageSmoothingEnabled = False  # Doesn't seem to make a difference with antialiasing?
-        _font_context.mozImageSmoothingEnabled = False
-        _font_context.webkitImageSmoothingEnabled = False
-        _font_context.msImageSmoothingEnabled = False
+        #_font_context.mozImageSmoothingEnabled = False
+        #_font_context.webkitImageSmoothingEnabled = False
+        #_font_context.msImageSmoothingEnabled = False
         _font_context.font = self.font.js_name
         _font_context.fillStyle = 'white'
 
@@ -197,8 +196,8 @@ class JavascriptPyodideFont(base.Font):
 
         return asyncio.create_task(_load_fonts())
 
-    def create_glyph(self, img: AbstractImage, descriptor: TextureDescriptor | None = None) -> Glyph:
-        return super().create_glyph(img, descriptor)
+    def create_glyph(self, img: ImageData) -> Glyph:
+        return super().create_glyph(img)
 
     def get_glyphs(self, text: str, shaping: bool) -> tuple[list[Glyph], list[GlyphPosition]]:
         self._initialize_renderer()

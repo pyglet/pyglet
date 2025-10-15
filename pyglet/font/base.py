@@ -13,10 +13,7 @@ from typing import BinaryIO, ClassVar, TYPE_CHECKING
 import unicodedata
 
 from pyglet.enums import (
-    ComponentFormat,
     TextureFilter,
-    TextureInternalFormat,
-    TextureDescriptor,
     Weight,
     Stretch,
     Style,

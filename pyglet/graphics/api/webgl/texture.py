@@ -6,7 +6,8 @@ import js
 import pyodide
 
 import pyglet
-from pyglet.enums import TextureDescriptor, TextureFilter, TextureInternalFormat, TextureType
+from pyglet.enums import TextureFilter, TextureType, ComponentFormat, \
+    AddressMode
 from pyglet.graphics.api.webgl.enums import texture_map
 from pyglet.graphics.api.webgl.gl import (
     GL_BGR,
@@ -68,7 +69,18 @@ from pyglet.image.base import (
 
 # from pyglet.image.buffer import Framebuffer, Renderbuffer, get_max_color_attachments
 
-_api_internal_formats = {
+_api_base_internal_formats = {
+    'R': 'GL_R',
+    'RG': 'GL_RG',
+    'RGB': 'GL_RGB',
+    'RGBA': 'GL_RGBA',
+    'BGR': 'GL_RGB',
+    'BGRA': 'GL_RGBA',
+    'D': 'GL_DEPTH_COMPONENT',
+    'DS': 'GL_DEPTH_STENCIL',
+}
+
+_api_base_pixel_formats = {
     'R': 'GL_RED',
     'RG': 'GL_RG',
     'RGB': 'GL_RGB',
@@ -78,28 +90,31 @@ _api_internal_formats = {
 }
 
 
-def _get_internal_format(texture_format: TextureInternalFormat) -> int:
+def _get_base_format(component_format: ComponentFormat) -> int:
+    return globals()[_api_base_pixel_formats[component_format]]
+
+
+def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, data_type: str = "B") -> int:
     """Convert our internal format class to the GL equivalent with size and type."""
     # Base format based on components
-    base_format = _api_internal_formats.get(texture_format.component.upper())
+    base_format = _api_base_internal_formats.get(component_format.upper())
 
     if base_format is None:
-        raise ValueError(f"Unknown format: {texture_format.component}")
-
-    # Size based on bit depth
-    size_suffix = '' if texture_format.depth is None else f'{texture_format.depth}'
+        raise ValueError(f"Unknown format: {component_format}")
 
     # Type suffix based on data type (integer, float, or default)
-    if isinstance(texture_format.data_type, int):
+    if data_type == "I":
+        type_suffix = "UI"
+    elif data_type == "i":
         type_suffix = 'I'
-    elif isinstance(texture_format.data_type, float):
+    elif data_type == "f":
         type_suffix = 'F'
     else:
         type_suffix = ''  # No suffix for unsigned normalized formats
 
     # Construct the final GL format string.
     # For example. Base_format: GL_RGBA, size: 32, "type": float -> GL_RGBA32F
-    gl_format = f"{base_format}{size_suffix}{type_suffix}"
+    gl_format = f"{base_format}{bit_size}{type_suffix}"
 
     # Get the integer value of the GL constant using globals()
     if gl_format in globals():
@@ -388,20 +403,29 @@ class Texture(TextureBase):
     _ctx: OpenGLSurfaceContext
     _gl: WebGLRenderingContext
 
-    def __init__(self, width: int, height: int, tex_id: int, descriptor: TextureDescriptor | None = None) -> None:
-        super().__init__(width, height, tex_id, descriptor)
-        self._context = pyglet.graphics.api.core.current_context
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int,
+                 tex_type: TextureType = TextureType.TYPE_2D,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "B",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0):
+        super().__init__(width, height, tex_id, tex_type, internal_format, internal_format_size, internal_format_type,
+                         filters, address_mode, anisotropic_level)
+        self._context = context
         self._gl = self._context.gl
-        self.target = texture_map[self.descriptor.tex_type]
-        self.min_filter = texture_map[self.descriptor.min_filter]
-        self.mag_filter = texture_map[self.descriptor.mag_filter]
+        self.target = texture_map[self.tex_type]
+        self._gl_min_filter = texture_map[self.min_filter]
+        self._gl_mag_filter = texture_map[self.mag_filter]
+        self._gl_internal_format = _get_internal_format(internal_format, internal_format_size, internal_format_type)
 
     def delete(self) -> None:
         """Delete this texture and the memory it occupies.
 
         Textures are invalid after deletion, and may no longer be used.
         """
-        self._gl.deleteTextures(1, GLuint(self.id))
+        self._gl.deleteTexture(self.id)
         self.id = None
 
     def __del__(self):
@@ -433,107 +457,141 @@ class Texture(TextureBase):
         raise NotImplementedError("Not supported.")
 
     @classmethod
-    def create_from_image(
-        cls,
-        image_data: ImageData | ImageDataRegion,
-        texture_descriptor: TextureDescriptor | None = None,
-    ) -> Texture:
+    def create_from_image(cls,
+                          image_data: ImageData | ImageDataRegion,
+                          tex_type: TextureType = TextureType.TYPE_2D,
+                          internal_format_size: int = 8,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: OpenGLSurfaceContext | None = None,
+                          ) -> Texture:
         """Create a Texture from image data.
 
-        On return, the texture will be bound.
-
         Args:
-            image_data:
-                The image instance.
-            texture_descriptor:
-                Description of the Texture.
+             image_data:
+                 The image instance.
+             tex_type:
+                 The texture enum type.
+             internal_format_size:
+                 Byte size of the internal format.
+             filters:
+                 Texture format filter, passed as a list of min/mag filters, or a single filter to apply both.
+             address_mode:
+                 Texture address mode.
+             anisotropic_level:
+                 The maximum anisotropic level.
+             context:
+                 A specific OpenGL Surface context, otherwise the current active context.
+
+        Returns:
+             A currently bound texture.
         """
-        desc = texture_descriptor or cls.default_descriptor
-        min_filter = texture_map[desc.min_filter]
-        mag_filter = texture_map[desc.mag_filter]
-
+        ctx = context or pyglet.graphics.api.core.current_context
         gl = pyglet.graphics.api.core.current_context.gl
+
         tex_id = gl.createTexture()
-        target = texture_map[desc.tex_type]
+        target = texture_map[tex_type]
         gl.bindTexture(target, tex_id)
-        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
-        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
-        gl_pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
+        texture = cls(ctx, image_data.width, image_data.height, tex_id.value, tex_type,
+                      ComponentFormat(image_data.format), internal_format_size, image_data.data_type, filters,
+                      address_mode, anisotropic_level)
 
-        if desc.internal_format and target != GL_TEXTURE_3D:
-            image_bytes = image_data.get_bytes(desc.pixel_format, image_data.width * len(desc.pixel_format))
-            buffer = pyodide.ffi.to_js(memoryview(image_bytes))
-            js_array = js.Uint8Array.new(buffer)
-            gl.texImage2D(
-                target,
-                0,
-                _get_internal_format(desc.internal_format),
-                image_data.width,
-                image_data.height,
-                0,
-                gl_pfmt,
-                gl_type,
-                js_array,
-            )
-            gl.flush()
-            # moo
+        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        return cls(image_data.width, image_data.height, tex_id, desc)
+        pixel_fmt = image_data.format
+        image_bytes = image_data.get_bytes(pixel_fmt, image_data.width * len(pixel_fmt))
+        buffer = pyodide.ffi.to_js(memoryview(image_bytes))
+        js_array = js.Uint8Array.new(buffer)
+        gl_pfmt, gl_type = _get_pixel_format(image_data)
+
+        align, row_length = texture._get_image_alignment(image_data)
+
+        gl.pixelStorei(GL_PACK_ALIGNMENT, align)
+        gl.pixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+
+        gl.texImage2D(
+            target,
+            0,
+            texture._gl_internal_format,
+            image_data.width,
+            image_data.height,
+            0,
+            gl_pfmt,
+            gl_type,
+            js_array,
+        )
+        gl.flush()
+        return texture
 
     @classmethod
-    def create(
-        cls, width: int, height: int, texture_descriptor: TextureDescriptor | None = None, blank_data: bool = True
-    ) -> TextureBase:
+    def create(cls, width: int, height: int,
+               tex_type: TextureType = TextureType.TYPE_2D,
+               internal_format: ComponentFormat = ComponentFormat.RGBA,
+               internal_format_size: int = 8,
+               internal_format_type: str = "B",
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               address_mode: AddressMode = AddressMode.REPEAT,
+               anisotropic_level: int = 0,
+               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> TextureBase:
         """Create a Texture.
 
-        Create a Texture with the specified dimensions, target and format.
-        On return, the texture will be bound.
+        Create a Texture with the specified dimensions, and attributes.
 
         Args:
             width:
                 Width of texture in pixels.
             height:
                 Height of texture in pixels.
-            texture_descriptor:
-                Description of the Texture.
-            fmt:
-                GL constant giving format of texture; for example, ``GL_RGBA``.
-                The format specifies what format the pixel data we're expecting to write
-                to the texture and should ideally be the same as for internal format.
+            tex_type:
+                The texture enum type.
+            internal_format:
+                Component format of the image data.
+            internal_format_size:
+                Byte size of the internal format.
+            internal_format_type:
+                Internal format type in struct format.
+            filters:
+                Texture format filter, passed as a list of min/mag filter or a single filter to apply both.
+            address_mode:
+                Texture address mode.
+            anisotropic_level:
+                The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
+            context:
+                A specific OpenGL Surface context, otherwise the current active context.
+
+        Returns:
+            A currently bound texture.
         """
-        desc = texture_descriptor or cls.default_descriptor
-        min_filter = texture_map[desc.min_filter]
-        mag_filter = texture_map[desc.mag_filter]
+        ctx = context or pyglet.graphics.api.core.current_context
+        gl = ctx.gl
 
-        gl = pyglet.graphics.api.core.current_context.gl
-        target = texture_map[desc.tex_type]
         tex_id = gl.createTexture()
+        target = texture_map[tex_type]
+
+        texture = cls(ctx, width, height, tex_id, tex_type, internal_format, internal_format_size, internal_format_type, filters, address_mode, anisotropic_level)
         gl.bindTexture(target, tex_id)
-        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
-        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
-        gl_pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
+        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        # Why create this without data?
-        if desc.internal_format and target != GL_TEXTURE_3D:
-            # blank = (GLubyte * (width * height * 4))() if blank_data else None
-            gl.texImage2D(
-                target,
-                0,
-                _get_internal_format(desc.internal_format),
-                width,
-                height,
-                0,
-                gl_pfmt,
-                gl_type,
-                None,
-            )
-            gl.flush()
+        data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
+        texture._allocate(data)
+        return texture
 
-        return cls(width, height, tex_id, desc)
+    def _allocate(self, data: None | js.Uint8Array) -> None:
+        self._gl.texImage2D(self.target, 0,
+                             self._gl_internal_format,
+                             self.width, self.height,
+                             0,
+                             _get_base_format(self.internal_format),
+                             GL_UNSIGNED_BYTE,
+                             data)
+        self._gl.flush()
 
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
@@ -806,62 +864,55 @@ class Texture3D(Texture, UniformTextureSequence):
     item_width: int = 0
     item_height: int = 0
     items: tuple
-    default_descriptor = TextureDescriptor(
-        tex_type=TextureType.TYPE_3D,
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-    )
 
     @classmethod
-    def create_for_images(cls, images, descriptor: TextureDescriptor | None = None, blank_data=True):
-        desc = descriptor or cls.default_descriptor
+    @classmethod
+    def create_for_images(cls, images,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0,
+                 context: OpenGLSurfaceContext | None = None) -> Texture3D:
+        ctx = context or pyglet.graphics.api.core.current_context
+        gl = ctx.gl
         item_width = images[0].width
         item_height = images[0].height
 
         if not all(img.width == item_width and img.height == item_height for img in images):
             raise ImageException('Images do not have same dimensions.')
 
-        texture = cls.create(item_width, item_height, desc, False)
-        if images[0].anchor_x or images[0].anchor_y:
-            texture.anchor_x = images[0].anchor_x
-            texture.anchor_y = images[0].anchor_y
+        tex_id = gl.createTexture()
+        target = texture_map[TextureType.TYPE_3D]
+        gl.bindTexture(target, tex_id)
+        texture = cls(ctx, item_width, item_height, tex_id, TextureType.TYPE_3D, internal_format, internal_format_size,
+                             internal_format_type, filters, address_mode, anisotropic_level)
+        gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+
+        base_image = images[0]
+        if base_image.anchor_x or base_image.anchor_y:
+            texture.anchor_x = base_image.anchor_x
+            texture.anchor_y = base_image.anchor_y
 
         texture.images = len(images)
 
-        pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
-
-        gl = pyglet.graphics.api.core.current_context.gl
-        blank = (GLubyte * (texture.width * texture.height * texture.images * 4))() if blank_data else None
-        gl.bindTexture(texture.target, texture.id)
-        gl.texImage3D(
-            texture.target,
-            texture.level,
-            _get_internal_format(desc.internal_format),
-            texture.width,
-            texture.height,
-            texture.images,
-            0,
-            pfmt,
-            gl_type,
-            blank,
-        )
+        size = (texture.width * texture.height * texture.images * len(internal_format))
+        data = (GLubyte * size)()
+        texture._allocate(data)
 
         items = []
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, z=i)
-
+            texture.upload(image, image.anchor_x, image.anchor_y, z=i)
         gl.flush()
 
         texture.items = items
         texture.item_width = item_width
         texture.item_height = item_height
         return texture
-
-    @classmethod
-    def create_for_image_grid(cls, grid, descriptor: TextureDescriptor | None = None):
-        return cls.create_for_images(grid[:], descriptor)
 
     def __len__(self):
         return len(self.items)
@@ -890,21 +941,30 @@ class TextureArrayRegion(TextureRegion):
 
 
 class TextureArray(Texture, UniformTextureSequence):
-    default_descriptor = TextureDescriptor(
-        tex_type=TextureType.TYPE_2D_ARRAY,
-        min_filter=TextureFilter.LINEAR,
-        mag_filter=TextureFilter.LINEAR,
-    )
+    items: list[TextureArrayRegion]
 
-    def __init__(self, width, height, tex_id, max_depth, descriptor: TextureDescriptor | None = None):
-        super().__init__(width, height, tex_id, descriptor or self.default_descriptor)
+    def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
+                 internal_format: ComponentFormat = ComponentFormat.RGBA,
+                 internal_format_size: int = 8,
+                 internal_format_type: str = "b",
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0):
+        super().__init__(context, width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
+                  internal_format_type, filters, address_mode, anisotropic_level)
         self.max_depth = max_depth
         self.items = []
 
     @classmethod
-    def create(
-        cls, width: int, height: int, descriptor: TextureDescriptor | None = None, max_depth: int = 256
-    ) -> TextureArray:
+    def create(cls, width: int, height: int,
+               max_depth: int = 256,
+               internal_format: ComponentFormat = ComponentFormat.RGBA,
+               internal_format_size: int = 8,
+               internal_format_type: str = "b",
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               address_mode: AddressMode = AddressMode.REPEAT,
+               anisotropic_level: int = 0,
+               context: OpenGLSurfaceContext | None = None) -> TextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -922,41 +982,47 @@ class TextureArray(Texture, UniformTextureSequence):
 
         .. versionadded:: 2.0
         """
-        desc = descriptor or cls.default_descriptor
-        min_filter = texture_map[desc.min_filter]
-        mag_filter = texture_map[desc.mag_filter]
+        ctx = pyglet.graphics.api.core.current_context or context
 
         max_depth_limit = get_max_array_texture_layers()
         assert max_depth <= max_depth_limit, f"TextureArray max_depth supported is {max_depth_limit}."
 
-        gl = pyglet.graphics.api.core.current_context.gl
+        gl = ctx.gl
+
         tex_id = gl.createTexture()
-        gl.bindTexture(GL_TEXTURE_2D_ARRAY, tex_id.value)
-        gl.texParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
-        gl.texParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
 
-        pfmt, gl_type = _get_gl_format_and_type(desc.pixel_format)
 
-        gl.texImage3D(
-            GL_TEXTURE_2D_ARRAY,
-            0,
-            _get_internal_format(desc.internal_format),
-            width,
-            height,
-            max_depth,
-            0,
-            pfmt,
-            gl_type,
-            0,
-        )
-        gl.flush()
+        texture = cls(ctx, width, height, tex_id, max_depth, internal_format, internal_format_size,
+                      internal_format_type, filters, address_mode, anisotropic_level)
 
-        texture = cls(width, height, tex_id.value, max_depth, desc)
-        texture.min_filter = min_filter
-        texture.mag_filter = mag_filter
+        gl.bindTexture(texture.target, tex_id)
+        gl.texParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        gl.texParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
+        texture._allocate(None)
         return texture
 
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+        data_pitch = abs(image_data._current_pitch)
+
+        data = image_data.convert(image_data.format, data_pitch)
+
+        fmt, gl_type = _get_pixel_format(image_data)
+
+        self._gl.texSubImage3D(self.target, self.level,
+                                      x, y, z,
+                                      image_data.width, image_data.height, 1,
+                                      fmt, gl_type,
+                                      data)
+
+    def _allocate(self, data: None | js.Uint8Array):
+        self._gl.texImage3D(self.target, 0,
+                                   self._gl_internal_format,
+                                   self.width, self.height, self.max_depth,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   0)
     def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(

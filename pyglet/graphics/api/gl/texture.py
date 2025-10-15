@@ -118,7 +118,7 @@ def get_max_array_texture_layers() -> int:
     return pyglet.graphics.api.core.current_context.get_info().MAX_ARRAY_TEXTURE_LAYERS
 
 
-def _get_gl_format_and_type(fmt: str, data_type: str):
+def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int | None]:
     fmt = _api_pixel_formats.get(fmt)
     if fmt:
         return fmt, _data_types.get(data_type)  # Eventually support others through ImageData.
@@ -395,13 +395,24 @@ class Texture(TextureBase):
                           ) -> Texture:
         """Create a Texture from image data.
 
-        On return, the texture will be bound.
-
         Args:
             image_data:
                 The image instance.
-            texture_descriptor:
-                Description of the Texture.
+            tex_type:
+                The texture enum type.
+            internal_format_size:
+                Byte size of the internal format.
+            filters:
+                Texture format filter, passed as a list of min/mag filters, or a single filter to apply both.
+            address_mode:
+                Texture address mode.
+            anisotropic_level:
+                The maximum anisotropic level.
+            context:
+                A specific OpenGL Surface context, otherwise the current active context.
+
+        Returns:
+            A currently bound texture.
         """
         ctx = context or pyglet.graphics.api.core.current_context
 
@@ -448,20 +459,34 @@ class Texture(TextureBase):
                blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> TextureBase:
         """Create a Texture.
 
-        Create a Texture with the specified dimensions, target and format.
-        On return, the texture will be bound.
+        Create a Texture with the specified dimensions, and attributes.
 
         Args:
             width:
                 Width of texture in pixels.
             height:
                 Height of texture in pixels.
-            texture_descriptor:
-                Description of the Texture.
+            tex_type:
+                The texture enum type.
+            internal_format:
+                Component format of the image data.
+            internal_format_size:
+                Byte size of the internal format.
+            internal_format_type:
+                Internal format type in struct format.
+            filters:
+                Texture format filter, passed as a list of min/mag filter or a single filter to apply both.
+            address_mode:
+                Texture address mode.
+            anisotropic_level:
+                The maximum anisotropic level.
             blank_data:
                 If True, initialize the texture data with all zeros. If False, do not pass initial data.
             context:
                 A specific OpenGL Surface context, otherwise the current active context.
+
+        Returns:
+            A currently bound texture.
         """
         ctx = context or pyglet.graphics.api.core.current_context
 
@@ -478,7 +503,7 @@ class Texture(TextureBase):
         texture._allocate(data)
         return texture
 
-    def _allocate(self, data: None | Array):
+    def _allocate(self, data: None | Array) -> None:
         self._context.glTexImage2D(self.target, 0,
                              self._gl_internal_format,
                              self.width, self.height,
@@ -491,8 +516,8 @@ class Texture(TextureBase):
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
-        Bind the texture, and read the pixel data back from the GPU.
-        This can be a somewhat costly operation.
+        Binds the texture and reads the pixel data back from the GPU, as such, can be a costly operation.
+
         Modifying the returned ImageData object has no effect on the
         texture itself. Uploading ImageData back to the GPU/texture
         can be done with the :py:meth:`~Texture.upload` method.
@@ -568,7 +593,7 @@ class Texture(TextureBase):
 
         return align, row_length
 
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int) -> None:
         data_pitch = abs(image_data._current_pitch)
 
         # Get data in required format (hopefully will be the same format it's already
