@@ -1,3 +1,41 @@
+pyglet 2.1.9
+
+Changes
+-------
+docs: Improve missing or underdeveloped math doc (#1295)
+input: Add new Controller properties for polling - Controller.dpad, Controller.leftanalog, Controller.rightanalog Vec2s.
+
+
+Bugfixes
+-------
+input.linux.evdev: Add support for the SYN_DROPPED event, to prevent "stuck" controls when events are lost.
+input.linux.evdev: Implement missing EvdevDevice.poll method.
+graphics.shaders: Fix attribute pointer issue for integers. (#1351)
+window.headless: Add missing abstract methods to HeadlessScreen (#1350)
+
+
+pyglet 2.1.8
+
+Changes
+-------
+docs: Improve camera example documentation. (#1326)
+gl: Add type hints to GL functions. (#1237) (#1325)
+font: Add font shaping support to MacOSX.
+window: Add support for MacOSX to have transparent windows and overlays. (#1339)
+window: Add new `on_clipboard_copy` & `on_clipboard_paste` events, and add support to the Caret class. (#1313)
+examples: Add a `get_mouse_scale` helper method to the FixedResolution class.
+math: Remove `if` checks from `__matmul__` operations for small performance improvement.
+
+Bugfixes
+--------
+font: Fix get_text_size for DirectWrite to include trailing whitespaces.
+font: Cache glyphs based on unique ID and indices to reduce cache collions. (#1346)
+font: Fix issue with inline elements crashing in a non-multiline scenario. (#1346)
+media: Fix WMFDecoder delivering audio data as float. (#1315) (#1316)
+window: Fix bugs with transparent framebuffers for transparent windows. (#1333)
+window: Adjust software cursor scale factor for MacOS for HiDPI. (#1343)
+
+
 pyglet 2.1.7
 
 Changes

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import io
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, BinaryIO, List, Optional, Union
 
 from pyglet.graphics import Texture
@@ -88,7 +89,7 @@ class AudioFormat:
             self.sample_rate,
         )
 
-
+@dataclass
 class VideoFormat:
     """Video details.
 
@@ -119,58 +120,41 @@ class VideoFormat:
             frame_rate:
                 Frame rate (frames per second) of the video or ``None`` if not known.
 
-        .. versionadded:: 1.2
-        """
-        self.width = width
-        self.height = height
-        self.sample_aspect = sample_aspect
-        self.frame_rate = frame_rate
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, VideoFormat):
-            return (
-                self.width == other.width
-                and self.height == other.height
-                and self.sample_aspect == other.sample_aspect
-                and self.frame_rate == other.frame_rate
-            )
-        return False
+            .. versionadded:: 1.2
+    """
+    width: int
+    height: int
+    sample_aspect: float = 0.0
+    frame_rate: float | None = None
 
 
 class AudioData:
     """A single packet of audio data.
 
     This class is used internally by pyglet.
+
+    Args:
+        data (bytes, ctypes array, or supporting buffer protocol): Sample data.
+        length (int): Size of sample data, in bytes.
+        timestamp (float): Time of the first sample, in seconds.
+        duration (float): Total data duration, in seconds.
+        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]): List of events
+            contained within this packet. Events are timestamped relative to
+            this audio packet.
+
+    .. deprecated:: 2.0.10
+            `timestamp` and `duration` are unused and will be removed eventually.
     """
 
-    __slots__ = 'data', 'length', 'timestamp', 'duration', 'events', 'pointer'
+    __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
 
-    def __init__(
-        self,
-        data: Union[bytes, ctypes.Array],
-        length: int,
-        timestamp: float = 0.0,
-        duration: float = 0.0,
-        events: list[MediaEvent] | None = None,
-    ) -> None:
-        """
-        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]):
+    def __init__(self,
+                 data: bytes | ctypes.Array,
+                 length: int,
+                 timestamp: float = 0.0,
+                 duration: float = 0.0,
+                 events: list[MediaEvent] | None = None) -> None:
 
-        Args:
-            data:
-                (bytes, ctypes array, or supporting buffer protocol): Sample data.
-            length:
-                Size of sample data, in bytes.
-            timestamp:
-                Time of the first sample, in seconds.
-            duration:
-                Total data duration, in seconds.
-            events:
-                List of events contained within this packet. Events are timestamped relative to this audio packet.
-
-        .. deprecated:: 2.0.10
-        `timestamp` and `duration` are unused and will be removed eventually.
-        """
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
@@ -193,6 +177,7 @@ class AudioData:
         self.events = [] if events is None else events
 
 
+@dataclass
 class SourceInfo:
     """Source metadata information.
 
@@ -210,15 +195,14 @@ class SourceInfo:
 
     .. versionadded:: 1.2
     """
-
-    title = ''
-    author = ''
-    copyright = ''
-    comment = ''
-    album = ''
-    year = 0
-    track = 0
-    genre = ''
+    title: str = ''
+    author: str = ''
+    copyright: str = ''
+    comment: str = ''
+    album: str = ''
+    year: int = 0
+    track: int = 0
+    genre: str = ''
 
 
 class Source:

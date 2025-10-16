@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
-from typing import BinaryIO, ClassVar, TYPE_CHECKING
+from typing import Any, BinaryIO, ClassVar, TYPE_CHECKING
 
 import unicodedata
 
@@ -267,7 +267,11 @@ class Font:
     texture_bin: None | GlyphTextureBin
 
     #: :meta private:
-    glyphs: dict[str | int, Glyph]
+    glyphs: dict[str | int | tuple[Any, int], Glyph]
+    # Glyphs can be cached in various ways:
+    # str: if no text shaping
+    # int: glyph index, if no fallback behavior.
+    # tuple: with a unique font identifier and glyph index
 
     texture_width: int = 512
     texture_height: int = 512

@@ -236,6 +236,8 @@ NSDeviceSize = c_void_p.in_dll(appkit, 'NSDeviceSize')
 NSDeviceResolution = c_void_p.in_dll(appkit, 'NSDeviceResolution')
 NSDragOperationGeneric = 4
 
+NSStatusWindowLevel = 25
+
 
 # /System/Library/Frameworks/AppKit.framework/Headers/NSEvent.h
 NSAnyEventMask = 0xFFFFFFFF     # NSUIntegerMax
@@ -340,7 +342,7 @@ NSOpenGLProfileVersion3_2Core = 0x3200    # choose an OpenGL 3.2 Core Implementa
 NSOpenGLProfileVersion4_1Core = 0x4100    # choose an OpenGL 4.1 Core Implementation
 
 NSOpenGLCPSwapInterval        = 222
-
+NSOpenGLCPSurfaceOpacity      = 236
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     CoreGraphics.framework/Headers/CGImage.h

@@ -244,6 +244,10 @@ class CocoaOpenGLWindowConfig(OpenGLWindowConfig):
             self._pixel_format,
             share_context)
 
+        if self.transparent_framebuffer:
+            opaque = c_int(0)
+            nscontext.setValues_forParameter_(byref(opaque), cocoapy.NSOpenGLCPSurfaceOpacity)
+
         # No longer needed after context creation.
         if self._pixel_format:
             self._pixel_format.release()

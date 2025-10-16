@@ -91,6 +91,7 @@ from __future__ import annotations
 
 import sys
 from abc import abstractmethod
+from collections import deque
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
@@ -477,7 +478,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         """
         EventDispatcher.__init__(self)
-        self._event_queue = []
+        self._event_queue = deque()
 
         self._config = config
         self._context = context
@@ -637,7 +638,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._context = None
         if app.event_loop:
             app.event_loop.dispatch_event('on_window_close', self)
-        self._event_queue = []
+        self._event_queue = deque()
 
     def dispatch_event(self, *args: Any) -> None:
         if not self._enable_event_queue or self._allow_dispatch_event:
@@ -785,6 +786,21 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         """
         raise NotImplementedError
 
+    def set_mouse_passthrough(self, state: bool) -> None:
+        """Set whether the operating system will ignore mouse input from this window.
+
+        Behavior may differ across operating systems. This is typically used in window overlays with
+        transparent frame buffers.
+
+        Args:
+            state:
+                ``True`` will allow mouse input to pass through the window to anything behind it. Otherwise, ``False``
+                allows the window to accept focus again.
+
+        .. versionadded:: 2.1.8
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def minimize(self) -> None:
         """Minimize the window."""
@@ -824,7 +840,8 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self.viewport = (0, 0, *self.get_framebuffer_size())
         w, h = self.get_size()
         if self.context:
-            self.projection = Mat4.orthogonal_projection(0, w, 0, h, -8192, 8192)
+            self.projection = Mat4.orthogonal_projection(0, max(w, 1), 0, max(h, 1), -8192, 8192)
+        self._mouse_cursor.scaling = self._get_mouse_scale()
         self.dispatch_event('on_scale', scale, dpi)
 
     def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
@@ -1092,8 +1109,15 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         if cursor is None:
             cursor = DefaultMouseCursor()
         self._mouse_cursor = cursor
-        self._mouse_cursor.scaling = self.scale
+        self._mouse_cursor.scaling = self._get_mouse_scale()
         self.set_mouse_cursor_platform_visible()
+
+    def _get_mouse_scale(self):
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return self.scale
 
     def set_exclusive_mouse(self, exclusive: bool = True) -> None:
         """Hide the mouse cursor and direct all mouse events to this window.

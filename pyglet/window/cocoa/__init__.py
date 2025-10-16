@@ -71,6 +71,11 @@ class CocoaWindow(BaseWindow):
                                       cocoapy.NSClosableWindowMask |
                                       cocoapy.NSUtilityWindowMask,
         BaseWindow.WINDOW_STYLE_BORDERLESS: cocoapy.NSBorderlessWindowMask,
+        BaseWindow.WINDOW_STYLE_TRANSPARENT: cocoapy.NSTitledWindowMask |
+                                         cocoapy.NSClosableWindowMask |
+                                         cocoapy.NSMiniaturizableWindowMask,
+        BaseWindow.WINDOW_STYLE_OVERLAY: cocoapy.NSBorderlessWindowMask,
+
     }
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
@@ -172,6 +177,18 @@ class CocoaWindow(BaseWindow):
                 # Attach the CAMetalLayer to the NSView
                 self._nsview.setLayer_(self._metal_layer)
                 self._nsview.setWantsLayer_(True)
+
+                ######################################
+                # From merge from master branch:
+                ######################################
+                # self._nswindow.setOpaque_(False)
+                # self._nswindow.setBackgroundColor_(NSColor.clearColor())
+                # self._nswindow.setHasShadow_(False)
+                #
+                # if self._style == "overlay":
+                #     self.set_mouse_passthrough(True)
+                #     self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+
             else:
                 print(f"Unsupported backend found. '{pyglet.options.backend}'")
 
@@ -235,6 +252,17 @@ class CocoaWindow(BaseWindow):
             return self._nswindow.backingScaleFactor()
 
         return 1.0
+
+    def _get_mouse_scale(self) -> float:
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return 1.0
+
+    def set_mouse_passthrough(self, state: bool) -> None:
+        with AutoReleasePool():
+            self._nswindow.setIgnoresMouseEvents_(state)
 
     def _set_nice_window_location(self) -> None:
         # Construct a list of all visible windows that aren't us.
@@ -355,7 +383,7 @@ class CocoaWindow(BaseWindow):
 
     def dispatch_pending_events(self) -> None:
         while self._event_queue:
-            event = self._event_queue.pop(0)
+            event = self._event_queue.popleft()
             EventDispatcher.dispatch_event(self, *event)
 
     def set_caption(self, caption: str) -> None:

@@ -29,6 +29,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
 import pyglet
+from pyglet.display.xlib import XlibScreenXinerama
 from pyglet.event import EventDispatcher
 from pyglet.libs.linux.x11 import cursorfont, xlib
 from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
@@ -323,7 +324,7 @@ class XlibWindow(BaseWindow):
 
             # Overlay should allow mouse to pass through and stay on top.
             if self._style == "overlay":
-                self._set_mouse_passthrough(True)
+                self.set_mouse_passthrough(True)
                 self._set_wm_state("_NET_WM_STATE_ABOVE")
 
             # Create window resize sync counter
@@ -471,7 +472,7 @@ class XlibWindow(BaseWindow):
         xrender_format = XRenderFindVisualFormat(self._x_display, visual)
         return xrender_format and xrender_format.contents.direct.alphaMask != 0
 
-    def _set_mouse_passthrough(self, state: bool) -> None:
+    def set_mouse_passthrough(self, state: bool) -> None:
         """Sets the clickable area in the application to an empty region if enabled."""
         if state:
             region = xlib.XCreateRegion()
@@ -780,7 +781,10 @@ class XlibWindow(BaseWindow):
                 y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
-            elif self._fullscreen and not self.screen._xinerama:  # noqa: SLF001
+            elif self._fullscreen:  # noqa: SLF001
+                if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
+                    return
+
                 # Restrict to fullscreen area (prevent viewport scrolling)
                 self.set_mouse_position(0, 0)
                 r = xlib.XGrabPointer(self._x_display, self._x_window,
@@ -1070,7 +1074,7 @@ class XlibWindow(BaseWindow):
 
     def dispatch_pending_events(self) -> None:
         while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+            EventDispatcher.dispatch_event(self, *self._event_queue.popleft())
 
         # Dispatch any context-related events
         if self._lost_context:

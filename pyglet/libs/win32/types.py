@@ -676,3 +676,100 @@ class DEV_BROADCAST_DEVICEINTERFACE(Structure):
         ('dbcc_classguid', com.GUID),
         ('dbcc_name', ctypes.c_wchar * 256)
     )
+
+
+class DISPLAY_DEVICEW(ctypes.Structure):
+    _fields_ = [
+        ('cb', DWORD),
+        ('DeviceName', WCHAR * 32),
+        ('DeviceString', WCHAR * 128),
+        ('StateFlags', DWORD),
+        ('DeviceID', WCHAR * 128),
+        ('DeviceKey', WCHAR * 128),
+    ]
+
+
+# Structures below are to retrieve a monitor name...
+class LUID(ctypes.Structure):
+    _fields_ = [('LowPart', DWORD), ('HighPart', LONG)]
+
+
+class _SourceInfoStruct(ctypes.Structure):
+    _fields_ = [('cloneGroupId', UINT32, 16), ('sourceModeInfoIdx', UINT32, 16)]
+
+
+class _DisplayUnion(ctypes.Union):
+    _fields_ = [('modeInfoIdx', UINT32), ('DUMMYSTRUCTNAME', _SourceInfoStruct)]
+
+
+class DISPLAYCONFIG_PATH_SOURCE_INFO(ctypes.Structure):
+    _fields_ = [('adapterId', LUID), ('id', UINT32), ('DUMMYUNIONNAME', _DisplayUnion), ('statusFlags', UINT32)]
+
+
+class _DummyStructTarget(ctypes.Structure):
+    _fields_ = [
+        ('desktopModeInfoIdx', UINT32, 16),
+        ('targetModeInfoIdx', UINT32, 16),
+    ]
+
+
+class _DummyUnionTarget(ctypes.Union):
+    _fields_ = [('modeInfoIdx', UINT32), ('DUMMYSTRUCTNAME', _DummyStructTarget)]
+
+
+class DISPLAYCONFIG_RATIONAL(ctypes.Structure):
+    _fields_ = [('Numerator', UINT32), ('Denominator', UINT32)]
+
+    def __repr__(self):
+        return f"DISPLAYCONFIG_RATIONAL(num={self.Numerator}, denom={self.Denominator})"
+
+
+class DISPLAYCONFIG_PATH_TARGET_INFO(ctypes.Structure):
+    _fields_ = [
+        ('adapterId', LUID),
+        ('id', UINT32),
+        ('DUMMYUNIONNAME', _DummyUnionTarget),
+        ('outputTechnology', UINT32),
+        ('rotation', UINT32),
+        ('scaling', UINT32),
+        ('refreshRate', DISPLAYCONFIG_RATIONAL),
+        ('scanLineOrdering', UINT32),
+        ('targetAvailable', BOOL),
+        ('statusFlags', UINT32),
+    ]
+
+
+class DISPLAYCONFIG_PATH_INFO(ctypes.Structure):
+    _fields_ = [
+        ('sourceInfo', DISPLAYCONFIG_PATH_SOURCE_INFO),
+        ('targetInfo', DISPLAYCONFIG_PATH_TARGET_INFO),
+        ('flags', UINT32),
+    ]
+
+
+class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
+    _fields_ = [('type', UINT32),
+                ('size', UINT32),
+                ('adapterId', LUID),
+                ('id', UINT32)
+                ]
+
+
+class DISPLAYCONFIG_SOURCE_DEVICE_NAME(ctypes.Structure):
+    _fields_ = [
+        ('header', DISPLAYCONFIG_DEVICE_INFO_HEADER),
+        ('viewGdiDeviceName', WCHAR * 32)
+    ]
+
+
+class DISPLAYCONFIG_TARGET_DEVICE_NAME(ctypes.Structure):
+    _fields_ = [
+        ('header', DISPLAYCONFIG_DEVICE_INFO_HEADER),
+        ('flags', UINT32),
+        ('outputTechnology', UINT32),
+        ('edidManufactureId', UINT16),
+        ('edidProductCodeId', UINT16),
+        ('connectorInstance', UINT32),
+        ('monitorFriendlyDeviceName', WCHAR * 64),
+        ('monitorDevicePath', WCHAR * 128),
+    ]
