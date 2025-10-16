@@ -17,7 +17,13 @@ class HeadlessDisplay(Display):
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
 
         num_devices = egl.EGLint()
-        egl.eglQueryDevicesEXT(0, None, byref(num_devices))
+        try:
+            egl.eglQueryDevicesEXT(0, None, byref(num_devices))
+        except pyglet.libs.egl.eglext.MissingFunctionException:
+            warnings.warn('No device available for EGL device platform. Using native display type.')
+            display = egl.EGLNativeDisplayType()
+            self._display_connection = egl.eglGetDisplay(display)
+
         if num_devices.value > 0:
             headless_device = pyglet.options.headless_device
             if headless_device < 0 or headless_device >= num_devices.value:
@@ -25,13 +31,16 @@ class HeadlessDisplay(Display):
             devices = (egl.EGLDeviceEXT * num_devices.value)()
             egl.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
             self._display_connection = egl.eglGetPlatformDisplayEXT(
-                egl.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
-        else:
-            warnings.warn('No device available for EGL device platform. Using native display type.')
-            display = egl.EGLNativeDisplayType()
-            self._display_connection = egl.eglGetDisplay(display)
+                egl.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None,
+            )
 
-        egl.eglInitialize(self._display_connection, None, None)
+        majorver = egl.EGLint()
+        minorver = egl.EGLint()
+        egl.eglInitialize(self._display_connection, majorver, minorver)
+        print("major", majorver.value, "minor", minorver.value)
+        print(
+            f"EGL version: {majorver.value}.{minorver.value}",
+        )
 
     def get_screens(self):
         return self._screens

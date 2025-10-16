@@ -40,7 +40,10 @@ class HeadlessOpenGLConfig(OpenGLConfig):
         if self.opengl_api == "gl":
             attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_BIT])
         elif self.opengl_api == "gles":
-            attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES3_BIT])
+            if self.major_version == 3:
+                attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES3_BIT])
+            else:
+                attrs.extend([egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT])
         else:
             msg = f"Unknown OpenGL API: {self.opengl_api}"
             raise ValueError(msg)
@@ -50,8 +53,7 @@ class HeadlessOpenGLConfig(OpenGLConfig):
         num_config = egl.EGLint()
         egl.eglChooseConfig(display_connection, attrs_list, None, 0, byref(num_config))
         configs = (egl.EGLConfig * num_config.value)()
-        egl.eglChooseConfig(display_connection, attrs_list, configs,
-                            num_config.value, byref(num_config))
+        egl.eglChooseConfig(display_connection, attrs_list, configs, num_config.value, byref(num_config))
 
         result = [EGLWindowConfig(window, c, self) for c in configs]
         return result[0]
@@ -78,16 +80,19 @@ class EGLWindowConfig(OpenGLWindowConfig):
                  config: HeadlessOpenGLConfig) -> None:
         super().__init__(window, config)
         self._egl_config = egl_config
-        context_attribs = (egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
-                           egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0,
-                           egl.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, config.forward_compatible or 0,
-                           egl.EGL_CONTEXT_OPENGL_DEBUG, config.debug or 0,
-                           egl.EGL_NONE)
+        context_attribs = [egl.EGL_CONTEXT_MAJOR_VERSION, config.major_version or 2,
+                           egl.EGL_CONTEXT_MINOR_VERSION, config.minor_version or 0]
+        if config.opengl_api == "gl" and self.forward_compatible:
+            context_attribs.extend([egl.EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, 1])
+        if config.debug:
+            context_attribs.extend([egl.EGL_CONTEXT_OPENGL_DEBUG, config.debug])
+
+        context_attribs.append(egl.EGL_NONE)
         self._context_attrib_array = (egl.EGLint * len(context_attribs))(*context_attribs)
 
         for name, attr in self.attribute_ids.items():
             value = egl.EGLint()
-            egl.eglGetConfigAttrib(window._egl_display_connection, egl_config, attr, byref(value))  # noqa: SLF001
+            egl.eglGetConfigAttrib(window._egl_display_connection, egl_config, attr, byref(value))
             setattr(self, name, value.value)
 
         for name, value in _fake_gl_attributes.items():
@@ -109,9 +114,10 @@ class HeadlessContext(OpenGLSurfaceContext):
                  window: HeadlessWindow | WaylandWindow,
                  config: EGLWindowConfig,
                  share: HeadlessContext | None) -> None:
-        super().__init__(opengl_backend, window, config, share)
+        super().__init__(opengl_backend, window, config=config, context_share=share)
 
         self.display_connection = window._egl_display_connection  # noqa: SLF001
+        self._extensions = []
 
         self.egl_context = self._create_egl_context(share)
         if not self.egl_context:
@@ -128,9 +134,17 @@ class HeadlessContext(OpenGLSurfaceContext):
             egl.eglBindAPI(egl.EGL_OPENGL_API)
         elif self.config.opengl_api == "gles":
             egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
-        return egl.eglCreateContext(self.window._egl_display_connection,  # noqa: SLF001
-                                    self.config._egl_config, share_context,  # noqa: SLF001
-                                    self.config._context_attrib_array)  # noqa: SLF001
+        return egl.eglCreateContext(
+            self.window._egl_display_connection,  # noqa: SLF001
+            self.config._egl_config,
+            share_context,
+            self.config._context_attrib_array,
+        )
+
+    def get_extensions(self) -> list[str]:
+        if not self._extensions:
+            self._extensions = egl.eglQueryString(self.window._egl_display_connection, egl.EGL_EXTENSIONS).decode().split()
+        return self._extensions
 
     def attach(self, window: HeadlessWindow | WaylandWindow) -> None:
         super().attach(window)
@@ -139,8 +153,9 @@ class HeadlessContext(OpenGLSurfaceContext):
         self.set_current()
 
     def set_current(self) -> None:
-        egl.eglMakeCurrent(
+        success = egl.eglMakeCurrent(
             self.display_connection, self.egl_surface, self.egl_surface, self.egl_context)
+        print("MADE CURRENT?", success)
         super().set_current()
 
     def detach(self) -> None:

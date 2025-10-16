@@ -101,6 +101,9 @@ class HeadlessWindow(BaseWindow):
             self._egl_surface = eglCreatePbufferSurface(self._egl_display_connection,
                                                             self.config._egl_config,  # noqa: SLF001
                                                             pbuffer_attrib_array)
+
+            if not self._egl_surface:
+                raise Exception("Failed to create EGL Surface.")
             self.context.attach(self)
 
             self.dispatch_event('_on_internal_resize', self._width, self._height)
