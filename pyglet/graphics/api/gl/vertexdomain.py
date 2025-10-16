@@ -419,7 +419,10 @@ class VertexDomain:
                 self.attrib_name_buffers[name] = self.vertex_buffers
 
         # Make a custom VertexList class w/ properties for each attribute
-        self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
+        self._vertexlist_class = self._create_vertex_class()
+
+    def _create_vertex_class(self) -> type:
+        return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
     def _create_vao(self) -> None:
         self.vao = GLVertexArrayBinding(self._context, self.streams)
@@ -665,11 +668,12 @@ class IndexedVertexDomain(VertexDomain):
     def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
                  index_type: DataTypes = "I") -> None:
         self.index_type = index_type
+        self._supports_base_vertex = context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
         super().__init__(context, initial_count, attribute_meta)
-        self._supports_base_vertex = self._context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
-        mixin = _LocalIndexSupport if self._supports_base_vertex else _RunningIndexSupport
+
+    def _create_vertex_class(self) -> type:
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
-        self._vertexlist_class = type(self._vertex_class.__name__, (mixin, self._vertex_class),
+        return type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_streams(self, size: int) -> None:
@@ -764,6 +768,12 @@ class InstancedIndexedVertexDomain(IndexedVertexDomain):
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
         self.instance_domain = GLInstanceDomainElements(self, initial_count, index_stream=self.index_stream)
+
+    def _create_vertex_class(self) -> type:
+        mixin = _LocalIndexSupport if self._supports_base_vertex else _RunningIndexSupport
+        # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
+        return type(self._vertex_class.__name__, (mixin, self._vertex_class),
+                                      self.vertex_buffers._property_dict)  # noqa: SLF001
 
     def _create_vao(self) -> None:
         """Handled by buckets."""
