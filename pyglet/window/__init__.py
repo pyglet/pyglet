@@ -76,16 +76,6 @@ by creating a "template" configuration::
     config.aux_buffers = 4
     # Create a window using this config
     win = window.Window(config=config)
-
-To determine if a given configuration is supported, query the screen (see
-above, "Working with multiple screens")::
-
-    configs = screen.get_matching_configs(config)
-    if not configs:
-        # ... config is not supported
-    else:
-        win = window.Window(config=configs[0])
-
 """
 from __future__ import annotations
 

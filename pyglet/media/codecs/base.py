@@ -21,20 +21,15 @@ class AudioFormat:
     An instance of this class is provided by sources with audio tracks.  You
     should not modify the fields, as they are used internally to describe the
     format of data provided by the source.
+
+    Args:
+        channels (int): The number of channels: 1 for mono or 2 for stereo
+            (pyglet does not yet support surround-sound sources).
+        sample_size (int): Bits per sample; only 8 or 16 are supported.
+        sample_rate (int): Samples per second (in Hertz).
     """
 
     def __init__(self, channels: int, sample_size: int, sample_rate: int) -> None:
-        """Specify the audio format properties.
-
-        Args:
-            channels:
-                The number of channels: 1 for mono or 2 for stereo
-                (pyglet does not yet support surround-sound sources).
-            sample_size:
-                Bits per sample; only 8 or 16 are supported.
-            sample_rate:
-                Samples per second (in Hertz).
-        """
         self.channels = channels
         self.sample_size = sample_size
         self.sample_rate = sample_rate
@@ -74,20 +69,15 @@ class AudioFormat:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, AudioFormat):
-            return (
-                self.channels == other.channels
-                and self.sample_size == other.sample_size
-                and self.sample_rate == other.sample_rate
-            )
+            return (self.channels == other.channels and
+                    self.sample_size == other.sample_size and
+                    self.sample_rate == other.sample_rate)
         return NotImplemented
 
     def __repr__(self) -> str:
         return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__,
-            self.channels,
-            self.sample_size,
-            self.sample_rate,
-        )
+            self.__class__.__name__, self.channels, self.sample_size,
+            self.sample_rate)
 
 @dataclass
 class VideoFormat:
@@ -100,25 +90,13 @@ class VideoFormat:
     video image.  For example, a video image of 640x480 with sample aspect 2.0
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
-    """
 
-    width: int
-    height: int
-    sample_aspect: float
-    frame_rate: float | None
-
-    def __init__(self, width: int, height: int, sample_aspect: float = 1.0, frame_rate: float | None = None) -> None:
-        """Define the video format information.
-
-        Args:
-            width:
-                Width of video image, in pixels.
-            height:
-                Height of video image, in pixels.
-            sample_aspect:
-                Aspect ratio (width over height) of a single video pixel.
-            frame_rate:
-                Frame rate (frames per second) of the video or ``None`` if not known.
+    Args:
+        width (int): Width of video image, in pixels.
+        height (int): Height of video image, in pixels.
+        sample_aspect (float): Aspect ratio (width over height) of a single
+            video pixel.
+        frame_rate (float): Frame rate (frames per second) of the video.
 
             .. versionadded:: 1.2
     """

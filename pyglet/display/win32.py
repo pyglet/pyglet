@@ -164,16 +164,6 @@ class Win32Screen(Screen):  # noqa: D101
 
         return "Unknown"
 
-    def get_matching_configs(self, template):
-        with device_context(None) as hdc:
-            canvas = Win32Canvas(self.display, 0, hdc)
-            configs = template.match(canvas)
-            # XXX deprecate config's being screen-specific
-            for config in configs:
-                config.screen = self
-
-        return configs
-
     def _get_monitor_info(self) -> MONITORINFOEX:
         info = MONITORINFOEX()
         info.cbSize = sizeof(MONITORINFOEX)
@@ -256,6 +246,8 @@ _win32_scale_name = {
     1: "center",
     2: "stretch",
 }
+
+
 class Win32ScreenMode(ScreenMode):  # noqa: D101
     def __init__(self, screen: Win32Screen, mode: DEVMODE) -> None:  # noqa: D107
         super().__init__(screen)

@@ -52,6 +52,7 @@ class PyodideOptions:
     page, and do not want to alter your code, then modify this option.
     """
 
+
 @dataclass
 class Options:
     """Dataclass for global pyglet options."""

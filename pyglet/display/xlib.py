@@ -260,15 +260,7 @@ class XlibScreen(Screen):
     def get_scale(self) -> float:
         return self.get_dpi() / 96
 
-    def get_matching_configs(self, template: Config):
-        canvas = XlibCanvas(self.display, None)
-        configs = template.match(canvas)
-        # XXX deprecate
-        for config in configs:
-            config.screen = self
-        return configs
-
-    def get_modes(self) -> list[XlibScreenModeXF86]:
+    def get_modes(self):
         if not _have_xf86vmode:
             return []
 
@@ -501,11 +493,3 @@ class XlibScreenModeXrandr(XlibScreenMode):
 
     def __repr__(self) -> str:
         return f'XlibScreenMode(width={self.width!r}, height={self.height!r}, depth={self.depth!r}, rate={self.rate})'
-
-
-class XlibCanvas(Canvas):  # noqa: D101
-    display: XlibDisplay
-
-    def __init__(self, display: XlibDisplay, x_window: xlib.Window) -> None:  # noqa: D107
-        super().__init__(display)
-        self.x_window = x_window

@@ -19,6 +19,7 @@ from pyglet import graphics
 from pyglet.graphics import GeometryMode
 from pyglet.graphics.draw import Group
 from pyglet.text import runlist
+from pyglet.font.base import GlyphPosition
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign, HorizontalAlign
@@ -671,6 +672,7 @@ elif pyglet.options.backend == "vulkan":
 
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
+
 
 class TextLayout:
     """Lay out and display documents.
