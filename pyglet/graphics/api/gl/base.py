@@ -108,6 +108,7 @@ class OpenGLWindowConfig(VerifiedGraphicsConfig):
         self.forward_compatible = base_config.forward_compatible
         self.opengl_api = base_config.opengl_api
         self.debug = base_config.debug
+        self.transparent_framebuffer = base_config.transparent_framebuffer
 
     @abc.abstractmethod
     def create_context(self, opengl_backend: OpenGLBackend, share: OpenGLSurfaceContext) -> OpenGLSurfaceContext:
