@@ -22,7 +22,7 @@ all_combinations = list(itertools.product(document_classes, layout_classes))
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_keyword(doctype, layouttype):
+def test_layout_creation_keyword(gl3_context, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(document=_doc, x=X, y=Y, z=Z, width=WIDTH, height=HEIGHT)
     assert _layout.x == X
@@ -34,7 +34,7 @@ def test_layout_creation_keyword(doctype, layouttype):
 
 
 @pytest.mark.parametrize('doctype, layouttype', all_combinations)
-def test_layout_creation_positional(doctype, layouttype):
+def test_layout_creation_positional(gl3_context, doctype, layouttype):
     _doc = doctype("This is a test")
     _layout = layouttype(_doc, X, Y, Z, WIDTH, HEIGHT)
     # Make sure the arguments were in order:

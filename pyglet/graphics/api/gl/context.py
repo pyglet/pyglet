@@ -187,10 +187,6 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self.core.current_context = None
             #gl_info.remove_active_context()
 
-            # Switch back to shadow context.
-            if self.core._shadow_window is not None:  # noqa: SLF001
-                self.core._shadow_window.switch_to()  # noqa: SLF001
-
     def _safe_to_operate_on_object_space(self) -> bool:
         """Check if it's safe to interact with this context's object space.
 
@@ -313,17 +309,17 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_BOOL_VEC2: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),
             gl.GL_BOOL_VEC3: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
             gl.GL_BOOL_VEC4: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 4),
-        
+
             gl.GL_INT: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_INT_VEC2: (gl.GLint, self.glUniform2iv, self.glProgramUniform2iv, 2),
             gl.GL_INT_VEC3: (gl.GLint, self.glUniform3iv, self.glProgramUniform3iv, 3),
             gl.GL_INT_VEC4: (gl.GLint, self.glUniform4iv, self.glProgramUniform4iv, 4),
-        
+
             gl.GL_FLOAT: (gl.GLfloat, self.glUniform1fv, self.glProgramUniform1fv, 1),
             gl.GL_FLOAT_VEC2: (gl.GLfloat, self.glUniform2fv, self.glProgramUniform2fv, 2),
             gl.GL_FLOAT_VEC3: (gl.GLfloat, self.glUniform3fv, self.glProgramUniform3fv, 3),
             gl.GL_FLOAT_VEC4: (gl.GLfloat, self.glUniform4fv, self.glProgramUniform4fv, 4),
-        
+
             # 1D Samplers
             gl.GL_SAMPLER_1D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_SAMPLER_1D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
@@ -331,7 +327,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_INT_SAMPLER_1D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_1D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
-        
+
             # 2D Samplers
             gl.GL_SAMPLER_2D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_SAMPLER_2D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
@@ -343,7 +339,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
-        
+
             # Cube Samplers
             gl.GL_SAMPLER_CUBE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_INT_SAMPLER_CUBE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
@@ -351,16 +347,16 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             gl.GL_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
-        
+
             # 3D Samplers
             gl.GL_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_UNSIGNED_INT_SAMPLER_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
-        
+
             gl.GL_FLOAT_MAT2: (gl.GLfloat, self.glUniformMatrix2fv, self.glProgramUniformMatrix2fv, 4),
             gl.GL_FLOAT_MAT3: (gl.GLfloat, self.glUniformMatrix3fv, self.glProgramUniformMatrix3fv, 6),
             gl.GL_FLOAT_MAT4: (gl.GLfloat, self.glUniformMatrix4fv, self.glProgramUniformMatrix4fv, 16),
-        
+
             # TODO: test/implement these:
             # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glProgramUniformMatrix2x3fv,
             # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv, glProgramUniformMatrix2x4fv,
@@ -368,18 +364,18 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glProgramUniformMatrix3x4fv,
             # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
             # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
-        
+
             gl.GL_IMAGE_1D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_IMAGE_2D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),
             gl.GL_IMAGE_2D_RECT: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
             gl.GL_IMAGE_3D: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
-        
+
             gl.GL_IMAGE_1D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),
             gl.GL_IMAGE_2D_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
-        
+
             gl.GL_IMAGE_2D_MULTISAMPLE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 2),
             gl.GL_IMAGE_2D_MULTISAMPLE_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
-        
+
             gl.GL_IMAGE_BUFFER: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),
             gl.GL_IMAGE_CUBE: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 1),
             gl.GL_IMAGE_CUBE_MAP_ARRAY: (gl.GLint, self.glUniform1iv, self.glProgramUniform1iv, 3),

@@ -7,7 +7,9 @@ import pyglet
 
 from .base import Display, Screen
 from pyglet.libs import egl
+from pyglet.util import debug_print
 
+_debug = debug_print('debug_api')
 
 class HeadlessDisplay(Display):
 
@@ -37,10 +39,7 @@ class HeadlessDisplay(Display):
         majorver = egl.EGLint()
         minorver = egl.EGLint()
         egl.eglInitialize(self._display_connection, majorver, minorver)
-        print("major", majorver.value, "minor", minorver.value)
-        print(
-            f"EGL version: {majorver.value}.{minorver.value}",
-        )
+        assert _debug(f"EGL version: {majorver.value}.{minorver.value}")
 
     def get_screens(self):
         return self._screens

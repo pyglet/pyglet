@@ -353,8 +353,6 @@ class TextureRegionBase(TextureBase):
         v2 = (y + height) / owner.height * scale_v + owner_v1
         r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
-        import traceback
-        traceback.print_stack()
         raise Exception
 
     def fetch(self, _z = 0) -> ImageDataRegion:

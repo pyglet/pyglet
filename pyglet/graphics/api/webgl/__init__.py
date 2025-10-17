@@ -134,9 +134,6 @@ class WebGLBackend(BackendGlobalObject):
         assert self.current_context is not None, "Context has not been created."
         return self.current_context.object_space
 
-    def post_init(self) -> None:
-        pass
-
     def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 

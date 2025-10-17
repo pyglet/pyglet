@@ -53,7 +53,6 @@ class Options:
     debug_input: bool
     debug_x11: bool
     debug_com: bool
-    shadow_window: bool
     vsync: bool | None
     xsync: bool
     xlib_fullscreen_override_redirect: bool

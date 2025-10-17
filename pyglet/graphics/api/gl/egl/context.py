@@ -155,7 +155,6 @@ class HeadlessContext(OpenGLSurfaceContext):
     def set_current(self) -> None:
         success = egl.eglMakeCurrent(
             self.display_connection, self.egl_surface, self.egl_surface, self.egl_context)
-        print("MADE CURRENT?", success)
         super().set_current()
 
     def detach(self) -> None:

@@ -5,7 +5,7 @@ from tests.annotations import skip_graphics_api, GraphicsAPI
 
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_ubo_data_structure():
+def test_shader_ubo_data_structure(gl3_context):
     """Test to make sure the Structure that is created is correct for UBO's.
     
     Includes nested structure and structure array.
@@ -125,7 +125,7 @@ def test_shader_ubo_data_structure():
     # assert image_data == (255, 255, 255, 255)
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_ubo_matrix_data_structure():
+def test_shader_ubo_matrix_data_structure(gl3_context):
     """Test UBO structure with matrix."""
 
     vertex_source: str = """#version 150 core
@@ -229,7 +229,7 @@ def test_shader_ubo_matrix_data_structure():
     # assert image_data == (255, 255, 255, 255)
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_uniform_block_matrix():
+def test_shader_uniform_block_matrix(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -327,7 +327,7 @@ def test_shader_uniform_block_matrix():
     # assert image_data == (255, 255, 255, 255)
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_uniform_matrix():
+def test_shader_uniform_matrix(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -400,7 +400,7 @@ def test_shader_uniform_matrix():
         assert a == pytest.approx(b)
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_uniform_matrix_array():
+def test_shader_uniform_matrix_array(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;
@@ -475,7 +475,7 @@ def test_shader_uniform_matrix_array():
         assert a == pytest.approx(b)
 
 @skip_graphics_api(GraphicsAPI.GL2)
-def test_shader_uniform_float_array():
+def test_shader_uniform_float_array(gl3_context):
     vertex_source: str = """#version 150 core
         in vec3 translate;
         in vec4 colors;

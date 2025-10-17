@@ -94,7 +94,7 @@ class HeadlessWindow(BaseWindow):
 
     def _create(self) -> None:
         self._egl_display_connection = self.display._display_connection  # noqa: SLF001
-        if pyglet.options.backend and not self._egl_surface:
+        if pyglet.options.backend and not self._egl_surface and not self._shadow:
             self._assign_config()
             pbuffer_attribs = (EGL_WIDTH, self._width, EGL_HEIGHT, self._height, EGL_NONE)
             pbuffer_attrib_array = (EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
@@ -106,7 +106,7 @@ class HeadlessWindow(BaseWindow):
                 raise Exception("Failed to create EGL Surface.")
             self.context.attach(self)
 
-            self.dispatch_event('_on_internal_resize', self._width, self._height)
+        self.dispatch_event('_on_internal_resize', self._width, self._height)
 
 
 __all__ = ['HeadlessWindow']

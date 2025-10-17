@@ -10,6 +10,7 @@ from pyglet.math import Mat4
 from pyglet.graphics.api.gl.shader import Shader, ShaderProgram
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.win32.wgl import WGLFunctions
     from pyglet.graphics.shader import ShaderType
     from pyglet.graphics.api.gl import OpenGLWindowConfig, ObjectSpace, OpenGLSurfaceContext
     from pyglet.window import Window
@@ -98,6 +99,7 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
         self._model = model
 
 class OpenGLBackend(BackendGlobalObject):
+    platform_func: WGLFunctions | None
     gl_api: Literal["gl", "gles"]
     current_context: OpenGLSurfaceContext | None
     _have_context: bool = False
@@ -106,22 +108,19 @@ class OpenGLBackend(BackendGlobalObject):
         self.gl_api = gl_api
         self.initialized = False
         self.current_context = None
-        self._shadow_window = None
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
         # of sharing basic information between contexts. However, in usage, the user or internals should use the
         # "real" context's information to prevent any discrepencies.
+        self.platform_func = None
+        self.platform_exts = []
         super().__init__()
 
     @property
     def object_space(self) -> ObjectSpace:
         assert self.current_context is not None, "Context has not been created."
         return self.current_context.object_space
-
-    def post_init(self) -> None:
-        if pyglet.options.shadow_window and not _is_pyglet_doc_run:
-            self._shadow_window = _create_shadow_window()
 
     def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
@@ -160,6 +159,9 @@ class OpenGLBackend(BackendGlobalObject):
         return self.current_context.get_info()
 
     def have_extension(self, extension_name: str) -> bool:
+        if self.platform_func and not self.current_context:
+            return extension_name in self.platform_exts
+
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False
@@ -224,28 +226,4 @@ class OpenGLBackend(BackendGlobalObject):
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         self.current_context.glViewport(x, y, width, height)
 
-def _create_shadow_window() -> Window | None:
-    from pyglet.window import Window
 
-    class ShadowWindow(Window):
-        _shadow = True
-
-        def __init__(self) -> None:
-            super().__init__(width=1, height=1, visible=False)
-
-        def _create_projection(self) -> None:
-            """Shadow window does not need a projection."""
-
-        def _on_internal_resize(self, width: int, height: int) -> None:
-            """No projection and not required."""
-
-        def _on_internal_scale(self, scale: float, dpi: int) -> None:
-            """No projection and not required."""
-
-    _shadow_window = ShadowWindow()
-    _shadow_window.switch_to()
-
-    from pyglet import app
-    app.windows.remove(_shadow_window)
-
-    return _shadow_window

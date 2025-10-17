@@ -161,24 +161,25 @@ class CocoaWindow(BaseWindow):
             # Then create a view and set it as our NSWindow's content view.
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
             self._metal_layer = None
-            if "gl" in pyglet.options.backend:
-                self._nsview.setWantsBestResolutionOpenGLSurface_(True)
-            elif pyglet.options.backend == "vulkan":
-                self._metal_layer = CAMetalLayer.alloc().init()
-                #self._metal_layer.setFramebufferOnly_(True)  # Layer can only be used as a FB. More performant?
-                transparent = self.style == 'transparent' or self.style == 'overlay'
-                self._metal_layer.setOpaque_(not transparent)
+            if not self._shadow:
+                if "gl" in pyglet.options.backend:
+                    self._nsview.setWantsBestResolutionOpenGLSurface_(True)
+                elif pyglet.options.backend == "vulkan":
+                    self._metal_layer = CAMetalLayer.alloc().init()
+                    #self._metal_layer.setFramebufferOnly_(True)  # Layer can only be used as a FB. More performant?
+                    transparent = self.style == 'transparent' or self.style == 'overlay'
+                    self._metal_layer.setOpaque_(not transparent)
 
-                # Attach the CAMetalLayer to the NSView
-                self._nsview.setLayer_(self._metal_layer)
-                self._nsview.setWantsLayer_(True)
-            else:
-                print(f"Unsupported backend found. '{pyglet.options.backend}'")
+                    # Attach the CAMetalLayer to the NSView
+                    self._nsview.setLayer_(self._metal_layer)
+                    self._nsview.setWantsLayer_(True)
+                else:
+                    print(f"Unsupported backend found. '{pyglet.options.backend}'")
 
-            self._assign_config()
-            self.context.attach(self)
-            if self._metal_layer:
-                self.context._nscontext = self._metal_layer
+                self._assign_config()
+                self.context.attach(self)
+                if self._metal_layer:
+                    self.context._nscontext = self._metal_layer  # noqa: SLF001
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)
 

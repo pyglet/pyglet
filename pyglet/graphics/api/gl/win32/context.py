@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from ctypes import c_int, c_uint
-
-from _ctypes import sizeof, byref
+import warnings
+from ctypes import c_int, c_uint, sizeof, byref
 
 from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
 from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
@@ -14,18 +13,64 @@ from pyglet.libs.win32.constants import PFD_DRAW_TO_WINDOW, PFD_SUPPORT_OPENGL, 
     PFD_DOUBLEBUFFER_DONTCARE, PFD_STEREO, PFD_STEREO_DONTCARE, PFD_DEPTH_DONTCARE, PFD_TYPE_RGBA
 from typing import TYPE_CHECKING
 
+from pyglet.util import asstr
+
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
     from pyglet.window.win32 import Win32Window
 
+
+def _initialize_wgl_funcs(window: Win32Window) -> WGLFunctions | None:
+    """Creates a temporary context, creates WGL functions to proc addresses, then destroys the context."""
+    pfd = PIXELFORMATDESCRIPTOR()
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
+    pfd.nVersion = 1
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
+    pfd.iPixelType = PFD_TYPE_RGBA
+    pfd.cColorBits = 24
+
+    pf = _gdi32.ChoosePixelFormat(window.dc, byref(pfd))
+    if pf:
+        if not _gdi32.SetPixelFormat(window.dc, pf, byref(pfd)):
+            warnings.warn("Unable to set pixel format.")
+            return None
+    else:
+        warnings.warn("Unable to find a pixel format.")
+        return None
+
+    dummy_ctx = wgl.wglCreateContext(window.dc)
+    if not dummy_ctx:
+        warnings.warn("Unable to create dummy context.")
+        return None
+
+    current_dc = wgl.wglGetCurrentDC()
+    current_ctx = wgl.wglGetCurrentContext()
+
+    if not wgl.wglMakeCurrent(window.dc, dummy_ctx):
+        print("Unable to make dummy context current.")
+        # Set back to old context and dc and delete dummy context.
+        wgl.wglMakeCurrent(current_dc, current_ctx)
+        wgl.wglDeleteContext(dummy_ctx)
+        return None
+
+    f =  WGLFunctions()
+    wgl.wglMakeCurrent(current_dc, current_ctx)
+    wgl.wglDeleteContext(dummy_ctx)
+    return f
+
+# WGL functions are loaded once and stored globally.
+_wgl_funcs = None
 
 class Win32OpenGLConfig(OpenGLConfig):
 
     def match(self, window: Win32Window) -> Win32OpenGLWindowConfig | None:
         # Backend may not be done loading during the match process, load in func.
         from pyglet.graphics.api import core
+        if not core.platform_func and (wgl_funcs := _initialize_wgl_funcs(window)):
+            core.platform_func = wgl_funcs
+            core.platform_exts = asstr(wgl_funcs.wglGetExtensionsStringEXT()).split()
 
-        if core.current_context and core.get_info().have_extension('WGL_ARB_pixel_format'):
+        if core.have_extension('WGL_ARB_pixel_format'):
             finalized_config = self._get_arb_pixel_format_matching_configs(window, core)
         else:
             finalized_config = self._get_pixel_format_descriptor_matching_configs(window)
@@ -96,7 +141,7 @@ class Win32OpenGLConfig(OpenGLConfig):
         nformats = c_uint(16)
 
         from pyglet.graphics.api import core
-        core.current_context.platform_func.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
+        core.platform_func.wglChoosePixelFormatARB(window.dc, attrs, None, nformats, pformats, nformats)
 
         # Only choose the first format, because these are in order of best matching from driver.
         # (Maybe not always the case?)
@@ -173,7 +218,7 @@ class Win32ARBOpenGLWindowConfig(Win32OpenGLWindowConfig):
         values = (c_int * len(attrs))()
         from pyglet.graphics.api import core
 
-        core.current_context.platform_func.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
+        core.platform_func.wglGetPixelFormatAttribivARB(window.dc, pf, 0, len(attrs), attrs, values)
 
         for name, value in zip(names, values):
             setattr(self, name, value)
@@ -183,7 +228,7 @@ class Win32ARBOpenGLWindowConfig(Win32OpenGLWindowConfig):
 
     def create_context(self, opengl_backend: OpenGLBackend, share: Win32ARBContext | None) -> Win32ARBContext | Win32Context:
         super().create_context(opengl_backend, share)
-        if opengl_backend.get_info().have_extension('WGL_ARB_create_context'):
+        if opengl_backend.have_extension('WGL_ARB_create_context'):
             # Graphics adapters that ONLY support up to OpenGL 3.1/3.2
             # should be using the Win32ARBContext class.
             return Win32ARBContext(opengl_backend, self._window, self, share)
@@ -277,5 +322,5 @@ class Win32ARBContext(_BaseWin32Context):
         self.config.apply_format()
 
         from pyglet.graphics.api import core
-        self._context = core.current_context.platform_func.wglCreateContextAttribsARB(window.dc, share, attribs)
+        self._context = core.platform_func.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)

@@ -527,7 +527,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         app.windows.add(self)
         self._create()
 
-        if pyglet.options.backend:
+        if pyglet.options.backend and not self._shadow:
             self.switch_to()
             self._create_projection()
 
@@ -1841,6 +1841,43 @@ else:
         from pyglet.window.emscripten import EmscriptenWindow as Window
 
 
+class _ShadowWindow(Window):
+    """Helper Window class for things that require a window.
+
+    For example, on some operating systems, input detection or clipboards are tied to windows or window events.
+    """
+    _shadow = True
+
+    def __init__(self) -> None:
+        super().__init__(width=1, height=1, visible=False)
+
+    def switch_to(self) -> None:
+        """Shadow window does not have a context to switch to."""
+
+    def _assign_config(self) -> None:
+        """Shadow window does not need a config or context."""
+
+    def _create_projection(self) -> None:
+        """Shadow window does not need a projection."""
+
+    def _on_internal_resize(self, width: int, height: int) -> None:
+        """No projection and not required."""
+
+    def _on_internal_scale(self, scale: float, dpi: int) -> None:
+        """No projection and not required."""
+
+def _create_shadow_window() -> Window | None:
+    # MacOS and browsers don't need a shadow window.
+    if pyglet.compat_platform not in ('darwin', 'emscripten'):
+        _shadow_window = _ShadowWindow()
+
+        from pyglet import app
+        app.windows.remove(_shadow_window)
+
+        return _shadow_window
+    return None
+
+_shadow_window = _create_shadow_window()
 
 __all__ = (
     # imported

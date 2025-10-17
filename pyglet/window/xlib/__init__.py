@@ -47,7 +47,8 @@ from pyglet.window import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.libs.linux.x11 import Visual
+    from pyglet.graphics.api.gl.xlib.context import XlibGLWindowConfig
+    from pyglet.libs.linux.x11.xlib import Visual
     from _ctypes import _Pointer
 
 try:
@@ -232,7 +233,7 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             # In OpenGL, it requires you to query GLX for the visual info.
-            if pyglet.options.backend is not None:
+            if pyglet.options.backend is not None and not self._shadow:
                 if "gl" in pyglet.options.backend:
                     self._assign_config()
 
@@ -299,7 +300,7 @@ class XlibWindow(BaseWindow):
             self.display._window_map[self._x_window] = self.dispatch_platform_event_view  # noqa: SLF001
 
             # Vulkan surface needs to be created after the window. Possibly move surface creation to context.attach.
-            if pyglet.options.backend == "vulkan":
+            if pyglet.options.backend == "vulkan" and not self._shadow:
                 self._assign_config()
 
             if self.context:
@@ -994,7 +995,7 @@ class XlibWindow(BaseWindow):
         name_atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
         atoms = [xlib.XInternAtom(self._x_display, asbytes(value), False) for value in values]
         atom_type = xlib.XInternAtom(self._x_display, asbytes('ATOM'), False)
-        if len(atoms):
+        if atoms:
             atoms_ar = (xlib.Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._x_display, self._window,
                                  name_atom, atom_type, 32, mode,
@@ -1009,7 +1010,7 @@ class XlibWindow(BaseWindow):
         net_wm_state = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_STATE'), False)
         atoms = [xlib.XInternAtom(self._x_display, asbytes(state), False) for state in states]
         atom_type = xlib.XInternAtom(self._x_display, asbytes('ATOM'), False)
-        if len(atoms):
+        if atoms:
             atoms_ar = (xlib.Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._x_display, self._window,
                                  net_wm_state, atom_type, 32, xlib.PropModePrepend,

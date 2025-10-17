@@ -44,13 +44,9 @@ _fragment_source: str = """#version 330 core
     }
 """
 
-@pytest.fixture(scope="module")
-def gl_context():
-    """Create one hidden window (and GL context) for the entire test session."""
-    yield pyglet.graphics.api.core.current_context
 
 @pytest.fixture(scope="module")
-def shader_program(gl_context):
+def shader_program(gl3_context):
     """Compile and link the ShaderProgram once per module, and delete at the end."""
     from pyglet.graphics import ShaderProgram, Shader
     vertex = Shader(_vertex_source, "vertex")

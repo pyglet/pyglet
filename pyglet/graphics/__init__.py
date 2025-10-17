@@ -27,5 +27,3 @@ from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas   # 
 #
 # get_default_shader: Callable[[], ShaderProgram] = _load_backend_base("get_default_shader")
 
-
-core.post_init()

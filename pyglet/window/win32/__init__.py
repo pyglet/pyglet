@@ -263,7 +263,7 @@ class Win32Window(BaseWindow):
             self._dc = _user32.GetDC(self._view_hwnd)
 
             # Context must be created after window is created.
-            if pyglet.options.backend:
+            if pyglet.options.backend and not self._shadow:
                 if "gl" in pyglet.options.backend and not self._wgl_context:
                     self._assign_config()
                     self.context.attach(self)
@@ -322,7 +322,7 @@ class Win32Window(BaseWindow):
 
         self.set_caption(self._caption)
 
-        if pyglet.options.backend:
+        if pyglet.options.backend and not self._shadow:
             self.switch_to()
             self.set_vsync(self._vsync)
 

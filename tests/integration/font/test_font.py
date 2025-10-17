@@ -2,7 +2,7 @@ import pyglet
 from tests.annotations import skip_platform, require_platform, Platform
 
 
-def test_font_create_default(test_data):
+def test_font_create_default(gl3_context, test_data):
     ft = pyglet.font.load()
     assert ft.name is not None
 
@@ -31,7 +31,7 @@ def test_load_no_custom_from_list(test_data):
     # Make sure name resolves to an actual found font.
     assert pyglet.font.manager.get_resolved_name(["Action Man", "DejaVu Sans"]) == 'DejaVu Sans'
 
-def test_load_privatefont(test_data):
+def test_load_privatefont(gl3_context, test_data):
     file = test_data.get_file('fonts', 'action_man.ttf')
     pyglet.font.add_file(file)
     assert pyglet.font.have_font("Action Man") == True
@@ -39,7 +39,7 @@ def test_load_privatefont(test_data):
     assert myfont.name == "Action Man"
 
 
-def test_load_privatefont_from_list(test_data):
+def test_load_privatefont_from_list(gl3_context, test_data):
     file = test_data.get_file('fonts', 'action_man.ttf')
     pyglet.font.add_file(file)
     assert pyglet.font.have_font("Action Man") == True
@@ -67,7 +67,7 @@ def test_font_load_callback(test_data):
     pyglet.font.add_file(file)
 
 @require_platform(Platform.WINDOWS)  # Same as above, but Linux runner uses DejaVu Sans.
-def test_load_gdi(test_data):
+def test_load_gdi(gl3_context, test_data):
     # Invalidate all font caches.
     pyglet.font.manager._invalidate()
 
@@ -90,7 +90,7 @@ def test_load_gdi(test_data):
     pyglet.font._system_font_class = pyglet.font._get_system_font_class()
 
 @require_platform(Platform.WINDOWS)  # Same as above, but Linux runner uses DejaVu Sans.
-def test_load_no_custom_from_list_gdi(test_data):
+def test_load_no_custom_from_list_gdi(gl3_context, test_data):
     # Invalidate all font caches.
     pyglet.font.manager._invalidate()
 
@@ -116,7 +116,7 @@ def test_load_no_custom_from_list_gdi(test_data):
     pyglet.options.win32_gdi_font = False
     pyglet.font._system_font_class = pyglet.font._get_system_font_class()
 
-def test_user_font(test_data):
+def test_user_font(gl3_context, test_data):
     bitmap_image = test_data.get_file('fonts', 'action_man_atlas.png')
 
     atlas_image = pyglet.image.load(bitmap_image)

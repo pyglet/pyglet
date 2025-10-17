@@ -15,7 +15,7 @@ from pyglet import resource
     (dict(rotate=270), (3, 0, 1, 2)),
     (dict(rotate=-90), (3, 0, 1, 2)),
 ])
-def test_resource_image_loading(event_loop, transforms, tex_order):
+def test_resource_image_loading(gl3_context, event_loop, transforms, tex_order):
     """Test loading an image resource with possible transformations."""
     resource.path.append('@' + __name__)
     resource.reindex()

@@ -28,14 +28,6 @@ class BackendGlobalObject(ABC):  # Temp name for now.
         ...
 
     @abstractmethod
-    def post_init(self) -> None:
-        """Called after the creation of this object at the end of the backend module.
-
-        This is useful as it allows execution of code after the object is created to create resources that
-        depend on the object, for example, a shadow window.
-        """
-
-    @abstractmethod
     def get_surface_context(self, window: Window, config) -> SurfaceContext:
         """After a window is created, this will be called.
 
