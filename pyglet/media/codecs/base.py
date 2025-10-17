@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import ctypes
 import io
-from typing import TYPE_CHECKING, BinaryIO, List, Optional, Union
+from typing import TYPE_CHECKING, BinaryIO, Optional
 
-from pyglet.graphics import Texture
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 if TYPE_CHECKING:
+    from pyglet.graphics import Texture
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
@@ -143,18 +143,17 @@ class AudioData:
     This class is used internally by pyglet.
     """
 
-    __slots__ = 'data', 'length', 'timestamp', 'duration', 'events', 'pointer'
+    __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
 
     def __init__(
         self,
-        data: Union[bytes, ctypes.Array],
+        data: bytes | ctypes.Array,
         length: int,
         timestamp: float = 0.0,
         duration: float = 0.0,
         events: list[MediaEvent] | None = None,
     ) -> None:
-        """
-        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]):
+        """Events (List[:class:`pyglet.media.drivers.base.MediaEvent`]):
 
         Args:
             data:
@@ -304,18 +303,17 @@ class Source:
         if not self.video_format:
             # XXX: This causes an assertion in the constructor of Animation
             return Animation([])
-        else:
-            frames = []
-            last_ts = 0
+        frames = []
+        last_ts = 0
+        next_ts = self.get_next_video_timestamp()
+        while next_ts is not None:
+            image = self.get_next_video_frame()
+            if image is not None:
+                delay = next_ts - last_ts
+                frames.append(AnimationFrame(image, delay))
+                last_ts = next_ts
             next_ts = self.get_next_video_timestamp()
-            while next_ts is not None:
-                image = self.get_next_video_frame()
-                if image is not None:
-                    delay = next_ts - last_ts
-                    frames.append(AnimationFrame(image, delay))
-                    last_ts = next_ts
-                next_ts = self.get_next_video_timestamp()
-            return Animation(frames)
+        return Animation(frames)
 
     def get_next_video_timestamp(self) -> float | None:
         """Get the timestamp of the next video frame.
@@ -326,7 +324,6 @@ class Source:
             float: The next timestamp, or ``None`` if there are no more video
             frames.
         """
-        pass
 
     def get_next_video_frame(self) -> Texture | None:
         """Get the next video frame.
@@ -337,7 +334,6 @@ class Source:
 
         .. versionadded:: 1.1
         """
-        pass
 
     def save(self, filename: str, file: BinaryIO | None = None, encoder: MediaEncoder | None = None) -> None:
         """Save this Source to a file.
@@ -356,10 +352,9 @@ class Source:
         """
         if encoder:
             return encoder.encode(self, filename, file)
-        else:
-            import pyglet.media.codecs
+        import pyglet.media.codecs
 
-            return pyglet.media.codecs.registry.encode(self, filename, file)
+        return pyglet.media.codecs.registry.encode(self, filename, file)
 
     # Internal methods that Player calls on the source:
 
@@ -461,7 +456,6 @@ class StreamingSource(Source):
 
     def delete(self) -> None:
         """Release the resources held by this StreamingSource."""
-        pass
 
 
 class StaticSource(Source):
@@ -503,7 +497,7 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> Optional['StaticMemorySource']:
+    def get_queue_source(self) -> Optional[StaticMemorySource]:
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
         return None
@@ -523,8 +517,7 @@ class StaticSource(Source):
 
 
 class StaticMemorySource(StaticSource):
-    """
-    Helper class for default implementation of :class:`.StaticSource`.
+    """Helper class for default implementation of :class:`.StaticSource`.
 
     Do not use directly. This class is used internally by pyglet.
 
@@ -633,7 +626,6 @@ class SourceGroup:
         Returns:
             Audio data, or ``None`` if there is no more data.
         """
-
         if not self._sources:
             return None
 
