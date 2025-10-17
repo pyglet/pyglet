@@ -44,7 +44,8 @@ def batched_sprite():
     a real GL context which would require it.
     """
     from pyglet.graphics import Batch
-    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=Batch())
+    mocked_batch = Batch(MagicMock())
+    sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=mocked_batch)
     sprite.rotation = 90
 
     return sprite
@@ -194,7 +195,7 @@ def test_group_setter(request, fixture):
 def test_batch_setter(request, fixture):
     _sprite = request.getfixturevalue(fixture)
     from pyglet.graphics import Batch
-    new_batch = Batch()
+    new_batch = Batch(MagicMock())
     with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
         _sprite.batch = new_batch
         assert _sprite.batch is new_batch

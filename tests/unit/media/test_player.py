@@ -1,3 +1,6 @@
+from unittest.mock import MagicMock
+
+import pyglet
 from tests import mock
 import random
 import unittest
@@ -25,7 +28,10 @@ class PlayerTestCase(unittest.TestCase):
 
     def setUp(self):
         self.audio_player = AudioPlayer()
-        self.video_player = VideoTestPlayer()
+
+        # Create a batch with a magic-mocked context.
+        batch = pyglet.graphics.Batch(MagicMock())
+        self.video_player = VideoTestPlayer(batch)
 
         self._get_audio_driver_patcher = mock.patch('pyglet.media.player.get_audio_driver')
         self.mock_get_audio_driver = self._get_audio_driver_patcher.start()
