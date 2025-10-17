@@ -40,7 +40,7 @@ class MouseStateHandler:
     """
 
     def __init__(self) -> None:  # noqa: D107
-        self.data = {
+        self.data: dict[int | str, int | bool] = {
             'x': 0,
             'y': 0,
         }
@@ -62,7 +62,7 @@ class MouseStateHandler:
         self.data['x'] = x
         self.data['y'] = y
 
-    def __getitem__(self, key: str) -> int | bool:
+    def __getitem__(self, key: str | int) -> int | bool:
         return self.data.get(key, False)
 
 
