@@ -528,8 +528,7 @@ class VideoPlayer(AudioPlayer):
         self._width = 0
         self._height = 0
         self.batch = batch or pyglet.graphics.get_default_batch()
-
-        self._context = pyglet.graphics.api.core.current_context
+        self._context = batch._context  # noqa: SLF001
 
         self._check_ffmpeg_availability()
 
