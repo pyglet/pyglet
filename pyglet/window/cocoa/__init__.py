@@ -16,7 +16,7 @@ from .pyglet_window import PygletToolWindow, PygletWindow
 from .systemcursor import SystemCursor
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl import CocoaContext
+    from pyglet.graphics.api.gl.cocoa.context import CocoaContext
 
 NSApplication = cocoapy.ObjCClass('NSApplication')
 NSCursor = cocoapy.ObjCClass('NSCursor')
@@ -71,6 +71,11 @@ class CocoaWindow(BaseWindow):
                                       cocoapy.NSClosableWindowMask |
                                       cocoapy.NSUtilityWindowMask,
         BaseWindow.WINDOW_STYLE_BORDERLESS: cocoapy.NSBorderlessWindowMask,
+        BaseWindow.WINDOW_STYLE_TRANSPARENT: cocoapy.NSTitledWindowMask |
+                                         cocoapy.NSClosableWindowMask |
+                                         cocoapy.NSMiniaturizableWindowMask,
+        BaseWindow.WINDOW_STYLE_OVERLAY: cocoapy.NSBorderlessWindowMask,
+
     }
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
@@ -89,7 +94,7 @@ class CocoaWindow(BaseWindow):
     def _create(self) -> None:
         with AutoReleasePool():
             if self._nswindow:
-                # The window is about the be recreated so destroy everything
+                # The window is about to be recreated so destroy everything
                 # associated with the old window, then destroy the window itself.
                 self._nswindow.orderOut_(None)
                 self._nswindow.close()
@@ -211,6 +216,16 @@ class CocoaWindow(BaseWindow):
             self.set_vsync(self._vsync)
             self.set_visible(self._visible)
 
+        if not self._fullscreen:
+            if self._style in ("transparent", "overlay"):
+                self._nswindow.setOpaque_(False)
+                self._nswindow.setBackgroundColor_(NSColor.clearColor())
+                self._nswindow.setHasShadow_(False)
+
+                if self._style == "overlay":
+                    self.set_mouse_passthrough(True)
+                    self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+
     def _update_geometry(self):
         if self._metal_layer:
             pass
@@ -235,6 +250,17 @@ class CocoaWindow(BaseWindow):
             return self._nswindow.backingScaleFactor()
 
         return 1.0
+
+    def _get_mouse_scale(self) -> float:
+        """The mouse scale factoring in the DPI.
+
+        On Mac, this is always 1.0.
+        """
+        return 1.0
+
+    def set_mouse_passthrough(self, state: bool) -> None:
+        with AutoReleasePool():
+            self._nswindow.setIgnoresMouseEvents_(state)
 
     def _set_nice_window_location(self) -> None:
         # Construct a list of all visible windows that aren't us.
@@ -355,7 +381,7 @@ class CocoaWindow(BaseWindow):
 
     def dispatch_pending_events(self) -> None:
         while self._event_queue:
-            event = self._event_queue.pop(0)
+            event = self._event_queue.popleft()
             EventDispatcher.dispatch_event(self, *event)
 
     def set_caption(self, caption: str) -> None:

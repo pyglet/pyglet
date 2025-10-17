@@ -518,6 +518,7 @@ class Controller(EventDispatcher):
         #: The unique guid for this Device
         self.guid: str = mapping.get('guid')
 
+        # Pollable
         self.a: bool = False
         self.b: bool = False
         self.x: bool = False
@@ -532,6 +533,10 @@ class Controller(EventDispatcher):
 
         self.lefttrigger: float = 0.0
         self.righttrigger: float = 0.0
+        self.dpad: Vec2 = Vec2()
+        self.leftanalog: Vec2 = Vec2()
+        self.rightanalog: Vec2 = Vec2()
+
         self.leftx: float = 0.0
         self.lefty: float = 0.0
         self.rightx: float = 0.0
@@ -615,12 +620,14 @@ class Controller(EventDispatcher):
             @control.event
             def on_change(value):
                 self.dpady = round(value * scale + bias) * sign    # normalized
+                self.dpad = Vec2(self.dpadx, self.dpady)
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         elif axis_name in ("dpleft", "dpright"):
             @control.event
             def on_change(value):
                 self.dpadx = round(value * scale + bias) * sign     # normalized
+                self.dpad = Vec2(self.dpadx, self.dpady)
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
         elif axis_name in ("lefttrigger", "righttrigger"):
@@ -635,14 +642,16 @@ class Controller(EventDispatcher):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, -self.lefty))
+                self.left_analog = Vec2(self.leftx, -self.lefty)
+                self.dispatch_event('on_stick_motion', self, "leftstick", self.left_analog)
 
         elif axis_name in ("rightx", "righty"):
             @control.event
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, -self.righty))
+                self.right_analog = Vec2(self.rightx, -self.righty)
+                self.dispatch_event('on_stick_motion', self, "rightstick", self.right_analog)
 
     def _bind_button_control(self, relation: Relation, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
@@ -653,7 +662,8 @@ class Controller(EventDispatcher):
             def on_change(value):
                 target, bias = defaults[button_name]
                 setattr(self, target, bias * value)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+                self.dpad = Vec2(self.dpadx, self.dpady)
+                self.dispatch_event('on_dpad_motion', self, self.dpad)
         else:
             @control.event
             def on_change(value):
@@ -679,7 +689,7 @@ class Controller(EventDispatcher):
         @control.event
         def on_change(value):
             vector = _input_map.get(value // _scale, Vec2(0.0, 0.0))
-            self.dpadx, self.dpady = vector
+            self.dpad = vector
             self.dispatch_event('on_dpad_motion', self, vector)
 
     def _initialize_controls(self) -> None:

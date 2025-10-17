@@ -575,14 +575,16 @@ class XInputController(Controller):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, self.lefty))
+                self.leftanalog = Vec2(self.leftx, self.lefty)
+                self.dispatch_event('on_stick_motion', self, "leftstick", self.leftanalog)
 
         elif name in ("rightx", "righty"):
             @control.event
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, self.righty))
+                self.rightanalog = Vec2(self.rightx, self.righty)
+                self.dispatch_event('on_stick_motion', self, "rightstick", self.rightanalog)
 
     def _add_button(self, control, name):
 
@@ -592,7 +594,8 @@ class XInputController(Controller):
                 target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
                                 'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[name]
                 setattr(self, target, bias * value)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+                self.dpad = Vec2(self.dpadx, self.dpady)
+                self.dispatch_event('on_dpad_motion', self, self.dpad)
         else:
             @control.event
             def on_change(value):

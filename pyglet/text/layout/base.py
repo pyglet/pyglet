@@ -673,6 +673,7 @@ elif pyglet.options.backend == "vulkan":
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
 
+
 class TextLayout:
     """Lay out and display documents.
 
@@ -1777,7 +1778,7 @@ class TextLayout:
                 owner_glyphs.extend(zip([kern] * (kern_end - kern_start), gs, os))
             if owner is None:
                 # Assume glyphs are already boxes.
-                for kern, glyph in owner_glyphs:
+                for _, glyph, _ in owner_glyphs:
                     line.add_box(glyph)
             else:
                 line.add_box(_GlyphBox(owner, font, owner_glyphs, width))

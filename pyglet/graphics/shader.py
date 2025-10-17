@@ -58,6 +58,7 @@ class Sampler:
     count: int = 1
     stages: Sequence[ShaderType] = ("fragment",)
 
+
 class ShaderProgramBase(ABC):
     _attributes: dict[str, Attribute]
     _uniform_blocks: dict[str, UniformBlockBase]

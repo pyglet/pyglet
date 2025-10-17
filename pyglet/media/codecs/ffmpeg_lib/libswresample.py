@@ -13,8 +13,8 @@ _debug = debug_print('debug_media')
 
 swresample = pyglet.lib.load_library(
     'swresample',
-    win32=('swresample-5', 'swresample-4', 'swresample-3'),
-    darwin=('swresample.5', 'swresample.4', 'swresample.3')
+    win32=('swresample-6', 'swresample-5', 'swresample-4', 'swresample-3'),
+    darwin=('swresample.6', 'swresample.5', 'swresample.4', 'swresample.3')
 )
 
 swresample.swresample_version.restype = c_int

@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ctypes import Structure, c_int, c_uint
     from typing import Callable, Union
-    c_data = Union[type[Structure], c_int, c_uint]
+    c_data = type[Structure] | type[c_int] | type[c_uint]
 
 
 _IOC_NRBITS = 8
@@ -64,7 +64,7 @@ _IOC_READ = 2
 # 'code' instead of 'type' to indicate the ioctl "magic number" ('H', 'E', etc.).
 
 
-def _IOC(io_dir: _IOC_NONE | _IOC_READ | _IOC_WRITE, code: int, nr: int, size: int) -> int:
+def _IOC(io_dir: Union[_IOC_NONE, _IOC_READ, _IOC_WRITE], code: int, nr: int, size: int) -> int:
     return (io_dir << _IOC_DIRSHIFT) | (code << _IOC_TYPESHIFT) | (nr << _IOC_NRSHIFT) | (size << _IOC_SIZESHIFT)
 
 
