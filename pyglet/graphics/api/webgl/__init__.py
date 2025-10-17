@@ -120,7 +120,6 @@ class WebGLBackend(BackendGlobalObject):
     def __init__(self) -> None:
         self.initialized = False
         self.current_context = None
-        self._shadow_window = None
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose

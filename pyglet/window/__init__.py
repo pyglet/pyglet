@@ -89,6 +89,7 @@ above, "Working with multiple screens")::
 """
 from __future__ import annotations
 
+import atexit
 import sys
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Sequence
@@ -1869,12 +1870,14 @@ class _ShadowWindow(Window):
 def _create_shadow_window() -> Window | None:
     # MacOS and browsers don't need a shadow window.
     if pyglet.compat_platform not in ('darwin', 'emscripten'):
-        _shadow_window = _ShadowWindow()
+        shadow_window = _ShadowWindow()
 
-        from pyglet import app
-        app.windows.remove(_shadow_window)
+        from pyglet import app  # noqa: PLC0415
+        app.windows.remove(shadow_window)
 
-        return _shadow_window
+        atexit.register(shadow_window.close)
+
+        return shadow_window
     return None
 
 _shadow_window = _create_shadow_window()
