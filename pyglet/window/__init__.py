@@ -1798,6 +1798,7 @@ __all__ = (
     # imported  # noqa: ERA001
     "event",
     "key",
+    "mouse",
     # classes  # noqa: ERA001
     "BaseWindow",
     "Window",
