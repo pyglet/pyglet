@@ -4,6 +4,7 @@ from typing import Any, ItemsView, Literal, Sequence
 
 from . import app as app
 from . import clock as clock
+from . import config as config
 from . import customtypes as customtypes
 from . import display as display
 from . import event as event

@@ -1,6 +1,13 @@
 from __future__ import annotations
 from enum import Enum, auto
-from typing import NamedTuple
+
+
+class GraphicsAPI(Enum):
+    OPENGL = auto()
+    OPENGL_2 = auto()
+    OPENGL_ES_2 = auto()
+    OPENGL_ES_3 = auto()
+    WEBGL = auto()
 
 
 class BlendFactor(Enum):

@@ -6,11 +6,12 @@ from typing import Callable, TYPE_CHECKING
 
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.base import SurfaceContext
-from pyglet.graphics.api.gl import gl_info, ObjectSpace, OpenGLWindowConfig
+from pyglet.graphics.api.gl import gl_info, ObjectSpace
 from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 
 
 if TYPE_CHECKING:
+    from pyglet.config import SurfaceConfig
     from pyglet.graphics.api.gl.shader import GLDataType, GLFunc
     from _ctypes import Array
     from pyglet.window import Window
@@ -29,12 +30,12 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     #: A container which is shared between all contexts that share GL objects.
     object_space: ObjectSpace
-    config: OpenGLWindowConfig
+    config: SurfaceConfig
     context_share: OpenGLSurfaceContext | None
 
     def __init__(self, core: OpenGLBackend,
                  window: Window,
-                 config: OpenGLWindowConfig,
+                 config: SurfaceConfig,
                  platform_info: GLXInfo | WGLInfo | None = None,
                  context_share: OpenGLSurfaceContext | None = None,
                  platform_func_class: type | None = None) -> None:

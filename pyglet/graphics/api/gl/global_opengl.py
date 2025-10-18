@@ -126,7 +126,7 @@ class OpenGLBackend(BackendGlobalObject):
         return config.create_context(self, shared)
 
     def get_surface_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
-        context = self.windows[window] = self.create_context(config, self.current_context)
+        context = self.windows[window] = self.create_context(config, shared=self.current_context)
         self._have_context = True
         return context
 
@@ -139,29 +139,26 @@ class OpenGLBackend(BackendGlobalObject):
         # Version 3.2 needs to be specified explicitly.
         if self.gl_api == "gles":
             configs = [
-                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=2,
+                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=2,
                                                     opengl_api=self.gl_api),
-                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=2,
+                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=2,
                                                     opengl_api=self.gl_api),
             ]
         else:
             configs = [
-                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
             ]
 
         return configs
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.graphics.api.gl.OpenGLConfig:
-        return pyglet.graphics.api.gl.OpenGLConfig(**kwargs)
+    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLConfig:
+        return pyglet.config.OpenGLConfig(**kwargs)
 
     def get_info(self):
         return self.current_context.get_info()
 
     def have_extension(self, extension_name: str) -> bool:
-        if self.platform_func and not self.current_context:
-            return extension_name in self.platform_exts
-
         if not self.current_context:
             warnings.warn('No GL context created yet or current context not set.')
             return False

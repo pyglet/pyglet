@@ -1,147 +1,20 @@
 from __future__ import annotations
 
 import warnings
-from _ctypes import _Pointer
-from ctypes import POINTER, byref, c_int, c_uint, cast
-from typing import TYPE_CHECKING, NoReturn
+from ctypes import byref, c_int, c_uint
+from typing import TYPE_CHECKING
 
 from pyglet.graphics.api import gl
 from pyglet.graphics.api.gl import lib, OpenGLSurfaceContext
-from pyglet.graphics.api.gl.base import OpenGLConfig, OpenGLWindowConfig, ContextException
-from pyglet.graphics.api.gl.xlib import glxext_arb, glx, glx_info, glxext_mesa
-from pyglet.libs.linux.x11 import xlib
-from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
-
+from pyglet.graphics.api.gl.base import ContextException
+from pyglet.graphics.api.gl.xlib import glx_info
+from pyglet.libs.linux.glx import glxext_arb, glx, glxext_mesa
 
 if TYPE_CHECKING:
+    from pyglet.config.gl.x11 import XlibGLSurfaceConfig
     from pyglet.graphics.api.gl import OpenGLBackend
     from pyglet.window.xlib import XlibWindow
-    from pyglet.libs.linux.x11 import Display
-
-
-class XlibOpenGLConfig(OpenGLConfig):
-
-    def match(self, window: XlibWindow) -> XlibGLWindowConfig | None:
-        x_display = window._x_display  # noqa: SLF001
-        x_screen = window._x_screen_id  # noqa: SLF001
-
-        # Construct array of attributes
-        attrs = []
-        for name, value in self.get_gl_attributes():
-            attr = XlibGLWindowConfig.attribute_ids.get(name, None)
-            if attr and value is not None:
-                attrs.extend([attr, int(value)])
-
-        attrs.extend([glx.GLX_X_RENDERABLE, True])
-        attrs.extend([0, 0])  # attrib_list must be null terminated
-
-        attrib_list = (c_int * len(attrs))(*attrs)
-
-        elements = c_int()
-        configs = glx.glXChooseFBConfig(x_display, x_screen, attrib_list, byref(elements))
-        if not configs:
-            return None
-
-        configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
-
-        result = [XlibGLWindowConfig(window, c, self) for c in configs]
-
-        # If we intend to have a transparent framebuffer.
-        if self.transparent_framebuffer:
-            result = [fb_cf for fb_cf in result if fb_cf.transparent]
-
-        # If we intend to have a transparent framebuffer.
-        if self.transparent_framebuffer:
-            result = [fb_cf for fb_cf in result if fb_cf.transparent]
-
-        # Can't free array until all XlibGLConfig's are GC'd.  Too much
-        # hassle, live with leak. XXX
-        # xlib.XFree(configs)
-        return result[0]
-
-
-class XlibGLWindowConfig(OpenGLWindowConfig):
-    _glx_info: glx_info.GLXInfo
-
-    attribute_ids = {  # noqa: RUF012
-        'buffer_size': glx.GLX_BUFFER_SIZE,
-        'level': glx.GLX_LEVEL,  # Not supported
-        'double_buffer': glx.GLX_DOUBLEBUFFER,
-        'stereo': glx.GLX_STEREO,
-        'aux_buffers': glx.GLX_AUX_BUFFERS,
-        'red_size': glx.GLX_RED_SIZE,
-        'green_size': glx.GLX_GREEN_SIZE,
-        'blue_size': glx.GLX_BLUE_SIZE,
-        'alpha_size': glx.GLX_ALPHA_SIZE,
-        'depth_size': glx.GLX_DEPTH_SIZE,
-        'stencil_size': glx.GLX_STENCIL_SIZE,
-        'accum_red_size': glx.GLX_ACCUM_RED_SIZE,
-        'accum_green_size': glx.GLX_ACCUM_GREEN_SIZE,
-        'accum_blue_size': glx.GLX_ACCUM_BLUE_SIZE,
-        'accum_alpha_size': glx.GLX_ACCUM_ALPHA_SIZE,
-
-        'sample_buffers': glx.GLX_SAMPLE_BUFFERS,
-        'samples': glx.GLX_SAMPLES,
-
-        # Not supported in current pyglet API:
-        # 'render_type': glx.GLX_RENDER_TYPE,
-        # 'drawable_type': glx.GLX_DRAWABLE_TYPE,
-        # 'config_caveat': glx.GLX_CONFIG_CAVEAT,
-        # 'transparent_type': glx.GLX_TRANSPARENT_TYPE,
-        # 'transparent_index_value': glx.GLX_TRANSPARENT_INDEX_VALUE,
-        # 'transparent_red_value': glx.GLX_TRANSPARENT_RED_VALUE,
-        # 'transparent_green_value': glx.GLX_TRANSPARENT_GREEN_VALUE,
-        # 'transparent_blue_value': glx.GLX_TRANSPARENT_BLUE_VALUE,
-        # 'transparent_alpha_value': glx.GLX_TRANSPARENT_ALPHA_VALUE,
-
-        # Used internally
-        'x_renderable': glx.GLX_X_RENDERABLE,
-    }
-
-    def __init__(self, window: XlibWindow, fbconfig: glx.GLXFBConfig,
-                 config: XlibOpenGLConfig) -> None:
-        super().__init__(window, config)
-
-        self.fbconfig = fbconfig
-        self.transparent = False
-
-        for name, attr in self.attribute_ids.items():
-            value = c_int()
-            result = glx.glXGetFBConfigAttrib(self._window._x_display, self.fbconfig, attr,  # noqa: SLF001
-                                              byref(value))
-            if result >= 0:
-                setattr(self, name, value.value)
-
-        # If user intends for a transparent framebuffer, the visual info needs to be
-        # queried for it. Even if a config supports alpha_size 8 and depth_size 32, there is no
-        # guarantee the visual info supports that same configuration.
-        if config.transparent_framebuffer:
-            xvi_ptr = glx.glXGetVisualFromFBConfig(self._window._x_display, self.fbconfig)  # noqa: SLF001
-            if xvi_ptr:
-                self.transparent = window._is_visual_transparent(xvi_ptr.contents.visual)  # noqa: SLF001
-                xlib.XFree(xvi_ptr)
-
-    def _is_visual_transparent(self, visual: _Pointer[xlib.Visual]) -> bool:
-        if not XRenderFindVisualFormat:
-            return False
-
-        xrender_format = XRenderFindVisualFormat(self.canvas.display._display, visual)
-        return xrender_format and xrender_format.contents.direct.alphaMask != 0
-
-    def get_visual_info(self) -> glx.XVisualInfo:
-        return glx.glXGetVisualFromFBConfig(self._window._x_display, self.fbconfig).contents  # noqa: SLF001
-
-    def create_context(self, opengl_backend: OpenGLBackend, share: XlibContext | None) -> XlibContext:
-        return XlibContext(opengl_backend, self._window, self, share)
-
-    def _create_glx_context(self, _share: None) -> NoReturn:
-        raise NotImplementedError
-
-    def apply_format(self) -> None:
-        pass
-
-    def is_complete(self) -> bool:
-        return True
+    from pyglet.libs.linux.x11.xlib import Display
 
 
 class XlibContext(OpenGLSurfaceContext):
@@ -150,7 +23,7 @@ class XlibContext(OpenGLSurfaceContext):
     glx_window: glx.GLXWindow | None
     _use_video_sync: bool
     _vsync: bool
-    config: XlibGLWindowConfig
+    config: XlibGLSurfaceConfig
     attached: bool = False
 
     _have_SGI_swap_control: bool  # noqa: N815
@@ -161,7 +34,7 @@ class XlibContext(OpenGLSurfaceContext):
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: XlibWindow,
-                 config: XlibGLWindowConfig,
+                 config: XlibGLSurfaceConfig,
                  share: XlibContext | None) -> None:
         self.x_display = window._x_display  # noqa: SLF001
         info = glx_info.GLXInfo(self.x_display)
@@ -201,21 +74,23 @@ class XlibContext(OpenGLSurfaceContext):
         else:
             share_context = None
 
-        attribs = []
-        if self.config.major_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB, self.config.major_version])
-        if self.config.minor_version is not None:
-            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, self.config.minor_version])
+        user_config = self.config.config
 
-        if self.config.opengl_api == "gl":
+        attribs = []
+        if user_config.major_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB, user_config.major_version])
+        if user_config.minor_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, user_config.minor_version])
+
+        if user_config.opengl_api == "gl":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
-        elif self.config.opengl_api == "gles":
+        elif user_config.opengl_api == "gles":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
 
         flags = 0
-        if self.config.forward_compatible:
+        if user_config.forward_compatible:
             flags |= glxext_arb.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
-        if self.config.debug:
+        if user_config.debug:
             flags |= glxext_arb.GLX_CONTEXT_DEBUG_BIT_ARB
 
         if flags:

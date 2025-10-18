@@ -20,7 +20,7 @@ from __future__ import annotations
 from ctypes import byref, c_int
 from typing import TYPE_CHECKING
 
-from pyglet.graphics.api.gl.xlib.glx import (
+from pyglet.libs.linux.glx.glx import (
     GLX_EXTENSIONS,
     GLX_VENDOR,
     GLX_VERSION,

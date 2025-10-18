@@ -47,7 +47,7 @@ from pyglet.window import (
 )
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl.xlib.context import XlibGLWindowConfig
+    from pyglet.config.gl.x11 import XlibGLSurfaceConfig
     from pyglet.libs.linux.x11.xlib import Visual
     from _ctypes import _Pointer
 
@@ -126,7 +126,7 @@ ViewEventHandler = _ViewEventHandler
 
 
 class XlibWindow(BaseWindow):
-    config: XlibGLWindowConfig
+    config: XlibGLSurfaceConfig
     _x_display: xlib.Display | None = None  # X display connection
     _x_screen_id: int | None = None  # X screen index
     _x_ic: xlib.XIC | None = None  # X input context

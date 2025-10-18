@@ -483,6 +483,7 @@ if TYPE_CHECKING:
     from . import (
         app,
         clock,
+        config,
         customtypes,
         display,
         enums,
@@ -504,6 +505,7 @@ if TYPE_CHECKING:
     )
 else:
     app = _ModuleProxy("app")  # type: ignore
+    config = _ModuleProxy("config")  # type: ignore
     clock = _ModuleProxy("clock")  # type: ignore
     customtypes = _ModuleProxy("customtypes")  # type: ignore
     display = _ModuleProxy("display")  # type: ignore

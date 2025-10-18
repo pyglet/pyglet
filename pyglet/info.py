@@ -60,22 +60,22 @@ def dump_pyglet():
 
 def dump_window():
     """Dump display, window, screen and default config info."""
+    import pyglet.window
+    window = pyglet.window.Window(visible=False)
     from pyglet.graphics.api import core
     if not core.have_version(3) or not core.have_version(2):
         print(f"Insufficient OpenGL version: {core.get_info().get_version_string()}")
         return
-    import pyglet.window
     display = pyglet.display.get_display()
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):
         print(f'screens[{i}]: {screen!r}')
-    window = pyglet.window.Window(visible=False)
     for key, value in window.config.attributes.items():
         print(f"config['{key}'] = {value!r}")
     print('context:', repr(window.context))
 
-    _heading('window.context._info')
+    _heading('window.context.info')
     dump_gl(window.context)
     window.close()
 
@@ -86,7 +86,7 @@ def dump_gl(context=None):
         info = context.get_info()
     else:
         from pyglet.graphics.api.gl import gl_info as info
-    print('gl_info.get_version_string()', info.get_version_string())
+    print('gl_info.get_version_string():', info.get_version_string())
     print('gl_info.get_version():', info.get_version())
     print('gl_info.get_vendor():', info.get_vendor())
     print('gl_info.get_renderer():', info.get_renderer())

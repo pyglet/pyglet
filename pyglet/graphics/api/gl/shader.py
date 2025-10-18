@@ -1210,9 +1210,11 @@ class ShaderProgram(ShaderProgramBase):
         try:
             uniform = self._uniforms[item]
         except KeyError as err:
-            msg = (f"A Uniform with the name `{item}` was not found.\n"
-                   f"The spelling may be incorrect or, if not in use, it "
-                   f"may have been optimized out by the OpenGL driver.")
+            msg = (
+                f"A Uniform with the name `{item}` was not found.\n"
+                f"The spelling may be incorrect or, if not in use, it "
+                f"may have been optimized out by the OpenGL driver."
+            )
             if _debug_api_shaders:
                 warnings.warn(msg)
                 return None
@@ -1234,7 +1236,11 @@ class ShaderProgram(ShaderProgramBase):
 
         # Probably just remove all of this?
         for name, fmt in data.items():
-            current_attrib = self._attributes[name]
+            try:
+                current_attrib = self._attributes[name]
+            except KeyError:
+                msg = f"Attribute {name} not found. Existing attributes: {list(self._attributes.keys())}"
+                raise ShaderException(msg) from None
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt  # noqa: PLW2901
