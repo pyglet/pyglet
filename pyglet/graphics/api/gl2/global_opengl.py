@@ -69,15 +69,15 @@ class OpenGL2_Matrices(WindowTransformations):
 
 class OpenGL2Backend(OpenGLBackend):
 
-    def get_default_configs(self) -> Sequence[pyglet.graphics.api.gl.OpenGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
         return [
-            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
+            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=2, minor_version=0,
                                                 opengl_api=self.gl_api),
-            pyglet.graphics.api.gl.OpenGLConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
+            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=2, minor_version=0,
                                                 opengl_api=self.gl_api),
         ]
 

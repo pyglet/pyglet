@@ -127,5 +127,3 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 #
 #         return _glDeleteTextures(n, textures)
 
-if _is_pyglet_doc_run:
-    from .base import OpenGLConfig

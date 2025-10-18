@@ -130,7 +130,7 @@ class OpenGLBackend(BackendGlobalObject):
         self._have_context = True
         return context
 
-    def get_default_configs(self) -> Sequence[pyglet.graphics.api.gl.OpenGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
