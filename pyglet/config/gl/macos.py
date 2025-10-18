@@ -3,8 +3,7 @@ from __future__ import annotations
 import platform
 from dataclasses import asdict
 
-from _ctypes import byref
-from ctypes import c_uint32, c_int
+from ctypes import byref, c_uint32, c_int
 
 from pyglet.config.gl import GLSurfaceConfig
 
@@ -188,7 +187,7 @@ def match(config: OpenGLConfig, window: CocoaWindow) -> CocoaGLSurfaceConfig | N
     # Create the pixel format.
     attrs_array_type = c_uint32 * len(attrs)
     attrs_array = attrs_array_type(*attrs)
-    from pyglet.graphics.api.gl.cocoa.context import NSOpenGLPixelFormat
+    from pyglet.graphics.api.gl.cocoa.context import NSOpenGLPixelFormat  # noqa: PLC0415
     pixel_format = NSOpenGLPixelFormat.alloc().initWithAttributes_(attrs_array)
 
     # Return the match list.
@@ -236,7 +235,7 @@ class CocoaGLSurfaceConfig(GLSurfaceConfig):
 
     def create_context(self, opengl_backend: OpenGLBackend, share: CocoaContext | None) -> CocoaContext:
         # Determine the shared NSOpenGLContext.
-        from pyglet.graphics.api.gl.cocoa.context import CocoaContext, NSOpenGLContext
+        from pyglet.graphics.api.gl.cocoa.context import CocoaContext, NSOpenGLContext  # noqa: PLC0415
 
         if share:
             share_context = share._nscontext  # noqa: SLF001
@@ -247,6 +246,10 @@ class CocoaGLSurfaceConfig(GLSurfaceConfig):
         nscontext = NSOpenGLContext.alloc().initWithFormat_shareContext_(
             self._pixel_format,
             share_context)
+
+        if self.config.transparent_framebuffer:
+            opaque = c_int(0)
+            nscontext.setValues_forParameter_(byref(opaque), cocoapy.NSOpenGLCPSurfaceOpacity)
 
         # No longer needed after context creation.
         if self._pixel_format:

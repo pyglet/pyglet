@@ -5,13 +5,13 @@ from typing import NoReturn, TYPE_CHECKING
 
 from ctypes import c_int, cast, byref, POINTER, _Pointer
 
-from pyglet.graphics.api.gl.xlib.context import XlibContext
 from pyglet.libs.linux.glx import glx
 from pyglet.libs.linux.x11 import xlib
 from pyglet.libs.linux.x11.xrender import XRenderFindVisualFormat
 from pyglet.config import SurfaceConfig
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl.xlib.context import XlibContext
     from pyglet.graphics.api import OpenGLBackend
     from pyglet.config import OpenGLConfig
     from pyglet.graphics.api.gl.xlib import glx_info
@@ -129,6 +129,7 @@ class XlibGLSurfaceConfig(SurfaceConfig):
         return glx.glXGetVisualFromFBConfig(self._window._x_display, self.fbconfig).contents  # noqa: SLF001
 
     def create_context(self, opengl_backend: OpenGLBackend, share: XlibContext | None) -> XlibContext:
+        from pyglet.graphics.api.gl.xlib.context import XlibContext  # noqa: PLC0415
         return XlibContext(opengl_backend, self._window, self, share)
 
     def _create_glx_context(self, _share: None) -> NoReturn:

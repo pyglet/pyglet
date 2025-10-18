@@ -208,7 +208,7 @@ class GLLegacyConfig(GLSurfaceConfig):
         _gdi32.SetPixelFormat(self._window.dc, self._pf, byref(self._pfd))
 
     def create_context(self, opengl_backend: OpenGLBackend, share: Win32ARBContext | None) -> Win32ARBContext | Win32Context:
-        from pyglet.graphics.api.gl.win32.context import Win32Context
+        from pyglet.graphics.api.gl.win32.context import Win32Context  # noqa: PLC0415
         return Win32Context(opengl_backend, self._window, self, share)
 
 
@@ -252,7 +252,7 @@ class GLSurfaceConfig(GLSurfaceConfig):
         self, opengl_backend: OpenGLBackend, share: Win32ARBContext | None,
     ) -> Win32ARBContext | Win32Context:
         #super().create_context(opengl_backend, share)
-        from pyglet.graphics.api.gl.win32.context import Win32ARBContext, Win32Context
+        from pyglet.graphics.api.gl.win32.context import Win32ARBContext, Win32Context  # noqa: PLC0415
         if _global_wgl.have_extension('WGL_ARB_create_context'):
             # Graphics adapters that ONLY support up to OpenGL 3.1/3.2 should be using the Win32ARBContext class.
             return Win32ARBContext(opengl_backend, self._window, self, share)
