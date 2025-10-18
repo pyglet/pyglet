@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import struct
 
 from ctypes import byref, Array
-from typing import Callable, Literal, Iterator, Union, Sequence, Any
+from typing import Literal, Iterator, Union, Sequence
 
 import pyglet
 from pyglet.enums import TextureType, TextureFilter, ComponentFormat, \
     AddressMode
-from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_UNSIGNED_INT
+from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
     GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
     GL_UNSIGNED_BYTE, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, \
@@ -16,13 +15,14 @@ from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL
     GLuint, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, \
     GLubyte, GL_PACK_ALIGNMENT, GL_UNPACK_SKIP_PIXELS, \
     GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, \
-    GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8, GL_BYTE, GL_INT  # noqa: F401
+    GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8, GL_BYTE, GL_INT, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0  # noqa: F401
+
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
 from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
-from pyglet.image.base import CompressedImageData, ImageException
+from pyglet.image.base import ImageException
 from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
-    TextureArrayDepthExceeded, TextureArrayBase
+    TextureArrayDepthExceeded
 
 _api_base_internal_formats = {
     'R': 'GL_R',
@@ -528,31 +528,28 @@ class Texture(TextureBase):
         """
         self._context.glBindTexture(self.target, self.id)
 
+        # Some tests seem to rely on this always being RGBA
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
         size = (self.width * self.height * self.images * len(fmt))
         buf = (GLubyte * size)()
-        self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        # Some tests seem to rely on this always being RGBA
-        self._context.glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+
+        if self._context.get_info().get_opengl_api() == "gles":
+            self._context.gles_pixel_fbo.bind()
+            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
+            self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+            self._context.glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
+            self._context.gles_pixel_fbo.unbind()
+        else:
+            self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
+            self._context.glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+
         data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-        # # TODO: Clean up this temporary hack
-        # if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
-        #     fbo = c_uint()
-        #     glGenFramebuffers(1, fbo)
-        #     glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
-        #     glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        #     glCheckFramebufferStatus(GL_FRAMEBUFFER)
-        #     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
-        #     glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
-        #     glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        #     glDeleteFramebuffers(1, fbo)
-        # else:
     def get_image_data(self, z: int = 0) -> ImageData:
         """Get the image data of this texture.
 
