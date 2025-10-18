@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import ctypes
 import io
-from typing import TYPE_CHECKING, BinaryIO, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, BinaryIO, Optional, Union
 
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
@@ -73,22 +74,17 @@ class AudioFormat:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, AudioFormat):
-            return (
-                self.channels == other.channels
-                and self.sample_size == other.sample_size
-                and self.sample_rate == other.sample_rate
-            )
+            return (self.channels == other.channels and
+                    self.sample_size == other.sample_size and
+                    self.sample_rate == other.sample_rate)
         return NotImplemented
 
     def __repr__(self) -> str:
         return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__,
-            self.channels,
-            self.sample_size,
-            self.sample_rate,
-        )
+            self.__class__.__name__, self.channels, self.sample_size,
+            self.sample_rate)
 
-
+@dataclass
 class VideoFormat:
     """Video details.
 
@@ -99,15 +95,6 @@ class VideoFormat:
     video image.  For example, a video image of 640x480 with sample aspect 2.0
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
-    """
-
-    width: int
-    height: int
-    sample_aspect: float
-    frame_rate: float | None
-
-    def __init__(self, width: int, height: int, sample_aspect: float = 1.0, frame_rate: float | None = None) -> None:
-        """Define the video format information.
 
         Args:
             width:
@@ -119,22 +106,12 @@ class VideoFormat:
             frame_rate:
                 Frame rate (frames per second) of the video or ``None`` if not known.
 
-        .. versionadded:: 1.2
-        """
-        self.width = width
-        self.height = height
-        self.sample_aspect = sample_aspect
-        self.frame_rate = frame_rate
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, VideoFormat):
-            return (
-                self.width == other.width
-                and self.height == other.height
-                and self.sample_aspect == other.sample_aspect
-                and self.frame_rate == other.frame_rate
-            )
-        return False
+            .. versionadded:: 1.2
+    """
+    width: int
+    height: int
+    sample_aspect: float = 0.0
+    frame_rate: float | None = None
 
 
 class AudioData:
@@ -192,6 +169,7 @@ class AudioData:
         self.events = [] if events is None else events
 
 
+@dataclass
 class SourceInfo:
     """Source metadata information.
 
@@ -209,15 +187,14 @@ class SourceInfo:
 
     .. versionadded:: 1.2
     """
-
-    title = ''
-    author = ''
-    copyright = ''
-    comment = ''
-    album = ''
-    year = 0
-    track = 0
-    genre = ''
+    title: str = ''
+    author: str = ''
+    copyright: str = ''
+    comment: str = ''
+    album: str = ''
+    year: int = 0
+    track: int = 0
+    genre: str = ''
 
 
 class Source:

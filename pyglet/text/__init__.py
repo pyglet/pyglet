@@ -49,7 +49,7 @@ from pyglet.text import caret, document, layout  # noqa: F401
 
 
 if TYPE_CHECKING:
-    from pyglet.customtypes import AnchorX, AnchorY, ContentVAlign
+    from pyglet.customtypes import AnchorX, AnchorY, HorizontalAlign
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.shader import ShaderProgram
     from pyglet.resource import Location
@@ -386,7 +386,7 @@ class Label(DocumentLabel):
             font_name: str | None = None, font_size: float | None = None,
             weight: str = "normal", style: str = "normal", stretch: str = "normal",
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
-            align: ContentVAlign = "left",
+            align: HorizontalAlign = "left",
             shaping: bool = True,
             batch: Batch | None = None, group: Group | None = None,
             program: ShaderProgram | None = None,

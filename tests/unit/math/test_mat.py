@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.math import Mat3, Mat4, Vec3
+from pyglet.math import Mat3, Mat4, Vec2, Vec3, Vec4
 
 
 @pytest.fixture()
@@ -131,3 +131,31 @@ def test_mat3_associative_mul():
     v1 = (swap_xy @ scale_x) @ Vec3(0, 1, 0)
     v2 = swap_xy @ (scale_x @ Vec3(0, 1, 0))
     assert v1 == v2 and abs(v1) != 0
+
+
+def _invalid_matmul(first, second):
+    return first @ second
+
+
+def test_mat3_vec3_mul(mat3):
+    other_vec3 = Vec3(1, 2, 3)
+    other_mat3 = Mat3()
+    multiplied_vector = mat3 @ other_vec3
+    multiplied_matrix = mat3 @ other_mat3
+    assert isinstance(multiplied_vector, Vec3)
+    assert isinstance(multiplied_matrix, Mat3)
+    assert pytest.raises(ValueError, _invalid_matmul, mat3, Vec2())
+    assert pytest.raises(ValueError, _invalid_matmul, mat3, Vec4())
+    assert pytest.raises(ValueError, _invalid_matmul, mat3, Mat4())
+
+
+def test_mat4_vec4_mul(mat4):
+    vector = Vec4(1, 2, 3, 4)
+    matrix = Mat4()
+    multiplied_vector = mat4 @ vector
+    multiplied_matrix = mat4 @ matrix
+    assert isinstance(multiplied_vector, Vec4)
+    assert isinstance(multiplied_matrix, Mat4)
+    assert pytest.raises(ValueError, _invalid_matmul, mat4, Vec2())
+    assert pytest.raises(ValueError, _invalid_matmul, mat4, Vec3())
+    assert pytest.raises(ValueError, _invalid_matmul, mat4, Mat3())

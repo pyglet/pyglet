@@ -301,8 +301,7 @@ class Vec2(_typing.NamedTuple):
         This simply means the vector will have a length of 1.0. If the vector
         has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2)
-        if d:
+        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2):
             return Vec2(self[0] / d, self[1] / d)
         return self
 
@@ -873,8 +872,7 @@ class Vec4(_typing.NamedTuple):
         This means that the vector will have the same direction, but a length of 1.0.
         If the vector has a length of 0, the original vector will be returned.
         """
-        d = _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
-        if d:
+        if d := _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2):
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
 
@@ -1054,7 +1052,21 @@ class Mat3(_typing.NamedTuple):
     def __matmul__(self, other: Mat3) -> Mat3: ...
 
     def __matmul__(self, other) -> Vec3 | Mat3:
-        if isinstance(other, Vec3):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
+            b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
+
+            # Multiply and sum rows * columns
+            return Mat3(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
+            )
+        except ValueError:
             x, y, z = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
@@ -1063,24 +1075,6 @@ class Mat3(_typing.NamedTuple):
                 a12 * x + a22 * y + a32 * z,
                 a13 * x + a23 * y + a33 * z,
             )
-
-        if not isinstance(other, Mat3):
-            msg = "Can only multiply with Mat3 or Vec3 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a21, a22, a23, a31, a32, a33 = self
-        b11, b12, b13, b21, b22, b23, b31, b32, b33 = other
-
-        # Multiply and sum rows * columns
-        return Mat3(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13, a12 * b11 + a22 * b12 + a32 * b13, a13 * b11 + a23 * b12 + a33 * b13,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23, a12 * b21 + a22 * b22 + a32 * b23, a13 * b21 + a23 * b22 + a33 * b23,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33, a12 * b31 + a22 * b32 + a32 * b33, a13 * b31 + a23 * b32 + a33 * b33,
-        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
@@ -1358,7 +1352,26 @@ class Mat4(_typing.NamedTuple):
     def __matmul__(self, other: Mat4) -> Mat4: ...
 
     def __matmul__(self, other):
-        if isinstance(other, Vec4):
+        try:
+            # extract the elements in row-column form. (matrix is stored column first)
+            a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
+            b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
+            # Multiply and sum rows * columns:
+            return Mat4(
+                # Column 1
+                a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
+                a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
+                # Column 2
+                a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
+                a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
+                # Column 3
+                a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
+                a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
+                # Column 4
+                a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
+                a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
+            )
+        except ValueError:
             x, y, z, w = other
             # extract the elements in row-column form. (matrix is stored column first)
             a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
@@ -1369,35 +1382,15 @@ class Mat4(_typing.NamedTuple):
                 x * a14 + y * a24 + z * a34 + w * a44,
             )
 
-        if not isinstance(other, Mat4):
-            msg = "Can only multiply with Mat4 or Vec4 types"
-            raise TypeError(msg)
-
-        # extract the elements in row-column form. (matrix is stored column first)
-        a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34, a41, a42, a43, a44 = self
-        b11, b12, b13, b14, b21, b22, b23, b24, b31, b32, b33, b34, b41, b42, b43, b44 = other
-        # Multiply and sum rows * columns:
-        return Mat4(
-            # Column 1
-            a11 * b11 + a21 * b12 + a31 * b13 + a41 * b14, a12 * b11 + a22 * b12 + a32 * b13 + a42 * b14,
-            a13 * b11 + a23 * b12 + a33 * b13 + a43 * b14, a14 * b11 + a24 * b12 + a34 * b13 + a44 * b14,
-            # Column 2
-            a11 * b21 + a21 * b22 + a31 * b23 + a41 * b24, a12 * b21 + a22 * b22 + a32 * b23 + a42 * b24,
-            a13 * b21 + a23 * b22 + a33 * b23 + a43 * b24, a14 * b21 + a24 * b22 + a34 * b23 + a44 * b24,
-            # Column 3
-            a11 * b31 + a21 * b32 + a31 * b33 + a41 * b34, a12 * b31 + a22 * b32 + a32 * b33 + a42 * b34,
-            a13 * b31 + a23 * b32 + a33 * b33 + a43 * b34, a14 * b31 + a24 * b32 + a34 * b33 + a44 * b34,
-            # Column 4
-            a11 * b41 + a21 * b42 + a31 * b43 + a41 * b44, a12 * b41 + a22 * b42 + a32 * b43 + a42 * b44,
-            a13 * b41 + a23 * b42 + a33 * b43 + a43 * b44, a14 * b41 + a24 * b42 + a34 * b43 + a44 * b44,
-        )
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
 
 
 class Quaternion(_typing.NamedTuple):
-    """Quaternion."""
+    """Quaternion.
+
+    Quaternions are 4-dimensional complex numbers, useful for describing 3D rotations.
+    """
 
     w: float = 1.0
     x: float = 0.0
@@ -1413,6 +1406,8 @@ class Quaternion(_typing.NamedTuple):
         raise NotImplementedError
 
     def to_mat4(self) -> Mat4:
+        """Calculate a 4x4 transform matrix which applies a rotation."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1438,6 +1433,8 @@ class Quaternion(_typing.NamedTuple):
         return Mat4(a, b, c, 0.0, e, f, g, 0.0, i, j, k, 0.0, 0.0, 0.0, 0.0, 1.0)
 
     def to_mat3(self) -> Mat3:
+        """Create a 3x3 rotation matrix."""
+
         w = self.w
         x = self.x
         y = self.y
@@ -1463,21 +1460,34 @@ class Quaternion(_typing.NamedTuple):
         return Mat3(*(a, b, c, e, f, g, i, j, k))
 
     def length(self) -> float:
-        """Calculate the length of the Quaternion.
-
-        The distance between the coordinates and the origin.
-        """
+        """Calculate the length of the quaternion from the origin."""
         return _math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
 
     def conjugate(self) -> Quaternion:
+        """Calculate the conjugate of this quaternion.
+
+        This operation:
+        #. leaves the :py:attr:`.w` component alone
+        #. inverts the sign of the :py:attr:`.x`, :py:attr:`.y`, and :py:attr:`.z` components
+
+        """
         return Quaternion(self.w, -self.x, -self.y, -self.z)
 
     def dot(self, other: Quaternion) -> float:
+        """Calculate the dot product with another quaternion."""
         a, b, c, d = self
         e, f, g, h = other
         return a * e + b * f + c * g + d * h
 
     def normalize(self) -> Quaternion:
+        """Calculate a unit quaternion from the instance.
+
+        The returned quaternion will be a scaled-down version
+        of the instance which has:
+
+        * a length of ``1``
+        * the same relative of its components
+        """
         m = self.length()
         if m == 0:
             return self

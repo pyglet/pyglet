@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unicodedata
-from ctypes.wintypes import HICON, HWND, MSG, POINT, RECT, SIZE, UINT
+from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT
 from functools import lru_cache
 from typing import Callable, Sequence
 
@@ -10,6 +10,8 @@ from pyglet import compat_platform
 from pyglet.libs.win32 import constants
 from pyglet.libs.win32.types import (
     BITMAPINFOHEADER,
+    BYTE,
+    COLORREF,
     HCURSOR,
     HRAWINPUT,
     ICONINFO,
@@ -411,6 +413,29 @@ class Win32Window(BaseWindow):
             _dwmapi.DwmFlush()
 
         self.context.flip()
+
+    def set_mouse_passthrough(self, state: bool) -> None:
+        color_ref = COLORREF()
+        alpha = BYTE()
+        flags = DWORD()
+
+        if self._ex_ws_style & constants.WS_EX_LAYERED:
+            _user32.GetLayeredWindowAttributes(self._hwnd, byref(color_ref), byref(alpha), byref(flags))
+
+        if state:
+            self._ex_ws_style |= (constants.WS_EX_TRANSPARENT | constants.WS_EX_LAYERED)
+        else:
+            self._ex_ws_style &= ~constants.WS_EX_TRANSPARENT
+
+            if self._ex_ws_style & constants.WS_EX_LAYERED and not flags.value & constants.LWA_ALPHA:
+                self._ex_ws_style &= ~constants.WS_EX_LAYERED
+
+        _user32.SetWindowLongW(self._hwnd, constants.GWL_EXSTYLE, self._ex_ws_style)
+
+        if state:
+            _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
+
+
 
     def set_location(self, x: int, y: int) -> None:
         x, y = self._client_to_window_pos(x, y)
@@ -829,7 +854,7 @@ class Win32Window(BaseWindow):
     def dispatch_pending_events(self) -> None:
         """Legacy or manual dispatch."""
         while self._event_queue:
-            event = self._event_queue.pop(0)
+            event = self._event_queue.popleft()
             if isinstance(event[0], str):
                 # pyglet event
                 EventDispatcher.dispatch_event(self, *event)
