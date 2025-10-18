@@ -77,6 +77,8 @@ class GLInfo:
         self.MAX_TEXTURE_IMAGE_UNITS = self.get_int(gl.GL_MAX_TEXTURE_IMAGE_UNITS)
         """Maximum number of texture units that can be used."""
 
+        self.MAX_UNIFORM_BUFFER_BINDINGS = self.get_int(gl.GL_MAX_UNIFORM_BUFFER_BINDINGS)
+
         # NOTE: The version string requirements for gles is a lot stricter
         #       so using this to rely on detecting the API is not too unreasonable
         self.opengl_api = "gles" if "opengl es" in self.version.lower() else "gl"

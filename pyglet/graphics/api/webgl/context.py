@@ -71,6 +71,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.gl = self.window.canvas.getContext("webgl2")
 
         self._info = GLInfo()
+        self._info.query(self.gl)
         self.object_space = ObjectSpace()
 
         self._draw_proxy = create_proxy(self.window.draw)

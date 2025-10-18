@@ -3,12 +3,12 @@ from __future__ import annotations
 import ctypes
 import io
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, BinaryIO, List, Optional, Union
+from typing import TYPE_CHECKING, BinaryIO, Optional, Union
 
-from pyglet.graphics import Texture
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 if TYPE_CHECKING:
+    from pyglet.graphics import Texture
     from pyglet.image.animation import Animation
     from pyglet.media.codecs import MediaEncoder
     from pyglet.media.drivers.base import MediaEvent
@@ -21,15 +21,20 @@ class AudioFormat:
     An instance of this class is provided by sources with audio tracks.  You
     should not modify the fields, as they are used internally to describe the
     format of data provided by the source.
-
-    Args:
-        channels (int): The number of channels: 1 for mono or 2 for stereo
-            (pyglet does not yet support surround-sound sources).
-        sample_size (int): Bits per sample; only 8 or 16 are supported.
-        sample_rate (int): Samples per second (in Hertz).
     """
 
     def __init__(self, channels: int, sample_size: int, sample_rate: int) -> None:
+        """Specify the audio format properties.
+
+        Args:
+            channels:
+                The number of channels: 1 for mono or 2 for stereo
+                (pyglet does not yet support surround-sound sources).
+            sample_size:
+                Bits per sample; only 8 or 16 are supported.
+            sample_rate:
+                Samples per second (in Hertz).
+        """
         self.channels = channels
         self.sample_size = sample_size
         self.sample_rate = sample_rate
@@ -91,12 +96,15 @@ class VideoFormat:
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
 
-    Args:
-        width (int): Width of video image, in pixels.
-        height (int): Height of video image, in pixels.
-        sample_aspect (float): Aspect ratio (width over height) of a single
-            video pixel.
-        frame_rate (float): Frame rate (frames per second) of the video.
+        Args:
+            width:
+                Width of video image, in pixels.
+            height:
+                Height of video image, in pixels.
+            sample_aspect:
+                Aspect ratio (width over height) of a single video pixel.
+            frame_rate:
+                Frame rate (frames per second) of the video or ``None`` if not known.
 
             .. versionadded:: 1.2
     """
@@ -110,29 +118,35 @@ class AudioData:
     """A single packet of audio data.
 
     This class is used internally by pyglet.
-
-    Args:
-        data (bytes, ctypes array, or supporting buffer protocol): Sample data.
-        length (int): Size of sample data, in bytes.
-        timestamp (float): Time of the first sample, in seconds.
-        duration (float): Total data duration, in seconds.
-        events (List[:class:`pyglet.media.drivers.base.MediaEvent`]): List of events
-            contained within this packet. Events are timestamped relative to
-            this audio packet.
-
-    .. deprecated:: 2.0.10
-            `timestamp` and `duration` are unused and will be removed eventually.
     """
 
     __slots__ = 'data', 'duration', 'events', 'length', 'pointer', 'timestamp'
 
-    def __init__(self,
-                 data: bytes | ctypes.Array,
-                 length: int,
-                 timestamp: float = 0.0,
-                 duration: float = 0.0,
-                 events: list[MediaEvent] | None = None) -> None:
+    def __init__(
+        self,
+        data: bytes | ctypes.Array,
+        length: int,
+        timestamp: float = 0.0,
+        duration: float = 0.0,
+        events: list[MediaEvent] | None = None,
+    ) -> None:
+        """Events (List[:class:`pyglet.media.drivers.base.MediaEvent`]):
 
+        Args:
+            data:
+                (bytes, ctypes array, or supporting buffer protocol): Sample data.
+            length:
+                Size of sample data, in bytes.
+            timestamp:
+                Time of the first sample, in seconds.
+            duration:
+                Total data duration, in seconds.
+            events:
+                List of events contained within this packet. Events are timestamped relative to this audio packet.
+
+        .. deprecated:: 2.0.10
+        `timestamp` and `duration` are unused and will be removed eventually.
+        """
         if isinstance(data, bytes):
             # bytes are treated specially by ctypes and can be cast to a void pointer, get
             # their content's address like this
@@ -266,18 +280,17 @@ class Source:
         if not self.video_format:
             # XXX: This causes an assertion in the constructor of Animation
             return Animation([])
-        else:
-            frames = []
-            last_ts = 0
+        frames = []
+        last_ts = 0
+        next_ts = self.get_next_video_timestamp()
+        while next_ts is not None:
+            image = self.get_next_video_frame()
+            if image is not None:
+                delay = next_ts - last_ts
+                frames.append(AnimationFrame(image, delay))
+                last_ts = next_ts
             next_ts = self.get_next_video_timestamp()
-            while next_ts is not None:
-                image = self.get_next_video_frame()
-                if image is not None:
-                    delay = next_ts - last_ts
-                    frames.append(AnimationFrame(image, delay))
-                    last_ts = next_ts
-                next_ts = self.get_next_video_timestamp()
-            return Animation(frames)
+        return Animation(frames)
 
     def get_next_video_timestamp(self) -> float | None:
         """Get the timestamp of the next video frame.
@@ -288,7 +301,6 @@ class Source:
             float: The next timestamp, or ``None`` if there are no more video
             frames.
         """
-        pass
 
     def get_next_video_frame(self) -> Texture | None:
         """Get the next video frame.
@@ -299,7 +311,6 @@ class Source:
 
         .. versionadded:: 1.1
         """
-        pass
 
     def save(self, filename: str, file: BinaryIO | None = None, encoder: MediaEncoder | None = None) -> None:
         """Save this Source to a file.
@@ -318,10 +329,9 @@ class Source:
         """
         if encoder:
             return encoder.encode(self, filename, file)
-        else:
-            import pyglet.media.codecs
+        import pyglet.media.codecs
 
-            return pyglet.media.codecs.registry.encode(self, filename, file)
+        return pyglet.media.codecs.registry.encode(self, filename, file)
 
     # Internal methods that Player calls on the source:
 
@@ -423,7 +433,6 @@ class StreamingSource(Source):
 
     def delete(self) -> None:
         """Release the resources held by this StreamingSource."""
-        pass
 
 
 class StaticSource(Source):
@@ -465,7 +474,7 @@ class StaticSource(Source):
 
         self._duration = len(self._data) / self.audio_format.bytes_per_second
 
-    def get_queue_source(self) -> Optional['StaticMemorySource']:
+    def get_queue_source(self) -> Optional[StaticMemorySource]:
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
         return None
@@ -485,8 +494,7 @@ class StaticSource(Source):
 
 
 class StaticMemorySource(StaticSource):
-    """
-    Helper class for default implementation of :class:`.StaticSource`.
+    """Helper class for default implementation of :class:`.StaticSource`.
 
     Do not use directly. This class is used internally by pyglet.
 
@@ -595,7 +603,6 @@ class SourceGroup:
         Returns:
             Audio data, or ``None`` if there is no more data.
         """
-
         if not self._sources:
             return None
 

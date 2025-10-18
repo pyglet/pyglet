@@ -52,7 +52,7 @@ import pyglet as _pyglet
 from pyglet import compat_platform
 from pyglet.graphics.api.gl.gl import *  # Must always be imported before gl_info or bad things happen.  # noqa: F403
 from pyglet.graphics.api.gl.lib import GLException  # noqa: F401
-from .base import OpenGLWindowConfig, ObjectSpace  # noqa: F401
+from .base import ObjectSpace  # noqa: F401
 from .context import OpenGLSurfaceContext
 
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run
@@ -127,17 +127,3 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 #
 #         return _glDeleteTextures(n, textures)
 
-if _is_pyglet_doc_run:
-    from .base import OpenGLConfig
-
-elif _pyglet.options.headless:
-    from .egl.context import HeadlessOpenGLConfig as OpenGLConfig
-elif compat_platform in ('win32', 'cygwin'):
-    from .win32.context import Win32OpenGLConfig as OpenGLConfig
-elif compat_platform.startswith('linux'):
-    from .xlib.context import XlibOpenGLConfig as OpenGLConfig
-elif compat_platform == 'darwin':
-    from .cocoa.context import CocoaOpenGLConfig as OpenGLConfig
-else:
-    msg = f"Platform not currently supported: {compat_platform}"
-    raise Exception(msg)

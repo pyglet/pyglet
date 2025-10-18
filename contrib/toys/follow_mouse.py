@@ -16,14 +16,14 @@ import random
 import sys
 
 import pyglet
+from pyglet.config import OpenGLConfig
+from pyglet.graphics import GeometryMode
 
 from pyglet.graphics.api.gl import (
     GL_BLEND,
     GL_LINE_SMOOTH,
-    GL_LINES,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_SRC_ALPHA,
-    OpenGLConfig,
     glBlendFunc,
     glEnable,
     glFlush,
@@ -37,7 +37,9 @@ window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 class Line:
     batch = pyglet.graphics.Batch()
     program = pyglet.shapes.get_default_shader()
-    lines = program.vertex_list(100, GL_LINES, batch=batch, colors=('Bn', (255, 255, 255, 255) * 100))
+    lines = program.vertex_list(100, GeometryMode.LINES, batch=batch,
+                                position=('f', (0, 0) * 100),
+                                colors=('Bn', (255, 255, 255, 255) * 100))
     black = pyglet.shapes.Rectangle(0, 0, window.width, window.height, color=(0, 0, 0, 32), batch=batch)
     unallocated = list(range(100))
     active = []

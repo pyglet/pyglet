@@ -15,7 +15,7 @@ Z = random.randint(-10, 10)
 
 
 @pytest.mark.parametrize('label_class', [Label, HTMLLabel])
-def test_label_creation(label_class):
+def test_label_creation(gl3_context, label_class):
     label = label_class("This is a test", x=X, y=Y, z=Z)
     assert label.x == X
     assert label.y == Y
@@ -30,7 +30,7 @@ def document(request):
     return decoder(string)
 
 
-def test_documentlabel_creation(document):
+def test_documentlabel_creation(gl3_context, document):
     label = DocumentLabel(document=document, x=X, y=Y, z=Z)
     assert label.x == X
     assert label.y == Y

@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import Literal
+
 from pyglet.display.base import Display, Screen
 import js
 
@@ -16,6 +19,12 @@ class EmscriptenScreen(Screen):
         width = js.window.screen.width
         height = js.window.screen.height
         super().__init__(display, 0, 0, width, height)
+
+    def get_display_id(self) -> int:
+        return 0
+
+    def get_monitor_name(self) -> str | Literal["Unknown"]:
+        return "BROWSER"
 
     def get_modes(self):
         pass

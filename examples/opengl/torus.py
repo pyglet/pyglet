@@ -16,12 +16,12 @@ This example demonstrates:
 from math import pi, sin, cos
 
 import pyglet
+from pyglet.config import OpenGLConfig
 from pyglet.graphics import GeometryMode
 
 from pyglet.graphics.api.gl import (
     glEnable,
     glClearColor,
-    OpenGLConfig,
     GL_DEPTH_TEST,
     GL_CULL_FACE,
 )

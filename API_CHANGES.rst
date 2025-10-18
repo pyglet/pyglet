@@ -6,6 +6,7 @@ pyglet.options
 --------------
 *Added*: ``pyglet.options.backend``: Can now specify a specific graphics backend to target, or no backend if you wish to use
 Pyglet for windowing.
+*Removed*: ``pyglet.options.shadow_window``: The shadow window containing a graphical context has been removed.
 
 pyglet.graphics
 ---------------
@@ -16,7 +17,7 @@ pyglet.graphics
 pyglet.font
 -----------
 *Added*: ``pyglet.font.manager``. Allows a callback to determine the font name and properties of a custom loaded font. Refer to documentation.
-
+*Added*: ``pyglet.font.get_custom_font_names``. Allows retrieval of loaded custom font family names.
 
 pyglet.text
 -----------

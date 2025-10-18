@@ -127,7 +127,7 @@ class CaretColorSetterTestCase(InteractiveTestCase, _DRYHelperMixin):
     """
 
     def test_caret_color_setter_rgb(self):
-        color = (0, 0, 255)
+        color = (0, 0, 0, 255)
         self.build_window_via_setter(color, window_class=SetterTestWindow)
         app.run()
         self.ask_color(color)

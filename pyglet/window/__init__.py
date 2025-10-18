@@ -79,14 +79,17 @@ by creating a "template" configuration::
 """
 from __future__ import annotations
 
+import atexit
 import sys
 from abc import abstractmethod
+from collections.abc import Iterable
 from collections import deque
 from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 import pyglet
 import pyglet.window.key
 import pyglet.window.mouse
+from pyglet.config import UserConfig
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
@@ -411,7 +414,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                  file_drops: bool = False,
                  display: Display | None = None,
                  screen: Screen | None = None,
-                 config: GraphicsConfig | None = None,
+                 config: UserConfig | Sequence[UserConfig] | None = None,
                  context: SurfaceContext | None = None,
                  mode: ScreenMode | None = None) -> None:
         """Create a window.
@@ -518,7 +521,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         app.windows.add(self)
         self._create()
 
-        if pyglet.options.backend:
+        if pyglet.options.backend and not self._shadow:
             self.switch_to()
             self._create_projection()
 
@@ -537,15 +540,28 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
                         template_config.alpha_size = 8
                         template_config.transparent_framebuffer = True
 
-                    if config := template_config.match(self):
+                    if config := pyglet.config.match_surface_config(template_config, self):
                         break
 
                 if not config:
                     msg = 'No standard config is available.'
                     raise NoSuchConfigException(msg)
 
-            if not config.is_finalized:
-                config = config.match(self)
+            if isinstance(config, Iterable):
+                for cfg in config:
+                    if cfg.is_finalized:
+                        config = cfg
+                        break
+
+                    if config := pyglet.config.match_surface_config(cfg, self):
+                        break
+            else:
+                if not config.is_finalized:
+                    config = pyglet.config.match_surface_config(config, self)
+
+            if not config:
+                msg = 'No standard config is available.'
+                raise NoSuchConfigException(msg)
 
             if not context:
                 from pyglet.graphics.api import core
@@ -1102,7 +1118,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
         self._mouse_cursor.scaling = self._get_mouse_scale()
         self.set_mouse_cursor_platform_visible()
 
-    def _get_mouse_scale(self):
+    def _get_mouse_scale(self) -> float:
         """The mouse scale factoring in the DPI.
 
         On Mac, this is always 1.0.
@@ -1855,6 +1871,45 @@ else:
         from pyglet.window.emscripten import EmscriptenWindow as Window
 
 
+class _ShadowWindow(Window):
+    """Helper Window class for things that require a window.
+
+    For example, on some operating systems, input detection or clipboards are tied to windows or window events.
+    """
+    _shadow = True
+
+    def __init__(self) -> None:
+        super().__init__(width=1, height=1, visible=False)
+
+    def switch_to(self) -> None:
+        """Shadow window does not have a context to switch to."""
+
+    def _assign_config(self) -> None:
+        """Shadow window does not need a config or context."""
+
+    def _create_projection(self) -> None:
+        """Shadow window does not need a projection."""
+
+    def _on_internal_resize(self, width: int, height: int) -> None:
+        """No projection and not required."""
+
+    def _on_internal_scale(self, scale: float, dpi: int) -> None:
+        """No projection and not required."""
+
+def _create_shadow_window() -> Window | None:
+    # MacOS and browsers don't need a shadow window.
+    if pyglet.compat_platform not in ('darwin', 'emscripten'):
+        shadow_window = _ShadowWindow()
+
+        from pyglet import app  # noqa: PLC0415
+        app.windows.remove(shadow_window)
+
+        atexit.register(shadow_window.close)
+
+        return shadow_window
+    return None
+
+_shadow_window = _create_shadow_window()
 
 __all__ = (
     # imported

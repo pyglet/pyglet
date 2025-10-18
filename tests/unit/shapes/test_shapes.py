@@ -107,7 +107,7 @@ def test_group_setter(shape_keywords_only):
 def test_batch_setter(shape_keywords_only):
     shape = shape_keywords_only()
 
-    new_batch = Batch()
+    new_batch = Batch(MagicMock())
     shape.batch = new_batch
     assert shape.batch is new_batch
 

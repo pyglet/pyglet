@@ -97,7 +97,9 @@ def listener(driver):
 
 def test_driver_create():
     driver = DirectSoundDriver()
-    del driver
+    driver.delete()
+    # Explicitly delete the driver, as GC may not happen immediately and be thread-unsafe.
+    #del driver
 
 
 def test_create_buffer(driver, audio_format):

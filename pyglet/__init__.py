@@ -117,10 +117,6 @@ class Options:
     debug_trace_depth: int = 1
     debug_trace_flush: bool = True
 
-    debug_com: bool = False
-    """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
-    that utilize COM calls. Only applies to the Windows platform."""
-
     debug_win32: bool = False
     """If ``True``, prints error messages related to Windows library calls. Usually gets information from
     ``Kernel32.GetLastError``. This information is output to a file called ``debug_win32.log``."""
@@ -135,22 +131,6 @@ class Options:
     debug_com: bool = False
     """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
     that utilize COM calls. Only applies to the Windows platform."""
-
-    shadow_window: bool = True
-    """By default, pyglet creates a hidden window with a GL context when
-     pyglet.gl is imported.  This allows resources to be loaded before
-     the application window is created, and permits GL objects to be
-     shared between windows even after they've been closed.  You can
-     disable the creation of the shadow window by setting this option to
-     False.
-
-     Some OpenGL driver implementations may not support shared OpenGL
-     contexts and may require disabling the shadow window (and all resources
-     must be loaded after the window using them was created).  Recommended
-     for advanced developers only.
-
-     .. versionadded:: 1.1
-     """
 
     vsync: bool | None = None
     """If set, the `pyglet.window.Window.vsync` property is ignored, and
@@ -489,6 +469,7 @@ if TYPE_CHECKING:
     from . import (
         app,
         clock,
+        config,
         customtypes,
         display,
         enums,
@@ -510,6 +491,7 @@ if TYPE_CHECKING:
     )
 else:
     app = _ModuleProxy("app")  # type: ignore
+    config = _ModuleProxy("config")  # type: ignore
     clock = _ModuleProxy("clock")  # type: ignore
     customtypes = _ModuleProxy("customtypes")  # type: ignore
     display = _ModuleProxy("display")  # type: ignore

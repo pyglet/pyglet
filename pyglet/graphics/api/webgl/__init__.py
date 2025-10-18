@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Sequence
 import js
 
 import pyglet
+from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
-from pyglet.graphics.api.webgl.config import OpenGLConfig, OpenGLWindowConfig
 from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
+
+    from pyglet.config import SurfaceConfig
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
@@ -120,7 +121,6 @@ class WebGLBackend(BackendGlobalObject):
     def __init__(self) -> None:
         self.initialized = False
         self.current_context = None
-        self._shadow_window = None
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
@@ -134,13 +134,10 @@ class WebGLBackend(BackendGlobalObject):
         assert self.current_context is not None, "Context has not been created."
         return self.current_context.object_space
 
-    def post_init(self) -> None:
-        pass
+    def create_context(self, config: SurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
+        return OpenGLSurfaceContext(self, config._window, config, shared)
 
-    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
-        return config.create_context(self, shared)
-
-    def get_surface_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
+    def get_surface_context(self, window: Window, config: SurfaceConfig) -> SurfaceContext:
         context = self.windows[window] = self.create_context(config, self.current_context)
         self.current_context = context
         self._have_context = True
@@ -154,18 +151,18 @@ class WebGLBackend(BackendGlobalObject):
     #     self._have_context = True
     #     return context
 
-    def get_default_configs(self) -> Sequence[OpenGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
         return [
-            OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-            OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
         ]
 
-    def get_config(self, **kwargs: float | str | None) -> OpenGLConfig:
-        return OpenGLConfig(**kwargs)
+    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLConfig:
+        return pyglet.config.OpenGLConfig(**kwargs)
 
     def get_info(self):
         return self.current_context.get_info()

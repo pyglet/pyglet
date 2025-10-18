@@ -48,6 +48,27 @@ class GLInfo:
         self.minor_version = 0
         self.extensions = set(gl.getSupportedExtensions())
 
+        self.MAX_ARRAY_TEXTURE_LAYERS = gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS)
+        """Value indicates the maximum number of layers allowed in a texture array"""
+
+        self.MAX_TEXTURE_SIZE = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+        """The largest texture size available."""
+
+        self.MAX_COLOR_ATTACHMENTS = gl.getParameter(gl.MAX_COLOR_ATTACHMENTS)
+        """Get the maximum allowable framebuffer color attachments."""
+
+        # gl.MAX_COLOR_TEXTURE_SAMPLES does not exist in WebGL context, but is defined as 0x910E in the spec.
+        # WEBGL doesn't allow multisampled color textures, only multisampled renderbuffers.
+        # Use MAX_SAMPLES instead?
+        self.MAX_COLOR_TEXTURE_SAMPLES = gl.getParameter(gl.MAX_SAMPLES)
+        """Maximum number of samples in a color multisample texture"""
+
+        self.MAX_TEXTURE_IMAGE_UNITS = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS)
+        """Maximum number of texture units that can be used."""
+
+        self.MAX_UNIFORM_BUFFER_BINDINGS = gl.getParameter(gl.MAX_UNIFORM_BUFFER_BINDINGS)
+
+
         self.was_queried = True
 
     def have_extension(self, extension: str) -> bool:
