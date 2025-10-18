@@ -24,4 +24,7 @@ def get_surface_config(user_config: UserConfig, surface: pyglet.window.Window) -
         from pyglet.config.gl.macos import match  # noqa: PLC0415
 
         return match(user_config, surface)
+
+    if pyglet.compat_platform == "emscripten":
+        return GLSurfaceConfig(surface, user_config, None)
     return None
