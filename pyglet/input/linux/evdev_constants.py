@@ -1,4 +1,4 @@
-"""Event constants from /usr/include/linux/input.h """
+"""Event constants from /usr/include/linux/input-event-codes.h"""
 
 EV_SYN = 0x00
 EV_KEY = 0x01
@@ -17,6 +17,7 @@ EV_MAX = 0x1f
 
 SYN_REPORT = 0
 SYN_CONFIG = 1
+SYN_DROPPED = 3
 
 # Keys and buttons
 

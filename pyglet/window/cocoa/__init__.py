@@ -362,7 +362,7 @@ class CocoaWindow(BaseWindow):
 
     def dispatch_pending_events(self) -> None:
         while self._event_queue:
-            event = self._event_queue.pop(0)
+            event = self._event_queue.popleft()
             EventDispatcher.dispatch_event(self, *event)
 
     def set_caption(self, caption: str) -> None:

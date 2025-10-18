@@ -1,7 +1,7 @@
 """Wrapper for include/libavcodec/avcodec.h
 """
 
-from ctypes import c_int, c_uint16, c_int64, c_uint32, c_uint64, c_size_t
+from ctypes import c_int, c_uint16, c_int64, c_uint32, c_uint64, c_size_t, c_char
 from ctypes import c_uint8, c_uint, c_float, c_char_p
 from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure
 
@@ -15,8 +15,8 @@ _debug = debug_print('debug_media')
 
 avcodec = pyglet.lib.load_library(
     'avcodec',
-    win32=('avcodec-61', 'avcodec-60', 'avcodec-59', 'avcodec-58'),
-    darwin=('avcodec.61', 'avcodec.60', 'avcodec.59', 'avcodec.58')
+    win32=('avcodec-62', 'avcodec-61', 'avcodec-60', 'avcodec-59', 'avcodec-58'),
+    darwin=('avcodec.62', 'avcodec.61', 'avcodec.60', 'avcodec.59', 'avcodec.58')
 )
 
 avcodec.avcodec_version.restype = c_int
@@ -25,8 +25,8 @@ avcodec_version = avcodec.avcodec_version() >> 16
 
 compat.set_version('avcodec', avcodec_version)
 
-
-FF_INPUT_BUFFER_PADDING_SIZE = 32
+# Since version 4.0 this is 64
+AV_INPUT_BUFFER_PADDING_SIZE = 64
 
 
 class AVPacketSideData(Structure):
@@ -67,7 +67,7 @@ AVPacket_Fields = [
 compat.add_version_changes('avcodec', 58, AVPacket, AVPacket_Fields,
                            removals=('opaque', 'opaque_ref', 'time_base'))
 
-for compat_ver in (59, 60, 61):
+for compat_ver in (59, 60, 61, 62):
     compat.add_version_changes('avcodec', compat_ver, AVPacket, AVPacket_Fields,
                                removals=('convergence_duration',))
 
@@ -118,8 +118,9 @@ for compat_ver in (58, 59, 60):
     compat.add_version_changes('avcodec', compat_ver, AVCodecParameters, AVCodecParameters_Fields,
                                removals=('coded_side_data', 'nb_coded_side_data', 'ch_layout', 'framerate'))
 
-compat.add_version_changes('avcodec', 61, AVCodecParameters, AVCodecParameters_Fields,
-                           removals=('channel_layout', 'channels'))
+for compat_ver in (61, 62):
+    compat.add_version_changes('avcodec', compat_ver, AVCodecParameters, AVCodecParameters_Fields,
+                               removals=('channel_layout', 'channels'))
 
 
 class AVProfile(Structure):
@@ -188,7 +189,7 @@ AVClass = libavutil.AVClass
 AVFrame = libavutil.AVFrame
 AV_NUM_DATA_POINTERS = libavutil.AV_NUM_DATA_POINTERS
 
-# Significant deprecation and re-ordering of the entire structure makes it unmanagable to
+# Significant deprecation and re-ordering of the entire structure makes it unmanageable to
 # track of all the changes via compat module. Re-define the structure and compat the new one going forward.
 if avcodec_version >= 61:
     AVCodecContext_Fields = [
@@ -217,7 +218,7 @@ if avcodec_version >= 61:
         ("framerate", AVRational),
 
         # Video fields
-        ("ticks_per_frame", c_int),  # Deprecated in 61.
+        ("ticks_per_frame", c_int),  # Deprecated in 61. (removed in 62)
         ("delay", c_int),
         ("width", c_int),
         ("height", c_int),
@@ -334,7 +335,7 @@ if avcodec_version >= 61:
                                POINTER(c_int), c_int)),
         ("profile", c_int),
         ("level", c_int),
-        ("properties", c_uint),
+        ("properties", c_uint),  # deprecated in 62
         ("skip_loop_filter", c_int),  # enum AVDiscard
         ("skip_idct", c_int),  # enum AVDiscard
         ("skip_frame", c_int),  # enum AVDiscard
@@ -364,8 +365,11 @@ if avcodec_version >= 61:
         ("nb_decoded_side_data", c_int),
     ]
 
-    compat.add_version_changes('avcodec', 61, AVCodecContext, AVCodecContext_Fields, removals=None)
+    compat.add_version_changes('avcodec', 61, AVCodecContext, AVCodecContext_Fields,
+                               removals=None)
 
+    compat.add_version_changes('avcodec', 62, AVCodecContext, AVCodecContext_Fields,
+                               removals=("ticks_per_frame",))
 else:
     AVCodecContext_Fields = [
         ('av_class', POINTER(AVClass)),
@@ -621,10 +625,10 @@ avcodec.avcodec_find_decoder_by_name.restype = POINTER(AVCodec)
 avcodec.avcodec_find_decoder_by_name.argtypes = [c_char_p]
 
 __all__ = [
-    'avcodec',
-    'FF_INPUT_BUFFER_PADDING_SIZE',
-    'AVPacket',
-    'AVCodecContext',
     'AV_CODEC_ID_VP8',
     'AV_CODEC_ID_VP9',
+    'AV_INPUT_BUFFER_PADDING_SIZE',
+    'AVCodecContext',
+    'AVPacket',
+    'avcodec',
 ]
