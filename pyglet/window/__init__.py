@@ -1915,6 +1915,7 @@ __all__ = (
     # imported
     "event",
     "key",
+    "mouse",
     # classes
     "BaseWindow",
     "Window",
