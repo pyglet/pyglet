@@ -34,14 +34,14 @@ class NotificationDevice(XlibSelectDevice):
     def fileno(self):
         return self._sync_file_read
 
-    def set(self):
-        self._event.set()
-        os.write(self._sync_file_write, b'1')
-
     def select(self):
         self._event.clear()
         os.read(self._sync_file_read, 1)
         app.platform_event_loop.dispatch_posted_events()
+
+    def set(self):
+        self._event.set()
+        os.write(self._sync_file_write, b'1')
 
 
 class TimerDevice(XlibSelectDevice):
@@ -55,17 +55,17 @@ class TimerDevice(XlibSelectDevice):
         os.read(self.fd, 1024)
 
     def set_timer(self, value):
-        os.timerfd_settime(self.fd, initial=value)
+        os.timerfd_settime(self.fd, initial=value or 0.0)
 
 
 class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
         super().__init__()
-        self._notification_device = NotificationDevice()
-        self._timer_device = TimerDevice()
-
         self.monitored_devices = {}
         self.epoll = select.epoll()
+
+        self._notification_device = NotificationDevice()
+        self._timer_device = TimerDevice()
 
         self.register(self._notification_device, POLLIN)
         self.register(self._timer_device, POLLIN)
@@ -85,16 +85,13 @@ class XlibEventLoop(PlatformEventLoop):
         # Timeout is from EventLoop.idle(). Return after that timeout or directly
         # after receiving a new event. None means: block for user input.
 
-        # The TimerDevice file descriptor will wake the poll:
         self._timer_device.set_timer(timeout)
 
         # At least one event will be returned (a real event, or the timer event)
-        events = self.epoll.poll(None)
-
-        if len(events) == 1 and (self._timer_device.fd, 1) in events:
-            return False
-
-        for fd, _ in events:
+        for fd, _ in self.epoll.poll(timeout):
             self.monitored_devices[fd].select()
 
-        return True
+        # Check the remaining time left before the timer device times out.
+        # If the timer has expired and woke the poll, this will equal 0.0 and return False.
+        # If an event woke the poll, then the value will be greater than 0.0 and return True.
+        return os.timerfd_gettime(self._timer_device.fd) > (0.0, 0.0)

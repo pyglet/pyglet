@@ -507,7 +507,7 @@ class EvdevControllerManager(ControllerManager, XlibSelectDevice):
             if controller := _create_controller(device):
                 self._controllers[name] = controller
 
-        pyglet.app.platform_event_loop.select_devices.add(self)
+        pyglet.app.platform_event_loop.register(self)
 
     def __del__(self):
         self._devices_file.close()
