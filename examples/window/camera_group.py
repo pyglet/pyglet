@@ -151,6 +151,16 @@ if __name__ == "__main__":
             camera.x -= 50*dt
         if keys[key.RIGHT]:
             camera.x += 50*dt
+        if keys[key.PLUS] or keys[key.EQUAL]:
+            camera.zoom += 0.5 * dt
+        if keys[key.MINUS]:
+            camera.zoom -= 0.5 * dt
+            if camera.zoom < 0.1:
+                camera.zoom = 0.1
+        if keys[key._0]:
+            camera.zoom = 1.0
+            camera.x = 0
+            camera.y = 0
 
         # Update position text label
         position_text.text = repr(round(camera.position))
