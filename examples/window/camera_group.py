@@ -54,9 +54,9 @@ class CameraGroup(Group):
         """ Apply zoom and camera offset to view matrix. """
 
         # Translate using the offset.
-        view_matrix = self._window.view.translate(-self.x * self.zoom, -self.y * self.zoom, 0)
+        view_matrix = self._window.view.translate((-self.x * self.zoom, -self.y * self.zoom, 0))
         # Scale by zoom level.
-        view_matrix = view_matrix.scale(self.zoom, self.zoom, 1)
+        view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
 
         self._window.view = view_matrix
 
@@ -66,9 +66,9 @@ class CameraGroup(Group):
         # it will multiply the current offset every draw update pushing it further and further away.
 
         # Use inverse zoom to reverse zoom
-        view_matrix = self._window.view.scale(1 / self.zoom, 1 / self.zoom, 1)
+        view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
         # Reverse translate.
-        view_matrix = view_matrix.translate(self.x * self.zoom, self.y * self.zoom, 0)
+        view_matrix = view_matrix.translate((self.x * self.zoom, self.y * self.zoom, 0))
 
         self._window.view = view_matrix
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # Use centered
     camera = CenteredCameraGroup(window, 0, 0)
     # Use un-centered
-    # camera = CameraGroup(0, 0)
+    # camera = CameraGroup(window, 0, 0)
 
     # Create a scene
     rect = pyglet.shapes.Rectangle(-25, -25, 50, 50, batch=batch, group=camera)
