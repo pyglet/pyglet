@@ -1,7 +1,7 @@
 import os
 import select
-import threading
 
+from math import inf
 from time import CLOCK_MONOTONIC
 from select import POLLIN
 
@@ -28,20 +28,17 @@ class XlibSelectDevice:
 
 class NotificationDevice(XlibSelectDevice):
     def __init__(self):
-        self._sync_file_read, self._sync_file_write = os.pipe()
-        self._event = threading.Event()
+        self.fd = os.eventfd(1, os.EFD_SEMAPHORE)
 
     def fileno(self):
-        return self._sync_file_read
+        return self.fd
 
     def select(self):
-        self._event.clear()
-        os.read(self._sync_file_read, 1)
+        os.eventfd_read(self.fd)
         app.platform_event_loop.dispatch_posted_events()
 
-    def set(self):
-        self._event.set()
-        os.write(self._sync_file_write, b'1')
+    def notify(self):
+        os.eventfd_write(self.fd, 1)
 
 
 class TimerDevice(XlibSelectDevice):
@@ -55,7 +52,7 @@ class TimerDevice(XlibSelectDevice):
         os.read(self.fd, 1024)
 
     def set_timer(self, value):
-        os.timerfd_settime(self.fd, initial=value or 0.0)
+        os.timerfd_settime(self.fd, initial=value)
 
 
 class XlibEventLoop(PlatformEventLoop):
@@ -79,13 +76,14 @@ class XlibEventLoop(PlatformEventLoop):
         del self.monitored_devices[device.fileno()]
 
     def notify(self):
-        self._notification_device.set()
+        self._notification_device.notify()
 
     def step(self, timeout=None):
         # Timeout is from EventLoop.idle(). Return after that timeout or directly
         # after receiving a new event. None means: block for user input.
 
-        self._timer_device.set_timer(timeout)
+        if timeout:
+            self._timer_device.set_timer(timeout)
 
         # At least one event will be returned (a real event, or the timer event)
         for fd, _ in self.epoll.poll(timeout):
