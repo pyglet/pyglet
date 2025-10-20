@@ -62,6 +62,8 @@ class ComponentFormat(str, Enum):
     DS = 'DS'  # Depth Stencil
     BGR = 'BGR'
     BGRA = 'BGRA'
+    L = 'L'  # Luminance (R) - Deprecated
+    LA = 'LA'  # Luminance Alpha (LA) - Deprecated
 
 
 class TextureType(Enum):

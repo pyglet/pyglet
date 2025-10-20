@@ -141,6 +141,15 @@ def add_default_codecs():
     except ImportError:
         pass
 
+    # Compressed texture in KTX2 format
+    try:
+        from pyglet.image.codecs import ktx2
+        registry.add_encoders(ktx2)
+        registry.add_decoders(ktx2)
+    except ImportError:
+        pass
+
+
     # Mac OS X default: Quartz
     if compat_platform == 'darwin':
         try:

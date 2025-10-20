@@ -15,7 +15,7 @@ class struct___GLsync(Structure):
     __slots__ = [
     ]
 struct___GLsync._fields_ = [
-    ('_opaque_struct', c_int)
+    ('_opaque_struct', c_int),
 ]
 
 # END OF gl.template
@@ -1548,6 +1548,59 @@ GL_ALL_SHADER_BITS = 4294967295
 GL_ALL_BARRIER_BITS = 4294967295
 GL_TIMEOUT_IGNORED = 18446744073709551615
 
+GL_COMPRESSED_RGBA_BPTC_UNORM_ARB         = 0x8E8C
+GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB   = 0x8E8D
+GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB   = 0x8E8E
+GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB = 0x8E8F
+
+# ETC1
+GL_ETC1_RGB8_OES                          = 0x8D64
+
+# ETC2 / EAC
+GL_COMPRESSED_R11_EAC                           = 0x9270
+GL_COMPRESSED_SIGNED_R11_EAC                    = 0x9271
+GL_COMPRESSED_RG11_EAC                          = 0x9272
+GL_COMPRESSED_SIGNED_RG11_EAC                   = 0x9273
+GL_COMPRESSED_RGB8_ETC2                         = 0x9274
+GL_COMPRESSED_SRGB8_ETC2                        = 0x9275
+GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2     = 0x9276
+GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2    = 0x9277
+GL_COMPRESSED_RGBA8_ETC2_EAC                    = 0x9278
+GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC             = 0x9279
+
+# ASTC RGBA (GL_KHR_texture_compression_astc_ldr) (GLES)
+GL_COMPRESSED_RGBA_ASTC_4x4_KHR          = 0x93B0
+GL_COMPRESSED_RGBA_ASTC_5x4_KHR          = 0x93B1
+GL_COMPRESSED_RGBA_ASTC_5x5_KHR          = 0x93B2
+GL_COMPRESSED_RGBA_ASTC_6x5_KHR          = 0x93B3
+GL_COMPRESSED_RGBA_ASTC_6x6_KHR          = 0x93B4
+GL_COMPRESSED_RGBA_ASTC_8x5_KHR          = 0x93B5
+GL_COMPRESSED_RGBA_ASTC_8x6_KHR          = 0x93B6
+GL_COMPRESSED_RGBA_ASTC_8x8_KHR          = 0x93B7
+GL_COMPRESSED_RGBA_ASTC_10x5_KHR         = 0x93B8
+GL_COMPRESSED_RGBA_ASTC_10x6_KHR         = 0x93B9
+GL_COMPRESSED_RGBA_ASTC_10x8_KHR         = 0x93BA
+GL_COMPRESSED_RGBA_ASTC_10x10_KHR        = 0x93BB
+GL_COMPRESSED_RGBA_ASTC_12x10_KHR        = 0x93BC
+GL_COMPRESSED_RGBA_ASTC_12x12_KHR        = 0x93BD
+
+# --- ASTC sRGB RGBA ---
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR  = 0x93D0
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR  = 0x93D1
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR  = 0x93D2
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR  = 0x93D3
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR  = 0x93D4
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR  = 0x93D5
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR  = 0x93D6
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR  = 0x93D7
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR = 0x93D8
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR = 0x93D9
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR = 0x93DA
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR= 0x93DB
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR= 0x93DC
+GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR= 0x93DD
+
+
 # GL command definitions
 
 class GLFunctions:
@@ -2327,7 +2380,7 @@ class GLFunctions:
         self.glViewport = _link_function('glViewport', None, [GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.0')
         self.glViewportArrayv = _link_function('glViewportArrayv', None, [GLuint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
         self.glViewportIndexedf = _link_function(
-            'glViewportIndexedf', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1'
+            'glViewportIndexedf', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1',
         )
         self.glViewportIndexedfv = _link_function('glViewportIndexedfv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
         self.glWaitSync = _link_function('glWaitSync', None, [GLsync, GLbitfield, GLuint64], requires='OpenGL 3.2')

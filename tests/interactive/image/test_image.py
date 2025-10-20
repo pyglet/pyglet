@@ -1,6 +1,8 @@
 from io import BytesIO
 import pytest
 
+import pyglet
+from pyglet import image, shapes
 from pyglet.graphics.api.gl import texture
 from pyglet.graphics.api import gl
 
@@ -9,65 +11,83 @@ from ...base.event_loop import EventLoopFixture
 
 
 class ImageTestFixture(EventLoopFixture):
+    COLOR_A = (128, 128, 128)   # light square
+    COLOR_B = (60, 60, 60)      # dark square
+
     def __init__(self, request, test_data):
         super().__init__(request)
         self.test_data = test_data
 
         self.show_checkerboard = True
-        self.show_triangle_left = False
         self.show_text = True
+
+        self.batch = None
+        self.checkboard = None
+
+        self.left_sprite = None
+        self.right_sprite = None
         self.left_texture = None
         self.right_texture = None
 
-        self.checkerboard = texture.create(32, 32, texture.CheckerImagePattern())
+        self.triangle = None
+
+    def create_window(self, **kwargs):
+        super().create_window(**kwargs)
+
+        self.batch = pyglet.graphics.Batch()
+
+        self.checkboard = self._create_checkerboard()
+
+        self.triangle = self._create_triangle(200, 200)
+        self.triangle.visible = False
+
+    def _create_checkerboard(self, size=32):
+        rects = []
+
+        cell_size = min(self.window.width / size, self.window.height / size)
+
+        for r in range(round(self.window.height / cell_size)):
+            for c in range(round(self.window.width / cell_size)):
+                x = c * cell_size
+                y = r * cell_size
+                is_dark = (r + c) % 2 == 1
+                color = self.COLOR_B if is_dark else self.COLOR_A
+                rects.append(shapes.Rectangle(x, y, cell_size, cell_size, color=color, batch=self.batch))
+
+        return rects
+
+    @property
+    def show_triangle_left(self):
+        if self.triangle:
+            return False
+
+        return self.triangle.visible
+
+    @show_triangle_left.setter
+    def show_triangle_left(self, value):
+        if self.triangle:
+            self.triangle.visible = value
+
+    def _create_triangle(self, w, h):
+        x = self.window.width // 4 - w // 2
+        y = (self.window.height - h) // 2
+        return shapes.Triangle(x, y, x+w, y, x, y + h, color=(255, 0, 0), batch=self.batch)
 
     def on_draw(self):
-        # Do not call super class draw, we need to split the clearing and the drawing
-        # the text box.
         self.clear()
-        self.draw_checkerboard()
-        self.draw_left()
-        self.draw_triangle_left()
-        self.draw_right()
+
+        self.batch.draw()
+
         if self.show_text:
             self.draw_text()
 
-    def draw_checkerboard(self):
-        if self.show_checkerboard:
-            gl.glPushMatrix()
-            gl.glScalef(self.window.width / float(self.checkerboard.width),
-                        self.window.height / float(self.checkerboard.height),
-                        1.)
-            gl.glMatrixMode(gl.GL_TEXTURE)
-            gl.glPushMatrix()
-            gl.glScalef(self.window.width / float(self.checkerboard.width),
-                        self.window.height / float(self.checkerboard.height),
-                        1.)
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            self.checkerboard.blit(0, 0, 0)
-            gl.glMatrixMode(gl.GL_TEXTURE)
-            gl.glPopMatrix()
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            gl.glPopMatrix()
-
-    def draw_left(self):
-        if self.left_texture:
-            self.left_texture.blit(
-                self.window.width // 4 - self.left_texture.width // 2,
-                (self.window.height - self.left_texture.height) // 2,
-                0)
-
-    def draw_right(self):
-        if self.right_texture:
-            x = self.window.width * 3 // 4 - self.right_texture.width // 2
-            x = max((x, self.window.width // 2))
-            self.right_texture.blit(
-                x,
-                (self.window.height - self.right_texture.height) // 2,
-                0)
-
     def load_left(self, image_file, decoder=None):
         self.left_texture = image.load(image_file, decoder=decoder).get_texture()
+        self.left_sprite = pyglet.sprite.Sprite(self.left_texture,
+                                                x=self.window.width // 4 - self.left_texture.width // 2,
+                                                y=(self.window.height - self.left_texture.height) // 2,
+                                                batch=self.batch)
+
 
     def copy_left_to_right(self, encoder=None):
         buf = BytesIO()
@@ -87,40 +107,34 @@ class ImageTestFixture(EventLoopFixture):
         img.get_bytes()  # forces conversion
         self.right_texture = img.get_texture()
 
-    def draw_triangle_left(self):
-        if self.show_triangle_left:
-            w = 200
-            h = 200
-            x = self.window.width // 4 - w // 2
-            y = (self.window.height - h) // 2
-
-            gl.glEnable(gl.GL_DEPTH_TEST)
-            gl.glBegin(gl.GL_TRIANGLES)
-            gl.glColor4f(1, 0, 0, 1)
-            gl.glVertex3f(x, y, -1)
-            gl.glColor4f(0, 1, 0, 1)
-            gl.glVertex3f(x + w, y, 0)
-            gl.glColor4f(0, 0, 1, 1)
-            gl.glVertex3f(x, y + h, 1)
-            gl.glEnd()
-            gl.glDisable(gl.GL_DEPTH_TEST)
-            gl.glColor4f(1, 1, 1, 1)
-
     def copy_color_buffer(self):
-        self.right_texture = \
-                pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_color_buffer().get_texture()
+        image = pyglet.graphics.api.gl.framebuffer.get_screenshot()
+        self.right_texture = image.get_texture()
+        self._set_right_sprite()
 
+    def _set_right_sprite(self) -> None:
+        x = self.window.width * 3 // 4 - self.right_texture.width // 2
+        x = max((x, self.window.width // 2))
+        y = (self.window.height - self.right_texture.height) // 2
+        self.right_sprite = pyglet.sprite.Sprite(self.right_texture,
+                                                x=x,
+                                                y=y,
+                                                batch=self.batch)
     def save_and_load_color_buffer(self):
         stream = BytesIO()
-        pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_color_buffer().save('buffer.png', stream)
+        img = pyglet.graphics.api.gl.framebuffer.get_screenshot()
+        img.save('buffer.png', stream)
         stream.seek(0)
         self.right_texture = image.load('buffer.png', stream)
+        self._set_right_sprite()
 
     def save_and_load_depth_buffer(self):
         stream = BytesIO()
-        pyglet.graphics.api.gl.framebuffer.get_buffer_manager().get_depth_buffer().save('buffer.png', stream)
+        img = pyglet.graphics.api.gl.framebuffer.get_screenshot()
+        img.save('buffer.png', stream)
         stream.seek(0)
         self.right_texture = image.load('buffer.png', stream)
+        self._set_right_sprite()
 
 
     def test_image_loading(self, decoder, image_name):
@@ -149,18 +163,12 @@ def image_test(request, test_data):
 
 bmp_images = ['rgb_16bpp.bmp', 'rgb_1bpp.bmp', 'rgb_24bpp.bmp', 'rgb_32bpp.bmp', 'rgb_4bpp.bmp',
               'rgb_8bpp.bmp', 'rgba_32bpp.bmp']
-dds_images = ['rgba_dxt1.dds', 'rgba_dxt3.dds', 'rgba_dxt5.dds', 'rgb_dxt1.dds']
+dds_images = ['rgba_bc7.dds', 'rgb_bc6s.dds', 'rgba_dxt1.dds', 'rgba_dxt3.dds', 'rgba_dxt5.dds', 'rgb_dxt1.dds']
 png_images = ['la.png', 'l.png', 'rgba.png', 'rgb.png']
+ktx2_images = ['rgba_bc7.ktx2']
 pypng_images = png_images + ['rgb_8bpp.png', 'rgb_8bpp_trans.png']
 gif_images = ['8bpp.gif']
 
-
-def test_checkerboard(image_test):
-    """Test that the checkerboard pattern looks correct."""
-    image_test.create_window()
-    image_test.ask_question(
-            "Do you see a checkboard pattern in two levels of grey?"
-            )
 
 @pytest.mark.parametrize('image_name', bmp_images)
 def test_bmp_loading(image_test, image_name):
@@ -174,6 +182,12 @@ def test_dds_loading(image_test, image_name):
     """Test loading DDS images."""
     from pyglet.image.codecs.dds import DDSImageDecoder
     image_test.test_image_loading(DDSImageDecoder(), image_name)
+
+@pytest.mark.parametrize('image_name', ktx2_images)
+def test_ktx2_loading(image_test, image_name):
+    """Test loading KTX2 images."""
+    from pyglet.image.codecs.ktx2 import KTX2ImageDecoder
+    image_test.test_image_loading(KTX2ImageDecoder(), image_name)
 
 
 @pytest.mark.parametrize('image_name', png_images)
@@ -201,6 +215,14 @@ def test_gdiplus_loading(image_test, image_name):
     """Test loading PNG images using Windows specific GDI+."""
     from pyglet.image.codecs.gdiplus import GDIPlusDecoder
     image_test.test_image_loading(GDIPlusDecoder(), image_name)
+
+
+@pytest.mark.parametrize('image_name', png_images + bmp_images)
+@require_platform(Platform.WINDOWS)
+def test_wic_loading(image_test, image_name):
+    """Test loading PNG images using Windows specific GDI+."""
+    from pyglet.image.codecs.wic import WICDecoder
+    image_test.test_image_loading(WICDecoder(), image_name)
 
 
 @pytest.mark.parametrize('image_name', png_images)

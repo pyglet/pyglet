@@ -2,15 +2,15 @@
 
 Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 """
+from __future__ import annotations
 
 import struct
 import itertools
+from typing import BinaryIO
 
-#from pyglet.graphics.api.gl import *
-from pyglet.image import CompressedImageData
+from pyglet.image.base import CompressedImageData, CompressionFormat
 from pyglet.image import codecs
-from pyglet.image.codecs import s3tc, ImageDecodeException
-
+from pyglet.image.codecs import ImageDecodeException
 
 # dwFlags of DDSURFACEDESC2
 DDSD_CAPS           = 0x00000001
@@ -53,10 +53,10 @@ class _FileStruct:
         for field, value in itertools.zip_longest(self._fields, items, fillvalue=None):
             setattr(self, field[0], value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         name = self.__class__.__name__
-        return '%s(%s)' % (name, (', \n%s' % (' ' * (len(name) + 1))).join(
-            ['%s = %s' % (field[0], repr(getattr(self, field[0]))) for field in self._fields]))
+        return '{}({})'.format(name, (', \n%s' % (' ' * (len(name) + 1))).join(
+            [f'{field[0]} = {getattr(self, field[0])!r}' for field in self._fields]))
 
     @classmethod
     def get_format(cls):
@@ -82,13 +82,21 @@ class DDSURFACEDESC2(_FileStruct):
         ('dwCaps1', 'I'),
         ('dwCaps2', 'I'),
         ('dwCapsReserved', '8s'),
-        ('dwReserved2', 'I')
+        ('dwReserved2', 'I'),
     ]
 
     def __init__(self, data):
         super().__init__(data)
         self.ddpfPixelFormat = DDPIXELFORMAT(self.ddpfPixelFormat)
 
+class DDS_HEADER_DXT10(_FileStruct):
+    _fields = [
+        ('dxgiFormat', 'I'),
+        ('resourceDimension', 'I'),
+        ('miscFlag', 'I'),
+        ('arraySize', 'I'),
+        ('miscFlags2', 'I'),
+    ]
 
 class DDPIXELFORMAT(_FileStruct):
     _fields = [
@@ -99,25 +107,39 @@ class DDPIXELFORMAT(_FileStruct):
         ('dwRBitMask', 'I'),
         ('dwGBitMask', 'I'),
         ('dwBBitMask', 'I'),
-        ('dwRGBAlphaBitMask', 'I')
+        ('dwRGBAlphaBitMask', 'I'),
     ]
 
+def _get_dds_block_size_dxgi(dxgi_format: int) -> int:
+    if dxgi_format in (71, 72, 80, 81):  # BC1 = 8 bytes per 4x4 block
+        return 8
+    if dxgi_format in (74, 75, # BC2  = 16 bytes per 4x4 block
+                       77, 78, # BC3
+                       83, 84, # BC5
+                       95, 96,  # B6
+                       98, 99):  # BC7
+        return 16
+    msg = f"Unsupported DXGI format {dxgi_format}"
+    raise ImageDecodeException(msg)
 
-_compression_formats = {
-    (b'DXT1', False): (GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  s3tc.decode_dxt1_rgb),
-    (b'DXT1', True):  (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, s3tc.decode_dxt1_rgba),
-    (b'DXT3', False): (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
-    (b'DXT3', True):  (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
-    (b'DXT5', False): (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
-    (b'DXT5', True):  (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
-}
+
+def _get_dds_block_size(fourcc: bytes) -> int:
+    """Return block size in bytes based on the below formats."""
+    if fourcc in (b'DXT1', b'BC1 '):
+        return 8
+    if fourcc in (b'DXT3', b'DXT5', b'BC2 ', b'BC3 ', b'BC5 ', b'ATI2'):
+        return 16
+    if fourcc in (b'BC4 ', b'ATI1'):
+        return 8
+
+    return 0  # Not block compressed
 
 
 class DDSImageDecoder(codecs.ImageDecoder):
-    def get_file_extensions(self):
+    def get_file_extensions(self) -> list[str]:
         return ['.dds']
 
-    def decode(self, filename, file):
+    def decode(self, filename: str, file: BinaryIO | None = None):
         if not file:
             file = open(filename, 'rb')
 
@@ -147,19 +169,19 @@ class DDSImageDecoder(codecs.ImageDecoder):
 
         has_alpha = desc.ddpfPixelFormat.dwRGBAlphaBitMask != 0
 
-        selector = (desc.ddpfPixelFormat.dwFourCC, has_alpha)
-        if selector not in _compression_formats:
-            raise ImageDecodeException('Unsupported texture compression %s' % desc.ddpfPixelFormat.dwFourCC)
-
-        dformat, decoder = _compression_formats[selector]
-        if dformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-            block_size = 8
+        fourcc = desc.ddpfPixelFormat.dwFourCC
+        if fourcc == b'DX10':
+            dx10_header_data = file.read(DDS_HEADER_DXT10.get_size())
+            dx10_header = DDS_HEADER_DXT10(dx10_header_data)
+            fmt = CompressionFormat(fourcc, has_alpha, dx10_header.dxgiFormat)
+            block_size = _get_dds_block_size_dxgi(dx10_header.dxgiFormat)
         else:
-            block_size = 16
+            block_size = _get_dds_block_size(fourcc)
+            fmt = CompressionFormat(fourcc, has_alpha)
 
         datas = []
         w, h = width, height
-        for i in range(mipmaps):
+        for _ in range(mipmaps):
             if not w and not h:
                 break
             if not w:
@@ -172,7 +194,7 @@ class DDSImageDecoder(codecs.ImageDecoder):
             w >>= 1
             h >>= 1
 
-        image = CompressedImageData(width, height, dformat, datas[0], 'GL_EXT_texture_compression_s3tc', decoder)
+        image = CompressedImageData(width, height, fmt, datas[0])
         level = 0
         for data in datas[1:]:
             level += 1
@@ -181,9 +203,9 @@ class DDSImageDecoder(codecs.ImageDecoder):
         return image
 
 
-def get_decoders():
+def get_decoders() -> list[DDSImageDecoder]:
     return [DDSImageDecoder()]
 
 
-def get_encoders():
+def get_encoders() -> list:
     return []

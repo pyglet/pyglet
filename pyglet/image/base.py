@@ -3,15 +3,17 @@ from __future__ import annotations
 import re
 import warnings
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union
 
+from pyglet.customtypes import DataTypes
 from pyglet.image.animation import Animation
 from pyglet.image.codecs import ImageEncoder
 from pyglet.image.codecs import registry as _codec_registry
 from pyglet.util import asbytes
 
 if TYPE_CHECKING:
-    from pyglet.graphics.texture import Texture, TextureGrid, TextureSequence
+    from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
 
 
 class ImagePattern(ABC):
@@ -62,7 +64,7 @@ class _AbstractImage(ABC):
         """Retrieve a rectangular region of this image."""
 
     def save(
-        self, filename: str | None = None, file: BinaryIO | None = None, encoder: ImageEncoder | None = None
+        self, filename: str | None = None, file: BinaryIO | None = None, encoder: ImageEncoder | None = None,
     ) -> None:
         """Save this image to a file.
 
@@ -148,8 +150,9 @@ class ImageData(_AbstractImage):
 
     _current_texture = None
 
-    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None, data_type = "B") -> None:
-        """Initialise image data.
+    def __init__(self, width: int, height: int, fmt: str, data: bytes, pitch: int | None = None,
+                 data_type: DataTypes = "B") -> None:
+        """Initialize image data.
 
         Args:
             width:
@@ -429,6 +432,13 @@ class ImageDataRegion(ImageData):
         return super().get_region(x, y, width, height)
 
 
+@dataclass(frozen=True)
+class CompressionFormat:
+    fmt: bytes
+    alpha: bool
+    dxgi_format: int = 0
+    vk_format: int = 0
+
 class CompressedImageData(_AbstractImage):
     """Compressed image data suitable for direct uploading to GPU."""
 
@@ -438,6 +448,7 @@ class CompressedImageData(_AbstractImage):
         self,
         width: int,
         height: int,
+        fmt: CompressionFormat,
         data: bytes,
         extension: str | None = None,
         decoder: Callable[[bytes, int, int], _AbstractImage] | None = None,
@@ -460,14 +471,45 @@ class CompressedImageData(_AbstractImage):
         """
         super().__init__(width, height)
         self.data = data
+        self.fmt = fmt
         self.extension = extension
         self.decoder = decoder
+        self.data_type = "B"
+        self.mipmap_data: list[bytes | None] = []
 
     def _have_extension(self) -> bool:
         raise NotImplementedError
 
-    def get_texture(self) -> Texture:
-        raise NotImplementedError
+    def set_mipmap_data(self, level: int, data: bytes) -> None:
+        """Set compressed image data for a mipmap level.
+
+        Supplied data gives a compressed image for the given mipmap level.
+        This image data must be in the same format as was used in the
+        constructor. The image data must also be of the correct dimensions for
+        the level (i.e., width >> level, height >> level); but this is not checked.
+        If *any* mipmap levels are specified, they are used; otherwise, mipmaps for
+        ``mipmapped_texture`` are generated automatically.
+        """
+        # Extend mipmap_data list to required level
+        self.mipmap_data += [None] * (level - len(self.mipmap_data))
+        self.mipmap_data[level - 1] = data
+
+    def create_texture(self, cls: type[CompressedTexture]) -> Texture:
+        """Given a texture class, create a texture containing this image."""
+        texture = cls.create_from_image(self)
+
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
+        return texture
+
+    def get_texture(self) -> CompressedTexture:
+        if not self._current_texture:
+            from pyglet.graphics.texture import CompressedTexture
+
+            self._current_texture = self.create_texture(CompressedTexture)
+        return self._current_texture
 
     def get_image_data(self) -> CompressedImageData:
         return self
@@ -494,7 +536,7 @@ class _AbstractGrid(ABC, Generic[T]):
     _items: list[T] | None = None
 
     def __init__(
-        self, rows: int, columns: int, item_width: int, item_height: int, row_padding: int = 0, column_padding: int = 0
+        self, rows: int, columns: int, item_width: int, item_height: int, row_padding: int = 0, column_padding: int = 0,
     ) -> None:
         self.rows = rows
         self.columns = columns

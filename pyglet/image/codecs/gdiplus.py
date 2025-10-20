@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from ctypes import (
+    addressof,
     POINTER,
     Structure,
     c_buffer,
@@ -245,12 +248,31 @@ class GDIPlusDecoder(ImageDecoder):
 
         # Create buffer for RawImage
         buffer = create_string_buffer(bitmap_data.Stride * height)
-        memmove(buffer, bitmap_data.Scan0, len(buffer))
+        if fmt == 'BGR':
+            stride = bitmap_data.Stride
+            components = len(fmt)
+            packed_row = width * components
+            src_stride = abs(stride)
+
+            src_addr = cast(bitmap_data.Scan0, c_void_p).value
+            src = (c_byte * (src_stride * height)).from_address(src_addr)
+
+            buf_address = addressof(buffer)
+            src_address = addressof(src)
+
+            for y in range(height):
+                src_y = y if stride < 0 else (height - 1 - y)
+                src_off = src_y * src_stride
+                dst_off = y * packed_row
+                memmove(buf_address + dst_off, src_address + src_off, packed_row)
+        else:
+            memmove(buffer, bitmap_data.Scan0, len(buffer))
+            packed_row = -bitmap_data.Stride
 
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
 
-        return ImageData(width, height, fmt, buffer, -bitmap_data.Stride)
+        return ImageData(width, height, fmt, buffer, packed_row)
 
     def _delete_bitmap(self, bitmap):
         # Release image and stream

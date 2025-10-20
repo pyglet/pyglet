@@ -5,24 +5,71 @@ from ctypes import byref, Array
 from typing import Literal, Iterator, Union, Sequence
 
 import pyglet
-from pyglet.enums import TextureType, TextureFilter, ComponentFormat, \
-    AddressMode
-from pyglet.graphics.api.gl import OpenGLSurfaceContext
-from pyglet.graphics.api.gl.gl import GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, \
-    GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, \
-    GL_UNSIGNED_BYTE, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, \
-    GL_LINEAR_MIPMAP_LINEAR, GL_TEXTURE_3D, \
-    GLuint, GL_TEXTURE0, GL_READ_WRITE, GL_RGBA32F, \
-    GLubyte, GL_PACK_ALIGNMENT, GL_UNPACK_SKIP_PIXELS, \
-    GL_UNPACK_SKIP_ROWS, GL_UNPACK_ALIGNMENT, GL_UNPACK_ROW_LENGTH, GL_TEXTURE_2D_ARRAY, \
-    GL_TRIANGLES, GL_RGBA8, GL_R8, GL_RG8, GL_RGB8, GL_BYTE, GL_INT, GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0  # noqa: F401
+from pyglet.enums import TextureType, TextureFilter, ComponentFormat, AddressMode
+from pyglet.graphics.api.gl import OpenGLSurfaceContext, GL_COMPRESSED_RGB8_ETC2
+from pyglet.graphics.api.gl.gl import (
+    GL_RED,
+    GL_RG,
+    GL_RGB,
+    GL_BGR,
+    GL_RGBA,
+    GL_BGRA,
+    GL_RED_INTEGER,
+    GL_RG_INTEGER,
+    GL_RGB_INTEGER,
+    GL_BGR_INTEGER,
+    GL_RGBA_INTEGER,
+    GL_BGRA_INTEGER,
+    GL_DEPTH_COMPONENT,
+    GL_DEPTH_STENCIL,
+    GL_UNSIGNED_BYTE,
+    GL_TEXTURE_MIN_FILTER,
+    GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_2D,
+    GL_LINEAR_MIPMAP_LINEAR,
+    GL_TEXTURE_3D,
+    GLuint,
+    GL_TEXTURE0,
+    GL_READ_WRITE,
+    GL_RGBA32F,
+    GLubyte,
+    GL_PACK_ALIGNMENT,
+    GL_UNPACK_SKIP_PIXELS,
+    GL_UNPACK_SKIP_ROWS,
+    GL_UNPACK_ALIGNMENT,
+    GL_UNPACK_ROW_LENGTH,
+    GL_TEXTURE_2D_ARRAY,  # noqa: F401
+    GL_TRIANGLES,  # noqa: F401
+    GL_RGBA8,  # noqa: F401
+    GL_R8,  # noqa: F401
+    GL_RG8,  # noqa: F401
+    GL_RGB8,  # noqa: F401
+    GL_BYTE,  # noqa: F401
+    GL_INT,  # noqa: F401
+    GL_FRAMEBUFFER,
+    GL_COLOR_ATTACHMENT0,
+    GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+    GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
+    GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
+    GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+    GL_TEXTURE_SWIZZLE_R,
+    GL_TEXTURE_SWIZZLE_G,
+    GL_TEXTURE_SWIZZLE_B,
+    GL_TEXTURE_SWIZZLE_A,
+    GL_GREEN,
+    GL_COMPRESSED_RED_RGTC1,
+    GL_COMPRESSED_SIGNED_RED_RGTC1,
+    GL_COMPRESSED_RG_RGTC2,
+    GL_COMPRESSED_SIGNED_RG_RGTC2,
+)
 
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
-from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T
+from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, ImageGrid, _AbstractGrid, T, CompressionFormat, \
+    CompressedImageData
 from pyglet.image.base import ImageException
 from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
-    TextureArrayDepthExceeded
+    TextureArrayDepthExceeded, CompressedTextureBase
 
 _api_base_internal_formats = {
     'R': 'GL_R',
@@ -33,6 +80,8 @@ _api_base_internal_formats = {
     'BGRA': 'GL_RGBA',
     'D': 'GL_DEPTH_COMPONENT',
     'DS': 'GL_DEPTH_STENCIL',
+    'L': 'GL_R',
+    'LA': 'GL_RG',
 }
 
 _api_base_pixel_formats = {
@@ -42,6 +91,8 @@ _api_base_pixel_formats = {
     'RGBA': 'GL_RGBA',
     'D': 'GL_DEPTH_COMPONENT',
     'DS': 'GL_DEPTH_STENCIL',
+    'L': 'GL_RED',
+    'LA': 'GL_RG',
 }
 
 
@@ -92,6 +143,8 @@ _api_pixel_formats = {
     'BGRAI': GL_BGRA_INTEGER,
     'D': GL_DEPTH_COMPONENT,
     'DS': GL_DEPTH_STENCIL,
+    'L': GL_RED,
+    'LA': GL_RG,
 }
 
 
@@ -124,164 +177,6 @@ def _get_gl_format_and_type(fmt: str, data_type: str) -> tuple[int | None, int |
         return fmt, _data_types.get(data_type)  # Eventually support others through ImageData.
 
     return None, None
-#
-# class GLCompressedImageData(CompressedImageData):
-#     """Compressed image data suitable for direct uploading to GPU."""
-#     # TODO: Finish compressed.
-#
-#     _current_texture = None
-#     _current_mipmap_texture = None
-#
-#     def __init__(self, width: int, height: int, gl_format: int, data: bytes,
-#                  extension: str | None = None,
-#                  decoder: Callable[[bytes, int, int], _AbstractImage] | None = None) -> None:
-#         """Construct a CompressedImageData with the given compressed data.
-#
-#         Args:
-#             width:
-#                 The width of the image.
-#             height:
-#                 The height of the image.
-#             gl_format:
-#                 GL constant giving the format of the compressed data.
-#                 For example: ``GL_COMPRESSED_RGBA_S3TC_DXT5_EXT``.
-#             data:
-#                 An array of bytes containing the compressed image data.
-#             extension:
-#                 If specified, gives the name of a GL extension to check for
-#                 before creating a texture.
-#             decoder:
-#                 An optional fallback function used to decode the compressed data.
-#                 This function is called if the required extension is not present.
-#         """
-#         super().__init__(width, height)
-#         self.data = data
-#         self.gl_format = gl_format
-#         self.extension = extension
-#         self.decoder = decoder
-#         self.mipmap_data = []
-#
-#     def set_mipmap_data(self, level: int, data: bytes) -> None:
-#         """Set compressed image data for a mipmap level.
-#
-#         Supplied data gives a compressed image for the given mipmap level.
-#         This image data must be in the same format as was used in the
-#         constructor. The image data must also be of the correct dimensions for
-#         the level (i.e., width >> level, height >> level); but this is not checked.
-#         If *any* mipmap levels are specified, they are used; otherwise, mipmaps for
-#         ``mipmapped_texture`` are generated automatically.
-#         """
-#         # Extend mipmap_data list to required level
-#         self.mipmap_data += [None] * (level - len(self.mipmap_data))
-#         self.mipmap_data[level - 1] = data
-#
-#     def _have_extension(self) -> bool:
-#         from pyglet.graphics.api import core
-#         return self.extension is None or core.have_extension(self.extension)
-#
-#     def get_texture(self) -> TextureBase:
-#         if self._current_texture:
-#             return self._current_texture
-#
-#         texture = TextureBase.create(self.width, self.height, blank_data=False)
-#
-#         if self.anchor_x or self.anchor_y:
-#             texture.anchor_x = self.anchor_x
-#             texture.anchor_y = self.anchor_y
-#
-#         self._context.glBindTexture(texture.target, texture.id)
-#         self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
-#         self._context.glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
-#
-#         if self._have_extension():
-#             self._context.glCompressedTexImage2D(texture.target, texture.level,
-#                                                  self.gl_format,
-#                                                  self.width, self.height, 0,
-#                                                  len(self.data), self.data)
-#         elif self.decoder:
-#             image = self.decoder(self.data, self.width, self.height)
-#             texture = image.get_texture()
-#             assert texture.width == self.width
-#             assert texture.height == self.height
-#         else:
-#             msg = f"No extension or fallback decoder is available to decode {self}"
-#             raise ImageException(msg)
-#
-#         self._context.glFlush()
-#         self._current_texture = texture
-#         return texture
-#
-#     def get_mipmapped_texture(self) -> TextureBase:
-#         if self._current_mipmap_texture:
-#             return self._current_mipmap_texture
-#
-#         if not self._have_extension():
-#             # TODO: mip-mapped software decoded compressed textures.
-#             #       For now, just return a non-mipmapped texture.
-#             return self.get_texture()
-#
-#         texture = TextureBase.create(self.width, self.height, GL_TEXTURE_2D, None)
-#
-#         if self.anchor_x or self.anchor_y:
-#             texture.anchor_x = self.anchor_x
-#             texture.anchor_y = self.anchor_y
-#
-#         self._context.glBindTexture(texture.target, texture.id)
-#
-#         self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-#
-#         if not self.mipmap_data:
-#             self._context.glGenerateMipmap(texture.target)
-#
-#         self._context.glCompressedTexImage2D(texture.target, texture.level,
-#                                              self.gl_format,
-#                                              self.width, self.height, 0,
-#                                              len(self.data), self.data)
-#
-#         width, height = self.width, self.height
-#         level = 0
-#         for data in self.mipmap_data:
-#             width >>= 1
-#             height >>= 1
-#             level += 1
-#             self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data),
-#                                                  data)
-#
-#         self._context.glFlush()
-#
-#         self._current_mipmap_texture = texture
-#         return texture
-#
-#     def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
-#         if not self._have_extension():
-#             raise ImageException(f"{self.extension} is required to decode {self}")
-#
-#         # TODO: use glCompressedTexImage2D/3D if `internalformat` is specified.
-#
-#         if target == GL_TEXTURE_3D:
-#             self._context.glCompressedTexSubImage3D(target, level,
-#                                                     x - self.anchor_x, y - self.anchor_y, z,
-#                                                     self.width, self.height, 1,
-#                                                     self.gl_format,
-#                                                     len(self.data), self.data)
-#         else:
-#             self._context.glCompressedTexSubImage2D(target, level,
-#                                                     x - self.anchor_x, y - self.anchor_y,
-#                                                     self.width, self.height,
-#                                                     self.gl_format,
-#                                                     len(self.data), self.data)
-#
-#     def get_image_data(self) -> CompressedImageData:
-#         return self
-#
-#     def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
-#         raise NotImplementedError(f"Not implemented for {self}")
-#
-#     def blit(self, x: int, y: int, z: int = 0) -> None:
-#         self.get_texture().blit(x, y, z)
-#
-#     def blit_into(self, source, x: int, y: int, z: int) -> None:
-#         raise NotImplementedError(f"Not implemented for {self}")
 
 
 def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
@@ -432,6 +327,10 @@ class Texture(TextureBase):
         image_bytes = image_data.get_bytes(pixel_fmt, image_data.width * len(pixel_fmt))
         gl_pfmt, gl_type = _get_pixel_format(image_data)
 
+        # !!! Better place for this?
+        if pixel_fmt in ("L", "LA"):
+            texture._swizzle_legacy_fmts(pixel_fmt)
+
         align, row_length = texture._get_image_alignment(image_data)
 
         ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
@@ -446,6 +345,15 @@ class Texture(TextureBase):
                          image_bytes)
         ctx.glFlush()
         return texture
+
+    def _swizzle_legacy_fmts(self, pixel_fmt: str) -> None:
+        # LUMINANCE and LUMINANCE_ALPHA are legacy and removed in core GL. Use swizzle to emulate.
+        if pixel_fmt.startswith("L"):
+            self._context.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED)
+            self._context.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED)
+            self._context.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED)
+        if pixel_fmt == "LA":
+            self._context.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_GREEN)
 
     @classmethod
     def create(cls, width: int, height: int,
@@ -577,16 +485,33 @@ class Texture(TextureBase):
 
     @staticmethod
     def _get_image_alignment(image_data: ImageData) -> tuple[int, int]:
-        data_pitch = abs(image_data._current_pitch)
-        data_format = image_data.format
+        """Image alignment and row length information on an Image to upload.
 
-        if data_pitch & 0x1:
-            align = 1
-        elif data_pitch & 0x2:
+        Args:
+            image_data: The image data to get the alignment from.
+
+        Returns:
+            (align, row_length)
+                align: 1, 2, 4, or 8 \
+                row_length: 0 if tightly packed.
+        """
+        components = len(image_data.format)
+        width = image_data.width
+        packed_row_bytes = width * components
+        pitch = abs(image_data._current_pitch)
+        if packed_row_bytes % 8 == 0:
+            align = 8
+        elif packed_row_bytes % 4 == 0:
+            align = 4
+        elif packed_row_bytes % 2 == 0:
             align = 2
         else:
-            align = 4
-        row_length = data_pitch // len(data_format)
+            align = 1
+
+        if pitch == packed_row_bytes:
+            row_length = 0
+        else:
+            row_length = pitch // components
 
         return align, row_length
 
@@ -1196,3 +1121,367 @@ class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
 
     def _update_item(self, existing_item: T, new_item: T) -> None:
         existing_item.upload(new_item, new_item.anchor_x, new_item.anchor_y, 0)
+
+# DDS compression formats based on DirectX.
+_dxgi_to_gl_format: dict[int, int] = {
+    # --- BC1 ---
+    71: GL_COMPRESSED_RGB_S3TC_DXT1_EXT,          # DXGI_FORMAT_BC1_UNORM
+    72: GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,         # DXGI_FORMAT_BC1_UNORM_SRGB
+
+    # --- BC2 ---
+    74: GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,         # DXGI_FORMAT_BC2_UNORM
+    75: GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,         # DXGI_FORMAT_BC2_UNORM_SRGB
+
+    # --- BC3 ---
+    77: GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,         # DXGI_FORMAT_BC3_UNORM
+    78: GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,         # DXGI_FORMAT_BC3_UNORM_SRGB
+
+    # --- BC4 ---
+    80: GL_COMPRESSED_RED_RGTC1,                  # DXGI_FORMAT_BC4_UNORM
+    81: GL_COMPRESSED_SIGNED_RED_RGTC1,           # DXGI_FORMAT_BC4_SNORM
+
+    # --- BC5 ---
+    83: GL_COMPRESSED_RG_RGTC2,                   # DXGI_FORMAT_BC5_UNORM
+    84: GL_COMPRESSED_SIGNED_RG_RGTC2,            # DXGI_FORMAT_BC5_SNORM
+
+    # --- BC6H ---
+    95: gl.GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB, # DXGI_FORMAT_BC6H_UF16
+    96: gl.GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB,   # DXGI_FORMAT_BC6H_SF16
+
+    # --- BC7 ---
+    98: gl.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB,         # DXGI_FORMAT_BC7_UNORM
+    99: gl.GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB,   # DXGI_FORMAT_BC7_UNORM_SRGB
+}
+
+# KTX2 compression formats based on Vulkan.
+vk_to_gl_format: dict[int, int] = {
+    # --- BC1 ---
+    131: GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,  # VK_FORMAT_BC1_RGBA_UNORM_BLOCK
+    132: GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,  # VK_FORMAT_BC1_RGBA_SRGB_BLOCK
+    # --- BC2 ---
+    133: GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,  # VK_FORMAT_BC2_UNORM_BLOCK
+    134: GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,  # VK_FORMAT_BC2_SRGB_BLOCK
+    # --- BC3 ---
+    135: GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,  # VK_FORMAT_BC3_UNORM_BLOCK
+    136: GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,  # VK_FORMAT_BC3_SRGB_BLOCK
+    # --- BC4 ---
+    137: GL_COMPRESSED_RED_RGTC1,  # VK_FORMAT_BC4_UNORM_BLOCK
+    138: GL_COMPRESSED_SIGNED_RED_RGTC1,  # VK_FORMAT_BC4_SNORM_BLOCK
+    # --- BC5 ---
+    139: GL_COMPRESSED_RG_RGTC2,  # VK_FORMAT_BC5_UNORM_BLOCK
+    140: GL_COMPRESSED_SIGNED_RG_RGTC2,  # VK_FORMAT_BC5_SNORM_BLOCK
+    # --- BC6H ---
+    141: gl.GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB,  # VK_FORMAT_BC6H_UFLOAT_BLOCK
+    142: gl.GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB,  # VK_FORMAT_BC6H_SFLOAT_BLOCK
+    # --- BC7 ---
+    146: gl.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB,  # VK_FORMAT_BC7_UNORM_BLOCK
+    147: gl.GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB,  # VK_FORMAT_BC7_SRGB_BLOCK
+    # --- ETC2 / EAC ---
+    74: GL_COMPRESSED_RGB8_ETC2,  # VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK
+    75: gl.GL_COMPRESSED_SRGB8_ETC2,  # VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK
+    76: gl.GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,  # VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK
+    77: gl.GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,  # VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK
+    78: gl.GL_COMPRESSED_RGBA8_ETC2_EAC,  # VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK
+    79: gl.GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,  # VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK
+    67: gl.GL_COMPRESSED_R11_EAC,  # VK_FORMAT_EAC_R11_UNORM_BLOCK
+    68: gl.GL_COMPRESSED_SIGNED_R11_EAC,  # VK_FORMAT_EAC_R11_SNORM_BLOCK
+    69: gl.GL_COMPRESSED_RG11_EAC,  # VK_FORMAT_EAC_R11G11_UNORM_BLOCK
+    70: gl.GL_COMPRESSED_SIGNED_RG11_EAC,  # VK_FORMAT_EAC_R11G11_SNORM_BLOCK
+    # --- ASTC (LDR) ---
+    157: gl.GL_COMPRESSED_RGBA_ASTC_4x4_KHR,  # VK_FORMAT_ASTC_4x4_UNORM_BLOCK
+    158: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR,  # VK_FORMAT_ASTC_4x4_SRGB_BLOCK
+    159: gl.GL_COMPRESSED_RGBA_ASTC_5x4_KHR,
+    160: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR,
+    161: gl.GL_COMPRESSED_RGBA_ASTC_5x5_KHR,
+    162: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR,
+    163: gl.GL_COMPRESSED_RGBA_ASTC_6x5_KHR,
+    164: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR,
+    165: gl.GL_COMPRESSED_RGBA_ASTC_6x6_KHR,
+    166: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR,
+    167: gl.GL_COMPRESSED_RGBA_ASTC_8x5_KHR,
+    168: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR,
+    169: gl.GL_COMPRESSED_RGBA_ASTC_8x6_KHR,
+    170: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR,
+    171: gl.GL_COMPRESSED_RGBA_ASTC_8x8_KHR,
+    172: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR,
+    173: gl.GL_COMPRESSED_RGBA_ASTC_10x5_KHR,
+    174: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR,
+    175: gl.GL_COMPRESSED_RGBA_ASTC_10x6_KHR,
+    176: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR,
+    177: gl.GL_COMPRESSED_RGBA_ASTC_10x8_KHR,
+    178: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR,
+    179: gl.GL_COMPRESSED_RGBA_ASTC_10x10_KHR,
+    180: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR,
+    181: gl.GL_COMPRESSED_RGBA_ASTC_12x10_KHR,
+    182: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR,
+    183: gl.GL_COMPRESSED_RGBA_ASTC_12x12_KHR,
+    184: gl.GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
+}
+
+_required_exts = {
+    "S3TC": ["GL_EXT_texture_compression_s3tc", "GL_EXT_texture_compression_dxt1"],
+    "RGTC": ["GL_EXT_texture_compression_rgtc"],
+    "BPTC": ["GL_ARB_texture_compression_bptc"],
+    "ETC2": ["GL_ARB_ES3_compatibility", "GL_OES_compressed_ETC2_RGB8_texture"],
+    "ASTC": ["GL_KHR_texture_compression_astc_ldr"],
+}
+
+def _get_format_family(gl_internal_format: int) -> str | None:
+    """Get the format family of the given format to check extension support.
+
+    Args:
+        gl_internal_format: The OpenGL enum format.
+             EX: GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+    """
+    if 33776 <= gl_internal_format <= 33780:
+        return "S3TC"
+    if 36283 <= gl_internal_format <= 36290:
+        return "RGTC"
+    if 36492 <= gl_internal_format <= 36495:
+        return "BPTC"
+    if 37492 <= gl_internal_format <= 37499:
+        return "ETC2"
+    if 37808 <= gl_internal_format <= 37855:
+        return "ASTC"
+    return None
+
+def _get_extension_from_compression(cf: CompressionFormat):
+    if cf.fmt in (b'DXT1', b'BC1 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT if cf.alpha else GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+    if cf.fmt in (b'DXT3', b'BC2 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+    if cf.fmt in (b'DXT5', b'BC3 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+
+    # Newer DDS formats:
+    if cf.fmt == b'DX10' and (fmt := _dxgi_to_gl_format.get(cf.dxgi_format)):
+        return fmt
+
+    # KTX2 formats:
+    if cf.fmt == b'KTX2' and (fmt := vk_to_gl_format.get(cf.vk_format)):
+        return fmt
+
+def _get_gl_compression_format(cf: CompressionFormat) -> int:
+    # Old formats:: dwFourCC
+    if cf.fmt in (b'DXT1', b'BC1 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT if cf.alpha else GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+    if cf.fmt in (b'DXT3', b'BC2 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+    if cf.fmt in (b'DXT5', b'BC3 '):
+        return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+
+    # Newer DDS formats:
+    if cf.fmt == b'DX10' and (fmt := _dxgi_to_gl_format.get(cf.dxgi_format)):
+        return fmt
+
+    # KTX2 formats:
+    if cf.fmt == b'KTX2' and (fmt := vk_to_gl_format.get(cf.vk_format)):
+        return fmt
+
+    msg = f"Unsupported compression format: {cf!r}"
+    raise ValueError(msg)
+
+class CompressedTexture(CompressedTextureBase):
+    """A compressed texture created from CompressedImageData."""
+
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
+                 tex_id: int,
+                 compression_fmt: CompressionFormat,
+                 tex_type: TextureType = TextureType.TYPE_2D,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT, anisotropic_level: int = 0) -> None:
+        super().__init__(width, height, tex_id, compression_fmt, tex_type, filters, address_mode, anisotropic_level)
+        self._context = context
+        self.target = texture_map[self.tex_type]
+        self._gl_min_filter = texture_map[self.min_filter]
+        self._gl_mag_filter = texture_map[self.mag_filter]
+        self._gl_internal_format = _get_gl_compression_format(compression_fmt)
+        self._compression_fmt = compression_fmt
+        self._can_gpu_decode = self._is_format_supported()
+        self.mipmap_data = []
+
+    def _is_format_supported(self) -> bool:
+        family = _get_format_family(self._gl_internal_format)
+        if not family:
+            msg = f"Unsupported compression format: {self._compression_fmt}"
+            raise ValueError(msg)
+
+        required = _required_exts.get(family, [])
+        return any(self._context.core.have_extension(ext) for ext in required)
+
+    @classmethod
+    def create(cls, width: int, height: int,
+               fmt: CompressionFormat,
+               tex_type: TextureType = TextureType.TYPE_2D,
+               internal_format: ComponentFormat = ComponentFormat.RGBA,
+               internal_format_size: int = 8,
+               internal_format_type: str = "B",
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               address_mode: AddressMode = AddressMode.REPEAT,
+               anisotropic_level: int = 0,
+               blank_data: bool = True,
+               context: OpenGLSurfaceContext | None = None) -> CompressedTexture:
+        ctx = context or pyglet.graphics.api.core.current_context
+
+        tex_id = GLuint()
+        print("tex_type", tex_type)
+        target = texture_map[tex_type]
+        ctx.glGenTextures(1, byref(tex_id))
+
+        texture = cls(ctx, width, height, tex_id.value, fmt, tex_type, filters, address_mode, anisotropic_level)
+        ctx.glBindTexture(target, tex_id.value)
+        ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+
+        data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
+        texture._allocate(data)
+        return texture
+
+
+    @classmethod
+    def create_from_image(cls,
+                          image_data: CompressedImageData,
+                          tex_type: TextureType = TextureType.TYPE_2D,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                          address_mode: AddressMode = AddressMode.REPEAT,
+                          anisotropic_level: int = 0,
+                          context: OpenGLSurfaceContext | None = None,
+                          ) -> CompressedTexture:
+        """Create a Texture from image data.
+
+        Args:
+            image_data:
+                The image instance.
+            tex_type:
+                The texture enum type.
+            internal_format_size:
+                Byte size of the internal format.
+            filters:
+                Texture format filter, passed as a list of min/mag filters, or a single filter to apply both.
+            address_mode:
+                Texture address mode.
+            anisotropic_level:
+                The maximum anisotropic level.
+            context:
+                A specific OpenGL Surface context, otherwise the current active context.
+
+        Returns:
+            A currently bound texture.
+        """
+        ctx = context or pyglet.graphics.api.core.current_context
+
+        tex_id = GLuint()
+        ctx.glGenTextures(1, byref(tex_id))
+        target = texture_map[tex_type]
+        ctx.glBindTexture(target, tex_id.value)
+
+        texture = cls(ctx, image_data.width, image_data.height, tex_id.value, image_data.fmt, tex_type,
+                      filters, address_mode, anisotropic_level)
+
+        ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
+        ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
+        texture._allocate(image_data.data)
+        return texture
+
+    def set_mipmap_data(self, level: int, data: bytes) -> None:
+        """Set compressed image data for a mipmap level.
+
+        Supplied data gives a compressed image for the given mipmap level.
+        This image data must be in the same format as was used in the
+        constructor. The image data must also be of the correct dimensions for
+        the level (i.e., width >> level, height >> level); but this is not checked.
+        If *any* mipmap levels are specified, they are used; otherwise, mipmaps for
+        ``mipmapped_texture`` are generated automatically.
+        """
+        # Extend mipmap_data list to required level
+        self.mipmap_data += [None] * (level - len(self.mipmap_data))
+        self.mipmap_data[level - 1] = data
+
+    def _allocate(self, data: None | Array) -> None:
+        if self._can_gpu_decode:
+            self._context.glCompressedTexImage2D(self.target, self.level,
+                                                 self._gl_internal_format,
+                                                 self.width, self.height, 0,
+                                                 len(data), data)
+        elif self.decoder:
+            image = self.decoder(data, self.width, self.height)
+            texture = image.get_texture()
+            assert texture.width == self.width
+            assert texture.height == self.height
+        else:
+            msg = f"No extension or fallback decoder is available to decode {self}"
+            raise ImageException(msg)
+
+        self._context.glFlush()
+    #
+    # def get_mipmapped_texture(self) -> TextureBase:
+    #     if self._current_mipmap_texture:
+    #         return self._current_mipmap_texture
+    #
+    #     if not self._have_extension():
+    #         # TODO: mip-mapped software decoded compressed textures.
+    #         #       For now, just return a non-mipmapped texture.
+    #         return self.get_texture()
+    #
+    #     texture = TextureBase.create(self.width, self.height, GL_TEXTURE_2D, None)
+    #
+    #     if self.anchor_x or self.anchor_y:
+    #         texture.anchor_x = self.anchor_x
+    #         texture.anchor_y = self.anchor_y
+    #
+    #     self._context.glBindTexture(texture.target, texture.id)
+    #
+    #     self._context.glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+    #
+    #     if not self.mipmap_data:
+    #         self._context.glGenerateMipmap(texture.target)
+    #
+    #     self._context.glCompressedTexImage2D(texture.target, texture.level,
+    #                                          self.gl_format,
+    #                                          self.width, self.height, 0,
+    #                                          len(self.data), self.data)
+    #
+    #     width, height = self.width, self.height
+    #     level = 0
+    #     for data in self.mipmap_data:
+    #         width >>= 1
+    #         height >>= 1
+    #         level += 1
+    #         self._context.glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data),
+    #                                              data)
+    #
+    #     self._context.glFlush()
+    #
+    #     self._current_mipmap_texture = texture
+    #     return texture
+    #
+    # def blit_to_texture(self, target: int, level: int, x: int, y: int, z: int, internalformat: int = None):
+    #     if not self._have_extension():
+    #         raise ImageException(f"{self.extension} is required to decode {self}")
+    #
+    #     # TODO: use glCompressedTexImage2D/3D if `internalformat` is specified.
+    #
+    #     if target == GL_TEXTURE_3D:
+    #         self._context.glCompressedTexSubImage3D(target, level,
+    #                                                 x - self.anchor_x, y - self.anchor_y, z,
+    #                                                 self.width, self.height, 1,
+    #                                                 self.gl_format,
+    #                                                 len(self.data), self.data)
+    #     else:
+    #         self._context.glCompressedTexSubImage2D(target, level,
+    #                                                 x - self.anchor_x, y - self.anchor_y,
+    #                                                 self.width, self.height,
+    #                                                 self.gl_format,
+    #                                                 len(self.data), self.data)
+
+    def get_image_data(self) -> CompressedImageData:
+        return self
+
+    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
+        raise NotImplementedError(f"Not implemented for {self}")
+
+    def blit(self, x: int, y: int, z: int = 0) -> None:
+        self.get_texture().blit(x, y, z)
+
+    def blit_into(self, source, x: int, y: int, z: int) -> None:
+        raise NotImplementedError(f"Not implemented for {self}")

@@ -20,8 +20,6 @@ from pyglet.graphics.api.webgl.gl import (
     GL_FRAMEBUFFER,
     GL_FRAMEBUFFER_COMPLETE,
     GL_LINEAR_MIPMAP_LINEAR,
-    GL_MAX_ARRAY_TEXTURE_LAYERS,
-    GL_MAX_TEXTURE_SIZE,
     GL_PACK_ALIGNMENT,
     GL_READ_WRITE,
     GL_RED,
@@ -31,7 +29,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_RGB,
     GL_RGB_INTEGER,
     GL_RGBA,
-    GL_RGBA8,
+    GL_RGBA8,  # noqa: F401
     GL_RGBA32F,
     GL_RGBA_INTEGER,
     GL_TEXTURE0,
@@ -46,10 +44,9 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
     GLubyte,
-    GLuint,
 )
 from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
-    TextureArrayDepthExceeded, TextureArrayBase
+    TextureArrayDepthExceeded
 from pyglet.image.base import (
     CompressedImageData,
     ImageData,
@@ -118,7 +115,7 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Callable, Literal, Sequence
+    from typing import Callable, Literal
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext
@@ -238,7 +235,7 @@ class GLCompressedImageData(CompressedImageData):
 
         if self._have_extension():
             gl.compressedTexImage2D(
-                texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data
+                texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
             )
         elif self.decoder:
             image = self.decoder(self.data, self.width, self.height)
@@ -277,7 +274,7 @@ class GLCompressedImageData(CompressedImageData):
             gl.generateMipmap(texture.target)
 
         gl.compressedTexImage2D(
-            texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data
+            texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
         )
 
         width, height = self.width, self.height
@@ -713,7 +710,7 @@ class Texture(TextureBase):
         # Flush image upload before data gets GC'd:
         gl.flush()
 
-    def get_texture(self, rectangle: bool = False) -> TextureBase:
+    def get_texture(self) -> TextureBase:
         return self
 
     def get_mipmapped_texture(self) -> TextureBase:
@@ -723,7 +720,7 @@ class Texture(TextureBase):
         return self.region_class(x, y, 0, width, height, self)
 
     def get_transform(
-        self, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0
+        self, flip_x: bool = False, flip_y: bool = False, rotate: Literal[0, 90, 180, 270, 360] = 0,
     ) -> TextureRegionBase:
         """Create a copy of this image applying a simple transformation.
 
@@ -1021,7 +1018,7 @@ class TextureArray(Texture, UniformTextureSequence):
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(
                 f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
-                f'{self.height})'
+                f'{self.height})',
             )
 
     def add(self, image: pyglet.image.ImageData) -> TextureArrayRegion:

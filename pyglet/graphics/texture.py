@@ -13,6 +13,7 @@ from pyglet.image.base import (
     ImageException,
     ImageGrid,
     _AbstractGrid,
+    CompressionFormat,
 )
 
 if TYPE_CHECKING:
@@ -611,6 +612,53 @@ TextureBase.region_class = TextureRegionBase
 TextureArrayBase.region_class = TextureArrayRegionBase
 TextureArrayRegionBase.region_class = TextureArrayRegionBase
 
+class CompressedTextureBase(_AbstractImage):
+    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
+    """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
+    ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
+    are specified in the order bottom-left, bottom-right, top-right and top-left.
+    """
+
+    tex_coords_order: tuple[int, int, int, int] = (0, 1, 2, 3)
+    """The default vertex winding order for a quad.
+    This defaults to counter-clockwise, starting at the bottom-left.
+    """
+
+    target: int
+    """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
+
+    level: int = 0
+    """The mipmap level of this texture."""
+
+    images = 1
+
+    x: int = 0
+    y: int = 0
+    z: int = 0
+
+    def __init__(self, width: int, height: int, tex_id: int,
+                 compression_format: CompressionFormat,
+                 tex_type: TextureType = TextureType.TYPE_2D,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 address_mode: AddressMode = AddressMode.REPEAT,
+                 anisotropic_level: int = 0,
+                 ) -> None:
+        super().__init__(width, height)
+        self.id = tex_id
+        self.tex_type = tex_type
+
+        if isinstance(filters, TextureFilter):
+            self.min_filter = filters
+            self.mag_filter = filters
+        else:
+            self.min_filter, self.mag_filter = filters
+
+        self.address_mode = address_mode
+        self.internal_format = compression_format
+        self.anisotropic_level = anisotropic_level
+
+    def get_texture(self) -> CompressedTextureBase:
+        return self
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
@@ -620,6 +668,7 @@ if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
         get_screenshot,
     )
     from pyglet.graphics.api.gl.texture import (
+        CompressedTexture,  # noqa: F401
         Texture,
         TextureRegion,
         Texture3D,

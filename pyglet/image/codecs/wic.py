@@ -114,7 +114,6 @@ def extract_image_data(bitmap: IWICBitmap, target_fmt: com.GUID = GUID_WICPixelF
 
     .. note:: ``bitmap`` is released before this function returns.
     """
-
     if "es" in pyglet.options.backend:
         target_fmt = GUID_WICPixelFormat32bppRGBA
         fmt = "RGBA"
