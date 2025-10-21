@@ -82,16 +82,10 @@ class TextureBase(_AbstractImage):
 
     images = 1
 
-    default_min_filter: TextureFilter = TextureFilter.LINEAR
-    """The default minification filter. Defaults to LINEAR.
-    If a texture is created without specifying a filter, this
-    default will be used. 
-    """
-
-    default_mag_filter: TextureFilter = TextureFilter.LINEAR
-    """The default magnification filter. Defaults to LINEAR.
-    If a texture is created without specifying a filter, this
-    default will be used. 
+    default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
+    """The default minification and magnification filters, as a tuple.
+    Both default to LINEAR. If a texture is created without specifying
+    a filter, these defaults will be used. 
     """
 
     x: int = 0
@@ -111,10 +105,10 @@ class TextureBase(_AbstractImage):
         self.id = tex_id
         self.tex_type = tex_type
 
-        if not filters:
-            self.min_filter = self.default_min_filter
-            self.mag_filter = self.default_mag_filter
-        elif isinstance(filters, TextureFilter):
+        # Use class defaults if None:
+        filters = filters or self.default_filters
+
+        if isinstance(filters, TextureFilter):
             self.min_filter = filters
             self.mag_filter = filters
         else:
