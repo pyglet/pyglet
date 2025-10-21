@@ -387,6 +387,18 @@ class Texture(TextureBase):
 
     images = 1
 
+    default_min_filter: TextureFilter = TextureFilter.LINEAR
+    """The default minification filter. Defaults to LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
+    default_mag_filter: TextureFilter = TextureFilter.LINEAR
+    """The default magnification filter. Defaults to LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
     x: int = 0
     y: int = 0
     z: int = 0
@@ -399,7 +411,7 @@ class Texture(TextureBase):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "B",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0):
         super().__init__(width, height, tex_id, tex_type, internal_format, internal_format_size, internal_format_type,
@@ -452,7 +464,7 @@ class Texture(TextureBase):
                           image_data: ImageData | ImageDataRegion,
                           tex_type: TextureType = TextureType.TYPE_2D,
                           internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: OpenGLSurfaceContext | None = None,
@@ -523,7 +535,7 @@ class Texture(TextureBase):
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                internal_format_size: int = 8,
                internal_format_type: str = "B",
-               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> TextureBase:
@@ -862,7 +874,7 @@ class Texture3D(Texture, UniformTextureSequence):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  context: OpenGLSurfaceContext | None = None) -> Texture3D:
@@ -938,7 +950,7 @@ class TextureArray(Texture, UniformTextureSequence):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0):
         super().__init__(context, width, height, tex_id, TextureType.TYPE_2D_ARRAY, internal_format, internal_format_size,
@@ -952,7 +964,7 @@ class TextureArray(Texture, UniformTextureSequence):
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                internal_format_size: int = 8,
                internal_format_type: str = "b",
-               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                context: OpenGLSurfaceContext | None = None) -> TextureArray:

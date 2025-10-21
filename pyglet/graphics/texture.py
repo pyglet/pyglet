@@ -82,6 +82,18 @@ class TextureBase(_AbstractImage):
 
     images = 1
 
+    default_min_filter: TextureFilter = TextureFilter.LINEAR
+    """The default minification filter. Defaults to LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
+    default_mag_filter: TextureFilter = TextureFilter.LINEAR
+    """The default magnification filter. Defaults to LINEAR.
+    If a texture is created without specifying a filter, this
+    default will be used. 
+    """
+
     x: int = 0
     y: int = 0
     z: int = 0
@@ -91,7 +103,7 @@ class TextureBase(_AbstractImage):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  ) -> None:
@@ -99,7 +111,10 @@ class TextureBase(_AbstractImage):
         self.id = tex_id
         self.tex_type = tex_type
 
-        if isinstance(filters, TextureFilter):
+        if not filters:
+            self.min_filter = self.default_min_filter
+            self.mag_filter = self.default_mag_filter
+        elif isinstance(filters, TextureFilter):
             self.min_filter = filters
             self.mag_filter = filters
         else:
@@ -138,7 +153,7 @@ class TextureBase(_AbstractImage):
                tex_type: TextureType = TextureType.TYPE_2D,
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                data_type: str = "b",
-               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                blank_data: bool = True,
@@ -177,7 +192,7 @@ class TextureBase(_AbstractImage):
     def create_from_image(cls, image_data: ImageData | ImageDataRegion,
                           tex_type: TextureType = TextureType.TYPE_2D,
                           internal_format_size: int = 8,
-                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                          filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: SurfaceContext | None = None,
@@ -401,7 +416,7 @@ class TextureArrayBase(TextureBase, UniformTextureSequence):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  ):
@@ -415,7 +430,7 @@ class TextureArrayBase(TextureBase, UniformTextureSequence):
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                internal_format_size: int = 8,
                internal_format_type: str = "b",
-               filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+               filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                max_depth: int = 256) -> TextureArray:
@@ -493,7 +508,7 @@ class Texture3D(TextureBase, UniformTextureSequence):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0, blank_data=True):
         raise NotImplementedError
@@ -503,7 +518,7 @@ class Texture3D(TextureBase, UniformTextureSequence):
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0):
         return cls.create_for_images(grid[:], internal_format, internal_format_size, internal_format_type,
@@ -639,7 +654,7 @@ class CompressedTextureBase(_AbstractImage):
     def __init__(self, width: int, height: int, tex_id: int,
                  compression_format: CompressionFormat,
                  tex_type: TextureType = TextureType.TYPE_2D,
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR,
+                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
                  ) -> None:
