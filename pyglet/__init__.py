@@ -294,7 +294,7 @@ class Options:
     .. versionadded:: 2.0.16
     """
 
-    backend: str | None = "opengl"
+    backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
     pyodide: PyodideOptions = field(default_factory=PyodideOptions)
