@@ -60,26 +60,26 @@ class WebGLRenderingContext:
     def texImage2D(
         self, target: int, level: int, internalformat: int,
         width: int, height: int, border: int,
-        format: int, type: int, pixels: bytes | memoryview | None = None
+        format: int, type: int, pixels: bytes | memoryview | None = None,
     ) -> None: ...
     def texImage2D(
         self, target: int, level: int, internalformat: int,
-        format: int, type: int, source: Any
+        format: int, type: int, source: Any,
     ) -> None: ...  # Overload for image sources
     def texSubImage2D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         width: int, height: int, format: int, type: int,
-        pixels: bytes | memoryview | None = None
+        pixels: bytes | memoryview | None = None,
     ) -> None: ...
     def texSubImage2D(
         self, target: int, level: int, xoffset: int, yoffset: int,
-        format: int, type: int, source: Any
+        format: int, type: int, source: Any,
     ) -> None: ...  # Overload for image sources
     def texParameterf(self, target: int, pname: int, param: float) -> None: ...
     def texParameteri(self, target: int, pname: int, param: int) -> None: ...
     def compressedTexImage2D(
             self, target: int, level: int, internalformat: int,
-            width: int, height: int, border: int, pixels: bytes | memoryview | None = None
+            width: int, height: int, border: int, pixels: bytes | memoryview | None = None,
     ) -> None: ...
     def generateMipmap(self, target: int) -> None: ...
     def deleteTexture(self, texture: WebGLTexture | None) -> None: ...
@@ -130,7 +130,7 @@ class WebGLRenderingContext:
     def polygonOffset(self, factor: float, units: float) -> None: ...
     def readPixels(
         self, x: int, y: int, width: int, height: int,
-        format: int, type: int, pixels: bytes | memoryview | None
+        format: int, type: int, pixels: bytes | memoryview | None,
     ) -> None: ...
     def sampleCoverage(self, value: float, invert: bool) -> None: ...
     def scissor(self, x: int, y: int, width: int, height: int) -> None: ...
@@ -196,7 +196,7 @@ class WebGL2RenderingContext(WebGLRenderingContext):
     def blitFramebuffer(
         self, srcX0: int, srcY0: int, srcX1: int, srcY1: int,
         dstX0: int, dstY0: int, dstX1: int, dstY1: int,
-        mask: int, filter: int
+        mask: int, filter: int,
     ) -> None: ...
     def clearBufferfi(self, buffer: int, drawbuffer: int, depth: float, stencil: int) -> None: ...
     def clearBufferfv(self, buffer: int, drawbuffer: int, values: Sequence[float] | memoryview) -> None: ...
@@ -207,17 +207,17 @@ class WebGL2RenderingContext(WebGLRenderingContext):
     def compressedTexImage3D(
         self, target: int, level: int, internalformat: int,
         width: int, height: int, depth: int, border: int,
-        imageSize: int, data: bytes | memoryview | None
+        imageSize: int, data: bytes | memoryview | None,
     ) -> None: ...
     def compressedTexSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int, zoffset: int,
         width: int, height: int, depth: int, format: int,
-        imageSize: int, data: bytes | memoryview | None
+        imageSize: int, data: bytes | memoryview | None,
     ) -> None: ...
     def copyBufferSubData(self, readTarget: int, writeTarget: int, readOffset: int, writeOffset: int, size: int) -> None: ...
     def copyTexSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int, zoffset: int,
-        x: int, y: int, width: int, height: int
+        x: int, y: int, width: int, height: int,
     ) -> None: ...
     def createQuery(self) -> WebGLQuery | None: ...
     def deleteQuery(self, query: WebGLQuery | None) -> None: ...
@@ -290,10 +290,17 @@ class WebGL2RenderingContext(WebGLRenderingContext):
     def texSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         zoffset: int, width: int, height: int, depth: int, format: int,
-        type: int, pixels: int | bytes | memoryview | None = None
+        type: int, pixels: int | bytes | memoryview | None = None,
     ) -> None: ...
     def texSubImage3D(
         self, target: int, level: int, xoffset: int, yoffset: int,
         zoffset: int, width: int, height: int, depth: int, format: int,
-        type: int, source: Any
+        type: int, source: Any,
     ) -> None: ...  # Overload for image sources
+    def framebufferTextureLayer(self,
+        target: int,
+        attachment: int,
+        texture: WebGLTexture | None,
+        level: int,
+        layer: int,
+    ) -> None: ...

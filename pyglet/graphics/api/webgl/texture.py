@@ -118,8 +118,7 @@ if TYPE_CHECKING:
     from typing import Callable, Literal
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
-    from pyglet.graphics.api.webgl.webgl_js import WebGLRenderingContext
-
+    from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
 
 _api_pixel_formats = {
     'R': GL_RED,
@@ -398,7 +397,7 @@ class Texture(TextureBase):
     z: int = 0
 
     _ctx: OpenGLSurfaceContext
-    _gl: WebGLRenderingContext
+    _gl: WebGL2RenderingContext
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, tex_id: int,
                  tex_type: TextureType = TextureType.TYPE_2D,
@@ -590,6 +589,9 @@ class Texture(TextureBase):
                              data)
         self._gl.flush()
 
+    def _attach_texture_to_fbo(self, z: int = 0) -> None:
+        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
@@ -612,22 +614,10 @@ class Texture(TextureBase):
 
         buffer_size = self.width * self.height * self.images * len(fmt)
 
-        # # TODO: Clean up this temporary hack
-        # if pyglet.graphics.api.core.current_context.get_info().get_opengl_api() == "gles":
-        #     fbo = c_uint()
-        #     glGenFramebuffers(1, fbo)
-        #     glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
-        #     glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        #     glCheckFramebufferStatus(GL_FRAMEBUFFER)
-        #     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
-        #     glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
-        #     glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        #     glDeleteFramebuffers(1, fbo)
-        # else:
         self._gl.pixelStorei(GL_PACK_ALIGNMENT, 1)
         fbo = self._gl.createFramebuffer()
         self._gl.bindFramebuffer(GL_FRAMEBUFFER, fbo)
-        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+        self._attach_texture_to_fbo(z)
 
         if self._gl.checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise Exception("Framebuffer is incomplete.")
@@ -638,8 +628,6 @@ class Texture(TextureBase):
         self._gl.deleteFramebuffer(fbo)
 
         data = ImageData(self.width, self.height, fmt, pixel_buf)
-        if self.images > 1:
-            data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
     def get_image_data(self, z: int = 0) -> ImageData:
@@ -863,9 +851,7 @@ class Texture3D(Texture, UniformTextureSequence):
     items: tuple
 
     @classmethod
-    @classmethod
     def create_for_images(cls, images,
-                 internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
@@ -876,6 +862,8 @@ class Texture3D(Texture, UniformTextureSequence):
         gl = ctx.gl
         item_width = images[0].width
         item_height = images[0].height
+        pixel_fmt = images[0].format
+        internal_format = ComponentFormat(pixel_fmt)
 
         if not all(img.width == item_width and img.height == item_height for img in images):
             raise ImageException('Images do not have same dimensions.')
@@ -910,6 +898,18 @@ class Texture3D(Texture, UniformTextureSequence):
         texture.item_width = item_width
         texture.item_height = item_height
         return texture
+
+    def _allocate(self, data: None | js.Uint8Array) -> None:
+        self._gl.texImage3D(self.target, 0,
+                                   self._gl_internal_format,
+                                   self.width, self.height, self.images,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   0)
+
+    def _attach_texture_to_fbo(self, z: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
 
     def __len__(self):
         return len(self.items)
@@ -1012,7 +1012,10 @@ class TextureArray(Texture, UniformTextureSequence):
                                       fmt, gl_type,
                                       data)
 
-    def _allocate(self, data: None | js.Uint8Array):
+    def _attach_texture_to_fbo(self, z: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+
+    def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(self.target, 0,
                                    self._gl_internal_format,
                                    self.width, self.height, self.max_depth,
@@ -1020,6 +1023,7 @@ class TextureArray(Texture, UniformTextureSequence):
                                    _get_base_format(self.internal_format),
                                    GL_UNSIGNED_BYTE,
                                    0)
+
     def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
             raise TextureArraySizeExceeded(
@@ -1056,8 +1060,10 @@ class TextureArray(Texture, UniformTextureSequence):
         return self.items[start_length:]
 
     @classmethod
-    def create_for_image_grid(cls, grid, internalformat: int = GL_RGBA) -> TextureArray:
-        texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
+    def create_for_image_grid(cls, grid) -> TextureArray:
+        texture_array = cls.create(grid[0].width, grid[0].height,
+                                   internal_format=ComponentFormat(grid[0].format),
+                                   max_depth=len(grid))
         texture_array.allocate(*grid[:])
         return texture_array
 
