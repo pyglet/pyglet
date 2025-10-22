@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import sys
+import warnings
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 
@@ -250,36 +251,23 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "real"
-    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'real'`.
+    dpi_scaling: Literal["platform", "stretch"] = "platform"
+    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
 
-    `'real'` (default): Provides a 1:1 pixel for Window frame size and framebuffer. Primarily used for game applications
-    to ensure you are getting the exact pixels for the resolution. If you provide an 800x600 window, you can ensure it
-    will be 800x600 pixels when the user chooses it.
+    `'platform'`: A DPI aware window is created. Framebuffer and window sizes are dictated by the platform the window
+    was created on. In most systems, the window size will be in DIPs (Device Independent Pixels). It is up to the user
+    to make any further adjustments to the framebuffer or window size for their application.
 
-    `'scaled'`: Window size is scaled based on the DPI ratio. Window size and content (projection) size matches the full
-    framebuffer. Primarily used for any applications that wish to become DPI aware. You must rescale and reposition your
-    content to take advantage of the larger framebuffer. An 800x600 with a 150% DPI scaling would be changed to
-    1200x900 for both `window.get_size` and `window.get_framebuffer_size()`.
+    On Windows and X11, the framebuffer and the requested window size will always match 1:1. On MacOS, depending
+    on a Hi-DPI display, you may get a larger sized framebuffer than the window size.
 
-    Keep in mind that pyglet objects may not be scaled proportionately, so this is left up to the developer.
-    The :py:attr:`~pyglet.window.Window.scale` & :py:attr:`~pyglet.window.Window.dpi` attributes can be queried as a
-    reference when determining object creation.
-
-    `'stretch'`:  Window is scaled based on the DPI ratio. However, content size matches original requested size of the
-    window, and is stretched to fit the full framebuffer. This mimics behavior of having no DPI scaling at all. No
-    rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the extent
-    of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
+    `'stretch'`:  This mimics behavior of having no DPI scaling at all. Window is scaled based on the DPI ratio.
+    However, content size matches original requested size of the window, and is stretched to fit the full framebuffer.
+    No rescaling and repositioning of content will be necessary, but at the cost of blurry content depending on the
+    extent of the stretch. For example, 800x600 at 150% DPI will be 800x600 for `window.get_size()` and 1200x900 for
     `window.get_framebuffer_size()`.
-
-    `'platform'`: A DPI aware window is created, however window sizing and framebuffer sizing is not interfered with
-    by Pyglet. Final sizes are dictated by the platform the window was created on. It is up to the user to make any
-    platform adjustments themselves such as sizing on a platform, mouse coordinate adjustments, or framebuffer size
-    handling. On Windows and X11, the framebuffer and the requested window size will always match in pixels 1:1. On
-    MacOS, depending on a Hi-DPI display, you may get a different sized framebuffer than the window size. This option
-    does allow `window.dpi` and `window.scale` to return their respective values.
     """
 
     shader_bind_management: bool = True

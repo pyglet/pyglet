@@ -18,6 +18,8 @@ Pyglet for windowing.
 
 *Removed*: ``pyglet.options.shadow_window``: The shadow window containing a graphical context has been removed.
 
+*Removed*: `'real'`, `'scaled'` options from ``pyglet.options.dpi_scaling``. Defaults to `'platform'`.
+
 pyglet.graphics
 ---------------
 *Changed*: Created backend agnostic API setups to support multiple backends. See pyglet.enums.
@@ -53,6 +55,8 @@ create a separation of CPU ImageData from GPU Texture.
 *Removed*: S3TC software decoder. No longer relevant or used as all hardware supports the decoding now.
 
 *Added*: KTX2 format support for compressed images. Supports zlib supercompression and no-compression decoding. (Note: that zstandard supercompression requires the `zstandard` library.)
+
+*Deprecated*: `pyglet.image.ImageGrid.get_texture_sequence`. Use `pyglet.graphics.TextureGrid.from_image_grid(image_grid)` instead.
 
 pyglet.graphics.texture
 -----------------------

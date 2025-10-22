@@ -67,7 +67,7 @@ class Options:
     win32_disable_xinput: bool
     com_mta: bool
     osx_alt_loop: bool
-    dpi_scaling: Literal["real", "scaled", "stretch"]
+    dpi_scaling: Literal["platform", "stretch"]
     shader_bind_management: bool
     backend: str | None
     pyodide: PyodideOptions

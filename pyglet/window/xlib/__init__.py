@@ -280,7 +280,7 @@ class XlibWindow(BaseWindow):
             else:
                 width, height = self._width, self._height
                 self._view_x = self._view_y = 0
-                if pyglet.options.dpi_scaling in ("scaled", "stretch"):
+                if pyglet.options.dpi_scaling == "stretch":
                     w, h = self.get_requested_size()
                     self._width = width = int(w * self.scale)
                     self._height = height = int(h * self.scale)
@@ -782,7 +782,7 @@ class XlibWindow(BaseWindow):
                 y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
-            elif self._fullscreen:  # noqa: SLF001
+            elif self._fullscreen:
                 if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
                     return
 

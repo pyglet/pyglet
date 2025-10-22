@@ -107,12 +107,7 @@ class CocoaWindow(BaseWindow):
                 self._delegate = None
 
             # Determine window parameters.
-            if pyglet.options.dpi_scaling == "real":
-                screen_scale = self.screen.get_scale()
-                w, h = self.get_requested_size()
-                width, height = w / screen_scale, h / screen_scale
-            else:
-                width, height = self._width, self._height
+            width, height = self._width, self._height
 
             content_rect = cocoapy.NSMakeRect(0, 0, width, height)
             WindowClass = PygletWindow
@@ -234,7 +229,7 @@ class CocoaWindow(BaseWindow):
             self.context.update_geometry()
 
     def _get_dpi_desc(self) -> int:
-        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
+        if self._nswindow:
             desc = self._nswindow.deviceDescription()
             rsize = desc.objectForKey_(darwin.NSDeviceResolution).sizeValue()
             return int(rsize.width)
@@ -247,7 +242,7 @@ class CocoaWindow(BaseWindow):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling in ("scaled", "stretch", "platform") and self._nswindow:
+        if self._nswindow:
             return self._nswindow.backingScaleFactor()
 
         return 1.0
@@ -472,11 +467,7 @@ class CocoaWindow(BaseWindow):
     def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
 
-        if pyglet.options.dpi_scaling == "real":
-            screen_scale = self._nswindow.backingScaleFactor()
-            frame_width, frame_height = width // screen_scale, height // screen_scale
-        else:
-            frame_width, frame_height = width, height
+        frame_width, frame_height = width, height
 
         self._set_frame_size(frame_width, frame_height)
         self.dispatch_event('_on_internal_resize', width, height)

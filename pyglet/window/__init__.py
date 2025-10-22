@@ -1255,10 +1255,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
 
         Read only.
         """
-        if pyglet.options.dpi_scaling != "real":
-            return self._dpi / 96
-
-        return 1.0
+        return self._dpi / 96
 
     @property
     def dpi(self) -> int:
@@ -1332,7 +1329,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
     @viewport.setter
     def viewport(self, values: tuple[int, int, int, int]) -> None:
         self._viewport = values
-        pr = self.scale
+        pr = 1.0
         x, y, w, h = values
         if self.context:
             self.context.core.set_viewport(self, int(x * pr), int(y * pr), int(w * pr), int(h * pr))
