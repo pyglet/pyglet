@@ -8,6 +8,8 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
+        backend-override: [ 'PYGLET_BACKEND=gl2 MESA_GL_VERSION_OVERRIDE=2.0', 'PYGLET_BACKEND=gl' ]
+
     name: Python ${{ matrix.python-version }} ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +24,7 @@ jobs:
           sudo apt-get install xvfb
       - name: Run tests
         run: |
-          xvfb-run pytest tests --ignore=tests/interactive
+          ${{ matrix.backend-override }} xvfb-run pytest tests --ignore=tests/interactive
 
   osx:
     runs-on: macos-latest
