@@ -4,6 +4,11 @@ from pyglet.graphics import Texture3D
 from pyglet.image import ImageData, ImageGrid
 from pyglet.window import Window
 
+from tests.annotations import skip_graphics_api, GraphicsAPI
+
+# GLES backends are currently failing on glTexSubImage3D
+pytestmark = [skip_graphics_api(GraphicsAPI.GLES)]
+
 
 def colorbyte(color):
     return bytes((color,))

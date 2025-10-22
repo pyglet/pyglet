@@ -26,6 +26,7 @@ class Platform:
 class GraphicsAPI:
     GL3 = ("opengl", "gles3")
     GL2 = ("gl2", "gles2")
+    GLES = ("gles2", "gles3")
 
 
 def require_platform(platform: list[str]):
