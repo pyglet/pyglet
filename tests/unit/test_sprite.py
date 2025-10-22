@@ -43,8 +43,7 @@ def batched_sprite():
     The lack of image data doesn't matter because these tests never touch
     a real GL context which would require it.
     """
-    from pyglet.graphics import Batch
-    mocked_batch = Batch(MagicMock())
+    mocked_batch = MagicMock()
     sprite = pyglet.sprite.Sprite(MagicMock(), x=1, y=2, z=3, batch=mocked_batch)
     sprite.rotation = 90
 
