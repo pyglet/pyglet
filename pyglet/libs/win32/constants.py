@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 
 # Most of this file is win32con.py from Python for Windows Extensions:
@@ -19,24 +20,24 @@ VK_OEM_7 = 0xde
 VK_OEM_8 = 0xdf
 VK_OEM_102 = 0xe2
 
-# Copyright (c) 1994-2001, Mark Hammond 
+# Copyright (c) 1994-2001, Mark Hammond
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions 
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
 # are met:
-# 
-# Redistributions of source code must retain the above copyright notice, 
+#
+# Redistributions of source code must retain the above copyright notice,
 # this list of conditions and the following disclaimer.
-# 
-# Redistributions in binary form must reproduce the above copyright 
-# notice, this list of conditions and the following disclaimer in 
+#
+# Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in
 # the documentation and/or other materials provided with the distribution.
-# 
-# Neither name of Mark Hammond nor the name of contributors may be used 
-# to endorse or promote products derived from this software without 
-# specific prior written permission. 
-# 
+#
+# Neither name of Mark Hammond nor the name of contributors may be used
+# to endorse or promote products derived from this software without
+# specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS
 # IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 # TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
@@ -3509,7 +3510,7 @@ ELF_CULTURE_LATIN = 0
 RASTER_FONTTYPE = 1
 DEVICE_FONTTYPE = 2
 TRUETYPE_FONTTYPE = 4
-def PALETTEINDEX(i): return ((16777216 | (i)))
+def PALETTEINDEX(i): return (16777216 | (i))
 
 PC_RESERVED = 1
 PC_EXPLICIT = 2
@@ -3564,42 +3565,42 @@ STOCK_LAST = 16
 CLR_INVALID = -1
 
 # Exception/Status codes from winuser.h and winnt.h
-STATUS_WAIT_0                    = 0    
-STATUS_ABANDONED_WAIT_0          = 128    
-STATUS_USER_APC                  = 192    
-STATUS_TIMEOUT                   = 258    
-STATUS_PENDING                   = 259    
-STATUS_SEGMENT_NOTIFICATION      = 1073741829    
-STATUS_GUARD_PAGE_VIOLATION      = -2147483647    
-STATUS_DATATYPE_MISALIGNMENT     = -2147483646    
-STATUS_BREAKPOINT                = -2147483645    
-STATUS_SINGLE_STEP               = -2147483644    
-STATUS_ACCESS_VIOLATION          = -1073741819    
-STATUS_IN_PAGE_ERROR             = -1073741818    
-STATUS_INVALID_HANDLE            = -1073741816    
-STATUS_NO_MEMORY                 = -1073741801    
-STATUS_ILLEGAL_INSTRUCTION       = -1073741795    
-STATUS_NONCONTINUABLE_EXCEPTION  = -1073741787    
-STATUS_INVALID_DISPOSITION       = -1073741786    
-STATUS_ARRAY_BOUNDS_EXCEEDED     = -1073741684    
-STATUS_FLOAT_DENORMAL_OPERAND    = -1073741683    
-STATUS_FLOAT_DIVIDE_BY_ZERO      = -1073741682    
-STATUS_FLOAT_INEXACT_RESULT      = -1073741681    
-STATUS_FLOAT_INVALID_OPERATION   = -1073741680    
-STATUS_FLOAT_OVERFLOW            = -1073741679    
-STATUS_FLOAT_STACK_CHECK         = -1073741678    
-STATUS_FLOAT_UNDERFLOW           = -1073741677    
-STATUS_INTEGER_DIVIDE_BY_ZERO    = -1073741676    
-STATUS_INTEGER_OVERFLOW          = -1073741675    
-STATUS_PRIVILEGED_INSTRUCTION    = -1073741674    
-STATUS_STACK_OVERFLOW            = -1073741571    
-STATUS_CONTROL_C_EXIT            = -1073741510    
+STATUS_WAIT_0                    = 0
+STATUS_ABANDONED_WAIT_0          = 128
+STATUS_USER_APC                  = 192
+STATUS_TIMEOUT                   = 258
+STATUS_PENDING                   = 259
+STATUS_SEGMENT_NOTIFICATION      = 1073741829
+STATUS_GUARD_PAGE_VIOLATION      = -2147483647
+STATUS_DATATYPE_MISALIGNMENT     = -2147483646
+STATUS_BREAKPOINT                = -2147483645
+STATUS_SINGLE_STEP               = -2147483644
+STATUS_ACCESS_VIOLATION          = -1073741819
+STATUS_IN_PAGE_ERROR             = -1073741818
+STATUS_INVALID_HANDLE            = -1073741816
+STATUS_NO_MEMORY                 = -1073741801
+STATUS_ILLEGAL_INSTRUCTION       = -1073741795
+STATUS_NONCONTINUABLE_EXCEPTION  = -1073741787
+STATUS_INVALID_DISPOSITION       = -1073741786
+STATUS_ARRAY_BOUNDS_EXCEEDED     = -1073741684
+STATUS_FLOAT_DENORMAL_OPERAND    = -1073741683
+STATUS_FLOAT_DIVIDE_BY_ZERO      = -1073741682
+STATUS_FLOAT_INEXACT_RESULT      = -1073741681
+STATUS_FLOAT_INVALID_OPERATION   = -1073741680
+STATUS_FLOAT_OVERFLOW            = -1073741679
+STATUS_FLOAT_STACK_CHECK         = -1073741678
+STATUS_FLOAT_UNDERFLOW           = -1073741677
+STATUS_INTEGER_DIVIDE_BY_ZERO    = -1073741676
+STATUS_INTEGER_OVERFLOW          = -1073741675
+STATUS_PRIVILEGED_INSTRUCTION    = -1073741674
+STATUS_STACK_OVERFLOW            = -1073741571
+STATUS_CONTROL_C_EXIT            = -1073741510
 
 
 WAIT_FAILED                      = -1
 WAIT_OBJECT_0                    = STATUS_WAIT_0 + 0
 
-WAIT_ABANDONED                      = STATUS_ABANDONED_WAIT_0 + 0 
+WAIT_ABANDONED                      = STATUS_ABANDONED_WAIT_0 + 0
 WAIT_ABANDONED_0                    = STATUS_ABANDONED_WAIT_0 + 0
 
 WAIT_TIMEOUT                        = STATUS_TIMEOUT
@@ -4186,7 +4187,7 @@ PM_NOREMOVE = 0
 PM_REMOVE = 1
 PM_NOYIELD = 2
 # Name clashes with key.MOD_ALT, key.MOD_CONTROL and key.MOD_SHIFT
-WIN32_MOD_ALT = 1 
+WIN32_MOD_ALT = 1
 WIN32_MOD_CONTROL = 2
 WIN32_MOD_SHIFT = 4
 WIN32_MOD_WIN = 8
@@ -5037,6 +5038,7 @@ WINDOWS_8_1_OR_GREATER = sys.getwindowsversion() >= (6, 3)
 WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER = sys.getwindowsversion() >= (10, 0, 14393)  # 1607
 WINDOWS_10_CREATORS_UPDATE_OR_GREATER = sys.getwindowsversion() >= (10, 0, 15063)  # 1703
 WINDOWS_10_1809_OR_GREATER = sys.getwindowsversion() >= (10, 0, 17763)  # 1809
+WINDOWS_11_21H2_OR_GREATER = sys.getwindowsversion() >= (10, 0, 22000)
 
 MSGFLT_ALLOW = 1
 MSGFLT_DISALLOW = 2
@@ -5087,3 +5089,12 @@ USER_DEFAULT_SCREEN_DPI = 96
 QDC_ONLY_ACTIVE_PATHS = 0x00000002
 DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 0x00000001
 DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME = 0x00000002
+
+# Since Windows 11 21H2
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+DWMWA_WINDOW_CORNER_PREFERENCE = 33
+DWMWA_BORDER_COLOR = 34
+DWMWA_CAPTION_COLOR = 35
+DWMWA_TEXT_COLOR = 36
+DWMWA_VISIBLE_FRAME_BORDER_THICKNESS = 37
+DWMWA_SYSTEMBACKDROP_TYPE = 38

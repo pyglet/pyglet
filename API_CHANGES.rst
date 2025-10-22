@@ -88,3 +88,5 @@ pyglet.window
 other
 -----
 *Added*: Functionality for Pyglet browser implementations via WebGL and Pyodide. (Note that this is still experimental, and reliant on the Pyodide project. See the docs.)
+
+*Added*: Functionality for Windows 11 to change the window frame to Dark Mode based on the new Dark/Light theme settings.

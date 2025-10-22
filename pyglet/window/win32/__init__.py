@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unicodedata
-from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT
+from ctypes.wintypes import DWORD, HICON, HWND, MSG, POINT, RECT, SIZE, UINT, BOOL, HKEY, LPBYTE
 from functools import lru_cache
 from typing import Callable, Sequence
 
@@ -38,7 +38,7 @@ from ctypes import (
     create_unicode_buffer,
     memmove,
     sizeof,
-    wstring_at,
+    wstring_at, c_ubyte,
 )
 
 import pyglet
@@ -55,6 +55,7 @@ from pyglet.libs.win32 import (
     _kernel32,
     _shell32,
     _user32,
+    _advapi32,
 )
 from pyglet.window import (
     BaseWindow,
@@ -254,13 +255,20 @@ class Win32Window(BaseWindow):
                 self._view_window_class.lpszClassName,
                 '',
                 constants.WS_CHILD | constants.WS_VISIBLE,
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 self._hwnd,
                 0,
                 self._view_window_class.hInstance,
-                0)
+                0,
+            )
 
             self._dc = _user32.GetDC(self._view_hwnd)
+
+            if not self._fullscreen and constants.WINDOWS_11_21H2_OR_GREATER:
+                self._update_light_mode(_ShouldSystemUseLightMode())
 
             # Context must be created after window is created.
             if pyglet.options.backend and not self._shadow:
@@ -1432,6 +1440,54 @@ class Win32Window(BaseWindow):
         self.dispatch_event('_on_internal_scale', scale, x_dpi)
         return 1
 
+    @Win32EventHandler(constants.WM_SETTINGCHANGE)
+    def _event_setting_change(self, msg: int, wParam: int, lParam: int) -> int:
+        if wParam == 0 and lParam != 0 and constants.WINDOWS_11_21H2_OR_GREATER:
+            ptr = cast(lParam, c_wchar_p)
+            if ptr.value == 'ImmersiveColorSet':
+                self._update_light_mode(_ShouldSystemUseLightMode())
 
+    def _update_light_mode(self, is_light_mode: bool) -> None:
+        value = BOOL(not is_light_mode)
+
+        _dwmapi.DwmSetWindowAttribute(self._hwnd, constants.DWMWA_USE_IMMERSIVE_DARK_MODE, byref(value), sizeof(value))
+
+def _ShouldSystemUseLightMode() -> bool:
+    """With Windows 11 there is no stable API to get the current light mode.
+
+    uxtheme.dll does have hidden functions that seemingly work. However, there are many reports it's not stable across
+    versions. The functions (138, which should be `ShouldAppsUseDarkMode`) are also not publicly exposed.
+
+    This was documented over 4 years ago here: https://github.com/microsoft/WindowsAppSDK/issues/41
+
+    With no solution from Microsoft, we have to rely on checking the registry key associated with this.
+    """
+    subkey = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+    value_name = "AppsUseLightTheme"
+    hkey = HKEY()
+
+    if _advapi32.RegOpenKeyExW(constants.HKEY_CURRENT_USER, subkey, 0, constants.KEY_READ, byref(hkey)) != 0:
+        return True
+
+    data_type = DWORD()
+    data_value = (c_ubyte * 4)()  # DWORD = 4 bytes
+    data_size = DWORD(sizeof(data_value))
+
+    try:
+        result = _advapi32.RegQueryValueExW(
+            hkey,
+            value_name,
+            None,
+            byref(data_type),
+            cast(data_value, LPBYTE),
+            byref(data_size),
+        )
+        if result == 0 and data_type.value == constants.REG_DWORD:
+            value = int.from_bytes(bytes(data_value), "little")
+            return bool(value)
+    finally:
+        _advapi32.RegCloseKey(hkey)
+
+    return True
 
 __all__ = ['Win32EventHandler', 'Win32Window']

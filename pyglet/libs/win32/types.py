@@ -1,3 +1,4 @@
+from __future__ import annotations
 import ctypes
 import sys
 from ctypes import (
@@ -92,8 +93,7 @@ def POINTER_(obj):
         def from_param(cls, x):
             if x is None:
                 return cls()
-            else:
-                return x
+            return x
 
         p.from_param = classmethod(from_param)
 
@@ -159,6 +159,8 @@ MONITOR_DEFAULTTONEAREST = 0
 MONITOR_DEFAULTTONULL = 1
 MONITOR_DEFAULTTOPRIMARY = 2
 
+REGSAM = DWORD
+
 def MAKEINTRESOURCE(i):
     return cast(ctypes.c_void_p(i & 0xFFFF), c_wchar_p)
 
@@ -174,7 +176,7 @@ class WNDCLASS(Structure):
         ('hCursor', HCURSOR),
         ('hbrBackground', HBRUSH),
         ('lpszMenuName', c_char_p),
-        ('lpszClassName', c_wchar_p)
+        ('lpszClassName', c_wchar_p),
     ]
 
 
@@ -182,7 +184,7 @@ class SECURITY_ATTRIBUTES(Structure):
     _fields_ = [
         ("nLength", DWORD),
         ("lpSecurityDescriptor", c_void_p),
-        ("bInheritHandle", BOOL)
+        ("bInheritHandle", BOOL),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -214,7 +216,7 @@ class PIXELFORMATDESCRIPTOR(Structure):
         ('bReserved', BYTE),
         ('dwLayerMask', DWORD),
         ('dwVisibleMask', DWORD),
-        ('dwDamageMask', DWORD)
+        ('dwDamageMask', DWORD),
     ]
 
 
@@ -294,7 +296,7 @@ class BITMAPV5HEADER(Structure):
 class BITMAPINFO(Structure):
     _fields_ = [
         ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', RGBQUAD * 1)
+        ('bmiColors', RGBQUAD * 1),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -314,7 +316,7 @@ class LOGFONT(Structure):
         ('lfClipPrecision', BYTE),
         ('lfQuality', BYTE),
         ('lfPitchAndFamily', BYTE),
-        ('lfFaceName', (c_char * LF_FACESIZE))  # Use ASCII
+        ('lfFaceName', (c_char * LF_FACESIZE)),  # Use ASCII
     ]
 
 
@@ -334,7 +336,7 @@ class LOGFONTW(Structure):
         ('lfClipPrecision', BYTE),
         ('lfQuality', BYTE),
         ('lfPitchAndFamily', BYTE),
-        ('lfFaceName', (WCHAR * LF_FACESIZE))
+        ('lfFaceName', (WCHAR * LF_FACESIZE)),
     ]
 
 
@@ -343,7 +345,7 @@ class TRACKMOUSEEVENT(Structure):
         ('cbSize', DWORD),
         ('dwFlags', DWORD),
         ('hwndTrack', HWND),
-        ('dwHoverTime', DWORD)
+        ('dwHoverTime', DWORD),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -354,7 +356,7 @@ class MINMAXINFO(Structure):
         ('ptMaxSize', POINT),
         ('ptMaxPosition', POINT),
         ('ptMinTrackSize', POINT),
-        ('ptMaxTrackSize', POINT)
+        ('ptMaxTrackSize', POINT),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -363,7 +365,7 @@ class ABC(Structure):
     _fields_ = [
         ('abcA', c_int),
         ('abcB', c_uint),
-        ('abcC', c_int)
+        ('abcC', c_int),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -389,7 +391,7 @@ class TEXTMETRIC(Structure):
         ('tmUnderlined', c_byte),
         ('tmStruckOut', c_byte),
         ('tmPitchAndFamily', c_byte),
-        ('tmCharSet', c_byte)
+        ('tmCharSet', c_byte),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -400,7 +402,7 @@ class MONITORINFOEX(Structure):
         ('rcMonitor', RECT),
         ('rcWork', RECT),
         ('dwFlags', DWORD),
-        ('szDevice', WCHAR * CCHDEVICENAME)
+        ('szDevice', WCHAR * CCHDEVICENAME),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -422,7 +424,7 @@ class _DUMMYSTRUCTNAME2(Structure):
     _fields_ = [
         ('dmPosition', POINTL),
         ('dmDisplayOrientation', DWORD),
-        ('dmDisplayFixedOutput', DWORD)
+        ('dmDisplayFixedOutput', DWORD),
     ]
 
 
@@ -475,7 +477,7 @@ class ICONINFO(Structure):
         ('xHotspot', DWORD),
         ('yHotspot', DWORD),
         ('hbmMask', HBITMAP),
-        ('hbmColor', HBITMAP)
+        ('hbmColor', HBITMAP),
     ]
     __slots__ = [f[0] for f in _fields_]
 
@@ -485,7 +487,7 @@ class RAWINPUTDEVICE(Structure):
         ('usUsagePage', USHORT),
         ('usUsage', USHORT),
         ('dwFlags', DWORD),
-        ('hwndTarget', HWND)
+        ('hwndTarget', HWND),
     ]
 
 
@@ -568,7 +570,7 @@ class _VarTable(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
         ('llVal', ctypes.c_longlong),
-        ('pwszVal', LPWSTR)
+        ('pwszVal', LPWSTR),
     ]
 
 
@@ -580,14 +582,14 @@ class PROPVARIANT(Structure):
         ('wReserved1', ctypes.c_ubyte),
         ('wReserved2', ctypes.c_ubyte),
         ('wReserved3', ctypes.c_ulong),
-        ('union', _VarTable)
+        ('union', _VarTable),
     ]
 
 
 class _VarTableVariant(Union):
     """Must be in an anonymous union or values will not work across various VT's."""
     _fields_ = [
-        ('bstrVal', LPCWSTR)
+        ('bstrVal', LPCWSTR),
     ]
 
 
@@ -599,7 +601,7 @@ class VARIANT(Structure):
         ('wReserved1', WORD),
         ('wReserved2', WORD),
         ('wReserved3', WORD),
-        ('union', _VarTableVariant)
+        ('union', _VarTableVariant),
     ]
 
 
@@ -674,7 +676,7 @@ class DEV_BROADCAST_DEVICEINTERFACE(Structure):
         ('dbcc_devicetype', DWORD),
         ('dbcc_reserved', DWORD),
         ('dbcc_classguid', com.GUID),
-        ('dbcc_name', ctypes.c_wchar * 256)
+        ('dbcc_name', ctypes.c_wchar * 256),
     )
 
 
@@ -751,14 +753,14 @@ class DISPLAYCONFIG_DEVICE_INFO_HEADER(ctypes.Structure):
     _fields_ = [('type', UINT32),
                 ('size', UINT32),
                 ('adapterId', LUID),
-                ('id', UINT32)
+                ('id', UINT32),
                 ]
 
 
 class DISPLAYCONFIG_SOURCE_DEVICE_NAME(ctypes.Structure):
     _fields_ = [
         ('header', DISPLAYCONFIG_DEVICE_INFO_HEADER),
-        ('viewGdiDeviceName', WCHAR * 32)
+        ('viewGdiDeviceName', WCHAR * 32),
     ]
 
 
