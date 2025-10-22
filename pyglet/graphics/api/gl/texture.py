@@ -26,8 +26,6 @@ from pyglet.graphics.api.gl.gl import (
     GL_TEXTURE_MIN_FILTER,
     GL_TEXTURE_MAG_FILTER,
     GL_TEXTURE_2D,
-    GL_LINEAR_MIPMAP_LINEAR,
-    GL_TEXTURE_3D,
     GLuint,
     GL_TEXTURE0,
     GL_READ_WRITE,
@@ -427,6 +425,9 @@ class Texture(TextureBase):
                              data)
         self._context.glFlush()
 
+    def _attach_gles_fbo_texture(self, _z: int = 0) -> None:
+        self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+
     def fetch(self, z: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
@@ -446,22 +447,23 @@ class Texture(TextureBase):
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        size = (self.width * self.height * self.images * len(fmt))
+        size = self.width * self.height * self.images * len(fmt)
         buf = (GLubyte * size)()
 
         if self._context.get_info().get_opengl_api() == "gles":
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+            self._attach_gles_fbo_texture(z)
             self._context.glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
             self._context.gles_pixel_fbo.unbind()
+            data = ImageData(self.width, self.height, fmt, buf)
         else:
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
             self._context.glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
-        data = ImageData(self.width, self.height, fmt, buf)
-        if self.images > 1:
-            data = data.get_region(0, z * self.height, self.width, self.height)
+            data = ImageData(self.width, self.height, fmt, buf)
+            if self.images > 1:
+                data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
     def get_image_data(self, z: int = 0) -> ImageData:
@@ -745,7 +747,6 @@ class Texture3D(Texture, UniformTextureSequence):
 
     @classmethod
     def create_for_images(cls, images,
-                 internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
@@ -755,6 +756,8 @@ class Texture3D(Texture, UniformTextureSequence):
         ctx = context or pyglet.graphics.api.core.current_context
         item_width = images[0].width
         item_height = images[0].height
+        pixel_fmt = images[0].format
+        internal_format = ComponentFormat(pixel_fmt)
 
         if not all(img.width == item_width and img.height == item_height for img in images):
             raise ImageException('Images do not have same dimensions.')
@@ -775,7 +778,7 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture.images = len(images)
 
-        size = (texture.width * texture.height * texture.images * len(internal_format))
+        size = texture.width * texture.height * texture.images * len(internal_format)
         data = (GLubyte * size)()
         texture._allocate(data)
 
@@ -794,6 +797,9 @@ class Texture3D(Texture, UniformTextureSequence):
     @classmethod
     def create_for_image_grid(cls, grid):
         return cls.create_for_images(grid[:])
+
+    def _attach_gles_fbo_texture(self, z: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
         data_pitch = abs(image_data._current_pitch)
@@ -895,6 +901,9 @@ class TextureArray(Texture, UniformTextureSequence):
         texture._allocate(None)
         return texture
 
+    def _attach_gles_fbo_texture(self, z: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
         data_pitch = abs(image_data._current_pitch)
 
@@ -908,7 +917,7 @@ class TextureArray(Texture, UniformTextureSequence):
                                       fmt, gl_type,
                                       data)
 
-    def _allocate(self, data: None | Array):
+    def _allocate(self, data: None | Array) -> None:
         self._context.glTexImage3D(self.target, 0,
                          self._gl_internal_format,
                          self.width, self.height, self.max_depth,
@@ -953,14 +962,15 @@ class TextureArray(Texture, UniformTextureSequence):
 
     @classmethod
     def create_for_image_grid(cls, grid: ImageGrid) -> TextureArray:
-        texture_array = cls.create(grid[0].width, grid[0].height, max_depth=len(grid))
+        texture_array = cls.create(grid[0].width, grid[0].height,
+                                   internal_format=ComponentFormat(grid[0].format),
+                                   max_depth=len(grid))
         texture_array.allocate(*grid[:])
         return texture_array
 
     @classmethod
     def create_for_images(cls, images: Sequence[ImageData],
                  max_depth: int | None = None,
-                 internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
@@ -970,6 +980,8 @@ class TextureArray(Texture, UniformTextureSequence):
         ctx = context or pyglet.graphics.api.core.current_context
         item_width = images[0].width
         item_height = images[0].height
+        pixel_fmt = images[0].format
+        internal_format = ComponentFormat(pixel_fmt)
 
         if not all(img.width == item_width and img.height == item_height for img in images):
             raise ImageException('Images do not have same dimensions.')

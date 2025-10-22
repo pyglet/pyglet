@@ -155,7 +155,7 @@ class TextureAtlas:
         self.texture = pyglet.graphics.Texture.create(width, height)
         self.allocator = Allocator(width, height)
 
-    def add(self, img: ImageData, border: int = 0) -> TextureRegion:
+    def add(self, img: ImageData | ImageDataRegion, border: int = 0) -> TextureRegion:
         """Add ImageData to the atlas.
 
         Given :py:class:`~pyglet.image.ImageData`, add it to the Atlas and

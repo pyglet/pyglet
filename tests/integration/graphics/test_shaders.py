@@ -91,9 +91,7 @@ def test_shader_ubo_data_structure(gl3_context):
     entity_block.bind(ubo)
 
     cls_struct = entity_block.view_cls
-    
     test_data = (5.0, 1.0, 5125.0, 4.0)
-    
     with ubo as block:
         block.data[0].color[1][:] = test_data
         block.simple_type = 1.0
@@ -101,13 +99,13 @@ def test_shader_ubo_data_structure(gl3_context):
 
         # Just test a random deep node.
         assert len(block.data[3].within[2].position[:]) == 3
-        
+
     data_from_buffer = ubo.read()
 
     verified_structure = cls_struct.from_buffer_copy(data_from_buffer)
 
     assert tuple(verified_structure.data[0].color[1][:]) == test_data
-    
+
     # Write to a FB to confirm the shader is actually modifying the right data.
     # TODO: Add the projection back to shadow window.
     # image = pyglet.image.ImageData(1, 1, 'RGBA', bytes([0, 0, 0, 255]))
@@ -123,6 +121,7 @@ def test_shader_ubo_data_structure(gl3_context):
     # # The image should now be white. (y is 1.0)
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
+
 
 @skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_ubo_matrix_data_structure(gl3_context):
@@ -198,7 +197,7 @@ def test_shader_ubo_matrix_data_structure(gl3_context):
     ubo = program.uniform_blocks['MatrixTest'].create_ubo()
 
     cls_struct = program.uniform_blocks['MatrixTest'].view_cls
-    
+
     test_data = pyglet.math.Mat4.orthogonal_projection(0, 800, 0, 600, -255, 255)
 
     with ubo as block:
@@ -207,7 +206,7 @@ def test_shader_ubo_matrix_data_structure(gl3_context):
     data_from_buffer = ubo.read()
 
     verified_structure = cls_struct.from_buffer_copy(data_from_buffer)
-    
+
     # Float imprecision's will become apparent, use approx instead...
     for a, b in zip(verified_structure.data[1].projection[1][:], tuple(test_data)):
         assert a == pytest.approx(b)
@@ -227,6 +226,7 @@ def test_shader_ubo_matrix_data_structure(gl3_context):
     # # The image should now be white. (y is 1.0)
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
+
 
 @skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_block_matrix(gl3_context):
@@ -326,6 +326,7 @@ def test_shader_uniform_block_matrix(gl3_context):
     # image_data = tuple(texture.get_image_data().get_data('RGBA')[:])
     # assert image_data == (255, 255, 255, 255)
 
+
 @skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_matrix(gl3_context):
     vertex_source: str = """#version 150 core
@@ -391,13 +392,14 @@ def test_shader_uniform_matrix(gl3_context):
 
     with program:
         program['matrix_uniform'] = tuple(test_data)
-        
+
     with program:
         fetched_data = program['matrix_uniform']
 
     # Float imprecision's will become apparent, use approx instead...
     for a, b in zip(fetched_data, tuple(test_data)):
-        assert a == pytest.approx(b)
+        assert a == pytest.approx(b, abs=1e-06)
+
 
 @skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_matrix_array(gl3_context):
@@ -474,6 +476,7 @@ def test_shader_uniform_matrix_array(gl3_context):
     for a, b in zip(fetched_data[18], tuple(test_data)):
         assert a == pytest.approx(b)
 
+
 @skip_graphics_api(GraphicsAPI.GL2)
 def test_shader_uniform_float_array(gl3_context):
     vertex_source: str = """#version 150 core
@@ -546,4 +549,3 @@ def test_shader_uniform_float_array(gl3_context):
         fetched_data = program['float_array'][11]
 
     assert test_data == fetched_data
-

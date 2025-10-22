@@ -499,7 +499,6 @@ class Texture3D(TextureBase, UniformTextureSequence):
 
     @classmethod
     def create_for_images(cls, images,
-                 internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,

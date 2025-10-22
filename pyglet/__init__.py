@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import sys
 import warnings
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Sequence
 
@@ -280,7 +281,7 @@ class Options:
     .. versionadded:: 2.0.16
     """
 
-    backend: str | None = "opengl"
+    backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
     pyodide: PyodideOptions = field(default_factory=PyodideOptions)
@@ -312,6 +313,8 @@ for _option_name, _type_str in options.__annotations__.items():
             setattr(options, _option_name, _value in ("true", "TRUE", "True", "1"))
         elif 'int' in _type_str:
             setattr(options, _option_name, int(_value))
+        elif 'str' in _type_str:
+            setattr(options, _option_name, _value)
         elif 'Literal' in _type_str and _value in _type_str:
             setattr(options, _option_name, _value)
         else:

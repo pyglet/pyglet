@@ -26,6 +26,8 @@ class Platform:
 class GraphicsAPI:
     GL3 = ("opengl", "gles3")
     GL2 = ("gl2", "gles2")
+    GLES = ("gles2", "gles3")
+
 
 def require_platform(platform: list[str]):
     """
@@ -83,6 +85,7 @@ def skip_if_continuous_integration():
     return pytest.mark.skipif(any(key in os.environ for key in ['CI']),
                               reason="Test is unreliable, or unavailable under Continuous Integration ")
 
+
 def require_graphics_api(backend: list[str]):
     """Specify a test is used with specific graphics API.
 
@@ -92,6 +95,7 @@ def require_graphics_api(backend: list[str]):
     """
     return pytest.mark.skipif(pyglet.options.backend not in backend,
                               reason=f"Test requires graphics backend: '{backend}'")
+
 
 def skip_graphics_api(backend: list[str]):
     """Skip the test if being run under a graphics API.

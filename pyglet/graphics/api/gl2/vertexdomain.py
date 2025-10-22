@@ -27,6 +27,8 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 from ctypes import Array
 
+import pyglet
+
 from pyglet.graphics.api.gl import (
     GL_BYTE,
     GL_DOUBLE,
@@ -108,15 +110,18 @@ class GLVertexArrayBinding(VertexArrayBinding):
         for stream in self.streams:
             stream.unbind()
 
+
 class InstancedVertexDomain:
     """Not available in OpenGL 2.0"""
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         raise NotImplementedError("InstancedVertexDomain is not available in OpenGL 2.0.")
+
 
 class InstancedIndexedVertexDomain:
     """Not available in OpenGL 2.0"""
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         raise NotImplementedError("InstancedIndexedVertexDomain is not available in OpenGL 2.0.")
+
 
 class VertexList:
     """A list of vertices within a :py:class:`VertexDomain`.
@@ -179,7 +184,7 @@ class VertexList:
                 Domain to migrate this vertex list to.
 
         """
-        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()), \
+        assert list(domain.attribute_meta.keys()) == list(self.domain.attribute_meta.keys()), \
             'Domain attributes must match.'
 
         new_start = domain.safe_alloc(self.count)
@@ -308,6 +313,7 @@ class VertexInstance:
         self._vertex_list.delete_instance(self)
         self._vertex_list = None
 
+
 class GLVertexStream(VertexStream):
     _ctx: OpenGLSurfaceContext
 
@@ -372,7 +378,6 @@ class VertexDomain:
     attribute_meta: dict[str, Attribute]
     buffer_attributes: list[tuple[AttributeBufferObject, Attribute]]
     vao: GLVertexArrayBinding
-    attribute_names: dict[str, Attribute]
     attrib_name_buffers: dict[str, GLVertexStream]
     _vertexlist_class: type
 

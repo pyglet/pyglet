@@ -4,11 +4,14 @@ from pyglet.graphics import Texture3D
 from pyglet.image import ImageData, ImageGrid
 from pyglet.window import Window
 
+from tests.annotations import skip_graphics_api, GraphicsAPI
+
 
 def colorbyte(color):
     return bytes((color,))
 
 
+@skip_graphics_api(GraphicsAPI.GL2)
 class TestTexture3D(unittest.TestCase):
     """Test the Texture3D for image grids."""
 

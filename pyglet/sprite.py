@@ -66,15 +66,21 @@ sprites within batches.
 """
 from __future__ import annotations
 
+import sys
+from typing import TYPE_CHECKING
+
 import pyglet
 from pyglet import event, clock
-import sys
-from typing import ClassVar, Literal
+
+if TYPE_CHECKING:
+    from typing import ClassVar, Literal
+    from pyglet.graphics.texture import TextureBase
 
 from pyglet.graphics import Group, Batch, ShaderProgram, GeometryMode
 from pyglet.enums import BlendFactor
-from pyglet.graphics.texture import TextureBase, TextureArrayRegion
-from pyglet.image.base import _AbstractImage, Animation
+from pyglet.image.base import Animation
+from pyglet.graphics.texture import TextureArrayRegion
+
 
 if pyglet.options.backend in ("opengl", "gles3"):
     from pyglet.graphics.api.gl.sprite import SpriteGroup, get_default_array_shader, get_default_shader
@@ -90,6 +96,7 @@ elif pyglet.options.backend == "vulkan":
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
 
 class Sprite(event.EventDispatcher):
     """Manipulate an on-screen image.
@@ -113,7 +120,7 @@ class Sprite(event.EventDispatcher):
     group_class: ClassVar[type[SpriteGroup | Group]] = SpriteGroup
 
     def __init__(self,
-                 img: _AbstractImage | Animation,
+                 img: TextureBase | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -216,14 +223,14 @@ class Sprite(event.EventDispatcher):
 
         if frame.duration is not None:
             duration = frame.duration - (self._next_dt - dt)
-            duration = min(max(0, duration), frame.duration)
+            duration = min(max(0.0, duration), frame.duration)
             clock.schedule_once(self._animate, duration)
             self._next_dt = duration
         else:
             self.dispatch_event('on_animation_end')
 
     @property
-    def blend_mode(self) -> tuple[int, int]:
+    def blend_mode(self) -> tuple[BlendFactor, BlendFactor]:
         """The current blend mode applied to this sprite.
 
         .. note:: Changing this can be an expensive operation as it involves a group creation and transfer.
@@ -311,7 +318,7 @@ class Sprite(event.EventDispatcher):
             self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
-    def image(self) -> _AbstractImage | Animation:
+    def image(self) -> TextureBase | Animation:
         """The Sprite's Image or Animation to display.
 
         .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
@@ -321,7 +328,7 @@ class Sprite(event.EventDispatcher):
         return self._texture
 
     @image.setter
-    def image(self, img: _AbstractImage | Animation) -> None:
+    def image(self, img: TextureBase | Animation) -> None:
         if self._animation is not None:
             clock.unschedule(self._animate)
             self._animation = None

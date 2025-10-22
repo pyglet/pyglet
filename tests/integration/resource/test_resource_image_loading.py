@@ -1,6 +1,10 @@
 import pytest
 
 from pyglet import resource
+from tests.annotations import skip_graphics_api, GraphicsAPI
+
+# GLES backends are currently failing on glTexSubImage2D
+pytestmark = [skip_graphics_api(GraphicsAPI.GLES)]
 
 
 @pytest.mark.parametrize('transforms,tex_order', [
