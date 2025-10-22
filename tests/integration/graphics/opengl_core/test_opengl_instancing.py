@@ -1,12 +1,15 @@
 from __future__ import annotations
-import os
-import contextlib
+
 import random
 
 import pytest
 import ctypes
-import pyglet
-from pyglet.graphics import GeometryMode
+
+from tests.annotations import skip_graphics_api, GraphicsAPI
+
+
+pytestmark = [skip_graphics_api(GraphicsAPI.GL2)]
+
 
 _vertex_source: str = """#version 330 core
     in vec3 position;
@@ -130,6 +133,7 @@ def test_attribute_divisors(shader_program, vlist_factory):
     assert _divisor_of(col_loc) == 1
     assert _divisor_of(trn_loc) == 1
 
+
 def test_instance_deletion(shader_program, vlist_factory):
     """Ensure the attribute divisor is set correctly in the VAO."""
     vlist = vlist_factory((0.0,) * 12)
@@ -152,6 +156,7 @@ def test_instance_deletion(shader_program, vlist_factory):
 
     # Last instance should move to fill the spot.
     assert last_instance.slot == 6
+
 
 def test_instance_deletion(shader_program, vlist_factory):
     """Ensure the attribute divisor is set correctly in the VAO."""
