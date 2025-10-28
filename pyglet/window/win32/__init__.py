@@ -106,6 +106,16 @@ Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
+# Some events should not be queued, especially those with pointers or structures.
+# Data is only guaranteed to be available for the duration of the initial function call.
+_priority_events = [
+    constants.WM_GETMINMAXINFO,
+    constants.WM_GETDPISCALEDSIZE,
+    constants.WM_DPICHANGED,
+    constants.WM_INPUT,
+]
+
+
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -426,8 +436,6 @@ class Win32Window(BaseWindow):
 
         if state:
             _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
-
-
 
     def set_location(self, x: int, y: int) -> None:
         x, y = self._client_to_window_pos(x, y)
@@ -859,7 +867,7 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg)
             result = None
             if event_handler:
-                if self._allow_dispatch_event or not self._enable_event_queue:
+                if self._allow_dispatch_event or not self._enable_event_queue or msg in _priority_events:
                     result = event_handler(msg, wParam, lParam)
                 else:
                     result = 0
