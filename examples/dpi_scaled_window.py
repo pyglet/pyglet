@@ -1,7 +1,5 @@
 import pyglet
-
-pyglet.options["debug_gl"] = False
-pyglet.options.dpi_scaling = "scaled"
+pyglet.options.debug_gl = False
 
 window = pyglet.window.Window(800, 600, caption="DPI Test", resizable=True)
 batch = pyglet.graphics.Batch()
@@ -31,8 +29,7 @@ labels = [hello_label, mouse_enter_label, mouse_leave_label, mouse_motion_label,
 dinosaur = pyglet.resource.animation("programming_guide/dinosaur.gif")
 
 sprite = pyglet.sprite.Sprite(dinosaur, x=100, y=140, batch=batch)
-if pyglet.options.dpi_scaling != "real":
-    sprite.scale = window.scale
+sprite.scale = window.scale
 
 
 @window.event
@@ -99,10 +96,9 @@ def on_scale(scale, dpi):
     print("Window Size:", window.get_size())
     print("Window Scale Ratio:", window.scale)
     print("Window Frame Buffer Size:", window.get_framebuffer_size())
-    if pyglet.options.dpi_scaling != "real":
-        for label in labels:
-            label.dpi = dpi
-        sprite.scale = window.scale
+    for label in labels:
+        label.dpi = dpi
+    sprite.scale = window.scale
 
 
 pyglet.app.run()

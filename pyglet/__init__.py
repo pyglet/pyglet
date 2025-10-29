@@ -255,8 +255,8 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "real"
-    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'real'`.
+    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "platform"
+    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
 
