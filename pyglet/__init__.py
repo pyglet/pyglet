@@ -130,6 +130,9 @@ class Options:
     """If ``True``, prints information related to Linux X11 calls. This can potentially help narrow down driver or
     operating system issues."""
 
+    debug_wayland: bool = False
+    """If ``True``, prints information related to communications with the Wayland compositor."""
+
     debug_com: bool = False
     """If ``True``, prints information on COM calls. This can potentially help narrow down issues with certain libraries
     that utilize COM calls. Only applies to the Windows platform."""
@@ -281,6 +284,12 @@ class Options:
     .. versionadded:: 2.0.16
     """
 
+    wayland: bool = False
+    """If ``True``, use Wayland instead of Xlib on Linux.
+
+    .. versionadded:: 3.0.0
+    """
+
     backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
@@ -426,7 +435,7 @@ class _ModuleProxy:
     def __init__(self, name: str) -> None:
         self.__dict__["_module_name"] = name
 
-    def __getattr__(self, name: str): # noqa: ANN204
+    def __getattr__(self, name: str):  # noqa: ANN204
         try:
             return getattr(self._module, name)
         except AttributeError:
