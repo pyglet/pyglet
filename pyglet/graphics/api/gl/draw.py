@@ -125,7 +125,7 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     (False, False): vertexdomain.VertexDomain,
     (True, False): vertexdomain.IndexedVertexDomain,
     (False, True): vertexdomain.InstancedVertexDomain,
-    (True, True): vertexdomain.InstancedIndexedVertexDomain
+    (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
 
@@ -377,7 +377,7 @@ class Batch(BatchBase):
                 if domain.is_empty:
                     del domain_map[(indexed, instanced, mode, formats)]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
+                draw_list.append((lambda d, m: lambda _: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
@@ -413,8 +413,7 @@ class Batch(BatchBase):
         for top_group in list(self.top_groups):
             if top_group.visible:
                 self._draw_list.extend(visit(top_group))
-
-        self._draw_list.extend(_state_manager.get_cleanup_states())
+                self._draw_list.extend(_state_manager.get_cleanup_states())
 
         self._draw_list_dirty = False
 
@@ -427,15 +426,15 @@ class Batch(BatchBase):
             domain_map = self.group_map[group]
             for domain in domain_map.values():
                 print(indent, '  ', domain)
-                for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print(indent, '    ', 'Region %d size %d:' % (start, size))
-                    for key, buffer in domain.attrib_name_buffers.items():
-                        print(indent, '      ', end=' ')
-                        try:
-                            region = buffer.get_region(start, size)
-                            print(key, region.array[:])
-                        except:  # noqa: E722
-                            print(key, '(unmappable)')
+                # for start, size in zip(*domain.allocator.get_allocated_regions()):
+                #     print(indent, '    ', 'Region %d size %d:' % (start, size))
+                #     for key, buffer in domain.attrib_name_buffers.items():
+                #         print(indent, '      ', end=' ')
+                #         try:
+                #             region = buffer.get_region(start, size)
+                #             print(key, region.array[:])
+                #         except:
+                #             print(key, '(unmappable)')
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
             print(indent, 'End group', group)
@@ -450,7 +449,7 @@ class Batch(BatchBase):
             self._update_draw_list()
 
         for func in self._draw_list:
-            func()
+            func(self._context)
 
     def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.
@@ -470,7 +469,7 @@ class Batch(BatchBase):
 
         # Horrendously inefficient.
         def visit(group: Group) -> None:
-            group.set_state()
+            group.set_state_all(self._context)
 
             # Draw domains using this group
             domain_map = self.group_map[group]
@@ -487,7 +486,7 @@ class Batch(BatchBase):
                     if child.visible:
                         visit(child)
 
-            group.unset_state()
+            group.unset_state_all(self._context)
 
         self.top_groups.sort()
         for top_group in self.top_groups:
