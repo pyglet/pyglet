@@ -8,7 +8,7 @@ class GLSurfaceConfig(SurfaceConfig):
 
 
 def get_surface_config(user_config: UserConfig, surface: pyglet.window.Window) -> SurfaceConfig | None:
-    if pyglet.options.headless:
+    if pyglet.options.headless or pyglet.options.wayland:
         from pyglet.config.gl.egl import match
 
         return match(user_config, surface)

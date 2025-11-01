@@ -1895,6 +1895,7 @@ class _ShadowWindow(Window):
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
         """No projection and not required."""
 
+
 def _create_shadow_window() -> Window | None:
     # MacOS and browsers don't need a shadow window.
     if pyglet.compat_platform not in ('darwin', 'emscripten'):
@@ -1908,7 +1909,9 @@ def _create_shadow_window() -> Window | None:
         return shadow_window
     return None
 
+
 _shadow_window = _create_shadow_window()
+
 
 __all__ = (
     # imported

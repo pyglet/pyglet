@@ -57,8 +57,9 @@ _modifier_map: dict[int, int] = {
 
 
 class WaylandWindow(BaseWindow):
-    _egl_display_connection = None
-    _egl_surface = None
+
+    egl_display_connection = None
+    egl_surface = None
 
     _protocols = ['/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml']
     client: Client = None
@@ -147,8 +148,11 @@ class WaylandWindow(BaseWindow):
     def dispatch_pending_events(self) -> None:
         pass
 
+    def before_draw(self) -> None:
+        pass
+
     def _create(self) -> None:
-        self._egl_display_connection = self.display.display_connection
+        self.egl_display_connection = self.display.display_connection
 
         self._dpi = self._screen.get_dpi()
         self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "stretch" else 1.0
@@ -215,9 +219,7 @@ class WaylandWindow(BaseWindow):
         #                                       self._width * 4, 0)
         # self.wl_surface.attach(wl_buffer.oid, 0, 0)
 
-        self.wl_surface.commit()
-
-        if not self._egl_surface:
+        if not self.egl_surface and not self._shadow:
             # An EGL window needs to be created from a Wayland surface,
             egl_window = wl_egl_window_create(self.wl_surface._proxy, self._width, self._height)
 
@@ -226,20 +228,22 @@ class WaylandWindow(BaseWindow):
                 msg = f"Failed to create EGL wayland window. Error: 0x{err:04x}"
                 raise Exception(msg)
 
-            self._egl_surface = egl.eglCreateWindowSurface(
-                self._egl_display_connection,
+            self._assign_config()
+
+            self.egl_surface = egl.eglCreateWindowSurface(
+                self.egl_display_connection,
                 self.config._egl_config,
                 egl_window,
                 None,
             )
 
-            if not self._egl_surface:
+            if not self.egl_surface:
                 err = egl.eglGetError()
                 msg = f"Failed to create egl surface. Error: 0x{err:04x}"
                 raise Exception(msg)
 
-            # self.canvas = WaylandCanvas(self.display, self._egl_surface)
-            # self.context.attach(self.canvas)
+            # self.canvas = WaylandCanvas(self.display, self.egl_surface)
+            self.context.attach(self)
             self.dispatch_event('_on_internal_resize', self._width, self._height)
 
     # Start Wayland event handlers
@@ -247,7 +251,6 @@ class WaylandWindow(BaseWindow):
     def xdg_base_ping_handler(self, serial):
         """Keep-alive response to the ping event"""
         self.xdg_wm_base.pong(serial)
-        print("PING!", serial)
 
     def wl_surface_preferred_buffer_scale_handler(self, factor):
         print(f" --> wl_surface scaling: {factor}")

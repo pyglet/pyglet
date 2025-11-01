@@ -94,7 +94,6 @@ class OpenGLConfig(UserConfig):
         return False
 
 
-
 def match_surface_config(config: UserConfig, surface: Window) -> SurfaceConfig | None:
     if isinstance(config, OpenGLConfig):
         from pyglet.config.gl import get_surface_config  # noqa: PLC0415
