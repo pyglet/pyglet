@@ -6,6 +6,7 @@ import socket as _socket
 import threading as _threading
 import time
 import weakref
+
 from collections import defaultdict as _defaultdict
 from collections import deque as _deque
 from ctypes import CFUNCTYPE, POINTER, byref, c_char_p, c_int, c_int32, c_uint32, c_void_p, cast, pointer
@@ -886,7 +887,7 @@ class Client:
 
         self.globals: dict[str, list[GlobalObject]] = _defaultdict(list)  # interface_name: [GlobalObject]
         self.global_interface_map: dict[int, str] = {}  # global_name: interface_name
-        #self.bound_globals: dict[int, Interface] = {}  # global_name: interface_instance
+        # self.bound_globals: dict[int, Interface] = {}  # global_name: interface_instance
 
         self.protocol_dict = {p.name: p for p in [Protocol(self, filename) for filename in protocols]}
         self.protocols = _NameSpace(**self.protocol_dict)
@@ -921,10 +922,19 @@ class Client:
         self._sync_done = _threading.Event()
         self._thread_running = _threading.Event()
 
-        target_func = self._receive_loop if USE_LIB_WAYLAND else self._receive_loop_socket
-        self._receive_thread = _threading.Thread(target=target_func, daemon=True)
+        self._receive_loop_method = self._receive_loop if USE_LIB_WAYLAND else self._receive_loop_socket
+        self._receive_thread = _threading.Thread(target=self._receive_loop_method, daemon=True)
         self._receive_thread.start()
         self._thread_running.wait()
+
+        # self.fd = wl_display_get_fd(dpy) if USE_LIB_WAYLAND else self._sock.fileno()
+
+    def fileno(self):
+        # TODO: return a file descriptor
+        pass
+
+    def select(self):
+        self._receive_loop_method()
 
     def _receive_loop(self) -> None:
         """A threaded method for continuously reading Server messages."""

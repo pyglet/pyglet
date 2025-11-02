@@ -5,7 +5,7 @@ from multiprocessing import Event
 from typing import Literal
 
 from pyglet.libs.linux.egl import egl, eglext
-from pyglet.libs.linux.wayland.client import Client
+from pyglet.window.wayland.client import Client
 
 from .base import Display, Screen, ScreenMode
 
@@ -104,10 +104,10 @@ class WaylandDisplay(Display):
 class WaylandScreen(Screen):
 
     def get_display_id(self) -> str | int:
-        return "wayland"
+        return self.name
 
     def get_monitor_name(self) -> str | Literal["Unknown"]:
-        return "wayland (fill in later)"
+        return self.description
 
     def __init__(self, display, geometry, modes, scale, name, description):
         self.name = name
@@ -126,15 +126,8 @@ class WaylandScreen(Screen):
             self._dpi = (_dpi_width + _dpi_height) / 2
         else:
             self._dpi = scale
-        super().__init__(display, self._geo.x, self._geo.y, _width_pixels, _height_pixels)
 
-    # def get_matching_configs(self, template):
-    #     canvas = WaylandCanvas(self.display, None)
-    #     configs = template.match(canvas)
-    #     # XXX deprecate
-    #     for config in configs:
-    #         config.screen = self
-    #     return configs
+        super().__init__(display, self._geo.x, self._geo.y, _width_pixels, _height_pixels)
 
     def get_modes(self):
         return self._modes
