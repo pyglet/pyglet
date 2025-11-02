@@ -42,12 +42,12 @@ class WaylandDisplay(Display):
         self.client.sync()
 
         self.display_connection = egl.eglGetPlatformDisplay(eglext.EGL_PLATFORM_WAYLAND, self.client.wl_display_p, None)
-        # self.display_connection = egl.eglGetDisplay(self.wl_display_p)
 
         assert egl.eglInitialize(self.display_connection, None, None) == egl.EGL_TRUE, "Failed to initialize Display"
 
         self._screens = []
         for i, _ in enumerate(self.client.globals.get('wl_output', [])):
+            # Initialize values to default
             self._geo = None
             self._modes = []
             self._scale = None
@@ -57,6 +57,7 @@ class WaylandDisplay(Display):
             wl_output = self.client.protocol_dict['wayland'].bind_interface('wl_output', index=i)
             self._mode_enum = wl_output.enums['mode']
             self._transform_enum = wl_output.enums['transform']
+            # Callbacks will update values:
             wl_output.set_handlers(
                 geometry=self._wl_output_geometry_handler,
                 mode=self._wl_output_mode_handler,
@@ -67,6 +68,7 @@ class WaylandDisplay(Display):
             )
             self.client.sync()
             self._query_done.wait()
+            # Make Screen instance with the now-filled-in values:
             self._screens.append(WaylandScreen(self, self._geo, self._modes, self._scale, self._name, self._descript))
             wl_output.release()
 
