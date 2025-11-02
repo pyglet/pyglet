@@ -6,7 +6,7 @@ import pyglet
 from pyglet.graphics.api.gl.enums import geometry_map
 
 
-from pyglet.graphics.draw import DomainKey, BatchBase, Group
+from pyglet.graphics.draw import _DomainKey, BatchBase, Group
 from pyglet.graphics.api.gl import (
     vertexdomain, OpenGLSurfaceContext,
 )
@@ -228,7 +228,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, vertexdomain.VertexDomain]]
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use.

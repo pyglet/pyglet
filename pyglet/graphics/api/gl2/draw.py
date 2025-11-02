@@ -16,7 +16,7 @@ from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl2.vertexdomain import VertexList, IndexedVertexList, VertexDomain, IndexedVertexDomain, \
     InstancedVertexDomain, InstancedIndexedVertexDomain
-from pyglet.graphics.draw import DomainKey, BatchBase, Group
+from pyglet.graphics.draw import _DomainKey, BatchBase, Group
 
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
@@ -227,7 +227,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, VertexDomain]]
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Create a graphics batch."""

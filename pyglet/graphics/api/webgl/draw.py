@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 from pyglet.graphics.api.webgl import vertexdomain
 from pyglet.graphics.api.webgl.enums import geometry_map
-from pyglet.graphics.draw import BatchBase, DomainKey, Group
+from pyglet.graphics.draw import BatchBase, _DomainKey, Group
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
@@ -222,7 +222,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, vertexdomain.VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, vertexdomain.VertexDomain]]
     initial_count: int
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:

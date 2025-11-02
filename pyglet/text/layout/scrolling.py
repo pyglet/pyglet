@@ -3,92 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar
 
 import pyglet
-from pyglet.graphics.draw import Group
 from pyglet.text.layout.base import TextLayout
 
 if TYPE_CHECKING:
+    from pyglet.graphics.draw import Group
     from pyglet.customtypes import AnchorX, AnchorY
     from pyglet.graphics import Batch
-    from pyglet.graphics.shader import ShaderProgram
+    from pyglet.graphics import ShaderProgram
     from pyglet.text.document import AbstractDocument
-
-
-# class ScrollableTextLayoutGroup(Group):
-#     """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
-#
-#     The group maintains internal state for specifying the viewable
-#     area, and for scrolling. Because the group has internal state
-#     specific to the text layout, the group is never shared.
-#     """
-#     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
-#
-#     def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,
-#                  parent: Group | None = None) -> None:
-#
-#         super().__init__(order=order, parent=parent)
-#         self.texture = texture
-#         self.program = program
-#         raise Exception
-#
-#     # def set_state(self) -> None:
-#     #     self.program.use()
-#     #     self.program["scissor"] = True
-#     #     self.program["scissor_area"] = self.scissor_area
-#     #
-#     #     glActiveTexture(GL_TEXTURE0)
-#     #     glBindTexture(self.texture.target, self.texture.id)
-#     #
-#     #     glEnable(GL_BLEND)
-#     #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-#     #
-#     # def unset_state(self) -> None:
-#     #     glDisable(GL_BLEND)
-#     #     self.program.stop()
-#
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__}({self.texture})"
-#
-#     def __eq__(self, other: object) -> bool:
-#         return self is other
-#
-#     def __hash__(self) -> int:
-#         return id(self)
-#
-#
-# class ScrollableTextDecorationGroup(Group):
-#     """Create a text decoration rendering group.
-#
-#     The group is created internally when a :py:class:`~pyglet.text.Label`
-#     is created; applications usually do not need to explicitly create it.
-#     """
-#
-#     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
-#
-#     def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
-#         super().__init__(order=order, parent=parent)
-#         self.program = program
-#
-#     # def set_state(self) -> None:
-#     #     self.program.use()
-#     #     self.program["scissor"] = True
-#     #     self.program["scissor_area"] = self.scissor_area
-#     #
-#     #     glEnable(GL_BLEND)
-#     #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-#     #
-#     # def unset_state(self) -> None:
-#     #     glDisable(GL_BLEND)
-#     #     self.program.stop()
-#     raise Exception
-#
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__}(scissor={self.scissor_area})"
-#
-#     def __eq__(self, other: object) -> bool:
-#         return self is other
-#
-#     def __hash__(self) -> int:
-#         return id(self)
 
 
 if pyglet.options.backend in ("opengl", "gles3"):
