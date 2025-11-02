@@ -12,7 +12,7 @@ from pyglet.event import EventDispatcher
 from pyglet.libs.linux.egl import egl
 from pyglet.libs.linux.wayland import xkbcommon
 from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler, key, mouse
-from pyglet.window.wayland.client import Client, Interface
+from pyglet.libs.linux.wayland.client import Client, Interface
 from pyglet.libs.linux.wayland.wayland_egl import *
 
 # Platform event data is single item, so use platform event handler directly.

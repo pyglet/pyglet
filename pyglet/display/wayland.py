@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from multiprocessing import Event
+from threading import Event
 from typing import Literal
 
 from pyglet.libs.linux.egl import egl, eglext
-from pyglet.window.wayland.client import Client
+from pyglet.libs.linux.wayland.client import Client
 
 from .base import Display, Screen, ScreenMode
 
@@ -26,15 +26,16 @@ class WaylandScreenMode(ScreenMode):
 
 class WaylandDisplay(Display):
     _protocols = ('/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml')
-    _created = False
+    _display_instance: WaylandDisplay | None = None
+
+    def __new__(cls):
+        if cls._display_instance:
+            return cls._display_instance
+        cls._display_instance = super().__new__(cls)
+        return cls._display_instance
 
     def __init__(self):
         super().__init__()
-        # !!! Rework to either only do one session or teardown process entirely.
-        if WaylandDisplay._created is True:
-            raise Exception("Guard: Only one Display/Client instance can be made per application.")
-        WaylandDisplay._created = True
-
         # Create temporary Client connection to query Screen information:
         # TODO: use the new fractional scaling Protocol if available.
         self.client = Client(*self._protocols)
