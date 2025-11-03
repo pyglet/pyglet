@@ -3,48 +3,44 @@ from __future__ import annotations
 import sys
 
 import pyglet
-from pyglet.graphics.api.gl import (
-    GL_BLEND,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_SRC_ALPHA,
-    GL_TEXTURE0,
-    glActiveTexture,
-    glBindTexture,
-    glBlendFunc,
-    glDisable,
-    glEnable,
-)
+from pyglet.enums import BlendFactor
+from pyglet.graphics.state import State
 from pyglet.window import key
 
+from typing import TYPE_CHECKING
 
-class DistFieldGroup(pyglet.sprite.SpriteGroup):  # noqa: D101
-    def set_state(self) -> None:
-        self.program.use()
+if TYPE_CHECKING:
+    from pyglet.graphics import ShaderProgram, Group
+    from pyglet.graphics.texture import TextureBase
 
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
 
+class DepthFieldUniforms(State):
+    sets_state = True
+
+    def __init__(self, program: ShaderProgram):
+        self.program = program
+
+    def set_state(self, ctx) -> None:
         self.program['bidirectional'] = enable_bidirectional
-
         self.program['antialias'] = enable_antialias
         self.program['outline'] = enable_outline
         self.program['outline_width'] = outline_width
         self.program['glow'] = enable_glow
         self.program['glow_width'] = glow_width
 
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
+class DistFieldGroup(pyglet.sprite.SpriteGroup):
 
-    def unset_state(self) -> None:
-        glDisable(GL_BLEND)
-        self.program.stop()
+    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
+                 parent: Group | None = None) -> None:
+        super().__init__(texture, blend_src, blend_dest, program, parent)
+        self.add_state(DepthFieldUniforms(program))
 
 
 class DistFieldSprite(pyglet.sprite.Sprite):
     """Override sprite to use DistFieldTextureGroup."""
     group_class = DistFieldGroup
 
-    def __init__(self, img, x=0, y=0, z=0, blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA, batch=None,
+    def __init__(self, img, x=0, y=0, z=0, blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA, batch=None,
                  group=None, subpixel=False, program=None) -> None:
         super().__init__(img, x, y, z, blend_src, blend_dest, batch, group, subpixel, program)
 

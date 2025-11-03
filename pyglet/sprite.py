@@ -699,9 +699,10 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        self._group.set_state_recursive()
+        ctx = pyglet.graphics.api.core.current_context
+        self._group.set_state_recursive(ctx)
         self._vertex_list.draw(GeometryMode.TRIANGLES)
-        self._group.unset_state_recursive()
+        self._group.unset_state_recursive(ctx)
 
     if _is_pyglet_doc_run:
         # Events

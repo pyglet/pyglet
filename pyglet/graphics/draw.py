@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 import weakref
-from typing import Any, Callable, Sequence, Tuple, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Any, Callable, Sequence, TYPE_CHECKING
 
 import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
-from pyglet.graphics import GeometryMode
+
 from pyglet.graphics.state import (
     State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
-    DepthBufferComparison, ScissorState,
+    DepthBufferComparison, ScissorState, ViewportState,
 )
 
 if TYPE_CHECKING:
+    from pyglet.graphics import GeometryMode
+    from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList
     from pyglet.graphics.shader import ShaderProgramBase
-
-
-
 
 
 
@@ -43,6 +43,7 @@ class Group:
         def on_draw():
             batch.draw()
     """
+    states: list[State]
     _hash: int
     hashable_states: tuple
 
@@ -74,18 +75,12 @@ class Group:
         # When dirty, it needs to be recalculated.
         self._dirty = False
 
-    def set_state(self):
-        pass
-
-    def unset_state(self):
-        pass
-
     @property
     def dirty(self) -> bool:
         """The group requires a recalculation of it's state."""
         return self._dirty
 
-    def _add_state(self, state: State) -> None:
+    def add_state(self, state: State) -> None:
         self.states.append(state)
         self.state_names[state.__class__.__name__] = state
 
@@ -95,33 +90,26 @@ class Group:
 
     def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
         self.data["scissor"] = [x, y, width, height]
-        self._add_state(ScissorState(self))
+        self.add_state(ScissorState(self))
 
     def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD):
-        self._add_state(BlendState(blend_src, blend_dst, blend_op))
+        self.add_state(BlendState(blend_src, blend_dst, blend_op))
 
     def set_depth_test(self, func: CompareOp) -> None:
-        self._add_state(DepthBufferComparison(func))
+        self.add_state(DepthBufferComparison(func))
 
-    # def set_depth_write(self, flag):
-    #     self._add_state(DepthWriteState(flag))
-    #
-    # def set_stencil(self, func, ref, mask, fail, zfail, zpass):
-    #     self._add_state("stencil_func", func, ref, mask)
-    #     self._add_state("stencil_op", fail, zfail, zpass)
-    #
-    # def set_polygon_mode(self, face, mode):
-    #     self._add_state("polygon_mode", face, mode)
-
-    # def set_viewport(self, x, y, width, height):
-    #     self._add_state(ViewportState(x, y, width, height))
+    def set_viewport(self, x, y, width, height):
+         self.add_state(ViewportState(x, y, width, height))
 
     def set_shader_program(self, program: ShaderProgramBase):
-        self._add_state(ShaderProgramState(program))
+        self.add_state(ShaderProgramState(program))
 
     def set_shader_uniform(self, program: ShaderProgramBase, name: str, value: float | Sequence):
         self.data[name] = value  # Initial data.
-        self._add_state(ShaderUniformState(program, name, self))
+        self.add_state(ShaderUniformState(program, name, self))
+
+    def set_uniform_buffer(self, ubo: str, binding: int):
+        self.add_state(UniformBufferState(ubo, binding))
 
     def update_data(self, name: str, value: Any) -> None:
         self.data[name] = value
@@ -139,10 +127,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
-        self._add_state(TextureState(texture, texture_unit, set_id))
-
-    def set_uniform_buffer(self, ubo, binding: int):
-        self._add_state(UniformBufferState(ubo, binding))
+        self.add_state(TextureState(texture, texture_unit, set_id))
 
     @property
     def order(self) -> int:
@@ -210,29 +195,29 @@ class Group:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(order={self._order})"
 
-    def set_state_all(self) -> None:
+    def set_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all set states of the underlying Group."""
         for state in self.states:
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
                     if dependant_state.sets_state:
-                        dependant_state.set_state()
+                        dependant_state.set_state(ctx)
 
             if state.sets_state:
-                state.set_state()
+                state.set_state(ctx)
 
-    def unset_state_all(self) -> None:
+    def unset_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all unset states of the underlying Group."""
         for state in self.states:
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
                     if dependant_state.unsets_state:
-                        dependant_state.unset_state()
+                        dependant_state.unset_state(ctx)
 
             if state.unsets_state:
-                state.unset_state()
+                state.unset_state(ctx)
 
-    def set_state_recursive(self) -> None:
+    def set_state_recursive(self, ctx: SurfaceContext) -> None:
         """Set this group and its ancestry.
 
         Call this method if you are using a group in isolation: the
@@ -240,17 +225,17 @@ class Group:
         ``set`` being called last.
         """
         if self.parent:
-            self.parent.set_state_recursive()
-        self.set_state_all()
+            self.parent.set_state_recursive(ctx)
+        self.set_state_all(ctx)
 
-    def unset_state_recursive(self) -> None:
+    def unset_state_recursive(self, ctx: SurfaceContext) -> None:
         """Unset this group and its ancestry.
 
         The inverse of ``set_state_recursive``.
         """
-        self.unset_state_all()
+        self.unset_state_all(ctx)
         if self.parent:
-            self.parent.unset_state_recursive()
+            self.parent.unset_state_recursive(ctx)
 
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
@@ -261,8 +246,13 @@ _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
    # (False, True): vertexdomain.InstancedVertexDomain,
    #  (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
-DomainKey = Tuple[bool, int, GeometryMode, str]
 
+@dataclass(frozen=True)
+class _DomainKey:
+    indexed: bool
+    instanced: bool
+    mode: GeometryMode
+    attributes: str
 
 class BatchBase:
     """Manage a collection of drawables for batched rendering.
@@ -294,7 +284,7 @@ class BatchBase:
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, VertexDomain]]
     initial_count: int
 
     def __init__(self, initial_count: int = 32) -> None:

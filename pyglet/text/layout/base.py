@@ -611,20 +611,6 @@ class TextLayoutGroup(Group):
         self.program = program
         raise Exception
 
-    # def set_state(self) -> None:
-    #     self.program.use()
-    #     self.program["scissor"] = False
-    #
-    #     glActiveTexture(GL_TEXTURE0)
-    #     glBindTexture(self.texture.target, self.texture.id)
-    #
-    #     glEnable(GL_BLEND)
-    #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    #
-    # def unset_state(self) -> None:
-    #     glDisable(GL_BLEND)
-    #     self.program.stop()
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
 
@@ -652,14 +638,14 @@ class TextDecorationGroup(Group):
         super().__init__(order=order, parent=parent)
         self.program = program
         raise Exception
-    # def set_state(self) -> None:
+    # def set_state(self, ctx: OpenGLSurfaceContext) -> None:
     #     self.program.use()
     #     self.program["scissor"] = False
     #
     #     glEnable(GL_BLEND)
     #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     #
-    # def unset_state(self) -> None:
+    # def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
     #     glDisable(GL_BLEND)
     #     self.program.stop()
 
