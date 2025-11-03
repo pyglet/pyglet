@@ -252,7 +252,7 @@ class Batch(BatchBase):
         self._draw_list_dirty = True
 
     def update_shader(
-        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, program: ShaderProgram
+        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, program: ShaderProgram,
     ) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
@@ -295,7 +295,7 @@ class Batch(BatchBase):
         return True
 
     def migrate(
-        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: Batch
+        self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: Batch,
     ) -> None:
         """Migrate a vertex list to another batch and/or group.
 
@@ -338,7 +338,7 @@ class Batch(BatchBase):
 
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
-        key = (indexed, instanced, mode, str(attributes))
+        key = _DomainKey(indexed, instanced, mode, str(attributes))
 
         try:
             domain = domain_map[key]
@@ -373,12 +373,12 @@ class Batch(BatchBase):
             domain_map = self.group_map[group]
 
             # indexed, instanced, mode, program, str(attributes))
-            for (indexed, instanced, mode, formats), domain in list(domain_map.items()):
+            for dkey, domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(indexed, instanced, mode, formats)]
+                    del domain_map[dkey]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
+                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[dkey.mode]))  # noqa: PLC3002
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)

@@ -351,13 +351,7 @@ class Batch(BatchBase):
 
         domain_map = self.group_map[group]
 
-        # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        if instanced:
-            self._instance_count += 1
-            key = (indexed, self._instance_count, mode, str(attributes))
-        else:
-            # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, str(attributes))
+        key = _DomainKey(indexed, False, mode, str(attributes))
 
         try:
             domain = domain_map[key]
@@ -393,12 +387,12 @@ class Batch(BatchBase):
             domain_map = self.group_map[group]
 
             # indexed, instanced, mode, program, str(attributes))
-            for (indexed, instanced, mode, formats), domain in list(domain_map.items()):
+            for dkey, domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(indexed, instanced, mode, formats)]
+                    del domain_map[dkey]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
+                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[dkey.mode]))  # noqa: PLC3002
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
