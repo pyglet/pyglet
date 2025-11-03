@@ -1,3 +1,19 @@
+pyglet 2.1.10
+
+Changes
+-------
+media: Add support for FFmpeg 8.0 (#1365)
+window: Update default dpi_scaling option to "platform". (#1383)
+window: Convert the Window event queue to a deque. (#1362)
+input.evdev: Do not attempt to reuse Controller instances on re-connect, as naming conflicts can occur.
+
+Bugfixes
+--------
+text: fix typing of Label.__init__'s align argument. (#1361)
+text: Update the passed args for attributed text. (#1379)
+shader: Fixed number of elements for GL_FLOAT_MAT3 (9, not 6) in pyglet.graphics.shader._uniform_setters. (#1364)
+
+
 pyglet 2.1.9
 
 Changes
