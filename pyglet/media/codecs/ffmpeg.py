@@ -1037,7 +1037,7 @@ class FFmpegSource(StreamingSource):
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 4
-        buf_size = avutil.av_image_get_buffer_size(AV_PIX_FMT_RGBA, width, height, 1)
+        buf_size = avutil.av_image_get_buffer_size(AV_PIX_FMT_RGBA, width, height, 1) + AV_INPUT_BUFFER_PADDING_SIZE
         buffer = (c_uint8 * buf_size)()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet, buffer)
