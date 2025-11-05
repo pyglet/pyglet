@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Generator, Any
+from typing import Generator, Any, TYPE_CHECKING
 
 import pyglet
+
+if TYPE_CHECKING:
+    from pyglet.graphics.api.base import SurfaceContext
 
 
 class State:
@@ -29,10 +32,10 @@ class State:
         """
         yield
 
-    def set_state(self) -> None:
+    def set_state(self, ctx: SurfaceContext) -> None:
         """Called when the state is set (enters scope)."""
 
-    def unset_state(self) -> None:
+    def unset_state(self, ctx: SurfaceContext) -> None:
         """Called when the state is unset (leaves scope)."""
 
     def resolve_state(self, *args: Any) -> None:
@@ -48,10 +51,10 @@ class State:
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401, RUF100
                                               ShaderUniformState,
-                                              UniformBufferState, DepthBufferComparison, ScissorState)
+                                              UniformBufferState, DepthBufferComparison, ScissorState, ViewportState)
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401
                                               ShaderUniformState,
-                                              UniformBufferState, DepthBufferComparison, ScissorState)
+                                              UniformBufferState, DepthBufferComparison, ScissorState, ViewportState)
 elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.state import *
+    from pyglet.graphics.api.vulkan.state import *  # noqa: F403

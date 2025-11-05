@@ -26,19 +26,41 @@ separate things in world space from things in "UI" space.
 
 import pyglet
 from pyglet.graphics import Group
+from pyglet.graphics.api.base import SurfaceContext
+from pyglet.graphics.state import State
 from pyglet.math import Vec2
 
 
+class CameraState(State):
+    sets_state = True
+    unsets_state = True
 
-class CameraGroup(Group):
-    """ Graphics group emulating the behaviour of a camera in 2D space. """
-
-    def __init__(self, window, x, y, zoom=1.0, order=0, parent=None):
-        super().__init__(order, parent)
+    def __init__(self, window: pyglet.window.Window, x: float, y: float, zoom: float=1.0):
         self._window = window
         self.x = x
         self.y = y
         self.zoom = zoom
+
+    def set_state(self, ctx: SurfaceContext):
+        """ Apply zoom and camera offset to view matrix. """
+
+        # Translate using the offset.
+        view_matrix = self._window.view.translate((-self.x * self.zoom, -self.y * self.zoom, 0))
+        # Scale by zoom level.
+        view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
+
+        self._window.view = view_matrix
+
+    def unset_state(self, ctx: SurfaceContext):
+        """ Revert zoom and camera offset from view matrix. """
+        # Since this is a matrix, you will need to reverse the translate after rendering otherwise
+        # it will multiply the current offset every draw update pushing it further and further away.
+        # Use inverse zoom to reverse zoom
+        view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
+        # Reverse translate.
+        view_matrix = view_matrix.translate((self.x * self.zoom, self.y * self.zoom, 0))
+
+        self._window.view = view_matrix
 
     @property
     def position(self) -> Vec2:
@@ -50,36 +72,15 @@ class CameraGroup(Group):
         """Set the scroll offset directly."""
         self.x, self.y = new_position
 
-    def set_state(self):
-        """ Apply zoom and camera offset to view matrix. """
 
-        # Translate using the offset.
-        view_matrix = self._window.view.translate((-self.x * self.zoom, -self.y * self.zoom, 0))
-        # Scale by zoom level.
-        view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
-
-        self._window.view = view_matrix
-
-    def unset_state(self):
-        """ Revert zoom and camera offset from view matrix. """
-        # Since this is a matrix, you will need to reverse the translate after rendering otherwise
-        # it will multiply the current offset every draw update pushing it further and further away.
-
-        # Use inverse zoom to reverse zoom
-        view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
-        # Reverse translate.
-        view_matrix = view_matrix.translate((self.x * self.zoom, self.y * self.zoom, 0))
-
-        self._window.view = view_matrix
-
-
-class CenteredCameraGroup(CameraGroup):
+class CenteredCameraState(CameraState):
     """ Alternative centered camera group.
 
     (0, 0) will be the center of the screen, as opposed to the bottom left.
     """
-
-    def set_state(self):
+    sets_state = True
+    unsets_state = True
+    def set_state(self, ctx: SurfaceContext):
         # Translate almost the same as normal, but add the center offset
         x = -self._window.width // 2 / self.zoom + self.x
         y = -self._window.height // 2 / self.zoom + self.y
@@ -88,8 +89,7 @@ class CenteredCameraGroup(CameraGroup):
         view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
         self._window.view = view_matrix
 
-    def unset_state(self):
-
+    def unset_state(self, ctx: SurfaceContext):
         x = -self._window.width // 2 / self.zoom + self.x
         y = -self._window.height // 2 / self.zoom + self.y
 
@@ -97,6 +97,9 @@ class CenteredCameraGroup(CameraGroup):
         view_matrix = view_matrix.translate((x * self.zoom, y * self.zoom, 0))
         self._window.view = view_matrix
 
+
+class CameraGroup(Group):
+    ...
 
 if __name__ == "__main__":
     from pyglet.window import key
@@ -110,13 +113,15 @@ if __name__ == "__main__":
     window.push_handlers(keys)
 
     # Use centered
-    camera = CenteredCameraGroup(window, 0, 0)
+    camera = CenteredCameraState(window, 0, 0)
     # Use un-centered
-    # camera = CameraGroup(window, 0, 0)
+    # camera = CameraState(window, 0, 0)
+    camera_group = CameraGroup()
+    camera_group.add_state(camera)
 
     # Create a scene
-    rect = pyglet.shapes.Rectangle(-25, -25, 50, 50, batch=batch, group=camera)
-    text = pyglet.text.Label("Text works too!", x=0, y=-50, anchor_x="center", batch=batch, group=camera)
+    rect = pyglet.shapes.Rectangle(-25, -25, 50, 50, batch=batch, group=camera_group)
+    text = pyglet.text.Label("Text works too!", x=0, y=50, color=(255, 0, 0, 255), anchor_x="center", batch=batch, group=camera_group)
 
     # Create some "UI"
     ui_text = pyglet.text.Label(
@@ -126,7 +131,8 @@ if __name__ == "__main__":
     position_text = pyglet.text.Label(
         "",
         x=window.width,
-        anchor_x="right", anchor_y="bottom",
+        anchor_x="right",
+        anchor_y="bottom",
         batch=batch,
     )
 

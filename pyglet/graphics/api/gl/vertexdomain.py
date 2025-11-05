@@ -289,18 +289,6 @@ class IndexedVertexList(VertexList):
         super().delete()
         self.domain.index_stream.dealloc(self.index_start, self.index_count)
 
-    def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain) -> None:
-        """Move this group from its current indexed domain and add to the specified one.
-
-        Attributes on domains must match.  (In practice, used
-        to change parent state of some vertices).
-
-        Args:
-            domain:
-                Indexed domain to migrate this vertex list to.
-        """
-        # Handled by new mixins.
-        raise NotImplementedError
 
     @property
     def indices(self) -> list[int]:

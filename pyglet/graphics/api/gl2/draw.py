@@ -16,7 +16,7 @@ from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl2.vertexdomain import VertexList, IndexedVertexList, VertexDomain, IndexedVertexDomain, \
     InstancedVertexDomain, InstancedIndexedVertexDomain
-from pyglet.graphics.draw import DomainKey, BatchBase, Group
+from pyglet.graphics.draw import _DomainKey, BatchBase, Group
 
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
@@ -227,7 +227,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[DomainKey, VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, VertexDomain]]
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Create a graphics batch."""
@@ -351,13 +351,7 @@ class Batch(BatchBase):
 
         domain_map = self.group_map[group]
 
-        # If instanced, ensure a separate domain, as multiple instance sources can match the key.
-        if instanced:
-            self._instance_count += 1
-            key = (indexed, self._instance_count, mode, str(attributes))
-        else:
-            # Find domain given formats, indices and mode
-            key = (indexed, 0, mode, str(attributes))
+        key = _DomainKey(indexed, False, mode, str(attributes))
 
         try:
             domain = domain_map[key]
@@ -393,12 +387,12 @@ class Batch(BatchBase):
             domain_map = self.group_map[group]
 
             # indexed, instanced, mode, program, str(attributes))
-            for (indexed, instanced, mode, formats), domain in list(domain_map.items()):
+            for dkey, domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(indexed, instanced, mode, formats)]
+                    del domain_map[dkey]
                     continue
-                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[mode]))  # noqa: PLC3002
+                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, geometry_map[dkey.mode]))  # noqa: PLC3002
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)

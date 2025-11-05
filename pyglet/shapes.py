@@ -411,9 +411,10 @@ class ShapeBase(ABC):
                      and call its :py:meth:`~Batch.draw` method.
 
         """
-        self._group.set_state_recursive()
+        ctx = pyglet.graphics.api.core.current_context
+        self._group.set_state_recursive(ctx)
         self._vertex_list.draw(self._draw_mode)
-        self._group.unset_state_recursive()
+        self._group.unset_state_recursive(ctx)
 
     def delete(self) -> None:
         """Force immediate removal of the shape from video memory.
@@ -1619,13 +1620,12 @@ class Rectangle(ShapeBase):
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x1 = -self._anchor_x
-            y1 = -self._anchor_y
-            x2 = x1 + self._width
-            y2 = y1 + self._height
+        x1 = -self._anchor_x
+        y1 = -self._anchor_y
+        x2 = x1 + self._width
+        y2 = y1 + self._height
 
-            return x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
+        return x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2
 
     def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
@@ -1732,7 +1732,7 @@ class BorderedRectangle(ShapeBase):
                              "they must both have the same opacity")
 
         # Choose a value to use if there is no conflict
-        elif fill_a:
+        if fill_a:
             alpha = fill_a[0]
         elif border_a:
             alpha = border_a[0]
@@ -2314,14 +2314,13 @@ class Triangle(ShapeBase):
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
             return (0, 0) * self._num_verts
-        else:
-            x1 = -self._anchor_x
-            y1 = -self._anchor_y
-            x2 = self._x2 + x1 - self._x
-            y2 = self._y2 + y1 - self._y
-            x3 = self._x3 + x1 - self._x
-            y3 = self._y3 + y1 - self._y
-            return x1, y1, x2, y2, x3, y3
+        x1 = -self._anchor_x
+        y1 = -self._anchor_y
+        x2 = self._x2 + x1 - self._x
+        y2 = self._y2 + y1 - self._y
+        x3 = self._x3 + x1 - self._x
+        y3 = self._y3 + y1 - self._y
+        return x1, y1, x2, y2, x3, y3
 
     def _update_vertices(self) -> None:
         self._vertex_list.position[:] = self._get_vertices()
@@ -2704,5 +2703,19 @@ class MultiLine(ShapeBase):
         self._update_vertices()
 
 
-__all__ = ('Arc', 'Box', 'BezierCurve', 'Circle', 'Ellipse', 'Line', 'MultiLine', 'Rectangle',
-           'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector', 'ShapeBase')
+__all__ = (
+    'Arc',
+    'BezierCurve',
+    'BorderedRectangle',
+    'Box',
+    'Circle',
+    'Ellipse',
+    'Line',
+    'MultiLine',
+    'Polygon',
+    'Rectangle',
+    'Sector',
+    'ShapeBase',
+    'Star',
+    'Triangle',
+)
