@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc as _abc
 import os as _os
+import select as _select
 import socket as _socket
 import threading as _threading
 import time
@@ -43,8 +44,10 @@ from pyglet.libs.linux.wayland.lib_wayland import (
     wl_proxy_marshal_constructor_versioned,
     wl_registry,
     wl_registry_bind,
+    wl_display_get_fd,
 )
 from pyglet.util import debug_print
+
 
 _debug_wayland = debug_print('debug_wayland')
 
@@ -899,9 +902,9 @@ class Client:
 
         if USE_LIB_WAYLAND:
             # Can use an opened socket if you want to read from it too, but you CANNOT write to it.
-            #self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM, 0)
-            #self._sock.connect(path)
-            #self.wl_display.connect(fd=self._sock.fileno())
+            # self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM, 0)
+            # self._sock.connect(path)
+            # self.wl_display.connect(fd=self._sock.fileno())
 
             self.wl_display.connect(self._endpoint)
             self.wl_display_p = cast(self.wl_display._display, c_void_p)
@@ -927,31 +930,22 @@ class Client:
         self._receive_thread.start()
         self._thread_running.wait()
 
-        # self.fd = wl_display_get_fd(dpy) if USE_LIB_WAYLAND else self._sock.fileno()
-
-    def fileno(self):
-        # TODO: return a file descriptor
-        pass
-
-    def select(self):
-        self._receive_loop_method()
-
     def _receive_loop(self) -> None:
         """A threaded method for continuously reading Server messages."""
         self._thread_running.set()
         dpy = self.wl_display._display
+        fd = wl_display_get_fd(dpy)
         while self._thread_running.is_set():
-            # Flush any queued requests
-            wl_display_flush(dpy)
-
             # Prepare to read. if it returns -1, just dispatch pending
             if wl_display_prepare_read(dpy) != 0:
                 wl_display_dispatch_pending(dpy)
                 continue
 
-            # !!! hack, probably use poll/epoll instead of a thread?
-            # using fd = wl_display_get_fd(dpy)
-            time.sleep(0.005)
+            # Flush any queued requests
+            wl_display_flush(dpy)
+
+            # Wake immediately if fd is readable, otherwise poll once per 0.005 seconds.
+            _, _, _ = _select.select([fd], [], [], 0.005)
 
             if wl_display_read_events(dpy) != 0:
                 wl_display_cancel_read(dpy)  # errors
@@ -1036,6 +1030,7 @@ class Client:
         self._recv_buffer = data
 
     def __del__(self) -> None:
+        self._thread_running.clear()
         if hasattr(self, '_sock') and self._sock:
             self._sock.close()
             self._sock = None
