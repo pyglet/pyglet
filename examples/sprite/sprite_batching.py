@@ -23,6 +23,7 @@ batch = pyglet.graphics.Batch()
 
 scales = [1.0, 0.75, 0.5, 0.25]
 
+
 sprites = []
 # Create 1000 sprites at various scales.
 for i in range(1000):
@@ -39,6 +40,10 @@ for i in range(1000):
 
     # Add sprites to keep in memory, like a list. Otherwise they will get GC'd when out of scope.
     sprites.append(sprite)
+
+
+text = pyglet.text.Label("Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
+text2 = pyglet.text.Label("               asf af Hello World!", x=window.width // 2, y=window.height // 2, batch=batch)
 
 
 @window.event

@@ -20,7 +20,6 @@ class VertexListTest(unittest.TestCase):
         self.w.close()
 
     def test_vertex_list_creation(self):
-        print("pyglet.graphics.api", pyglet.graphics.api.core.current_context)
         program = pyglet.graphics.api.get_default_shader()
 
         vertices = (

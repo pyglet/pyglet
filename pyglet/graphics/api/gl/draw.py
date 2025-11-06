@@ -130,73 +130,84 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
 
 
 class StateManager:
-    def __init__(self):
+    active_states: dict[type, State]
+
+    def __init__(self) -> None:
         self.active_states = {}
 
-    def get_state_funcs(self, states: list[State]) -> tuple[list[callable], list[callable]]:
-        set_functions = []
-        unset_functions = []
-        new_states = {}
+    @staticmethod
+    def expand_states_to_dict(states: list[State]) -> dict[type, State]:
+        """Flatten a groups list of states (including dependents) into a dict."""
+        out: dict[type, State] = {}
+        all_states: list[State] = []
+        for s in states:
+            if s.dependents:
+                all_states.extend(s.generate_dependent_states())
+            all_states.append(s)
+        for s in all_states:
+            out[type(s)] = s
+        return out
 
-        # Collect all states and their dependencies
-        all_states = []
-        for state in states:
-            if state.dependents:
-                all_states.extend(state.generate_dependent_states())
-            all_states.append(state)
+    def transition_to(self, target: dict[type, State]) -> tuple[list[Callable], list[Callable]]:
+        """Transition from the current active states to the target state set.
 
-        # Process states in dependency order
-        for state in all_states:
-            state_type = type(state)
+        Emits only changes for states that differ or are missing.
+        Returns (set_functions, unset_functions).
+        """
+        set_funcs: list[Callable] = []
+        unset_funcs: list[Callable] = []
 
-            # Handle replacement logic
-            if state_type in self.active_states:
-                current_state = self.active_states[state_type]
-                if state != current_state:
-                    # Call unset only if the flag is enabled
-                    #if current_state.unsets_state and current_state.call_unset_on_replace:
-                    #    unset_functions.append(current_state.unset_state)
-                    if state.sets_state:
-                        set_functions.append(state.set_state)
-            else:
-                # New state, add its set function if applicable
-                if state.sets_state:
-                    set_functions.append(state.set_state)
+        current = self.active_states
 
-            # Update new states
-            new_states[state_type] = state
+        # Unset anything that no longer exists in target
+        for t, cur in list(current.items()):
+            if t not in target:
+                if cur.unsets_state:
+                    unset_funcs.append(cur.unset_state)
+                del current[t]
 
-        # Determine which states were removed
-        removed_states = {
-            state_type: self.active_states[state_type]
-            for state_type in self.active_states
-            if state_type not in new_states
-        }
+        # Anything new or changed
+        for t, new in target.items():
+            old = current.get(t)
+            if old is None or old != new:
+                if new.sets_state:
+                    set_funcs.append(new.set_state)
+                current[t] = new
+            # else equals no-op
 
-        for state in removed_states.values():
-            if state.unsets_state:
-                unset_functions.append(state.unset_state)
+        return set_funcs, unset_funcs
 
-        # Update active states
-        self.active_states = new_states
-
-        return set_functions, unset_functions
-
-    def get_cleanup_states(self) -> list[callable]:
+    def get_cleanup_states(self) -> list[Callable]:
         """Return a list of functions to unset all active states.
 
         Clears the active states in the process. This is done at the end of the batch draw.
         """
-        unset_functions = [
-            state.unset_state for state in self.active_states.values() if state.unsets_state
-        ]
+        funcs = [s.unset_state for s in self.active_states.values() if s.unsets_state]
         self.active_states.clear()
-        return unset_functions
-
+        return funcs
 
 # Singleton instance for all batches. (How to cleanup state between all batches?)
 _state_manager: StateManager = StateManager()
 
+
+class _DrawConsolidator:
+    def __init__(self):
+        self.set_states = []
+        self.unset_states = []
+        self.buckets = []
+        self.draw_list = []
+        self.last_domain = None
+        self.last_mode = None
+
+    def store_states(self, set_states, unset_states):
+        self.set_states.extend(set_states)
+        self.unset_states.extend(unset_states)
+
+    def commit_states(self):
+        self.draw_list.extend(self.set_states)
+        self.draw_list.extend(self.unset_states)
+        self.set_states.clear()
+        self.unset_states.clear()
 
 class Batch(BatchBase):
     """Manage a collection of drawables for batched rendering.
@@ -319,9 +330,24 @@ class Batch(BatchBase):
                 The batch to migrate to (or the current batch).
 
         """
+        print("MIGRATING VERTEX LIST?", mode, group)
         attributes = vertex_list.domain.attribute_meta
         domain = batch.get_domain(vertex_list.indexed, vertex_list.instanced, mode, group, attributes)
-        vertex_list.migrate(domain)
+
+        # If the same domain, no need to move vertices, just update the group.
+        if domain != vertex_list.domain:
+            print("THIS DOMAIN", vertex_list.domain, "NEW DOMAIN?", domain)
+            vertex_list.migrate(domain)
+            bucket = domain.get_group_bucket(group)
+            bucket.add_vertex_list(vertex_list)
+
+            print("DRAW LIST IS DIRTY, MIGRATE")
+        else:
+            vertex_list.update_group(group)
+
+            # Updating group can potentially change draw order though.
+            print("DRAW LIST IS DIRTY")
+            self._draw_list_dirty = True
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
                    attributes: dict[str, Any]) -> vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
@@ -333,18 +359,17 @@ class Batch(BatchBase):
         if group not in self.group_map:
             self._add_group(group)
 
-        domain_map = self.group_map[group]
-
         # If instanced, ensure a separate domain, as multiple instance sources can match the key.
         # Find domain given formats, indices and mode
         key = _DomainKey(indexed, instanced, mode, str(attributes))
 
         try:
-            domain = domain_map[key]
+            domain = self._domain_registry[key]
         except KeyError:
             # Create domain
             domain = _domain_class_map[(indexed, instanced)](self._context, self.initial_count, attributes)
-            domain_map[key] = domain
+            self._domain_registry[key] = domain
+            self._all_domains_in_draw_order.append(domain)   # keep stable append
             self._draw_list_dirty = True
         return domain
 
@@ -362,63 +387,168 @@ class Batch(BatchBase):
         group._assigned_batches.add(self)  # noqa: SLF001
         self._draw_list_dirty = True
 
-    def _update_draw_list(self) -> None:
-        """Visit group tree in preorder and create a list of bound methods to call."""
+    def _cleanup_groups(self, group: Group) -> None:
+        """Safely remove empty groups from all tracking structures."""
+        print("CLEAN GROUP?", group)
+        del self.group_map[group]
+        group._assigned_batches.remove(self)  # noqa: SLF001
+        if group.parent:
+            self.group_children[group.parent].remove(group)
+        try:  # noqa: SIM105
+            del self.group_children[group]
+        except KeyError:
+            pass
+        try:  # noqa: SIM105
+            self.top_groups.remove(group)
+        except ValueError:
+            pass
 
-        def visit(group: Group) -> list:
-            draw_list = []
+    def _create_draw_list(self) -> list[Callable]:
+        """Rebuild draw list by walking the group tree and minimizing state transitions."""
+        print("CREATE DRAW LIST")
 
-            # Draw domains using this group
-            domain_map = self.group_map[group]
+        def _vao_call_fn(domain):
+            def _draw(_context):
+                domain.bind_vao()
 
-            # indexed, instanced, mode, program, str(attributes))
-            for dkey, domain in list(domain_map.items()):
-                # Remove unused domains from batch
-                if domain.is_empty:
-                    del domain_map[dkey]
+            return _draw
+
+        def make_draw_buckets_fn(domain, buckets, mode_func):
+            def _draw(_context):
+                domain.draw_buckets(mode_func, buckets)
+
+            return _draw
+
+        def _flush_buckets(draw_list, last_domain, last_mode):
+            nonlocal dc
+            draw_list.append(make_draw_buckets_fn(last_domain, list(dc.buckets), last_mode))
+            dc.buckets.clear()
+
+        def visit(group: Group, inherited_state: dict[type, State]) -> list[Callable]:
+            nonlocal dc
+
+            draw_list: list[Callable] = []
+            if not group.visible:
+                return draw_list
+
+            dc.draw_list = draw_list
+
+            group_states = _state_manager.expand_states_to_dict(group.states)
+
+            has_states = bool(group_states)
+
+            # Determine if any vertices are drawable.
+            is_drawable = False
+            for domain in self._domain_registry.values():
+                if domain.is_empty or not domain.get_drawable_bucket(group):
                     continue
-                draw_list.append((lambda d, m: lambda _: d.draw(m))(domain, geometry_map[dkey.mode]))  # noqa: PLC3002
+                is_drawable = True
+                break
 
-            # Sort and visit child groups of this group
-            children = self.group_children.get(group)
-            if children:
-                children.sort()
-                for child in list(children):
+            # State has nothing drawable and no children to affect.
+            # Even if it has states, nothing to apply it to. Return early.
+            if not is_drawable and not self.group_children.get(group):
+                self._cleanup_groups(group)
+                return []
+
+            # Group is not drawable, and has no states, go through visible children.
+            if not has_states and not is_drawable:
+                for child in sorted(self.group_children.get(group, [])):
                     if child.visible:
-                        draw_list.extend(visit(child))
+                        draw_list.extend(visit(child, inherited_state))
+                if not self.group_children.get(group):
+                    self._cleanup_groups(group)
+                return draw_list
+            # Compute this node's effective target state
+            target_state = {**inherited_state, **group_states}
 
-            if children or domain_map:
-                set_funcs, unset_funcs = _state_manager.get_state_funcs(group.states)
-                return [*set_funcs, *draw_list, *unset_funcs]
+            # Apply state transitions
+            set_calls, unset_calls = _state_manager.transition_to(target_state)
 
-            # Remove unused group from batch
-            del self.group_map[group]
-            group._assigned_batches.remove(self)  # noqa: SLF001
-            if group.parent:
-                self.group_children[group.parent].remove(group)
-            try:
-                del self.group_children[group]
-            except KeyError:
-                pass
-            try:
-                self.top_groups.remove(group)
-            except ValueError:
-                pass
+            state_changed = bool(set_calls or unset_calls)
 
-            return []
+            dc.store_states(set_calls, unset_calls)
 
-        self._draw_list = []
+            # If drawable, then find the domains to draw.
+            if is_drawable:
+                for dkey, domain in self._domain_registry.items():
+                    bucket = domain.get_drawable_bucket(group)
+                    if not bucket:
+                        continue
+
+                    mode_func = geometry_map[dkey.mode]
+                    domain_changed = dc.last_domain != domain
+                    # If not the last VAO, then assign a VAO.
+                    if domain_changed:
+                        if dc.buckets:
+                            _flush_buckets(draw_list, dc.last_domain, dc.last_mode)
+
+                        dc.commit_states()
+
+                        draw_list.append(_vao_call_fn(domain))
+
+                    # If the state changed, and the domain didn't, states need to still be comitted
+                    if state_changed:
+                        # Domain change would have flushed already.
+                        if not domain_changed:
+                            # If the last state has changed, then we can't draw them together. Commit the buckets.
+                            if dc.buckets:
+                                _flush_buckets(draw_list, dc.last_domain, dc.last_mode)
+                            dc.commit_states()
+
+                    dc.buckets.append(bucket)
+
+                    dc.last_domain = domain
+                    dc.last_mode = mode_func
+
+            # Recurse into visible children
+            for child in sorted(self.group_children.get(group, [])):
+                if child.visible:
+                    draw_list.extend(visit(child, target_state))
+
+            if not is_drawable:
+                dc.commit_states()
+
+            return draw_list
+
+        # Build the final list
+        _draw_list = []
+
+        dc = _DrawConsolidator()
 
         self.top_groups.sort()
-        for top_group in list(self.top_groups):
-            if top_group.visible:
-                self._draw_list.extend(visit(top_group))
-                self._draw_list.extend(_state_manager.get_cleanup_states())
+        baseline_state: dict[type, State] = {}
 
-        self._draw_list_dirty = False
+        for top in list(self.top_groups):
+            if top.visible:
+                _draw_list.extend(visit(top, baseline_state))
 
-        if _debug_graphics_batch:
-            self._dump_draw_list()
+        # End-of-frame cleanup for anything still active:
+        if dc.buckets:
+            print(f"We have current buckets, and the state count is being finalized.: {len(dc.buckets)}")
+            _draw_list.append(make_draw_buckets_fn(dc.last_domain, list(dc.buckets), dc.last_mode))
+        _draw_list.extend(_state_manager.get_cleanup_states())
+
+        #self._draw_list_dirty = False
+
+        #self._debug_dump_group_tree()
+        self._dump_draw_order(_draw_list)
+
+        return _draw_list
+
+    def _dump_draw_order(self, draw_list):
+        print("=== FINAL DRAW LIST ===")
+        for i, fn in enumerate(draw_list):
+            print(f"{i:03d}: {fn}")
+
+    def _debug_dump_group_tree(self):
+        print("TREE")
+        def walk(g, depth=0):
+            print("  " * depth + f"- {g!r}")
+            for c in sorted(self.group_children.get(g, [])):
+                walk(c, depth+1)
+        for root in sorted(self.top_groups):
+            walk(root)
 
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
@@ -443,13 +573,46 @@ class Batch(BatchBase):
         for group in self.top_groups:
             dump(group)
 
+    def _update_draw_list(self) -> None:
+        if self._draw_list_dirty:
+            self._draw_list = self._create_draw_list()
+            self._draw_list_dirty = False
+
     def draw(self) -> None:
         """Draw the batch."""
-        if self._draw_list_dirty:
-            self._update_draw_list()
+        self._update_draw_list()
 
         for func in self._draw_list:
             func(self._context)
+
+    # def draw_groups(self, *groups: Group) -> None:
+    #     """Draw specific groups within the batch.
+    #
+    #     .. note: This only applies to a top level group; groups within groups not supported and will produce
+    #              a KeyError.
+    #
+    #     .. note: Draw calls are not optimized like the Batch is.
+    #     """
+    #     #assert self._allow_group_draw, "Enable the draw_group parameter on initialization to use this."
+    #
+    #     if self._draw_list_dirty:
+    #         self._update_draw_list()
+    #
+    #     for group in groups:
+    #         print("GROUP", group)
+    #         for dkey, domain in self._domain_registry.items():
+    #             domain.bind_vao()
+    #             print("BIND", group in domain._buckets, group, domain._buckets)
+    #             if group in domain._buckets:
+    #                 group.set_state_all(self._context)
+    #                 bucket = domain._buckets[group]
+    #
+    #                 print("BUCKET DRAW?", bucket, bucket.is_empty)
+    #                 bucket.draw(dkey.mode)
+    #                 group.unset_state_all(self._context)
+    #
+    #         #for func in self._draw_list_groups[group]:
+    #         #    func()
 
     def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.

@@ -37,6 +37,7 @@ responsibility to maintain the allocated regions.
 from __future__ import annotations
 
 
+
 class AllocatorMemoryException(Exception):  # noqa: N818
     """The buffer is not large enough to fulfil an allocation.
 
@@ -56,7 +57,7 @@ class Allocator:
     sizes: list[int]
     starts: list[int]
 
-    __slots__ = 'capacity', 'starts', 'sizes'
+    __slots__ = 'capacity', 'sizes', 'starts'
 
     def __init__(self, capacity: int) -> None:
         """Create an allocator for a buffer of the specified maximum capacity size."""
@@ -343,3 +344,111 @@ class Allocator:
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self!s}>'
+
+
+class RangeAllocator:
+    """Tracks and merges (start, count) buffer subranges for drawing.
+
+    Used by rendering buckets to collect multiple
+    vertex list ranges that belong to the same group/state, and merge
+    contiguous ones into larger draw calls.
+
+    .. note:: This preserves insertion order when re-allocating, but sorts by
+    range start when rebuilding, so that the final merged ranges are contiguous for better batched drawing.
+
+    Example:
+        >>> allocator = RangeAllocator()
+        >>> allocator.add(0, 4)
+        >>> allocator.add(4, 4)
+        >>> allocator.add(8, 4)
+        >>> allocator.merged_ranges
+        [(0, 12)]
+        >>> allocator.remove(4, 4)
+        >>> allocator.merged_ranges
+        [(0, 4), (8, 4)]
+        >>> allocator.add(4, 4)
+        >>> allocator.merged_ranges
+        [(0, 12)]
+    """
+
+    _ranges: list[tuple[int, int]]
+    _merged: list[tuple[int, int]]
+    is_dirty: bool
+
+    __slots__ = ("_merged", "_ranges", "is_dirty")
+
+    def __init__(self) -> None:
+        """Initialize an empty range collector."""
+        self._ranges = []
+        self._merged = []
+        self.is_dirty = False
+
+    def add(self, start: int, count: int) -> None:
+        """Add a new range to be tracked.
+
+        Args:
+            start:
+                Starting index of the buffer range.
+            count:
+                Number of elements in the range.
+        """
+        self._ranges.append((start, count))
+        self.is_dirty = True
+
+    def remove(self, start: int, count: int) -> None:
+        """Remove a specific tracked range if it exists.
+
+        Args:
+            start:
+                Starting index of the buffer range.
+            count:
+                Number of elements in the range.
+        """
+        try:
+            self._ranges.remove((start, count))
+            self.is_dirty = True
+        except ValueError:
+            pass  # Silently ignore if not found
+
+    def clear(self) -> None:
+        self._ranges.clear()
+        self._merged.clear()
+        self.is_dirty = False
+
+    def _rebuild(self) -> None:
+        """Rebuild merged contiguous ranges."""
+        if not self.is_dirty:
+            return
+
+        merged: list[tuple[int, int]] = []
+        for start, count in sorted(self._ranges, key=lambda r: r[0]):
+            if merged and start == merged[-1][0] + merged[-1][1]:
+                s0, c0 = merged[-1]  # Extend previous block
+                merged[-1] = (s0, c0 + count)
+            else:
+                merged.append((start, count))
+        self._merged = merged
+        self.is_dirty = False
+
+    @property
+    def merged_ranges(self) -> list[tuple[int, int]]:
+        """Return contiguous ranges.
+
+        Returns:
+            A list of ``(start, count)`` of draw ranges.
+        """
+        self._rebuild()
+        return self._merged
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self._ranges) == 0
+
+    def __len__(self) -> int:
+        """Return the number of tracked (unmerged) ranges."""
+        return len(self._ranges)
+
+    def __iter__(self):
+        """Iterate over the current merged contiguous ranges."""
+        self._rebuild()
+        return iter(self._merged)

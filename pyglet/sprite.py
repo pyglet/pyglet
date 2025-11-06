@@ -350,6 +350,7 @@ class Sprite(event.EventDispatcher):
             self._texture = texture
             self._group = self.get_sprite_group()
             self._create_vertex_list()
+            print("CREATE VERTEX LIST")
         else:
             self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture

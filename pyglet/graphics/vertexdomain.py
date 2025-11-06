@@ -694,8 +694,10 @@ class VertexArrayProtocol(Protocol):
     def bind(self): ...
     def unbind(self): ...
 
+
 class VertexArrayBinding:
     """Program-specific VAO that binds streams."""
+
     def __init__(self, ctx, streams: list[VertexStream | InstanceStream | IndexStream]):
         # attr_map: semantic/name -> location (from ShaderProgram inspection)
         self._ctx = ctx
@@ -706,11 +708,87 @@ class VertexArrayBinding:
     def bind(self):
         raise NotImplementedError
 
-    def _create_vao(self) -> VertexArrayProtocol:
-        ...
+    def _create_vao(self) -> VertexArrayProtocol: ...
 
     def _link(self):
         """Link the all streams to the VAO."""
 
     def __repr__(self):
         return f'<{self.__class__.__name__}@{id(self):x} vao={self.vao}, streams={self.streams}>'
+
+
+class _MultiDrawCache:
+    def __init__(self):
+        self._starts = None
+        self._sizes = None
+        self._primcount = 0
+        self.is_dirty = True
+
+    def rebuild_from_regions(self, regions, index_element_size):
+        primcount = len(regions)
+        if primcount == 0:
+            self._starts = self._sizes = None
+            self._primcount = 0
+            self.is_dirty = False
+            return
+
+        intptr_array = (GLintptr * primcount)(
+            *(r[0] * index_element_size for r in regions),
+        )
+        self._starts = (ctypes.POINTER(GLvoid) * primcount)(
+            *[ctypes.cast(ctypes.c_void_p(addr), ctypes.POINTER(GLvoid)) for addr in intptr_array],
+        )
+        self._sizes = (GLsizei * primcount)(*(r[1] for r in regions))
+        self._primcount = primcount
+        self.is_dirty = False
+
+    def bind_and_draw(self, ctx, mode, gl_type):
+        if self._primcount:
+            ctx.glMultiDrawElements(mode, self._sizes, gl_type, self._starts, self._primcount)
+
+
+
+class VertexGroupBucket(allocation.RangeAllocator):
+    """A grouping of vertex lists belonging to a single group in a domain.
+
+    Vertex lists are still owned by the domain, but this allows states to be rendered together if possible.
+    """
+
+    __slots__ = ("_merged", "_ranges", "is_dirty")
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def add_vertex_list(self, vl: VertexList) -> None:
+        self.add(vl.start, vl.count)
+        vl.bucket = vl
+
+    def remove_vertex_list(self, vl: VertexList) -> None:
+        self.remove(vl.start, vl.count)
+        vl.bucket = None
+
+    def draw(self, domain, mode: int) -> None:
+        """Draw all contiguous ranges."""
+        for start, count in self.merged_ranges:
+            domain.draw_range(mode, start, count)
+
+
+class IndexedVertexGroupBucket(allocation.RangeAllocator):
+    """A grouping of indexed vertex lists belonging to a single group in a domain.
+
+    Vertex lists are still owned by the domain, but this allows states to be rendered together if possible.
+    """
+    __slots__ = ("_merged", "_ranges", "is_dirty")
+
+    def add_vertex_list(self, vl: IndexedVertexList) -> None:
+        self.add(vl.index_start, vl.index_count)
+        vl.bucket = self
+
+    def remove_vertex_list(self, vl: IndexedVertexList) -> None:
+        self.remove(vl.index_start, vl.index_count)
+        vl.bucket = None
+
+    def draw(self, domain, mode: int) -> None:
+        """Draw all contiguous ranges."""
+        for start, count in self.merged_ranges:
+            domain.draw_range(mode, start, count)

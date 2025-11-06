@@ -307,6 +307,9 @@ class BatchBase:
         self._draw_list = []
         self._draw_list_dirty = False
 
+        self._domain_registry: dict[_DomainKey, VertexDomain] = {}
+        self._all_domains_in_draw_order: list[VertexDomain] = []  # cached order
+
         self._instance_count = 0
         self.initial_count = initial_count
 
