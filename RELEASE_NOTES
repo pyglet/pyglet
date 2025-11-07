@@ -1,3 +1,17 @@
+pyglet 2.1.11
+
+Changes
+-------
+shader: Add some missing Uniform type definitions that were missed for less common types. #1380
+ffmpeg: Remove some missing attributes (libavformat version loading) that have been removed in FFMpeg 8.0.
+
+Bugfixes
+--------
+media.ffmpeg: Fix source padding issue for some sources. #1386
+window.win32: Fix memory address issues when queuing events during Windows OS window creation. #1382
+font.dwrite: Fix bug in font_files indixing (use first object, not font_fact index).
+
+
 pyglet 2.1.10
 
 Changes
