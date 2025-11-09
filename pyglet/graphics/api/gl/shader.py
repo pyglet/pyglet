@@ -1270,14 +1270,9 @@ class ShaderProgram(ShaderProgramBase):
         batch = batch or pyglet.graphics.get_default_batch()
         group = group or pyglet.graphics.ShaderGroup(program=self)
         domain = batch.get_domain(indexed, bool(instances), mode, group, attributes)
-        bucket = domain.get_group_bucket(group)
 
         # Create vertex list and initialize
-        if indexed:
-            vlist = domain.create(count, indices)
-        else:
-            vlist = domain.create(count)
-        bucket.add_vertex_list(vlist)
+        vlist = domain.create(group, count, indices)
 
         for name, array in initial_arrays:
             vlist.set_attribute_data(name, array)

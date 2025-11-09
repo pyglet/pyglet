@@ -431,6 +431,11 @@ class RangeAllocator:
         self.is_dirty = False
 
     @property
+    def ranges(self) -> list[tuple[int, int]]:
+        """Return a list of all un-merged ranges tracked by this allocator."""
+        return self._ranges
+
+    @property
     def merged_ranges(self) -> list[tuple[int, int]]:
         """Return contiguous ranges.
 

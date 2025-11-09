@@ -1,8 +1,18 @@
 import ctypes
+from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 import pyglet
+from pyglet.enums import CompareOp
+from pyglet.graphics.state import State
 
+
+class UniqueState(State):
+    sets_state = True
+
+@dataclass(frozen=True)
+class SameState(State):
+    sets_state = True
 
 class GroupNoState(pyglet.graphics.Group):
     """This group has no state to be set.
@@ -11,59 +21,39 @@ class GroupNoState(pyglet.graphics.Group):
     """
 
 
-class GroupWithUniqueGLState(pyglet.graphics.Group):
+class GroupWithUniqueState(pyglet.graphics.Group):
     """This group has a state.
 
-    It should exist after optimization.
+    The state is unique and shouldn't match others.
     """
-    def initialize(self):
-        self.set_states = [pyglet.graphics.GLState(pyglet.gl.gl.glEnable, (pyglet.gl.gl.GL_SCISSOR_TEST,))]
+    def __init__(self):
+        super().__init__()
+        self.add_state(UniqueState())
+
+
+class GroupWithSimilarState(pyglet.graphics.Group):
+    """This group has a state.
+
+    The state is a dataclass and should match others.
+    """
+    def __init__(self):
+        super().__init__()
+        self.add_state(SameState())
 
 
 test_image = pyglet.image.ImageData(1, 1, 'RGBA', (ctypes.c_byte * 4)(0, 0, 0, 0))
 
-import inspect
-
-def _validate_group(batch, no_state_groups, state_groups, expected_sets, expected_unsets, expected_optimized_sets,
-                    expected_optimized_unsets, expected_binds, expected_draws):
+def _validate_group(batch, expected_groups, expected_sets, expected_unsets, expected_binds, expected_draws):
     draw_list = batch._create_draw_list()  # noqa: SLF001
 
     batch._draw_list = draw_list
 
     original_function_names = [func.__name__ for func in draw_list]
 
-    print(original_function_names)
-
     assert original_function_names.count("set_state") == expected_sets
     assert original_function_names.count("unset_state") == expected_unsets
-
-    vao_binds = original_function_names.count("bind_vao")
-    draw_calls = original_function_names.count("<lambda>")
-
-    print("VAO", vao_binds, "DRAW", draw_calls)
-
-    # draw_list_groups = [draw_group for domain, mode, draw_group in draw_list]
-    #
-    # optimized = batch._optimize_draw_list(draw_list)  # noqa: SLF001
-    #
-    # optimized_bound_instances = [func.__self__ for func in optimized if hasattr(func, '__self__')]
-    #
-
-    # for nsg in no_state_groups:
-    #     assert nsg in draw_list_groups  # Group exists in original draw list.
-    #     assert nsg not in optimized_bound_instances  # No state, no set.
-    #
-    # for sg in state_groups:
-    #     assert sg in draw_list_groups  # Group exists in original draw list.
-    #     assert sg in optimized_bound_instances  # State set, should be found.
-    #
-    # # set_state, bind, <lambda>, and unset_state
-    # function_names = [func.__name__ for func in optimized]
-    #
-    # assert function_names.count("set_state") == expected_optimized_sets
-    # assert function_names.count("unset_state") == expected_optimized_unsets
-    # assert function_names.count("bind") == expected_binds
-    # assert function_names.count("<lambda>") == expected_draws
+    assert original_function_names.count("_bind_vao") == expected_binds
+    assert original_function_names.count("_draw") == expected_draws
 
 
 def test_group_parent_no_state(gl3_context):
@@ -74,11 +64,9 @@ def test_group_parent_no_state(gl3_context):
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, group=group, batch=batch)
 
-    _validate_group(batch, [group], [sprite._group],
+    _validate_group(batch, expected_groups=[sprite._group],
                     expected_sets=5,  # program, blend enable, blend mode, active texture, texture state
                     expected_unsets=2,
-                    expected_optimized_sets=1,
-                    expected_optimized_unsets=1,
                     expected_draws=1,
                     expected_binds=1,
                     )
@@ -87,31 +75,27 @@ def test_group_parent_with_state(gl3_context):
     """State should be kept of parent."""
     batch = pyglet.graphics.Batch()
 
-    group = GroupWithUniqueGLState()
+    group = GroupWithUniqueState()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, group=group, batch=batch)
 
-    _validate_group(batch, [], [group, sprite._group],
-                    expected_sets=5,
+    _validate_group(batch, [group],
+                    expected_sets=6,  # Calls an empty state function.
                     expected_unsets=2,
-                    expected_optimized_sets=2,
-                    expected_optimized_unsets=2,
                     expected_draws=1,
                     expected_binds=1,
                     )
 
 
 def test_group_no_parent(gl3_context):
-    # Make sure parent state exists if a child changes it
+    """Make sure parent state exists if a child changes it."""
     batch = pyglet.graphics.Batch()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
 
-    _validate_group(batch, [], [sprite._group],
+    _validate_group(batch, [sprite._group],
                     expected_sets=5,
                     expected_unsets=2,
-                    expected_optimized_sets=1,
-                    expected_optimized_unsets=1,
                     expected_draws=1,
                     expected_binds=1,
                     )
@@ -123,33 +107,77 @@ def test_group_ordering(gl3_context):
 
 
 def test_group_consolidation(gl3_context):
-    # Make sure the same groups consolidate.
+    """Make sure the same groups consolidate properly."""
     batch = pyglet.graphics.Batch()
 
     sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
     sprite2 = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
 
-    _validate_group(batch, [], [sprite._group, sprite2._group],
+    _validate_group(batch, [sprite._group, sprite2._group],
                     expected_sets=5,
                     expected_unsets=2,
-                    expected_optimized_sets=1,
-                    expected_optimized_unsets=1,
                     expected_draws=1,
                     expected_binds=1,
                     )
 
+def test_similar_group_equal_comparison():
+    """Ensure groups that are similar will equal each other or rendering may break."""
+    group1 = pyglet.graphics.Group()
+    group1.set_viewport(0, 0, 100, 100)
+    group1.set_depth_test(CompareOp.EQUAL)
 
-def test_group_comparison():
-    # Make sure similar groups compare to eachother.
-    pass
+    group2 = pyglet.graphics.Group()
+    group2.set_viewport(0, 0, 100, 100)
+    group2.set_depth_test(CompareOp.EQUAL)
 
+    assert group2 == group1
+    assert group2 is not group1
 
-def test_group_deletion(gl3_context):
-    # Make sure groups are freed from the domain and batch when removed.
-    batch = pyglet.graphics.Batch()
+def test_similar_group_equal_comparison_inherit():
+    """Same as above, but groups that added their state within the group creation."""
+    group1 = GroupWithSimilarState()
+    group2 = GroupWithSimilarState()
 
-    sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
+    assert group2 == group1
+    assert group2 is not group1
 
+def test_different_group_equal_add_comparison():
+    """Ensure groups that are different will not equal each other or rendering may break."""
+    group1 = pyglet.graphics.Group()
+    group1.set_viewport(0, 0, 200, 200)
+
+    group2 = pyglet.graphics.Group()
+    group2.set_viewport(0, 0, 100, 100)
+
+    assert group2 != group1
+    assert group2 is not group1
+
+def test_group_custom_state_comparison():
+    """Ensure states that aren't dataclasses will not equal each other or rendering may break."""
+    group1 = GroupWithUniqueState()
+    group2 = GroupWithUniqueState()
+
+    assert group2 != group1
+    assert group2 is not group1
+
+def test_group_custom_state_dataclass_comparison():
+    """Ensure states that are dataclasses will equal each other or rendering may break."""
+    @dataclass(frozen=True)
+    class MyState(State):
+        sets_state = True
+
+    custom_state = MyState()
+    group1 = pyglet.graphics.Group()
+    group1.add_state(custom_state)
+
+    other_custom_state = MyState()
+    group2 = pyglet.graphics.Group()
+    group2.add_state(other_custom_state)
+
+    assert group2 == group1
+    assert group2 is not group1
+
+def _test_sprite_deletion(sprite, batch):
     domain = sprite._vertex_list.domain
     group = sprite._group
     removed_vlist = sprite._vertex_list
@@ -162,16 +190,42 @@ def test_group_deletion(gl3_context):
     # Group should actually still exist, until the draw list is recreated.
     assert domain in list(batch._domain_registry.values())
     assert domain.has_bucket(group) == True
-    assert group in domain._buckets
+    assert group in domain._vertex_buckets
 
+def test_single_group_deletion(gl3_context):
+    """Make sure groups are freed from the domain and their buckets when removed."""
+    batch = pyglet.graphics.Batch()
+
+    sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
+
+    domain = sprite._vertex_list.domain
+    group = sprite._group
+
+    _test_sprite_deletion(sprite, batch)
+
+    # Recreate draw list after deletion.
     batch._update_draw_list()
+    batch.delete_empty_domains()
 
     # Ensure an empty domain is removed and the group is removed.
     assert group not in batch.top_groups
-    assert domain not in batch._domain_registry
+    assert domain not in list(batch._domain_registry.values())
     assert domain.has_bucket(group) == False
 
 
-def test_group_buildup():
-    # Ensure group count in a domain does not exceed the total number of groups.
-    pass
+def test_group_persistence_deletion(gl3_context):
+    """Creates two sprites and deletes one to ensure resources still exist for the other."""
+    batch = pyglet.graphics.Batch()
+
+    sprite = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
+    group = sprite._group
+    domain = sprite._vertex_list.domain
+
+    sprite2 = pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch)
+
+    batch._update_draw_list()
+
+    # Ensure group bucket still exists because only one was removed.
+    assert group in batch.top_groups
+    assert domain in batch._domain_registry.values()
+    assert domain.has_bucket(group) == True

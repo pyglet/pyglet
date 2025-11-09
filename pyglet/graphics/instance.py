@@ -4,7 +4,6 @@ import weakref
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
-
 if TYPE_CHECKING:
     from pyglet.graphics.vertexdomain import InstanceStream, VertexArrayBinding
     from pyglet.graphics.api.gl.vertexdomain import InstanceVertexList, InstanceIndexedVertexList

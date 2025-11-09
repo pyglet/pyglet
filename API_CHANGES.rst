@@ -26,6 +26,8 @@ pyglet.graphics
 
 *Changed*: Now has a global graphics core object that manages the multiple contexts.
 
+*Added*: Batches can now accept a specific context and/or initial size argument.
+
 *Added*: Ability kwargs to target specific contexts for Pyglet objects if using multiple contexts.
 
 

@@ -281,6 +281,8 @@ class BatchBase:
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
+    _empty_domains: set[_DomainKey]
+    _domain_registry: dict[_DomainKey, Any]
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
@@ -307,10 +309,12 @@ class BatchBase:
         self._draw_list = []
         self._draw_list_dirty = False
 
-        self._domain_registry: dict[_DomainKey, VertexDomain] = {}
-        self._all_domains_in_draw_order: list[VertexDomain] = []  # cached order
+        # Mapping of DomainKey to a VertexDomain
+        self._domain_registry = {}
 
-        self._instance_count = 0
+        # Keep empty domains around for a little to prevent possible.
+        self._empty_domains = set()
+
         self.initial_count = initial_count
 
     def invalidate(self) -> None:
@@ -322,6 +326,18 @@ class BatchBase:
         .. versionadded:: 1.2
         """
         self._draw_list_dirty = True
+
+    def delete_empty_domains(self) -> None:
+        """Deletes all empty domains and all of their buffers.
+
+        Should not need to be called through normal usage, as this will occur periodically.
+        """
+        for domain_key in self._empty_domains:
+            domain = self._domain_registry[domain_key]
+            # It's possible this domain was re-used before being deleted, check one last time before removal.
+            if domain.is_empty:
+                del self._domain_registry[domain_key]
+        self._empty_domains.clear()
 
     def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgramBase) -> bool:
