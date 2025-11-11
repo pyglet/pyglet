@@ -62,8 +62,8 @@ class Group:
         self._visible = True
         self._assigned_batches = weakref.WeakSet()
 
-        self.state_names = {}
-        self.states = []
+        self._state_names = {}
+        self._states = []
 
         # Store data on the group for states to use during their state call.
         self.data = { "uniform" : {}}
@@ -81,10 +81,10 @@ class Group:
         return self._dirty
 
     def add_state(self, state: State) -> None:
-        self.states.append(state)
-        self.state_names[state.__class__.__name__] = state
+        self._states.append(state)
+        self._state_names[state.__class__.__name__] = state
 
-        self.hashable_states = tuple({state for state in self.states if state.group_hash is True})
+        self.hashable_states = tuple({state for state in self._states if state.group_hash is True})
         self._hash = hash((self._order, self.parent, self.hashable_states))
         self._dirty = True
 
@@ -197,7 +197,7 @@ class Group:
 
     def set_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all set states of the underlying Group."""
-        for state in self.states:
+        for state in self._states:
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
                     if dependant_state.sets_state:
@@ -208,7 +208,7 @@ class Group:
 
     def unset_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all unset states of the underlying Group."""
-        for state in self.states:
+        for state in self._states:
             if state.dependents:
                 for dependant_state in state.generate_dependent_states():
                     if dependant_state.unsets_state:

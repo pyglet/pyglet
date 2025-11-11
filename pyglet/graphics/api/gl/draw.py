@@ -5,7 +5,6 @@ from typing import Callable, Sequence, Any, TYPE_CHECKING
 import pyglet
 from pyglet.graphics.api.gl.enums import geometry_map
 
-
 from pyglet.graphics.draw import _DomainKey, BatchBase, Group
 from pyglet.graphics.api.gl import (
     vertexdomain, OpenGLSurfaceContext,
@@ -118,8 +117,6 @@ def get_default_blit_shader() -> ShaderProgram:
     )
 
 
-
-
 _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     # Indexed, Instanced : Domain
     (False, False): vertexdomain.VertexDomain,
@@ -128,87 +125,6 @@ _domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
     (True, True): vertexdomain.InstancedIndexedVertexDomain,
 }
 
-
-class _StateManager:
-    active_states: dict[type, State]
-
-    def __init__(self) -> None:
-        self.active_states = {}
-
-    @staticmethod
-    def expand_states_to_dict(states: list[State]) -> dict[type, State]:
-        """Flatten a groups list of states (including dependents) into a dict."""
-        out: dict[type, State] = {}
-        all_states: list[State] = []
-        for s in states:
-            if s.dependents:
-                all_states.extend(s.generate_dependent_states())
-            all_states.append(s)
-        for s in all_states:
-            out[type(s)] = s
-        return out
-
-    def transition_to(self, target: dict[type, State]) -> tuple[list[Callable], list[Callable]]:
-        """Transition from the current active states to the target state set.
-
-        Emits only changes for states that differ or are missing.
-        Returns (set_functions, unset_functions).
-        """
-        set_funcs: list[Callable] = []
-        unset_funcs: list[Callable] = []
-
-        current = self.active_states
-
-        # Unset anything that no longer exists in target
-        for t, cur in list(current.items()):
-            if t not in target:
-                if cur.unsets_state:
-                    unset_funcs.append(cur.unset_state)
-                del current[t]
-
-        # Anything new or changed
-        for t, new in target.items():
-            old = current.get(t)
-            if old is None or old != new:
-                if new.sets_state:
-                    set_funcs.append(new.set_state)
-                current[t] = new
-            # else equals no-op
-
-        return set_funcs, unset_funcs
-
-    def get_cleanup_states(self) -> list[Callable]:
-        """Return a list of functions to unset all active states.
-
-        Clears the active states in the process. This is done at the end of the batch draw.
-        """
-        funcs = [s.unset_state for s in self.active_states.values() if s.unsets_state]
-        self.active_states.clear()
-        return funcs
-
-# Singleton instance for all batches.
-_state_manager: _StateManager = _StateManager()
-
-
-class _DrawConsolidator:
-    """Handles consolidating draw calls together by state."""
-    def __init__(self) -> None:
-        self.set_states = []
-        self.unset_states = []
-        self.buckets = []
-        self.draw_list = []
-        self.last_domain = None
-        self.last_mode = None
-
-    def store_states(self, set_states: list[Callable], unset_states: list[Callable]) -> None:
-        self.set_states.extend(set_states)
-        self.unset_states.extend(unset_states)
-
-    def commit_states(self) -> None:
-        self.draw_list.extend(self.set_states)
-        self.draw_list.extend(self.unset_states)
-        self.set_states.clear()
-        self.unset_states.clear()
 
 class Batch(BatchBase):
     """Manage a collection of drawables for batched rendering.
@@ -404,34 +320,10 @@ class Batch(BatchBase):
 
     def _create_draw_list(self) -> list[Callable]:
         """Rebuild draw list by walking the group tree and minimizing state transitions."""
-        def _vao_call_fn(domain):
-            def _bind_vao(_context):
-                domain.bind_vao()
-
-            return _bind_vao
-
-        def make_draw_buckets_fn(domain, buckets, mode_func):
-            def _draw(_context):
-                domain.draw_buckets(mode_func, buckets)
-
-            return _draw
-
-        def _flush_buckets(dc, draw_list):
-            draw_list.append(make_draw_buckets_fn(dc.last_domain, list(dc.buckets), dc.last_mode))
-            dc.buckets.clear()
-
-        def visit(group: Group, inherited_state: dict[type, State]) -> list[Callable]:
-            nonlocal dc
-
-            draw_list: list[Callable] = []
+        def visit(group: Group) -> list[Callable]:
+            draw_list = []
             if not group.visible:
                 return draw_list
-
-            dc.draw_list = draw_list
-
-            group_states = _state_manager.expand_states_to_dict(group.states)
-
-            has_states = bool(group_states)
 
             # Determine if any vertices are drawable.
             is_drawable = False
@@ -448,24 +340,6 @@ class Batch(BatchBase):
                 self._cleanup_groups(group)
                 return []
 
-            # Group is not drawable, and has no states, go through visible children.
-            if not has_states and not is_drawable:
-                for child in sorted(self.group_children.get(group, [])):
-                    if child.visible:
-                        draw_list.extend(visit(child, inherited_state))
-                if not self.group_children.get(group):
-                    self._cleanup_groups(group)
-                return draw_list
-            # Compute the effective target state
-            target_state = {**inherited_state, **group_states}
-
-            # Apply state transitions
-            set_calls, unset_calls = _state_manager.transition_to(target_state)
-
-            state_changed = bool(set_calls or unset_calls)
-
-            dc.store_states(set_calls, unset_calls)
-
             # If drawable, then find the domains to draw.
             if is_drawable:
                 for dkey, domain in self._domain_registry.items():
@@ -473,59 +347,141 @@ class Batch(BatchBase):
                     if not bucket:
                         continue
 
-                    mode_func = geometry_map[dkey.mode]
-                    domain_changed = dc.last_domain != domain
-                    # If not the last VAO, then assign a VAO.
-                    if domain_changed:
-                        if dc.buckets:
-                            _flush_buckets(dc, draw_list)
-
-                        dc.commit_states()
-
-                        draw_list.append(_vao_call_fn(domain))
-
-                    # If the state changed, and the domain didn't, states need to still be comitted
-                    # Domain change would have flushed already.
-                    if state_changed and not domain_changed:
-                        # If the last state has changed, then we can't draw them together. Commit the buckets.
-                        if dc.buckets:
-                            _flush_buckets(dc, draw_list)
-                        dc.commit_states()
-
-                    dc.buckets.append(bucket)
-
-                    dc.last_domain = domain
-                    dc.last_mode = mode_func
+                    draw_list.append((domain, dkey.mode, group))
 
             # Recurse into visible children
-            for child in sorted(self.group_children.get(group, [])):
+            children = self.group_children.get(group, [])
+            for child in sorted(children):
                 if child.visible:
-                    draw_list.extend(visit(child, target_state))
+                    draw_list.extend(visit(child))
 
-            if not is_drawable:
-                dc.commit_states()
+            if children or is_drawable:
+                return [(None, 'set', group), *draw_list, (None, 'unset', group)]
 
             return draw_list
 
         _draw_list = []
 
-        dc = _DrawConsolidator()
-
         self.top_groups.sort()
-        baseline_state: dict[type, State] = {}
 
         for top in list(self.top_groups):
             if top.visible:
-                _draw_list.extend(visit(top, baseline_state))
-
-        # Cleanup for anything still active
-        if dc.buckets:
-            _draw_list.append(make_draw_buckets_fn(dc.last_domain, list(dc.buckets), dc.last_mode))
-        _draw_list.extend(_state_manager.get_cleanup_states())
+                _draw_list.extend(visit(top))
 
         return _draw_list
 
-    def _dump_draw_list_call_order(self, draw_list: list[Callable], include_dc: bool=False) -> None:
+    def _optimize_draw_list(self, draw_list: list[tuple]) -> list[Callable]:
+        """Turn a flattened (domain/mode/group) list into optimized callables.
+        States that are equal (by __eq__) are treated as the same logical GPU state.
+        Intermediate unset/set pairs for identical states are removed, preserving
+        dependency ordering and teardown safety.
+        """
+        calls: list[Callable] = []
+        active_states: dict[type, State] = {}  # (type, key) -> instance
+        expanded_states = {}
+
+        # ----------------- helpers -----------------
+        def _vao_bind_fn(domain):
+            def _bind_vao(_ctx):
+                domain.bind_vao()
+
+            return _bind_vao
+
+        def _draw_bucket_fn(domain, bucket, mode_func):
+            def _draw(_ctx):
+                domain.draw_buckets(mode_func, [bucket])
+
+            return _draw
+
+        def _expand_states_in_order(states: list) -> list:
+            """Dependents first, then the state itself."""
+            ordered: list = []
+            for s in states:
+                if s.dependents:
+                    ordered.extend(s.generate_dependent_states())
+                ordered.append(s)
+            return ordered
+
+        def _next_same_type_set(idx: int, state_type: type) -> None | State:
+            for j in range(idx + 1, len(draw_list)):
+                dom2, mode2, group2 = draw_list[j]
+                if dom2 is None and mode2 == "set":
+                    for s2 in expanded_states[group2]:
+                        if type(s2) is state_type:
+                            return s2  # first same-type set we see in the future
+            return None
+
+        def _emit_set(_state: State, _group: Group) -> None:
+            state_type = type(_state)
+            current = active_states.get(state_type)
+
+            if current is None:
+                if _state.sets_state:
+                    calls.append(_state.set_state)
+                active_states[state_type] = _state
+                return
+
+            # Already active.
+            if current == _state:
+                return
+
+            if current.unsets_state:
+                calls.append(current.unset_state)
+            if _state.sets_state:
+                calls.append(_state.set_state)
+            active_states[state_type] = _state
+
+        def _emit_unset(_state, idx):
+            """Emit only at last appearance."""
+            state_type = type(_state)
+            current = active_states.get(state_type)
+            if current is None:
+                return  # nothing active of this type
+
+            # Check if this type exists in the future.
+            next_set = _next_same_type_set(idx, state_type)
+
+            # Doesn't exist, so just unset it now.
+            if next_set is None:
+                if current.unsets_state:
+                    calls.append(current.unset_state)
+                active_states.pop(state_type, None)
+                return
+
+            # Next set is the current one, so this state can potentially persist.
+            if next_set == current:
+                return
+
+            # There exists the same state type in the future, but it's not this one. Unset state.
+            if current.unsets_state:
+                calls.append(current.unset_state)
+            active_states.pop(state_type, None)
+
+        for (domain, mode, group) in draw_list:
+            if group not in expanded_states:
+                expanded_states[group] = _expand_states_in_order(group._states)
+
+        for i, (domain, mode, group) in enumerate(draw_list):
+            if domain is None:
+                if mode == "set":
+                    for s in expanded_states[group]:
+                        _emit_set(s, group)
+                elif mode == "unset":
+                    for s in reversed(expanded_states[group]):
+                        _emit_unset(s, i)
+                continue
+
+            # Drawable entry
+            bucket = domain.get_drawable_bucket(group)
+            if not bucket or bucket.is_empty:
+                continue
+            calls.append(_vao_bind_fn(domain))
+            calls.append(_draw_bucket_fn(domain, bucket, geometry_map[mode]))
+
+        return calls
+
+
+    def _dump_draw_list_call_order(self, draw_list: list[Callable], include_dc: bool=True) -> None:
         import inspect
 
         print("=== DRAW ORDER ===")
@@ -581,7 +537,13 @@ class Batch(BatchBase):
 
     def _update_draw_list(self) -> None:
         if self._draw_list_dirty:
-            self._draw_list = self._create_draw_list()
+            draw_list = self._create_draw_list()
+            #print("----initial_draw_list-----")
+            #for i, d in enumerate(draw_list):
+            #    print(f"{i}: {d}")
+            #print("----end initial draw list-----")
+            self._draw_list = self._optimize_draw_list(draw_list)
+            #self._dump_draw_list_call_order(self._draw_list)
             self._draw_list_dirty = False
 
     def draw(self) -> None:

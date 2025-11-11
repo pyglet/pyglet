@@ -51,13 +51,13 @@ class ShaderProgramState(State):
     program: ShaderProgram
 
     sets_state: bool = True
-    unsets_state: bool = True
+    #unsets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
         self.program.use()
 
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program.stop()
+    #def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
+    #    self.program.stop()
 
 @dataclass(frozen=True)
 class RenderPassState(State):
