@@ -30,15 +30,19 @@ class ActiveTextureState(State):
 
 @dataclass(frozen=True)
 class TextureState(State):  # noqa: D101
-    texture: TextureBase
+    texture: tuple[int, int]
     binding: int = 0
     set_id: int = 0
 
     dependents: bool = True
     sets_state: bool = True
 
+    @classmethod
+    def from_texture(cls, texture: TextureBase, binding: int, set_id: int) -> TextureState:
+        return cls((texture.target, texture.id), binding, set_id)
+
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.bindTexture(self.texture.target, self.texture.id)
+        ctx.gl.bindTexture(*self.texture)
 
     def generate_dependent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)

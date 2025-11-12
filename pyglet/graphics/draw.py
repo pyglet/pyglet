@@ -127,7 +127,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
-        self.add_state(TextureState(texture, texture_unit, set_id))
+        self.add_state(TextureState.from_texture(texture, texture_unit, set_id))
 
     @property
     def order(self) -> int:
