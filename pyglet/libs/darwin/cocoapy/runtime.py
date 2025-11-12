@@ -66,6 +66,34 @@ libc = cdll.LoadLibrary(util.find_library('c'))
 libc.free.restype = None
 libc.free.argtypes = [c_void_p]
 
+libc.sysctlbyname.argtypes = [c_char_p, c_void_p, POINTER(c_size_t), c_void_p, c_size_t]
+libc.sysctlbyname.restype = c_int
+
+def _sysctl_get(name: str) -> str:
+    name_bytes = name.encode("utf-8")
+
+    size = c_size_t()
+    # Gets buffer size.
+    libc.sysctlbyname(name_bytes, None, byref(size), None, 0)
+
+    buf = create_string_buffer(size.value)
+    libc.sysctlbyname(name_bytes, buf, byref(size), None, 0)
+    return buf.value.decode("utf-8")
+
+def get_chip_model() -> str:
+    """Return Apple chip model name.
+
+    For example: "Apple M2"
+    """
+    try:
+        # Newer field.
+        return _sysctl_get("machdep.cpu.brand_string")
+    except Exception:
+        try:
+            return _sysctl_get("hw.model")
+        except Exception:
+            return "Unknown"
+
 ######################################################################
 
 # BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types)

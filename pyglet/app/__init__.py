@@ -47,8 +47,10 @@ if _is_pyglet_doc_run:
 else:
     if compat_platform == 'darwin':
         from pyglet.app.cocoa import CocoaPlatformEventLoop as PlatformEventLoop
+        from pyglet.libs.darwin.cocoapy.runtime import get_chip_model
 
-        if platform.machine() == 'arm64' or pyglet.options["osx_alt_loop"]:
+        # Use alternate loop only if forced, or using an M1 chip.
+        if (platform.machine() == 'arm64' and "M1" in get_chip_model()) or pyglet.options.osx_alt_loop:
             from pyglet.app.cocoa import CocoaAlternateEventLoop as EventLoop
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
