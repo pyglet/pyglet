@@ -563,12 +563,19 @@ class XInputController(Controller):
         scale = 2.0 / (control.max - control.min)
         bias = -1.0 - control.min * scale
 
-        if name in ("lefttrigger", "righttrigger"):
+        if name == "lefttrigger":
             @control.event
             def on_change(value):
                 normalized_value = value * tscale
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_trigger_motion', self, name, normalized_value)
+                self.dispatch_event('on_lefttrigger_motion', self, normalized_value)
+
+        if name == "righttrigger":
+            @control.event
+            def on_change(value):
+                normalized_value = value * tscale
+                setattr(self, name, normalized_value)
+                self.dispatch_event('on_righttrigger_motion', self, normalized_value)
 
         elif name in ("leftx", "lefty"):
             @control.event
@@ -576,7 +583,7 @@ class XInputController(Controller):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
                 self.leftanalog = Vec2(self.leftx, self.lefty)
-                self.dispatch_event('on_stick_motion', self, "leftstick", self.leftanalog)
+                self.dispatch_event('on_leftstick_motion', self, self.leftanalog)
 
         elif name in ("rightx", "righty"):
             @control.event
@@ -584,7 +591,7 @@ class XInputController(Controller):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
                 self.rightanalog = Vec2(self.rightx, self.righty)
-                self.dispatch_event('on_stick_motion', self, "rightstick", self.rightanalog)
+                self.dispatch_event('on_rightstick_motion', self, self.rightanalog)
 
     def _add_button(self, control, name):
 

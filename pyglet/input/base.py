@@ -497,9 +497,11 @@ class Controller(EventDispatcher):
     The following event types are dispatched:
         `on_button_press`
         `on_button_release`
-        `on_stick_motion`
+        `on_leftstick_motion`
+        `on_rightstick_motion`
         `on_dpad_motion`
-        `on_trigger_motion`
+        `on_lefttrigger_motion`
+        `on_righttrigger_motion`
 
     """
 
@@ -630,12 +632,19 @@ class Controller(EventDispatcher):
                 self.dpad = Vec2(self.dpadx, self.dpady)
                 self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
 
-        elif axis_name in ("lefttrigger", "righttrigger"):
+        elif axis_name == "lefttrigger":
             @control.event
             def on_change(value):
                 normalized_value = value * tscale
                 setattr(self, axis_name, normalized_value)
-                self.dispatch_event('on_trigger_motion', self, axis_name, normalized_value)
+                self.dispatch_event(f'on_lefttrigger_motion', self, normalized_value)
+
+        elif axis_name == "righttrigger":
+            @control.event
+            def on_change(value):
+                normalized_value = value * tscale
+                setattr(self, axis_name, normalized_value)
+                self.dispatch_event(f'on_righttrigger_motion', self, normalized_value)
 
         elif axis_name in ("leftx", "lefty"):
             @control.event
@@ -643,7 +652,7 @@ class Controller(EventDispatcher):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
                 self.left_analog = Vec2(self.leftx, -self.lefty)
-                self.dispatch_event('on_stick_motion', self, "leftstick", self.left_analog)
+                self.dispatch_event('on_leftstick_motion', self, self.left_analog)
 
         elif axis_name in ("rightx", "righty"):
             @control.event
@@ -651,7 +660,7 @@ class Controller(EventDispatcher):
                 normalized_value = value * scale + bias
                 setattr(self, axis_name, normalized_value)
                 self.right_analog = Vec2(self.rightx, -self.righty)
-                self.dispatch_event('on_stick_motion', self, "rightstick", self.right_analog)
+                self.dispatch_event('on_rightstick_motion', self, self.right_analog)
 
     def _bind_button_control(self, relation: Relation, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
@@ -840,9 +849,11 @@ class Controller(EventDispatcher):
 
 Controller.register_event_type('on_button_press')
 Controller.register_event_type('on_button_release')
-Controller.register_event_type('on_stick_motion')
+Controller.register_event_type('on_leftstick_motion')
+Controller.register_event_type('on_rightstick_motion')
 Controller.register_event_type('on_dpad_motion')
-Controller.register_event_type('on_trigger_motion')
+Controller.register_event_type('on_lefttrigger_motion')
+Controller.register_event_type('on_righttrigger_motion')
 
 
 class AppleRemote(EventDispatcher):

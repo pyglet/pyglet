@@ -69,25 +69,25 @@ class ControllerDisplay:
     def on_dpad_motion(self, controller, vector):
         self.d_pad.position = Vec2(280, 185) + vector.normalize() * 25
 
-    def on_stick_motion(self, controller, stick, vector):
-        if stick == "leftstick":
-            self.left_stick.position = Vec2(180, 240) + vector * 50
-            self.left_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
-            self.left_stick_bar_x.width = vector.x * 100
-            self.left_stick_bar_y.width = vector.y * 100
-        elif stick == "rightstick":
-            self.right_stick.position = Vec2(540, 240) + vector * 50
-            self.right_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
-            self.right_stick_bar_x.width = vector.x * 100
-            self.right_stick_bar_y.width = vector.y * 100
+    def on_leftstick_motion(self, controller, vector):
+        self.left_stick.position = Vec2(180, 240) + vector * 50
+        self.left_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
+        self.left_stick_bar_x.width = vector.x * 100
+        self.left_stick_bar_y.width = vector.y * 100
 
-    def on_trigger_motion(self, controller, trigger, value):
-        if trigger == "lefttrigger":
-            self.left_trigger.y = 310 + (value*50)
-            controller.rumble_play_weak(value, duration=5)
-        elif trigger == "righttrigger":
-            self.right_trigger.y = 310 + (value*50)
-            controller.rumble_play_strong(value, duration=5)
+    def on_rightstick_motion(self, controller, vector):
+        self.right_stick.position = Vec2(540, 240) + vector * 50
+        self.right_stick_label.text = f"({vector.x:.2f}, {vector.y:.2f})"
+        self.right_stick_bar_x.width = vector.x * 100
+        self.right_stick_bar_y.width = vector.y * 100
+
+    def on_lefttrigger_motion(self, controller, value):
+        self.left_trigger.y = 310 + (value*50)
+        controller.rumble_play_weak(value, duration=5)
+
+    def on_righttrigger_motion(self, controller, value):
+        self.right_trigger.y = 310 + (value*50)
+        controller.rumble_play_strong(value, duration=5)
 
 
 controller_display = ControllerDisplay(batch=batch)
