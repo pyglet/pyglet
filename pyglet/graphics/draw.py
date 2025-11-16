@@ -8,8 +8,16 @@ import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
 
 from pyglet.graphics.state import (
-    State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
-    DepthBufferComparison, ScissorState, ViewportState,
+    State,
+    TextureState,
+    ShaderProgramState,
+    BlendState,
+    ShaderUniformState,
+    UniformBufferState,
+    DepthBufferComparison,
+    ScissorState,
+    ViewportState,
+    _expand_states_in_order,
 )
 
 if TYPE_CHECKING:
@@ -45,7 +53,7 @@ class Group:
     """
     states: list[State]
     _hash: int
-    hashable_states: tuple
+    _hashable_states: tuple
 
     def __init__(self, order: int = 0, parent: Group | None = None) -> None:
         """Initialize a rendering group.
@@ -64,29 +72,22 @@ class Group:
 
         self._state_names = {}
         self._states = []
+        self._expanded_states = []
 
         # Store data on the group for states to use during their state call.
         self.data = { "uniform" : {}}
 
         # Default hash
-        self.hashable_states = ()
+        self._hashable_states = ()
         self._hash = hash((self._order, self.parent))
-
-        # When dirty, it needs to be recalculated.
-        self._dirty = False
-
-    @property
-    def dirty(self) -> bool:
-        """The group requires a recalculation of it's state."""
-        return self._dirty
 
     def add_state(self, state: State) -> None:
         self._states.append(state)
         self._state_names[state.__class__.__name__] = state
+        self._expanded_states = _expand_states_in_order(self._states)
 
-        self.hashable_states = tuple({state for state in self._states if state.group_hash is True})
-        self._hash = hash((self._order, self.parent, self.hashable_states))
-        self._dirty = True
+        self._hashable_states = tuple({state for state in self._states if state.group_hash is True})
+        self._hash = hash((self._order, self.parent, self._hashable_states))
 
     def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
         self.data["scissor"] = [x, y, width, height]
@@ -177,7 +178,7 @@ class Group:
         return (self.__class__ is other.__class__ and
                 self._order == other.order and
                 self.parent == other.parent and
-                self.hashable_states == other.hashable_states)
+                self._hashable_states == other._hashable_states)
 
     def __hash__(self) -> int:
         """This is an immutable return to establish the permanent identity of the object.
@@ -197,23 +198,13 @@ class Group:
 
     def set_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all set states of the underlying Group."""
-        for state in self._states:
-            if state.dependents:
-                for dependant_state in state.generate_dependent_states():
-                    if dependant_state.sets_state:
-                        dependant_state.set_state(ctx)
-
+        for state in self._expanded_states:
             if state.sets_state:
                 state.set_state(ctx)
 
     def unset_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all unset states of the underlying Group."""
-        for state in self._states:
-            if state.dependents:
-                for dependant_state in state.generate_dependent_states():
-                    if dependant_state.unsets_state:
-                        dependant_state.unset_state(ctx)
-
+        for state in self._expanded_states:
             if state.unsets_state:
                 state.unset_state(ctx)
 

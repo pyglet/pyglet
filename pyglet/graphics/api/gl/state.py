@@ -35,7 +35,7 @@ class TextureState(State):  # noqa: D101
     binding: int = 0
     set_id: int = 0
 
-    dependents: bool = True
+    parents: bool = True
     sets_state: bool = True
 
     @classmethod
@@ -45,7 +45,7 @@ class TextureState(State):  # noqa: D101
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
         ctx.glBindTexture(*self.texture)
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
 
 
@@ -90,9 +90,9 @@ class ScissorState(State):
     group: Group
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ScissorStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
@@ -118,13 +118,13 @@ class BlendState(State):
     op: BlendOp = BlendOp.ADD
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
     def __post_init__(self):
         if not isinstance(self.src, BlendFactor):
             raise Exception("src must be BlendFactor")
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield BlendStateEnable()
         # Do later.
         #if self.op != BlendOp.ADD:
@@ -151,9 +151,9 @@ class DepthBufferComparison(State):
     func: CompareOp
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield DepthTestStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:

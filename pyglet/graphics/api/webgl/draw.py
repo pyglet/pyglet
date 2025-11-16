@@ -136,8 +136,8 @@ class StateManager:
         # Collect all states and their dependencies
         all_states = []
         for state in states:
-            if state.dependents:
-                all_states.extend(state.generate_dependent_states())
+            if state.parents:
+                all_states.extend(state.generate_parent_states())
             all_states.append(state)
 
         # Process states in dependency order

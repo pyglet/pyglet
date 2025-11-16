@@ -378,7 +378,6 @@ class Batch(BatchBase):
         """
         calls: list[Callable] = []
         active_states: dict[type, State] = {}  # (type, key) -> instance
-        expanded_states = {}
 
         # ----------------- helpers -----------------
         def _vao_bind_fn(domain):
@@ -387,18 +386,18 @@ class Batch(BatchBase):
 
             return _bind_vao
 
-        def _draw_bucket_fn(domain, bucket, mode_func):
+        def _draw_bucket_fn(domain, buckets, mode_func):
             def _draw(_ctx):
-                domain.draw_buckets(mode_func, [bucket])
+                domain.draw_buckets(mode_func, buckets)
 
             return _draw
 
         def _expand_states_in_order(states: list) -> list:
-            """Dependents first, then the state itself."""
+            """Parent first, then the state itself."""
             ordered: list = []
             for s in states:
-                if s.dependents:
-                    ordered.extend(s.generate_dependent_states())
+                if s.parents:
+                    ordered.extend(s.generate_parent_states())
                 ordered.append(s)
             return ordered
 
@@ -406,77 +405,97 @@ class Batch(BatchBase):
             for j in range(idx + 1, len(draw_list)):
                 dom2, mode2, group2 = draw_list[j]
                 if dom2 is None and mode2 == "set":
-                    for s2 in expanded_states[group2]:
+                    for s2 in group2._expanded_states:  # noqa: SLF001
                         if type(s2) is state_type:
                             return s2  # first same-type set we see in the future
             return None
 
-        def _emit_set(_state: State, _group: Group) -> None:
-            state_type = type(_state)
-            current = active_states.get(state_type)
-
-            if current is None:
-                if _state.sets_state:
-                    calls.append(_state.set_state)
-                active_states[state_type] = _state
+        def flush_buckets():
+            nonlocal current_buckets, last_mode, last_domain
+            if not current_buckets:
                 return
 
-            # Already active.
+            calls.append(_draw_bucket_fn(last_domain, list(current_buckets), geometry_map[last_mode]))
+            current_buckets.clear()
+
+        def _emit_set(_state: State) -> None:
+            stype = type(_state)
+            current = active_states.get(stype)
+
+            # state is same → no-op
             if current == _state:
                 return
 
-            if current.unsets_state:
+            # state changed → flush buckets
+            if current_buckets:
+                flush_buckets()
+
+            # unset previous if needed
+            if current and current.unsets_state:
                 calls.append(current.unset_state)
+
+            # set new state
             if _state.sets_state:
                 calls.append(_state.set_state)
-            active_states[state_type] = _state
 
-        def _emit_unset(_state, idx):
-            """Emit only at last appearance."""
-            state_type = type(_state)
-            current = active_states.get(state_type)
+            active_states[stype] = _state
+
+        def _emit_unset(_state: State, idx: int) -> None:
+            stype = type(_state)
+            current = active_states.get(stype)
             if current is None:
-                return  # nothing active of this type
-
-            # Check if this type exists in the future.
-            next_set = _next_same_type_set(idx, state_type)
-
-            # Doesn't exist, so just unset it now.
-            if next_set is None:
-                if current.unsets_state:
-                    calls.append(current.unset_state)
-                active_states.pop(state_type, None)
                 return
 
-            # Next set is the current one, so this state can potentially persist.
+            next_set = _next_same_type_set(idx, stype)
             if next_set == current:
-                return
+                return  # will remain active
 
-            # There exists the same state type in the future, but it's not this one. Unset state.
+            # state is about to end → flush
+            flush_buckets()
+
             if current.unsets_state:
                 calls.append(current.unset_state)
-            active_states.pop(state_type, None)
+            active_states.pop(stype, None)
 
-        for (domain, mode, group) in draw_list:
-            if group not in expanded_states:
-                expanded_states[group] = _expand_states_in_order(group._states)
+        last_domain = None
+        last_mode = None
+        current_buckets = []
 
         for i, (domain, mode, group) in enumerate(draw_list):
             if domain is None:
+                # This is a state boundary. See if it *actually* changes state; if so, flush first.
                 if mode == "set":
-                    for s in expanded_states[group]:
-                        _emit_set(s, group)
+                    for s in group._expanded_states:
+                        _emit_set(s)
+
                 elif mode == "unset":
-                    for s in reversed(expanded_states[group]):
+                    for s in reversed(group._expanded_states):
                         _emit_unset(s, i)
+
                 continue
 
-            # Drawable entry
+            # Drawable
             bucket = domain.get_drawable_bucket(group)
-            if not bucket or bucket.is_empty:
+            if not bucket or getattr(bucket, "is_empty", False):
                 continue
-            calls.append(_vao_bind_fn(domain))
-            calls.append(_draw_bucket_fn(domain, bucket, geometry_map[mode]))
+
+            # Domain / mode boundaries for multi-draw coalescing
+            if last_domain is None:
+                calls.append(_vao_bind_fn(domain))
+            elif domain != last_domain:
+                # New VAO: flush previous batch, bind new VAO
+                flush_buckets()
+                calls.append(_vao_bind_fn(domain))
+            elif mode != last_mode:
+                # Same VAO but different primitive mode: flush
+                flush_buckets()
+
+            current_buckets.append(bucket)
+            last_domain = domain
+            last_mode = mode
+
+        # Final flush
+        flush_buckets()
 
         return calls
 
