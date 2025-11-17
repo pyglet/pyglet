@@ -13,6 +13,7 @@ from pyglet.util import debug_print
 
 _debug = debug_print('debug_api')
 
+
 class HeadlessDisplay(Display):
 
     def __init__(self):

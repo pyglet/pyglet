@@ -41,6 +41,9 @@ else:
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.display.win32 import Win32Display as Display
         from pyglet.display.win32 import Win32Screen as Screen
+    elif compat_platform == 'linux' and options.wayland:
+        from pyglet.display.wayland import WaylandDisplay as Display
+        from pyglet.display.wayland import WaylandScreen as Screen
     elif compat_platform == 'linux':
         from pyglet.display.xlib import XlibDisplay as Display
         from pyglet.display.xlib import XlibScreen as Screen

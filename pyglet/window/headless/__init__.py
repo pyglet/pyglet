@@ -19,8 +19,8 @@ ViewEventHandler = _ViewEventHandler
 
 
 class HeadlessWindow(BaseWindow):
-    _egl_display_connection = None
-    _egl_surface = None
+    egl_display_connection = None
+    egl_surface = None
 
     def _recreate(self, changes: Sequence[str]) -> None:
         pass
@@ -93,16 +93,16 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def _create(self) -> None:
-        self._egl_display_connection = self.display._display_connection  # noqa: SLF001
-        if pyglet.options.backend and not self._egl_surface and not self._shadow:
+        self.egl_display_connection = self.display._display_connection  # noqa: SLF001
+        if pyglet.options.backend and not self.egl_surface and not self._shadow:
             self._assign_config()
             pbuffer_attribs = (EGL_WIDTH, self._width, EGL_HEIGHT, self._height, EGL_NONE)
             pbuffer_attrib_array = (EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
-            self._egl_surface = eglCreatePbufferSurface(self._egl_display_connection,
-                                                            self.config._egl_config,  # noqa: SLF001
-                                                            pbuffer_attrib_array)
+            self.egl_surface = eglCreatePbufferSurface(self.egl_display_connection,
+                                                       self.config._egl_config,  # noqa: SLF001
+                                                       pbuffer_attrib_array)
 
-            if not self._egl_surface:
+            if not self.egl_surface:
                 raise Exception("Failed to create EGL Surface.")
             self.context.attach(self)
 

@@ -1862,6 +1862,8 @@ else:
         from pyglet.window.cocoa import CocoaWindow as Window
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
+    elif pyglet.compat_platform == 'linux' and pyglet.options.wayland:
+        from pyglet.window.wayland import WaylandWindow as Window
     elif pyglet.compat_platform == 'linux':
         from pyglet.window.xlib import XlibWindow as Window
     elif pyglet.compat_platform == 'emscripten':
@@ -1893,6 +1895,7 @@ class _ShadowWindow(Window):
     def _on_internal_scale(self, scale: float, dpi: int) -> None:
         """No projection and not required."""
 
+
 def _create_shadow_window() -> Window | None:
     # MacOS and browsers don't need a shadow window.
     if pyglet.compat_platform not in ('darwin', 'emscripten'):
@@ -1906,12 +1909,15 @@ def _create_shadow_window() -> Window | None:
         return shadow_window
     return None
 
+
 _shadow_window = _create_shadow_window()
+
 
 __all__ = (
     # imported
     "event",
     "key",
+    "mouse",
     # classes
     "BaseWindow",
     "Window",

@@ -53,6 +53,7 @@ class Options:
     debug_win32: bool
     debug_input: bool
     debug_x11: bool
+    debug_wayland: bool
     debug_com: bool
     vsync: bool | None
     xsync: bool
@@ -69,6 +70,7 @@ class Options:
     osx_alt_loop: bool
     dpi_scaling: Literal["platform", "stretch"]
     shader_bind_management: bool
+    wayland: bool
     backend: str | None
     pyodide: PyodideOptions
 
