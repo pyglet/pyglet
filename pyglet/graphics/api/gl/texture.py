@@ -1140,6 +1140,9 @@ class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
     def _update_item(self, existing_item: T, new_item: T) -> None:
         existing_item.upload(new_item, new_item.anchor_x, new_item.anchor_y, 0)
 
+    def get_texture_sequence(self) -> TextureGrid:
+        return self
+
 # DDS compression formats based on DirectX.
 _dxgi_to_gl_format: dict[int, int] = {
     # --- BC1 ---
