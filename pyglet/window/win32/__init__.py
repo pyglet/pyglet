@@ -415,10 +415,11 @@ class Win32Window(BaseWindow):
     def flip(self) -> None:
         self.draw_mouse_cursor()
 
-        if not self._fullscreen and (self._always_dwm or self._dwm_composition_enabled()) and self._interval:
+        if not self._fullscreen and not self._always_dwm and self._dwm_composition_enabled() and self._interval:
             _dwmapi.DwmFlush()
 
-        self.context.flip()
+        if self._context:
+            self._context.flip()
 
     def set_mouse_passthrough(self, state: bool) -> None:
         color_ref = COLORREF()
