@@ -164,11 +164,6 @@ else:  # Handle import edge cases
 
 # Import the other constants after the UI libraries to avoid
 # cluttering the symbol table when debugging import problems.
-from pyglet.graphics.api.gl import (
-   GL_COLOR_BUFFER_BIT,
-   GL_DEPTH_BUFFER_BIT,
-   glClear,
-)
 
 default_vertex_src = """#version 150 core
 in vec3 translate;
@@ -646,7 +641,7 @@ class PygletWidget(QOpenGLWidget):
 
     def paintGL(self) -> None:
         """Pyglet equivalent of on_draw event for window"""
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.batch.draw()
 
@@ -659,6 +654,8 @@ class PygletWidget(QOpenGLWidget):
         """Call anything that needs a context to be created."""
         self._projection_matrix = pyglet.math.Mat4()
         self._view_matrix = pyglet.math.Mat4()
+
+        self._shadow_window = pyglet.window.Window(1, 1, visible=False)
 
         self.batch = pyglet.graphics.Batch()
 
@@ -676,7 +673,7 @@ class PygletWidget(QOpenGLWidget):
 
     @property
     def viewport(self) -> tuple[int, int, int, int]:
-        """The Window viewport
+        """The Window viewport.
 
         The Window viewport, expressed as (x, y, width, height).
 
