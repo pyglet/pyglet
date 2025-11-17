@@ -462,6 +462,31 @@ For example::
         my_shader.my_uniform = 1.0
 
 
+
+Groups
+^^^^^^
+
+In Pyglet, when a vertex list is added to a Batch, it is effectively combined
+with similar objects in a large buffer. This significantly increases performance, but also presents the question,
+how do I affect those objects separately? That is where `Groups` come into the picture.
+
+A group is a way to affect a group of objects and/or vertices rendered in a `pyglet.graphics.Batch`. It is also
+commonly used to affect the draw order in the draw list. It is the collection of states that are applied to those
+vertex lists.
+
+For example, if you have a number of vertex lists that all need texturing enabled,
+but have different bound textures. The following example demonstrates this::
+
+    class TextureBindGroup(pyglet.graphics.Group):
+        def __init__(self, texture, order=0, parent=None):
+            super().__init__(order=order, parent=parent)
+            self.add_texture(texture, binding=0)
+
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture2))
+    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+
+
 Hierarchical state
 ^^^^^^^^^^^^^^^^^^
 
@@ -470,65 +495,131 @@ in a tree structure.  If groups **B** and **C** have parent **A**, then the
 order of ``set_state`` and ``unset_state`` calls for vertex lists in a batch
 will be::
 
-    A.set_state()
+    A.set_states()
 
-      B.set_state()
+      B.set_states()
       # Draw B vertices
-      B.unset_state()
+      B.unset_states()
 
-      C.set_state()
+      C.set_states()
       # Draw C vertices
-      C.unset_state()
+      C.unset_states()
 
-    A.unset_state()
-
-This is useful to group state changes into as few calls as possible.  For
-example, if you have a number of vertex lists that all need texturing enabled,
-but have different bound textures, you could enable and disable texturing in
-the parent group and bind each texture in the child groups.  The following
-example demonstrates this::
-
-    class TextureEnableGroup(pyglet.graphics.Group):
-        def set_state(self):
-            glActiveTexture(GL_TEXTURE0)
-
-        def unset_state(self):
-            # not necessary
+    A.unset_states()
 
 
-    texture_enable_group = TextureEnableGroup()
+Group states
+^^^^^^^^^^^^
+
+A group contains a list of :py:meth:`~pyglet.graphics.State` objects that will be applied to all
+of the vertices in that Group. This makes it easier to keep track of states within a Group and allow
+state tracking.
+
+Here is an example of how a :py:meth:`~pyglet.graphics.State` looks like under the hood::
+
+    @dataclass(frozen=True)
+    class ActiveTextureState(State):
+        binding: int
+        sets_state: bool = True
+
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            ctx = pyglet.graphics.api.core.current_context
+            ctx.glActiveTexture(GL_TEXTURE0 + self.binding)
 
 
-    class TextureBindGroup(pyglet.graphics.Group):
-        def __init__(self, texture):
-            super().__init__(parent=texture_enable_group)
-            assert texture.target = GL_TEXTURE_2D
-            self.texture = texture
+    @dataclass(frozen=True)
+    class TextureState(State):
+        texture: tuple[int, int]
+        binding: int = 0
+        set_id: int = 0
 
-        def set_state(self):
-            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        parents: bool = True
+        sets_state: bool = True
 
-        def unset_state(self):
-            # not required
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            ctx.glBindTexture(*self.texture)
 
-        def __eq__(self, other):
-            return (self.__class__ is other.__class__ and
-                    self.texture.id == other.texture.id and
-                    self.texture.target == other.texture.target and
-                    self.parent == other.parent)
-
-        def __hash__(self):
-            return hash((self.texture.id, self.texture.target))
-
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture2))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+        def generate_parent_states(self) -> Generator[State, None, None]:
+            yield ActiveTextureState(self.binding)
 
 
-.. note:: The ``__eq__`` method on the group allows the :py:class:`~pyglet.graphics.Batch`
-          to automatically merge the two identical ``TextureBindGroup`` instances.
-          For optimal performance, always take care to ensure your custom Groups have
-          correct ``__eq__`` and ``__hash__`` methods defined.
+
+Creating a custom state
+^^^^^^^^^^^^^^^^^^^^^^^
+
+You can create your own State object by subclassing `pyglet.graphics.State` and add it to a group
+with :py:meth:`~pyglet.graphics.Group.add_state`.
+
+If your state relies on another state (from the example above, the `ActiveTextureState`) you will implement the
+:py:meth:`~pyglet.graphics.State.generate_parent_states` method to yield the parent state.
+
+A `State` must declare their intentions on how the state will be applied with attributes on the class itself.
+
+The following attributes and their descriptions can be found on the :py:class:`~pyglet.graphics.State` class.
+
+By using a frozen dataclass, Python will automatically generate the `__eq__` and `__hash__` functions for you, so
+you can get proper render consolidation. In other words, even if they are separate objects, the statement
+`TextureState((1, 1)) == TextureState((1, 1))` will be `True`.
+
+If you do not decorate the :py:class:`~pyglet.graphics.State` as a frozen dataclass, it will be considered
+a separate object and not consolidate with other states. This can be useful when you do not want merging of groups
+such as a group that contains a camera or scissor state.
+
+Lets look at a couple examples of implementing your own state. Say you already have your Camera object (`MyCamera`)
+and wish to make separate cameras for each ParallaxGroup in your game.
+
+Your state could look like this::
+
+    @dataclass(frozen=True)
+    class CameraState(pyglet.graphics.State):
+        camera: MyCamera
+        sets_state: bool = True  # <- Must be set for set_state to be called
+        unsets_state: bool = True  # <- Must be set for unset_state to be called
+
+        def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+            self.camera.set_view()  # Sets your scale/translate/view matrix
+
+        def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
+            # Resets your scale/translate/view matrix
+            # This may not even be needed if every draw is setting a new view.
+            self.camera.unset_view()
+
+Then for your group::
+
+    class ParallaxGroup(Group):
+        def __init__(self, camera: MyCamera, order=0, parent=None):
+            super().init(order=order, parent=parent)
+            self.add_state(CameraState(camera))
+
+    background_camera = MyCamera()
+    middle_camera = MyCamera()
+    background_group = ParallaxGroup(background_camera)
+    middle_group = ParallaxGroup(middle_camera)
+
+You could also just use your own implementation class as a State itself.
+
+Since it does not need any consolidation, there is no need to specify it as a dataclass.::
+
+    class CameraState(State):
+        sets_state: bool = True
+        unsets_state: bool = True
+
+        def __init__(self, window: pyglet.window.Window, x: float, y: float, zoom: float=1.0):
+            self._window = window
+            self.x = x
+            self.y = y
+            self.zoom = zoom
+
+        def set_state(self, ctx: SurfaceContext):
+            view_matrix = self._window.view.translate((-self.x * self.zoom, -self.y * self.zoom, 0))
+            view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
+            self._window.view = view_matrix
+
+        def unset_state(self, ctx: SurfaceContext):
+            view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
+            view_matrix = view_matrix.translate((self.x * self.zoom, self.y * self.zoom, 0))
+            self._window.view = view_matrix
+
 
 Drawing order
 ^^^^^^^^^^^^^
