@@ -34,10 +34,8 @@ if TYPE_CHECKING:
 _vertex_source: str = """#version 110
     attribute vec3 position;
     attribute vec4 colors;
-    attribute vec3 tex_coords;
 
     varying vec4 vertex_colors;
-    varying vec3 texture_coords;
 
     uniform mat4 u_projection;
     uniform mat4 u_view;
@@ -47,45 +45,15 @@ _vertex_source: str = """#version 110
         gl_Position = u_projection * u_view * vec4(position, 1.0);
 
         vertex_colors = colors;
-        texture_coords = tex_coords;
     }
 """
 
 _fragment_source: str = """#version 110
     varying vec4 vertex_colors;
-    varying vec3 texture_coords;
 
     void main()
     {
         gl_FragColor = vertex_colors;
-    }
-"""
-
-# Default blit source
-_blit_vertex_source: str = """#version 110
-    attribute vec3 position;
-    attribute vec3 tex_coords;
-    varying vec3 texture_coords;
-
-    uniform mat4 u_projection;
-    uniform mat4 u_view;
-
-    void main()
-    {
-        gl_Position = u_projection * u_view * vec4(position, 1.0);
-
-        texture_coords = tex_coords;
-    }
-"""
-
-_blit_fragment_source: str = """#version 110
-    varying vec3 texture_coords;
-
-    uniform sampler2D our_texture;
-
-    void main()
-    {
-        gl_FragColor = texture2D(our_texture, texture_coords.xy);
     }
 """
 
@@ -107,16 +75,6 @@ def get_default_shader() -> ShaderProgram:
         (_vertex_source, 'vertex'),
         (_fragment_source, 'fragment'),
     )
-
-
-def get_default_blit_shader() -> ShaderProgram:
-    """A default basic shader for blitting, provides no blending."""
-    return pyglet.graphics.api.core.get_cached_shader(
-        "default_blit",
-        (_blit_vertex_source, 'vertex'),
-        (_blit_fragment_source, 'fragment'),
-    )
-
 
 
 _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {

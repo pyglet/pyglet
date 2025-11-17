@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 # Default Shader source:
 
-_vertex_source: str = """#version 330 core
+_vertex_texture_source: str = """#version 330 core
     in vec3 position;
     in vec4 colors;
     in vec3 tex_coords;
@@ -43,7 +43,7 @@ _vertex_source: str = """#version 330 core
     }
 """
 
-_fragment_source: str = """#version 330 core
+_fragment_texture_source: str = """#version 330 core
     in vec4 vertex_colors;
     in vec3 texture_coords;
     out vec4 final_colors;
@@ -56,11 +56,11 @@ _fragment_source: str = """#version 330 core
     }
 """
 
-# Default blit source
-_blit_vertex_source: str = """#version 330 core
+_vertex_primitive_source: str = """#version 330 core
     in vec3 position;
-    in vec3 tex_coords;
-    out vec3 texture_coords;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
 
     uniform WindowBlock
     {
@@ -72,19 +72,17 @@ _blit_vertex_source: str = """#version 330 core
     {
         gl_Position = window.projection * window.view * vec4(position, 1.0);
 
-        texture_coords = tex_coords;
+        vertex_colors = colors;
     }
 """
 
-_blit_fragment_source: str = """#version 330 core
-    in vec3 texture_coords;
+_fragment_primitive_source: str = """#version 330 core
+    in vec4 vertex_colors;
     out vec4 final_colors;
-
-    uniform sampler2D our_texture;
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords.xy);
+        final_colors = vertex_colors;
     }
 """
 
@@ -103,17 +101,8 @@ def get_default_shader() -> ShaderProgram:
     """A default basic shader for default batches."""
     return pyglet.graphics.api.core.get_cached_shader(
         "default_graphics",
-        (_vertex_source, 'vertex'),
-        (_fragment_source, 'fragment'),
-    )
-
-
-def get_default_blit_shader() -> ShaderProgram:
-    """A default basic shader for blitting, provides no blending."""
-    return pyglet.graphics.api.core.get_cached_shader(
-        "default_blit",
-        (_blit_vertex_source, 'vertex'),
-        (_blit_fragment_source, 'fragment'),
+        (_vertex_primitive_source, 'vertex'),
+        (_fragment_primitive_source, 'fragment'),
     )
 
 

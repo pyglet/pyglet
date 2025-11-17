@@ -25,7 +25,7 @@ if pyglet.options.backend in ("opengl", "gles3"):
     core = OpenGLBackend("gles" if pyglet.options.backend == "gles3" else "gl")
 
     from pyglet.graphics.api.gl.draw import Batch
-    from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.gl.shader import ShaderProgram, Shader, ComputeShaderProgram
 
 elif pyglet.options.backend in ("gl2", "gles2"):
@@ -34,7 +34,7 @@ elif pyglet.options.backend in ("gl2", "gles2"):
     core = OpenGL2Backend("gles" if pyglet.options.backend == "gles2" else "gl")
 
     from pyglet.graphics.api.gl2.draw import Batch
-    from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
 
 elif pyglet.options.backend == "webgl":
@@ -43,7 +43,7 @@ elif pyglet.options.backend == "webgl":
     core = WebGLBackend()
 
     from pyglet.graphics.api.webgl.draw import Batch
-    from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.webgl.shader import ShaderProgram, Shader, ComputeShaderProgram
 
 elif pyglet.options.backend == "vulkan":
@@ -51,7 +51,7 @@ elif pyglet.options.backend == "vulkan":
     core = VulkanGlobal()
 
     from pyglet.graphics.api.vulkan.draw import Batch
-    from pyglet.graphics.api.vulkan.draw import get_default_shader, get_default_batch, get_default_blit_shader
+    from pyglet.graphics.api.vulkan.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.vulkan.shader import ShaderProgram, Shader
 else:
     raise Exception("Backend not set. Cannot utilize a graphics API.")
