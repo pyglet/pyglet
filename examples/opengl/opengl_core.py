@@ -2,10 +2,6 @@
 
 import pyglet
 from pyglet.graphics import GeometryMode
-from pyglet.graphics.api.gl import (
-    glClearColor,
-)
-
 
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
@@ -30,11 +26,14 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
                             position=('f', create_quad_vertex_list(480, 270, -11, 50, 50)),
-                            colors=('f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
+                            colors=('f', (1, 0.5, 0.2, 1) * 4))
 
 program.vertex_list_indexed(4, GeometryMode.TRIANGLES, [0, 1, 2, 0, 2, 3], batch, None,
                             position=('f', (400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0)),
-                            colors=('f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
+                            colors=('f', (1, 0, 0, 1,
+                                          0, 1, 0, 1,
+                                          0, 0, 1, 1,
+                                          1, 1, 1, 1)))
 
 
 img = pyglet.image.load("pyglet.png")
@@ -87,6 +86,6 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    glClearColor(0.2, 0.3, 0.3, 1)
+    window.context.set_clear_color(0.2, 0.3, 0.3, 1)
     pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()
