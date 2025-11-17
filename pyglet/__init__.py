@@ -110,10 +110,6 @@ class Options:
     debug_media: bool = False
     """If ``True``, prints more detailed media information for audio codecs and drivers. Will be very verbose."""
 
-    debug_texture: bool = False
-    """If ``True``, prints information on :py:class:`~pyglet.graphics.Texture` size (in bytes) when they are allocated and
-    deleted."""
-
     debug_trace: bool = False
     debug_trace_args: bool = False
     debug_trace_depth: int = 1
@@ -322,9 +318,7 @@ for _option_name, _type_str in options.__annotations__.items():
             setattr(options, _option_name, _value in ("true", "TRUE", "True", "1"))
         elif 'int' in _type_str:
             setattr(options, _option_name, int(_value))
-        elif 'str' in _type_str:
-            setattr(options, _option_name, _value)
-        elif 'Literal' in _type_str and _value in _type_str:
+        elif 'str' in _type_str or ('Literal' in _type_str and _value in _type_str):
             setattr(options, _option_name, _value)
         else:
             warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")

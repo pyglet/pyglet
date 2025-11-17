@@ -45,7 +45,6 @@ class Options:
     debug_graphics_batch: bool
     debug_lib: bool
     debug_media: bool
-    debug_texture: bool
     debug_trace: bool
     debug_trace_args: bool
     debug_trace_depth: int
