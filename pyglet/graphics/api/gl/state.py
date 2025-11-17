@@ -10,9 +10,9 @@ from pyglet.graphics.api.gl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Group
     from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.api.gl.shader import ShaderProgram
+    from pyglet.customtypes import ScissorProtocol
 
 
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ class ScissorStateEnable(State):
 
 @dataclass(frozen=True)
 class ScissorState(State):
-    group: Group
+    spo: ScissorProtocol
 
     sets_state: bool = True
     parents: bool = True
@@ -96,7 +96,7 @@ class ScissorState(State):
         yield ScissorStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        glScissor(*self.group.data["scissor"])
+        glScissor(int(self.spo.x), int(self.spo.y), int(self.spo.width), int(self.spo.height))
 
 
 @dataclass(frozen=True)
@@ -120,7 +120,7 @@ class BlendState(State):
     sets_state: bool = True
     parents: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.src, BlendFactor):
             raise Exception("src must be BlendFactor")
 
@@ -204,13 +204,13 @@ class UniformBufferState(State):
 @dataclass(frozen=True)
 class ShaderUniformState(State):
     program: ShaderProgram
-    name: str
-    group: Group
+    data: dict[str, Any]
 
     sets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program[self.name] = self.group.data[self.name]
+        for name, value in self.data.items():
+            self.program[name] = value
 
     def __hash__(self) -> int:
         return id(self)

@@ -191,7 +191,7 @@ class TextLayoutGroup(Group):
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        self.set_shader_uniform(program, "scissor", False)
+        self.set_shader_uniforms(program, "scissor", False)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -209,7 +209,7 @@ class TextDecorationGroup(Group):
         super().__init__(order=order, parent=parent)
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_shader_uniform(program,"scissor", False)
+        self.set_shader_uniforms(program,"scissor", False)
 
 
 
@@ -232,8 +232,8 @@ class ScrollableTextLayoutGroup(Group):
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
         self.set_texture(texture, 0)
-        self.set_shader_uniform(program,"scissor", True)
-        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        self.set_shader_uniforms(program,"scissor", True)
+        self.set_shader_uniforms(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.texture})"
@@ -259,8 +259,8 @@ class ScrollableTextDecorationGroup(Group):
         self.program = program
         self.set_shader_program(program)
         self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_shader_uniform(program, "scissor", True)
-        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
+        self.set_shader_uniforms(program, "scissor", True)
+        self.set_shader_uniforms(program,"scissor_area", self.scissor_area)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(scissor={self.scissor_area})"

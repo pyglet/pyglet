@@ -1,8 +1,9 @@
 """Holds type aliases used throughout the codebase."""
+from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type
+from typing import Union, Literal, Type, Protocol
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
 
@@ -35,6 +36,22 @@ CType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 
+
+class ScissorProtocol(Protocol):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+
 __all__ = [
-    "Buffer", "HorizontalAlign", "AnchorX", "AnchorY", "ContentVAlign", "DataTypes", "CType", "CTypesPointer",
+    "AnchorX",
+    "AnchorY",
+    "Buffer",
+    "CType",
+    "CTypesPointer",
+    "ContentVAlign",
+    "DataTypes",
+    "HorizontalAlign",
 ]

@@ -66,10 +66,10 @@ class ScrollableTextLayout(TextLayout):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
-            group.update_data("scissor_area", area)
+            group.uniforms["scissor_area"] = area
 
-        self.background_decoration_group.update_data("scissor_area", area)
-        self.foreground_decoration_group.update_data("scissor_area", area)
+        self.background_decoration_group.uniforms["scissor_area"] = area
+        self.foreground_decoration_group.uniforms["scissor_area"] = area
 
     def _update(self) -> None:
         super()._update()

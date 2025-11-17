@@ -51,7 +51,10 @@ class ScissorGroup(pyglet.graphics.Group):
         super().__init__(order, parent)
         self.x, self.y = x, y
         self.width, self.height = width, height
-        self.set_scissor(x, y, width, height)
+        self.uniforms = {
+            "scissor": self.area,
+        }
+        self.set_scissor(self)
 
     @property
     def area(self):
@@ -82,7 +85,7 @@ for x in range(5):
 def on_mouse_drag(x, y, dx, dy, *etc):
     scissor_group.x += dx
     scissor_group.y += dy
-    scissor_group.update_data("scissor", scissor_group.area)
+    scissor_group.uniforms["scissor"] = scissor_group.area
 
 
 

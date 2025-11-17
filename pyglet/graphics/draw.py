@@ -21,6 +21,7 @@ from pyglet.graphics.state import (
 )
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics import GeometryMode
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import TextureBase
@@ -74,9 +75,6 @@ class Group:
         self._states = []
         self._expanded_states = []
 
-        # Store data on the group for states to use during their state call.
-        self.data = { "uniform" : {}}
-
         # Default hash
         self._hashable_states = ()
         self._hash = hash((self._order, self.parent))
@@ -89,9 +87,8 @@ class Group:
         self._hashable_states = tuple({state for state in self._states if state.group_hash is True})
         self._hash = hash((self._order, self.parent, self._hashable_states))
 
-    def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
-        self.data["scissor"] = [x, y, width, height]
-        self.add_state(ScissorState(self))
+    def set_scissor(self, scissor_object: ScissorProtocol) -> None:
+        self.add_state(ScissorState(scissor_object))
 
     def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD):
         self.add_state(BlendState(blend_src, blend_dst, blend_op))
@@ -105,15 +102,11 @@ class Group:
     def set_shader_program(self, program: ShaderProgramBase):
         self.add_state(ShaderProgramState(program))
 
-    def set_shader_uniform(self, program: ShaderProgramBase, name: str, value: float | Sequence):
-        self.data[name] = value  # Initial data.
-        self.add_state(ShaderUniformState(program, name, self))
+    def set_shader_uniforms(self, program: ShaderProgramBase, uniforms: dict[str, Any]):
+        self.add_state(ShaderUniformState(program, uniforms))
 
     def set_uniform_buffer(self, ubo: str, binding: int):
         self.add_state(UniformBufferState(ubo, binding))
-
-    def update_data(self, name: str, value: Any) -> None:
-        self.data[name] = value
 
     def set_texture(self, texture: TextureBase, texture_unit: int=0, set_id: int=0) -> None:
         """Set the texture state.

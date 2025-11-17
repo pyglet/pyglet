@@ -8,26 +8,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
 
 
-def _expand_states_in_order(states: list[State]) -> list[State]:
-    """Return all states expanded in dependency order (parents first)."""
-    visited = set()
-    ordered = []
 
-    def dfs(state: State) -> None:
-        if state in visited:
-            return
-        visited.add(state)
-
-        if state.parents:
-            for parent in state.generate_parent_states():
-                dfs(parent)
-
-        ordered.append(state)
-
-    for s in states:
-        dfs(s)
-
-    return ordered
 
 class State:
     """Base class for all states with optional scope methods."""
@@ -68,6 +49,27 @@ class State:
         For example, in Vulkan, a descriptor set is not available during the Group creation, it only gets created
         when the draw list is being processed.
         """
+
+def _expand_states_in_order(states: list[State]) -> list[State]:
+    """Return all states expanded in dependency order (parents first)."""
+    visited = set()
+    ordered = []
+
+    def dfs(state: State) -> None:
+        if state in visited:
+            return
+        visited.add(state)
+
+        if state.parents:
+            for parent in state.generate_parent_states():
+                dfs(parent)
+
+        ordered.append(state)
+
+    for s in states:
+        dfs(s)
+
+    return ordered
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.state import (TextureState, ShaderProgramState, BlendState, # noqa: F401, RUF100
