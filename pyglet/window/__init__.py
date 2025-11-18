@@ -1909,8 +1909,10 @@ def _create_shadow_window() -> Window | None:
         return shadow_window
     return None
 
-
-_shadow_window = _create_shadow_window()
+if not _is_pyglet_doc_run:
+    _shadow_window = _create_shadow_window()
+else:
+    _shadow_window = None
 
 
 __all__ = (

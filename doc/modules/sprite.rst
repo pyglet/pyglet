@@ -7,8 +7,6 @@ pyglet.sprite
   :members:
   :undoc-members:
 
-.. autoclass:: AdvancedSprite
-
 .. autoclass:: SpriteGroup
   :members:
   :undoc-members:

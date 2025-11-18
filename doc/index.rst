@@ -76,9 +76,9 @@ If you are migrating from an older version of pyglet, please read through
    modules/clock
    modules/display
    modules/customtypes
+   modules/enums
    modules/event
-   modules/font
-   modules/gl
+   modules/font/index
    modules/graphics/index
    modules/gui
    modules/image/index
