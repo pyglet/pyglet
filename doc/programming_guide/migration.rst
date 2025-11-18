@@ -26,7 +26,7 @@ channel.
 
 pyglet.gl reorganization
 ^^^^^^^^^^^^^^^^^^^^^^^^
-To support multiple (and future backends) and a more flexible rendering architecture, the `pyglet.gl`
+To support multiple backends and a more flexible rendering architecture, the `pyglet.gl`
 module has been reorganized under `pyglet.graphics.api.gl`. If you used OpenGL directly, you will need to update
 these imports.
 
@@ -34,20 +34,46 @@ With the new backend agnostic changes, this should no longer be needed unless yo
 with OpenGL. We understand people still may use Pyglet just for OpenGL usage, so this capability will still be
 possible.
 
-Resource image loading
-^^^^^^^^^^^^^^^^^^^^^^
+
+Image changes and removal of image.blit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many classes have been moved out of the ``pyglet.image`` to ``pyglet.graphics.texture``. These changes
+were done because it blurred the distinction between CPU-side image representations and GPU-side
+rendering operations. ``ImageData`` is intended to represent raw pixel data stored in system CPU memory,
+while ``Texture``s represent GPU usage and drawing. Keeping everything in the same module and the constant
+cross-usage of both led to ambiguous behavior and inconsistent expectations.
+
+With those changes in mind, ``ImageData.blit`` has also been removed, as this is no longer consistent with
+that separation.
+
+Instead to draw an image, create a Sprite (or Texture) from it and draw it directly or batch it instead:
+
+.. code-block:: python
+
+    batch = pyglet.graphics.Batch()
+    sprite = pyglet.sprite.Sprite(image, batch=batch)
+    batch.draw()
+
+
+**Resource image loading**
+
 :py:meth:`~pyglet.resource.image` previously loaded an image into a texture atlas. However, this was not properly
 named as it did not actually return a `~pyglet.image.ImageData` instance in the same way `~pyglet.image.load` does.
-
-Furthermore, this also complicated the concept to users that an "image" and "texture" were effectively the
-same thing when they are not. To clarify simply, an `~pyglet.image.ImageData` instance is a representation of the
-image data on the CPU side, while a `~pyglet.graphics.Texture` is a representation of image data on the GPU side.
+With the decisions explained in the previous section, this has also been changed.
 
 Going forward, migrate your code to instead use :py:meth:`~pyglet.resource.texture` as it will give the previous
 behavior of loading into a texture atlas.
 
-While using :py:meth:`~pyglet.resource.image` will still work, you will have significant performance penalties
+.. note:: While using :py:meth:`~pyglet.resource.image` will still work, you may experience significant performance penalties
 in doing so. Please update your functions to this new usage.
+
+**Image grids**
+
+The function `pyglet.image.ImageGrid.get_texture_sequence` has been removed. This is no longer recommended,
+as it created it's own texture, further reducing performance. Going forward, it is best to
+use ``pyglet.graphics.TextureGrid``. This behaves the same way as ``ImageGrid``, but for textures. This
+will allow you to use an existing texture, such as loaded from an atlas.
+
 
 Separation of Media Player
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -62,12 +88,33 @@ By decoupling these responsibilities, pyglet can provide more focused, maintaina
 while avoiding unnecessary dependencies for applications that only need audio or only need video.
 
 
+Loading resources before Window creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In previous versions of Pyglet, a "shadow window" with its own context was something enabled by
+default. This created a hidden 1x1 window that had it's own context that could be shared with other
+windows. This allowed users to load resources and access OpenGL before the "real" window was made
+visible.
+
+This caused problems in certain hardware, and certain configurations. For example, sometimes
+you could ask for an OpenGL ES context, but because of the shadow window, the driver would upgrade it
+to a full context. Some drivers are also more strict when it comes to sharing behavior.
+
+This functionality has been removed to increase compatibility between backends. This should only affect
+you if you attempt to load resources before a Window is created. If you want the previous behavior, it
+can still be done. You would create your own window before as shown below::
+
+    shadow_window = pyglet.window.Window(1, 1, visible=False)
+
+This will mimic the previous behavior.
+
 pyglet.graphics.Group changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 One of the most significant changes will be with Groups. There were three driving reasons
+
 1) To make groups easier to use: This was a common pitfall for users creating their own groups.
-2) To better support multiple backends: Less need for direct GL calls.
-3) To optimize the draw list for better performance.
+2) To better support multiple backends: Less need for direct backend (GL) calls for users.
+3) To optimize the draw list for better performance.: Now that groups are state aware, we can remove
+duplicate function calls.
 
 To better understand Groups, please visit the rendering section here: <add link> as the next section will have an
 assumed knowledge of Groups.
@@ -129,7 +176,7 @@ Or just as valid::
 
 We have added many built in and common states to Pyglet to make Groups easier to use.
 
-This change should only affect you, if you utilize any sort of custom groups in your code.
+This change should only affect you if you utilize any sort of custom groups in your code.
 
 You will notice in the above example there is no longer a `set_state` or `unset_state` on the Group itself, these have
 have been moved into the `State` object.
