@@ -16,7 +16,7 @@ from pyglet.math import Vec2
 
 from pyglet.window.cocoa.pyglet_delegate import NSNotification
 
-from pyglet.input import ControllerManager, Device, Control, Controller, Button, AbsoluteAxis, base
+from pyglet.input.base import Device, Control, Controller, Button, AbsoluteAxis, ControllerManager, Sign
 
 from pyglet.libs.darwin import ObjCClass, get_selector
 from pyglet.window.cocoa.pyglet_view import NSNotificationCenter
@@ -104,8 +104,8 @@ _button_mapping = {
     "Button Menu": "start",
     "Button Options": "back",
     "Button Home": "guide",
-    "Left Thumbstick Button": "leftstick",
-    "Right Thumbstick Button": "rightstick",
+    "Left Thumbstick Button": "leftthumb",
+    "Right Thumbstick Button": "rightthumb",
     "Left Shoulder": "leftshoulder",
     "Left Trigger": "lefttrigger",
     "Right Shoulder": "rightshoulder",
@@ -134,7 +134,7 @@ _axis_mapping = {
 }
 
 _dpads_mapping = {
-    "Direction Pad": base.AbsoluteAxis.HAT,
+    "Direction Pad": AbsoluteAxis.HAT,
     # "Touchpad 2": "unknown",
     # "Touchpad 1": "unknown",
     # "Right Thumbstick": "unknown",
@@ -336,8 +336,8 @@ class AppleGamepad(Device):
                 'guide': Button('guide'),
                 'leftshoulder': Button('leftshoulder'),
                 'rightshoulder': Button('rightshoulder'),
-                'leftstick': Button('leftstick'),
-                'rightstick': Button('rightstick'),
+                'leftthumb': Button('leftthumb'),
+                'rightthumb': Button('rightthumb'),
                 'dpup': Button('dpup'),
                 'dpdown': Button('dpdown'),
                 'dpleft': Button('dpleft'),
@@ -350,7 +350,7 @@ class AppleGamepad(Device):
                 'lefttrigger': AbsoluteAxis('lefttrigger', 0, 1),
                 'righttrigger': AbsoluteAxis('righttrigger', 0, 1),
 
-                base.AbsoluteAxis.HAT: base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 1),
+                "hat": AbsoluteAxis('hat', 0, 1),
             }
 
     def _axis_changed_callback(self, axes_obj, value):
@@ -417,6 +417,7 @@ class AppleGamepad(Device):
 class AppleController(Controller):
     """Javascript Gamepad Controller object that handles buttons and controls."""
     device: AppleGamepad
+
     def __init__(self, device: AppleGamepad, mapping: dict) -> None:
         super().__init__(device, mapping)
         self._last_updated = 0.0
@@ -428,65 +429,67 @@ class AppleController(Controller):
                 continue
             control = self.device.controls[button_name]
             self._button_controls.append(control)
-            self._add_button(control, button_name)
+            self._bind_button_control(control, button_name)
+            # self._add_button(control, button_name)
 
         for axis_name in _axis_mapping.values():
             control = self.device.controls[axis_name]
             self._axis_controls.append(control)
-            self._add_axis(control, axis_name)
+            self._bind_axis_control(control, axis_name, Sign.DEFAULT)
+            # self._add_axis(control, axis_name)
 
-    def _add_axis(self, control: Control, name: str) -> None:
-        if name in ("lefttrigger", "righttrigger"):
-            @control.event
-            def on_change(value):
-                setattr(self, name, value)
-                self.dispatch_event('on_trigger_motion', self, name, value)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', self, name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', self, name)
-
-        elif name in ("leftx", "lefty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, self.lefty))
-
-        elif name in ("rightx", "righty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, self.righty))
-
-    def _add_button(self, control: Control, name: str) -> None:
-
-        if name in ("dpleft", "dpright", "dpup", "dpdown"):
-            @control.event
-            def on_change(value):
-                target, bias = {
-                    'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                    'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)
-                }[name]
-                setattr(self, target, bias * value)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
-        else:
-            @control.event
-            def on_change(value):
-                setattr(self, name, value)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', self, name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', self, name)
+    # def _add_axis(self, control: Control, name: str) -> None:
+    #     if name in ("lefttrigger", "righttrigger"):
+    #         @control.event
+    #         def on_change(value):
+    #             setattr(self, name, value)
+    #             self.dispatch_event('on_trigger_motion', self, name, value)
+    #
+    #         @control.event
+    #         def on_press():
+    #             self.dispatch_event('on_button_press', self, name)
+    #
+    #         @control.event
+    #         def on_release():
+    #             self.dispatch_event('on_button_release', self, name)
+    #
+    #     elif name in ("leftx", "lefty"):
+    #         @control.event
+    #         def on_change(value):
+    #             normalized_value = value
+    #             setattr(self, name, normalized_value)
+    #             self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, self.lefty))
+    #
+    #     elif name in ("rightx", "righty"):
+    #         @control.event
+    #         def on_change(value):
+    #             normalized_value = value
+    #             setattr(self, name, normalized_value)
+    #             self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, self.righty))
+    #
+    # def _add_button(self, control: Control, name: str) -> None:
+    #
+    #     if name in ("dpleft", "dpright", "dpup", "dpdown"):
+    #         @control.event
+    #         def on_change(value):
+    #             target, bias = {
+    #                 'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
+    #                 'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)
+    #             }[name]
+    #             setattr(self, target, bias * value)
+    #             self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
+    #     else:
+    #         @control.event
+    #         def on_change(value):
+    #             setattr(self, name, value)
+    #
+    #         @control.event
+    #         def on_press():
+    #             self.dispatch_event('on_button_press', self, name)
+    #
+    #         @control.event
+    #         def on_release():
+    #             self.dispatch_event('on_button_release', self, name)
 
     def rumble_play_weak(self, strength: float=1.0, duration: float=0.5) -> None:
         if self.device and self.device.weak_motor_engine:
@@ -505,6 +508,7 @@ class AppleController(Controller):
     def rumble_stop_strong(self) -> None:
         if self.device and self.device.strong_motor_engine:
             self.device.strong_motor_engine.stop_event()
+
 
 class _AppleControllerManager_Implementation(EventDispatcher):
     _PygletAppleControllerManager = ObjCSubclass('NSObject', '_PygletAppleControllerManager')
@@ -576,7 +580,7 @@ _apple_controller = _SingletonAppleDispatcher()
 
 class AppleControllerManager(ControllerManager):
 
-    def __init__(self, display=None):
+    def __init__(self):
         self._controllers = {}
 
         @_apple_controller.event
