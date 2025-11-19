@@ -6,13 +6,12 @@ from ctypes.wintypes import DWORD, LONG, LPCWSTR, SHORT, ULONG, WORD
 
 import pyglet
 from pyglet.event import EventDispatcher
-from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Device
+from pyglet.input.base import AbsoluteAxis, Button, Controller, ControllerManager, Device, Sign
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32 import _oleaut32 as oleaut32
 from pyglet.libs.win32 import com
 from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
 from pyglet.libs.win32.types import BYTE, VARIANT
-from pyglet.math import Vec2
 
 for library_name in ['xinput1_4', 'xinput9_1_0', 'xinput1_3']:
     try:
@@ -404,9 +403,9 @@ class XInputDevice(Device):
             'dpright': Button('dpright'),
 
             'leftx': AbsoluteAxis('leftx', -32768, 32768),
-            'lefty': AbsoluteAxis('lefty', -32768, 32768),
+            'lefty': AbsoluteAxis('lefty', -32768, 32768, inverted=True),
             'rightx': AbsoluteAxis('rightx', -32768, 32768),
-            'righty': AbsoluteAxis('righty', -32768, 32768),
+            'righty': AbsoluteAxis('righty', -32768, 32768, inverted=True),
             'lefttrigger': AbsoluteAxis('lefttrigger', 0, 255),
             'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
@@ -546,75 +545,19 @@ _device_manager = XInputDeviceManager()
 
 class XInputController(Controller):
 
+    device: XInputDevice
+
     def _initialize_controls(self):
 
         for button_name in controller_api_to_pyglet.values():
             control = self.device.controls[button_name]
             self._button_controls.append(control)
-            self._add_button(control, button_name)
+            self._bind_button_control(control, button_name)
 
         for axis_name in "leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger":
             control = self.device.controls[axis_name]
             self._axis_controls.append(control)
-            self._add_axis(control, axis_name)
-
-    def _add_axis(self, control, name):
-        tscale = 1.0 / (control.max - control.min)
-        scale = 2.0 / (control.max - control.min)
-        bias = -1.0 - control.min * scale
-
-        if name == "lefttrigger":
-            @control.event
-            def on_change(value):
-                normalized_value = value * tscale
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_lefttrigger_motion', self, normalized_value)
-
-        if name == "righttrigger":
-            @control.event
-            def on_change(value):
-                normalized_value = value * tscale
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_righttrigger_motion', self, normalized_value)
-
-        elif name in ("leftx", "lefty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value * scale + bias
-                setattr(self, name, normalized_value)
-                self.leftanalog = Vec2(self._leftx, self._lefty)
-                self.dispatch_event('on_leftstick_motion', self, self.leftanalog)
-
-        elif name in ("rightx", "righty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value * scale + bias
-                setattr(self, name, normalized_value)
-                self.rightanalog = Vec2(self._rightx, self._righty)
-                self.dispatch_event('on_rightstick_motion', self, self.rightanalog)
-
-    def _add_button(self, control, name):
-
-        if name in ("dpleft", "dpright", "dpup", "dpdown"):
-            @control.event
-            def on_change(value):
-                target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                                'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[name]
-                setattr(self, target, bias * value)
-                self.dpad = Vec2(self._dpadx, self._dpady)
-                self.dispatch_event('on_dpad_motion', self, self.dpad)
-        else:
-            @control.event
-            def on_change(value):
-                setattr(self, name, value)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', self, name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', self, name)
+            self._bind_axis_control(control, axis_name, Sign.DEFAULT)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
         self.device.vibration.wRightMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
