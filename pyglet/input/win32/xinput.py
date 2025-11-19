@@ -396,8 +396,8 @@ class XInputDevice(Device):
             'guide': Button('guide'),
             'leftshoulder': Button('leftshoulder'),
             'rightshoulder': Button('rightshoulder'),
-            'leftstick': Button('leftstick'),
-            'rightstick': Button('rightstick'),
+            'leftthumb': Button('leftthumb'),
+            'rightthumb': Button('rightthumb'),
             'dpup': Button('dpup'),
             'dpdown': Button('dpdown'),
             'dpleft': Button('dpleft'),
@@ -582,7 +582,7 @@ class XInputController(Controller):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.leftanalog = Vec2(self.leftx, self.lefty)
+                self.leftanalog = Vec2(self._leftx, self._lefty)
                 self.dispatch_event('on_leftstick_motion', self, self.leftanalog)
 
         elif name in ("rightx", "righty"):
@@ -590,7 +590,7 @@ class XInputController(Controller):
             def on_change(value):
                 normalized_value = value * scale + bias
                 setattr(self, name, normalized_value)
-                self.rightanalog = Vec2(self.rightx, self.righty)
+                self.rightanalog = Vec2(self._rightx, self._righty)
                 self.dispatch_event('on_rightstick_motion', self, self.rightanalog)
 
     def _add_button(self, control, name):
@@ -601,7 +601,7 @@ class XInputController(Controller):
                 target, bias = {'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
                                 'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)}[name]
                 setattr(self, target, bias * value)
-                self.dpad = Vec2(self.dpadx, self.dpady)
+                self.dpad = Vec2(self._dpadx, self._dpady)
                 self.dispatch_event('on_dpad_motion', self, self.dpad)
         else:
             @control.event

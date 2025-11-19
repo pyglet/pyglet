@@ -50,8 +50,8 @@ class ControllerDisplay:
                         'start': Circle(390, 240, 9, batch=batch),
                         'guide': Circle(360, 240, 9, color=(255, 255, 100), batch=batch),
                         'back': Circle(330, 240, 9, batch=batch),
-                        'leftstick': Circle(180, 240, 9, batch=batch),
-                        'rightstick': Circle(540, 240, 9, batch=batch)}
+                        'leftthumb': Circle(180, 240, 9, batch=batch),
+                        'rightthumb': Circle(540, 240, 9, batch=batch)}
 
         for button in self.buttons.values():
             button.visible = False
