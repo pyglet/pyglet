@@ -30,10 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 from contextlib import contextmanager
 
-from .runtime import objc, send_message, send_super, AutoReleasePool
+from .runtime import objc, send_message, send_super, AutoReleasePool, ObjCBlock
 from .runtime import get_selector
 from .runtime import ObjCClass, ObjCInstance, ObjCSubclass
 
 from .cocoatypes import *
 from .cocoalibs import *
-
+from .cocoahelpers import *
