@@ -44,6 +44,10 @@ from pyglet.graphics.api.gl.gl import (
     GL_RGB8,  # noqa: F401
     GL_BYTE,  # noqa: F401
     GL_INT,  # noqa: F401
+    GL_DEPTH_COMPONENT16,  # noqa: F401
+    GL_DEPTH_COMPONENT24,  # noqa: F401
+    GL_DEPTH_COMPONENT32,  # noqa: F401
+    GL_DEPTH_COMPONENT32F,  # noqa: F401
     GL_FRAMEBUFFER,
     GL_COLOR_ATTACHMENT0,
     GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
@@ -107,7 +111,7 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
         raise ValueError(f"Unknown format: {component_format}")
 
     # Type suffix based on data type (integer, float, or default)
-    if data_type == "I":
+    if data_type == "I" and component_format != ComponentFormat.D:
         type_suffix = "UI"
     elif data_type == "i":
         type_suffix = 'I'
