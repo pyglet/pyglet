@@ -86,6 +86,34 @@ class CompareOp(Enum):
     GREATER_OR_EQUAL = auto()
     ALWAYS = auto()
 
+class FramebufferTarget(Enum):
+    FRAMEBUFFER = auto()
+    DRAW = auto()
+    READ = auto()
+
+class FramebufferAttachment(Enum):
+    COLOR0 = auto()
+    COLOR1 = auto()
+    COLOR2 = auto()
+    COLOR3 = auto()
+    COLOR4 = auto()
+    COLOR5 = auto()
+    COLOR6 = auto()
+    COLOR7 = auto()
+    COLOR8 = auto()
+    COLOR9 = auto()
+    COLOR10 = auto()
+    COLOR11 = auto()
+    COLOR12 = auto()
+    COLOR13 = auto()
+    COLOR14 = auto()
+    COLOR15 = auto()
+
+    DEPTH = auto()
+    STENCIL = auto()
+    DEPTH_STENCIL = auto()
+
+
 
 class Weight(str, Enum):
     """An :py:class:`~enum.Enum` of known cross-platform font weight strings.

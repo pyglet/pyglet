@@ -15,9 +15,8 @@ from math import floor
 
 import pyglet
 
-from pyglet.graphics.api.gl import *
-from pyglet.enums import TextureFilter
-from pyglet.graphics.texture import Texture, Renderbuffer, Framebuffer
+from pyglet.enums import TextureFilter, FramebufferAttachment, ComponentFormat
+from pyglet.graphics import Texture, Renderbuffer, Framebuffer
 
 
 class FixedResolution:
@@ -31,11 +30,13 @@ class FixedResolution:
 
         self.framebuffer = Framebuffer(context=window.context)
         # Use a Texture for the Color Buffer:
-        self._color_buffer = Texture.create(width, height, filter=TextureFilter.NEAREST)
+        self._color_buffer = Texture.create(width, height, filters=TextureFilter.NEAREST)
         self.framebuffer.attach_texture(self._color_buffer)
         # Use a RenderBuffer for the Depth Buffer:
-        self._depth_buffer = Renderbuffer(window.context, width, height, GL_DEPTH_COMPONENT)
-        self.framebuffer.attach_renderbuffer(self._depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
+        self._depth_buffer = Renderbuffer(window.context, width, height,
+                                          component_format=ComponentFormat.D, bit_size=24)
+        self.framebuffer.attach_renderbuffer(self._depth_buffer,
+                                             attachment=FramebufferAttachment.DEPTH)
 
         # Use a Sprite to render the Color Buffer Texture:
         self._sprite = pyglet.sprite.Sprite(self._color_buffer)
