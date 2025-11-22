@@ -36,14 +36,15 @@ class _WGL:
         return self._funcs
 
     @property
-    def loaded(self):
+    def loaded(self) -> bool:
         return self._loaded
 
     def have_extension(self, extension: str) -> bool:
         return extension in self._extensions
 
-    def create(self, window: Win32Window) -> bool:
-        funcs = self._initialize_wgl_funcs(window)
+    def create(self) -> bool:
+        from pyglet.window import _shadow_window  # noqa: PLC0415
+        funcs = self._initialize_wgl_funcs(_shadow_window)
         if funcs:
             self._loaded = True
             self._funcs = funcs
@@ -52,7 +53,7 @@ class _WGL:
 
         return False
 
-    def _initialize_wgl_funcs(self, window: Win32Window) -> WGLFunctions | None:
+    def _initialize_wgl_funcs(self, shadow_window: Win32Window) -> WGLFunctions | None:
         """Creates a temporary context, creates WGL functions to proc addresses, then destroys the context."""
         pfd = PIXELFORMATDESCRIPTOR()
         pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
@@ -61,16 +62,21 @@ class _WGL:
         pfd.iPixelType = PFD_TYPE_RGBA
         pfd.cColorBits = 24
 
-        pf = _gdi32.ChoosePixelFormat(window.dc, byref(pfd))
+        shadow_dc = shadow_window.dc
+        assert shadow_dc is not None
+
+        # !!! # Will break transparent windows if using the intended visible window. Must use the
+        # shadow window here as once a pixel format is set for a Window it cannot be altered.
+        pf = _gdi32.ChoosePixelFormat(shadow_dc, byref(pfd))
         if pf:
-            if not _gdi32.SetPixelFormat(window.dc, pf, byref(pfd)):
+            if not _gdi32.SetPixelFormat(shadow_dc, pf, byref(pfd)):
                 warnings.warn("Unable to set pixel format.")
                 return None
         else:
             warnings.warn("Unable to find a pixel format.")
             return None
 
-        dummy_ctx = wgl.wglCreateContext(window.dc)
+        dummy_ctx = wgl.wglCreateContext(shadow_dc)
         if not dummy_ctx:
             warnings.warn("Unable to create dummy context.")
             return None
@@ -78,7 +84,7 @@ class _WGL:
         current_dc = wgl.wglGetCurrentDC()
         current_ctx = wgl.wglGetCurrentContext()
 
-        if not wgl.wglMakeCurrent(window.dc, dummy_ctx):
+        if not wgl.wglMakeCurrent(shadow_dc, dummy_ctx):
             print("Unable to make dummy context current.")
             # Set back to old context and dc and delete dummy context.
             wgl.wglMakeCurrent(current_dc, current_ctx)
@@ -95,10 +101,10 @@ _global_wgl = _WGL()
 
 def match(config: OpenGLConfig, window: Win32Window) -> GLSurfaceConfig | None:
     if not _global_wgl.loaded:
-        _global_wgl.create(window)
+        _global_wgl.create()
 
     if _global_wgl.have_extension('WGL_ARB_pixel_format'):
-        finalized_config = _get_arb_pixel_format_matching_configs(config, window)
+         finalized_config = _get_arb_pixel_format_matching_configs(config, window)
     else:
         finalized_config = _get_pixel_format_descriptor_matching_configs(config, window)
 
@@ -173,7 +179,8 @@ def _get_arb_pixel_format_matching_configs(config: OpenGLConfig, window: Win32Wi
     # (Maybe not always the case?)
     if pformats[0]:
         pf = pformats[:nformats.value][0]
-        return GLSurfaceConfig(window, pf, config)
+        m =GLSurfaceConfig(window, pf, config)
+        return m
 
     return None
 
@@ -181,7 +188,7 @@ def _get_arb_pixel_format_matching_configs(config: OpenGLConfig, window: Win32Wi
 
 class GLLegacyConfig(GLSurfaceConfig):
     def __init__(self, window: Win32Window, pf: int, user_config: OpenGLConfig) -> None:
-        super().__init__(window, user_config)
+        super().__init__(window, user_config, pf)
         self._pf = pf
         self._pfd = PIXELFORMATDESCRIPTOR()
 
