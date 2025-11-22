@@ -55,6 +55,7 @@ import sys
 
 from typing import TYPE_CHECKING
 
+from . import controller
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, ControllerManager
 from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException

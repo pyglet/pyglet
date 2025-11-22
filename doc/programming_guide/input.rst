@@ -1,24 +1,25 @@
 Controller & Joystick input
 ===========================
 
-The :py:mod:`~pyglet.input` module allows you to accept input from USB or Bluetooth
-human interface devices (HID). High-level classes are provided for working with
-game controllers, joysticks, and the Apple Remote, with named and normalized inputs.
-Basic support is also provided for Drawing Tablets, such as those made by Wacom.
+The :py:mod:`~pyglet.input` module allows you to accept input from USB or Bluetooth (HID) devices.
+You can interact with these devices directly, but high-level classes are provided for working with
+game controllers, joysticks, and the Apple Remote, all with named and normalized inputs. Basic
+support is also provided for Drawing Tablets, such as those made by Wacom.
 
-The game controller abstraction is most suitable for modern dual-analog stick controllers,
-such as those from video game consoles. The joystick abstraction is more generalized,
-and suits devices with an arbitrary number of buttons, absolute or relative axis, and hats.
-This includes devices like flight sticks, steering wheels, and just about anything else with
-digital and/or analog inputs. For most types of games, the game controller abstraction is
-recommended.
+The ``game controller`` interface is most suitable for modern dual-analog stick controllers,
+and provides a "just works" abstraction that suits many typical games. The ``joystick`` interface
+is more generalized, and is suitable for devices with an arbitrary number of buttons, absolute & relative
+axis, and hats. This includes devices like flight sticks, steering wheels, and just about anything
+else with digital and/or analog inputs. For most types of games, the ``game controller`` interface
+is recommended.
 
-For advanced use cases, it is also possible to access the low-level input devices directly.
-This can be useful if you need direct access to the raw inputs, without normalization.
-For most application and games this is not required.
+As mentioned above, for advanced use cases you can access the low-level input devices directly.
+This can be useful if you only need direct access to the raw inputs (Controls), without normalization.
+For most application and games this is not required, but is suitable when dealing with devices that
+are not necessarily game controllers or joysticks.
 
-The :py:mod:`~pyglet.input` module provides several methods for querying
-devices, and a ControllerManager class to support hot-plugging of Controllers::
+The :py:mod:`~pyglet.input` module provides several functions for querying devices, as well as a
+ControllerManager class that allows easier support for hot-plugging of Controllers::
 
     # get a list of all low-level input devices:
     devices = pyglet.input.get_devices()
@@ -42,12 +43,11 @@ devices, and a ControllerManager class to support hot-plugging of Controllers::
 Using Controllers
 -----------------
 
-Controllers have a strictly defined set of inputs that mimic the layout of
-modern dual-analog stick video game console Controllers. This includes two
-analog sticks, analog triggers, a directional pad (dpad), face and shoulder
-buttons, and start/back/guide and stick press buttons. Many controllers also
-include the ability to play rumble effects (vibration). The following platform
-interfaces are used for Controller support:
+Controllers in pyglet have a strictly defined "virtual" layout that mimics modern dual-analog
+stick video game console and PC controllers. This layout includes two analog sticks, analog triggers,
+a directional pad (dpad), face and shoulder buttons, and start/back/guide and stick press buttons.
+Controllers also include the ability to play rumble effects (vibration). The following platform interfaces
+are used for Controller support:
 
     .. list-table::
         :header-rows: 1
@@ -61,12 +61,16 @@ interfaces are used for Controller support:
           -
 
         * - Windows
-          - DirectInput & Xinput
+          - Xinput & DirectInput
           - rumble not implemented on DirectInput
 
         * - MacOSX
-          - IOKit
-          - rumble not yet implemented
+          - Game Controller framework
+          -
+
+        * - Web
+          - w3c Gamepad Interface
+          -
 
 Before using a controller, you must find it and open it. You can either list
 and open Controllers manually, or use a :ref:`guide_controller-manager`.
@@ -313,6 +317,32 @@ repository.
 
 Using Joysticks
 ---------------
+
+The following platform interfaces are used for Joystick support:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - platform
+          - interface
+          - notes
+
+        * - Linux
+          - evdev
+          -
+
+        * - Windows
+          - DirectInput
+          -
+
+        * - MacOSX
+          - IOKit
+          -
+
+        * - Web
+          -
+          - not yet supported
+
 
 Before using a joystick, you must find it and open it. To get a list
 of all joystick devices currently connected to your computer, call
