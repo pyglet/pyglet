@@ -775,3 +775,35 @@ class DISPLAYCONFIG_TARGET_DEVICE_NAME(ctypes.Structure):
         ('monitorFriendlyDeviceName', WCHAR * 64),
         ('monitorDevicePath', WCHAR * 128),
     ]
+
+
+LPOFNHOOKPROC = ctypes.WINFUNCTYPE(UINT, HWND,  UINT,WPARAM, LPARAM)
+
+LPEDITMENU = ctypes.c_void_p
+
+class OPENFILENAMEW(Structure):
+    _fields_ = [
+        ("lStructSize", DWORD),
+        ("hwndOwner", HWND),
+        ("hInstance", HINSTANCE),
+        ("lpstrFilter", LPCWSTR),
+        ("lpstrCustomFilter", LPWSTR),
+        ("nMaxCustFilter", DWORD),
+        ("nFilterIndex", DWORD),
+        ("lpstrFile", LPWSTR),
+        ("nMaxFile", DWORD),
+        ("lpstrFileTitle", LPWSTR),
+        ("nMaxFileTitle", DWORD),
+        ("lpstrInitialDir", LPCWSTR),
+        ("lpstrTitle", LPCWSTR),
+        ("Flags", DWORD),
+        ("nFileOffset", WORD),
+        ("nFileExtension", WORD),
+        ("lpstrDefExt", LPCWSTR),
+        ("lCustData", LPARAM),
+        ("lpfnHook", LPOFNHOOKPROC),
+        ("lpTemplateName", LPCWSTR),
+        ("pvReserved", LPVOID),
+        ("dwReserved", DWORD),
+        ("FlagsEx", DWORD),
+    ]
