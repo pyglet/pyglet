@@ -10,16 +10,17 @@ The ``game controller`` interface is most suitable for modern dual-analog stick 
 and provides a "just works" abstraction that suits many typical games. The ``joystick`` interface
 is more generalized, and is suitable for devices with an arbitrary number of buttons, absolute & relative
 axis, and hats. This includes devices like flight sticks, steering wheels, and just about anything
-else with digital and/or analog inputs. For most types of games, the ``game controller`` interface
-is recommended.
+else with digital and/or analog inputs. For most cases, the ``game controller`` interface is recommended.
 
-As mentioned above, for advanced use cases you can access the low-level input devices directly.
-This can be useful if you only need direct access to the raw inputs (Controls), without normalization.
-For most application and games this is not required, but is suitable when dealing with devices that
-are not necessarily game controllers or joysticks.
+At the lowest level is the :py:class:`~pyglet.input.Device` interface. Suitable for advanced use cases,
+this gives you direct access to raw :py:class:`~pyglet.input.Control` objects without any normalization.
+This is useful if you have a specific hardware device you are working with, particularly those that are
+not necessarily game controllers. The higher level ``game controller`` and ``joystick`` interfaces all
+work on top of a :py:class:`~pyglet.input.Device`.
 
 The :py:mod:`~pyglet.input` module provides several functions for querying devices, as well as a
-ControllerManager class that allows easier support for hot-plugging of Controllers::
+:py:class:`~pyglet.input.ControllerManager` class that allows easier support for hot-plugging of
+:py:class:`~pyglet.input.Controller` objects::
 
     # get a list of all low-level input devices:
     devices = pyglet.input.get_devices()
@@ -64,15 +65,15 @@ are used for Controller support:
           - Xinput & DirectInput
           - rumble not implemented on DirectInput
 
-        * - MacOSX
+        * - macOS
           - Game Controller framework
-          -
+          - an open Window is required for recieving input
 
         * - Web
           - w3c Gamepad Interface
           -
 
-Before using a controller, you must find it and open it. You can either list
+Before using a Controller, you must find it and open it. You can either list
 and open Controllers manually, or use a :ref:`guide_controller-manager`.
 A ControllerManager provides useful events for easily handling hot-plugging
 of Controllers, which  is described in a following section. First, however,
@@ -88,10 +89,10 @@ Then choose a controller from the list and call `Controller.open()` to open it::
         controller.open()
 
 
-Once opened, you you can start receiving data from the the inputs.
-A variety of analog and digital :py:class:`~pyglet.input.Control` types
-are defined, which are automatically normalized to consistent ranges. The
-following analog controls are available:
+Once opened, you you can start receiving data from the the inputs. A variety of analog and digital
+inputs are defined. The analog sticks and the directional pad (dpad) are provided as a 2D vector
+(:py:class:`~pyglet.math.Vec2`), with the individual axis normalized from ``-1.0, 1.0``. The triggers are defined
+as ``floats`` from ``0.0, 1.0``. See the following chart:
 
     .. list-table::
         :header-rows: 1
@@ -100,28 +101,16 @@ following analog controls are available:
           - type
           - range
 
-        * - leftx
-          - float
+        * - leftstick
+          - Vec2
           - -1~1
 
-        * - lefty
-          - float
+        * - rightstick
+          - Vec2
           - -1~1
 
-        * - rightx
-          - float
-          - -1~1
-
-        * - righty
-          - float
-          - -1~1
-
-        * - dpadx
-          - float
-          - -1~1
-
-        * - dpady
-          - float
+        * - dpad
+          - Vec2
           - -1~1
 
         * - lefttrigger
@@ -132,7 +121,8 @@ following analog controls are available:
           - float
           - 0~1
 
-The following digital controls are available:
+The buttons are all boolean (True/False), and use the following naming scheme (regardless of the brand of device,
+or actual names that may be printed on the hardware):
 
     .. list-table::
         :header-rows: 1
@@ -157,28 +147,27 @@ The following digital controls are available:
           - called "select" or "share" on some controllers
         * - guide
           - usually in the center, with a company logo
-        * - leftstick
+        * - leftthumb
           - pressing in on the left analog stick
-        * - rightstick
+        * - rightthumb
           - pressing in on the right analog stick
 
 
-These values can be read in two ways. First, you can just query them manually
-in your game loop. All control names listed above are properties on the
-controller instance::
+These values can be read in two ways. Polling the values directly by querying the attributes on the Controller
+instance. Or, setting up event handlers for input changes events (more on this later). All control names listed
+above are properties on the controller instance, and can be accessed directly::
 
-    # controller_instance.a       (boolean)
-    # controller_instance.leftx   (float)
+    # controller_instance.a           (boolean)
+    # controller_instance.leftstick   (Vec2)
 
     if controller_instance.a == True:
         # do something
 
 
-Alternatively, since controllers are a subclass of :py:class:`~pyglet.event.EventDispatcher`,
-events will be dispatched when any of the values change. This is usually the
-recommended way to handle input, since it reduces the chance of "missed" button
-presses due to slow polling. The different controls are grouped into the following
-event types:
+Controllers subclass :py:class:`~pyglet.event.EventDispatcher`, and will dispatch a variety of events whenever
+the inputs change. You can set up handlers to receive whichever inputs you are interested in. Event handling is the
+recommended way to handle input, since it reduces the chance of "missed" button presses due to slow polling.
+The following events are defined:
 
     .. list-table::
         :header-rows: 1
@@ -195,40 +184,48 @@ event types:
           - controller, button_name
           - :py:class:`~pyglet.input.Controller`, `str`
 
-        * - on_stick_motion
-          - controller, stick_name, vector
-          - :py:class:`~pyglet.input.Controller`, `str`, :py:class:`~pyglet.math.Vec2`
-
-        * - on_dpad_motion
-          - controller, left, right, up, down
+        * - on_leftstick_motion
+          - controller, 2D vector
           - :py:class:`~pyglet.input.Controller`, :py:class:`~pyglet.math.Vec2`
 
-        * - on_trigger_motion
-          - controller, trigger_name, value
-          - :py:class:`~pyglet.input.Controller`, `str`, `float`
+        * - on_rightstick_motion
+          - controller, 2D vector
+          - :py:class:`~pyglet.input.Controller`, :py:class:`~pyglet.math.Vec2`
 
+        * - on_dpad_motion
+          - controller, 2D vector
+          - :py:class:`~pyglet.input.Controller`, :py:class:`~pyglet.math.Vec2`
+
+        * - on_lefttrigger_motion
+          - controller, value
+          - :py:class:`~pyglet.input.Controller`, `float`
+
+        * - on_righttrigger_motion
+          - controller, value
+          - :py:class:`~pyglet.input.Controller`, `float`
 
 Analog (and Dpad) events can be handled like this::
 
     @controller.event
-    def on_stick_motion(controller, name, vector):
-
-        if name == "leftstick":
-            # Do something with the 2D vector
-        elif name == "rightstick":
-            # Do something with the 2D vector
+    def on_leftstick_motion(controller, vector):
+        # Do something with the vector, such as character movement
 
     @controller.event
-    def on_trigger_motion(controller, name, value):
+    def on_rightstick_motion(controller, vector):
+        # Do something with the vector, such as a camera update
 
-        if name == "lefttrigger":
-            # Do something with the value
-        elif name == "righttrigger":
-            # Do something with the value
+    @controller.event
+    def on_lefttrigger_motion(controller, name, value):
+        # Do something with the value
+
+    @controller.event
+    def on_righttrigger_motion(controller, name, value):
+        # Do something with the value
 
     @controller.event
     def on_dpad_motion(controller, vector):
-        # Do something with the 2D vector
+        # Do something with the 2D vector, such as character movement
+
 
 Digital events can be handled like this::
 
@@ -258,11 +255,11 @@ are both strong and weak effects, which can be played independently::
     controller.rumble_play_strong(strength, duration=0.5)
 
 The `strength` parameter should be on a scale of 0-1. Values outside of
-this range will be clamped. The optional `duration` parameter is in seconds.
+this range will be clamped. The optional ``duration`` parameter is in seconds.
 The maximum duration can vary from platform to platform, but is usually
 at least 5 seconds. If you play another effect while an existing effect is
-still playing, it will replace it. You can also stop playback of a rumble
-effect at any time::
+still playing, it will replace it. This can be useful to "ramp up" the intensity
+of an effect over time. You can also stop playback of a rumble effect at any time::
 
     controller.rumble_stop_weak()
     controller.rumble_stop_strong()
