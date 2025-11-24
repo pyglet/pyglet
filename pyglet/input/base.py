@@ -16,7 +16,6 @@ from pyglet.event import EventDispatcher
 if TYPE_CHECKING:
     from pyglet.window import BaseWindow
     from pyglet.display.base import Display
-    from pyglet.input.controller import Relation
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -489,7 +488,7 @@ class Controller(EventDispatcher):
     To use a Controller, you must first call ``open``. Controllers will then
     dispatch various events whenever the inputs change. They can also be polled
     manually at any time to find the current value of any inputs. Analog stick
-    inputs are normalized to the range [-1.0, 1.0], and triggers are normalized
+    axis are normalized to the range [-1.0, 1.0], and triggers are normalized
     to the range [0.0, 1.0]. All other inputs are digital.
 
     Note: A running application event loop is required
@@ -504,6 +503,45 @@ class Controller(EventDispatcher):
         `on_righttrigger_motion`
 
     """
+    #: :The underlying device used by this Controller interface.
+    device: Device
+    #: The logical device name
+    name: str
+    #: The unique guid for this Device
+    guid: str
+
+    #: :The "south" face button.
+    a: bool
+    #: :The "east" face button.
+    b: bool
+    #: :The "west" fast button.
+    x: bool
+    #: :The "north" face button.
+    y: bool
+    #: :Sometimes called "share" or "select".
+    back: bool
+    #: :Sometimes called "options" or "menu".
+    start: bool
+    #: :The home button on the device.
+    guide: bool
+    #: :The top left bumper.
+    leftshoulder: bool
+    #: :The top right bumper.
+    rightshoulder: bool
+    #: :Pushing in on the left analog stick.
+    leftthumb: bool
+    #: :Pushing in on the right analog stick.
+    rightthumb: bool
+    #: :Left analog trigger.
+    lefttrigger: float
+    #: :Right analog trigger.
+    righttrigger: float
+    #: :The direction pad, as a 2D vector.
+    dpad: Vec2
+    #: :The left analog stick.
+    leftstick: Vec2
+    #: :The right analog stick.
+    rightstick: Vec2
 
     def __init__(self, device: Device, mapping: dict):
         """Create a Controller instance mapped to a Device.
@@ -514,10 +552,7 @@ class Controller(EventDispatcher):
         #: The underlying Device:
         self.device: Device = device
         self._mapping = mapping
-
-        #: The logical device name
         self.name: str = mapping.get('name')
-        #: The unique guid for this Device
         self.guid: str = mapping.get('guid')
 
         # Pollable attributes
@@ -530,8 +565,8 @@ class Controller(EventDispatcher):
         self.guide: bool = False
         self.leftshoulder: bool = False
         self.rightshoulder: bool = False
-        self.leftthumb: bool = False          # stick press button
-        self.rightthumb: bool = False         # stick press button
+        self.leftthumb: bool = False
+        self.rightthumb: bool = False
         self.lefttrigger: float = 0.0
         self.righttrigger: float = 0.0
         self.dpad: Vec2 = Vec2()
@@ -548,7 +583,7 @@ class Controller(EventDispatcher):
         self._dpady: float = 0.0
 
         # references to the actual device controls
-        # be used to map to the uniform layout above
+        # being used to map to the uniform layout above
         self._button_controls: list = []
         self._axis_controls: list = []
         self._hat_control: Control | None = None
