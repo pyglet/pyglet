@@ -293,32 +293,27 @@ class FPSCamera:
 
     # --- Controller input ---
 
-    def on_stick_motion(self, _controller, stick: str, vector: Vec2):
-        """Handle controller input.
+    def on_leftstick_motion(self, _controller, vector: Vec2):
+        """Right Controller stick controlls the camera position."""
+        if vector.length() < self.dead_zone:
+            self.controller_move = Vec2()
+        else:
+            self.controller_move = vector
 
-        The left stick controls the camera position, and the right stick
-        controls the camera rotation.
-        """
-        # Translation
-        if stick == "leftstick":
-            if vector.length() < self.dead_zone:
-                self.controller_move = Vec2()
-            else:
-                self.controller_move = vector
+    def on_rightstick_motion(self, _controller, vector: Vec2):
+        """Right Controller stick controlls the camera rotation."""
+        if vector.length() >= self.dead_zone:
+            self.controller_look = vector
+        else:
+            self.controller_look = Vec2()
 
-        # Camera rotation
-        if stick == "rightstick":
-            if vector.length() >= self.dead_zone:
-                self.controller_look = vector
-            else:
-                self.controller_look = Vec2()
+    def on_lefttrigger_motion(self, controller, value: float):
+        """Left trigger lowers the elevation."""
+        self._elevation = -value
 
-    def on_trigger_motion(self, controller, trigger: str, value: float):
-        """Handle the controller trigger input."""
-        if trigger == "lefttrigger":
-            self._elevation = -value
-        if trigger == "righttrigger":
-            self._elevation = value
+    def on_righttrigger_motion(self, controller, value: float):
+        """Right trigger raises the elevation."""
+        self._elevation = value
 
     # -- Private methods --
 

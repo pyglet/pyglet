@@ -25,6 +25,7 @@ from __future__ import annotations
 import os as _os
 import sys as _sys
 import warnings as _warnings
+import dataclasses as _dataclasses
 
 from .base import Sign
 from .controller_db import mapping_list
@@ -53,16 +54,11 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
     return f"{bus:04x}0000{vendor:04x}0000{product:04x}0000{version:04x}0000"
 
 
+@_dataclasses.dataclass(frozen=True)
 class Relation:
-    __slots__ = 'control_type', 'index', 'sign'
-
-    def __init__(self, control_type: str, index: int, sign: Sign = Sign.DEFAULT):
-        self.control_type = control_type
-        self.index = index
-        self.sign = sign
-
-    def __repr__(self):
-        return f"Relation(type={self.control_type}, index={self.index}, sign={self.sign})"
+    control_type: str
+    index: int
+    sign: Sign = Sign.DEFAULT
 
 
 def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
@@ -79,7 +75,7 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
 
     try:
         guid, name, *split_mapping = mapping_string.strip().split(",")
-        relations = dict(guid=guid, name=name)
+        relations: dict[str, str | Relation] = dict(guid=guid, name=name)
     except ValueError:
         return None
 
@@ -132,6 +128,8 @@ def get_mapping(guid: str) -> dict[str, str | Relation] | None:
         except ValueError:
             _warnings.warn(f"Unable to parse Controller mapping: {mapping}")
             continue
+
+    return None
 
 
 def add_mappings_from_file(filename: str) -> None:

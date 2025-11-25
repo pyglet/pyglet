@@ -16,11 +16,10 @@ from pyglet.math import Vec2
 
 from pyglet.window.cocoa.pyglet_delegate import NSNotification
 
-from pyglet.input import ControllerManager, Device, Control, Controller, Button, AbsoluteAxis, base
+from pyglet.input.base import Device, Control, Controller, Button, AbsoluteAxis, ControllerManager, Sign
 
 from pyglet.libs.darwin import ObjCClass, get_selector
 from pyglet.window.cocoa.pyglet_view import NSNotificationCenter
-
 
 lib = util.find_library('GameController')
 
@@ -34,14 +33,22 @@ NSObject = ObjCClass('NSObject')
 GCController = ObjCClass("GCController")
 NSArray = ObjCClass('NSArray')
 
+
 class _GCController(Protocol):
     """Just a type hint to better understand the controller API's"""
+
     def playerIndex(self) -> int: ...
+
     def vendorName(self) -> str: ...
+
     def battery(self): ...
+
     def haptics(self): ...
+
     def light(self): ...
+
     def physicalInputProfile(self): ...
+
 
 GCControllerDidConnectNotification = c_void_p.in_dll(gc, 'GCControllerDidConnectNotification')
 GCControllerDidDisconnectNotification = c_void_p.in_dll(gc, 'GCControllerDidDisconnectNotification')
@@ -71,7 +78,8 @@ GCHapticDurationInfinite = c_void_p.in_dll(gc, 'GCHapticDurationInfinite')
 
 GCSystemGestureStateDisabled = 2
 
-CHHapticDynamicParameterIDHapticIntensityControl = c_void_p.in_dll(gc, 'CHHapticDynamicParameterIDHapticIntensityControl')
+CHHapticDynamicParameterIDHapticIntensityControl = c_void_p.in_dll(gc,
+                                                                   'CHHapticDynamicParameterIDHapticIntensityControl')
 
 CHHapticEventParameter = ObjCClass('CHHapticEventParameter')
 CHHapticEvent = ObjCClass('CHHapticEvent')
@@ -83,11 +91,13 @@ GCDeviceBatteryStateDischarging = 0
 GCDeviceBatteryStateCharging = 1
 GCDeviceBatteryStateFull = 2
 
+
 class BatteryState(Enum):
     UNKNOWN = auto()
     DISCHARGING = auto()
     CHARGING = auto()
     FULL = auto()
+
 
 _state_mapping = {
     GCDeviceBatteryStateUnknown: BatteryState.UNKNOWN,
@@ -104,17 +114,17 @@ _button_mapping = {
     "Button Menu": "start",
     "Button Options": "back",
     "Button Home": "guide",
-    "Left Thumbstick Button": "leftstick",
-    "Right Thumbstick Button": "rightstick",
+    "Left Thumbstick Button": "leftthumb",
+    "Right Thumbstick Button": "rightthumb",
     "Left Shoulder": "leftshoulder",
-    "Left Trigger": "lefttrigger",
     "Right Shoulder": "rightshoulder",
+    "Left Trigger": "lefttrigger",
     "Right Trigger": "righttrigger",
     "Button A": "a",
     "Button B": "b",
     "Button X": "x",
     "Button Y": "y",
-    "Touchpad Button": "touchpad",
+    # "Touchpad Button": "touchpad",
 }
 
 _axis_mapping = {
@@ -124,8 +134,11 @@ _axis_mapping = {
     "Left Thumbstick X Axis": "leftx",
     "Left Thumbstick Y Axis": "lefty",
 
-    #"Direction Pad X Axis": "leftx",
-    #"Direction Pad Y Axis": "lefty",
+    "Left Trigger": "lefttrigger",
+    "Right Trigger": "righttrigger",
+
+    # "Direction Pad X Axis": "leftx",
+    # "Direction Pad Y Axis": "lefty",
 
     # "Touchpad 1 Y Axis": "unsupport",
     # "Touchpad 1 X Axis": "unsupport",
@@ -134,7 +147,7 @@ _axis_mapping = {
 }
 
 _dpads_mapping = {
-    "Direction Pad": base.AbsoluteAxis.HAT,
+    "Direction Pad": AbsoluteAxis.HAT,
     # "Touchpad 2": "unknown",
     # "Touchpad 1": "unknown",
     # "Right Thumbstick": "unknown",
@@ -174,7 +187,7 @@ class HapticEngine:
             empty_arr = NSArray.alloc().init()
 
             pattern = CHHapticPattern.alloc().initWithEvents_parameters_error_(event_arr, empty_arr,
-                                                                                    byref(self.error))
+                                                                               byref(self.error))
 
             if not pattern:
                 self.as_nserror()
@@ -190,20 +203,20 @@ class HapticEngine:
 
     def as_nserror(self):
         ns_error = ObjCInstance(self.error.value)
-        print("macos GC error:", ns_error.localizedDescription())
+        # print("macos GC error:", ns_error.localizedDescription())
 
     def trigger_event(self, intensity, sharpness, duration):
         self.is_playing = True
 
         param = CHHapticDynamicParameter.alloc().initWithParameterID_value_relativeTime_(
-           CHHapticDynamicParameterIDHapticIntensityControl, intensity, 0,
+            CHHapticDynamicParameterIDHapticIntensityControl, intensity, 0,
         )
 
         dynam_param_arr = NSArray.arrayWithObject_(param)
 
         self._player.sendParameters_atTime_error_(dynam_param_arr, 0, byref(self.error))
         if self.error:
-            print("macos GC: Failed to update parameter")
+            # print("macos GC: Failed to update parameter")
             return
 
         self._player.startAtTime_error_(0, None)
@@ -239,6 +252,7 @@ class HapticEngine:
 class AppleGamepad(Device):
 
     def __init__(self, manager, controller: _GCController) -> None:
+
         with AutoReleasePool():
             self.manager = weakref.proxy(manager)
             self.device_name = ns_to_py(controller.vendorName())
@@ -257,7 +271,7 @@ class AppleGamepad(Device):
             self.strong_motor_engine = None
 
             if self.haptics:
-                #self.weak_motor_engine = self._get_motor_engine(GCHapticsLocalityDefault)
+                # self.weak_motor_engine = self._get_motor_engine(GCHapticsLocalityDefault)
                 self.weak_motor_engine = self._get_motor_engine(GCHapticsLocalityLeftHandle)
                 self.strong_motor_engine = self._get_motor_engine(GCHapticsLocalityRightHandle)
 
@@ -286,7 +300,7 @@ class AppleGamepad(Device):
                     assert button_objc.ptr.value not in self._button_ptrs
                     pyglet_name = _button_mapping.get(button_name)
                     if not pyglet_name:
-                        #print(f"Found: {button_name} button, but does not map to anything. Ignoring.")
+                        # print(f"Found: {button_name} button, but does not map to anything. Ignoring.")
                         continue
                     # Try to disable any "gestured" buttons so they can be used like actual buttons.
                     if button_objc.isBoundToSystemGesture():
@@ -302,11 +316,10 @@ class AppleGamepad(Device):
                     assert axis_obj.ptr.value not in self._axes_ptrs
                     pyglet_name = _axis_mapping.get(axis_name)
                     if not pyglet_name:
-                        #print(f"Found: {axis_name} axis, but does not map to anything. Ignoring.")
+                        # print(f"Found: {axis_name} axis, but does not map to anything. Ignoring.")
                         continue
                     self._axes_ptrs[axis_obj.ptr.value] = pyglet_name
                     axis_obj.setValueChangedHandler_(self._axes_cb_block)
-
 
             self._dpad_ptrs = {}
             if self.dpads:
@@ -320,8 +333,7 @@ class AppleGamepad(Device):
                     self._dpad_ptrs[dpad_obj.ptr.value] = pyglet_name
                     dpad_obj.setValueChangedHandler_(self._dpad_cb_block)
 
-            print("DEVICE NAME", repr(self.device_name), "index", self.index, self.product_category)
-
+            # print("DEVICE NAME", repr(self.device_name), "index", self.index, self.product_category)
 
             # We need to store the Block's so callbacks don't get GC'd, as it contains CFUNCTYPES.
             self.cb_blocks = {}
@@ -336,21 +348,21 @@ class AppleGamepad(Device):
                 'guide': Button('guide'),
                 'leftshoulder': Button('leftshoulder'),
                 'rightshoulder': Button('rightshoulder'),
-                'leftstick': Button('leftstick'),
-                'rightstick': Button('rightstick'),
+                'leftthumb': Button('leftthumb'),
+                'rightthumb': Button('rightthumb'),
                 'dpup': Button('dpup'),
                 'dpdown': Button('dpdown'),
                 'dpleft': Button('dpleft'),
                 'dpright': Button('dpright'),
 
                 'leftx': AbsoluteAxis('leftx', -1, 1),
-                'lefty': AbsoluteAxis('lefty', -1, 1),
+                'lefty': AbsoluteAxis('lefty', -1, 1, inverted=True),
                 'rightx': AbsoluteAxis('rightx', -1, 1),
-                'righty': AbsoluteAxis('righty', -1, 1),
+                'righty': AbsoluteAxis('righty', -1, 1, inverted=True),
                 'lefttrigger': AbsoluteAxis('lefttrigger', 0, 1),
                 'righttrigger': AbsoluteAxis('righttrigger', 0, 1),
 
-                base.AbsoluteAxis.HAT: base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 1),
+                "hat": AbsoluteAxis('hat', 0, 1),
             }
 
     def _axis_changed_callback(self, axes_obj, value):
@@ -401,7 +413,7 @@ class AppleGamepad(Device):
 
         error = engine.startAndReturnError_(err)
         if not error:
-            print("Error starting engine")
+            # print("Error starting engine")
             return None
 
         self.haptic_engine = HapticEngine(locality, engine)
@@ -411,12 +423,13 @@ class AppleGamepad(Device):
         return list(self.controls.values())
 
     def get_guid(self) -> str:
-        return self.guid
-    
+        return "MFI_APPLE_CONTROLLER"
+
 
 class AppleController(Controller):
     """Javascript Gamepad Controller object that handles buttons and controls."""
     device: AppleGamepad
+
     def __init__(self, device: AppleGamepad, mapping: dict) -> None:
         super().__init__(device, mapping)
         self._last_updated = 0.0
@@ -428,72 +441,19 @@ class AppleController(Controller):
                 continue
             control = self.device.controls[button_name]
             self._button_controls.append(control)
-            self._add_button(control, button_name)
+            self._bind_button_control(control, button_name)
 
         for axis_name in _axis_mapping.values():
             control = self.device.controls[axis_name]
             self._axis_controls.append(control)
-            self._add_axis(control, axis_name)
+            self._bind_axis_control(control, axis_name, Sign.DEFAULT)
 
-    def _add_axis(self, control: Control, name: str) -> None:
-        if name in ("lefttrigger", "righttrigger"):
-            @control.event
-            def on_change(value):
-                setattr(self, name, value)
-                self.dispatch_event('on_trigger_motion', self, name, value)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', self, name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', self, name)
-
-        elif name in ("leftx", "lefty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, self.lefty))
-
-        elif name in ("rightx", "righty"):
-            @control.event
-            def on_change(value):
-                normalized_value = value
-                setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, self.righty))
-
-    def _add_button(self, control: Control, name: str) -> None:
-
-        if name in ("dpleft", "dpright", "dpup", "dpdown"):
-            @control.event
-            def on_change(value):
-                target, bias = {
-                    'dpleft': ('dpadx', -1.0), 'dpright': ('dpadx', 1.0),
-                    'dpdown': ('dpady', -1.0), 'dpup': ('dpady', 1.0)
-                }[name]
-                setattr(self, target, bias * value)
-                self.dispatch_event('on_dpad_motion', self, Vec2(self.dpadx, self.dpady))
-        else:
-            @control.event
-            def on_change(value):
-                setattr(self, name, value)
-
-            @control.event
-            def on_press():
-                self.dispatch_event('on_button_press', self, name)
-
-            @control.event
-            def on_release():
-                self.dispatch_event('on_button_release', self, name)
-
-    def rumble_play_weak(self, strength: float=1.0, duration: float=0.5) -> None:
+    def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
         if self.device and self.device.weak_motor_engine:
             strength_clamp = int(max(min(1.0, strength), 0))
             self.device.weak_motor_engine.trigger_event(strength_clamp, sharpness=1.0, duration=duration)
 
-    def rumble_play_strong(self, strength: float=1.0, duration: float=0.5) -> None:
+    def rumble_play_strong(self, strength: float = 1.0, duration: float = 0.5) -> None:
         if self.device and self.device.strong_motor_engine:
             strength_clamp = int(max(min(1.0, strength), 0))
             self.device.strong_motor_engine.trigger_event(strength_clamp, sharpness=1.0, duration=duration)
@@ -505,6 +465,7 @@ class AppleController(Controller):
     def rumble_stop_strong(self) -> None:
         if self.device and self.device.strong_motor_engine:
             self.device.strong_motor_engine.stop_event()
+
 
 class _AppleControllerManager_Implementation(EventDispatcher):
     _PygletAppleControllerManager = ObjCSubclass('NSObject', '_PygletAppleControllerManager')
@@ -542,8 +503,7 @@ class _AppleControllerManager_Implementation(EventDispatcher):
         device: GCController = notification.object()
 
         wrapper = AppleGamepad(self, device)
-
-        controller = AppleController(wrapper, {"name": wrapper.device_name, "guid": "MFI_APPLE_CONTROLLER" })
+        controller = AppleController(wrapper, {"name": wrapper.device_name, "guid": "MFI_APPLE_CONTROLLER"})
 
         self.controllers[device] = controller
 
@@ -561,7 +521,9 @@ class _AppleControllerManager_Implementation(EventDispatcher):
     def get_controllers(self):
         return list(self.controllers.values())
 
+
 _PygletAppleControllerManager = ObjCClass('_PygletAppleControllerManager')
+
 
 class _SingletonAppleDispatcher(EventDispatcher):
     """Only keep this as we only need one."""
@@ -569,14 +531,16 @@ class _SingletonAppleDispatcher(EventDispatcher):
     def __init__(self):
         self._obj_mgr = _PygletAppleControllerManager.alloc().initWithDispatcher(self)
 
+
 _SingletonAppleDispatcher.register_event_type("on_connect")
 _SingletonAppleDispatcher.register_event_type("on_disconnect")
 
 _apple_controller = _SingletonAppleDispatcher()
 
+
 class AppleControllerManager(ControllerManager):
 
-    def __init__(self, display=None):
+    def __init__(self):
         self._controllers = {}
 
         @_apple_controller.event

@@ -241,11 +241,25 @@ class GamepadController(Controller):
             self._last_updated = gamepad.timestamp
 
     def _add_axis(self, control: Control, name: str) -> None:
-        if name in ("lefttrigger", "righttrigger"):
+        if name == "lefttrigger":
             @control.event
             def on_change(value):
                 setattr(self, name, value)
-                self.dispatch_event('on_trigger_motion', self, name, value)
+                self.dispatch_event('on_lefttrigger_motion', self, value)
+
+            @control.event
+            def on_press():
+                self.dispatch_event('on_button_press', self, name)
+
+            @control.event
+            def on_release():
+                self.dispatch_event('on_button_release', self, name)
+
+        if name == "righttrigger":
+            @control.event
+            def on_change(value):
+                setattr(self, name, value)
+                self.dispatch_event('on_righttrigger_motion', self, value)
 
             @control.event
             def on_press():
@@ -260,14 +274,14 @@ class GamepadController(Controller):
             def on_change(value):
                 normalized_value = value
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "leftstick", Vec2(self.leftx, -self.lefty))
+                self.dispatch_event('on_leftstick_motion', self, Vec2(self.leftx, -self.lefty))
 
         elif name in ("rightx", "righty"):
             @control.event
             def on_change(value):
                 normalized_value = value
                 setattr(self, name, normalized_value)
-                self.dispatch_event('on_stick_motion', self, "rightstick", Vec2(self.rightx, -self.righty))
+                self.dispatch_event('on_rightstick_motion', self, Vec2(self.rightx, -self.righty))
 
     def _add_button(self, control: Control, name: str) -> None:
 
