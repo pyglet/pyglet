@@ -87,6 +87,10 @@ pyglet.window
 -------------
 *Changed*: Window.set_mouse_visible has been renamed to Window.set_mouse_cursor_visible, and Window.set_mouse_platform_visible has been renamed to Window.set_mouse_cursor_platform_visible.
 
+pyglet.input
+------------
+*Changed* Controllers now dispatch separate events for left/right sticks, and left/right triggers.
+
 other
 -----
 *Added*: Functionality for Pyglet browser implementations via WebGL and Pyodide. (Note that this is still experimental, and reliant on the Pyodide project. See the docs.)

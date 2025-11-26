@@ -631,16 +631,16 @@ def _detect_controller_mapping(device):
 
     for i, control in enumerate(button_controls):
         if name := _aliases.get(control.event_code):
-            mapping[name] = Relation('button', i)
+            mapping[name] = Relation('button', index=i)
 
     for i, control in enumerate(axis_controls):
         if name := _aliases.get(control.event_code):
-            mapping[name] = Relation('axis', i)
+            mapping[name] = Relation('axis', index=i)
 
     for i, control in enumerate(hat_controls):
         if name := _aliases.get(control.event_code):
             index = 1 + i << 1
-            mapping[name] = Relation('hat0', index)
+            mapping[name] = Relation('hat0', index=index)
 
     return mapping
 
@@ -654,9 +654,8 @@ def _create_controller(device) -> Controller | None:
 
     mapping = get_mapping(device.get_guid())
     if not mapping:
-        warnings.warn(f"Warning: {device} (GUID: {device.get_guid()}) "
-                      f"has no controller mappings. Update the mappings in the Controller DB.\n"
-                      f"Auto-detecting as defined by the 'Linux gamepad specification'")
+        warnings.warn(f"\n{device} (GUID: {device.get_guid()}) has no controller mapping.\n"
+                      f"Auto-detecting as defined by the 'Linux gamepad specification'.")
         mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:

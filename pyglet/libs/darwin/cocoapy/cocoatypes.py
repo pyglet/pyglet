@@ -87,3 +87,26 @@ NSZeroPoint = NSPoint(0,0)
 
 CFTypeID = c_ulong
 CFNumberType = c_uint32
+
+_dispose_helper_cb = CFUNCTYPE(c_void_p, c_void_p)
+_copy_helper_cb = CFUNCTYPE(c_void_p, c_void_p, c_void_p)
+
+class Block_descriptor_1(Structure):
+    _fields_ = [
+        ("reserved", c_ulong),
+        ("Block_size", c_ulong),
+        ("copy_helper", _copy_helper_cb),  # Optional
+        ("dispose_helper", _dispose_helper_cb),  # Optional
+        ("signature", c_char_p),
+    ]
+
+
+class Block_literal_1(Structure):
+    _fields_ = [
+        ("isa", c_void_p),  # address to ConcreteStack/ConcreteGlobal
+        ("flags", c_int),
+        ("reserved", c_int),
+        ("invoke", c_void_p),  # Invoke function
+        ("descriptor", Block_descriptor_1),
+    ]
+
