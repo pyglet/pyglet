@@ -25,9 +25,8 @@ from __future__ import annotations
 import os as _os
 import sys as _sys
 import warnings as _warnings
-import dataclasses as _dataclasses
 
-from .base import Sign
+from .base import Sign, Relation
 from .controller_db import mapping_list
 
 
@@ -54,13 +53,6 @@ def create_guid(bus: int, vendor: int, product: int, version: int, name: str, si
     return f"{bus:04x}0000{vendor:04x}0000{product:04x}0000{version:04x}0000"
 
 
-@_dataclasses.dataclass(frozen=True)
-class Relation:
-    control_type: str
-    index: int
-    sign: Sign = Sign.DEFAULT
-
-
 def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
     """Parse a SDL2 style GameController mapping string.
 
@@ -84,10 +76,14 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
         if ':' not in item:
             continue
 
-        key, relation_string, *etc = item.split(':')
+        input_name, relation_string, *etc = item.split(':')
 
-        if key not in valid_keys:
+        if input_name not in valid_keys:
             continue
+
+        # override some input_names to match pyglet layout:
+        input_name = {'leftstick': 'leftthumb',
+                      'rightstick': 'rightthumb'}.get(input_name, input_name)
 
         # Look for specific flags to signify axis sign:
         if "+" in relation_string:
@@ -104,11 +100,11 @@ def _parse_mapping(mapping_string: str) -> dict[str, str | Relation] | None:
 
         # All relations will be one of (Button, Axis, or Hat).
         if relation_string.startswith("b"):  # Button
-            relations[key] = Relation("button", int(relation_string[1:]), sign)
+            relations[input_name] = Relation("button", index=int(relation_string[1:]), sign=sign)
         elif relation_string.startswith("a"):  # Axis
-            relations[key] = Relation("axis", int(relation_string[1:]), sign)
+            relations[input_name] = Relation("axis", index=int(relation_string[1:]), sign=sign)
         elif relation_string.startswith("h0"):  # Hat
-            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), sign)
+            relations[input_name] = Relation("hat0", index=int(relation_string.split(".")[1]), sign=sign)
 
     return relations
 

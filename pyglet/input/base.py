@@ -9,6 +9,7 @@ import enum
 import warnings
 
 from typing import TYPE_CHECKING, Literal
+from dataclasses import dataclass
 
 from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
@@ -37,6 +38,13 @@ class Sign(enum.Enum):
     NEGATIVE = enum.auto()
     INVERTED = enum.auto()
     DEFAULT = enum.auto()
+
+
+@dataclass
+class Relation:
+    control_type: str
+    index: int
+    sign: Sign = Sign.DEFAULT
 
 
 class Device:
@@ -543,6 +551,16 @@ class Controller(EventDispatcher):
     #: :The right analog stick.
     rightstick: Vec2
 
+    #: :A list of all Button Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    button_controls: list[Button]
+    #: :A list of all RelativeAxis Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    relative_axis_controls: list[RelativeAxis]
+    #: :A list of all AbsoluteAxis Controls exposed by the underlying device,
+    #: :regardless of whether they are bound to the Controller layout.
+    absolute_axis_controls: list[AbsoluteAxis]
+
     def __init__(self, device: Device, mapping: dict):
         """Create a Controller instance mapped to a Device.
 
@@ -582,13 +600,10 @@ class Controller(EventDispatcher):
         self._dpadx: float = 0.0
         self._dpady: float = 0.0
 
-        # references to the actual device controls
-        # being used to map to the uniform layout above
-        self._button_controls: list = []
-        self._axis_controls: list = []
-        self._hat_control: Control | None = None
-        self._hat_x_control: Control | None = None
-        self._hat_y_control: Control | None = None
+        # ALL Controls this device exposes, whether they are mapped to the default layout or not:
+        self.button_controls = [c for c in self.device.get_controls() if isinstance(c, Button)]
+        self.relative_axis_controls = [c for c in self.device.get_controls() if isinstance(c, RelativeAxis)]
+        self.absolute_axis_controls = [c for c in self.device.get_controls() if isinstance(c, AbsoluteAxis)]
 
         self._initialize_controls()
 
@@ -704,9 +719,9 @@ class Controller(EventDispatcher):
 
     def _bind_button_control(self, control: Button, button_name: str) -> None:
         if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
-            # These are buttons that are mapped to a dpad direction
+            # This is a button that is mapped to a dpad direction:
 
-            # mapping of   {button_name: (_scratch_attr, axis_value)} 
+            # mapping of   {button_name: (_scratch_attr, axis_value)}
             name_to_axis = {'dpleft': ('_dpadx', -1.0), 'dpright': ('_dpadx', 1.0),
                             'dpdown': ('_dpady', -1.0), 'dpup': ('_dpady', 1.0)}
 
@@ -718,10 +733,7 @@ class Controller(EventDispatcher):
                 self.dispatch_event('on_dpad_motion', self, self.dpad)
 
         else:
-            # This is a regular button
-
-            button_name = {'leftstick': 'leftthumb',
-                           'rightstick': 'rightthumb'}.get(button_name, button_name)
+            # This is a regular button:
 
             @control.event
             def on_change(value):
@@ -756,42 +768,31 @@ class Controller(EventDispatcher):
         then binds them to the appropriate "virtual" controls
         as defined in the mapped relations.
         """
-
-        for ctrl in self.device.get_controls():
-            # Categorize the various control types
-            if isinstance(ctrl, Button):
-                self._button_controls.append(ctrl)
-
-            elif isinstance(ctrl, AbsoluteAxis):
-                if ctrl.name == "hat_x":
-                    self._hat_x_control = ctrl
-                elif ctrl.name == "hat_y":
-                    self._hat_y_control = ctrl
-                elif ctrl.name == "hat":
-                    self._hat_control = ctrl
-                else:
-                    self._axis_controls.append(ctrl)
+        hat_control = next((c for c in self.absolute_axis_controls if c.name == 'hat'), None)
+        hat_x_control = next((c for c in self.absolute_axis_controls if c.name == 'hat_x'), None)
+        hat_y_control = next((c for c in self.absolute_axis_controls if c.name == 'hat_y'), None)
 
         for name, relation in self._mapping.items():
-
-            if relation is None or isinstance(relation, str):
+            if not isinstance(relation, Relation):
                 continue
 
             try:
                 if relation.control_type == "button":
-                    self._bind_button_control(self._button_controls[relation.index], name)
+                    self._bind_button_control(self.button_controls[relation.index], name)
 
                 elif relation.control_type == "axis":
-                    self._bind_axis_control(self._axis_controls[relation.index], name, relation.sign)
+                    self._bind_axis_control(self.absolute_axis_controls[relation.index], name, relation.sign)
 
                 elif relation.control_type == "hat0":
-                    if self._hat_control:
-                        self._bind_dedicated_hat(self._hat_control)
-                    else:
-                        control, dpname = {1: (self._hat_y_control, 'dpup'),
-                                           2: (self._hat_x_control, 'dpright'),
-                                           4: (self._hat_y_control, 'dpdown'),
-                                           8: (self._hat_x_control, 'dpleft')}[relation.index]
+                    if hat_control:
+                        self._bind_dedicated_hat(hat_control)
+                        continue
+
+                    elif hat_x_control and hat_y_control:
+                        control, dpname = {1: (hat_y_control, 'dpup'),
+                                           2: (hat_x_control, 'dpright'),
+                                           4: (hat_y_control, 'dpdown'),
+                                           8: (hat_x_control, 'dpleft')}[relation.index]
 
                         self._bind_axis_control(control, dpname, relation.sign)
 
