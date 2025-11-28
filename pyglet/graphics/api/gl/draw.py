@@ -305,7 +305,7 @@ class Batch(BatchBase):
         # Remove bucket from all domains.
         for domain in self._domain_registry.values():
             if domain.has_bucket(group):
-                del domain._vertex_buckets[group]
+                del domain._vertex_buckets[group]  # noqa: SLF001
 
     def _create_draw_list(self) -> list[Callable]:
         """Rebuild draw list by walking the group tree and minimizing state transitions."""
@@ -359,36 +359,29 @@ class Batch(BatchBase):
 
         return _draw_list
 
+    @staticmethod
+    def _vao_bind_fn(domain):    # noqa: ANN001, ANN205
+        def _bind_vao(_ctx) -> None:  # noqa: ANN001
+            domain.bind_vao()
+
+        return _bind_vao
+
+    @staticmethod
+    def _draw_bucket_fn(domain, buckets, mode_func):  # noqa: ANN001, ANN205
+        def _draw(_ctx) -> None:  # noqa: ANN001
+            domain.draw_buckets(mode_func, buckets)
+
+        return _draw
+
     def _optimize_draw_list(self, draw_list: list[tuple]) -> list[Callable]:
         """Turn a flattened (domain/mode/group) list into optimized callables.
+
         States that are equal (by __eq__) are treated as the same logical GPU state.
         Intermediate unset/set pairs for identical states are removed, preserving
         dependency ordering and teardown safety.
         """
         calls: list[Callable] = []
         active_states: dict[type, State] = {}  # (type, key) -> instance
-
-        # ----------------- helpers -----------------
-        def _vao_bind_fn(domain):
-            def _bind_vao(_ctx):
-                domain.bind_vao()
-
-            return _bind_vao
-
-        def _draw_bucket_fn(domain, buckets, mode_func):
-            def _draw(_ctx):
-                domain.draw_buckets(mode_func, buckets)
-
-            return _draw
-
-        def _expand_states_in_order(states: list) -> list:
-            """Parent first, then the state itself."""
-            ordered: list = []
-            for s in states:
-                if s.parents:
-                    ordered.extend(s.generate_parent_states())
-                ordered.append(s)
-            return ordered
 
         def _next_same_type_set(idx: int, state_type: type) -> None | State:
             for j in range(idx + 1, len(draw_list)):
@@ -399,27 +392,27 @@ class Batch(BatchBase):
                             return s2  # first same-type set we see in the future
             return None
 
-        def flush_buckets():
+        def flush_buckets() -> None:
             nonlocal current_buckets, last_mode, last_domain
             if not current_buckets:
                 return
 
-            calls.append(_draw_bucket_fn(last_domain, list(current_buckets), geometry_map[last_mode]))
+            calls.append(self._draw_bucket_fn(last_domain, list(current_buckets), geometry_map[last_mode]))
             current_buckets.clear()
 
         def _emit_set(_state: State) -> None:
             stype = type(_state)
             current = active_states.get(stype)
 
-            # state is same → no-op
+            # state is same
             if current == _state:
                 return
 
-            # state changed → flush buckets
+            # state changed
             if current_buckets:
                 flush_buckets()
 
-            # unset previous if needed
+            # unset previous
             if current and current.unsets_state:
                 calls.append(current.unset_state)
 
@@ -439,7 +432,7 @@ class Batch(BatchBase):
             if next_set == current:
                 return  # will remain active
 
-            # state is about to end → flush
+            # state is about to end
             flush_buckets()
 
             if current.unsets_state:
@@ -465,16 +458,15 @@ class Batch(BatchBase):
 
             # Drawable
             bucket = domain.get_drawable_bucket(group)
-            if not bucket or getattr(bucket, "is_empty", False):
+            if not bucket or bucket.is_empty:
                 continue
 
-            # Domain / mode boundaries for multi-draw coalescing
             if last_domain is None:
-                calls.append(_vao_bind_fn(domain))
+                calls.append(self._vao_bind_fn(domain))
             elif domain != last_domain:
                 # New VAO: flush previous batch, bind new VAO
                 flush_buckets()
-                calls.append(_vao_bind_fn(domain))
+                calls.append(self._vao_bind_fn(domain))
             elif mode != last_mode:
                 # Same VAO but different primitive mode: flush
                 flush_buckets()
@@ -487,7 +479,6 @@ class Batch(BatchBase):
         flush_buckets()
 
         return calls
-
 
     def _dump_draw_list_call_order(self, draw_list: list[Callable], include_dc: bool=True) -> None:
         import inspect
@@ -520,6 +511,38 @@ class Batch(BatchBase):
             print(f"{i:03d} ({label}): {name}")
         print("==================")
 
+    def _set_draw_functions(self, draw_list: list) -> list[Callable]:
+        """Takes a draw list and turns them into function calls.
+
+        Does not optimize any states. All states are called.
+        """
+        calls: list[Callable] = []
+        last_domain = None
+
+        for i, (domain, mode, group) in enumerate(draw_list):
+            if domain is None:
+                # This is a state boundary. See if it *actually* changes state; if so, flush first.
+                if mode == "set":
+                    calls.extend([s.set_state for s in group._expanded_states if s.sets_state])
+
+                elif mode == "unset":
+                    calls.extend(reversed([s.unset_state for s in group._expanded_states if s.unsets_state]))
+
+                continue
+
+            # Drawable
+            bucket = domain.get_drawable_bucket(group)
+            if not bucket or bucket.is_empty:
+                continue
+
+            if last_domain is None or domain != last_domain:
+                calls.append(self._vao_bind_fn(domain))
+
+            calls.append(self._draw_bucket_fn(domain, [bucket], geometry_map[mode]))
+            last_domain = domain
+
+        return calls
+
     def _dump_draw_list(self) -> None:
         def dump(group: Group, indent: str = '') -> None:
             print(indent, 'Begin group', group)
@@ -546,12 +569,10 @@ class Batch(BatchBase):
     def _update_draw_list(self) -> None:
         if self._draw_list_dirty:
             draw_list = self._create_draw_list()
-            #print("----initial_draw_list-----")
-            #for i, d in enumerate(draw_list):
-            #    print(f"{i}: {d}")
-            #print("----end initial draw list-----")
-            self._draw_list = self._optimize_draw_list(draw_list)
-            #self._dump_draw_list_call_order(self._draw_list)
+            if pyglet.options.optimize_states:
+                self._draw_list = self._optimize_draw_list(draw_list)
+            else:
+                self._draw_list = self._set_draw_functions(draw_list)
             self._draw_list_dirty = False
 
     def draw(self) -> None:
@@ -562,34 +583,6 @@ class Batch(BatchBase):
             func(self._context)
 
         self.delete_empty_domains()
-    # def draw_groups(self, *groups: Group) -> None:
-    #     """Draw specific groups within the batch.
-    #
-    #     .. note: This only applies to a top level group; groups within groups not supported and will produce
-    #              a KeyError.
-    #
-    #     .. note: Draw calls are not optimized like the Batch is.
-    #     """
-    #     #assert self._allow_group_draw, "Enable the draw_group parameter on initialization to use this."
-    #
-    #     if self._draw_list_dirty:
-    #         self._update_draw_list()
-    #
-    #     for group in groups:
-    #         print("GROUP", group)
-    #         for dkey, domain in self._domain_registry.items():
-    #             domain.bind_vao()
-    #             print("BIND", group in domain._buckets, group, domain._buckets)
-    #             if group in domain._buckets:
-    #                 group.set_state_all(self._context)
-    #                 bucket = domain._buckets[group]
-    #
-    #                 print("BUCKET DRAW?", bucket, bucket.is_empty)
-    #                 bucket.draw(dkey.mode)
-    #                 group.unset_state_all(self._context)
-    #
-    #         #for func in self._draw_list_groups[group]:
-    #         #    func()
 
     def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.

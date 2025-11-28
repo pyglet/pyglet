@@ -71,6 +71,7 @@ class Options:
     shader_bind_management: bool
     wayland: bool
     backend: str | None
+    optimize_states: bool
     pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:

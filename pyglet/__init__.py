@@ -289,6 +289,15 @@ class Options:
     backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
+    optimize_states: bool = True
+    """Runs a second pass on the draw list to remove any redundant states.
+
+    This option is mostly meant for debugging, as this should not significantly impact the draw list creation time
+    or impact drawing states.
+
+    .. versionadded:: 3.0.0
+    """
+
     pyodide: PyodideOptions = field(default_factory=PyodideOptions)
     """Pyodide specific options."""
 
