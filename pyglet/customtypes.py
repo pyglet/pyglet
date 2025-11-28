@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type, Protocol
+from typing import Union, Literal, Type, Protocol, Tuple
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
 
@@ -17,6 +17,11 @@ HorizontalAlign = Literal["left", "center", "right"]
 AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["bottom", "center", "top"]
+
+Number = Union[int, float]
+
+RGBColor = Tuple[Number, Number, Number]
+RGBAColor = Tuple[Number, Number, Number, Number]
 
 DataTypes = Literal[
     'f',  # float
@@ -54,4 +59,6 @@ __all__ = [
     "ContentVAlign",
     "DataTypes",
     "HorizontalAlign",
+    "RGBAColor",
+    "RGBColor",
 ]

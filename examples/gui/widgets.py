@@ -1,6 +1,6 @@
 import pyglet
 
-window = pyglet.window.Window(540, 500, caption="Widget Example")
+window = pyglet.window.Window(540, 600, caption="Widget Example")
 batch = pyglet.graphics.Batch()
 window.context.set_clear_color(0.8, 0.8, 0.8, 1.0)
 
@@ -42,6 +42,13 @@ def release_button_handler(widget):
     push_label.text = "Push Button: False"
 
 
+def text_button_handler(widget):
+    text_label.text = "Text Button: True"
+
+
+def text_release_button_handler(widget):
+    text_label.text = "Text Button: False"
+
 def text_entry_handler(widget, text):
     text_entry_label.text = f"Text: {text}"
 
@@ -53,6 +60,13 @@ def text_entry_handler(widget, text):
 # A Frame instance to hold all widgets, and provide special
 # hashing to avoid sending all the Window events to every widget:
 frame = pyglet.gui.Frame(window, order=4)
+
+
+text_button = pyglet.gui.TextButton(100, 500, text="Click me!", batch=batch)
+text_button.set_handler('on_press', text_button_handler)
+text_button.set_handler('on_release', text_release_button_handler)
+frame.add_widget(text_button)
+text_label = pyglet.text.Label("Text Button: False", x=300, y=500, batch=batch, color=(0, 0, 0, 255))
 
 
 togglebutton = pyglet.gui.ToggleButton(100, 400, pressed=pressed, unpressed=unpressed, hover=hover, batch=batch)

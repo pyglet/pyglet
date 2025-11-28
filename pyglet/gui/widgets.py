@@ -12,6 +12,7 @@ from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import RGBColor
     from pyglet.image import _AbstractImage
 
 
@@ -135,7 +136,7 @@ class WidgetBase(EventDispatcher):
         raise NotImplementedError('Value depends on control type!')
 
     @value.setter
-    def value(self, value: int | float | bool) -> None:
+    def value(self, value: float | bool) -> None:
         raise NotImplementedError('Value depends on control type!')
 
     def _check_hit(self, x: int, y: int) -> bool:
@@ -287,6 +288,115 @@ class PushButton(WidgetBase):
 PushButton.register_event_type('on_press')
 PushButton.register_event_type('on_release')
 
+
+class TextButton(WidgetBase):
+    """Instance of a text push button.
+
+    Triggers the event 'on_press' when it is clicked by the mouse.
+    Triggers the event 'on_release' when the mouse is released.
+    """
+
+    def __init__(self, x: int, y: int, text: str,
+                 pressed_color: RGBColor = (255, 0, 0),
+                 unpressed_color: RGBColor = (255, 255, 255),
+                 hover_color: RGBColor = (0, 255, 0),
+                 batch: Batch | None = None,
+                 group: Group | None = None) -> None:
+        """Create a push button.
+
+        Args:
+            x:
+                X coordinate of the push button.
+            y:
+                Y coordinate of the push button.
+            pressed_color:
+                Color to change text when the button is pressed.
+            unpressed_color:
+                Color to change text when the button isn't pressed.
+            hover_color:
+                Color to change text when the button is being hovered over.
+            batch:
+                Optional batch to add the push button to.
+            group:
+                Optional parent group of the push button.
+        """
+        self._text = text
+        self._batch = batch or pyglet.graphics.Batch()
+        self._user_group = group
+        fg_group = Group(order=1, parent=group)
+        self._label = pyglet.text.Label(text=self._text, x=x, y=y, batch=batch, group=fg_group)
+        super().__init__(x, y, self._label.content_width, self._label.content_height)
+        self._pressed_color = pressed_color
+        self._unpressed_color = unpressed_color
+        self._hover_color = hover_color
+        self._pressed = False
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        self._text = text
+        self._label.text = text
+
+    def _update_position(self) -> None:
+        self._label.position = self._x, self._y, 0
+
+    @property
+    def value(self) -> bool:
+        """Whether the button is pressed or not."""
+        return self._pressed
+
+    @value.setter
+    def value(self, value: bool) -> None:
+        assert type(value) is bool, "This Widget's value must be True or False."
+        self._pressed = value
+        self._label.color = self._pressed_color if self._pressed else self._unpressed_color
+
+    def update_groups(self, order: int) -> None:
+        self._label.group = Group(order=order + 1, parent=self._user_group)
+
+    def on_mouse_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+        if not self.enabled or not self._check_hit(x, y):
+            return
+        self._label.color = self._pressed_color
+        self._pressed = True
+        self.dispatch_event('on_press', self)
+
+    def on_mouse_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+        if not self.enabled or not self._pressed:
+            return
+        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+        self._pressed = False
+        self.dispatch_event('on_release', self)
+
+    def on_mouse_leave(self, x: int, y: int) -> None:
+        if not self.enabled or not self._pressed:
+            return
+        self._label.color = self._unpressed_color
+        self._pressed = False
+        self.dispatch_event('on_release')
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
+        if not self.enabled or self._pressed:
+            return
+        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
+        if not self.enabled or self._pressed:
+            return
+        self._label.color = self._hover_color if self._check_hit(x, y) else self._unpressed_color
+
+    def on_press(self, widget: TextButton) -> None:
+        """Event: Dispatched when the button is clicked."""
+
+    def on_release(self, widget: TextButton) -> None:
+        """Event: Dispatched when the button is released."""
+
+
+TextButton.register_event_type('on_press')
+TextButton.register_event_type('on_release')
 
 class ToggleButton(PushButton):
     """Instance of a toggle button.
