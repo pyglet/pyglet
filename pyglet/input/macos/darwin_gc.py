@@ -440,12 +440,12 @@ class AppleController(Controller):
             if button_name not in self.device.controls:
                 continue
             control = self.device.controls[button_name]
-            self._button_controls.append(control)
+            self.button_controls.append(control)
             self._bind_button_control(control, button_name)
 
         for axis_name in _axis_mapping.values():
             control = self.device.controls[axis_name]
-            self._axis_controls.append(control)
+            self.relative_axis_controls.append(control)
             self._bind_axis_control(control, axis_name, Sign.DEFAULT)
 
     def rumble_play_weak(self, strength: float = 1.0, duration: float = 0.5) -> None:
