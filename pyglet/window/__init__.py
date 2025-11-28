@@ -93,7 +93,7 @@ from pyglet.config import UserConfig
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
-from pyglet.window import event, key
+from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig

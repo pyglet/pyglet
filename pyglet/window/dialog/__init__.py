@@ -1,11 +1,9 @@
 from __future__ import annotations
-import os as _os
-
-from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
+import sys
+from pathlib import Path
 
 import pyglet
 from pyglet.event import EventDispatcher as _EventDispatcher
-from pyglet.window.dialog.windows import WindowsFileDialogBackend
 
 """File dialog classes for opening and saving files.
 
@@ -52,23 +50,42 @@ The `FileSaveDialog` works similarly::
     open_dialog.show()
 """
 
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-class FileOpenDialog(_EventDispatcher):
-    backend = WindowsFileDialogBackend()
+class _OpenDialogMeta(type):
+    def __new__(cls, name, bases, attrs):
+        if _is_pyglet_doc_run:
+            return super().__new__(cls, name, bases, attrs)
 
+        if pyglet.compat_platform == "darwin":
+             from pyglet.window.dialog.darwin import MacOSFileOpenDialog
+             return MacOSFileOpenDialog
+        elif pyglet.compat_platform == "linux":
+            from pyglet.window.dialog.linux import TkFileOpenDialog
+            return TkFileOpenDialog
+
+        return super().__new__(cls, name, bases, attrs)
+
+
+class FileOpenDialog(_EventDispatcher, metaclass=_OpenDialogMeta):
     def __init__(
-        self, title="Open File", initial_dir=_os.path.curdir, initial_file=None, filetypes=None, multiple=False,
-    ):
-        """:Parameters:
-        `title` : str
+        self, title: str="Open File", initial_dir: str | Path=Path.cwd(), initial_file: str | None=None,
+            filetypes: list[tuple[str, str]] | None=None, multiple: bool=False) -> None:
+        """Establish how the open file dialog will behave.
+
+        title:
             The Dialog Window name. Defaults to "Open File".
-        `initial_dir` : str
+        initial_dir:
             The directory to start in.
-        `filetypes` : list of tuple
+        initial_file:
+            The filename to prepopulate with when opening. Not supported on Mac OS.
+        filetypes:
             An optional list of tuples containing (name, extension) to filter by.
             If none are given, all files will be shown and selectable.
             For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
-        `multiple` : bool
+            For multiple file types in the same selection, separate by a semicolon.
+            For example: [("Images", ".png;.bmp")]`
+        multiple: bool
             True if multiple files can be selected. Defaults to False.
         """
         self.title = title
@@ -78,93 +95,57 @@ class FileOpenDialog(_EventDispatcher):
         self.initial_file = initial_file
 
     def open(self):
-        def dispatch(result):
-            self.dispatch_event("on_dialog_open", result)
-
-        self.backend.open_file(self.title, self.initial_dir, self.initial_file, self.filetypes, self.multiple, dispatch)
-
-
-class _Dialog(_EventDispatcher):
-    """Dialog base class
-
-    This base class sets up a ProcessPoolExecutor with a single
-    background Process. This allows the Dialog to display in
-    the background without blocking or interfering with the main
-    application Process. This also limits to a single open Dialog
-    at a time.
-    """
-
-    executor = _ProcessPoolExecutor(max_workers=1)
-    _dialog = None
-
-    @staticmethod
-    def _open_dialog(dialog):
-        import tkinter as tk
-
-        root = tk.Tk()
-        root.withdraw()
-        return dialog.show()
-
-    def open(self):
-        future = self.executor.submit(self._open_dialog, self._dialog)
-        future.add_done_callback(self._dispatch_event)
-
-    def _dispatch_event(self, future):
+        """Open a file dialog window to select files according to the configuration."""
         raise NotImplementedError
 
+    def on_dialog_save(self, filenames: list[str]):
+        """Event for filename choice"""
 
-# class FileOpenDialog(_Dialog):
-#
-#         from tkinter import filedialog
-#         self._dialog = filedialog.Open(title=title,
-#                                        initialdir=initial_dir,
-#                                        filetypes=filetypes or (),
-#                                        multiple=multiple)
-#
-#     def _dispatch_event(self, future):
-#         self.dispatch_event('on_dialog_open', future.result())
-#
-#     def on_dialog_open(self, filenames):
-#         """Event for filename choices"""
+class _SaveDialogMeta(type):
+    def __new__(cls, name, bases, attrs):
+        if _is_pyglet_doc_run:
+            return super().__new__(cls, name, bases, attrs)
 
+        if pyglet.compat_platform == "darwin":
+            from pyglet.window.dialog.darwin import MacOSFileSaveDialog
+            return MacOSFileSaveDialog
+        elif pyglet.compat_platform == "linux":
+            from pyglet.window.dialog.linux import TkFileSaveDialog
+            return TkFileSaveDialog
 
-class FileSaveDialog(_Dialog):
-    def __init__(self, title="Save As", initial_dir=_os.path.curdir, initial_file=None, filetypes=None, default_ext=""):
-        """:Parameters:
-        `title` : str
+        return super().__new__(cls, name, bases, attrs)
+
+class FileSaveDialog(_EventDispatcher, metaclass=_SaveDialogMeta):
+
+    def __init__(self, title="Save As", initial_dir=Path.cwd(), initial_file=None, filetypes=None, default_ext=""):
+        """Establish how the save file dialog will behave.
+
+        title:
             The Dialog Window name. Defaults to "Save As".
-        `initial_dir` : str
+        initial_dir:
             The directory to start in.
-        `initial_file` : str
+        initial_file:
             A default file name to be filled in. Defaults to None.
-        `filetypes` : list of tuple
+        filetypes:
             An optional list of tuples containing (name, extension) to
             filter to. If the `default_ext` argument is not given, this list
-            also dictactes the extension that will be added to the entered
+            also dictates the extension that will be added to the entered
             file name. If a list of `filetypes` are not give, you can enter
             any file name to save as.
             For example: `[("PNG", ".png"), ("24-bit Bitmap", ".bmp")]`
-        `default_ext` : str
+        default_ext:
             A default file extension to add to the file. This will override
             the `filetypes` list if given, but will not override a manually
             entered extension.
         """
-        from tkinter import filedialog
+        self.title = title
+        self.initial_dir = initial_dir
+        self.filetypes = filetypes
+        self.initial_file = initial_file
+        self.default_ext = default_ext
 
-        self._dialog = filedialog.SaveAs(
-            title=title,
-            initialdir=initial_dir,
-            initialfile=initial_file or (),
-            filetypes=filetypes or (),
-            defaultextension=default_ext,
-        )
-
-    def _dispatch_event(self, future):
-        self.dispatch_event('on_dialog_save', future.result())
+    def open(self):
+        raise NotImplementedError
 
     def on_dialog_save(self, filename):
         """Event for filename choice"""
-
-
-FileOpenDialog.register_event_type('on_dialog_open')
-FileSaveDialog.register_event_type('on_dialog_save')
