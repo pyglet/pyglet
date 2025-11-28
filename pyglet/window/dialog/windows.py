@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import ctypes
 import threading
+from pathlib import Path
 
 from _ctypes import sizeof
 from ctypes import create_unicode_buffer
 
+import pyglet
 from pyglet.libs.win32 import OPENFILENAMEW, _comdlg32
-from pyglet.libs.win32.constants import OFN_EXPLORER, OFN_PATHMUSTEXIST, OFN_OVERWRITEPROMPT, OFN_FILEMUSTEXIST, \
-    OFN_ALLOWMULTISELECT
+from pyglet.libs.win32.constants import (
+    OFN_EXPLORER,
+    OFN_PATHMUSTEXIST,
+    OFN_OVERWRITEPROMPT,
+    OFN_FILEMUSTEXIST,
+    OFN_ALLOWMULTISELECT,
+)
+from pyglet.window.dialog.base import FileOpenDialogBase, FileSaveDialogBase
 
 
 def _build_filter_string(filetypes: list[tuple[str, str]]) -> str:
@@ -76,10 +84,7 @@ def _parse_multiselect(buffer) -> list[str]:
     return [folder + "\\" + f for f in files]
 
 
-class WindowsFileDialogBackend:
-
-
-    def _build_ofn(self, hwnd, title, initialdir, initial_file, filetypes, multiple, for_save=False, buffer_chars=65536, default_ext=None,
+def _build_ofn(hwnd, title, initialdir, initial_file, filetypes, multiple, for_save=False, buffer_chars=65536, default_ext=None,
     ):
         file_buffer = create_unicode_buffer(buffer_chars)
 
@@ -100,7 +105,9 @@ class WindowsFileDialogBackend:
         # Optional fields
         ofn.lpstrFileTitle = None
         ofn.nMaxFileTitle = 0
-        ofn.lpstrInitialDir = initialdir
+        if isinstance(initialdir, Path):
+            initialdir = initialdir.absolute()
+        ofn.lpstrInitialDir = str(initialdir)
         ofn.lpstrTitle = title
 
         # Base flags
@@ -125,16 +132,17 @@ class WindowsFileDialogBackend:
 
         return ofn, file_buffer
 
-    def _windows_open_file(self, hwnd, title=None, initialdir=None, initial_file="", filetypes=None, multiple=False):
-        _title = title or ("Open files" if multiple else "Open a file")
 
-        ofn, file_buffer = self._build_ofn(
-            hwnd=hwnd,
-            title=_title,
-            initialdir=initialdir,
-            initial_file=initial_file,
-            filetypes=filetypes,
-            multiple=multiple,
+class WindowsFileOpenDialog(FileOpenDialogBase):
+
+    def _open_dialog(self) -> list[str] | None:
+        ofn, file_buffer = _build_ofn(
+            hwnd=None,
+            title=self.title,
+            initialdir=self.initial_dir,
+            initial_file=self.initial_file,
+            filetypes=self.filetypes,
+            multiple=self.multiple,
             for_save=False,
             buffer_chars=65536,
         )
@@ -142,37 +150,45 @@ class WindowsFileDialogBackend:
         if not _comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
             return None
 
-        if multiple:
+        if self.multiple:
             return _parse_multiselect(file_buffer.value)
 
         return file_buffer.value
 
-    def _windows_save_file(self, hwnd, title=None, initialdir=None, initial_file="", filetypes=None,
-                           default_ext=None):
-        ofn, file_buffer = self._build_ofn(
-            hwnd=hwnd,
-            title=title,
-            initialdir=initialdir,
-            initial_file=initial_file,
-            filetypes=filetypes,
+    def open(self) -> None:
+        def run() -> None:
+            result = self._open_dialog()
+            if result is None:
+                result = []
+            assert isinstance(result, list)
+            pyglet.app.platform_event_loop.post_event(self, "on_dialog_open", result)
+
+        threading.Thread(target=run, daemon=True).start()
+
+
+
+class WindowsFileSaveDialog(FileSaveDialogBase):
+    def _open_dialog(self) -> str:
+        ofn, file_buffer = _build_ofn(
+            hwnd=None,
+            title=self.title,
+            initialdir=self.initial_dir,
+            initial_file=self.initial_file,
+            filetypes=self.filetypes,
             multiple=False,
             for_save=True,
             buffer_chars=65536,
-            default_ext=default_ext,
+            default_ext=self.default_ext,
         )
 
         if not _comdlg32.GetSaveFileNameW(ctypes.byref(ofn)):
-            return None
+            return ""
 
         return file_buffer.value
 
-    def open_file(self, title, initial_dir, initial_file, filetypes, multiple, callback):
-        def run():
-            try:
-                result = self._windows_open_file(None, title, initial_dir, initial_file, filetypes, multiple)  # your ctypes code
-            except Exception as e:
-                print("Exception found", e)
-            print("Resulted", result)
-            callback(result)
+    def open(self) -> None:
+        def run() -> None:
+            result = self._open_dialog()
+            pyglet.app.platform_event_loop.post_event(self, "on_dialog_save", result)
 
         threading.Thread(target=run, daemon=True).start()

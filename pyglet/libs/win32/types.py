@@ -48,6 +48,7 @@ from ctypes.wintypes import (
     LPARAM,
     LPCWSTR,
     LPOLESTR,
+    LPVOID,
     LPWSTR,
     MSG,
     POINT,

@@ -27,7 +27,7 @@ class _Dialog(_EventDispatcher):
 
 class FileOpenDialogBase(_Dialog):
     def __init__(
-        self, title: str="Open File", initial_dir: str | Path=Path.cwd(), initial_file: str | None=None,
+        self, title: str="Open File", initial_dir: str | Path | None = None, initial_file: str | None=None,
             filetypes: list[tuple[str, str]] | None=None, multiple: bool=False,
     ):
         """Establish how the file dialog will behave.
@@ -35,7 +35,8 @@ class FileOpenDialogBase(_Dialog):
         title:
             The Dialog Window name. Defaults to "Open File".
         initial_dir:
-            The directory to start in.
+            The directory to start in. If a path is not given, it is up the OS to determine behavior.
+            On Windows, if None is passed, it will open to the last used directory.
         initial_file:
             The filename to prepopulate with when opening. Not supported on Mac OS.
         filetypes:
@@ -60,13 +61,14 @@ FileOpenDialogBase.register_event_type('on_dialog_open')
 
 class FileSaveDialogBase(_Dialog):
 
-    def __init__(self, title="Save As", initial_dir=Path.cwd(), initial_file=None, filetypes=None, default_ext=""):
+    def __init__(self, title="Save As", initial_dir: str | Path | None=None, initial_file=None, filetypes=None, default_ext=""):
         """Establish how the save file dialog will behave.
 
         title:
             The Dialog Window name. Defaults to "Save As".
         initial_dir:
-            The directory to start in.
+            The directory to start in. If a path is not given, it is up the OS to determine behavior.
+            On Windows, if None is passed, it will open to the last used directory.
         initial_file:
             A default file name to be filled in. Defaults to None.
         filetypes:
@@ -87,7 +89,7 @@ class FileSaveDialogBase(_Dialog):
         self.initial_file = initial_file
         self.default_ext = default_ext
 
-    def open(self):
+    def open(self) -> None:
         raise NotImplementedError
 
     def on_dialog_save(self, filename):
