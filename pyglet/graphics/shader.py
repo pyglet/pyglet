@@ -120,6 +120,11 @@ _uniform_setters: dict[int, tuple[GLDataType, GLFunc, GLFunc, int]] = {
     gl.GL_INT_VEC3: (gl.GLint, gl.glUniform3iv, gl.glProgramUniform3iv, 3),
     gl.GL_INT_VEC4: (gl.GLint, gl.glUniform4iv, gl.glProgramUniform4iv, 4),
 
+    gl.GL_UNSIGNED_INT:      (gl.GLuint, gl.glUniform1uiv, gl.glProgramUniform1uiv, 1),
+    gl.GL_UNSIGNED_INT_VEC2: (gl.GLuint, gl.glUniform2uiv, gl.glProgramUniform2uiv, 2),
+    gl.GL_UNSIGNED_INT_VEC3: (gl.GLuint, gl.glUniform3uiv, gl.glProgramUniform3uiv, 3),
+    gl.GL_UNSIGNED_INT_VEC4: (gl.GLuint, gl.glUniform4uiv, gl.glProgramUniform4uiv, 4),
+
     gl.GL_FLOAT: (gl.GLfloat, gl.glUniform1fv, gl.glProgramUniform1fv, 1),
     gl.GL_FLOAT_VEC2: (gl.GLfloat, gl.glUniform2fv, gl.glProgramUniform2fv, 2),
     gl.GL_FLOAT_VEC3: (gl.GLfloat, gl.glUniform3fv, gl.glProgramUniform3fv, 3),
