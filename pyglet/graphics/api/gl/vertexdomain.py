@@ -330,6 +330,9 @@ class VertexDomain(VertexDomainBase):
     def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
         super().__init__(context, initial_count, attribute_meta)
 
+    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+
     def draw_bucket(self, mode: int, bucket) -> None:
         bucket.draw(self, mode)
 
@@ -341,9 +344,14 @@ class VertexDomain(VertexDomainBase):
         start_list = [region[0] for region in regions]
         size_list = [region[1] for region in regions]
         primcount = len(regions)
-        starts = (GLint * primcount)(*start_list)
-        sizes = (GLsizei * primcount)(*size_list)
-        self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
+        if self._supports_multi_draw:
+            starts = (GLint * primcount)(*start_list)
+            sizes = (GLsizei * primcount)(*size_list)
+            self._context.glMultiDrawArrays(mode, starts, sizes, primcount)
+        else:
+            for start, size in zip(start_list, size_list):
+                self._context.glDrawArrays(mode, start, size)
+
 
     def _create_vertex_class(self) -> type:
         return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
@@ -594,6 +602,9 @@ class IndexedVertexDomain(IndexedVertexDomainBase):
         self._supports_base_vertex = context.get_info().have_extension("GL_ARB_draw_elements_base_vertex")
         super().__init__(context, initial_count, attribute_meta)
 
+    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+        return ctx.get_info().have_extension("GL_EXT_multi_draw_arrays")
+
     def _create_vertex_class(self) -> type:
         # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
         return type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
@@ -622,10 +633,15 @@ class IndexedVertexDomain(IndexedVertexDomainBase):
         size_list = [region[1] for region in regions]
         primcount = len(regions)
 
-        starts = [s * self.index_stream.index_element_size for s in start_list]
-        starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-        sizes = (GLsizei * primcount)(*size_list)
-        self._context.glMultiDrawElements(mode, sizes, self.index_stream.gl_type, starts, primcount)
+        if self._supports_multi_draw:
+            starts = [s * self.index_stream.index_element_size for s in start_list]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*size_list)
+            self._context.glMultiDrawElements(mode, sizes, self.index_stream.gl_type, starts, primcount)
+        else:
+            for start, size in zip(start_list, size_list):
+                self._context.glDrawElements(mode, size, self.index_stream.gl_type,
+                                             start * self.index_stream.index_element_size)
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
@@ -699,7 +715,6 @@ class InstancedIndexedVertexDomain(InstancedIndexedVertexDomainBase, IndexedVert
     def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
         """Draw a specific VertexGroupBucket in the domain."""
         for bucket in buckets:
-            print("bucket.ranges", bucket.ranges, self._instance_map)
             for vl_range in bucket.ranges:
                 self.instance_domain.draw_bucket(mode, self._instance_map[vl_range])
 

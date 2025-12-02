@@ -65,8 +65,8 @@ class _WGL:
         shadow_dc = shadow_window.dc
         assert shadow_dc is not None
 
-        # !!! # Will break transparent windows if using the intended visible window. Must use the
-        # shadow window here as once a pixel format is set for a Window it cannot be altered.
+        # !!! # Will break transparent windows if using the main visible window.
+        #  Must use the shadow window here as once a pixel format is set for a Window it cannot be altered.
         pf = _gdi32.ChoosePixelFormat(shadow_dc, byref(pfd))
         if pf:
             if not _gdi32.SetPixelFormat(shadow_dc, pf, byref(pfd)):

@@ -111,6 +111,20 @@ class OpenGLSurfaceContext(SurfaceContext):
     def flip(self):
         pass
 
+    def destroy(self) -> None:
+        """Release the Context.
+
+        The context will not be useable after being destroyed.  Each platform
+        has its own convention for releasing the context and the buffer(s)
+        that depend on it in the correct order; this should never be called
+        by an application.
+        """
+        # self.detach()
+        #
+        if self.core.current_context is self:
+            self.core.current_context = None
+        #     #gl_info.remove_active_context()
+
     def attach(self, window: Window) -> None:
         # if not self.config.compatible(canvas):
         #     msg = f'Cannot attach {canvas} to {self}'

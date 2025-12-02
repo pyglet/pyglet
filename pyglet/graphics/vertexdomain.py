@@ -337,6 +337,7 @@ class VertexDomainBase(ABC):
         self._context = context or pyglet.graphics.api.core.current_context
         self.attribute_meta = attribute_meta
         self.attrib_name_buffers = {}
+        self._supports_multi_draw = self._has_multi_draw_extension(self._context)
 
         # Separate attributes.
         self.per_vertex: list[Attribute] = []
@@ -360,6 +361,10 @@ class VertexDomainBase(ABC):
 
         # Make a custom VertexListBase class w/ properties for each attribute
         self._vertexlist_class = self._create_vertex_class()
+
+    @abstractmethod
+    def _has_multi_draw_extension(self, ctx: SurfaceContext) -> bool:
+        raise NotImplementedError
 
     @abstractmethod
     def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
@@ -856,7 +861,9 @@ class VertexArrayBinding:
 
     In the case of instanced drawing, each instance needs its own VAO as their per-instance data are separate buffers.
     """
-    def __init__(self, ctx, streams: list[VertexStream | InstanceStream | IndexStream]):
+    streams: list[VertexStream | InstanceStream | IndexStream]
+
+    def __init__(self, ctx: SurfaceContext, streams: list[VertexStream | InstanceStream | IndexStream]):
         # attr_map: semantic/name -> location (from ShaderProgram inspection)
         self._ctx = ctx
         self.vao = self._create_vao()

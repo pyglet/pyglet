@@ -25,6 +25,7 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING, Any, Sequence
 
+from pyglet.graphics.api.base import SurfaceContext
 from pyglet.graphics.api.webgl import vertexarray
 from pyglet.graphics.api.webgl.gl import (
     GL_BYTE,
@@ -50,6 +51,11 @@ from pyglet.graphics.vertexdomain import (
     InstanceStream,
     VertexStream,
     IndexStream,
+    VertexListBase,
+    IndexedVertexListBase,
+    VertexDomainBase,
+    IndexedVertexDomainBase,
+    VertexGroupBucket,
     _RunningIndexSupport,
 )
 
@@ -156,86 +162,8 @@ class GLVertexArrayBinding(VertexArrayBinding):  # noqa: D101
         self.vao.unbind()
 
 
-class VertexList:
-    """A list of vertices within a :py:class:`VertexDomain`.
-
-    Use :py:meth:`VertexDomain.create` to construct this list.
-    """
-    count: int
-    start: int
-    domain: VertexDomain
-    indexed: bool = False
-    instanced: bool = False
-    initial_attribs: dict
-
-    def __init__(self, domain: VertexDomain, start: int, count: int) -> None:  # noqa: D107
-        self.domain = domain
-        self.start = start
-        self.count = count
-        self.initial_attribs = domain.attribute_meta
-
-    def draw(self, mode: GeometryMode) -> None:
-        """Draw this vertex list in the given OpenGL mode.
-
-        Args:
-            mode:
-                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-        """
-        self.domain.draw_subset(mode, self)
-
-    def resize(self, count: int, index_count: int | None = None) -> None:  # noqa: ARG002
-        """Resize this group.
-
-        Args:
-            count:
-                New number of vertices in the list.
-            index_count:
-                Ignored for non-indexed VertexDomains
-
-        """
-        new_start = self.domain.safe_realloc(self.start, self.count, count)
-        if new_start != self.start:
-            # Copy contents to new location
-            for buffer in self.domain.attrib_name_buffers.values():
-                old_data = buffer.get_region(self.start, self.count)
-                buffer.set_region(new_start, self.count, old_data)
-        self.start = new_start
-        self.count = count
-
-    def delete(self) -> None:
-        """Delete this group."""
-        self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
-
-    def migrate(self, domain: VertexDomain) -> None:
-        """Move this group from its current domain and add to the specified one.
-
-        Attributes on domains must match.
-        (In practice, used to change parent state of some vertices).
-
-        Args:
-            domain:
-                Domain to migrate this vertex list to.
-
-        """
-        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()), \
-            'Domain attributes must match.'
-
-        new_start = domain.safe_alloc(self.count)
-        # Copy data to new stream.
-        self.domain.vertex_buffers.copy_data(new_start, domain.vertex_buffers, self.start, self.count)
-        self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
-        self.domain = domain
-        self.start = new_start
-
-    def set_attribute_data(self, name: str, data: Any) -> None:
-        stream = self.domain.attrib_name_buffers[name]
-        buffer = stream.attrib_name_buffers[name]
-
-        array_start = buffer.element_count * self.start
-        array_end = buffer.element_count * self.count + array_start
-        buffer.data[array_start:array_end] = data
-        buffer.invalidate_region(self.start, self.count)
-
+class VertexList(VertexListBase):
+    ...
 
 class InstanceVertexList(VertexList):
     """A list of vertices within an :py:class:`InstancedVertexDomain` that are not indexed."""
@@ -271,49 +199,8 @@ class InstanceVertexList(VertexList):
 
 
 
-class IndexedVertexList(VertexList):
-    """A list of vertices within an :py:class:`IndexedVertexDomain` that are indexed.
-
-    Use :py:meth:`IndexedVertexDomain.create` to construct this list.
-    """
-    domain: IndexedVertexDomain | InstancedIndexedVertexDomain
-    indexed: bool = True
-
-    index_count: int
-    index_start: int
-
-    def __init__(self, domain: IndexedVertexDomain, start: int, count: int, index_start: int,  # noqa: D107
-                 index_count: int) -> None:
-        super().__init__(domain, start, count)
-        self.index_start = index_start
-        self.index_count = index_count
-
-    def delete(self) -> None:
-        """Delete this group."""
-        super().delete()
-        self.domain.index_stream.dealloc(self.index_start, self.index_count)
-
-    def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain) -> None:
-        """Move this group from its current indexed domain and add to the specified one.
-
-        Attributes on domains must match.  (In practice, used
-        to change parent state of some vertices).
-
-        Args:
-            domain:
-                Indexed domain to migrate this vertex list to.
-        """
-        # Handled by new mixins.
-        raise NotImplementedError
-
-    @property
-    def indices(self) -> list[int]:
-        """Array of index data."""
-        return self.domain.index_stream.get_region(self.index_start, self.index_count)
-
-    @indices.setter
-    def indices(self, data: Sequence[int]) -> None:
-        self.domain.index_stream.set_region(self.index_start, self.index_count, data)
+class IndexedVertexList(IndexedVertexListBase):
+    ...
 
 
 class InstanceIndexedVertexList(VertexList):
@@ -404,86 +291,52 @@ class GLIndexStream(IndexStream):  # noqa: D101
         self.buffer.bind_to_index_buffer()
 
 
-class VertexDomain:
+class VertexDomain(VertexDomainBase):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
-    streams: list[GLVertexStream | GLInstanceStream | GLIndexStream]
-    per_instance: list[Attribute]
-    per_vertex: list[Attribute]
 
-    attribute_meta: dict[str, Attribute]
-    buffer_attributes: list[tuple[AttributeBufferObject, Attribute]]
-    vao: GLVertexArrayBinding
-    attribute_names: dict[str, Attribute]
-    attrib_name_buffers: dict[str, GLVertexStream]
-    _vertexlist_class: type
-
-    _vertex_class: type[VertexList] = VertexList
-
-    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:  # noqa: D107
-        self._context = context
-        self._gl = self._context.gl
-
-        ext = self._gl.getExtension("WEBGL_multi_draw")
-        if ext:
-            self._multi_draw_array = ext.multiDrawArraysWEBGL
-            self._multi_draw_elements = ext.multiDrawElementsWEBGL
+    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
+        super().__init__(context, initial_count, attribute_meta)
+        self._gl = context.gl
+        if self._supports_multi_draw:
+            self._multi_draw_array = self._gl.getExtension("WEBGL_multi_draw").multiDrawArraysWEBGL
         else:
             self._multi_draw_array = None
-            self._multi_draw_elements = None
 
-        self.attribute_meta = attribute_meta
-        self.attrib_name_buffers = {}
+    def draw_bucket(self, mode: int, bucket) -> None:
+        bucket.draw(self, mode)
 
-        # Separate attributes.
-        self.per_vertex: list[Attribute] = []
-        self.per_instance: list[Attribute] = []
-        for attrib in attribute_meta.values():
-            if not attrib.fmt.is_instanced:
-                self.per_vertex.append(attrib)
-            else:
-                self.per_instance.append(attrib)
+    def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
+        regions = []
+        for bucket in buckets:
+            regions.extend(bucket.merged_ranges)
 
-        self._create_streams(initial_count)
-        self._create_vao()
+        start_list = [region[0] for region in regions]
+        size_list = [region[1] for region in regions]
+        primcount = len(regions)
+        if self._supports_multi_draw:
+            starts = (GLint * primcount)(*start_list)
+            sizes = (GLsizei * primcount)(*size_list)
+            self._multi_draw_array(starts[:], 0, sizes[:], 0, primcount)
+        else:
+            for start, size in zip(start_list, size_list):
+                self._gl.drawArrays(mode, start, size)
 
-        for name, attrib in attribute_meta.items():
-            if not attrib.fmt.is_instanced:
-                self.attrib_name_buffers[name] = self.vertex_buffers
+    def _create_vertex_class(self) -> type:
+        return type(self._vertex_class.__name__, (self._vertex_class,), self.vertex_buffers._property_dict)
 
-        # Make a custom VertexList class w/ properties for each attribute
-        self._vertexlist_class = type(self._vertex_class.__name__, (self._vertex_class,),
-                                      self.vertex_buffers._property_dict)  # noqa: SLF001
+    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+        return ctx.gl.getExtension("WEBGL_multi_draw")
 
-    def _create_vao(self) -> None:
-        self.vao = GLVertexArrayBinding(self._context, self.streams)
+    def _create_vao(self) -> GLVertexArrayBinding:
+        return GLVertexArrayBinding(self._context, self._streams)
 
-    def _create_streams(self, size: int) -> None:
+    def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
         self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
-        self.streams = [self.vertex_buffers]
-
-    def safe_alloc(self, count: int) -> int:
-        """Allocate vertices, resizing the buffers if necessary."""
-        return self.vertex_buffers.alloc(count)
-
-    def safe_realloc(self, start: int, count: int, new_count: int) -> int:
-        """Reallocate vertices, resizing the buffers if necessary."""
-        return self.vertex_buffers.realloc(start, count, new_count)
-
-    def create(self, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
-        """Create a :py:class:`VertexList` in this domain.
-
-        Args:
-            count:
-                Number of vertices to create.
-            indices:
-                Ignored for non indexed VertexDomains
-        """
-        start = self.safe_alloc(count)
-        return self._vertexlist_class(self, start, count)
+        return [self.vertex_buffers]
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
@@ -663,52 +516,57 @@ class InstancedVertexDomain(VertexDomain):  # noqa: D101
 
 
 
-class IndexedVertexDomain(VertexDomain):
+class IndexedVertexDomain(IndexedVertexDomainBase):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
+
     _vertex_class = IndexedVertexList
     _supports_base_vertex: bool = False
 
-    def __init__(self, context: OpenGLSurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
+    def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
                  index_type: DataTypes = "I") -> None:
-        self.index_type = index_type
-        super().__init__(context, initial_count, attribute_meta)
-        # Make a custom VertexList class w/ properties for each attribute in the ShaderProgram:
-        self._vertexlist_class = type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
+        super().__init__(context, initial_count, attribute_meta, index_type)
+        self._gl = context.gl
+        if self._supports_multi_draw:
+            self._multi_draw_elements = self._gl.getExtension("WEBGL_multi_draw").multiDrawElementsWEBGL
+        else:
+            self._multi_draw_elements = None
+
+    def _create_vertex_class(self) -> type:
+        return type(self._vertex_class.__name__, (_RunningIndexSupport, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
-    def _create_streams(self, size: int) -> None:
-        super()._create_streams(size)
+    def _create_vao(self) -> GLVertexArrayBinding:
+        return GLVertexArrayBinding(self._context, self._streams)
+
+    def _create_streams(self, size: int) -> list[VertexStream | IndexStream | InstanceStream]:
+        self.vertex_buffers = GLVertexStream(self._context, size, self.per_vertex)
         self.index_stream = GLIndexStream(self._context, self.index_type, size)
-        self.streams.append(self.index_stream)
+        return [self.vertex_buffers, self.index_stream]
 
-    def safe_index_alloc(self, count: int) -> int:
-        """Allocate indices, resizing the buffers if necessary."""
-        return self.index_stream.alloc(count)
+    def draw_buckets(self, mode: int, buckets: list[VertexGroupBucket]) -> None:
+        regions = []
+        for bucket in buckets:
+            regions.extend(bucket.merged_ranges)
 
-    def safe_index_realloc(self, start: int, count: int, new_count: int) -> int:
-        """Reallocate indices, resizing the buffers if necessary."""
-        return self.index_stream.realloc(start, count, new_count)
+        start_list = [region[0] for region in regions]
+        size_list = [region[1] for region in regions]
+        primcount = len(regions)
+        if self._supports_multi_draw:
+            starts = [s * self.index_stream.index_element_size for s in start_list]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*size_list)
+            self._multi_draw_elements(mode, sizes[:], 0, self.index_stream.gl_type, starts[:], 0, primcount)
+        else:
+            for start, size in zip(start_list, size_list):
+                self._gl.drawElements(mode, size, self.index_stream.gl_type,
+                                      start * self.index_stream.index_element_size)
 
-    def create(self, count: int, indices: Sequence[int] | None) -> IndexedVertexList:
-        """Create an :py:class:`IndexedVertexList` in this domain.
-
-        Args:
-            count:
-                Number of vertices to create
-            indices:
-                The indices used for this vertex list.
-
-        """
-        index_count = len(indices)
-        start = self.safe_alloc(count)
-        index_start = self.safe_index_alloc(index_count)
-        vertex_list = self._vertexlist_class(self, start, count, index_start, index_count)
-        vertex_list.indices = indices  # Move into class at some point?
-        return vertex_list
+    def _has_multi_draw_extension(self, ctx: OpenGLSurfaceContext) -> bool:
+        return ctx.gl.getExtension("WEBGL_multi_draw")
 
     def draw(self, mode: int) -> None:
         """Draw all vertices in the domain.
