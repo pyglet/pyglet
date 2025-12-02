@@ -21,6 +21,6 @@ def get_screenshot() -> ImageData:
 
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
-    from pyglet.graphics.api.gl.framebuffer import Framebuffer, Renderbuffer  # noqa: F
-
-
+    from pyglet.graphics.api.gl.framebuffer import Framebuffer, Renderbuffer
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.framebuffer import Framebuffer, Renderbuffer  # noqa: F401
