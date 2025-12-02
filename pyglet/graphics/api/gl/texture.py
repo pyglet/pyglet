@@ -770,8 +770,19 @@ class Texture3D(Texture, UniformTextureSequence):
         target = texture_map[TextureType.TYPE_3D]
         ctx.glGenTextures(1, byref(tex_id))
         ctx.glBindTexture(target, tex_id.value)
-        texture = cls(ctx, item_width, item_height, tex_id.value, TextureType.TYPE_3D, internal_format, internal_format_size,
-                             internal_format_type, filters, address_mode, anisotropic_level)
+        texture = cls(
+            ctx,
+            item_width,
+            item_height,
+            tex_id.value,
+            TextureType.TYPE_3D,
+            internal_format,
+            internal_format_size,
+            internal_format_type,
+            filters,
+            address_mode,
+            anisotropic_level,
+        )
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
@@ -784,6 +795,12 @@ class Texture3D(Texture, UniformTextureSequence):
 
         size = texture.width * texture.height * texture.images * len(internal_format)
         data = (GLubyte * size)()
+
+        align, row_length = texture._get_image_alignment(base_image)
+
+        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
+        ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+
         texture._allocate(data)
 
         items = []
@@ -928,7 +945,7 @@ class TextureArray(Texture, UniformTextureSequence):
                          0,
                          _get_base_format(self.internal_format),
                          GL_UNSIGNED_BYTE,
-                         0)
+                         data)
 
     def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
