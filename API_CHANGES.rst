@@ -20,6 +20,8 @@ Pyglet for windowing.
 
 *Removed*: `'real'`, `'scaled'` options from ``pyglet.options.dpi_scaling``. Defaults to `'platform'`.
 
+*Added*: ``pyglet.options.optimize_states``: For debugging purposes if states are not behaving as they should. Report any issues that arise where disabling this fixes an issue.
+
 pyglet.graphics
 ---------------
 *Changed*: Created backend agnostic API setups to support multiple backends. See pyglet.enums.
@@ -86,6 +88,8 @@ consolidation optimization, and for compatibility between multiple backends.
 pyglet.window
 -------------
 *Changed*: Window.set_mouse_visible has been renamed to Window.set_mouse_cursor_visible, and Window.set_mouse_platform_visible has been renamed to Window.set_mouse_cursor_platform_visible.
+
+*Added*: pyglet.window.dialog.FileOpenDialog and pyglet.window.dialog.FileSaveDialog to open OS file dialog windows.
 
 pyglet.input
 ------------
