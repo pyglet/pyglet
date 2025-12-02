@@ -16,8 +16,10 @@ from typing import (
 import pyglet
 
 from pyglet import graphics
-from pyglet.graphics import GeometryMode
+from pyglet.enums import BlendFactor
+from pyglet.graphics import GeometryMode, Group, ShaderProgram
 from pyglet.graphics.draw import Group
+from pyglet.graphics.texture import TextureBase
 from pyglet.text import runlist
 from pyglet.font.base import GlyphPosition
 
@@ -56,6 +58,107 @@ elif pyglet.options.backend == "vulkan":
         get_default_decoration_shader,
         get_default_layout_shader,
     )
+
+
+class TextLayoutGroup(Group):
+    """Create a text layout rendering group.
+
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
+
+    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+                 parent: Group | None = None) -> None:
+        super().__init__(order=order, parent=parent)
+        self.uniforms = {"scissor": False}
+        self.texture = texture
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_texture(texture, 0)
+        self.set_shader_uniforms(program, self.uniforms)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.texture})"
+
+
+class TextDecorationGroup(Group):
+    """Create a text decoration rendering group.
+
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
+
+    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
+                 parent: Group | None = None) -> None:
+        super().__init__(order=order, parent=parent)
+        self.uniforms = {"scissor": False}
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_shader_uniforms(program, self.uniforms)
+
+
+class ScrollableTextLayoutGroup(Group):
+    """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+
+    The group maintains internal state for specifying the viewable
+    area, and for scrolling. Because the group has internal state
+    specific to the text layout, the group is never shared.
+    """
+    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+
+    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+                 parent: Group | None = None) -> None:
+
+        super().__init__(order=order, parent=parent)
+        self.texture = texture
+        self.uniforms = {
+            "scissor": True,
+            "scissor_area": self.scissor_area,
+        }
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.set_texture(texture, 0)
+        self.set_shader_uniforms(program, self.uniforms)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.texture})"
+
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
+    def __hash__(self) -> int:
+        return id(self)
+
+
+class ScrollableTextDecorationGroup(Group):
+    """Create a text decoration rendering group.
+
+    The group is created internally when a :py:class:`~pyglet.text.Label`
+    is created; applications usually do not need to explicitly create it.
+    """
+
+    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
+
+    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
+        super().__init__(order=order, parent=parent)
+        self.program = program
+        self.set_shader_program(program)
+        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        self.uniforms = {
+            "scissor": True,
+            "scissor_area": self.scissor_area,
+        }
+        self.set_shader_uniforms(program, self.uniforms)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
+
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
+    def __hash__(self) -> int:
+        return id(self)
+
 
 class _LayoutVertexList(Protocol):
     """Just a Protocol to add completion for VertexLists."""
@@ -597,64 +700,6 @@ class _InvalidRange:
         return self.end > self.start
 
 
-class TextLayoutGroup(Group):
-    """Create a text layout rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.program = program
-        raise Exception
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: object) -> bool:
-        return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
-                self.program.id is other.program.id and
-                self.order == other.order and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
-
-    def __hash__(self) -> int:
-        return hash((id(self.parent), self.program.id, self.order, self.texture.target, self.texture.id))
-
-
-class TextDecorationGroup(Group):
-    """Create a text decoration rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
-                 parent: Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.program = program
-        raise Exception
-    # def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-    #     self.program.use()
-    #     self.program["scissor"] = False
-    #
-    #     glEnable(GL_BLEND)
-    #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    #
-    # def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-    #     glDisable(GL_BLEND)
-    #     self.program.stop()
-
-if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
-    from pyglet.graphics.api.gl.text import TextDecorationGroup, TextLayoutGroup
-elif pyglet.options.backend == "webgl":
-    from pyglet.graphics.api.webgl.text import TextDecorationGroup, TextLayoutGroup
-elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.text import TextDecorationGroup, TextLayoutGroup
 
 # Just have one object for empty positions in layout. It won't be modified.
 _empty_pos = GlyphPosition(0, 0, 0, 0)
@@ -1852,3 +1897,4 @@ class TextLayout:
     def get_line_count(self) -> int:
         """Get the number of lines in the text layout."""
         return self._line_count
+

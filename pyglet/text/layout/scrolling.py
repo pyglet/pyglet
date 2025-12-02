@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-import pyglet
-from pyglet.text.layout.base import TextLayout
+from pyglet.text.layout.base import TextLayout, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
     from pyglet.graphics.draw import Group
@@ -12,15 +11,6 @@ if TYPE_CHECKING:
     from pyglet.graphics import ShaderProgram
     from pyglet.text.document import AbstractDocument
 
-
-if pyglet.options.backend in ("opengl", "gles3"):
-    from pyglet.graphics.api.gl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
-elif pyglet.options.backend in ("gl2", "gles2"):
-    from pyglet.graphics.api.gl2.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
-elif pyglet.options.backend == "webgl":
-    from pyglet.graphics.api.webgl.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
-elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.text import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.

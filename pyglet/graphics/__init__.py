@@ -17,15 +17,4 @@ from pyglet.graphics.api import Batch, get_default_shader, get_default_batch, co
 from pyglet.graphics.texture import Texture, TextureGrid, Texture3D, TextureArray   # noqa: F401
 from pyglet.graphics.atlas import TextureBin, TextureArrayBin, TextureAtlas   # noqa: F401
 from pyglet.graphics.framebuffer import Framebuffer, Renderbuffer  # noqa: F401
-#
-# def _load_backend_base(name: str):
-#     if pyglet.options.backend == "opengl":
-#         backend_module = importlib.import_module("pyglet.graphics.api.gl.graphics")
-#     else:
-#         raise ValueError("Unsupported backend selected")
-#
-#     return getattr(backend_module, name)
-#
-#
-# get_default_shader: Callable[[], ShaderProgram] = _load_backend_base("get_default_shader")
 

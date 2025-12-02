@@ -17,7 +17,7 @@ from pyglet.text.layout.base import (
     _LayoutContext,
     _Line,
 )
-from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayoutGroup
+from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
