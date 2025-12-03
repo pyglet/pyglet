@@ -796,10 +796,7 @@ class Texture3D(Texture, UniformTextureSequence):
         size = texture.width * texture.height * texture.images * len(internal_format)
         data = (GLubyte * size)()
 
-        align, row_length = texture._get_image_alignment(base_image)
-
-        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, align)
-        ctx.glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
+        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
         texture._allocate(data)
 
