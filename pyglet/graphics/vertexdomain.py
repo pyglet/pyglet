@@ -163,11 +163,38 @@ class VertexListBase:
             raise ValueError(msg) from None
 
 
-class InstanceVertexList(VertexListBase):
-    """A list of vertices within an :py:class:`InstanceVertexDomain` that are instanced."""
+class InstanceVertexListBase(VertexListBase):
+    """A list of vertices within an :py:class:`InstancedVertexDomain` that are not indexed."""
     domain: InstancedVertexDomainBase
     instanced: bool = True
 
+    def __init__(self, domain: VertexDomainBase, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
+        super().__init__(domain, group, start, count)
+        self.instance_bucket = bucket
+        self.instance_bucket.create_instance()
+
+    def create_instance(self, **attributes: Any) -> VertexInstanceBase:
+        return self.instance_bucket.create_instance(**attributes)
+
+    def set_attribute_data(self, name: str, data: Any) -> None:
+        if self.initial_attribs[name].fmt.is_instanced:
+            stream = self.instance_bucket.stream
+            count = 1
+            start = 0
+        else:
+            stream = self.domain.attrib_name_buffers[name]
+            count = self.count
+            start = self.start
+        buffer = stream.attrib_name_buffers[name]
+
+        array_start = buffer.element_count * start
+        array_end = buffer.element_count * count + array_start
+        try:
+            buffer.data[array_start:array_end] = data
+            buffer.invalidate_region(start, count)
+        except ValueError:
+            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            raise ValueError(msg) from None
 
 
 class _IndexSupportBase:
@@ -302,18 +329,80 @@ class IndexedVertexListBase(VertexListBase):
         self.domain.index_stream.set_region(self.index_start, self.index_count, data)
 
 
-class InstanceIndexedVertexList(VertexListBase):
-    domain: InstancedIndexedVertexDomainBase
+class InstanceIndexedVertexListBase(VertexListBase):
+    """A list of vertices within an :py:class:`IndexedVertexDomain` that are indexed.
+
+    Use :py:meth:`IndexedVertexDomain.create` to construct this list.
+    """
+    domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase
     indexed: bool = True
     instanced: bool = True
 
     index_count: int
     index_start: int
 
-    bucket: InstanceBucket
+    instance_bucket: InstanceBucket
+    supports_base_vertex: bool = False
 
-    def create_instance(self, **attributes: Any) -> VertexInstanceBase:
-        return self.bucket.create_instance(**attributes)
+    def __init__(self, domain: InstancedIndexedVertexDomainBase, group: Group, start: int, count: int,
+                 index_start: int, index_count: int, index_type: DataTypes, base_vertex: int,
+                 instance_bucket: InstanceBucket) -> None:
+        self.index_start = index_start
+        self.index_count = index_count
+        self.index_type = index_type
+        self.base_vertex = base_vertex
+        self.instance_bucket = instance_bucket
+        self.instance_bucket.create_instance()
+        self.start_base_vertex = start if self.supports_base_vertex else 0
+        super().__init__(domain, group, start, count)
+
+    def delete(self) -> None:
+        """Delete this group."""
+        raise Exception
+        super().delete()
+        self.domain.index_allocator.dealloc(self.index_start, self.index_count)
+
+    def migrate(self, domain: InstancedIndexedVertexDomainBase) -> None:
+        old_domain = self.domain
+
+        # Moved vertex data here.
+        super().migrate(domain)
+
+        # Remove from bucket and enter into new bucket.
+        new_bucket = domain.instance_domain.get_elements_bucket(mode=0,
+                                                    first_index=self.index_start,
+                                                   index_count=self.index_count,
+                                                   index_type="I")
+
+        # Move instance data.
+        old_domain.instance_domain.move_all(self.instance_bucket, new_bucket)
+
+    def create_instance(self, **attributes: Any) -> None:
+        return self.instance_bucket.create_instance(**attributes)
+
+    def set_attribute_data(self, name: str, data: Any) -> None:
+        if self.initial_attribs[name].fmt.is_instanced:
+            stream = self.instance_bucket.stream
+            count = 1
+            start = 0
+        else:
+            stream = self.domain.attrib_name_buffers[name]
+            count = self.count
+            start = self.start
+        buffer = stream.attrib_name_buffers[name]
+
+        array_start = buffer.element_count * start
+        array_end = buffer.element_count * count + array_start
+        try:
+            buffer.data[array_start:array_end] = data
+            buffer.invalidate_region(start, count)
+        except ValueError:
+            msg = f"Invalid data size for '{buffer}'. Expected {array_end - array_start}, got {len(data)}."
+            raise ValueError(msg) from None
+
+    def dealloc_from_group(self, vertex_list):
+        """Removes a vertex list from a specific state in this domain."""
+        vertex_list.bucket.remove_vertex_list(vertex_list)
 
 class VertexDomainBase(ABC):
     """Management of a set of vertex lists.
@@ -625,7 +714,7 @@ class InstancedIndexedVertexDomainBase(IndexedVertexDomainBase):
         key = (vertex_list.index_start, vertex_list.index_count)
         self._instance_map[key] = vertex_list.instance_bucket
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexList:
+    def create(self, group: Group, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexListBase:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
