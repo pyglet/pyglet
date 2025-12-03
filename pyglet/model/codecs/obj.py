@@ -8,15 +8,18 @@ from pyglet.util import asstr
 
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
-from .. import Model, MaterialGroup, TexturedMaterialGroup
-from ...graphics import Batch, Group, GeometryMode
+from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
+from pyglet.graphics import Batch, Group, GeometryMode
 
 
 def _new_mesh(name, material):
     # The three primitive types used in .obj files:
-    attributes = [Attribute('POSITION', 'f', 'VEC3', 0, []),
-                  Attribute('NORMAL', 'f', 'VEC3', 0, []),
-                  Attribute('TEXCOORD_0', 'f', 'VEC3', 0, [])]
+    attributes = [
+        Attribute('POSITION', 'f', 'VEC3', 0, []),
+        Attribute('NORMAL', 'f', 'VEC3', 0, []),
+        Attribute('TEXCOORD_0', 'f', 'VEC3', 0, []),
+    ]
+
     primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GeometryMode.TRIANGLES)
     mesh = Mesh(primitives=[primitive], name=name)
     return mesh
@@ -139,49 +142,75 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
                 mesh.primitives[0].material = material
 
         elif values[0] == 'o':
-            mesh = _new_mesh(name=values[1], material=default_material)
+            mesh = _new_mesh(values[1], material=default_material)
             meshes.append(mesh)
 
         elif values[0] == 'f':
+            # --- FACES
+
             if material is None:
                 material = SimpleMaterial()
             if mesh is None:
                 mesh = _new_mesh(name='unknown', material=material)
                 meshes.append(mesh)
 
-            # For fan triangulation, remember first and latest vertices
-            n1 = None
-            nlast = None
-            t1 = None
-            tlast = None
-            v1 = None
-            vlast = None
+            primitive = mesh.primitives[0]
 
-            for i, v in enumerate(values[1:]):
-                v_i, t_i, n_i = (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
+            pos_attr = primitive.attributes[0]
+
+            # optional normals and teture uvs
+            normal_attr = primitive.attributes[1] if len(primitive.attributes) > 1 else None
+            tex_uv_attr = primitive.attributes[2] if len(primitive.attributes) > 2 else None
+
+            face_vertices = []
+            for v in values[1:]:
+                parts = v.split('/')
+
+                # vertex index (should not be empty, raise error instead?)
+                v_i = int(parts[0]) if parts[0] else 0
+
+                # texcoord index (optional)
+                t_i = 0
+                if len(parts) >= 2 and parts[1]:
+                    t_i = int(parts[1])
+
+                # normal index (optional)
+                n_i = 0
+                if len(parts) == 3 and parts[2]:
+                    n_i = int(parts[2])
+
+                # handle negative indices
                 if v_i < 0:
-                    v_i += len(vertices) - 1
+                    v_i = len(vertices) + v_i
                 if t_i < 0:
-                    t_i += len(tex_coords) - 1
+                    t_i = len(tex_coords) + t_i
                 if n_i < 0:
-                    n_i += len(normals) - 1
+                    n_i = len(normals) + n_i
 
-                mesh.primitives[0].attributes[0].array += vertices[v_i]
-                mesh.primitives[0].attributes[1].array += normals[n_i]
-                mesh.primitives[0].attributes[2].array += tex_coords[t_i]
+                face_vertices.append((v_i, t_i, n_i))
 
-                if i >= 3:
-                    mesh.primitives[0].attributes[0].array += v1 + vlast
-                    mesh.primitives[0].attributes[1].array += n1 + nlast
-                    mesh.primitives[0].attributes[2].array += t1 + tlast
+            # For fan triangulation, remember first and latest vertices
+            for i in range(2, len(face_vertices)):
+                for idx in (0, i - 1, i):
+                    v_i, t_i, n_i = face_vertices[idx]
 
-                if i == 0:
-                    n1 = normals[n_i]
-                    t1 = tex_coords[t_i]
-                    v1 = vertices[v_i]
-                nlast = normals[n_i]
-                tlast = tex_coords[t_i]
-                vlast = vertices[v_i]
+                    pos_attr.array += vertices[v_i]
+
+                    # normals (optional)
+                    if normal_attr is not None:
+                        if n_i != 0:
+                            primitive.has_normals = True
+                            normal_attr.array += normals[n_i]
+                        else:
+                            normal_attr.array += [0.0, 0.0, 1.0]
+
+                    # texcoords (optional)
+                    if tex_uv_attr is not None:
+                        if t_i != 0:
+                            primitive.has_tex_coords = True
+                            tex_uv_attr.array += tex_coords[t_i]
+                        else:
+                            tex_uv_attr.array += [0.0, 0.0]
 
         for mesh in meshes:
             for primitive in mesh.primitives:
@@ -203,13 +232,13 @@ class OBJScene(Scene):
 
                 if material.texture_name:
                     program = pyglet.model.get_default_textured_shader()
-                    texture = pyglet.resource.texture(material.texture_name)
+                    texture = pyglet.resource.texture(material.texture_name, atlas=False)
                     matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
                 else:
                     program = pyglet.model.get_default_shader()
                     matgroup = MaterialGroup(material, program, parent=group)
 
-                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes}
+                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes if a.name in program.attributes}
                 # Add additional material data:
                 data['COLOR_0'] = 'f', material.diffuse * count
 

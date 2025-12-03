@@ -74,6 +74,7 @@ class Group:
         self._state_names = {}
         self._states = []
         self._expanded_states = []
+        self._comparisons = []
 
         # Default hash
         self._hashable_states = ()
@@ -86,6 +87,9 @@ class Group:
 
         self._hashable_states = tuple({state for state in self._states if state.group_hash is True})
         self._hash = hash((self._order, self.parent, self._hashable_states))
+
+    def add_comparison(self, value):
+        self._comparisons.append(value)
 
     def set_scissor(self, scissor_object: ScissorProtocol) -> None:
         self.add_state(ScissorState(scissor_object))
@@ -171,7 +175,8 @@ class Group:
         return (self.__class__ is other.__class__ and
                 self._order == other.order and
                 self.parent == other.parent and
-                self._hashable_states == other._hashable_states)
+                self._hashable_states == other._hashable_states and
+                self._comparisons == other._comparisons)
 
     def __hash__(self) -> int:
         """This is an immutable return to establish the permanent identity of the object.
