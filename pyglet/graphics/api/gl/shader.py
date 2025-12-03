@@ -1261,22 +1261,18 @@ class ShaderProgram(ShaderProgramBase):
             for name, divisor in instances.items():
                 attributes[name].set_divisor(divisor)
 
-        if _debug_api_shaders:
-            if missing_data := [key for key in attributes if key not in data]:
-                msg = (
-                    f"No data was supplied for the following found attributes: `{missing_data}`.\n"
-                )
-                warnings.warn(msg)
+        if _debug_api_shaders and (missing_data := [key for key in attributes if key not in data]):
+            msg = (
+                f"No data was supplied for the following found attributes: `{missing_data}`.\n"
+            )
+            warnings.warn(msg)
 
         batch = batch or pyglet.graphics.get_default_batch()
         group = group or pyglet.graphics.ShaderGroup(program=self)
         domain = batch.get_domain(indexed, bool(instances), mode, group, attributes)
 
         # Create vertex list and initialize
-        if indexed:
-            vlist = domain.create(count, indices)
-        else:
-            vlist = domain.create(count)
+        vlist = domain.create(group, count, indices)
 
         for name, array in initial_arrays:
             vlist.set_attribute_data(name, array)

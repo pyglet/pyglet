@@ -7,7 +7,7 @@ This can have major performance benefits when dealing with a large number of ima
 manages a collection of atlases of a given size. :py:class:`TextureArrayBin` works similarly
 except for :py:class:`~pyglet.graphics.TextureArray`s instead of altases.
 
-This module is used internally by the :py:mod:`pyglet.resource` module.
+This module is used internally by the :py:mod:`~pyglet.resource` module.
 
 Example usage::
 

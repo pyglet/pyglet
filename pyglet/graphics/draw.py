@@ -8,11 +8,20 @@ import pyglet
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
 
 from pyglet.graphics.state import (
-    State, TextureState, ShaderProgramState, BlendState, ShaderUniformState, UniformBufferState,
-    DepthBufferComparison, ScissorState, ViewportState,
+    State,
+    TextureState,
+    ShaderProgramState,
+    BlendState,
+    ShaderUniformState,
+    UniformBufferState,
+    DepthBufferComparison,
+    ScissorState,
+    ViewportState,
+    _expand_states_in_order,
 )
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics import GeometryMode
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import TextureBase
@@ -45,7 +54,7 @@ class Group:
     """
     states: list[State]
     _hash: int
-    hashable_states: tuple
+    _hashable_states: tuple
 
     def __init__(self, order: int = 0, parent: Group | None = None) -> None:
         """Initialize a rendering group.
@@ -62,35 +71,24 @@ class Group:
         self._visible = True
         self._assigned_batches = weakref.WeakSet()
 
-        self.state_names = {}
-        self.states = []
-
-        # Store data on the group for states to use during their state call.
-        self.data = { "uniform" : {}}
+        self._state_names = {}
+        self._states = []
+        self._expanded_states = []
 
         # Default hash
-        self.hashable_states = ()
+        self._hashable_states = ()
         self._hash = hash((self._order, self.parent))
 
-        # When dirty, it needs to be recalculated.
-        self._dirty = False
-
-    @property
-    def dirty(self) -> bool:
-        """The group requires a recalculation of it's state."""
-        return self._dirty
-
     def add_state(self, state: State) -> None:
-        self.states.append(state)
-        self.state_names[state.__class__.__name__] = state
+        self._states.append(state)
+        self._state_names[state.__class__.__name__] = state
+        self._expanded_states = _expand_states_in_order(self._states)
 
-        self.hashable_states = tuple({state for state in self.states if state.group_hash is True})
-        self._hash = hash((self._order, self.parent, self.hashable_states))
-        self._dirty = True
+        self._hashable_states = tuple({state for state in self._states if state.group_hash is True})
+        self._hash = hash((self._order, self.parent, self._hashable_states))
 
-    def set_scissor(self, x: int, y: int, width: int, height: int) -> None:
-        self.data["scissor"] = [x, y, width, height]
-        self.add_state(ScissorState(self))
+    def set_scissor(self, scissor_object: ScissorProtocol) -> None:
+        self.add_state(ScissorState(scissor_object))
 
     def set_blend(self, blend_src: BlendFactor, blend_dst: BlendFactor, blend_op: BlendOp = BlendOp.ADD):
         self.add_state(BlendState(blend_src, blend_dst, blend_op))
@@ -104,15 +102,11 @@ class Group:
     def set_shader_program(self, program: ShaderProgramBase):
         self.add_state(ShaderProgramState(program))
 
-    def set_shader_uniform(self, program: ShaderProgramBase, name: str, value: float | Sequence):
-        self.data[name] = value  # Initial data.
-        self.add_state(ShaderUniformState(program, name, self))
+    def set_shader_uniforms(self, program: ShaderProgramBase, uniforms: dict[str, Any]):
+        self.add_state(ShaderUniformState(program, uniforms))
 
     def set_uniform_buffer(self, ubo: str, binding: int):
         self.add_state(UniformBufferState(ubo, binding))
-
-    def update_data(self, name: str, value: Any) -> None:
-        self.data[name] = value
 
     def set_texture(self, texture: TextureBase, texture_unit: int=0, set_id: int=0) -> None:
         """Set the texture state.
@@ -127,7 +121,7 @@ class Group:
             set_id:
                 The set that the sampler belongs to. Only applicable in Vulkan.
         """
-        self.add_state(TextureState(texture, texture_unit, set_id))
+        self.add_state(TextureState.from_texture(texture, texture_unit, set_id))
 
     @property
     def order(self) -> int:
@@ -177,7 +171,7 @@ class Group:
         return (self.__class__ is other.__class__ and
                 self._order == other.order and
                 self.parent == other.parent and
-                self.hashable_states == other.hashable_states)
+                self._hashable_states == other._hashable_states)
 
     def __hash__(self) -> int:
         """This is an immutable return to establish the permanent identity of the object.
@@ -197,23 +191,13 @@ class Group:
 
     def set_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all set states of the underlying Group."""
-        for state in self.states:
-            if state.dependents:
-                for dependant_state in state.generate_dependent_states():
-                    if dependant_state.sets_state:
-                        dependant_state.set_state(ctx)
-
+        for state in self._expanded_states:
             if state.sets_state:
                 state.set_state(ctx)
 
     def unset_state_all(self, ctx: SurfaceContext) -> None:
         """Calls all unset states of the underlying Group."""
-        for state in self.states:
-            if state.dependents:
-                for dependant_state in state.generate_dependent_states():
-                    if dependant_state.unsets_state:
-                        dependant_state.unset_state(ctx)
-
+        for state in self._expanded_states:
             if state.unsets_state:
                 state.unset_state(ctx)
 
@@ -281,6 +265,8 @@ class BatchBase:
     a custom drawable, get your vertex domains from the given batch instead of
     setting them up yourself.
     """
+    _empty_domains: set[_DomainKey]
+    _domain_registry: dict[_DomainKey, Any]
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
@@ -307,7 +293,12 @@ class BatchBase:
         self._draw_list = []
         self._draw_list_dirty = False
 
-        self._instance_count = 0
+        # Mapping of DomainKey to a VertexDomain
+        self._domain_registry = {}
+
+        # Keep empty domains around for a little to prevent possible.
+        self._empty_domains = set()
+
         self.initial_count = initial_count
 
     def invalidate(self) -> None:
@@ -319,6 +310,18 @@ class BatchBase:
         .. versionadded:: 1.2
         """
         self._draw_list_dirty = True
+
+    def delete_empty_domains(self) -> None:
+        """Deletes all empty domains and all of their buffers.
+
+        Should not need to be called through normal usage, as this will occur periodically.
+        """
+        for domain_key in self._empty_domains:
+            domain = self._domain_registry[domain_key]
+            # It's possible this domain was re-used before being deleted, check one last time before removal.
+            if domain.is_empty:
+                del self._domain_registry[domain_key]
+        self._empty_domains.clear()
 
     def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgramBase) -> bool:

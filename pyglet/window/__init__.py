@@ -93,7 +93,7 @@ from pyglet.config import UserConfig
 from pyglet.event import EVENT_HANDLE_STATE, EventDispatcher
 
 from pyglet.math import Mat4
-from pyglet.window import event, key
+from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
@@ -1909,8 +1909,10 @@ def _create_shadow_window() -> Window | None:
         return shadow_window
     return None
 
-
-_shadow_window = _create_shadow_window()
+if not _is_pyglet_doc_run:
+    _shadow_window = _create_shadow_window()
+else:
+    _shadow_window = None
 
 
 __all__ = (

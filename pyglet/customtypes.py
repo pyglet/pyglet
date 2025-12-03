@@ -1,8 +1,9 @@
 """Holds type aliases used throughout the codebase."""
+from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type
+from typing import Union, Literal, Type, Protocol, Tuple
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
 
@@ -16,6 +17,11 @@ HorizontalAlign = Literal["left", "center", "right"]
 AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["bottom", "center", "top"]
+
+Number = Union[int, float]
+
+RGBColor = Tuple[Number, Number, Number]
+RGBAColor = Tuple[Number, Number, Number, Number]
 
 DataTypes = Literal[
     'f',  # float
@@ -35,6 +41,24 @@ CType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 
+
+class ScissorProtocol(Protocol):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+
 __all__ = [
-    "Buffer", "HorizontalAlign", "AnchorX", "AnchorY", "ContentVAlign", "DataTypes", "CType", "CTypesPointer",
+    "AnchorX",
+    "AnchorY",
+    "Buffer",
+    "CType",
+    "CTypesPointer",
+    "ContentVAlign",
+    "DataTypes",
+    "HorizontalAlign",
+    "RGBAColor",
+    "RGBColor",
 ]

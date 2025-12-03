@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pyglet
+
 if TYPE_CHECKING:
     from pyglet.image import ImageData
 
@@ -16,3 +18,9 @@ def get_screenshot() -> ImageData:
     .. versionadded:: 3.0
     """
     raise NotImplementedError
+
+
+if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
+    from pyglet.graphics.api.gl.framebuffer import Framebuffer, Renderbuffer
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.framebuffer import Framebuffer, Renderbuffer  # noqa: F401

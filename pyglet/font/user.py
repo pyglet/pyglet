@@ -182,8 +182,9 @@ class UserDefinedMappingFont(UserDefinedFontBase):
     _glyph_renderer: UserDefinedGlyphRenderer
 
     def __init__(self, name: str, default_char: str, size: int, mappings: DictLikeObject,
-            ascent: int | None = None, descent: int | None = None, weight: str = "normal", italic: bool = False,
-            stretch: bool = False, dpi: int = 96, locale: str | None = None) -> None:
+            ascent: int | None = None, descent: int | None = None,
+            weight: str = "normal", style: str = "normal", stretch: str = "normal",
+            dpi: int = 96, locale: str | None = None) -> None:
         """Initialize the default parameters of your font.
 
         Args:
@@ -203,10 +204,10 @@ class UserDefinedMappingFont(UserDefinedFontBase):
                 Maximum descent below the baseline, in pixels. Usually negative.
             weight:
                 The font weight, as a string. Defaults to "normal".
-            italic:
-                If ``True``, this font will be used when ``italic`` is enabled for the font name.
+            style:
+                The font style, as a string. Defaults to "normal".
             stretch:
-                If ``True``, this font will be used when ``stretch`` is enabled for the font name.
+                The font stretch, as a string. Defaults to "normal".
             dpi:
                 The assumed resolution of the display device, for the purposes of determining the pixel size of the
                 font. Use a default of 96 for standard sizing.
@@ -225,7 +226,7 @@ class UserDefinedMappingFont(UserDefinedFontBase):
             if descent is None:
                 descent = 0
 
-        super().__init__(name, default_char, size, ascent, descent, weight, italic, stretch, dpi, locale)
+        super().__init__(name, default_char, size, ascent, descent, weight, style, stretch, dpi, locale)
 
     def enable_scaling(self, base_size: int) -> None:
         """Enables scaling the font size.
@@ -278,7 +279,7 @@ def get_scaled_user_font(font_base: UserDefinedMappingFont, size: int) -> UserDe
             The new font size. This will be scaled based on the ratio between the base size and the new size.
     """
     new_font = UserDefinedMappingFont(font_base.name, font_base.default_char, size, font_base.mappings,
-                                      font_base.ascent, font_base.descent, font_base.weight, font_base.italic,
+                                      font_base.ascent, font_base.descent, font_base.weight, font_base.style,
                                       font_base.stretch, font_base.dpi, font_base.locale)
 
     new_font.enable_scaling(font_base.size)

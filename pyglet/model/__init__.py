@@ -211,7 +211,8 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         self.texture = texture
         self.set_texture(self.texture)
         self.set_shader_program(program)
-        self.set_shader_uniform(program, 'model', self.matrix)
+        self.uniforms = {"model": self.matrix}
+        self.set_shader_uniforms(program, self.uniforms)
     #
     # def set_state(self) -> None:
     #     # gl.glActiveTexture(gl.GL_TEXTURE0)

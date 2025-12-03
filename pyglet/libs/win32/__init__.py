@@ -25,6 +25,7 @@ _ole32 = DebugLibrary('ole32')
 _oleaut32 = DebugLibrary('oleaut32')
 _shcore = DebugLibrary('shcore')
 _advapi32 = DebugLibrary("advapi32")
+_comdlg32 = DebugLibrary("comdlg32")
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -314,6 +315,12 @@ _advapi32.RegOpenKeyExW.argtypes = [HKEY, LPCWSTR, DWORD, REGSAM, POINTER(HKEY)]
 _advapi32.RegOpenKeyExW.restype = LONG
 _advapi32.RegQueryValueExW.argtypes = [HKEY,LPCWSTR,LPVOID, POINTER(DWORD), LPBYTE, POINTER(DWORD)]
 _advapi32.RegQueryValueExW.restype = LONG
+
+# _comdlg32
+_comdlg32.GetOpenFileNameW.argtypes = [POINTER(OPENFILENAMEW)]
+_comdlg32.GetOpenFileNameW.restype = BOOL
+_comdlg32.GetSaveFileNameW.argtypes = [POINTER(OPENFILENAMEW)]
+_comdlg32.GetSaveFileNameW.restype = BOOL
 
 
 if _debug_win32:

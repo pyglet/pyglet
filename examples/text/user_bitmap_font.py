@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pyglet
-pyglet.font.Font.text
 from pyglet.font.user import UserDefinedMappingFont, get_scaled_user_font
 
 # Add our resource path that includes the font atlas.
@@ -22,11 +21,8 @@ atlas_characters = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345
 rows = 5
 columns = 16
 
-# Ensure the data is image data, as it is needed to blit into a Texture.
-image_data = atlas_image.get_image_data()
-
 # Create image grid based on how many glyphs.
-grid = pyglet.image.ImageGrid(image_data, rows=rows, columns=columns)
+grid = pyglet.image.ImageGrid(atlas_image, rows=rows, columns=columns)
 
 # Map characters to image data. A -> ImageData
 # The mapping can be a dictionary lookup, or it can be an object that behaves like a dictionary.

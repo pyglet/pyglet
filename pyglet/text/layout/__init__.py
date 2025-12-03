@@ -123,7 +123,7 @@ from pyglet.text.layout.base import (
     TextLayoutGroup,
     get_default_layout_shader,
     get_default_image_layout_shader,
-    get_default_decoration_shader,
+    get_default_decoration_shader, ScrollableTextLayoutGroup, ScrollableTextDecorationGroup,
 )
 from pyglet.text.layout.incremental import (
     IncrementalTextDecorationGroup,
@@ -132,9 +132,7 @@ from pyglet.text.layout.incremental import (
 )
 
 from pyglet.text.layout.scrolling import (
-    ScrollableTextDecorationGroup,
     ScrollableTextLayout,
-    ScrollableTextLayoutGroup,
 )
 
 __all__ = [

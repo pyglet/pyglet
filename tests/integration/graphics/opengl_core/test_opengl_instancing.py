@@ -99,8 +99,8 @@ def test_instancing_count(vlist_factory):
             translate=(i * size, i * size, 0.0),
         )
 
-    assert vlist.bucket is not None
-    assert vlist.bucket.instance_count == instance_count + 1  # the initial list
+    assert vlist.instance_bucket is not None
+    assert vlist.instance_bucket.instance_count == instance_count + 1  # the initial list
 
 
 def test_missing_instance_attribute_raises(vlist_factory):
@@ -123,7 +123,7 @@ def test_attribute_divisors(shader_program, vlist_factory):
     vlist = vlist_factory((0.0,) * 12)
 
     # Bind the VAO that vlist configured
-    vlist.bucket.vao.bind()
+    vlist.instance_bucket.vao.bind()
 
     pos_loc = shader_program._attributes["position"].location
     col_loc = shader_program._attributes["colors"].location

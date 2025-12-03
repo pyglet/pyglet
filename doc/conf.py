@@ -65,7 +65,7 @@ class _RstSnippetParser(RSTParser):
         """Override to skip processing rst_epilog/rst_prolog for typing."""
 
 
-sphinx_autodoc_typehints.parser.RSTParser = _RstSnippetParser
+sphinx_autodoc_typehints._parser.RSTParser = _RstSnippetParser
 
 
 def write_build(data, filename):
@@ -438,7 +438,7 @@ def custom_formatter(annotation, config):
                 # May be wrong but
                 params["bound"] = f":py:class:`{bound_param.__forward_arg__}`"
             else:
-                params["bound"] = f"{sphinx_autodoc_typehints.format_annotation(bound_param, config)}"
+                params["bound"] = f"{sphinx_autodoc_typehints.format_annotation(bound_param, config, short_literals=True)}"
         args_format = f"\\(``{annotation.__name__}``{', {}' if args else ''}"
         if params:
             args_format += "".join(f", *{k} =* {v}" for k, v in params.items())
@@ -448,4 +448,4 @@ def custom_formatter(annotation, config):
     return None
 
 
-typehints_formatter = custom_formatter
+typehints_formatter = None

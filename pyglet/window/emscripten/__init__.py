@@ -3,8 +3,8 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable
 
-import js  # noqa
-from pyodide.ffi import create_proxy  # noqa
+import js
+from pyodide.ffi import create_proxy
 
 import pyglet.app
 from pyglet.window import BaseWindow, DefaultMouseCursor, ImageMouseCursor, MouseCursor, key, mouse
@@ -280,7 +280,7 @@ def translate_mouse_bits(buttons: int) -> int:
     return result
 
 
-def CanvasEventHandler(name: str, passive: None| bool=None) -> Callable:  # noqa: ANN202
+def CanvasEventHandler(name: str, passive: None| bool=None) -> Callable:
     def _event_wrapper(f: Callable) -> Callable:
         f._canvas = True
         f._passive = passive
@@ -634,7 +634,7 @@ class EmscriptenWindow(BaseWindow):
         pos_x = (event.clientX - rect.left) * self._scale
         pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
         self.dispatch_event(
-            'on_mouse_press', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers
+            'on_mouse_press', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers,
         )
 
     @CanvasEventHandler("mouseup")
@@ -644,7 +644,7 @@ class EmscriptenWindow(BaseWindow):
         pos_x = (event.clientX - rect.left) * self._scale
         pos_y = self._canvas.height - (event.clientY - rect.top) * self._scale
         self.dispatch_event(
-            'on_mouse_release', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers
+            'on_mouse_release', pos_x, pos_y, _mouse_map.get(event.button, 0), modifiers,
         )
 
     @CanvasEventHandler("mousemove")
@@ -712,7 +712,9 @@ class EmscriptenWindow(BaseWindow):
             self._exited_fullscreen(event, *self._windowed_size)
 
     def get_framebuffer_size(self):
-        return self._width, self._height
+        if self._context:
+            return self._context.gl.drawingBufferWidth, self._context.gl.drawingBufferHeight
+        return self.get_size()
 
     def _event_resized(self, entries, observer):
         for entry in entries:

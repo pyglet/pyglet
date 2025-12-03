@@ -43,7 +43,6 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_PIXELS,
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
-    GLubyte,
 )
 from pyglet.graphics.texture import TextureBase, TextureRegionBase, UniformTextureSequence, TextureArraySizeExceeded, \
     TextureArrayDepthExceeded
@@ -452,6 +451,37 @@ class Texture(TextureBase):
         """
         raise NotImplementedError("Not supported.")
 
+    @staticmethod
+    def _get_image_alignment(image_data: ImageData) -> tuple[int, int]:
+        """Image alignment and row length information on an Image to upload.
+
+        Args:
+            image_data: The image data to get the alignment from.
+
+        Returns:
+            (align, row_length)
+                align: 1, 2, 4, or 8 \
+                row_length: 0 if tightly packed.
+        """
+        components = len(image_data.format)
+        width = image_data.width
+        packed_row_bytes = width * components
+        pitch = abs(image_data._current_pitch)
+        if packed_row_bytes % 8 == 0:
+            align = 8
+        elif packed_row_bytes % 4 == 0:
+            align = 4
+        elif packed_row_bytes % 2 == 0:
+            align = 2
+        else:
+            align = 1
+
+        if pitch == packed_row_bytes:
+            row_length = 0
+        else:
+            row_length = pitch // components
+
+        return align, row_length
     @classmethod
     def create_from_image(cls,
                           image_data: ImageData | ImageDataRegion,
@@ -490,7 +520,7 @@ class Texture(TextureBase):
         target = texture_map[tex_type]
         gl.bindTexture(target, tex_id)
 
-        texture = cls(ctx, image_data.width, image_data.height, tex_id.value, tex_type,
+        texture = cls(ctx, image_data.width, image_data.height, tex_id, tex_type,
                       ComponentFormat(image_data.format), internal_format_size, image_data.data_type, filters,
                       address_mode, anisotropic_level)
 
@@ -575,7 +605,7 @@ class Texture(TextureBase):
         gl.texParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         gl.texParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
-        data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
+        data = js.Uint8Array.new(width * height * len(internal_format)) if blank_data else None
         texture._allocate(data)
         return texture
 
@@ -784,7 +814,9 @@ class TextureRegion(Texture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
-        super().__init__(width, height, owner.id, owner.descriptor)
+        super().__init__(owner._context, width, height, owner.id, owner.tex_type, owner.internal_format,
+                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
+                         owner.anisotropic_level)
 
         self.x = x
         self.y = y
@@ -884,7 +916,7 @@ class Texture3D(Texture, UniformTextureSequence):
         texture.images = len(images)
 
         size = (texture.width * texture.height * texture.images * len(internal_format))
-        data = (GLubyte * size)()
+        data = js.Uint8Array.new(size)
         texture._allocate(data)
 
         items = []

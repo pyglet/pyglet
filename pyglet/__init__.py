@@ -110,10 +110,6 @@ class Options:
     debug_media: bool = False
     """If ``True``, prints more detailed media information for audio codecs and drivers. Will be very verbose."""
 
-    debug_texture: bool = False
-    """If ``True``, prints information on :py:class:`~pyglet.graphics.Texture` size (in bytes) when they are allocated and
-    deleted."""
-
     debug_trace: bool = False
     debug_trace_args: bool = False
     debug_trace_depth: int = 1
@@ -293,6 +289,15 @@ class Options:
     backend: Literal["opengl", "gl2", "gles3", "gles2", "webgl"] = "opengl"
     """Specify the graphics API backend."""
 
+    optimize_states: bool = True
+    """Runs a second pass on the draw list to remove any redundant states.
+
+    This option is mostly meant for debugging, as this should not significantly impact the draw list creation time
+    or impact drawing states.
+
+    .. versionadded:: 3.0.0
+    """
+
     pyodide: PyodideOptions = field(default_factory=PyodideOptions)
     """Pyodide specific options."""
 
@@ -322,9 +327,7 @@ for _option_name, _type_str in options.__annotations__.items():
             setattr(options, _option_name, _value in ("true", "TRUE", "True", "1"))
         elif 'int' in _type_str:
             setattr(options, _option_name, int(_value))
-        elif 'str' in _type_str:
-            setattr(options, _option_name, _value)
-        elif 'Literal' in _type_str and _value in _type_str:
+        elif 'str' in _type_str or ('Literal' in _type_str and _value in _type_str):
             setattr(options, _option_name, _value)
         else:
             warnings.warn(f"Invalid value '{_value}' for {_option_name}. Expecting {_type_str}")

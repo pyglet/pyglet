@@ -343,7 +343,9 @@ class TextureRegionBase(TextureBase):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
     def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
-        super().__init__(width, height, owner.id, owner.descriptor)
+        super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
+                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
+                         owner.anisotropic_level)
 
         self.x = x
         self.y = y
