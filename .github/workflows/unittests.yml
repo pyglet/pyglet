@@ -26,8 +26,8 @@ jobs:
         env:
           PYGLET_BACKEND: ${{ matrix.backend-override }}
         run: |
-          xvfb-run python3 -m pyglet.info
-          xvfb-run pytest tests --ignore=tests/interactive
+          xvfb-run --auto-servernum  python3 -m pyglet.info
+          xvfb-run --auto-servernum  pytest tests --ignore=tests/interactive
 
   osx:
     runs-on: macos-latest
@@ -103,5 +103,5 @@ jobs:
           PYGLET_BACKEND: ${{ matrix.backend-override }}
           PYGLET_HEADLESS: true
         run: |
-          xvfb-run python3 -m pyglet.info
-          xvfb-run pytest tests --ignore=tests/interactive
+          python3 -m pyglet.info
+          pytest tests --ignore=tests/interactive
