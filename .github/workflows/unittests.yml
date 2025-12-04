@@ -26,6 +26,7 @@ jobs:
         env:
           PYGLET_BACKEND: ${{ matrix.backend-override }}
         run: |
+          xvfb-run python3 -m pyglet.info
           xvfb-run pytest tests --ignore=tests/interactive
 
   osx:
@@ -53,7 +54,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-        backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3' ]
+        backend-override: [ 'opengl', 'gl2', 'gles2' ]
     name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override }}
     steps:
       - uses: actions/checkout@v4
@@ -77,3 +78,30 @@ jobs:
         run: |
           python3 -m pyglet.info
           pytest tests --ignore=tests/interactive
+
+  headless:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
+        backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3']
+
+    name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          sudo apt-get install xvfb
+      - name: Run tests
+        env:
+          PYGLET_BACKEND: ${{ matrix.backend-override }}
+          PYGLET_HEADLESS: true
+        run: |
+          xvfb-run python3 -m pyglet.info
+          xvfb-run pytest tests --ignore=tests/interactive
