@@ -45,6 +45,7 @@ jobs:
           pip install pytest
       - name: Run tests
         run: |
+          python3 -m pyglet.info
           pytest tests --ignore=tests/interactive --ignore=tests/integration
 
   windows:
@@ -52,7 +53,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-        backend-override: [ 'opengl', 'gl2', 'gles2' ]
+        backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3' ]
     name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override }}
     steps:
       - uses: actions/checkout@v4
@@ -74,4 +75,5 @@ jobs:
         env:
           PYGLET_BACKEND: ${{ matrix.backend-override }}
         run: |
+          python3 -m pyglet.info
           pytest tests --ignore=tests/interactive
