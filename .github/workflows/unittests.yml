@@ -53,7 +53,7 @@ jobs:
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
         backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3' ]
-    name: Python ${{ matrix.python-version }} Windows
+    name: Python ${{ matrix.python-version }} Windows ${{ matrix.backend-override }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
