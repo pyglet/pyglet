@@ -83,12 +83,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.10' ]
-        backend-override: [ 'opengl', 'gl2', 'gles2', 'gles3']
+        python-version: [ '3.12', '3.13', '3.14', 'pypy-3.10' ]
+        backend-override: [ 'opengl', 'gles2', 'gles3']
 
     name: Python ${{ matrix.python-version }} Ubuntu HEADLESS ${{ matrix.backend-override }}
     steps:
       - uses: actions/checkout@v4
+      - uses: openrndr/setup-opengl@v1.1
       - name: Setup python
         uses: actions/setup-python@v5
         with:
