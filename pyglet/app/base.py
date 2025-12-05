@@ -264,6 +264,7 @@ class EventLoop(event.EventDispatcher):
         interrupted (see :py:meth:`sleep`).
         """
         self.has_exit = True
+        self.clock.unschedule(self._redraw_windows)
         app.platform_event_loop.notify()
 
     def sleep(self, timeout: float) -> bool:
