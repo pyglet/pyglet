@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Generator
 
 from pyglet.enums import BlendFactor, BlendOp, CompareOp
@@ -9,6 +9,7 @@ from pyglet.graphics.api.webgl.gl import GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TES
 from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl.webgl_js import WebGLTexture
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics import Group
     from pyglet.graphics.api.webgl.shader import ShaderProgram
@@ -30,17 +31,28 @@ class ActiveTextureState(State):
 
 @dataclass(frozen=True)
 class TextureState(State):  # noqa: D101
-    texture: TextureBase
+    texture: tuple[int, int]
+    # WebGL doesn't expose the actual texture ID, so we use the python memory ID instead to consolidate the types
+    # as Python doesn't allow the JS Proxy to be hashable.
+    # However, the actual WebGL object needs to be passed for the function.
+    webgl_texture: WebGLTexture = field(hash=False, compare=False)
     binding: int = 0
     set_id: int = 0
 
-    dependents: bool = True
+    parents: bool = True
     sets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.gl.bindTexture(self.texture.target, self.texture.id)
+    @classmethod
+    def from_texture(cls, texture: TextureBase, binding: int, set_id: int) -> TextureState:
+        return cls((texture.target, id(texture.id)),
+                   webgl_texture=texture.id,
+                   binding=binding,
+                   set_id=set_id)
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+        ctx.gl.bindTexture(self.texture[0], self.webgl_texture)
+
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
 
 
@@ -49,13 +61,13 @@ class ShaderProgramState(State):
     program: ShaderProgram
 
     sets_state: bool = True
-    unsets_state: bool = True
+    #unsets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
         self.program.use()
 
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program.stop()
+    #def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
+    #    self.program.stop()l
 
 
 @dataclass(frozen=True)
@@ -86,9 +98,9 @@ class ScissorState(State):
     group: Group
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ScissorStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
@@ -114,9 +126,9 @@ class BlendState(State):
     op: BlendOp = BlendOp.ADD
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield BlendStateEnable()
         # Do later.
         # if self.op != BlendOp.ADD:
@@ -143,9 +155,9 @@ class DepthBufferComparison(State):
     func: CompareOp
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield DepthTestStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
@@ -199,16 +211,17 @@ class UniformBufferState(State):
 @dataclass(frozen=True)
 class ShaderUniformState(State):
     program: ShaderProgram
-    name: str
-    group: Group
+    data: dict[str, Any]
 
     sets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program[self.name] = self.group.data[self.name]
+        for name, value in self.data.items():
+            self.program[name] = value
 
     def __hash__(self) -> int:
         return id(self)
 
     def __eq__(self, other: State) -> bool:
         return False
+

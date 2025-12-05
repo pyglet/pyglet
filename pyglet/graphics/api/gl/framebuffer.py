@@ -24,27 +24,52 @@ from __future__ import annotations
 
 import pyglet
 from typing import TYPE_CHECKING
-from pyglet.graphics.api.gl.gl import GLint, GL_VIEWPORT, GL_BACK, GLubyte, \
-    GL_PACK_ALIGNMENT, GL_UNSIGNED_BYTE, GL_RGBA, GLuint, \
-    GL_RENDERBUFFER, \
-    GL_FRAMEBUFFER, \
-    GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_UNSUPPORTED, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT, \
-    GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT, GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT, \
-    GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER, GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, \
-    GL_COLOR_ATTACHMENT0
+
+from pyglet.customtypes import DataTypes
+from pyglet.enums import FramebufferTarget, FramebufferAttachment, ComponentFormat
+from pyglet.graphics.api.gl import gl, GL_RGBA, GL_UNSIGNED_BYTE, GLuint
 from pyglet.image.base import ImageData
+from pyglet.graphics.api.gl.texture import _get_internal_format
 
 if TYPE_CHECKING:
     from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.api.gl.texture import Texture
 
+_gl_target_map = {
+    FramebufferTarget.FRAMEBUFFER: gl.GL_FRAMEBUFFER,
+    FramebufferTarget.DRAW:       gl.GL_DRAW_FRAMEBUFFER,
+    FramebufferTarget.READ:       gl.GL_READ_FRAMEBUFFER,
+}
+
+_gl_attachment_map = {
+    FramebufferAttachment.COLOR0:        gl.GL_COLOR_ATTACHMENT0,
+    FramebufferAttachment.COLOR1:        gl.GL_COLOR_ATTACHMENT1,
+    FramebufferAttachment.COLOR2:        gl.GL_COLOR_ATTACHMENT2,
+    FramebufferAttachment.COLOR3:        gl.GL_COLOR_ATTACHMENT3,
+    FramebufferAttachment.COLOR4:        gl.GL_COLOR_ATTACHMENT4,
+    FramebufferAttachment.COLOR5:        gl.GL_COLOR_ATTACHMENT5,
+    FramebufferAttachment.COLOR6:        gl.GL_COLOR_ATTACHMENT6,
+    FramebufferAttachment.COLOR7:        gl.GL_COLOR_ATTACHMENT7,
+    FramebufferAttachment.COLOR8:        gl.GL_COLOR_ATTACHMENT8,
+    FramebufferAttachment.COLOR9:        gl.GL_COLOR_ATTACHMENT9,
+    FramebufferAttachment.COLOR10:       gl.GL_COLOR_ATTACHMENT10,
+    FramebufferAttachment.COLOR11:       gl.GL_COLOR_ATTACHMENT11,
+    FramebufferAttachment.COLOR12:       gl.GL_COLOR_ATTACHMENT12,
+    FramebufferAttachment.COLOR13:       gl.GL_COLOR_ATTACHMENT13,
+    FramebufferAttachment.COLOR14:       gl.GL_COLOR_ATTACHMENT14,
+    FramebufferAttachment.COLOR15:       gl.GL_COLOR_ATTACHMENT15,
+
+    FramebufferAttachment.DEPTH:         gl.GL_DEPTH_ATTACHMENT,
+    FramebufferAttachment.STENCIL:       gl.GL_STENCIL_ATTACHMENT,
+    FramebufferAttachment.DEPTH_STENCIL: gl.GL_DEPTH_STENCIL_ATTACHMENT,
+}
 
 
 def get_viewport() -> tuple:
     """Get the current OpenGL viewport dimensions (left, bottom, right, top)."""
     ctx = pyglet.graphics.api.core.current_context
-    viewport = (GLint * 4)()
-    ctx.glGetIntegerv(GL_VIEWPORT, viewport)
+    viewport = (gl.GLint * 4)()
+    ctx.glGetIntegerv(gl.GL_VIEWPORT, viewport)
     return tuple(viewport)
 
 def get_screenshot() -> ImageData:
@@ -62,10 +87,10 @@ def get_screenshot() -> ImageData:
     width = viewport[2]
     height = viewport[3]
 
-    buf = (GLubyte * (len(fmt) * width * height))()
+    buf = (gl.GLubyte * (len(fmt) * width * height))()
 
-    ctx.glReadBuffer(GL_BACK)
-    ctx.glPixelStorei(GL_PACK_ALIGNMENT, 1)
+    ctx.glReadBuffer(gl.GL_BACK)
+    ctx.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)
     ctx.glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buf)
     return ImageData(width, height, fmt, buf)
 
@@ -80,23 +105,24 @@ def get_max_color_attachments() -> int:
 class Renderbuffer:
     """OpenGL Renderbuffer Object."""
 
-    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int, internal_format: int, samples: int = 1) -> None:
+    def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
+                 component_format: ComponentFormat, bit_size: int, data_type: DataTypes = "I", samples: int = 1) -> None:
         """Create a RenderBuffer instance."""
         self._context = context or pyglet.graphics.api.core.current_context
         self._id = GLuint()
         self._width = width
         self._height = height
-        self._internal_format = internal_format
+        self._internal_format = _get_internal_format(component_format, bit_size, data_type)
 
         self._context.glGenRenderbuffers(1, self._id)
-        self._context.glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._id)
 
         if samples > 1:
-            self._context.glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
+            self._context.glRenderbufferStorageMultisample(gl.GL_RENDERBUFFER, samples, self._internal_format, width, height)
         else:
-            self._context.glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+            self._context.glRenderbufferStorage(gl.GL_RENDERBUFFER, self._internal_format, width, height)
 
-        self._context.glBindRenderbuffer(GL_RENDERBUFFER, 0)
+        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
     @property
     def id(self) -> int:
@@ -111,10 +137,10 @@ class Renderbuffer:
         return self._height
 
     def bind(self) -> None:
-        self._context.glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._id)
 
     def unbind(self) -> None:
-        self._context.glBindRenderbuffer(GL_RENDERBUFFER, 0)
+        self._context.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
     def delete(self) -> None:
         self._context.glDeleteRenderbuffers(1, self._id)
@@ -132,12 +158,23 @@ class Renderbuffer:
         return f"{self.__class__.__name__}(id={self._id.value})"
 
 
+_status_states = {
+    gl.GL_FRAMEBUFFER_UNSUPPORTED: "Framebuffer unsupported. Try another format.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: "Framebuffer incomplete attachment.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: "Framebuffer missing attachment.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: "Framebuffer unsupported dimension.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: "Framebuffer incomplete formats.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: "Framebuffer incomplete draw buffer.",
+    gl.GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: "Framebuffer incomplete read buffer.",
+    gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
+}
+
 class Framebuffer:
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
     """
-    def __init__(self, context: OpenGLSurfaceContext, target: int = GL_FRAMEBUFFER) -> None:
+    def __init__(self, target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER, context: OpenGLSurfaceContext | None = None) -> None:
         self._context = context or pyglet.graphics.api.core.current_context
         self._id = GLuint()
         self._context.glGenFramebuffers(1, self._id)
@@ -145,6 +182,7 @@ class Framebuffer:
         self._width = 0
         self._height = 0
         self.target = target
+        self._gl_target = _gl_target_map[target]
 
     @property
     def id(self) -> int:
@@ -164,9 +202,9 @@ class Framebuffer:
     def bind(self) -> None:
         """Bind the Framebuffer.
 
-        This ctivates it as the current drawing target.
+        This activates it as the current drawing target.
         """
-        self._context.glBindFramebuffer(self.target, self._id)
+        self._context.glBindFramebuffer(self._gl_target, self._id)
 
     def unbind(self) -> None:
         """Unbind the Framebuffer.
@@ -175,7 +213,7 @@ class Framebuffer:
         to the framebuffer, or if you wish to access data
         from its Texture atachments.
         """
-        self._context.glBindFramebuffer(self.target, 0)
+        self._context.glBindFramebuffer(self._gl_target, 0)
 
     def clear(self) -> None:
         """Clear the attachments."""
@@ -200,7 +238,7 @@ class Framebuffer:
     @property
     def is_complete(self) -> bool:
         """True if the framebuffer is 'complete', else False."""
-        return self._context.glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
+        return self._context.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) == gl.GL_FRAMEBUFFER_COMPLETE
 
     def get_status(self) -> str:
         """Get the current Framebuffer status, as a string.
@@ -209,45 +247,30 @@ class Framebuffer:
         can be used for more information. It will return a
         string with the OpenGL reported status.
         """
-        states = {GL_FRAMEBUFFER_UNSUPPORTED: "Framebuffer unsupported. Try another format.",
-                  GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: "Framebuffer incomplete attachment.",
-                  GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: "Framebuffer missing attachment.",
-                  GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: "Framebuffer unsupported dimension.",
-                  GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: "Framebuffer incomplete formats.",
-                  GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: "Framebuffer incomplete draw buffer.",
-                  GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: "Framebuffer incomplete read buffer.",
-                  GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete."}
+        gl_status = self._context.glCheckFramebufferStatus(self._gl_target)
 
-        gl_status = self._context.glCheckFramebufferStatus(GL_FRAMEBUFFER)
+        return _status_states.get(gl_status, "Unknown error")
 
-        return states.get(gl_status, "Unknown error")
-
-    def attach_texture(self, texture: Texture,
-                       target: int = GL_FRAMEBUFFER, attachment: int = GL_COLOR_ATTACHMENT0) -> None:
+    def attach_texture(self, texture: Texture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Texture to the Framebuffer.
 
         Args:
             texture:
                 Specifies the texture object to attach to the framebuffer attachment
                 point named by attachment.
-            target:
-                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
-                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
-                to GL_DRAW_FRAMEBUFFER.
             attachment:
-                Specifies the attachment point of the framebuffer. attachment must be
-                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
-                GL_DEPTH_STENCIL_ATTACHMENT.
+                Specifies the attachment point of the framebuffer.
         """
         self.bind()
-        self._context.glFramebufferTexture(target, attachment, texture.id, texture.level)
-        self._attachment_types |= attachment
+        gl_attachment = _gl_attachment_map[attachment]
+        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, texture.level)
+        self._attachment_types |= gl_attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
 
     def attach_texture_layer(self, texture: Texture, layer: int, level: int,
-                             target: int = GL_FRAMEBUFFER, attachment: int = GL_COLOR_ATTACHMENT0) -> None:
+                             attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Texture layer to the Framebuffer.
 
         Args:
@@ -258,42 +281,32 @@ class Framebuffer:
                 Specifies the layer of texture to attach.
             level:
                 Specifies the mipmap level of texture to attach.
-            target:
-                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
-                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
-                to GL_DRAW_FRAMEBUFFER.
             attachment:
-                Specifies the attachment point of the framebuffer. attachment must be
-                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
-                GL_DEPTH_STENCIL_ATTACHMENT.
+                Specifies the attachment point of the framebuffer.
         """
         self.bind()
-        self._context.glFramebufferTextureLayer(target, attachment, texture.id, level, layer)
-        self._attachment_types |= attachment
+        gl_attachment = _gl_attachment_map[attachment]
+        self._context.glFramebufferTextureLayer(self._gl_target, gl_attachment, texture.id, level, layer)
+        self._attachment_types |= gl_attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
         self.unbind()
 
     def attach_renderbuffer(self, renderbuffer: Renderbuffer,
-                            target: int = GL_FRAMEBUFFER, attachment: int = GL_COLOR_ATTACHMENT0) -> None:
+                            attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Renderbuffer to the Framebuffer.
 
         Args:
             renderbuffer:
                 Specifies the Renderbuffer to attach to the framebuffer attachment
                 point named by attachment.
-            target:
-                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
-                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
-                to GL_DRAW_FRAMEBUFFER.
             attachment:
-                Specifies the attachment point of the framebuffer. attachment must be
-                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
-                GL_DEPTH_STENCIL_ATTACHMENT.
+                Specifies the attachment point of the framebuffer.
         """
         self.bind()
-        self._context.glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, renderbuffer.id)
-        self._attachment_types |= attachment
+        gl_attachment = _gl_attachment_map[attachment]
+        self._context.glFramebufferRenderbuffer(self._gl_target, gl_attachment, gl.GL_RENDERBUFFER, renderbuffer.id)
+        self._attachment_types |= gl_attachment
         self._width = max(renderbuffer.width, self._width)
         self._height = max(renderbuffer.height, self._height)
         self.unbind()

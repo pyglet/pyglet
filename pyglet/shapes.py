@@ -72,7 +72,7 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 import pyglet
 from pyglet.extlibs import earcut
-from pyglet.graphics import Batch, Group
+from pyglet.graphics import Batch, Group, ShaderProgram
 from pyglet.enums import BlendFactor
 from pyglet.math import Vec2
 
@@ -81,13 +81,13 @@ if TYPE_CHECKING:
 
 
 if pyglet.options.backend in ("opengl", "gles3"):
-    from pyglet.graphics.api.gl.shapes import _ShapeGroup, get_default_shader
+    from pyglet.graphics.api.gl.shapes import get_default_shader
 elif pyglet.options.backend in ("gl2", "gles2"):
-    from pyglet.graphics.api.gl2.shapes import _ShapeGroup, get_default_shader
+    from pyglet.graphics.api.gl2.shapes import get_default_shader
 elif pyglet.options.backend == "webgl":
-    from pyglet.graphics.api.webgl.shapes import _ShapeGroup, get_default_shader
+    from pyglet.graphics.api.webgl.shapes import get_default_shader
 elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.shapes import _ShapeGroup, get_default_shader
+    from pyglet.graphics.api.vulkan.shapes import get_default_shader
 from pyglet.graphics import GeometryMode
 
 def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
@@ -198,6 +198,39 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
     v6 = (p1[0] - miter1_scaled_p[0], p1[1] - miter1_scaled_p[1])
 
     return v_miter2, scale2, v1[0], v1[1], v2[0], v2[1], v3[0], v3[1], v4[0], v4[1], v5[0], v5[1], v6[0], v6[1]
+
+
+
+
+class _ShapeGroup(Group):
+    """Shared Shape rendering Group.
+
+    The group is automatically coalesced with other shape groups
+    sharing the same parent group and blend parameters.
+    """
+    blend_src: int
+    blend_dest: int
+
+    def __init__(self, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
+                 parent: Group | None = None) -> None:
+        """Create a Shape group.
+
+        The group is created internally. Usually you do not
+        need to explicitly create it.
+
+        Args:
+            blend_src:
+                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
+            blend_dest:
+                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
+            program:
+                The ShaderProgram to use.
+            parent:
+                Optional parent group.
+        """
+        super().__init__(parent=parent)
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
 
 
 class ShapeBase(ABC):

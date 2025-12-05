@@ -1,10 +1,8 @@
 from __future__ import annotations
 import pyglet
-from pyglet.graphics.draw import Group
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.enums import BlendFactor
     from pyglet.graphics.api import ShaderProgram
 
 vertex_source = """#version 110
@@ -51,35 +49,3 @@ def get_default_shader() -> ShaderProgram:
         (vertex_source, 'vertex'),
         (fragment_source, 'fragment'),
     )
-
-
-
-class _ShapeGroup(Group):
-    """Shared Shape rendering Group.
-
-    The group is automatically coalesced with other shape groups
-    sharing the same parent group and blend parameters.
-    """
-    blend_src: int
-    blend_dest: int
-
-    def __init__(self, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
-                 parent: Group | None = None) -> None:
-        """Create a Shape group.
-
-        The group is created internally. Usually you do not
-        need to explicitly create it.
-
-        Args:
-            blend_src:
-                OpenGL blend source mode; for example, ``GL_SRC_ALPHA``.
-            blend_dest:
-                OpenGL blend destination mode; for example, ``GL_ONE_MINUS_SRC_ALPHA``.
-            program:
-                The ShaderProgram to use.
-            parent:
-                Optional parent group.
-        """
-        super().__init__(parent=parent)
-        self.set_shader_program(program)
-        self.set_blend(blend_src, blend_dest)

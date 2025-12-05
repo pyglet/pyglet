@@ -55,7 +55,7 @@ class OpenGL2_Matrices(WindowTransformations):
     def view(self, view: Mat4) -> None:
         self._view = view
         view_array = tuple(self._view)
-        for program in self.backend.current_context.cached_programs:
+        for program in self.backend.current_context.cached_programs.values():
             with program:
                 program["u_view"] = view_array
 

@@ -83,19 +83,44 @@ from pyglet.graphics.texture import TextureArrayRegion
 
 
 if pyglet.options.backend in ("opengl", "gles3"):
-    from pyglet.graphics.api.gl.sprite import SpriteGroup, get_default_array_shader, get_default_shader
+    from pyglet.graphics.api.gl.sprite import get_default_array_shader, get_default_shader
 elif pyglet.options.backend in ("gl2", "gles2"):
-    from pyglet.graphics.api.gl.sprite import SpriteGroup
     from pyglet.graphics.api.gl2.sprite import get_default_array_shader, get_default_shader
 elif pyglet.options.backend == "webgl":
-    from pyglet.graphics.api.webgl.sprite import SpriteGroup
     from pyglet.graphics.api.webgl.sprite import get_default_array_shader, get_default_shader
 elif pyglet.options.backend == "vulkan":
-    from pyglet.graphics.api.vulkan.sprite import SpriteGroup
-    from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader
-
+    from pyglet.graphics.api.vulkan.sprite import get_default_array_shader, get_default_shader, SpriteGroup
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
+
+class SpriteGroup(Group):
+    """Shared Sprite rendering Group."""
+
+    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor,
+                 program: ShaderProgram, parent: Group | None = None) -> None:
+        """Create a sprite group.
+
+        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
+        is created; applications usually do not need to explicitly create it.
+
+        Args:
+            texture:
+                The (top-level) texture containing the sprite image.
+            blend_src:
+                Blend factor source mode; for example: ``SRC_ALPHA``.
+            blend_dest:
+                Blend factor source mode; for example: ``_ONE_MINUS_SRC_ALPHA``.
+            program:
+                A custom ShaderProgram.
+            parent:
+                Optional parent group.
+        """
+        super().__init__(parent=parent)
+        self.texture = texture
+        self.set_shader_program(program)
+        self.set_blend(blend_src, blend_dest)
+        self.set_texture(self.texture, 0)
 
 
 class Sprite(event.EventDispatcher):
@@ -350,6 +375,7 @@ class Sprite(event.EventDispatcher):
             self._texture = texture
             self._group = self.get_sprite_group()
             self._create_vertex_list()
+            print("CREATE VERTEX LIST")
         else:
             self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture
@@ -719,3 +745,4 @@ class Sprite(event.EventDispatcher):
 
 
 Sprite.register_event_type('on_animation_end')
+

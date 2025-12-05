@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 import pyglet
-from typing import TYPE_CHECKING, ClassVar
-
-from pyglet.enums import BlendFactor
-from pyglet.graphics.draw import Group
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.api.gl.shader import ShaderProgram
 
 layout_vertex_source = """#version 330 core
@@ -189,97 +185,6 @@ def get_default_decoration_shader() -> ShaderProgram:
         (decoration_fragment_source, "fragment"),
     )
 
-
-class TextLayoutGroup(Group):
-    """Create a text layout rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_texture(texture, 0)
-        self.set_shader_uniform(program, "scissor", False)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-
-class TextDecorationGroup(Group):
-    """Create a text decoration rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    def __init__(self, program: ShaderProgram, order: int = 0,  # noqa: D107
-                 parent: Group | None = None) -> None:
-        super().__init__(order=order, parent=parent)
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_shader_uniform(program,"scissor", False)
-
-
-
 # ====== SCROLLING TEXT
 
-class ScrollableTextLayoutGroup(Group):
-    """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
-    The group maintains internal state for specifying the viewable
-    area, and for scrolling. Because the group has internal state
-    specific to the text layout, the group is never shared.
-    """
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
-
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
-                 parent: Group | None = None) -> None:
-
-        super().__init__(order=order, parent=parent)
-        self.texture = texture
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_texture(texture, 0)
-        self.set_shader_uniform(program,"scissor", True)
-        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.texture})"
-
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    def __hash__(self) -> int:
-        return id(self)
-
-
-class ScrollableTextDecorationGroup(Group):
-    """Create a text decoration rendering group.
-
-    The group is created internally when a :py:class:`~pyglet.text.Label`
-    is created; applications usually do not need to explicitly create it.
-    """
-
-    scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
-
-    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:  # noqa: D107
-        super().__init__(order=order, parent=parent)
-        self.program = program
-        self.set_shader_program(program)
-        self.set_blend(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
-        self.set_shader_uniform(program, "scissor", True)
-        self.set_shader_uniform(program,"scissor_area", self.scissor_area)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(scissor={self.scissor_area})"
-
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    def __hash__(self) -> int:
-        return id(self)

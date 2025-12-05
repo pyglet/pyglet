@@ -130,7 +130,7 @@ class Caret(EventDispatcher):
 
     @layout.setter
     def layout(self, layout: IncrementalTextLayout) -> None:
-        if self._layout == layout and self._group == layout.group:
+        if self._layout == layout and self._group == layout.foreground_decoration_group:
             return
 
         self._layout = layout

@@ -45,7 +45,6 @@ class Options:
     debug_graphics_batch: bool
     debug_lib: bool
     debug_media: bool
-    debug_texture: bool
     debug_trace: bool
     debug_trace_args: bool
     debug_trace_depth: int
@@ -72,6 +71,7 @@ class Options:
     shader_bind_management: bool
     wayland: bool
     backend: str | None
+    optimize_states: bool
     pyodide: PyodideOptions
 
     def get(self, item: str, default: Any = None) -> Any:

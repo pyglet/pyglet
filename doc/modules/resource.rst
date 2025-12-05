@@ -18,7 +18,6 @@ Functions
 .. autofunction:: animation
 .. autofunction:: texture
 .. autofunction:: media
-.. autofunction:: model
 .. autofunction:: shader
 .. autofunction:: html
 .. autofunction:: attributed

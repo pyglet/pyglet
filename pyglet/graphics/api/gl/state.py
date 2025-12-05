@@ -10,9 +10,9 @@ from pyglet.graphics.api.gl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
-    from pyglet.graphics import Group
     from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.api.gl.shader import ShaderProgram
+    from pyglet.customtypes import ScissorProtocol
 
 
 @dataclass(frozen=True)
@@ -31,17 +31,21 @@ class ActiveTextureState(State):
 
 @dataclass(frozen=True)
 class TextureState(State):  # noqa: D101
-    texture: TextureBase
+    texture: tuple[int, int]
     binding: int = 0
     set_id: int = 0
 
-    dependents: bool = True
+    parents: bool = True
     sets_state: bool = True
 
-    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        ctx.glBindTexture(self.texture.target, self.texture.id)
+    @classmethod
+    def from_texture(cls, texture: TextureBase, binding: int, set_id: int) -> TextureState:
+        return cls((texture.target, texture.id), binding, set_id)
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def set_state(self, ctx: OpenGLSurfaceContext) -> None:
+        ctx.glBindTexture(*self.texture)
+
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ActiveTextureState(self.binding)
 
 
@@ -51,13 +55,13 @@ class ShaderProgramState(State):
     program: ShaderProgram
 
     sets_state: bool = True
-    unsets_state: bool = True
+    #unsets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
         self.program.use()
 
-    def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program.stop()
+    #def unset_state(self, ctx: OpenGLSurfaceContext) -> None:
+    #    self.program.stop()
 
 @dataclass(frozen=True)
 class RenderPassState(State):
@@ -83,16 +87,16 @@ class ScissorStateEnable(State):
 
 @dataclass(frozen=True)
 class ScissorState(State):
-    group: Group
+    spo: ScissorProtocol
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield ScissorStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        glScissor(*self.group.data["scissor"])
+        glScissor(int(self.spo.x), int(self.spo.y), int(self.spo.width), int(self.spo.height))
 
 
 @dataclass(frozen=True)
@@ -114,13 +118,13 @@ class BlendState(State):
     op: BlendOp = BlendOp.ADD
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.src, BlendFactor):
             raise Exception("src must be BlendFactor")
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield BlendStateEnable()
         # Do later.
         #if self.op != BlendOp.ADD:
@@ -147,9 +151,9 @@ class DepthBufferComparison(State):
     func: CompareOp
 
     sets_state: bool = True
-    dependents: bool = True
+    parents: bool = True
 
-    def generate_dependent_states(self) -> Generator[State, None, None]:
+    def generate_parent_states(self) -> Generator[State, None, None]:
         yield DepthTestStateEnable()
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
@@ -200,13 +204,13 @@ class UniformBufferState(State):
 @dataclass(frozen=True)
 class ShaderUniformState(State):
     program: ShaderProgram
-    name: str
-    group: Group
+    data: dict[str, Any]
 
     sets_state: bool = True
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:
-        self.program[self.name] = self.group.data[self.name]
+        for name, value in self.data.items():
+            self.program[name] = value
 
     def __hash__(self) -> int:
         return id(self)

@@ -91,6 +91,18 @@ class SurfaceContext(ABC):  # Temp name for now.
         This function is called automatically when the operating system Window has been created.
         """
 
+    @abstractmethod
+    def destroy(self) -> None:
+        """Destroys the graphical context."""
+
+    @abstractmethod
+    def flip(self) -> None:
+        """Flips the buffers in the graphical context."""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Clears the framebuffer."""
+
 
 class VerifiedGraphicsConfig:
     """Determines if this config is complete and able to create a Window resource context.

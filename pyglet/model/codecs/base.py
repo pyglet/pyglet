@@ -107,7 +107,7 @@ class SimpleMaterial(Material):
         self.texture_name = texture_name
 
     def __repr__(self):
-        return f"Material(name='{self.name}', texture='{self.texture_name}'"
+        return f"Material(name='{self.name}', texture='{self.texture_name}')"
 
 
 class PBRMaterial(Material):

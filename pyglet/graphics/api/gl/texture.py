@@ -44,6 +44,10 @@ from pyglet.graphics.api.gl.gl import (
     GL_RGB8,  # noqa: F401
     GL_BYTE,  # noqa: F401
     GL_INT,  # noqa: F401
+    GL_DEPTH_COMPONENT16,  # noqa: F401
+    GL_DEPTH_COMPONENT24,  # noqa: F401
+    GL_DEPTH_COMPONENT32,  # noqa: F401
+    GL_DEPTH_COMPONENT32F,  # noqa: F401
     GL_FRAMEBUFFER,
     GL_COLOR_ATTACHMENT0,
     GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
@@ -107,7 +111,7 @@ def _get_internal_format(component_format: ComponentFormat, bit_size: int = 8, d
         raise ValueError(f"Unknown format: {component_format}")
 
     # Type suffix based on data type (integer, float, or default)
-    if data_type == "I":
+    if data_type == "I" and component_format != ComponentFormat.D:
         type_suffix = "UI"
     elif data_type == "i":
         type_suffix = 'I'
@@ -766,8 +770,19 @@ class Texture3D(Texture, UniformTextureSequence):
         target = texture_map[TextureType.TYPE_3D]
         ctx.glGenTextures(1, byref(tex_id))
         ctx.glBindTexture(target, tex_id.value)
-        texture = cls(ctx, item_width, item_height, tex_id.value, TextureType.TYPE_3D, internal_format, internal_format_size,
-                             internal_format_type, filters, address_mode, anisotropic_level)
+        texture = cls(
+            ctx,
+            item_width,
+            item_height,
+            tex_id.value,
+            TextureType.TYPE_3D,
+            internal_format,
+            internal_format_size,
+            internal_format_type,
+            filters,
+            address_mode,
+            anisotropic_level,
+        )
         ctx.glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texture._gl_min_filter)
         ctx.glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texture._gl_mag_filter)
 
@@ -780,6 +795,9 @@ class Texture3D(Texture, UniformTextureSequence):
 
         size = texture.width * texture.height * texture.images * len(internal_format)
         data = (GLubyte * size)()
+
+        ctx.glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+
         texture._allocate(data)
 
         items = []
@@ -924,7 +942,7 @@ class TextureArray(Texture, UniformTextureSequence):
                          0,
                          _get_base_format(self.internal_format),
                          GL_UNSIGNED_BYTE,
-                         0)
+                         data)
 
     def _verify_size(self, image: _AbstractImage) -> None:
         if image.width > self.width or image.height > self.height:
@@ -1139,6 +1157,9 @@ class TextureGrid(_AbstractGrid[Union[Texture, TextureRegion]]):
 
     def _update_item(self, existing_item: T, new_item: T) -> None:
         existing_item.upload(new_item, new_item.anchor_x, new_item.anchor_y, 0)
+
+    def get_texture_sequence(self) -> TextureGrid:
+        return self
 
 # DDS compression formats based on DirectX.
 _dxgi_to_gl_format: dict[int, int] = {

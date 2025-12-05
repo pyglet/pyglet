@@ -8,12 +8,8 @@ from ctypes import (
     POINTER,
     Array,
     Structure,
-    addressof,
-    byref,
     c_buffer,
     c_byte,
-    c_char,
-    c_char_p,
     c_double,
     c_float,
     c_int,
@@ -22,7 +18,6 @@ from ctypes import (
     c_uint,
     c_ushort,
     cast,
-    create_string_buffer,
     pointer,
     sizeof,
 )
@@ -220,7 +215,7 @@ class _UniformArray:
     )
 
     def __init__(
-        self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool
+        self, uniform: _Uniform, gl_getter: GLFunc, gl_setter: GLFunc, gl_type: GLDataType, is_matrix: bool,
     ) -> None:
         self._uniform = uniform
         self._gl_type = gl_type
@@ -386,7 +381,7 @@ class _Uniform:
 
             self.get = self._create_getter_func(program, location, gl_getter, length)
             self.set = self._create_setter_func(
-                self._ctx.gl, program, location, gl_setter, c_array, length, ptr, is_matrix
+                self._ctx.gl, program, location, gl_setter, c_array, length, ptr, is_matrix,
             )
 
     @staticmethod
@@ -579,7 +574,7 @@ class UniformBlock:  # noqa: D101
     binding: int
     uniforms: dict[int, tuple[str, GLDataType, int, int]]
     view_cls: type[Structure] | None
-    __slots__ = 'ctx', 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
+    __slots__ = 'binding', 'ctx', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
     def __init__(
         self,
@@ -855,7 +850,7 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: ShaderProgram | ComputeShaderProgram
+    ctx: OpenGLSurfaceContext, program: ShaderProgram | ComputeShaderProgram,
 ) -> dict[str, UniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
@@ -865,7 +860,7 @@ def _introspect_uniform_blocks(
         name = gl_ctx.getActiveUniformBlockName(program_id, index)
         if not name:
             msg = f"Unable to query UniformBlock name at index: {index}"
-            raise ShaderException(msg)  # noqa: B904
+            raise ShaderException(msg)
 
         # num_active = gl.glGetActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS)
         block_data_size = gl_ctx.getActiveUniformBlockParameter(program_id, index, gl.GL_UNIFORM_BLOCK_DATA_SIZE)
@@ -914,7 +909,7 @@ def _introspect_uniform_blocks(
                 manager.add_explicit_binding(program, name, binding)
 
         uniform_blocks[name] = UniformBlock(
-            program, name, index, block_data_size, binding_index, uniforms, len(indices)
+            program, name, index, block_data_size, binding_index, uniforms, len(indices),
         )
 
         if _debug_api_shaders:
@@ -1033,7 +1028,7 @@ class Shader(ShaderBase):
         if status != GL_TRUE:
             source = source_string
             source_lines = "{0}".format(
-                "\n".join(f"{str(i + 1).zfill(3)}: {line} " for i, line in enumerate(source.split("\n")))
+                "\n".join(f"{str(i + 1).zfill(3)}: {line} " for i, line in enumerate(source.split("\n"))),
             )
 
             msg = (
@@ -1253,10 +1248,7 @@ class ShaderProgram(ShaderProgramBase):
         domain = batch.get_domain(indexed, bool(instances), mode, group, attributes)
 
         # Create vertex list and initialize
-        if indexed:
-            vlist = domain.create(count, indices)
-        else:
-            vlist = domain.create(count)
+        vlist = domain.create(group, count, indices)
 
         for name, array in initial_arrays:
             vlist.set_attribute_data(name, array)
@@ -1265,7 +1257,7 @@ class ShaderProgram(ShaderProgramBase):
 
 
     def vertex_list(
-        self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None, **data: Any
+        self, count: int, mode: GeometryMode, batch: Batch = None, group: Group = None, **data: Any,
     ) -> VertexList:
         """Create a VertexList.
 

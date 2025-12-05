@@ -38,7 +38,7 @@ from contextlib import contextmanager
 
 from ctypes import *
 from ctypes import util
-from typing import Type, TypeVar, Sequence, Any
+from typing import Type, TypeVar, Sequence, Any, Callable
 
 from .cocoatypes import *
 
@@ -65,6 +65,15 @@ libc = cdll.LoadLibrary(util.find_library('c'))
 # void free(void *)
 libc.free.restype = None
 libc.free.argtypes = [c_void_p]
+
+_NSConcreteGlobalBlock = c_void_p.in_dll(libc, "_NSConcreteGlobalBlock")
+
+BLOCK_IS_NOESCAPE      =  (1 << 23)
+BLOCK_HAS_COPY_DISPOSE =  (1 << 25)
+BLOCK_HAS_CTOR =          (1 << 26)
+BLOCK_IS_GLOBAL =         (1 << 28)
+BLOCK_HAS_STRET =         (1 << 29)
+BLOCK_HAS_SIGNATURE =     (1 << 30)
 
 ######################################################################
 
@@ -434,6 +443,9 @@ OBJC_ASSOCIATION_ASSIGN = 0  # Weak reference to the associated object.
 OBJC_ASSOCIATION_RETAIN = 0x0301  # Strong reference to the associated object. The association is made atomically.
 OBJC_ASSOCIATION_COPY = 0x0303  # Specifies that the associated object is copied. The association is made atomically.
 
+class MissingEncodingType(Exception):
+    """If an encoding type is missing."""
+
 
 def ensure_bytes(x: bytes | str) -> bytes:
     """Attempt to encode an object as :py:class:`bytes`.
@@ -792,7 +804,7 @@ def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
 cfunctype_table = {}
 
 
-def parse_type_encoding(encoding):
+def parse_type_encoding(encoding: bytes):
     """Takes a type encoding string and outputs a list of the separated type codes.
     Currently does not handle unions or bitfields and strips out any field width
     specifiers or type specifiers from the encoding.  For Python 3.2+, encoding is
@@ -847,6 +859,9 @@ def parse_type_encoding(encoding):
             if typecode and typecode[-1:] == b'^':
                 # Previous char was pointer specifier, so keep going.
                 typecode += c
+            elif typecode and c == b'?' and typecode[-1:] == b'@':
+                # Block type, combine them.
+                typecode += c
             else:
                 # Add previous type code to the list.
                 if typecode:
@@ -883,8 +898,10 @@ def cfunctype_for_encoding(encoding):
             argtypes.append(typecodes[code])
         elif code[0:1] == b'^' and code[1:] in typecodes:
             argtypes.append(POINTER(typecodes[code[1:]]))
+        elif code[0:2] == b'@?':
+            argtypes.append(c_void_p)
         else:
-            raise Exception('unknown type encoding: ' + code)
+            raise Exception(f'unknown type encoding: {code}')
 
     cfunctype = CFUNCTYPE(*argtypes)
 
@@ -983,11 +1000,10 @@ class ObjCMethod:
         # Get types for all the arguments.
         try:
             self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
-        except:
-            # print(f'no argtypes encoding for {self.name} ({self.argument_types})')
+        except MissingEncodingType as e:
+            #print(f'no argtypes encoding for {self.name}: {e}')
             self.argtypes = None
         # Get types for the return type.
-
         try:
             if self.return_type == b'@':
                 self.restype = ObjCInstance
@@ -1004,7 +1020,7 @@ class ObjCMethod:
         libc.free(return_type_ptr)
 
 
-    def ctype_for_encoding(self, encoding):
+    def ctype_for_encoding(self, encoding: bytes):
         """Return ctypes type for an encoded Objective-C type."""
         if encoding in self.typecodes:
             return self.typecodes[encoding]
@@ -1019,8 +1035,10 @@ class ObjCMethod:
         elif encoding[0:2] == b'r^' and encoding[2:] in self.typecodes:
             # const pointer, also don't care
             return POINTER(self.typecodes[encoding[2:]])
+        elif encoding[0:2] == b'@?':
+            return c_void_p
         else:
-            raise Exception('unknown encoding for %s: %s' % (self.name, encoding))
+            raise MissingEncodingType(encoding)
 
     def get_prototype(self):
         """Returns a ctypes CFUNCTYPE for the method."""
@@ -1071,7 +1089,8 @@ class ObjCMethod:
             # Add more useful info to argument error exceptions, then reraise.
             error.args += ('selector = ' + str(self.name),
                            'argtypes =' + str(self.argtypes),
-                           'encoding = ' + str(self.encoding))
+                           'encoding = ' + str(self.encoding),
+                           f'args passed = {args}')
             raise
 
 
@@ -1081,7 +1100,7 @@ class ObjCBoundMethod:
     """This represents an Objective-C method (an IMP) which has been bound
     to some id which will be passed as the first parameter to the method."""
 
-    def __init__(self, method, objc_id):
+    def __init__(self, method: ObjCMethod, objc_id):
         """Initialize with a method and ObjCInstance or ObjCClass object."""
         self.method = method
         self.objc_id = objc_id
@@ -1369,11 +1388,10 @@ def get_cached_instances():
     return [(obj.objc_class.name, obj._retained, obj.pool, obj) for obj in ObjCInstance._cached_objects.values()]
 
 
-def convert_method_arguments(encoding, args):
+def convert_method_arguments(arg_encodings, args):
     """Used by ObjCSubclass to convert Objective-C method arguments to
     Python values before passing them on to the Python-defined method."""
     new_args = []
-    arg_encodings = parse_type_encoding(encoding)[3:]
     for e, a in zip(arg_encodings, args):
         if e == b'@':
             new_args.append(ObjCInstance(a))
@@ -1488,18 +1506,20 @@ class ObjCSubclass:
 
         return decorator
 
-    def method(self, encoding):
+    def method(self, encoding: bytes | str):
         """Function decorator for instance methods."""
         # Add encodings for hidden self and cmd arguments.
-        encoding = ensure_bytes(encoding)
-        typecodes = parse_type_encoding(encoding)
+        encoding_bytes = ensure_bytes(encoding)
+        typecodes = parse_type_encoding(encoding_bytes)
         typecodes.insert(1, b'@:')
-        encoding = b''.join(typecodes)
+        encoding_bytes = b''.join(typecodes)
 
         def decorator(f):
+            arg_encoding = parse_type_encoding(encoding_bytes)[3:]
+
             def objc_method(objc_self, objc_cmd, *args):
                 py_self = ObjCInstance(objc_self)
-                args = convert_method_arguments(encoding, args)
+                args = convert_method_arguments(arg_encoding, args)
                 result = f(py_self, *args)
                 if isinstance(result, ObjCClass):
                     result = result.ptr.value
@@ -1508,7 +1528,7 @@ class ObjCSubclass:
                 return result
 
             name = f.__name__.replace('_', ':')
-            self.add_method(objc_method, name, encoding)
+            self.add_method(objc_method, name, encoding_bytes)
             return objc_method
 
         return decorator
@@ -1522,9 +1542,10 @@ class ObjCSubclass:
         encoding = b''.join(typecodes)
 
         def decorator(f):
+            arg_encoding = parse_type_encoding(encoding)[3:]
             def objc_class_method(objc_cls, objc_cmd, *args):
                 py_cls = ObjCClass(objc_cls)
-                args = convert_method_arguments(encoding, args)
+                args = convert_method_arguments(arg_encoding, args)
                 result = f(py_cls, *args)
                 if isinstance(result, ObjCClass):
                     result = result.ptr.value
@@ -1642,3 +1663,46 @@ def AutoReleasePool():
         yield
     finally:
         objc.objc_autoreleasePoolPop(pool)
+
+def get_callback_block(func: Callable, *, encoding: list[bytes | str]):
+    """Creates a block to handle callbacks from ObjC."""
+    bytes_list = [ensure_bytes(char) for char in encoding]
+    return ObjCBlock(func, encoding=bytes_list)
+
+class ObjCBlock:
+    """A basic implementation of a Global ObjC Block.
+
+    You must keep this object alive and referenced.
+    """
+    def __init__(self, func: Callable, *, encoding: list[bytes]):
+        if not callable(func):
+            raise TypeError("Blocks must be callable")
+
+        self.func = func
+
+        # Signature is return, block, args
+        desc_signature = encoding[0] + b"@?" + b"".join(encoding[1:])
+
+        cfunc_type = cfunctype_for_encoding(desc_signature)
+
+        self.cfunc_wrapper = cfunc_type(self._wrapper)
+
+        self._descriptor = Block_descriptor_1(
+            reserved=0,
+            Block_size=sizeof(Block_literal_1),
+            signature=desc_signature,
+        )
+
+        self.literal = Block_literal_1(
+            isa=addressof(_NSConcreteGlobalBlock),
+            flags=BLOCK_IS_GLOBAL | BLOCK_HAS_SIGNATURE,
+            reserved=0,
+            invoke=cast(self.cfunc_wrapper, c_void_p),
+            descriptor=self._descriptor,
+        )
+
+        self.block = cast(byref(self.literal), c_void_p)
+        self._as_parameter_ = self.block  # for ctypes to treat this as the block.
+
+    def _wrapper(self, _block, *args):
+        return self.func(*args)

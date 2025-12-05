@@ -93,8 +93,11 @@ class MultiTextureSpriteGroup(pyglet.sprite.SpriteGroup):
         for idx, texture_ in enumerate(texture_list[1:]):
             self.set_texture(texture_, idx+1)
 
+        self.uniforms = {}
         for idx, name in enumerate(self.textures):
-            self.set_shader_uniform(program, name, idx)
+            self.uniforms[name] = idx
+
+        self.set_shader_uniforms(program, self.uniforms)
 
     def __repr__(self) -> str:
          return f'{self.__class__.__name__}({self.texture}-{self.texture.id})'

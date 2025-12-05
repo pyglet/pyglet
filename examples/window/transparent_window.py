@@ -7,9 +7,9 @@ from pyglet.graphics import Batch
 from pyglet.window import Window
 
 
+window = Window(500, 500, caption="Transparent Window", style=Window.WINDOW_STYLE_TRANSPARENT)
+
 batch = Batch()
-window = Window(500, 500, style=Window.WINDOW_STYLE_TRANSPARENT)
-window.set_caption("Transparent Window")
 
 circle = pyglet.shapes.Circle(250, 250, 100, color=(255, 255, 0), batch=batch)
 

@@ -17,7 +17,7 @@ from pyglet.text.layout.base import (
     _LayoutContext,
     _Line,
 )
-from pyglet.text.layout.scrolling import ScrollableTextDecorationGroup, ScrollableTextLayoutGroup
+from pyglet.text.layout import ScrollableTextLayoutGroup, ScrollableTextDecorationGroup
 
 if TYPE_CHECKING:
     from pyglet.customtypes import AnchorX, AnchorY
@@ -143,9 +143,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         area = (self.left, self.bottom, self._width, self._height)
 
         for group in self.group_cache.values():
-            group.update_data("scissor_area", area)
-        self.background_decoration_group.update_data("scissor_area", area)
-        self.foreground_decoration_group.update_data("scissor_area", area)
+            group.uniforms["scissor_area"] = area
+        self.background_decoration_group.uniforms["scissor_area"] = area
+        self.foreground_decoration_group.uniforms["scissor_area"] = area
 
     def _init_document(self) -> None:
         assert self._document, "Cannot remove document from IncrementalTextLayout"
@@ -660,7 +660,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         return self._rotation
 
     @rotation.setter
-    def rotation(self, angle: float) -> None:  # noqa: ARG002
+    def rotation(self, angle: float) -> None:
         msg = "Rotating IncrementalTextLayout's is not supported."
         raise NotImplementedError(msg)
 
@@ -938,7 +938,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if x <= self.view_x:
             self.view_x = x
 
-        elif x >= self.view_x + self.width or (x >= self.view_x + self.width) and (self._content_width > self.width):
+        elif x >= self.view_x + self.width or ((x >= self.view_x + self.width) and (self._content_width > self.width)):
             self.view_x = x - self.width
 
         elif self.view_x + self.width > self._content_width:
