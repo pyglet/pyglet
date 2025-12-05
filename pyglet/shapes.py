@@ -864,7 +864,8 @@ class Arc(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1034,7 +1035,8 @@ class BezierCurve(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1171,7 +1173,8 @@ class Circle(ShapeBase):
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1289,7 +1292,8 @@ class Ellipse(ShapeBase):
             self._segments * 3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1422,7 +1426,8 @@ class Sector(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1564,7 +1569,8 @@ class Line(ShapeBase):
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1690,7 +1696,8 @@ class Rectangle(ShapeBase):
             6, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -1833,7 +1840,8 @@ class BorderedRectangle(ShapeBase):
             8, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * 4 + self._border_rgba * 4),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _update_color(self) -> None:
         self._vertex_list.colors[:] = self._rgba * 4 + self._border_rgba * 4
@@ -2047,7 +2055,8 @@ class Box(ShapeBase):
             self._num_verts, self._draw_mode, indices, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _update_color(self):
         self._vertex_list.colors[:] = self._rgba * self._num_verts
@@ -2226,7 +2235,8 @@ class RoundedRectangle(pyglet.shapes.ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2377,7 +2387,8 @@ class Triangle(ShapeBase):
             3, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2513,8 +2524,8 @@ class Star(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            rotation=('f', (self._rotation,) * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2638,7 +2649,8 @@ class Polygon(ShapeBase):
             self._batch, self._group,
             position=('f', vertices),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
@@ -2723,7 +2735,8 @@ class MultiLine(ShapeBase):
             self._num_verts, self._draw_mode, self._batch, self._group,
             position=('f', self._get_vertices()),
             colors=('Bn', self._rgba * self._num_verts),
-            translation=('f', (self._x, self._y) * self._num_verts))
+            translation=('f', (self._x, self._y) * self._num_verts),
+            rotation=('f', (self._rotation,) * self._num_verts))
 
     def _get_vertices(self) -> Sequence[float]:
         if not self._visible:
