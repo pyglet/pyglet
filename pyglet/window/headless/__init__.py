@@ -6,7 +6,14 @@ import pyglet
 # from pyglet.window import key
 # from pyglet.window import mouse
 from pyglet.event import EventDispatcher
-from pyglet.libs.egl import eglCreatePbufferSurface, EGLint, EGL_WIDTH, EGL_HEIGHT, EGL_NONE
+from pyglet.libs.egl import (
+    eglCreatePbufferSurface,
+    EGLint,
+    EGL_WIDTH,
+    EGL_HEIGHT,
+    EGL_NONE,
+    eglDestroySurface,
+)
 from pyglet.window import (
     BaseWindow,
     _PlatformEventHandler,
@@ -23,7 +30,9 @@ class HeadlessWindow(BaseWindow):
     egl_surface = None
 
     def _recreate(self, changes: Sequence[str]) -> None:
-        pass
+        if 'fullscreen' in changes:
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
+            self.dispatch_event('on_expose')
 
     def flip(self) -> None:
         if self.context:
@@ -62,7 +71,12 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_visible(self, visible: bool = True) -> None:
-        pass
+        if visible:
+            self.dispatch_event('_on_internal_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
+        else:
+            self.dispatch_event('on_hide')
 
     def minimize(self) -> None:
         pass
@@ -106,7 +120,12 @@ class HeadlessWindow(BaseWindow):
                 raise Exception("Failed to create EGL Surface.")
             self.context.attach(self)
 
-        self.dispatch_event('_on_internal_resize', self._width, self._height)
+    def close(self) -> None:
+        super().close()
+        if self.egl_surface:
+            eglDestroySurface(self.egl_display_connection, self.egl_surface)
+            self.egl_surface = None
+        self.egl_display_connection = None
 
 
 __all__ = ['HeadlessWindow']

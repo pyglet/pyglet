@@ -587,7 +587,7 @@ class BaseWindow(EventDispatcher, metaclass=_WindowMetaclass):
             pass
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}=(width={self.width}, height={self.height})'
+        return f'{self.__class__.__name__}(width={self.width}, height={self.height})'
 
     @abstractmethod
     def _create(self) -> None:
