@@ -12,7 +12,6 @@ MOVEMENT_SPEED = 600
 REDRAW_RATE = 60
 
 
-
 @window.event
 def on_key_press(keycode, mod):
     global REDRAW_RATE, fps
@@ -29,7 +28,7 @@ def on_key_press(keycode, mod):
         new_redraw_rate = REDRAW_RATE - 10
 
     if new_redraw_rate != REDRAW_RATE:
-        REDRAW_RATE = new_redraw_rate
+        REDRAW_RATE = max(new_redraw_rate, 10)
         pyglet.clock.unschedule(window.draw)
         pyglet.clock.schedule_interval(window.draw, 1/REDRAW_RATE)
         fps = pyglet.window.FPSDisplay(window=window)
