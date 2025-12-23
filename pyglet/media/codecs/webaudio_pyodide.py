@@ -97,10 +97,9 @@ class PyodideDecoder(MediaDecoder):  # noqa: D101
         return '.mp3', '.aac', '.wav', '.ogg', '.webm'
         # possibly use audio.canPlayType?
 
-    def decode(self, filename: str, file: BinaryIO, streaming: bool = True) -> JavascriptWebAudioSource | StaticSource:
-        if streaming:
-            return JavascriptWebAudioSource(filename, file)
-        return StaticSource(JavascriptWebAudioSource(filename, file))
+    def decode(self, filename: str, file: BinaryIO, streaming: bool = True) -> JavascriptWebAudioSource:
+        # web audio doesn't really have streaming sources, so just always return this regardless
+        return JavascriptWebAudioSource(filename, file)
 
 
 def get_decoders() -> list[PyodideDecoder]:  # noqa: D103
