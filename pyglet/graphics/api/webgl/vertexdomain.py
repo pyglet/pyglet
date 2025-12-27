@@ -228,7 +228,7 @@ class VertexDomain(VertexDomainBase):
         if self._supports_multi_draw:
             starts = (GLint * primcount)(*start_list)
             sizes = (GLsizei * primcount)(*size_list)
-            self._multi_draw_array(starts[:], 0, sizes[:], 0, primcount)
+            self._multi_draw_array(mode, starts[:], 0, sizes[:], 0, primcount)
         else:
             for start, size in zip(start_list, size_list):
                 self._gl.drawArrays(mode, start, size)
