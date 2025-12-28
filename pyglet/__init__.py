@@ -54,6 +54,12 @@ class PyodideOptions:
     page, and do not want to alter your code, then modify this option.
     """
 
+    context_options: dict[str, Any] = field(default_factory=lambda: {})  # noqa: PIE807
+    """Some applications may need to specify options to the getContext call for creating the WebGL2RenderingContext.
+
+    These can be passed in here as a dictionary. A common example of this would be to disable pre-multipled alpha.
+    """
+
 
 @dataclass
 class Options:

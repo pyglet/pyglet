@@ -3,6 +3,7 @@ from __future__ import annotations
 import weakref
 from typing import TYPE_CHECKING, Any, Callable
 
+import pyglet
 import js
 from pyodide.ffi import create_proxy
 
@@ -68,7 +69,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.is_current = False
 
         # The GL Context.
-        self.gl = self.window.canvas.getContext("webgl2")
+        self.gl = self.window.canvas.getContext("webgl2", pyglet.options.pyodide.context_options)
 
         self._info = GLInfo()
         self._info.query(self.gl)
