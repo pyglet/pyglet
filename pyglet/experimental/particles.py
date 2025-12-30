@@ -293,7 +293,8 @@ class Emitter(event.EventDispatcher):
         """
         if self._animation:
             clock.unschedule(self._animate)
-        self._vertex_list.delete()
+        if self._vertex_list:
+            self._vertex_list.delete()
         self._vertex_list = None
         self._texture = None
         self._group = None
