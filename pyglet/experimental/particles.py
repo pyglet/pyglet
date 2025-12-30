@@ -8,7 +8,7 @@ import time
 import pyglet
 from pyglet import clock, event, graphics, image
 from pyglet.graphics import GeometryMode
-from pyglet.graphics.api.gl import *
+from pyglet.enums import BlendFactor
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -186,6 +186,9 @@ def get_default_shader():
 
 
 class EmitterGroup(graphics.Group):
+    blend_src: BlendFactor
+    blend_dest: BlendFactor
+
     def __init__(self, texture, blend_src, blend_dest, program, parent=None):
         super().__init__(parent=parent)
         self.texture = texture
@@ -211,7 +214,7 @@ class Emitter(event.EventDispatcher):
     def __init__(self, img, x, y, z, count, velocity, spread,
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
                  scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
-                 blend_src=GL_SRC_ALPHA, blend_dest=GL_ONE_MINUS_SRC_ALPHA,
+                 blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, program=None):
 
         self._img = img
@@ -274,7 +277,7 @@ class Emitter(event.EventDispatcher):
                                        program,
                                        self._user_group)
         if (self._batch and
-                self._batch.update_shader(self._vertex_list, GL_POINTS, self._group, program)):
+                self._batch.update_shader(self._vertex_list, GeometryMode.POINTS, self._group, program)):
             # Exit early if changing domain is not needed.
             return
 
