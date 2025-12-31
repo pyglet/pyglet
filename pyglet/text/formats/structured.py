@@ -5,8 +5,7 @@ import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import pyglet
-from pyglet.enums import BlendFactor
-from pyglet.graphics import GeometryMode
+from pyglet.enums import BlendFactor, GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group

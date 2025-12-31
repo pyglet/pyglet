@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pyglet.graphics import GeometryMode
 from pyglet.graphics.api.webgl.gl import (
     GL_LINEAR, GL_NEAREST, GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, \
     GL_TEXTURE_CUBE_MAP, \
@@ -15,7 +14,7 @@ from pyglet.graphics.api.webgl.gl import (
     GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_NEVER, GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_NOTEQUAL,
     GL_GEQUAL, GL_ALWAYS)
 
-from pyglet.enums import BlendFactor, TextureFilter, TextureType, TextureWrapping, CompareOp
+from pyglet.enums import BlendFactor, TextureFilter, TextureType, TextureWrapping, CompareOp, GeometryMode
 
 geometry_map = {
     GeometryMode.POINTS: GL_POINTS,

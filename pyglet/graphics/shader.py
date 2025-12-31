@@ -10,7 +10,8 @@ from typing import Literal, Sequence, Any, TYPE_CHECKING, Callable, Protocol
 if TYPE_CHECKING:
     from pyglet.customtypes import DataTypes, CType
     from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceIndexedVertexList, InstanceVertexList
-    from pyglet.graphics import GeometryMode, Batch, Group
+    from pyglet.graphics import Batch, Group
+    from pyglet.enums import GeometryMode
     from _weakref import CallableProxyType
 
 

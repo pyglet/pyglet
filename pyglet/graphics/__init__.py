@@ -8,8 +8,6 @@ See the :ref:`guide_graphics` for details on how to use this graphics API.
 """
 from __future__ import annotations
 
-
-from pyglet.graphics.base import GeometryMode  # noqa: F401
 from pyglet.graphics import api  # noqa: F401
 from pyglet.graphics.draw import Group, ShaderGroup  # noqa: F401
 from pyglet.graphics.state import State  # noqa: F401

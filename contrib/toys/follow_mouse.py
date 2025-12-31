@@ -17,7 +17,7 @@ import sys
 
 import pyglet
 from pyglet.config import OpenGLConfig
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 
 from pyglet.graphics.api.gl import (
     GL_BLEND,

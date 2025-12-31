@@ -1,8 +1,7 @@
 """This is a simple example that visually confirms """
 
 import pyglet
-from pyglet.graphics import GeometryMode
-
+from pyglet.enums import GeometryMode
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 batch = pyglet.graphics.Batch()

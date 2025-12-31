@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 import pyglet
 
 # from pyglet.graphics.api.webgl.buffer import BufferObject
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.buffer import BufferObject
 from pyglet.graphics.api.webgl.gl import (

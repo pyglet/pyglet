@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyglet.enums import BlendFactor
+from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.sprite import Sprite
 
 if TYPE_CHECKING:
     from pyglet.image import _AbstractImage, Animation
-    from pyglet.graphics import Batch, Group, GeometryMode
+    from pyglet.graphics import Batch, Group
     from pyglet.text.layout import TextLayout
 
 

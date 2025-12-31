@@ -64,7 +64,8 @@ from pyglet.graphics.vertexdomain import (
 if TYPE_CHECKING:
     from ctypes import Array
     from pyglet.graphics.shader import AttributeView
-    from pyglet.graphics import GeometryMode, Group
+    from pyglet.graphics import Group
+    from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
     from pyglet.customtypes import CType, DataTypes
 

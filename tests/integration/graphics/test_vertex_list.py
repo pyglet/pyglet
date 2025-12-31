@@ -3,7 +3,8 @@ import unittest
 import pytest
 
 import pyglet
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
+
 
 def _create_quad_vertices(x, y, z, width, height):
     return (x, y, z,

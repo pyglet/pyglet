@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Sequence
     from pyglet.model import Model
-    from pyglet.graphics import Batch, Group, GeometryMode
+    from pyglet.graphics import Batch, Group
+    from pyglet.enums import GeometryMode
 
 
 class Scene(ABC):

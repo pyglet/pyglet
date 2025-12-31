@@ -32,6 +32,7 @@ from math import pi, sin, cos
 from typing import TYPE_CHECKING
 
 import pyglet
+import pyglet.enums
 from pyglet import graphics
 from pyglet.math import Mat4
 
@@ -128,7 +129,7 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            self._batch.migrate(vlist, graphics.GeometryMode.TRIANGLES, group, batch)
+            self._batch.migrate(vlist, pyglet.enums.GeometryMode.TRIANGLES, group, batch)
 
         self._batch = batch
 
@@ -364,7 +365,7 @@ class Cube(Model):
                    7, 6, 4, 6, 5, 4,        # back
                    3, 2, 0, 2, 1, 0]        # front
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, graphics.GeometryMode.TRIANGLES, indices,
+        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.enums.GeometryMode.TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
                                                  POSITION=('f', vertices),
                                                  NORMAL=('f', normals),
@@ -422,7 +423,7 @@ class Sphere(Model):
                 indices.extend([first, second, second + 1])
                 indices.extend([first, second + 1, first + 1])
 
-        return self._program.vertex_list_indexed(len(vertices) // 3, graphics.GeometryMode.TRIANGLES, indices,
+        return self._program.vertex_list_indexed(len(vertices) // 3, pyglet.enums.GeometryMode.TRIANGLES, indices,
                                                  batch=self._batch, group=self._group,
                                                  POSITION=('f', vertices),
                                                  NORMAL=('f', normals),

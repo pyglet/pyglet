@@ -3,8 +3,7 @@ from __future__ import annotations
 import random
 
 import pyglet
-from pyglet.graphics import GeometryMode
-
+from pyglet.enums import GeometryMode
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 

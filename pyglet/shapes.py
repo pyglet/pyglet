@@ -73,7 +73,7 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 import pyglet
 from pyglet.extlibs import earcut
 from pyglet.graphics import Batch, Group, ShaderProgram
-from pyglet.enums import BlendFactor
+from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.math import Vec2
 
 if TYPE_CHECKING:
@@ -88,7 +88,7 @@ elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.shapes import get_default_shader
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.shapes import get_default_shader
-from pyglet.graphics import GeometryMode
+
 
 def _rotate_point(center: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
     prev_angle = math.atan2(point[1] - center[1], point[0] - center[0])

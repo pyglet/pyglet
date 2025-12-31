@@ -42,7 +42,7 @@ from pyglet.graphics.shader import ShaderSource, ShaderType, ShaderBase, Attribu
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import BufferObject
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 
 if TYPE_CHECKING:
     from _weakref import CallableProxyType

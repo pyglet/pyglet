@@ -13,8 +13,8 @@ The code shown here illustrates:
 """
 import pyglet
 
-from pyglet.enums import BlendFactor
-from pyglet.graphics import Shader, ShaderProgram, Group, GeometryMode
+from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.graphics import Shader, ShaderProgram, Group
 
 ###################################
 # Create a Window, and render Batch

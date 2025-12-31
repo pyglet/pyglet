@@ -16,8 +16,8 @@ from typing import (
 import pyglet
 
 from pyglet import graphics
-from pyglet.enums import BlendFactor
-from pyglet.graphics import GeometryMode, Group, ShaderProgram
+from pyglet.enums import BlendFactor, GeometryMode
+from pyglet.graphics import Group, ShaderProgram
 from pyglet.graphics.draw import Group
 from pyglet.graphics.texture import TextureBase
 from pyglet.text import runlist

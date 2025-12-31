@@ -65,7 +65,7 @@ def shader_program(gl3_context):
 @pytest.fixture
 def vlist_factory(shader_program):
     """Helper to create a fresh instanced vertex list bound to the shared program."""
-    from pyglet.graphics import GeometryMode
+    from pyglet.enums import GeometryMode
     def make(verts, indices=(0,1,2,0,2,3)):
         return shader_program.vertex_list_instanced_indexed(
             4,

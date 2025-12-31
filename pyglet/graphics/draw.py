@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Sequence, TYPE_CHECKING
 
 import pyglet
-from pyglet.enums import BlendFactor, BlendOp, CompareOp
+from pyglet.enums import BlendFactor, BlendOp, CompareOp, GeometryMode
 
 from pyglet.graphics.state import (
     State,
@@ -22,7 +22,6 @@ from pyglet.graphics.state import (
 
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
-    from pyglet.graphics import GeometryMode
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import TextureBase
     from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList

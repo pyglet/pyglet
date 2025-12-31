@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Pattern
 from pyglet import clock, event
 from pyglet.window import key
 from pyglet.event import EventDispatcher
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 
 if TYPE_CHECKING:
     from pyglet.graphics import Batch

@@ -76,8 +76,8 @@ if TYPE_CHECKING:
     from typing import ClassVar, Literal
     from pyglet.graphics.texture import TextureBase
 
-from pyglet.graphics import Group, Batch, ShaderProgram, GeometryMode
-from pyglet.enums import BlendFactor
+from pyglet.graphics import Group, Batch, ShaderProgram
+from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.image.base import Animation
 from pyglet.graphics.texture import TextureArrayRegion
 

@@ -66,7 +66,7 @@ from pyglet.graphics.vertexdomain import (
 if TYPE_CHECKING:
     from pyglet.graphics.shader import AttributeView
     from pyglet.customtypes import CType, DataTypes
-    from pyglet.graphics import GeometryMode
+    from pyglet.enums import GeometryMode
     from pyglet.graphics.shader import Attribute
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 

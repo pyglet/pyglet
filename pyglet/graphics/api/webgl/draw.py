@@ -10,7 +10,7 @@ from pyglet.graphics.draw import BatchBase, _DomainKey, Group
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
-    from pyglet.graphics import GeometryMode
+    from pyglet.enums import GeometryMode
     from pyglet.graphics.api.webgl.vertexdomain import IndexedVertexList, VertexList
     from pyglet.graphics.api.webgl.shader import ShaderProgram
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext

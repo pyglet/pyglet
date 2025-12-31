@@ -10,6 +10,15 @@ class GraphicsAPI(Enum):
     WEBGL = auto()
 
 
+class GeometryMode(Enum):
+    POINTS = auto()
+    LINES = auto()
+    LINE_STRIP = auto()
+    TRIANGLES = auto()
+    TRIANGLE_STRIP = auto()
+    TRIANGLE_FAN = auto()
+
+
 class BlendFactor(Enum):
     ZERO = "ZERO"
     ONE = "ONE"
@@ -86,10 +95,12 @@ class CompareOp(Enum):
     GREATER_OR_EQUAL = auto()
     ALWAYS = auto()
 
+
 class FramebufferTarget(Enum):
     FRAMEBUFFER = auto()
     DRAW = auto()
     READ = auto()
+
 
 class FramebufferAttachment(Enum):
     COLOR0 = auto()
@@ -112,7 +123,6 @@ class FramebufferAttachment(Enum):
     DEPTH = auto()
     STENCIL = auto()
     DEPTH_STENCIL = auto()
-
 
 
 class Weight(str, Enum):

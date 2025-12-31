@@ -9,7 +9,8 @@ from pyglet.util import asstr
 from . import ModelDecodeException, ModelDecoder
 from .base import SimpleMaterial, Mesh, Primitive, Attribute, Node, Scene
 from pyglet.model import Model, MaterialGroup, TexturedMaterialGroup
-from pyglet.graphics import Batch, Group, GeometryMode
+from pyglet.graphics import Batch, Group
+from pyglet.enums import GeometryMode
 
 
 def _new_mesh(name, material):

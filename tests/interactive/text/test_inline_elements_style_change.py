@@ -6,7 +6,7 @@ import pytest
 
 import pyglet
 import pyglet.text.layout
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 from pyglet.text import caret, document
 from pyglet.text.layout import IncrementalTextLayout
 from tests.base.interactive import InteractiveTestCase

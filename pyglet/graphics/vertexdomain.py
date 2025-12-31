@@ -35,7 +35,8 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.instance import InstanceBucket, VertexInstanceBase, BaseInstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
-    from pyglet.graphics import GeometryMode, Group
+    from pyglet.graphics import Group
+    from pyglet.enums import GeometryMode
 
 
 def _nearest_pow2(v: int) -> int:

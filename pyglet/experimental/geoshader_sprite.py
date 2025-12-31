@@ -4,7 +4,7 @@ import sys
 
 import pyglet
 from pyglet import clock, event, graphics, image
-from pyglet.graphics import GeometryMode
+from pyglet.enums import GeometryMode
 from pyglet.graphics.api.gl import *
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

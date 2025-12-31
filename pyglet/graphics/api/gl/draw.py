@@ -14,7 +14,7 @@ from pyglet.graphics.state import State
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
-    from pyglet.graphics import GeometryMode
+    from pyglet.enums import GeometryMode
     from pyglet.graphics.api.gl2.shader import ShaderProgram
     from pyglet.graphics.api.gl.vertexdomain import VertexList, IndexedVertexList
 
