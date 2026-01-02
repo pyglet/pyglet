@@ -4,7 +4,7 @@ import ctypes
 from ctypes import byref, sizeof
 from typing import TYPE_CHECKING
 
-from pyglet.libs.win32 import _gdi32, _shcore, _user32
+from pyglet.libs.win32 import _gdi32, _user32
 from pyglet.libs.win32.constants import (
     CDS_FULLSCREEN,
     DISP_CHANGE_SUCCESSFUL,
@@ -36,6 +36,9 @@ from pyglet.libs.win32.types import (
 )
 
 from .base import Canvas, Display, Screen, ScreenMode
+
+if WINDOWS_8_1_OR_GREATER:
+    from pyglet.libs.win32 import _shcore
 
 if TYPE_CHECKING:
     from ctypes.wintypes import HDC, HMONITOR, LPARAM, LPRECT
