@@ -205,14 +205,13 @@ class Emitter(event.EventDispatcher):
     _animation = None
     _frame_index = 0
     _paused = False
-    _rotation = 0
     _visible = True
     _vertex_list = None
     group_class = EmitterGroup
 
     def __init__(self, img, x, y, z, count, velocity, spread,
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
-                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
                  blend_src=BlendFactor.SRC_ALPHA, blend_dest=BlendFactor.ONE_MINUS_SRC_ALPHA,
                  batch=None, group=None, program=None):
 
@@ -227,6 +226,7 @@ class Emitter(event.EventDispatcher):
         self._color_end = color_end
         self._scale_start = scale_start
         self._scale_end = scale_end
+        self._rotation = rotation
 
         if isinstance(img, image.Animation):
             self._animation = img
@@ -360,47 +360,36 @@ class ParticleManager:
     def __init__(self, img, lifespan, count, velocity,
                  spread=(10.0, 10.0),
                  color_start=(255, 255, 255, 255), color_end=(255, 255, 255, 255),
-                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0),
+                 scale_start=(1.0, 1.0), scale_end=(1.0, 1.0), rotation=0.0,
                  batch=None, group=None):
 
         self._img = img
-        self._lifespan = lifespan
-        self._count = count
-        self._velocity = velocity
-        self._spread = spread
-        self._color_start = color_start
-        self._color_end = color_end
-        self._scale_start = scale_start
-        self._scale_end = scale_end
+        self.lifespan = lifespan
+        self.count = count
+        self.velocity = velocity
+        self.spread = spread
+        self.color_start = color_start
+        self.color_end = color_end
+        self.scale_start = scale_start
+        self.scale_end = scale_end
+        self.rotation = rotation
 
         self._batch = batch
         self._group = group
         self._program = get_default_shader()
         clock.schedule_interval(self._update_shader_time, 1 / 60)
 
-        # TODO: remove debug
-        self.total_number = 0
-        self.total_label = pyglet.text.Label("particles: 0", 10, 10, dpi=256, color=(10, 200, 10), batch=batch)
-
     def _update_shader_time(self, dt):
         self._program['time'] = time.perf_counter()
 
-    def _delete_callback(self, dt, emitter):
+    @staticmethod
+    def _delete_callback(dt, emitter):
         emitter.delete()
 
-        # TODO: remove debug
-        self.total_number -= 1
-        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
-
     def create_emitter(self, x, y, z=0):
-        emitter = Emitter(self._img, x, y, z, self._count, self._velocity, self._spread,
-                          color_start=self._color_start, color_end=self._color_end,
-                          scale_start=self._scale_start, scale_end=self._scale_end,
+        emitter = Emitter(self._img, x, y, z, self.count, self.velocity, self.spread,
+                          color_start=self.color_start, color_end=self.color_end,
+                          scale_start=self.scale_start, scale_end=self.scale_end, rotation=self.rotation,
                           batch=self._batch, group=self._group)
-        pyglet.clock.schedule_once(self._delete_callback, self._lifespan, emitter)
-
-        # TODO: remove debug
-        self.total_number += 1
-        self.total_label.text = f"particles: {self.total_number * self._count * 8!s}"
-
+        pyglet.clock.schedule_once(self._delete_callback, self.lifespan, emitter)
         return emitter
