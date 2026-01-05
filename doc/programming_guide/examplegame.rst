@@ -8,7 +8,7 @@ clone. It is assumed that the reader is familiar with writing and running
 Python programs. This is not a programming tutorial, but it should hopefully
 be clear enough to follow even if you're a beginner. If you get stuck,
 first have a look at the relevant sections of the programming guide.
-The full source code can also be found in the `examples/game/` folder
+The full source code can also be found in the ``examples/game/`` folder
 of the pyglet source directory, which you can follow along with.
 If anything is still not clear, let us know!
 
@@ -24,11 +24,11 @@ Setting up
 
 First things first, make sure you have pyglet installed. Then, we will set
 up the folder structure for our project.  Since this example game is written
-in stages, we will have several `version` folders at various stages of
+in stages, we will have several ``version`` folders at various stages of
 development.  We will also have a shared resource folder with the images,
-called ‘resources,’ outside of the example folders.  Each `version` folder
-contains a Python file called `asteroid.py` which runs the game, as well as
-a sub-folder named `game` where we will place additional modules; this is
+called '``resources``', outside of the example folders.  Each ``version`` folder
+contains a Python file called ``asteroid.py`` which runs the game, as well as
+a sub-folder named ``game`` where we will place additional modules; this is
 where most of the logic will be. Your folder structure should look like this::
 
     game/
@@ -42,8 +42,8 @@ where most of the logic will be. Your folder structure should look like this::
 Getting a window
 ^^^^^^^^^^^^^^^^
 
-To set up a window, simply `import pyglet`, create a new instance of
-:class:`pyglet.window.Window`, and call `pyglet.app.run()`::
+To set up a window, simply ``import pyglet``, create a new instance of
+:class:`pyglet.window.Window`, and call ``pyglet.app.run()``::
 
     import pyglet
     game_window = pyglet.window.Window(800, 600)
@@ -51,9 +51,8 @@ To set up a window, simply `import pyglet`, create a new instance of
     if __name__ == '__main__':
         pyglet.app.run()
 
-If you run the code above, you should see a window full of junk that
-goes away when you press Esc. (What you are seeing is raw uninitialized
-graphics memory).
+If you run the code above, you should see a window full of random graphical junk (or just a blank window)
+that goes away when you press Esc. (What you are seeing is raw uninitialized graphics memory).
 
 Loading and displaying an image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,42 +67,47 @@ directory, we need to tell pyglet where to find them::
 pyglet's :mod:`pyglet.resource` module takes all of the hard work out of
 finding and loading game resources such as images, sounds, etc..  All that
 you need to do is tell it where to look, and reindex it. In this example
-game, the resource path starts with `../` because the resources folder is
-on the same level as the `version1` folder.  If we left it off, pyglet
-would look inside `version1/` for the `resources/` folder.
+game, the resource path starts with ``../`` because the resources folder is
+on the same level as the ``version1`` folder.  If we left it off, pyglet
+would look inside ``version1/`` for the ``resources/`` folder.
 
 Now that pyglet’s resource module is initialized, we can easily load the images
-with the :func:`~pyglet.resource.image` function of the resource module::
+with the :func:`~pyglet.resource.texture` function of the resource module::
 
-    player_image = pyglet.resource.image("player.png")
-    bullet_image = pyglet.resource.image("bullet.png")
-    asteroid_image = pyglet.resource.image("asteroid.png")
+    player_texture = pyglet.resource.texture("player.png")
+    bullet_texture = pyglet.resource.texture("bullet.png")
+    asteroid_texture = pyglet.resource.texture("asteroid.png")
 
-Centering the images
+If you are unfamiliar with the term, a "``texture``" is basically an image that
+has been loaded into GPU memory. You may see the terms used interchangeably, but
+essentially the image data is loaded from disk (and decoded), and then uploaded
+to the GPU memory where it exists as a texture.
+
+Centering the textures
 ^^^^^^^^^^^^^^^^^^^^
 
-Pyglet will draw and position all images from their lower left corner by
-default.  We don’t want this behavior for our images, which need to rotate
+Pyglet will draw and position all textures from their lower left corner by
+default.  We don’t want this behavior for our textures, which need to rotate
 around their centers.  All we have to do to achieve this is to set their
 anchor points.  Lets create a function to simplify this::
 
-    def center_image(image):
-        """Sets an image's anchor point to its center"""
-        image.anchor_x = image.width // 2
-        image.anchor_y = image.height // 2
+    def center_texture(texture):
+        """Sets an texture's anchor point to its center"""
+        texture.anchor_x = texture.width // 2
+        texture.anchor_y = texture.height // 2
 
-Now we can just call center_image() on all of our loaded images::
+Now we can just call center_texture() on all of our loaded textures::
 
-    center_image(player_image)
-    center_image(bullet_image)
-    center_image(asteroid_image)
+    center_texture(player_texture)
+    center_texture(bullet_texture)
+    center_texture(asteroid_texture)
 
-Remember that the center_image() function must be defined before it can be
+Remember that the center_texture() function must be defined before it can be
 called at the module level.  Also, note that zero degrees points directly
-to the right in pyglet, so the images are all drawn with their front
+to the right in pyglet, so the textures are all drawn with their front
 pointing to the right.
 
-To access the images from asteroid.py, we need to use something like
+To access the textures from asteroid.py, we need to use something like
 `from game import resources`, which we’ll get into in the next section.
 
 Initializing objects
@@ -167,7 +171,7 @@ like so::
 
     from game import resources
     ...
-    player_ship = pyglet.sprite.Sprite(img=resources.player_image, x=400, y=300)
+    player_ship = pyglet.sprite.Sprite(img=resources.player_texture, x=400, y=300)
 
 To get the player to draw on the screen, add a line to `on_draw()`::
 
@@ -189,7 +193,7 @@ player.  Let’s put the loading code in a new game submodule called load.py::
         for i in range(num_asteroids):
             asteroid_x = random.randint(0, 800)
             asteroid_y = random.randint(0, 600)
-            new_asteroid = pyglet.sprite.Sprite(img=resources.asteroid_image,
+            new_asteroid = pyglet.sprite.Sprite(img=resources.asteroid_texture,
                                                 x=asteroid_x, y=asteroid_y)
             new_asteroid.rotation = random.randint(0, 360)
             asteroids.append(new_asteroid)
@@ -223,7 +227,7 @@ the z value, so we just use a throwaway variable for that::
                 asteroid_x = random.randint(0, 800)
                 asteroid_y = random.randint(0, 600)
             new_asteroid = pyglet.sprite.Sprite(
-                img=resources.asteroid_image, x=asteroid_x, y=asteroid_y)
+                img=resources.asteroid_texture, x=asteroid_x, y=asteroid_y)
             new_asteroid.rotation = random.randint(0, 360)
             asteroids.append(new_asteroid)
         return asteroids
@@ -292,7 +296,7 @@ each new sprite. Update the function::
 
     def asteroids(num_asteroids, player_position, batch=None):
         ...
-        new_asteroid = pyglet.sprite.Sprite(img=resources.asteroid_image,
+        new_asteroid = pyglet.sprite.Sprite(img=resources.asteroid_texture,
                                             x=asteroid_x, y=asteroid_y,
                                             batch=batch)
 
@@ -324,7 +328,7 @@ and scale, and append it to the return list::
     def player_lives(num_icons, batch=None):
         player_lives = []
         for i in range(num_icons):
-            new_sprite = pyglet.sprite.Sprite(img=resources.player_image,
+            new_sprite = pyglet.sprite.Sprite(img=resources.player_texture,
                                               x=785-i*30, y=585, batch=batch)
             new_sprite.scale = 0.5
             player_lives.append(new_sprite)
@@ -382,10 +386,10 @@ they just wrapped around the screen. Here is a simple function that
 accomplishes the goal::
 
     def check_bounds(self):
-        min_x = -self.image.width / 2
-        min_y = -self.image.height / 2
-        max_x = 800 + self.image.width / 2
-        max_y = 600 + self.image.height / 2
+        min_x = -self.texture.width / 2
+        min_y = -self.texture.height / 2
+        max_x = 800 + self.texture.width / 2
+        max_y = 600 + self.texture.height / 2
         if self.x < min_x:
             self.x = max_x
         elif self.x > max_x:
@@ -470,10 +474,10 @@ importing the appropriate modules, and subclassing `PhysicalObject`::
     class Player(physicalobject.PhysicalObject):
 
         def __init__(self, *args, **kwargs):
-            super().__init__(img=resources.player_image, *args, **kwargs)
+            super().__init__(img=resources.player_texture, *args, **kwargs)
 
 So far, the only difference between a Player and a PhysicalObject is that a
-Player will always have the same image.  But Player objects need a couple
+Player will always have the same texture.  But Player objects need a couple
 more attributes.  Since the ship will always thrust with the same force in
 whatever direction it points, we’ll need to define a constant for the
 magnitude of that force.  We should also define a constant for the ship’s
@@ -627,7 +631,7 @@ thrusting forward or not, especially for an observer just watching someone
 else play the game.  One way to provide visual feedback is to show an engine
 flame behind the player while the player is thrusting.
 
-Loading the flame image
+Loading the flame texture
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The player will now be made of two sprites.  There’s nothing preventing us
@@ -636,31 +640,31 @@ engine_sprite attribute and update it every frame. For our purposes,
 this approach will be the simplest and most scalable.
 
 To make the flame draw in the correct position, we could either do some
-complicated math every frame, or we could just move the image’s anchor point.
-First, load the image in resources.py::
+complicated math every frame, or we could just move the texture’s anchor point.
+First, load the texture in resources.py::
 
-    engine_image = pyglet.resource.image("engine_flame.png")
+    engine_texture = pyglet.resource.texture("engine_flame.png")
 
-To get the flame to draw behind the player, we need to move the flame image’s
-center of rotation to the right, past the end of the image.
+To get the flame to draw behind the player, we need to move the flame texture’s
+center of rotation to the right, past the end of the texture.
 To do that, we just set its `anchor_x` and `anchor_y` attributes::
 
-    engine_image.anchor_x = engine_image.width * 1.5
-    engine_image.anchor_y = engine_image.height / 2
+    engine_texture.anchor_x = engine_texture.width * 1.5
+    engine_texture.anchor_y = engine_texture.height / 2
 
-Now the image is ready to be used by the player class.  If you’re still
-confused about anchor points, experiment with the values for engine_image’s
+Now the texture is ready to be used by the player class.  If you’re still
+confused about anchor points, experiment with the values for engine_texture’s
 anchor point when you finish this section.
 
 Creating and drawing the flame
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The engine sprite needs to be initialized with all the same arguments as
-Player, except that it needs a different image and must be initially invisible.
+Player, except that it needs a different texture and must be initially invisible.
 The code for creating it belongs in `Player.__init__()` and is very
 straightforward::
 
-    self.engine_sprite = pyglet.sprite.Sprite(img=resources.engine_image, *args, **kwargs)
+    self.engine_sprite = pyglet.sprite.Sprite(img=resources.engine_texture, *args, **kwargs)
     self.engine_sprite.visible = False
 
 To make the engine sprite appear only while the player is thrusting, we need
@@ -777,7 +781,7 @@ Remember to call from util import distance in load.py.  Now we can write
 `PhysicalObject.collides_with()` without duplicating code::
 
     def collides_with(self, other_object):
-        collision_distance = self.image.width/2 + other_object.image.width/2
+        collision_distance = self.texture.width/2 + other_object.texture.width/2
         actual_distance = util.distance(self.position, other_object.position)
 
         return (actual_distance <= collision_distance)
@@ -891,7 +895,7 @@ subclass of PhysicalObject::
 
         def __init__(self, *args, **kwargs):
             super().__init__(
-                resources.bullet_image, *args, **kwargs)
+                resources.bullet_texture, *args, **kwargs)
 
 To get bullets to disappear after a time, we could keep track of our own
 age and lifespan attributes, or we could let pyglet do all the work for us.
@@ -906,7 +910,7 @@ We can do this as soon as the object is initialized by adding a call to
 :meth:`pyglet.clock.schedule_once` to the constructor::
 
     def __init__(self, *args, **kwargs):
-        super().__init__(resources.bullet_image, *args, **kwargs)
+        super().__init__(resources.bullet_texture, *args, **kwargs)
         pyglet.clock.schedule_once(self.die, 0.5)
 
 There’s still more work to be done on the Bullet class, but before we
@@ -924,7 +928,7 @@ to its constructor::
 
     class Player(physicalobject.PhysicalObject):
         def __init__(self, *args, **kwargs):
-            super().__init__(img=resources.player_image, *args, **kwargs)
+            super().__init__(img=resources.player_texture, *args, **kwargs)
             ...
             self.bullet_speed = 700.0
 
@@ -949,7 +953,7 @@ As usual, convert to radians and reverse the direction::
 
 Next, calculate the bullet’s position and instantiate it::
 
-    ship_radius = self.image.width/2
+    ship_radius = self.texture.width/2
     bullet_x = self.x + math.cos(angle_radians) * ship_radius
     bullet_y = self.y + math.sin(angle_radians) * ship_radius
     new_bullet = bullet.Bullet(bullet_x, bullet_y, batch=self.batch)
@@ -1058,14 +1062,14 @@ Writing the asteroid class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Create a new submodule of game called asteroid.py.  Write the usual constructor
-to pass a specific image to the superclass, passing along any other parameters::
+to pass a specific texture to the superclass, passing along any other parameters::
 
     import pyglet
     from . import resources, physicalobject
 
     class Asteroid(physicalobject.PhysicalObject):
         def __init__(self, *args, **kwargs):
-            super().__init__(resources.asteroid_image, *args, **kwargs)
+            super().__init__(resources.asteroid_texture, *args, **kwargs)
 
 Now we need to write a new `handle_collision_with()` method.  It should create
 a random number of new, smaller asteroids with random velocities.  However,
@@ -1107,7 +1111,7 @@ rotation every frame.
 Add the attribute in the constructor::
 
     def __init__(self, *args, **kwargs):
-        super().__init__(resources.asteroid_image, *args, **kwargs)
+        super().__init__(resources.asteroid_texture, *args, **kwargs)
         self.rotate_speed = random.random() * 100.0 - 50.0
 
 Then write the update() method::
@@ -1137,7 +1141,7 @@ Next steps
 ----------
 
 So instead of walking you through a standard refactoring session,
-I’m going to leave it as an exercise for you to do the following::
+I’m going to leave it as an exercise for you to do the following:
 
 * Make the Score counter mean something
 * Let the player restart the level if they die
