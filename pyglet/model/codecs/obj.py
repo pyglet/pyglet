@@ -19,6 +19,7 @@ def _new_mesh(name, material):
         Attribute('POSITION', 'f', 'VEC3', 0, []),
         Attribute('NORMAL', 'f', 'VEC3', 0, []),
         Attribute('TEXCOORD_0', 'f', 'VEC3', 0, []),
+        Attribute('COLOR_0', 'f', 'VEC3', 0, [])
     ]
 
     primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GeometryMode.TRIANGLES)
@@ -52,7 +53,7 @@ def load_material_library(filename):
                 # save previous material
                 for item in (diffuse, ambient, specular, emission):
                     item.append(opacity)
-                matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
+                matlib[name] = SimpleMaterial(name, tuple(diffuse), tuple(ambient), tuple(specular), tuple(emission), shininess, texture_name)
             name = values[1]
 
         elif name is None:
@@ -72,6 +73,7 @@ def load_material_library(filename):
                 shininess = (shininess * 128) / 1000    # Normalize to 1~128 for OpenGL
             elif values[0] == 'd':
                 opacity = float(values[1])
+
             elif values[0] == 'map_Kd':
                 texture_name = values[1]
 
@@ -81,9 +83,9 @@ def load_material_library(filename):
     file.close()
 
     for item in (diffuse, ambient, specular, emission):
-        item.append(opacity)
+        item += [opacity]
 
-    matlib[name] = SimpleMaterial(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    matlib[name] = SimpleMaterial(name, tuple(diffuse), tuple(ambient), tuple(specular), tuple(emission), shininess, texture_name)
 
     return matlib
 
@@ -108,12 +110,12 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
     normals = [[0., 0., 0.]]
     tex_coords = [[0., 0.]]
-    vertices = [[0., 0., 0.]]
+    positions = [[0., 0., 0.]]
 
-    diffuse = [1.0, 1.0, 1.0, 1.0]
-    ambient = [1.0, 1.0, 1.0, 1.0]
-    specular = [1.0, 1.0, 1.0, 1.0]
-    emission = [0.0, 0.0, 0.0, 1.0]
+    diffuse = (1.0, 1.0, 1.0, 1.0)
+    ambient = (1.0, 1.0, 1.0, 1.0)
+    specular = (1.0, 1.0, 1.0, 1.0)
+    emission = (0.0, 0.0, 0.0, 1.0)
     shininess = 100.0
 
     default_material = SimpleMaterial("Default", diffuse, ambient, specular, emission, shininess)
@@ -127,7 +129,7 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
             continue
 
         if values[0] == 'v':
-            vertices.append(list(map(float, values[1:4])))
+            positions.append(list(map(float, values[1:4])))
         elif values[0] == 'vn':
             normals.append(list(map(float, values[1:4])))
         elif values[0] == 'vt':
@@ -158,12 +160,11 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
             primitive = mesh.primitives[0]
 
             pos_attr = primitive.attributes[0]
+            normal_attr = primitive.attributes[1]
+            tex_uv_attr = primitive.attributes[2]
+            color_attr = primitive.attributes[3]
 
-            # optional normals and teture uvs
-            normal_attr = primitive.attributes[1] if len(primitive.attributes) > 1 else None
-            tex_uv_attr = primitive.attributes[2] if len(primitive.attributes) > 2 else None
-
-            face_vertices = []
+            face_positions = []
             for v in values[1:]:
                 parts = v.split('/')
 
@@ -182,41 +183,41 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
                 # handle negative indices
                 if v_i < 0:
-                    v_i = len(vertices) + v_i
+                    v_i = len(positions) + v_i
                 if t_i < 0:
                     t_i = len(tex_coords) + t_i
                 if n_i < 0:
                     n_i = len(normals) + n_i
 
-                face_vertices.append((v_i, t_i, n_i))
+                face_positions.append((v_i, t_i, n_i))
 
-            # For fan triangulation, remember first and latest vertices
-            for i in range(2, len(face_vertices)):
+            for _ in face_positions:
+                color_attr.array += material.diffuse
+
+            # For fan triangulation, remember first and latest position
+            for i in range(2, len(face_positions)):
                 for idx in (0, i - 1, i):
-                    v_i, t_i, n_i = face_vertices[idx]
+                    v_i, t_i, n_i = face_positions[idx]
 
-                    pos_attr.array += vertices[v_i]
+                    pos_attr.array += positions[v_i]
 
-                    # normals (optional)
-                    if normal_attr is not None:
-                        if n_i != 0:
-                            primitive.has_normals = True
-                            normal_attr.array += normals[n_i]
-                        else:
-                            normal_attr.array += [0.0, 0.0, 1.0]
+                    if n_i != 0:
+                        primitive.has_normals = True
+                        normal_attr.array += normals[n_i]
+                    else:
+                        normal_attr.array += [0.0, 0.0, 1.0]
 
-                    # texcoords (optional)
-                    if tex_uv_attr is not None:
-                        if t_i != 0:
-                            primitive.has_tex_coords = True
-                            tex_uv_attr.array += tex_coords[t_i]
-                        else:
-                            tex_uv_attr.array += [0.0, 0.0]
+                    if t_i != 0:
+                        primitive.has_tex_coords = True
+                        tex_uv_attr.array += tex_coords[t_i]
+                    else:
+                        tex_uv_attr.array += [0.0, 0.0]
 
-        for mesh in meshes:
-            for primitive in mesh.primitives:
-                for attribute in primitive.attributes:
-                    attribute.count = len(attribute.array) // 3
+    for mesh in meshes:
+        for primitive in mesh.primitives:
+            for attribute in primitive.attributes:
+                attribute.count = len(attribute.array) // 3
+                print(attribute)
 
     return meshes
 
@@ -227,24 +228,24 @@ class OBJScene(Scene):
         vertex_lists = []
         groups = []
         for node in self.nodes:
-            for mesh in node.meshes:
-                material = mesh.primitives[0].material
-                count = mesh.primitives[0].attributes[0].count
+            mesh = node.mesh
+            material = mesh.primitives[0].material
+            count = mesh.primitives[0].attributes[0].count
 
-                if material.texture_name:
-                    program = pyglet.model.get_default_textured_shader()
-                    texture = pyglet.resource.texture(material.texture_name, atlas=False)
-                    matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-                else:
-                    program = pyglet.model.get_default_shader()
-                    matgroup = MaterialGroup(material, program, parent=group)
+            if material.texture_name:
+                program = pyglet.model.get_default_textured_shader()
+                texture = pyglet.resource.texture(material.texture_name, atlas=False)
+                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+            else:
+                program = pyglet.model.get_default_shader()
+                matgroup = MaterialGroup(material, program, parent=group)
 
-                data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes if a.name in program.attributes}
-                # Add additional material data:
-                data['COLOR_0'] = 'f', material.diffuse * count
+            data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes if a.name in program.attributes}
+            # Add additional material data:
+            data['COLOR_0'] = 'f', material.diffuse * count
 
-                vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
-                groups.append(matgroup)
+            vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
+            groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
 
@@ -258,9 +259,8 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, filename, file):
-
         mesh_list = parse_obj_file(filename=filename, file=file)
-        return OBJScene(nodes=[Node(meshes=mesh_list)])
+        return OBJScene(nodes=[Node(mesh=mesh) for mesh in mesh_list])
 
 
 def get_decoders():

@@ -8,9 +8,13 @@ from urllib.request import urlopen
 
 import pyglet
 
+# The glTF spec uses constants that match those in OpenGL. Imported here for convenience, but they could be localized:
 from pyglet.graphics.api.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT, GL_DOUBLE
+from pyglet.graphics.api.gl import GL_POINTS, GL_TRIANGLES, GL_LINES, GL_TRIANGLE_STRIP, GL_LINE_STRIP, GL_TRIANGLE_FAN
 from pyglet.graphics.api.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
-from pyglet.graphics.api.gl import GL_REPEAT
+
+from pyglet.enums import AddressMode, GeometryMode
+
 
 from . import ModelDecodeException, ModelDecoder
 from .base import Scene
@@ -33,7 +37,7 @@ _array_types = {
     GL_DOUBLE: 'd',
 }
 
-_gl_type_sizes = {
+_accessor_type_sizes = {
     GL_BYTE: 1,
     GL_UNSIGNED_BYTE: 1,
     GL_SHORT: 2,
@@ -57,6 +61,15 @@ _accessor_type_counts = {
 _targets = {
     GL_ELEMENT_ARRAY_BUFFER: "ELEMENT_ARRAY_BUFFER",
     GL_ARRAY_BUFFER: "ARRAY_BUFFER",
+}
+
+_geometry_modes = {
+    GL_POINTS: GeometryMode.POINTS,
+    GL_LINES: GeometryMode.LINES,
+    GL_LINE_STRIP: GeometryMode.LINE_STRIP,
+    GL_TRIANGLES: GeometryMode.TRIANGLES,
+    GL_TRIANGLE_STRIP: GeometryMode.TRIANGLE_STRIP,
+    GL_TRIANGLE_FAN: GeometryMode.TRIANGLE_FAN,
 }
 
 
@@ -134,7 +147,7 @@ class Accessor:
 
         # The byte size of the `GL type` multiplied by the length of the GLSL `data type`.
         # For example: a GL_FLOAT is 4 bytes and a VEC3 has 3 values, so 4 * 3 = 12 bytes
-        self._byte_length = _gl_type_sizes[self.component_type] * _accessor_type_counts[self.type]
+        self._byte_length = _accessor_type_sizes[self.component_type] * _accessor_type_counts[self.type]
 
     def read(self) -> bytes:
         return self.buffer_view.read(self.byte_offset, self._byte_length, self.count)
@@ -165,7 +178,7 @@ class Primitive(BasePrimitive):
         indices_accessor = owner.accessors[indices_index] if indices_index is not None else None
         indices = indices_accessor.as_array() if indices_accessor else None
 
-        mode = data.get('mode', 4)     # defaults to TRIANGLES
+        mode = _geometry_modes[data.get('mode', GL_TRIANGLES)]
 
         material_index = data.get('material')
         material = owner.materials[material_index] if material_index is not None else None
@@ -192,7 +205,7 @@ class Material(PBRMaterial):
         self.alpha_cutoff = data.get('alphaCutoff', 0.5)
         self.double_sided = data.get('doubleSided', False)
 
-        # TODO: finish this
+        # TODO: finish this once the base class is ready
         # super().__init__(name, )
 
 
@@ -224,8 +237,8 @@ class Sampler:
         self.name = data.get('name')
         self.min_filter = data.get('minFilter')
         self.mag_filter = data.get('magFilter')
-        self.wrap_s = data.get('wrapS', GL_REPEAT)
-        self.wrap_t = data.get('wrapT', GL_REPEAT)
+        self.wrap_s = data.get('wrapS', AddressMode.REPEAT)
+        self.wrap_t = data.get('wrapT', AddressMode.REPEAT)
         # self.extensions = data.get('extensions')
         # self.extras = data.get('extras')
 
@@ -261,20 +274,15 @@ class Camera(BaseCamera):
         super().__init__(camera_type, aspect_ratio, yfov, xmag, ymag, zfar, znear)
 
 
-class Mesh:
+class Mesh(BaseMesh):
+    def __init__(self, data, owner):
+        primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
+        super().__init__(primitives=primitives, name=data.get('name'))
+
+
+class Node(BaseNode):
     def __init__(self, data, owner):
         self.data = data
-        self.primitives = [Primitive(primitive_data, owner) for primitive_data in data.get('primitives')]
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(primitives={len(self.primitives)})"
-
-
-class Node:
-    def __init__(self, data, owner):
-        self.data = data
-        self._owner = owner
-        self._child_indices = self.data.get('children', [])
 
         _mesh_index = data.get('mesh')
         self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
@@ -287,17 +295,10 @@ class Node:
         # TODO: handle global and local transforms:
         # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
 
-    @property
-    def children(self):
-        return [self._owner.nodes[i] for i in self._child_indices]
+        # TODO: create a list of child Nodes to pass to super()
+        child_indices = self.data.get('children', [])
 
-    def __iter__(self):
-        yield self
-        for child in self.children:
-            yield child
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(mesh={self.mesh}, children={self._child_indices})"
+        super().__init__(mesh=self.mesh)
 
 
 class GLTF:
@@ -319,14 +320,10 @@ class GLTF:
         self.textures = [Texture(data=data, owner=self) for data in gltf_data.get('textures', [])]
         self.materials = [Material(data) for data in gltf_data.get('materials', [])]
 
-        print(self.images)
-        print(self.samplers)
-        print(self.textures)
+        self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
-
-        self.cameras = [Camera(cam['type'], cam[cam['type']]) for cam in gltf_data.get('cameras', [])]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
