@@ -214,25 +214,6 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         self.set_shader_program(program)
         self.uniforms = {"model": self.matrix}
         self.set_shader_uniforms(program, self.uniforms)
-    #
-    # def set_state(self) -> None:
-    #     # gl.glActiveTexture(gl.GL_TEXTURE0)
-    #     # gl.glBindTexture(self.texture.target, self.texture.id)
-    #     # self.program.use()
-    #     # self.program['model'] = self.matrix
-    #     pass
-    #
-    # def __hash__(self) -> int:
-    #     return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
-    #
-    # def __eq__(self, other) -> bool:
-    #     return (self.__class__ is other.__class__ and
-    #             self.material == other.material and
-    #             self.texture.target == other.texture.target and
-    #             self.texture.id == other.texture.id and
-    #             self.program == other.program and
-    #             self.order == other.order and
-    #             self.parent == other.parent)
 
 
 class MaterialGroup(BaseMaterialGroup):
@@ -279,19 +260,11 @@ class MaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def set_state(self) -> None:
-        self.program.use()
-        self.program['model'] = self.matrix
-
-    def __hash__(self):
-        return hash((self.material, self.program, self.order, self.parent))
-
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.material == other.material and
-                self.program == other.program and
-                self.order == other.order and
-                self.parent == other.parent)
+    def __init__(self, material: SimpleMaterial, program: ShaderProgram, order: int = 0, parent: Group | None = None):
+        super().__init__(material, program, order, parent)
+        self.set_shader_program(program)
+        self.uniforms = {"model": self.matrix}
+        self.set_shader_uniforms(program, self.uniforms)
 
 
 class Cube(Model):
