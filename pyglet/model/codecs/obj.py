@@ -14,17 +14,16 @@ from pyglet.enums import GeometryMode
 
 
 def _new_mesh(name, material):
-    # The three primitive types used in .obj files:
+    # The pre-defined attributes types used in .obj files:
     attributes = [
         Attribute('POSITION', 'f', 'VEC3', 0, []),
         Attribute('NORMAL', 'f', 'VEC3', 0, []),
-        Attribute('TEXCOORD_0', 'f', 'VEC3', 0, []),
-        Attribute('COLOR_0', 'f', 'VEC3', 0, [])
+        Attribute('TEXCOORD_0', 'f', 'VEC2', 0, []),
+        Attribute('COLOR_0', 'f', 'VEC4', 0, [])
     ]
 
     primitive = Primitive(attributes=attributes, indices=None, material=material, mode=GeometryMode.TRIANGLES)
-    mesh = Mesh(primitives=[primitive], name=name)
-    return mesh
+    return Mesh(primitives=[primitive], name=name)
 
 
 def load_material_library(filename):
@@ -191,9 +190,6 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
                 face_positions.append((v_i, t_i, n_i))
 
-            for _ in face_positions:
-                color_attr.array += material.diffuse
-
             # For fan triangulation, remember first and latest position
             for i in range(2, len(face_positions)):
                 for idx in (0, i - 1, i):
@@ -215,9 +211,15 @@ def parse_obj_file(filename, file=None) -> list[Mesh]:
 
     for mesh in meshes:
         for primitive in mesh.primitives:
-            for attribute in primitive.attributes:
-                attribute.count = len(attribute.array) // 3
-                print(attribute)
+            pos_attr = primitive.attributes[0]
+            normal_attr = primitive.attributes[1]
+            tex_uv_attr = primitive.attributes[2]
+            color_attr = primitive.attributes[3]
+            color_attr.array = material.diffuse * (len(pos_attr.array) // 3)
+
+            for attribute in (pos_attr, normal_attr, tex_uv_attr, color_attr):
+                count = {'VEC2': 2, 'VEC3': 3, 'VEC4': 4}[attribute.type]
+                attribute.count = len(attribute.array) // count
 
     return meshes
 
@@ -229,23 +231,23 @@ class OBJScene(Scene):
         groups = []
         for node in self.nodes:
             mesh = node.mesh
-            material = mesh.primitives[0].material
-            count = mesh.primitives[0].attributes[0].count
 
-            if material.texture_name:
-                program = pyglet.model.get_default_textured_shader()
-                texture = pyglet.resource.texture(material.texture_name, atlas=False)
-                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
-            else:
-                program = pyglet.model.get_default_shader()
-                matgroup = MaterialGroup(material, program, parent=group)
+            for primitive in mesh.primitives:
+                material = primitive.material
+                count = primitive.attributes[0].count
 
-            data = {a.name: (a.fmt, a.array) for a in mesh.primitives[0].attributes if a.name in program.attributes}
-            # Add additional material data:
-            data['COLOR_0'] = 'f', material.diffuse * count
+                if material.texture_name:
+                    _texture = pyglet.resource.texture(material.texture_name, atlas=False)
+                    program = pyglet.model.get_default_textured_shader()
+                    matgroup = TexturedMaterialGroup(material, program, _texture, parent=group)
+                else:
+                    program = pyglet.model.get_default_shader()
+                    matgroup = MaterialGroup(material, program, parent=group)
 
-            vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
-            groups.append(matgroup)
+                data = {a.name: (a.fmt, a.array) for a in primitive.attributes if a.name in program.attributes}
+
+                vertex_lists.append(program.vertex_list(count, GeometryMode.TRIANGLES, batch, matgroup, **data))
+                groups.append(matgroup)
 
         return [Model(vertex_lists=vertex_lists, groups=groups, batch=batch)]
 

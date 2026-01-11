@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pyglet.enums import GeometryMode
 
 
-class Scene(ABC):
+class Scene:
     """A high level container for one or more Node objects."""
 
     def __init__(self, nodes: list[Node] | None = None) -> None:
@@ -39,7 +39,7 @@ class Scene(ABC):
         raise NotImplementedError(f"{self.__class__.__name__} does not implement this method.")
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(nodes={self.nodes})"
+        return f"{self.__class__.__name__}(nodes={len(self.nodes)})"
 
 
 class Node:
@@ -51,6 +51,10 @@ class Node:
         self.camera = camera
         self.children = children or []
 
+    def __repr__(self):
+        return (f"{self.__class__.__name__}"
+                f"(mesh={self.mesh}, skin={self.skin}, camera={self.camera}, children={len(self.children)})")
+
 
 class Mesh:
     """Object containing vertex and related data."""
@@ -59,7 +63,7 @@ class Mesh:
         self.name = name
 
     def __repr__(self):
-        return f"Mesh(name='{self.name}', primitive_count={len(self.primitives)})"
+        return f"Mesh(name='{self.name}', primitives={len(self.primitives)})"
 
 
 @dataclasses.dataclass
