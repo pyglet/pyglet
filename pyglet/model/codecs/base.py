@@ -13,17 +13,36 @@ if TYPE_CHECKING:
 
 
 class Scene:
-    """A high level container for one or more Node objects."""
+    """A high level container for one or more Nodes.
+
+    The Scene contains a list of 0 or more Nodes. The Nodes
+    themselves may contain 'child' Nodes. The Node list can
+    be accessed directly. Alternatively, the Scene instance
+    can be iterated over. This will recursively yield all
+    Nodes and their child Nodes. For example::
+
+        for node in scene_instance:
+            ...
+
+    will yield::
+
+        yield NodeA
+            yield ChildA
+            yield ChildB
+        yield NodeB
+        etc.
+
+    """
 
     def __init__(self, nodes: list[Node] | None = None) -> None:
         self.nodes = nodes or []
 
-    # TODO: test and implement:
-    # def __iter__(self):
-    #     """Iterate over all Nodes and their children (if existing)."""
-    #     for top_node in self.nodes:
-    #         for node in top_node:
-    #             yield node
+    def __iter__(self):
+        """Recursively iterate over all Nodes and their children."""
+        for parent_node in self.nodes:
+            yield parent_node
+            for child_node in parent_node.children:
+                yield child_node
 
     def create_models(self, batch: Batch, group: Group | None = None) -> list[Model]:
         """Decoder subclasses are currently responsible for generating Model objects.

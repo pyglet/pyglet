@@ -282,7 +282,8 @@ class Mesh(BaseMesh):
 
 class Node(BaseNode):
     def __init__(self, data, owner):
-        self.data = data
+        self._data = data
+        self._owner = owner
 
         _mesh_index = data.get('mesh')
         self.mesh = owner.meshes[_mesh_index] if _mesh_index is not None else None
@@ -292,20 +293,25 @@ class Node(BaseNode):
         self.rotation = data.get('rotation')        # Quaternion
         self.scale = data.get('scale')              # Vec3
 
+        # TODO: handle these:
+        self.skin = None
+        self.camera = None
+
         # TODO: handle global and local transforms:
         # https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_004_ScenesNodes.md
 
-        # TODO: create a list of child Nodes to pass to super()
-        child_indices = self.data.get('children', [])
+        self._child_indices = data.get('children', [])
 
-        super().__init__(mesh=self.mesh)
+    @property
+    def children(self):
+        return [self._owner.nodes[i] for i in self._child_indices]
 
 
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
         self._gltf_data = gltf_data
-        self.version = self._gltf_data['asset']['version']
-        self.generator = self._gltf_data['asset'].get('generator', 'unknown')
+        self.version = gltf_data['asset']['version']
+        self.generator = gltf_data['asset'].get('generator', 'unknown')
 
         self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
         self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
