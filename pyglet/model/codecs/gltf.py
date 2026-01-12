@@ -173,6 +173,7 @@ class Attribute(BaseAttribute):
 class Primitive(BasePrimitive):
     def __init__(self, data, owner):
         attributes = [Attribute(name, index, owner) for name, index in data.get('attributes').items()]
+        assert len(set(a.count for a in attributes)) == 1, "All Attributes must have the same count"
 
         indices_index = data.get('indices')
         indices_accessor = owner.accessors[indices_index] if indices_index is not None else None
@@ -188,17 +189,26 @@ class Primitive(BasePrimitive):
 
 class Material(PBRMaterial):
     def __init__(self, data):
+        self._data = data
         self.name = data.get('name')
-        # self.extensions = data.get('extensions')
-        # self.extras = data.get('extras')
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
 
-        # TODO: parse this:
-        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
-
+        self.base_color_texture = data.get('baseColorTexture')
         self.normal_texture = data.get('normalTexture')
         self.occlusion_texture = data.get('occlusionTexture')
         self.emissive_texture = data.get('emissiveTexture')
-        self.base_color_texture = data.get('baseColorTexture')
+
+        self.pbr_metallic_roughness = data.get('pbrMetallicRoughness')
+        self.base_color_factor = self.pbr_metallic_roughness.get('baseColorFactor', (1.0, 1.0, 1.0, 1.0))
+        self.metalic_factor = self.pbr_metallic_roughness.get('metallicFactor', 1.0)
+        self.roughness_factor = self.pbr_metallic_roughness.get('roughnessFactor', 1.0)
+
+        self.base_color_texture = self.pbr_metallic_roughness.get('baseColorTexture', self.base_color_texture)
+        self.metallic_roughness_texture = self.pbr_metallic_roughness.get('metallicRoughnessTexture')
+
+        self.extensions = self.pbr_metallic_roughness.get('extensions', self.extensions)
+        self.extras = self.pbr_metallic_roughness.get('extras', self.extras)
 
         self.emissive_factor = data.get('emissiveFactor', (0.0, 0.0, 0.0))
         self.alpha_mode = data.get('alphaMode', 'OPAQUE')   # Any of: OPAQUE, MASK, BLEND
@@ -211,16 +221,15 @@ class Material(PBRMaterial):
 
 class Texture:
     def __init__(self, data, owner):
+        self._data = data
         self.name = data.get('name')
         # self.extensions = data.get('extensions')
         # self.extras = data.get('extras')
 
         # TODO: verify how this works. Default sampler?
         self._sampler_index = data.get('sampler')
-        if self._sampler_index:
-            self.sampler = owner.samplers[self._sampler_index]
-        else:
-            self.sampler = Sampler({})
+        self.sampler = owner.samplers[self._sampler_index] if self._sampler_index else Sampler(data={})
+
         self.source = data.get('source')            # technically NOT required
         self.image = owner.images[self.source]
 
@@ -229,6 +238,9 @@ class Texture:
         self.mag_filter = self.sampler.mag_filter
         self.wrap_s = self.sampler.wrap_s
         self.wrap_t = self.sampler.wrap_t
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, image={self.image})"
 
 
 class Sampler:
@@ -259,6 +271,9 @@ class Image:
         #     return
         # else:
         raise NotImplementedError
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}, uri={self.uri})"
 
 
 class Camera(BaseCamera):
@@ -342,9 +357,6 @@ def load_gltf(filename, file=None) -> GLTF:
 
     try:
         if file is None:
-            file = pyglet.resource.file(filename, 'r')
-        elif file.mode != 'r':
-            file.close()
             file = pyglet.resource.file(filename, 'r')
     except pyglet.resource.ResourceNotFoundException:
         raise ModelDecodeException

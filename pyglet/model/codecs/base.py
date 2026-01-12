@@ -105,6 +105,8 @@ class Primitive:
         self.indices = indices
         self.mode = mode
         self.material = material
+        # All attributes must have the same count:
+        self.count = self.attributes[0].count
 
     def __repr__(self):
         return f"Primitive(attributes={list(self.attributes)}, mode={self.mode})"
