@@ -75,25 +75,34 @@ _geometry_modes = {
 
 class Buffer:
     """Abstraction over unstructured bytes."""
-    def __init__(self, data):
+    def __init__(self, data, binary_buffer=None):
         self.length = data['byteLength']
-        self._uri = data['uri']
-
-        if self._uri.startswith('data'):
-            self._response = urlopen(self._uri)
-            self._file = self._response.file
+        if not 'uri' in data:
+            self._binary_buffer = binary_buffer
+            self._uri = None
+            self._file = None
         else:
-            self._file = pyglet.resource.file(self._uri, 'rb')
+            self._uri = data['uri']
+
+            if self._uri.startswith('data'):
+                self._response = urlopen(self._uri)
+                self._file = self._response.file
+            else:
+                self._file = pyglet.resource.file(self._uri, 'rb')
 
     def read(self, offset, nbytes) -> bytes:
+        if not self._uri:
+            return self._binary_buffer[offset:offset+nbytes]
+
         self._file.seek(offset)
         return self._file.read(nbytes)
 
     def __del__(self):
-        try:
-            self._file.close()
-        except AttributeError:
-            pass
+        if self._file:
+            try:
+                self._file.close()
+            except AttributeError:
+                pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(length={self.length})"
@@ -328,13 +337,14 @@ class GLTF:
         self.version = gltf_data['asset']['version']
         self.generator = gltf_data['asset'].get('generator', 'unknown')
 
-        self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
+        if binary_buffer:
+            data = gltf_data['buffers'][0]
+            self.buffers = [Buffer(data=data, binary_buffer=binary_buffer)]
+        else:
+            self.buffers = [Buffer(data=data) for data in gltf_data['buffers']]
         self.buffer_views = [BufferView(data=data, owner=self) for data in gltf_data['bufferViews']]
         self.accessors = [Accessor(data=data, owner=self) for data in gltf_data['accessors']]
 
-        if binary_buffer:
-            # TODO: test this, and think of a better way to do it
-            self.buffers[0]._file = binary_buffer
 
         self.images = [Image(data=data, owner=self) for data in gltf_data.get('images', [])]
         self.samplers = [Sampler(data=data) for data in gltf_data.get('samplers', [])]
@@ -362,6 +372,8 @@ def load_gltf(filename, file=None) -> GLTF:
         raise ModelDecodeException
 
     if filename.endswith('glb'):
+        file.close()
+        file = pyglet.resource.file(filename, 'rb')
         # Check header
         magic = file.read(4)
         if magic != b"glTF":
