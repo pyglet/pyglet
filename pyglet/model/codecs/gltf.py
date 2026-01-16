@@ -4,6 +4,7 @@ import json
 import struct
 
 from array import array
+import io
 from urllib.request import urlopen
 
 import pyglet
@@ -275,11 +276,27 @@ class Image:
         self.extras = data.get('extras')
 
     def read(self):
-        # TODO: load from either URI or bufferview
-        # if self.uri:
-        #     return
-        # else:
-        raise NotImplementedError
+        if self.uri:
+            img = pyglet.resource.image(self.uri)
+            return img
+
+        if self.mime_type:
+            fmt = self.mime_type.split('/')[-1]
+        else:
+            # Use png as the default image format
+            fmt = 'png'
+        if self.buffer_view:
+            # In this case we use a buffer view to get the image data
+            offset = 0
+            length = self.buffer_view.length
+            count = 1
+            image_data_bytes = self.buffer_view.read(offset, length, count)
+            image_stream = io.BytesIO(image_data_bytes)
+            # hardcode a filename
+            filename = f"image.{fmt}"
+            img = pyglet.image.load(filename, file=image_stream)
+            return img
+        return None
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name}, uri={self.uri})"
