@@ -2747,6 +2747,7 @@ __all__ = (
     'MultiLine',
     'Polygon',
     'Rectangle',
+    'RoundedRectangle',
     'Sector',
     'ShapeBase',
     'Star',
