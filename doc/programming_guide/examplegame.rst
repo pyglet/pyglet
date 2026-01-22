@@ -83,10 +83,13 @@ has been loaded into GPU memory. You may see the terms used interchangeably, but
 essentially the image data is loaded from disk (and decoded), and then uploaded
 to the GPU memory where it exists as a texture.
 
+.. note:: You must create a Window before loading any GPU related resources.
+
+
 Centering the textures
 ^^^^^^^^^^^^^^^^^^^^
 
-Pyglet will draw and position all textures from their lower left corner by
+pyglet will draw and position all textures from their lower left corner by
 default.  We don’t want this behavior for our textures, which need to rotate
 around their centers.  All we have to do to achieve this is to set their
 anchor points.  Lets create a function to simplify this::
@@ -454,7 +457,7 @@ periodically or at some specified time in the future.  The one we want is
     pyglet.clock.schedule_interval(update, 1/120.0)
 
 Putting this line above `pyglet.app.run()` in the if `__name__ == '__main__'`
-block tells pyglet to call `update()` 120 times per second.  Pyglet will pass
+block tells pyglet to call `update()` 120 times per second.  pyglet will pass
 in the elapsed time, i.e. `dt`, as the only parameter.
 
 Now when you run asteroid.py, you should see your formerly static asteroids
@@ -486,7 +489,7 @@ rotation speed::
         self.thrust = 300.0
         self.rotate_speed = 200.0
 
-Now we need to get the class to respond to user input.  Pyglet uses an
+Now we need to get the class to respond to user input.  pyglet uses an
 event-based approach to input, sending key press and key release events
 to registered event handlers.  But we want to use a polling approach in
 this example, checking periodically if a key is down.  One way to accomplish
