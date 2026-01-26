@@ -1417,7 +1417,7 @@ class Sector(ShapeBase):
         if math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) > self._radius:
             return False
         angle = math.degrees(math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x))
-        angle = (angle + 360) % 360
+        angle = angle % 360
         start_angle = self._start_angle % 360
         end_angle = (start_angle + self._angle) % 360
         if self._angle >= 0:
