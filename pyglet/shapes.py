@@ -1414,12 +1414,22 @@ class Sector(ShapeBase):
     def __contains__(self, point: tuple[float, float]) -> bool:
         assert len(point) == 2
         point = _rotate_point((self._x, self._y), point, math.radians(self._rotation))
-        angle = math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x)
-        if angle < 0:
-            angle += 2 * math.pi
-        if self._start_angle < angle < self._start_angle + self._angle:
-            return math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) < self._radius
-        return False
+        if math.dist((self._x - self._anchor_x, self._y - self._anchor_y), point) > self._radius:
+            return False
+        angle = math.degrees(math.atan2(point[1] - self._y + self._anchor_y, point[0] - self._x + self._anchor_x))
+        angle = angle % 360
+        start_angle = self._start_angle % 360
+        end_angle = (start_angle + self._angle) % 360
+        if self._angle >= 0:
+            if start_angle <= end_angle:
+                return start_angle <= angle <= end_angle
+            else:
+                return angle >= start_angle or angle <= end_angle
+        else:
+            if end_angle <= start_angle:
+                return end_angle <= angle <= start_angle
+            else:
+                return angle >= end_angle or angle <= start_angle
 
     def _create_vertex_list(self) -> None:
         self._vertex_list = self._program.vertex_list(
@@ -1437,7 +1447,7 @@ class Sector(ShapeBase):
         y = -self._anchor_y
         r = self._radius
         segment_radians = math.radians(self._angle) / self._segments
-        start_radians = math.radians(self._start_angle - self._rotation)
+        start_radians = math.radians(self._start_angle)
 
         # Calculate the outer points of the sector.
         points = [(x + (r * math.cos((i * segment_radians) + start_radians)),
