@@ -1,3 +1,12 @@
+pyglet 2.1.13
+
+Bugfixes
+--------
+shapes: fix rotation behaviour of Sector when later setting radius/angle/etc. (#1405)
+window.win32: check Windows version before importing shcore. (#1402)
+gui.PushButton: fix missing argument in on_mouse_leave handler. (#1397)
+
+
 pyglet 2.1.12
 
 Bugfixes
