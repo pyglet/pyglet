@@ -551,12 +551,12 @@ class XInputController(Controller):
 
         for button_name in controller_api_to_pyglet.values():
             control = self.device.controls[button_name]
-            self._button_controls.append(control)
+            # self.button_controls.append(control)
             self._bind_button_control(control, button_name)
 
         for axis_name in "leftx", "lefty", "rightx", "righty", "lefttrigger", "righttrigger":
             control = self.device.controls[axis_name]
-            self._axis_controls.append(control)
+            # self.absolute_axis_controls.append(control)
             self._bind_axis_control(control, axis_name, Sign.DEFAULT)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
