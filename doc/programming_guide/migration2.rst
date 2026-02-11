@@ -1,8 +1,8 @@
 .. _migration:
 
-Migrating from pyglet 2.0
-=========================
-This page will help you upgrade your project from pyglet 2.0.
+Migrating from pyglet 2.0 -> 2.1
+================================
+This page will help you upgrade your project from the pyglet 2.0 series to 2.1 series.
 
 Some of pyglet 2.1's improvements required small breaking changes,
 including:

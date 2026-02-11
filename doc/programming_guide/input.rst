@@ -6,21 +6,30 @@ You can interact with these devices directly, but high-level classes are provide
 game controllers, joysticks, and the Apple Remote, all with named and normalized inputs. Basic
 support is also provided for Drawing Tablets, such as those made by Wacom.
 
+
+.. contents::
+    :depth: 3
+
+
+Types of Input Devices
+----------------------
+
+The two most common interfaces are ``game controllers`` and ``joysticks``.
 The ``game controller`` interface is most suitable for modern dual-analog stick controllers,
 and provides a "just works" abstraction that suits many typical games. The ``joystick`` interface
 is more generalized, and is suitable for devices with an arbitrary number of buttons, absolute & relative
 axis, and hats. This includes devices like flight sticks, steering wheels, and just about anything
 else with digital and/or analog inputs. For most cases, the ``game controller`` interface is recommended.
 
-At the lowest level is the :py:class:`~pyglet.input.Device` interface. Suitable for advanced use cases,
-this gives you direct access to raw :py:class:`~pyglet.input.Control` objects without any normalization.
-This is useful if you have a specific hardware device you are working with, particularly those that are
-not necessarily game controllers. The higher level ``game controller`` and ``joystick`` interfaces all
-work on top of a :py:class:`~pyglet.input.Device`.
+In addition to the above interfaces, a low level :py:class:`~pyglet.input.Device` interface is also available.
+(The higher level ``game controller`` and ``joystick`` interfaces all work on top of a :py:class:`~pyglet.input.Device`).
+Accessing the underlying ``Device`` is useful for more advanced cases, as it gives you direct access to the
+raw analog and digital :py:class:`~pyglet.input.Control` objects without any normalization. If you are working with
+a very specific piece of hardware, this can be helpful.
 
-The :py:mod:`~pyglet.input` module provides several functions for querying devices, as well as a
-:py:class:`~pyglet.input.ControllerManager` class that allows easier support for hot-plugging of
-:py:class:`~pyglet.input.Controller` objects::
+To start working with input devices, import the :py:mod:`~pyglet.input` module. This module provides several functions
+for querying devices, as well as a :py:class:`~pyglet.input.ControllerManager` class that allows easier support
+for hot-plugging of :py:class:`~pyglet.input.Controller` objects::
 
     # get a list of all low-level input devices:
     devices = pyglet.input.get_devices()
@@ -44,11 +53,10 @@ The :py:mod:`~pyglet.input` module provides several functions for querying devic
 Using Controllers
 -----------------
 
-Controllers in pyglet have a strictly defined "virtual" layout that mimics modern dual-analog
-stick video game console and PC controllers. This layout includes two analog sticks, analog triggers,
-a directional pad (dpad), face and shoulder buttons, and start/back/guide and stick press buttons.
-Controllers also include the ability to play rumble effects (vibration). The following platform interfaces
-are used for Controller support:
+Controllers in pyglet have a strictly defined "virtual" layout that mimics modern dual-analog stick
+game controllers. This layout includes two analog sticks, analog triggers, a directional pad (dpad),
+face and shoulder buttons, start/back/guide buttons, and stick press buttons. Controllers also include
+the ability to play rumble effects (vibration). The following platform interfaces are used for Controller support:
 
     .. list-table::
         :header-rows: 1
@@ -146,16 +154,15 @@ or actual names that may be printed on the hardware):
         * - back
           - called "select" or "share" on some controllers
         * - guide
-          - usually in the center, with a company logo
+          - usually in the center, with a brand logo
         * - leftthumb
           - pressing in on the left analog stick
         * - rightthumb
           - pressing in on the right analog stick
 
 
-These values can be read in two ways. Polling the values directly by querying the attributes on the Controller
-instance. Or, setting up event handlers for input changes events (more on this later). All control names listed
-above are properties on the controller instance, and can be accessed directly::
+These values can be read in two ways. First, you can simply poll the values directly by querying the attributes
+on the Controller instance::
 
     # controller_instance.a           (boolean)
     # controller_instance.leftstick   (Vec2)
@@ -164,10 +171,10 @@ above are properties on the controller instance, and can be accessed directly::
         # do something
 
 
-Controllers subclass :py:class:`~pyglet.event.EventDispatcher`, and will dispatch a variety of events whenever
-the inputs change. You can set up handlers to receive whichever inputs you are interested in. Event handling is the
-recommended way to handle input, since it reduces the chance of "missed" button presses due to slow polling.
-The following events are defined:
+Alternatively, since Controllers subclass :py:class:`~pyglet.event.EventDispatcher`, they will dispatch a variety
+of events whenever the inputs change. You can set up handlers to receive whichever inputs you are interested in.
+Event handling is the recommended way to handle input, since it reduces the chance of "missed" button presses due
+to slow polling. The following events are defined:
 
     .. list-table::
         :header-rows: 1
