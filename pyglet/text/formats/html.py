@@ -6,12 +6,18 @@ supported fully::
     B BLOCKQUOTE BR CENTER CODE DD DIR DL EM FONT H1 H2 H3 H4 H5 H6 I IMG KBD
     LI MENU OL P PRE Q SAMP STRONG SUB SUP TT U UL VAR
 
+As of 3.0 supports the following inline style tags::
+
+    color, background-color, font-size, font-family, font-weight, font-style, font-stretch,
+    text-decoration, text-align, margin-left, margin-right, margin-top, margin-bottom,
+    text-indent, line-height
+
 The mark (bullet or number) of a list item is separated from the body of the
 list item with a tab, as the pyglet document model does not allow
 out-of-stream text.  This means lists display as expected, but behave a little
 oddly if edited.
 
-No CSS styling is supported.
+Full CSS styling is unsupported outside the above inline styles.
 """
 from __future__ import annotations
 
