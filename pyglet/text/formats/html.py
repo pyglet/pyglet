@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from pyglet.resource import Location
 
 
-def _hex_color(val: int) -> list[int, int, int, int]: # type: ignore reportInvalidTypeArguments
+def _hex_color(val: int) -> list[int]:
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
 
@@ -53,7 +53,7 @@ _color_names = {
 }
 
 
-def _parse_color(value: str) -> list[int, int, int, int]: # type: ignore reportInvalidTypeArguments
+def _parse_color(value: str) -> list[int]:
     if value.startswith("#"):
         return _hex_color(int(value[1:], 16))
 
@@ -86,6 +86,127 @@ _block_containers = ["_top_block",
                      "ul", "ol", "dir", "menu", "dl"]
 
 
+_css_decl_re = re.compile(r"\s*([\w-]+)\s*:\s*([^;]+)")
+
+_length_re = re.compile(r"^\s*([-+]?\d*\.?\d+)(px|pt|%)?\s*$")
+
+def _parse_length(value: str, *, base: float | None = None) -> float | None:
+    """Parse a CSS length.
+
+    Supports:
+        12
+        12px
+        12pt
+        120%  (requires base)
+    """
+    m = _length_re.match(value)
+    if not m:
+        return None
+
+    number = float(m.group(1))
+    unit = m.group(2)
+
+    if unit == "%":
+        if base is None:
+            return None
+        return base * (number / 100.0)
+
+    return number
+
+def _parse_style_attr(style_text: str, current_style: dict[str, Any]) -> dict[str, Any]:
+    """Parse inline CSS style into pyglet style attributes."""
+    result: dict[str, Any] = {}
+
+    for match in _css_decl_re.finditer(style_text):
+        prop = match.group(1).lower()
+        raw = match.group(2).strip()
+
+        if prop == "color":
+            with contextlib.suppress(ValueError):
+                result["color"] = _parse_color(raw)
+
+        elif prop == "background-color":
+            with contextlib.suppress(ValueError):
+                result["background_color"] = _parse_color(raw)
+
+        elif prop == "font-size":
+            base = current_style.get("font_size", 12)
+            size = _parse_length(raw, base=base)
+            if size:
+                result["font_size"] = size
+
+        elif prop == "font-family":
+            result["font_name"] = [f.strip() for f in raw.split(",")]
+
+        elif prop == "font-weight":
+            if raw.lower() in ("bold", "700", "600"):
+                result["weight"] = "bold"
+            else:
+                result["weight"] = raw.lower()
+
+        elif prop == "font-stretch":
+            result["stretch"] = raw.lower()
+
+        elif prop == "font-style":
+            result["style"] = raw.lower()
+
+        elif prop == "text-decoration":
+            if "underline" in raw.lower():
+                color = current_style.get("color") or [0, 0, 0, 255]
+                result["underline"] = color
+            else:
+                result["underline"] = None
+
+        elif prop == "text-align":
+            if raw.lower() in ("left", "center", "right"):
+                result["align"] = raw.lower()
+
+        elif prop == "margin-left":
+            b = current_style.get("margin_left", 12)
+            size = _parse_length(raw, base=b)
+            if size is not None:
+                result["margin_left"] = size
+
+        elif prop == "margin-right":
+            b = current_style.get("margin_right", 12)
+            size = _parse_length(raw, base=b)
+            if size is not None:
+                result["margin_right"] = size
+
+        elif prop == "margin-top":
+            b = current_style.get("margin_top", 12)
+            size = _parse_length(raw, base=b)
+            if size is not None:
+                result["margin_top"] = size
+
+        elif prop == "margin-bottom":
+            b = current_style.get("margin_bottom", 12)
+            size = _parse_length(raw, base=b)
+            if size is not None:
+                result["margin_bottom"] = size
+
+        elif prop == "text-indent":
+            val = _parse_length(raw)
+            if val is not None:
+                result["indent"] = val
+
+        elif prop == "line-height":
+            base = float(current_style.get("font_size", 12))
+
+            try:
+                multiplier = float(raw)
+                if multiplier > 0:
+                    result["line_spacing"] = base * multiplier
+                continue
+            except ValueError:
+                pass
+
+            val = _parse_length(raw, base=base)
+            if val is not None and val > 0:
+                result["line_spacing"] = float(val)
+
+    return result
+
 class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
     """Decoder for HTML documents."""
     #: Default style attributes for unstyled text in the HTML document.
@@ -94,7 +215,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         "font_size": 12,
         "margin_bottom": "12pt",
         "weight": "normal",
-        "italic": False,
+        "style": "normal",
     }
 
     #: Map HTML font sizes to actual font sizes, in points.
@@ -174,7 +295,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         if element in ("b", "strong"):
             style["weight"] = "bold"
         elif element in ("i", "em", "var"):
-            style["italic"] = True
+            style["style"] = "italic"
         elif element in ("tt", "code", "samp", "kbd"):
             style["font_name"] = "Courier New"
         elif element == "u":
@@ -234,7 +355,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             style["weight"] = "bold"
         elif element == "h6":
             style["font_size"] = 12
-            style["italic"] = True
+            style["style"] = "italic"
         elif element == "br":
             self.add_text("\u2028")
             self.strip_leading_space = True
@@ -294,6 +415,9 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self.prepare_for_data()
                 self.add_element(structured.ImageElement(image, width, height))
                 self.strip_leading_space = False
+        if "style" in attrs:
+            css_style = _parse_style_attr(attrs["style"], self.current_style)
+            style.update(css_style)
 
         self.push_style(element, style)
 
