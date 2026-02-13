@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from pyglet.customtypes import RGBAColor
 
 from pyglet.image import animation  # noqa: F401
-from pyglet.image.animation import AnimationFrame  # noqa: F401
+from pyglet.image.animation import Animation, AnimationFrame
 from pyglet.image.base import ImageData, ImageDataRegion, CompressedImageData, ImageException  # noqa: F401
 
 from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: F401
