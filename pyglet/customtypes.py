@@ -3,9 +3,10 @@ from __future__ import annotations
 import ctypes
 import sys
 
-from typing import Union, Literal, Type, Protocol, Tuple
+from typing import Union, Literal, Type, Protocol, Tuple, Annotated
 
 from ctypes import _SimpleCData, _Pointer  # type: ignore  # noqa: PGH003
+from dataclasses import dataclass
 
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
@@ -18,10 +19,16 @@ AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["bottom", "center", "top"]
 
-Number = Union[int, float]
 
-RGBColor = Tuple[Number, Number, Number]
-RGBAColor = Tuple[Number, Number, Number, Number]
+@dataclass
+class Range:
+    minimum: float | int
+    maximum: float | int
+
+
+ColorChannel = Annotated[int, Range(0, 255)]
+RGBColor = tuple[ColorChannel, ColorChannel, ColorChannel]
+RGBAColor = tuple[ColorChannel, ColorChannel, ColorChannel, ColorChannel]
 
 DataTypes = Literal[
     'f',  # float
@@ -41,13 +48,11 @@ CType = Type[_SimpleCData]
 CTypesPointer = _Pointer
 
 
-
 class ScissorProtocol(Protocol):
     x: int
     y: int
     width: int
     height: int
-
 
 
 __all__ = [

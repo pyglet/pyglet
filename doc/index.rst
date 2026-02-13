@@ -2,14 +2,14 @@ pyglet Documentation
 ====================
 
 .. note::
-   This is the documentation for pyglet version |version|.
-   If you need a different one use the docs version selector.
+   This is the documentation for pyglet version |version|. If you need
+   a different one, use the docs version selector at the bottom of the page.
 
-**pyglet** is a cross-platform windowing and multimedia library for Python,
-intended for developing games and other visually rich applications. It supports
-windowing, user interface event handling, game controllers and joysticks,
-OpenGL graphics, loading images and videos, and playing sounds and music.
-**pyglet** works on Windows, macOS and Linux.
+**pyglet** is a cross-platform Python multimedia library for building
+games and interactive applications. It provides hardware-accelerated GPU rendering,
+window management, input handling, sprites, text, images, and audio — all with zero
+external dependencies and a clean, Pythonic API.
+**pyglet** works on Windows, macOS and Linux. New in v3.0 is initial web support.
 
 Some of the features of pyglet are:
 

@@ -1,7 +1,9 @@
-"""Image load, capture and high-level texture functions.
+"""Loading and manipulation of raw image data.
 
 Only basic functionality is described here; for full reference see the
-accompanying documentation.
+accompanying documentation. Images are loaded as :py:class:`ImageData`.
+For simplicity, the terms "image" and "image data" may be used interchangeably
+below.
 
 To load an image::
 
@@ -17,8 +19,7 @@ object instead of a filename::
 The hint helps the module locate an appropriate decoder to use based on the
 file extension.  It is optional.
 
-Once loaded, images can be used directly by most other modules of pyglet.  All
-images have a width and height you can access::
+All images have a width and height you can access::
 
     width, height = pic.width, pic.height
 
@@ -26,85 +27,19 @@ You can extract a region of an image (this keeps the original image intact;
 the memory is shared efficiently)::
 
     subimage = pic.get_region(x, y, width, height)
-
-Remember that y-coordinates are always increasing upwards.
-
-Drawing images
---------------
-
-To draw an image at some point on the screen::
-
-    pic.blit(x, y, z)
-
-This assumes an appropriate view transform and projection have been applied.
-
-Some images have an intrinsic "anchor point": this is the point which will be
-aligned to the ``x`` and ``y`` coordinates when the image is drawn.  By
-default, the anchor point is the lower-left corner of the image.  You can use
-the anchor point to center an image at a given point, for example::
-
-    pic.anchor_x = pic.width // 2
-    pic.anchor_y = pic.height // 2
-    pic.blit(x, y, z)
-
-Texture access
---------------
-
-If you are using OpenGL directly, you can access the image as a texture::
-
-    texture = pic.get_texture()
-
-(This is the most efficient way to obtain a texture; some images are
-immediately loaded as textures, whereas others go through an intermediate
-form).  To use a texture with pyglet.gl::
-
-    from pyglet.graphics.api.gl import *
-    glEnable(texture.target)        # typically target is GL_TEXTURE_2D
-    glBindTexture(texture.target, texture.id)
-    # ... draw with the texture
-
-Pixel access
-------------
-
-To access raw pixel data of an image::
-
-    rawimage = pic.get_image_data()
-
-(If the image has just been loaded this will be a very quick operation;
-however if the image is a texture a relatively expensive readback operation
-will occur).  The pixels can be accessed as bytes::
-
-    format = 'RGBA'
-    pitch = rawimage.width * len(format)
-    pixels = rawimage.get_bytes(format, pitch)
-
-"format" strings consist of characters that give the byte order of each color
-component.  For example, if rawimage.format is 'RGBA', there are four color
-components: red, green, blue and alpha, in that order.  Other common format
-strings are 'RGB', 'LA' (luminance, alpha) and 'I' (intensity).
-
-The "pitch" of an image is the number of bytes in a row (this may validly be
-more than the number required to make up the width of the image, it is common
-to see this for word alignment).  If "pitch" is negative the rows of the image
-are ordered from top to bottom, otherwise they are ordered from bottom to top.
-
-Retrieving data with the format and pitch given in `ImageData.format` and
-`ImageData.pitch` avoids the need for data conversion (assuming you can make
-use of the data in this arbitrary format).
-
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, BinaryIO, Sequence
-
-import pyglet
+from typing import TYPE_CHECKING, BinaryIO
 
 if TYPE_CHECKING:
+    from pyglet.image.animation import Animation
     from pyglet.image.base import _AbstractImage
+    from pyglet.customtypes import RGBAColor
 
 from pyglet.image import animation  # noqa: F401
-from pyglet.image.animation import Animation, AnimationFrame  # noqa: F401, TC001
+from pyglet.image.animation import AnimationFrame  # noqa: F401
 from pyglet.image.base import ImageData, ImageDataRegion, CompressedImageData, ImageException  # noqa: F401
 
 from pyglet.image.base import ImageGrid, ImagePattern, _color_as_bytes  # noqa: F401
@@ -181,7 +116,7 @@ def create(width: int, height: int, pattern: ImagePattern | None = None) -> _Abs
 class SolidColorImagePattern(ImagePattern):
     """Creates an image filled with a solid RGBA color."""
 
-    def __init__(self, color: Sequence[int, int, int, int] = (0, 0, 0, 0)):
+    def __init__(self, color: RGBAColor = (0, 0, 0, 0)) -> None:
         """Create a solid image pattern with the given color.
 
         Args:
@@ -199,12 +134,8 @@ class SolidColorImagePattern(ImagePattern):
 class CheckerImagePattern(ImagePattern):
     """Create an image with a tileable checker image."""
 
-    def __init__(
-        self,
-        color1: Sequence[int, int, int, int] = (150, 150, 150, 255),
-        color2: Sequence[int, int, int, int] = (200, 200, 200, 255),
-    ):
-        """Initialise with the given colors.
+    def __init__(self, color1: RGBAColor = (150, 150, 150, 255), color2: RGBAColor = (200, 200, 200, 255)) -> None:
+        """Initialize with the given colors.
 
         Args:
             color1:

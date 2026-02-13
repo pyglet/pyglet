@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-import warnings
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Generic, Iterator, Sequence, TypeVar, Union
@@ -14,6 +14,7 @@ from pyglet.util import asbytes
 
 if TYPE_CHECKING:
     from pyglet.graphics.texture import CompressedTexture, Texture, TextureGrid, TextureSequence
+    from pyglet.customtypes import RGBAColor
 
 
 class ImagePattern(ABC):
@@ -25,7 +26,7 @@ class ImagePattern(ABC):
         raise NotImplementedError('method must be defined in subclass')
 
 
-def _color_as_bytes(color: Sequence[int, int, int, int]) -> bytes:
+def _color_as_bytes(color: RGBAColor) -> bytes:
     if len(color) != 4:
         raise TypeError("color is expected to have 4 components")
     return bytes(color)
@@ -439,6 +440,7 @@ class CompressionFormat:
     dxgi_format: int = 0
     vk_format: int = 0
 
+
 class CompressedImageData(_AbstractImage):
     """Compressed image data suitable for direct uploading to GPU."""
 
@@ -460,6 +462,8 @@ class CompressedImageData(_AbstractImage):
                 The width of the image.
             height:
                 The height of the image.
+            fmt:
+                The :py:class:`CompressionFormat` specification.
             data:
                 An array of bytes containing the compressed image data.
             extension:
@@ -494,7 +498,7 @@ class CompressedImageData(_AbstractImage):
         self.mipmap_data += [None] * (level - len(self.mipmap_data))
         self.mipmap_data[level - 1] = data
 
-    def create_texture(self, cls: type[CompressedTexture]) -> Texture:
+    def create_texture(self, cls: type[CompressedTexture]) -> CompressedTexture:
         """Given a texture class, create a texture containing this image."""
         texture = cls.create_from_image(self)
 
@@ -517,8 +521,8 @@ class CompressedImageData(_AbstractImage):
     def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
         raise NotImplementedError(f"Not implemented for {self}")
 
-    def blit(self, x: int, y: int, z: int = 0) -> None:
-        raise NotImplementedError
+    def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
+        raise NotImplementedError("This is no longer supported. Check documentation for 3.0 migration.")
 
 
 T = TypeVar('T', bound=_AbstractImage)
@@ -645,18 +649,11 @@ class _AbstractGrid(ABC, Generic[T]):
         return self.rows * self.columns
 
 
-class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImageSequence):
+class ImageGrid(_AbstractGrid[ImageData | ImageDataRegion], _AbstractImageSequence):
     """An imaginary grid placed over an image allowing easy access to regular regions of that image.
 
     The grid can be accessed either as a complete image, or as a sequence of images.
-
-    Any :py:class:`~pyglet.graphics.TextureGrid` generated via the method below will create
-    a separate texture resource::
-
-        image_grid = ImageGrid(...)
-        texture_grid = image_grid.get_texture_sequence()
-
-    For existing Texture's, it is recommended to use :py:class:`~pyglet.graphics.TextureGrid` directly.
+    For existing Textures, it is recommended to use :py:class:`~pyglet.graphics.TextureGrid` directly.
     """
 
     _texture_grid: TextureGrid | None = None
@@ -718,13 +715,8 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         return self.image.get_image_data()
 
     def get_texture_sequence(self) -> TextureGrid:
-        """Create a :py:class:`~pyglet.graphics.TextureGrid` resource from the underlying image data.
+        """Deprecated.
 
-        It is recommended to use :py:class:`~pyglet.graphics.TextureGrid` directly.
+        Use :py:class:`~pyglet.graphics.TextureGrid` instead.
         """
-        warnings.warn("Use pyglet.graphics.TextureGrid instead", DeprecationWarning)
-        if not self._texture_grid:
-            from pyglet.graphics.texture import TextureGrid
-            self._texture_grid = TextureGrid.from_image_grid(self)
-        return self._texture_grid
-
+        raise NotImplementedError("This is no longer supported. Use pyglet.graphics.TextureGrid instead.")
