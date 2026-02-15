@@ -145,7 +145,7 @@ class CocoaWindow(BaseWindow):
             if self._fullscreen:
                 # BUG: I suspect that this doesn't do the right thing when using
                 # multiple monitors (which would be to go fullscreen on the monitor
-                # where the window is located).  However I've no way to test.
+                # where the window is located).  However, I've no way to test.
                 blackColor = NSColor.blackColor()
                 self._nswindow.setBackgroundColor_(blackColor)
                 self._nswindow.setOpaque_(True)

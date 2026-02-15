@@ -1,3 +1,49 @@
+pyglet 2.1.13
+
+Bugfixes
+--------
+shapes: fix rotation behaviour of Sector when later setting radius/angle/etc. (#1405)
+window.win32: check Windows version before importing shcore. (#1402)
+gui.PushButton: fix missing argument in on_mouse_leave handler. (#1397)
+
+
+pyglet 2.1.12
+
+Bugfixes
+--------
+shapes: On vertex_list creation, ensure vertex data is initialized for rotation.
+
+
+pyglet 2.1.11
+
+Changes
+-------
+shader: Add some missing Uniform type definitions that were missed for less common types. #1380
+ffmpeg: Remove some missing attributes (libavformat version loading) that have been removed in FFMpeg 8.0.
+
+Bugfixes
+--------
+media.ffmpeg: Fix source padding issue for some sources. #1386
+window.win32: Fix memory address issues when queuing events during Windows OS window creation. #1382
+font.dwrite: Fix bug in font_files indixing (use first object, not font_fact index).
+
+
+pyglet 2.1.10
+
+Changes
+-------
+media: Add support for FFmpeg 8.0 (#1365)
+window: Update default dpi_scaling option to "platform". (#1383)
+window: Convert the Window event queue to a deque. (#1362)
+input.evdev: Do not attempt to reuse Controller instances on re-connect, as naming conflicts can occur.
+
+Bugfixes
+--------
+text: fix typing of Label.__init__'s align argument. (#1361)
+text: Update the passed args for attributed text. (#1379)
+shader: Fixed number of elements for GL_FLOAT_MAT3 (9, not 6) in pyglet.graphics.shader._uniform_setters. (#1364)
+
+
 pyglet 2.1.9
 
 Changes

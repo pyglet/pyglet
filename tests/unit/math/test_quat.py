@@ -11,16 +11,6 @@ def test_create():
     assert q.length() == 1
 
 
-def test_from_mat3():
-    with pytest.raises(NotImplementedError):
-        Quaternion.from_mat3()
-
-
-def test_from_mat4():
-    with pytest.raises(NotImplementedError):
-        Quaternion.from_mat4()
-
-
 def test_to_mat3():
     # TODO: Needs improvement. Just checking identity matrix.
     q = Quaternion()

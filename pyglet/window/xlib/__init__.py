@@ -782,7 +782,7 @@ class XlibWindow(BaseWindow):
                 y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
-            elif self._fullscreen:
+            elif self._fullscreen:  # noqa: SLF001
                 if isinstance(self.screen, XlibScreenXinerama) and self.screen._xinerama:
                     return
 

@@ -96,6 +96,7 @@ from pyglet.math import Mat4
 from pyglet.window import event, key, dialog
 
 if TYPE_CHECKING:
+    import BaseWindow as Window
     from pyglet.graphics.api.base import VerifiedGraphicsConfig, SurfaceContext, GraphicsConfig
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.text import Label
