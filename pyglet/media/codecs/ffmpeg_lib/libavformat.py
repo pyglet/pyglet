@@ -112,9 +112,9 @@ AVClass = libavutil.AVClass
 AVCodec = libavcodec.AVCodec
 
 
-
 class AVStream(Structure):
     pass
+
 
 AVStream_Fields = [
         ('av_class', POINTER(AVClass)),
@@ -142,19 +142,19 @@ AVStream_Fields = [
         ('pts_wrap_bits', c_int),
     ]
 
-compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=('av_class',))
+compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields,
+                           removals=('av_class',))
 
 compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
                            removals=('av_class', 'codec', 'recommended_encoder_configuration', 'info'))
 
-for compat_ver in (60, 61, 62):
+for compat_ver in (60, 61):
     compat.add_version_changes('avformat', compat_ver, AVStream, AVStream_Fields,
                                removals=('codec', 'recommended_encoder_configuration', 'info'),
                                repositions=(compat.Reposition("codecpar", "id"),))
 
 compat.add_version_changes('avformat', 62, AVStream, AVStream_Fields,
-                           removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data',
-                                     'nb_side_data'),
+                           removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data', 'nb_side_data'),
                            repositions=(compat.Reposition("codecpar", "id"),))
 
 
