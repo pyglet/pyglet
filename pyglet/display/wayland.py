@@ -36,12 +36,11 @@ class WaylandDisplay(Display):
 
     def __init__(self):
         super().__init__()
-        # Create temporary Client connection to query Screen information:
         # TODO: use the new fractional scaling Protocol if available.
         self.client = Client(*self._protocols)
         self.client.sync()
 
-        self.display_connection = egl.eglGetPlatformDisplay(eglext.EGL_PLATFORM_WAYLAND, self.client.wl_display_p, None)
+        self.display_connection = egl.eglGetPlatformDisplay(eglext.EGL_PLATFORM_WAYLAND, self.client.wl_display_ptr, None)
 
         assert egl.eglInitialize(self.display_connection, None, None) == egl.EGL_TRUE, "Failed to initialize Display"
 
@@ -154,4 +153,5 @@ class WaylandScreen(Screen):
         return self._scale
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+        return (f"{self.__class__.__name__}(name={self.name}, x={self.x}, y={self.y}, "
+                f"width={self.width}, height={self.height})")

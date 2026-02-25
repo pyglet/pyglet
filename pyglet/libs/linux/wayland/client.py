@@ -5,7 +5,6 @@ import os as _os
 import select as _select
 import socket as _socket
 import threading as _threading
-import time
 import weakref
 
 from collections import defaultdict as _defaultdict
@@ -21,6 +20,7 @@ from xml.etree.ElementTree import Element, ParseError
 
 if TYPE_CHECKING:
     from ctypes import _Pointer
+    from ctypes import Array as CtypesArray
 
 
 from pyglet.libs.linux.wayland.lib_wayland import (
@@ -50,8 +50,6 @@ from pyglet.util import debug_print
 
 
 _debug_wayland = debug_print('debug_wayland')
-
-USE_LIB_WAYLAND = True
 
 
 class ObjectIDPool:
@@ -340,9 +338,11 @@ class Event:
         self.arg_ctypes = [arg.c_type for arg in self.arguments]
         self.arg_count = len(self.arguments)
 
+        if POINTER(wl_array) in self.arg_ctypes:
+            print(self)
+
     def __call__(self, payload: bytes, fds: bytes) -> None:
-        if USE_LIB_WAYLAND:
-            raise Exception("Not to be called.")
+        raise Exception("Not to be called.")
         decoded_values = []
 
         for arg in self.arguments:
@@ -386,7 +386,7 @@ class Request:
         )
         # TODO: attempt to update a custom signature/annotations for the __call__ method.
 
-    def create_interface_proxy(self, name: str, *args: Any) -> None:
+    def create_interface_proxy(self, name: str, *args: Any) -> wl_proxy:
         interface_struct = self._protocol._interface_structures[name]
         _formated_args = []
         for arg in args:
@@ -394,15 +394,15 @@ class Request:
                 _formated_args.append(c_uint32(arg))
             elif isinstance(arg, str):
                 _formated_args.append(c_char_p(arg.encode()))
-            elif hasattr(arg, "_proxy"):
+            elif hasattr(arg, "proxy"):
                 # It has an interface with a proxy, like wl_surface.
-                _formated_args.append(cast(arg._proxy, c_void_p))
+                _formated_args.append(cast(arg.proxy, c_void_p))
             else:
                 msg = f"Unsupported arg type for {arg!r}"
                 raise TypeError(msg)
 
         return wl_proxy_marshal_constructor_versioned(
-            self._interface._proxy,
+            self._interface.proxy,
             c_uint32(self.opcode),
             byref(interface_struct),
             c_uint32(self.version),
@@ -419,39 +419,21 @@ class Request:
 
     def __call__(self, *args: Any) -> None | Interface:
         assert len(args) == len(self.arguments), f"expected {len(self.arguments)} arguments: {self.arguments}"
-
-        if USE_LIB_WAYLAND:
-            assert _debug_wayland(f"> request called: {self.name} : args={args}. all={self.arguments}")
-
-            for argument, value in zip(self.arguments, args):
-                if argument.returns_new_object:
-                    assert _debug_wayland(
-                        f"> requires new interface: {self.new_interface} value={value} : args={args}. {self.arguments}",
-                    )
-                    proxy = self.create_interface_proxy(self.new_interface, *args)
-                    interface = self._protocol.create_interface(argument.interface, value, proxy=proxy)
-                    assert _debug_wayland(f"> created interface: {interface}")
-                    return interface
-
-            assert _debug_wayland(f"> calling: {self.name} : args={args}")
-            wl_proxy_marshal(self._interface._proxy, self.opcode, *args)
-            return None
-
-        # Pure socket call.
-        interface = None
-        bytestring = b''
-        fds = b''
+        assert _debug_wayland(f"> request called: {self.name} : args={args}. all={self.arguments}")
 
         for argument, value in zip(self.arguments, args):
             if argument.returns_new_object:
-                interface = self._protocol.create_interface(argument.interface, value)
-            if argument.wl_type is FD:
-                fds += argument(value)
-                continue
-            bytestring += argument(value)
+                assert _debug_wayland(
+                    f"> requires new interface: {self.new_interface} value={value} : args={args}. {self.arguments}",
+                )
+                proxy = self.create_interface_proxy(self.new_interface, *args)
+                interface = self._protocol.create_interface(argument.interface, value, proxy=proxy)
+                assert _debug_wayland(f"> created interface: {interface}")
+                return interface
 
-        self._send(bytestring, fds)
-        return interface
+        assert _debug_wayland(f"> calling: {self.name} : args={args}")
+        wl_proxy_marshal(self._interface.proxy, self.opcode, *args)
+        return None
 
     def __repr__(self) -> str:
         return f"{self.name}(opcode={self.opcode}, args=({', '.join(f'{a}' for a in self.arguments)}))"
@@ -486,17 +468,15 @@ class Interface:
         for name in self.event_types:
             self._handlers[name] = []
 
-        self._proxy = proxy
+        self.proxy = proxy
 
         # Keeps listener callbacks in memory when created, to prevent GC.
         self._listener_keepalive = None
 
     def _install_listeners(self) -> None:
         """Build and register the handlers as listeners."""
-        if not USE_LIB_WAYLAND:
-            return
 
-        if not self._proxy:
+        if not self.proxy:
             raise RuntimeError("No wl_proxy to attach listener to.")
 
         c_funcs = []
@@ -536,7 +516,7 @@ class Interface:
         for i, fn_ptr in enumerate(c_funcs):
             arr[i] = fn_ptr
 
-        rc = wl_proxy_add_listener(self._proxy, arr, None)
+        rc = wl_proxy_add_listener(self.proxy, arr, None)
         if rc != 0:
             msg = f"wl_proxy_add_listener failed for {self.name}, rc={rc}"
             raise RuntimeError(msg)
@@ -570,9 +550,9 @@ class Interface:
             del self._handlers[name]
 
     def delete(self) -> None:
-        if self._proxy:
-            wl_proxy_destroy(self._proxy)
-            self._proxy = None
+        if self.proxy:
+            wl_proxy_destroy(self.proxy)
+            self.proxy = None
         if self._listener_keepalive:
             self._listener_keepalive = None
 
@@ -590,7 +570,7 @@ def _generate_wl_interface(interface_element: Element, all_interfaces: dict) -> 
     version = int(interface_element.attrib.get("version", 1))
 
     # Converts requests and events elements to ctypes pointers
-    def build_messages(elements: list[Element]) -> Array[wl_message]:
+    def build_messages(elements: list[Element]) -> CtypesArray[wl_message]:
         messages = (wl_message * len(elements))()
         for i, elem in enumerate(elements):
             msg_name = elem.attrib["name"].encode("utf-8")
@@ -672,7 +652,7 @@ class ClientDisplay(Interface):
         super().__init__(oid, proxy)
         assert proxy is None, "Should not be created with proxy."
         self._display = None
-        self._proxy = None
+        self.proxy = None
 
     def connect(self, path: str | Path | None = None, fd: int | None = None) -> None:
         if fd is not None:
@@ -687,23 +667,19 @@ class ClientDisplay(Interface):
                 self._display = wl_display_connect(None)
             if not self._display:
                 raise WaylandException("Could not connect to Wayland Display.")
-        self._proxy = as_proxy(self._display)
+
+        self.proxy = as_proxy(self._display)
 
     @property
-    def display(self) -> _Pointer[wl_display]:
+    def display(self) -> _Pointer[wl_display] | None:
         return self._display
 
     def disconnect(self) -> None:
         if self._display:
             wl_display_disconnect(self._display)
             self._display = None
-            wl_proxy_destroy(self._proxy)
-            self._proxy = None
-
-    def _install_listeners(self) -> None:
-        """The wl_display object is special and does not support listeners added through wl_proxy_add_listener()."""
-        if USE_LIB_WAYLAND:
-            raise WaylandException("Wayland Client Display does not support listeners. Use WAYLAND_DEBUG environment variable.")
+            wl_proxy_destroy(self.proxy)
+            self.proxy = None
 
 
 _special_classes = {
@@ -713,7 +689,7 @@ _special_classes = {
 
 class Protocol:
     def __init__(self, client: Client, filename: str) -> None:
-        """A Wayland Protocol
+        """Representation of a Wayland Protocol.
 
         Given a Wayland Protocol .xml file, this class will dynamically
         introspect and define custom classes for all Interfaces defined
@@ -746,9 +722,9 @@ class Protocol:
             interface_class = type(name, (interface_base_class,), {'protocol': self, '_element': element, 'opcode': i})
             self._interface_classes[name] = interface_class
             assert _debug_wayland(f"   * found interface: '{name}'")
-            if USE_LIB_WAYLAND:
-                iface_struct = _generate_wl_interface(element, self._interface_structures)
-                assert _debug_wayland(f"    * generated: {name} -> {iface_struct}")
+
+            iface_struct = _generate_wl_interface(element, self._interface_structures)
+            assert _debug_wayland(f"    * generated: {name} -> {iface_struct}")
 
     def bind_interface(self, name: str, index: int = 0) -> Interface:
         """Create an Interface instance & bind it to a global object.
@@ -765,27 +741,16 @@ class Protocol:
         iface_name = interface_global.interface.decode()
         # Inform the server of the new relationship:
         # Request...
-        if USE_LIB_WAYLAND:
-            proxy = interface_global.bind_proxy(self._interface_structures[iface_name])
-        else:
-            proxy = None
-
+        proxy = interface_global.bind_proxy(self._interface_structures[iface_name])
         interface_instance = self.create_interface(iface_name, proxy=proxy)
 
         # Will cause a leak if uncommented. Just keep your instance alive.
         # self.client.bound_globals[interface_global.name] = interface_instance
 
-        if not USE_LIB_WAYLAND:
-            _string = String(name).to_bytes()
-            _version = UInt(interface_global.version).to_bytes()
-            _new_id = NewID(interface_instance.oid).to_bytes()
-            combined_new_id = _string + _version + _new_id
-            self.client.wl_registry.bind(interface_global.name, combined_new_id)
-
         assert _debug_wayland(f"> {self}.bind_interface: global {name}")
         return interface_instance
 
-    def create_interface(self, name: str, oid: int | None = None, proxy = None) -> Interface:
+    def create_interface(self, name: str, oid: int | None = None, proxy=None) -> Interface:
         """Create an Interface instance by name.
 
         Args:
@@ -799,7 +764,6 @@ class Protocol:
         oid = oid or next(self.client.oid_pool)
         interface = self._interface_classes[name](oid=oid, proxy=proxy)
         assert _debug_wayland(f"> {self}.create_interface: {interface}")
-        #self.client._oid_interface_map[oid] = interface
         return interface
 
     # def delete_interface(self, oid: int) -> None:
@@ -900,21 +864,8 @@ class Client:
         # Create global display interface:
         self.wl_display: ClientDisplay = self.protocols.wayland.create_interface(name='wl_display')
 
-        if USE_LIB_WAYLAND:
-            # Can use an opened socket if you want to read from it too, but you CANNOT write to it.
-            # self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM, 0)
-            # self._sock.connect(path)
-            # self.wl_display.connect(fd=self._sock.fileno())
-
-            self.wl_display.connect(self._endpoint)
-            self.wl_display_p = cast(self.wl_display._display, c_void_p)
-        else:
-            self._sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM, 0)
-            self._sock.connect(path.as_posix())
-            assert _debug_wayland(f"connected to: {self._sock.getpeername()}")
-            # !!! Not supported with lib Wayland.
-            self.wl_display.set_handlers(error=self._wl_display_error_handler,
-                                         delete_id=self._wl_display_delete_id_handler)
+        self.wl_display.connect(self._endpoint)
+        self.wl_display_ptr = cast(self.wl_display.display, c_void_p)
 
         # Create global registry:
         self.wl_registry: Interface = self.wl_display.get_registry(next(self.oid_pool))
@@ -925,15 +876,14 @@ class Client:
         self._sync_done = _threading.Event()
         self._thread_running = _threading.Event()
 
-        self._receive_loop_method = self._receive_loop if USE_LIB_WAYLAND else self._receive_loop_socket
-        self._receive_thread = _threading.Thread(target=self._receive_loop_method, daemon=True)
+        self._receive_thread = _threading.Thread(target=self._receive_loop, daemon=True)
         self._receive_thread.start()
         self._thread_running.wait()
 
     def _receive_loop(self) -> None:
         """A threaded method for continuously reading Server messages."""
         self._thread_running.set()
-        dpy = self.wl_display._display
+        dpy = self.wl_display.display
         fd = wl_display_get_fd(dpy)
         while self._thread_running.is_set():
             # Prepare to read. if it returns -1, just dispatch pending
@@ -983,52 +933,6 @@ class Client:
         """
         self._sock.sendmsg([request], [(_socket.SOL_SOCKET, _socket.SCM_RIGHTS, fds)])
 
-    def _receive_loop_socket(self) -> None:
-        """A threaded method for continuously reading Server messages."""
-        self._thread_running.set()
-        while self._thread_running.is_set():
-            self._receive_socket()
-
-    def _receive_socket(self) -> None:
-        """Receive and process Wayland Events (messages) from the server."""
-        _header_len = Header.length
-
-        try:
-            new_data, ancdata, msg_flags, _ = self._sock.recvmsg(4096, _socket.CMSG_SPACE(64))
-        except ConnectionError:
-            raise WaylandSocketError("Socket is closed")
-
-        if new_data == b"":
-            raise WaylandSocketError("Socket is dead")
-
-        # Include any leftover partial data:
-        data = self._recv_buffer + new_data
-        fds = b"".join([fds for _, _, fds in ancdata])
-
-        # Parse the events in chunks:
-        while len(data) > _header_len:
-            # The first part of the data is the header:
-            header = Header.from_bytes(data[:_header_len])
-
-            # Do we have enough data for the full message?
-            if len(data) < header.size:
-                print("WARNING! Pending FDS!", fds)
-                break
-
-            # - find the matching object (interface) from the header.oid
-            # - find the matching event by its header.opcode
-            # - pass the raw payload into the event, which will decode it
-            # TODO: handle "dead" interfaces:
-            interface = self._oid_interface_map[header.oid]
-            event = interface.events[header.opcode]
-            event(data[_header_len:header.size], fds)
-
-            # trim, and continue loop
-            data = data[header.size:]
-
-        # Keep leftover for next time:
-        self._recv_buffer = data
-
     def __del__(self) -> None:
         self._thread_running.clear()
         if hasattr(self, '_sock') and self._sock:
@@ -1055,7 +959,7 @@ class Client:
         # wayland lib sends as bytes, socket reader sends as string.
         fmt_interface_name = interface_name.decode()
         assert _debug_wayland(f"wl_registry global: {global_name_id}, {fmt_interface_name}, {version}")
-        self.globals[fmt_interface_name].append(GlobalObject(self.wl_registry._proxy, global_name_id, interface_name, version))
+        self.globals[fmt_interface_name].append(GlobalObject(self.wl_registry.proxy, global_name_id, interface_name, version))
         self.global_interface_map[global_name_id] = fmt_interface_name
 
     def _wl_registry_global_remove(self, global_name):
@@ -1063,6 +967,5 @@ class Client:
         interface = self.global_interface_map.pop(global_name)
         self.globals[interface] = [g for g in self.globals[interface] if g.name != global_name]
 
-        if instance := self.bound_globals.pop(global_name, None):
-            # TODO:
-            pass
+        # if instance := self.bound_globals.pop(global_name, None):
+        #     # TODO:

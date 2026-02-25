@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import ctypes
-import mmap
 import os
-from ctypes import create_string_buffer
+import mmap
+import ctypes
+
 from typing import Sequence
 
 import pyglet
@@ -56,7 +56,7 @@ class WaylandWindow(BaseWindow):
     egl_display_connection = None
     egl_surface = None
 
-    _protocols = ['/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml']
+    # _protocols = ['/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml']
     client: Client = None
     wl_compositor: Interface
     wl_surface: Interface
@@ -74,7 +74,7 @@ class WaylandWindow(BaseWindow):
         self.xkb_keymap = None
         self.xkb_state_withmod = None   # updated when modifiers are pressed
         self.xkb_state_default = None   # never gets updated (for reference)
-        self._text_buffer = create_string_buffer(4)
+        self._text_buffer = ctypes.create_string_buffer(4)
         super().__init__(*args, **kwargs)
 
     def _recreate(self, changes: Sequence[str]) -> None:
@@ -187,11 +187,11 @@ class WaylandWindow(BaseWindow):
         self.wl_seat = self.client.protocol_dict['wayland'].bind_interface('wl_seat')
         self.wl_pointer = self.wl_seat.get_pointer(next(self.client.oid_pool))
         self.wl_pointer.set_handlers(motion=self.wl_pointer_motion_handler,
-                                    button=self.wl_pointer_button_handler,
-                                    axis_value120=self.wl_pointer_axis_value120_handler,
-                                    enter=self.wl_pointer_enter_handler,
-                                    leave=self.wl_pointer_leave_handler)
-        # frame', self.wl_pointer_frame_handler)
+                                     button=self.wl_pointer_button_handler,
+                                     axis_value120=self.wl_pointer_axis_value120_handler,
+                                     enter=self.wl_pointer_enter_handler,
+                                     leave=self.wl_pointer_leave_handler,
+                                     frame=self.wl_pointer_frame_handler)
 
         self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
         self.wl_keyboard.set_handlers(
@@ -216,7 +216,7 @@ class WaylandWindow(BaseWindow):
 
         if not self.egl_surface and not self._shadow:
             # An EGL window needs to be created from a Wayland surface,
-            egl_window = wl_egl_window_create(self.wl_surface._proxy, self._width, self._height)
+            egl_window = wl_egl_window_create(self.wl_surface.proxy, self._width, self._height)
 
             if not egl_window:
                 err = egl.eglGetError()
@@ -252,6 +252,7 @@ class WaylandWindow(BaseWindow):
 
     def xdg_toplevel_configure_handler(self, width, height, states):
         print(" --> xdg_toplevel configure event", width, height, states)
+        print(states.contents.size)
 
     def xdg_toplevel_configure_bounds(self, width, height):
         print(" --> xdg_toplevel_configure_bounds event", width, height)
@@ -259,9 +260,9 @@ class WaylandWindow(BaseWindow):
     def xdg_toplevel_close_handler(self):
         self.dispatch_event('on_close')
 
-    def xdg_surface_configure_handler(self, *args):
-        print(" --> xdg_surface configure event", args)
-        self.xdg_surface.ack_configure(args[0])
+    def xdg_surface_configure_handler(self, serial):
+        print(" --> xdg_surface configure event", serial)
+        self.xdg_surface.ack_configure(serial)
 
     def wl_pointer_button_handler(self, serial, time, button, state):
         mouse_button = {0x110: mouse.LEFT,
@@ -301,8 +302,9 @@ class WaylandWindow(BaseWindow):
         scroll_y *= (value120 / 120)
         self.dispatch_event('on_mouse_scroll', self._mouse_x, self._mouse_y, scroll_x, scroll_y)
 
-    # def wl_pointer_frame_handler(self):
-    #     print("end of pointer frame")
+    def wl_pointer_frame_handler(self, *args):
+        # print(" --> wl_pointer frame event", args)
+        pass
 
     def wl_pointer_enter_handler(self, serial, surface, surface_x, surface_y):
         # TODO: make sure it's the main app surface
