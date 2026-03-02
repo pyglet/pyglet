@@ -56,7 +56,6 @@ class WaylandWindow(BaseWindow):
     egl_display_connection = None
     egl_surface = None
 
-    # _protocols = ['/usr/share/wayland/wayland.xml', '/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml']
     client: Client = None
     wl_compositor: Interface
     wl_surface: Interface
@@ -64,6 +63,7 @@ class WaylandWindow(BaseWindow):
     wdg_surface: Interface
     xdg_toplevel: Interface
     wl_pointer: Interface
+    wl_keyboard: Interface
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         self._mouse_buttons = 0
@@ -152,6 +152,7 @@ class WaylandWindow(BaseWindow):
         self._dpi = self._screen.get_dpi()
         self._scale = self._screen.get_scale() if pyglet.options.dpi_scaling == "stretch" else 1.0
 
+        # TODO: Wayland fullscreen related calls
         # if self._fullscreen:
         #     width, height = self.screen.width, self.screen.height
         # else:
@@ -161,6 +162,7 @@ class WaylandWindow(BaseWindow):
         #         w, h = self.get_requested_size()
         #         self._width = width = int(w * self.scale)
         #         self._height = height = int(h * self.scale)
+
         self.client = self.display.client
         self.client.sync()
 
@@ -183,36 +185,6 @@ class WaylandWindow(BaseWindow):
         )
         self.xdg_toplevel.set_parent(None)
         self.xdg_toplevel.set_app_id(self._caption)
-
-        self.wl_seat = self.client.protocol_dict['wayland'].bind_interface('wl_seat')
-        self.wl_pointer = self.wl_seat.get_pointer(next(self.client.oid_pool))
-        self.wl_pointer.set_handlers(motion=self.wl_pointer_motion_handler,
-                                     button=self.wl_pointer_button_handler,
-                                     axis_value120=self.wl_pointer_axis_value120_handler,
-                                     enter=self.wl_pointer_enter_handler,
-                                     leave=self.wl_pointer_leave_handler,
-                                     frame=self.wl_pointer_frame_handler)
-
-        self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
-        self.wl_keyboard.set_handlers(
-            keymap=self.wl_keyboard_keymap_handler,
-            modifiers=self.wl_keyboard_modifiers_handler,
-            key=self.wl_keyboard_key_handler,
-            enter=self.wl_keyboard_enter_handler,
-            leave=self.wl_keyboard_leave_handler,
-        )
-
-        # Used for software render?
-        # import os, tempfile
-        # fd, name = tempfile.mkstemp()
-        # _data_size = self._width * self._height * 4  # width x height x rgba
-        # os.write(fd, b'\xee\x33\x33\xee' * self._width * self._height)  # BGRA
-        #
-        # wl_shm = self.client.protocol_dict['wayland'].bind_interface('wl_shm')
-        # wl_shm_pool = wl_shm.create_pool(next(self.client.oid_pool), fd, _data_size)
-        # wl_buffer = wl_shm_pool.create_buffer(next(self.client.oid_pool), 0, self._width, self._height,
-        #                                       self._width * 4, 0)
-        # self.wl_surface.attach(wl_buffer.oid, 0, 0)
 
         if not self.egl_surface and not self._shadow:
             # An EGL window needs to be created from a Wayland surface,
@@ -237,9 +209,44 @@ class WaylandWindow(BaseWindow):
                 msg = f"Failed to create egl surface. Error: 0x{err:04x}"
                 raise Exception(msg)
 
-            # self.canvas = WaylandCanvas(self.display, self.egl_surface)
             self.context.attach(self)
             self.dispatch_event('_on_internal_resize', self._width, self._height)
+
+            self._set_input_handlers()
+
+    def _set_input_handlers(self):
+        # TODO: set when window receives focus
+        self.wl_seat = self.client.protocol_dict['wayland'].bind_interface('wl_seat')
+        self.wl_pointer = self.wl_seat.get_pointer(next(self.client.oid_pool))
+        self.wl_pointer.set_handlers(motion=self.wl_pointer_motion_handler,
+                                     button=self.wl_pointer_button_handler,
+                                     axis_value120=self.wl_pointer_axis_value120_handler,
+                                     enter=self.wl_pointer_enter_handler,
+                                     leave=self.wl_pointer_leave_handler,
+                                     frame=self.wl_pointer_frame_handler)
+
+        self.wl_keyboard = self.wl_seat.get_keyboard(next(self.client.oid_pool))
+        self.wl_keyboard.set_handlers(
+            keymap=self.wl_keyboard_keymap_handler,
+            modifiers=self.wl_keyboard_modifiers_handler,
+            key=self.wl_keyboard_key_handler,
+            enter=self.wl_keyboard_enter_handler,
+            leave=self.wl_keyboard_leave_handler,
+        )
+
+    def _remove_input_handlers(self):
+        # TODO: explicitly remove handlers for multi-windows (pending Client updates).
+        if hasattr(self, 'wl_pointer'):
+            self.wl_pointer.clear_handlers()
+        if hasattr(self, 'wl_keyboard'):
+            self.wl_keyboard.clear_handlers()
+
+    def close(self) -> None:
+        super().close()
+        self._remove_input_handlers()
+
+    def on_expose(self):
+        print("Exposed: ", self)
 
     # Start Wayland event handlers
 
@@ -252,7 +259,6 @@ class WaylandWindow(BaseWindow):
 
     def xdg_toplevel_configure_handler(self, width, height, states):
         print(" --> xdg_toplevel configure event", width, height, states)
-        print(states.contents.size)
 
     def xdg_toplevel_configure_bounds(self, width, height):
         print(" --> xdg_toplevel_configure_bounds event", width, height)
@@ -280,9 +286,18 @@ class WaylandWindow(BaseWindow):
             self.dispatch_event('on_mouse_release', self._mouse_x, self._mouse_y, mouse_button, self._key_modifiers)
 
     def wl_pointer_motion_handler(self, time, surface_x, surface_y):
+        # TODO: unpack "fixed" type in the client:
+        surface_x = surface_x / 256.0
+        surface_y = surface_y / 256.0
+
         x = surface_x / self._scale
-        # TODO: isolate flipped-Y to a single value
-        y = self.height - surface_y / self._scale
+        y = self._height - surface_y / self._scale
+
+        x = round(x)
+        y = round(y)
+
+        print(f"motionnotify: x={x}, y={y}  {self}")
+
         dx = x - self._mouse_x
         dy = y - self._mouse_y
         self._mouse_x = x

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc as _abc
 import os as _os
 import select as _select
 import socket as _socket
@@ -12,7 +11,6 @@ from collections import deque as _deque
 from ctypes import CFUNCTYPE, POINTER, byref, c_char_p, c_int, c_int32, c_uint32, c_void_p, cast, pointer
 from dataclasses import dataclass
 from pathlib import Path
-from struct import Struct as _Struct
 from types import SimpleNamespace as _NameSpace
 from typing import TYPE_CHECKING, Any, Callable
 from xml.etree import ElementTree as _ElementTree
@@ -92,170 +90,12 @@ class WaylandProtocolError(WaylandException, FileNotFoundError):
 ##################################
 
 
-class WaylandType(_abc.ABC):
-    struct: _Struct
-    length: int
-    value: int | float | str | bytes
-
-    @_abc.abstractmethod
-    def to_bytes(self) -> bytes:
-        ...
-
-    @classmethod
-    @_abc.abstractmethod
-    def from_bytes(cls, buffer: bytes) -> WaylandType:
-        ...
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(length={self.length}, value={self.value})"
-
-
-class Int(WaylandType):
-    struct = _Struct('i')
-    length = struct.size
-
-    def __init__(self, value: int):
-        self.value = value
-
-    def to_bytes(self) -> bytes:
-        return self.struct.pack(self.value)
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> Int:
-        return cls(cls.struct.unpack(buffer[:cls.length])[0])
-
-
-class UInt(WaylandType):
-    struct = _Struct('I')
-    length = struct.size
-
-    def __init__(self, value: int):
-        self.value = value
-
-    def to_bytes(self) -> bytes:
-        return self.struct.pack(self.value)
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> UInt:
-        return cls(cls.struct.unpack(buffer[:cls.length])[0])
-
-
-class Fixed(WaylandType):
-    struct = _Struct('I')
-    length = struct.size
-
-    def __init__(self, value: int):
-        self.value = value
-
-    def to_bytes(self) -> bytes:
-        return self.struct.pack((int(self.value) << 8) + int((self.value % 1.0) * 256))
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> Fixed:
-        unpacked = cls.struct.unpack(buffer[:cls.length])[0]
-        return cls((unpacked >> 8) + (unpacked & 0xFF) / 256.0)
-
-
-class String(WaylandType):
-    struct = _Struct('I')
-
-    def __init__(self, text: str):
-        # length uint + text length + 4byte rounding
-        self.length = 4 + len(text) + (-len(text) % 4)
-        self.value = text
-
-    def to_bytes(self) -> bytes:
-        string_length = len(self.value) + 1
-        padding = self.length - self.struct.size
-        encoded = self.value.encode()
-        return self.struct.pack(string_length) + encoded.ljust(padding, b'\x00')
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> String:
-        length = cls.struct.unpack(buffer[:4])[0]   # 32-bit integer ('I')
-        text = buffer[4:4+length-1].decode()        # strip padding byte
-        return cls(text)
-
-
-class Array(WaylandType):
-    struct = _Struct('I')
-
-    def __init__(self, array: bytes):
-        # length uint + text length + 4byte padding
-        self.length = 4 + len(array) + (-len(array) % 4)
-        self.value = array
-
-    def to_bytes(self) -> bytes:
-        length = len(self.value)
-        padding_size = 4 - (length % 4)
-        return self.struct.pack(length) + b'\x00' * padding_size
-
-    @classmethod
-    def from_bytes(cls, buffer: bytes) -> Array:
-        length = cls.struct.unpack(buffer[:4])[0]      # 32-bit integer
-        array = buffer[4:4+length]
-        return cls(array)
-
-
-class Header(WaylandType):
-    struct = _Struct('IHH')
-    length = struct.size
-
-    def __init__(self, oid, opcode, size):
-        self.oid = oid
-        self.opcode = opcode
-        self.size = size
-        self.value = self.struct.pack(oid, opcode, size)
-
-    def to_bytes(self) -> bytes:
-        return self.value
-
-    @classmethod
-    def from_bytes(cls, buffer) -> Header:
-        return cls(*cls.struct.unpack(buffer))
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(oid={self.oid}, opcode={self.opcode}, size={self.size})"
-
-
-class Object(UInt):
-    def __init__(self, value: int):
-        # Optional 'allow-null' (None) as 0:
-        super().__init__(value or 0)
-
-
-class NewID(UInt):
-    def to_bytes(self) -> bytes:
-        # Special case for wl_registry.bind()
-        if isinstance(self.value, bytes):
-            return self.value
-        return super().to_bytes()
-
-
-class FD(Int):
-    pass
-
-
-class _ObjectSpace:
-    pass
-
-
 ##################################
 #      Wayland abstractions
 ##################################
 
 
 class Argument:
-    _type_map = {
-        'int': Int,
-        'uint': UInt,
-        'fixed': Fixed,
-        'string': String,
-        'object': Object,
-        'new_id': NewID,
-        'array': Array,
-        'fd': FD,
-    }
 
     _ctype_map = {
         'int': c_int32,
@@ -273,23 +113,22 @@ class Argument:
         self._element = element
         self.name = element.get('name')
         self.type_name = element.get('type')
-        self.wl_type = self._type_map[self.type_name]
         self.c_type = self._ctype_map[self.type_name]
 
         self.summary = element.get('summary')
         self.allow_null = True if element.get('allow-null') else False
 
         self.interface = element.get('interface')
-        self.returns_new_object = self.wl_type is NewID and self.interface
+        self.returns_new_object = self.type_name == 'new_id' and self.interface
 
-    def __call__(self, value) -> bytes:
-        return self.wl_type(value).to_bytes()
-
-    def from_bytes(self, buffer: bytes) -> WaylandType:
-        return self.wl_type.from_bytes(buffer)
+    # def __call__(self, value) -> bytes:
+    #     return self.wl_type(value).to_bytes()
+    #
+    # def from_bytes(self, buffer: bytes) -> WaylandType:
+    #     return self.wl_type.from_bytes(buffer)
 
     def __repr__(self) -> str:
-        return f"{self.name}: {self.wl_type.__name__}"
+        return f"{self.name}: {self.type_name}"
 
 
 class Entry:
@@ -338,28 +177,6 @@ class Event:
         self.arg_ctypes = [arg.c_type for arg in self.arguments]
         self.arg_count = len(self.arguments)
 
-        if POINTER(wl_array) in self.arg_ctypes:
-            print(self)
-
-    def __call__(self, payload: bytes, fds: bytes) -> None:
-        raise Exception("Not to be called.")
-        decoded_values = []
-
-        for arg in self.arguments:
-            if arg.wl_type == FD:
-                wl_type = arg.wl_type.from_bytes(fds)
-                decoded_values.append(wl_type.value)
-                fds = fds[wl_type.length:]
-            else:
-                wl_type = arg.wl_type.from_bytes(payload)
-                decoded_values.append(wl_type.value)
-                # trim, and continue loop:
-                payload = payload[wl_type.length:]
-
-        # signature = tuple(f"{arg.name}={value}" for arg, value in zip(self.arguments, decoded_values))
-        # print(f"Event({self.name}), arguments={signature}")
-        self._interface.dispatch_event(self.name, *decoded_values)
-
     def __repr__(self):
         args = ', '.join(f'{a.name}={a.type_name}' for a in self.arguments)
         return f"{self.__class__.__name__}(name={self.name}, opcode={self.opcode}, args=({args}))"
@@ -368,7 +185,6 @@ class Event:
 class Request:
     def __init__(self, interface, element, opcode):
         self._protocol = interface.protocol
-        self._client = interface.protocol.client
         self.parent_oid = interface.oid
         self.opcode = opcode
         self.version = interface.version
@@ -384,7 +200,6 @@ class Request:
             (a.get('interface') for a in element.findall('arg') if a.get('type') == 'new_id'),
             None,
         )
-        # TODO: attempt to update a custom signature/annotations for the __call__ method.
 
     def create_interface_proxy(self, name: str, *args: Any) -> wl_proxy:
         interface_struct = self._protocol._interface_structures[name]
@@ -409,23 +224,13 @@ class Request:
             *_formated_args,
         )
 
-    def _send(self, bytestring, fds) -> None:
-        """Attach a Header to the payload, and send."""
-        size = Header.length + len(bytestring)
-        header = Header(self.parent_oid, self.opcode, size)
-        # final request and file descriptor payloads:
-        request = header.to_bytes() + bytestring
-        self._client.socket_sendmsg(request, fds)
-
     def __call__(self, *args: Any) -> None | Interface:
         assert len(args) == len(self.arguments), f"expected {len(self.arguments)} arguments: {self.arguments}"
         assert _debug_wayland(f"> request called: {self.name} : args={args}. all={self.arguments}")
 
         for argument, value in zip(self.arguments, args):
             if argument.returns_new_object:
-                assert _debug_wayland(
-                    f"> requires new interface: {self.new_interface} value={value} : args={args}. {self.arguments}",
-                )
+                assert _debug_wayland(f"> requires new interface: {self.new_interface} value={value} : args={args}. {self.arguments}")
                 proxy = self.create_interface_proxy(self.new_interface, *args)
                 interface = self._protocol.create_interface(argument.interface, value, proxy=proxy)
                 assert _debug_wayland(f"> created interface: {interface}")
@@ -450,28 +255,26 @@ class Interface:
 
     def __init__(self, oid: int, proxy: wl_proxy | None = None) -> None:
         self.oid = oid
+        self.proxy = proxy
+
         self.name = self._element.get('name')
         self.version = int(self._element.get('version'), 0)
-
         self.description = getattr(self._element.find('description'), 'text', "")
         self.summary = self._element.find('description').get('summary') if self.description else ""
 
         self.enums = {element.get('name'): Enum(self, element) for element in self._element.findall('enum')}
         self.events = [Event(self, element, opc) for opc, element in enumerate(self._element.findall('event'))]
-        self.event_types = [event.name for event in self.events]
 
+        # Wayland Requests are dynamically set as callable pseudo-methods on the Inteface class:
         self.requests = [Request(self, elem, opcode) for opcode, elem in enumerate(self._element.findall('request'))]
         for request in self.requests:
             setattr(self, request.name, request)
 
-        self._handlers = dict()
-        for name in self.event_types:
-            self._handlers[name] = []
-
-        self.proxy = proxy
-
-        # Keeps listener callbacks in memory when created, to prevent GC.
+        # Dynamically callable handlers (listeners)
+        self._handlers = {event.name: None for event in self.events}
         self._listener_keepalive = None
+        # TODO: make this work with the default wl_display interface:
+        # self._install_listeners()
 
     def _install_listeners(self) -> None:
         """Build and register the handlers as listeners."""
@@ -483,31 +286,18 @@ class Interface:
         wrappers = []
 
         for ev in self.events:
-            if ev.name not in self._handlers:
-                assert _debug_wayland(f"> Handler for {ev.name} not found. Using dummy function.")
 
-                def _make_wrapper(event_name):
-                    def _callback(data, proxy, *args): ...
+            def _make_wrapper(event_name):
+                def _callback(_data, _proxy, *args):
+                    if _handler := self._handlers[event_name]:
+                        _handler(*args)
+                return _callback
 
-                    return _callback
-            else:
-                # Wrap this since we don't use the user_data or wl_registry argument.
-                def _make_wrapper(event_name):
-                    handler = self._handlers[event_name]
-
-                    def _callback(data, proxy, *args):
-                        handler(*args)
-
-                    return _callback
-
-            # handler_func = self._handlers[ev.name]
-            cb_type = CFUNCTYPE(None, c_void_p, POINTER(wl_registry), *ev.arg_ctypes)
             py_fn = _make_wrapper(ev.name)
+
+            cb_type = CFUNCTYPE(None, c_void_p, POINTER(wl_registry), *ev.arg_ctypes)
             c_fn = cb_type(py_fn)
-            # c_fn = cb_type(handler_func)
-            assert _debug_wayland(
-                f"> {self}: creating cb for: {ev.name} : {self._handlers.get(ev.name)} | ctype: {cb_type}",
-            )
+            assert _debug_wayland(f"> {self}: creating cb for {ev.name}: {self._handlers[ev.name]} | ctype: {cb_type}")
             wrappers.append(c_fn)
             c_funcs.append(cast(c_fn, c_void_p).value)
 
@@ -521,33 +311,38 @@ class Interface:
             msg = f"wl_proxy_add_listener failed for {self.name}, rc={rc}"
             raise RuntimeError(msg)
 
+        # keep a reference to prevent garbage collection:
         self._listener_keepalive = (arr, wrappers)
 
-    def dispatch_event(self, name: str, *args: Any) -> None:
-        handler = self._handlers[name]
-        handler(*args)
-
     def set_handler(self, name: str, handler: Callable) -> None:
-        assert self._listener_keepalive is None, "You have already set a handler. For multiple types, use set_handlers."
+        """Set a handler on this interface by name."""
         self._handlers[name] = handler
-        self._install_listeners()
+        if not self._listener_keepalive:
+            self._install_listeners()
 
     def set_handlers(self, **handler_funcs: Callable) -> None:
-        assert self._listener_keepalive is None, "You have already set handlers."
-        self._handlers = handler_funcs
-        self._install_listeners()
+        """Set a series of handlers on this interface as name=func kwargs."""
+        self._handlers |= handler_funcs
+        if not self._listener_keepalive:
+            self._install_listeners()
 
     def set_handlers_dict(self, handlers_dict: dict[str, Callable]) -> None:
         """Same as set_handlers but takes a dict.
 
         Used to prevent clashing of namespaces with kwargs, such as "global" for wl_registry.
         """
-        self._handlers = handlers_dict
-        self._install_listeners()
+        self._handlers |= handlers_dict
+        if not self._listener_keepalive:
+            self._install_listeners()
+
+    def clear_handlers(self) -> None:
+        """Remove ALL event handlers assigned to this interface."""
+        self._handlers = {ev.name: None for ev in self.events}
 
     def remove_handler(self, name: str) -> None:
+        """Remove an event handler from this interface by name."""
         if name in self._handlers:
-            del self._handlers[name]
+            self._handlers[name] = None
 
     def delete(self) -> None:
         if self.proxy:
@@ -647,46 +442,6 @@ def _generate_wl_interface(interface_element: Element, all_interfaces: dict) -> 
     return iface
 
 
-class ClientDisplay(Interface):
-    def __init__(self, oid: int, proxy=None) -> None:
-        super().__init__(oid, proxy)
-        assert proxy is None, "Should not be created with proxy."
-        self._display = None
-        self.proxy = None
-
-    def connect(self, path: str | Path | None = None, fd: int | None = None) -> None:
-        if fd is not None:
-            self._display = wl_display_connect_to_fd(fd)
-            if not self._display:
-                raise WaylandException("Could not connect to Wayland Display.")
-        else:
-            if isinstance(path, str):
-                self._display = wl_display_connect(path.encode())
-            else:
-                # Should connect to default.
-                self._display = wl_display_connect(None)
-            if not self._display:
-                raise WaylandException("Could not connect to Wayland Display.")
-
-        self.proxy = as_proxy(self._display)
-
-    @property
-    def display(self) -> _Pointer[wl_display] | None:
-        return self._display
-
-    def disconnect(self) -> None:
-        if self._display:
-            wl_display_disconnect(self._display)
-            self._display = None
-            wl_proxy_destroy(self.proxy)
-            self.proxy = None
-
-
-_special_classes = {
-    "wl_display": ClientDisplay,  # Creation differs than normal interfaces.
-}
-
-
 class Protocol:
     def __init__(self, client: Client, filename: str) -> None:
         """Representation of a Wayland Protocol.
@@ -718,8 +473,7 @@ class Protocol:
         # classes using the _InterfaceBase class. Opcodes are determined by enumeration order.
         for i, element in enumerate(self._root.findall('interface')):
             name = element.get('name')
-            interface_base_class = _special_classes.get(name, Interface)
-            interface_class = type(name, (interface_base_class,), {'protocol': self, '_element': element, 'opcode': i})
+            interface_class = type(name, (Interface,), {'protocol': self, '_element': element, 'opcode': i})
             self._interface_classes[name] = interface_class
             assert _debug_wayland(f"   * found interface: '{name}'")
 
@@ -818,7 +572,6 @@ class Client:
     creates the main Display (``wl_display``) interface, which is available
     as ``Client.wl_display``.
     """
-    _sock: _socket.socket | None
 
     def __init__(self, *protocols: str) -> None:
         """Create a Wayland Client connection.
@@ -830,16 +583,12 @@ class Client:
             "At a minimum you must provide at least a wayland.xml "
             "protocol file, commonly '/usr/share/wayland/wayland.xml'."
         )
-        self._sock = None
-        self._recv_buffer = b""
-
         self._endpoint = Path(_os.environ.get('WAYLAND_DISPLAY', default='wayland-0'))
 
         if self._endpoint.is_absolute():
             path = self._endpoint
         else:
-            _runtime_dir = Path(_os.environ.get('XDG_RUNTIME_DIR', default='/run/user/1000'))
-            path = _runtime_dir / self._endpoint
+            path = Path(_os.environ.get('XDG_RUNTIME_DIR', default='/run/user/1000')) / self._endpoint
 
         assert _debug_wayland(f"endpoint: {path}")
 
@@ -862,16 +611,14 @@ class Client:
         assert 'wayland' in self.protocol_dict, "You must provide at minimum a wayland.xml protocol file."
 
         # Create global display interface:
-        self.wl_display: ClientDisplay = self.protocols.wayland.create_interface(name='wl_display')
-
-        self.wl_display.connect(self._endpoint)
-        self.wl_display_ptr = cast(self.wl_display.display, c_void_p)
+        self.wl_display_struct = wl_display_connect(c_char_p(str(self._endpoint).encode('utf-8')))
+        self.wl_display_ptr = cast(self.wl_display_struct, c_void_p)
+        self.wl_display = self.protocols.wayland.create_interface('wl_display', proxy=as_proxy(self.wl_display_struct))
 
         # Create global registry:
         self.wl_registry: Interface = self.wl_display.get_registry(next(self.oid_pool))
-        self.wl_registry.set_handlers_dict(
-            {"global": self._wl_registry_global, "global_remove": self._wl_registry_global_remove},
-        )
+        self.wl_registry.set_handler('global', self._wl_registry_global)
+        self.wl_registry.set_handler('global_remove', self._wl_registry_global_remove)
 
         self._sync_done = _threading.Event()
         self._thread_running = _threading.Event()
@@ -883,7 +630,7 @@ class Client:
     def _receive_loop(self) -> None:
         """A threaded method for continuously reading Server messages."""
         self._thread_running.set()
-        dpy = self.wl_display.display
+        dpy = self.wl_display_struct
         fd = wl_display_get_fd(dpy)
         while self._thread_running.is_set():
             # Prepare to read. if it returns -1, just dispatch pending
@@ -914,33 +661,15 @@ class Client:
         wl_callback = self.wl_display.sync(next(self.oid_pool))
         wl_callback.set_handler('done', _wl_display_sync_handler)
 
-        if self._sync_done.wait(5.0) is False:
+        if not self._sync_done.wait(5.0):
             raise WaylandSocketError("wl_display.sync timed out")
         self._sync_done.clear()
 
-    def socket_sendmsg(self, request: bytes, fds: bytes) -> None:
-        """Send prepared requests and (optional) file descriptors to the server.
-
-        This method expects the data to be pre-packed into bytestrings. This usually
-        means preparing the appropriate Header and payload (WaylandTypes), and using
-        their ``to_bytes`` methods to pack them into their raw byte representations.
-        If a request is also passing file descriptors, they should be separately packed
-        into the ``fds`` bytestring as file descriptors are sent as ancillary data.
-
-        Args:
-            request: a raw bytestring representing a concatenated Header & Request.
-            fds: a raw bytestring representing file descriptors.
-        """
-        self._sock.sendmsg([request], [(_socket.SOL_SOCKET, _socket.SCM_RIGHTS, fds)])
-
     def __del__(self) -> None:
         self._thread_running.clear()
-        if hasattr(self, '_sock') and self._sock:
-            self._sock.close()
-            self._sock = None
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(socket='{self._sock.getpeername() if self._sock else self._endpoint}')"
+        return f"{self.__class__.__name__}(socket={self._endpoint}')"
 
     # Event handlers
 
