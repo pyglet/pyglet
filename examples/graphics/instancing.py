@@ -1,6 +1,7 @@
 """This is a simple example that displays how instances are created from vertex lists."""
 from __future__ import annotations
 import random
+from dataclasses import dataclass
 
 import pyglet
 from pyglet.enums import GeometryMode
@@ -70,7 +71,16 @@ def _get_triangle_vertices(size: int) -> list[int]:
 
 background_group = pyglet.graphics.ShaderGroup(program, order=0)
 BORDER = 25
-background_group.set_scissor(BORDER, BORDER,  window.width - BORDER * 2, window.height - BORDER * 2)
+
+@dataclass(frozen=True)
+class ScissorData:
+    x: int
+    y: int
+    width: int
+    height: int
+
+scissor = ScissorData(BORDER, BORDER,  window.width - BORDER * 2, window.height - BORDER * 2)
+background_group.set_scissor(scissor)
 foreground_group = pyglet.graphics.ShaderGroup(program, order=1)
 
 vertex_list = program.vertex_list(3, GeometryMode.TRIANGLES,
