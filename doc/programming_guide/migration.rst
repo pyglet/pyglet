@@ -46,6 +46,37 @@ However, with the new backend agnostic changes, this should no longer be needed 
 with OpenGL. We understand people still may use pyglet just for OpenGL usage, so this capability will still be
 possible. Due to changes in groups (see below), you may no longer need direct OpenGL calls in many cases.
 
+Enum-based graphics constants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many GL constants that were previously passed around in higher-level APIs
+now have pyglet-owned enums under :py:mod:`pyglet.enums`. This keeps the API
+backend-agnostic and avoids relying on raw ``GL_*`` values in user code.
+
+Common migrations:
+
+* Geometry modes:
+
+  ``pyglet.gl.GL_TRIANGLES`` -> ``pyglet.enums.GeometryMode.TRIANGLES``
+
+* Texture filtering:
+
+  ``pyglet.gl.GL_NEAREST`` -> ``pyglet.enums.TextureFilter.NEAREST``
+  ``pyglet.gl.GL_LINEAR`` -> ``pyglet.enums.TextureFilter.LINEAR``
+
+* Framebuffer attachments:
+
+  ``pyglet.gl.GL_COLOR_ATTACHMENT0`` -> ``pyglet.enums.FramebufferAttachment.COLOR0``
+  ``pyglet.gl.GL_DEPTH_ATTACHMENT`` -> ``pyglet.enums.FramebufferAttachment.DEPTH``
+
+* Blend factors:
+
+  ``pyglet.gl.GL_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.SRC_ALPHA``
+  ``pyglet.gl.GL_ONE_MINUS_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.ONE_MINUS_SRC_ALPHA``
+
+If you still use raw OpenGL calls directly, you can continue to use ``GL_*``
+constants from ``pyglet.graphics.api.gl``. But for pyglet's high-level APIs
+and new rendering helpers, refer to the enums.
+
 
 Image changes and removal of image.blit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
