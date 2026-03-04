@@ -233,3 +233,30 @@ You will notice in the above example there is no longer a ``set_state`` or ``uns
 These methods have have been moved into the ``State`` object. Refer to the rendering guide section: "Creating a custom
 state" to learn the new way to do this.
 
+Other notable API changes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Additional changes not covered above:
+
+* ``pyglet.config``:
+  The old ``pyglet.gl.Config`` was replaced by backend-specific configs such as
+  ``pyglet.config.Config``.
+
+* ``pyglet.graphics.Texture``:
+  ``Texture.blit_into`` was renamed to ``Texture.upload`` and
+  ``Texture.get_image_data`` was renamed to ``Texture.fetch``.
+
+* Fonts and text:
+  ``pyglet.font.manager`` now supports custom font-name callbacks,
+  ``pyglet.font.get_custom_font_names`` was added, and ``pyglet.font.FontGroup``
+  allows grouped font fallbacks. ``Label.font_name`` now returns the resolved
+  font family name, not the style string passed in.
+
+* ``pyglet.window``:
+  ``Window.set_mouse_visible`` was renamed to
+  ``Window.set_mouse_cursor_visible``, and ``Window.set_mouse_platform_visible``
+  was renamed to ``Window.set_mouse_cursor_platform_visible``.
+
+* ``pyglet.input``:
+  Controllers now dispatch separate events for left/right sticks and
+  left/right triggers.
+
