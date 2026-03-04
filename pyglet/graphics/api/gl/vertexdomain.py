@@ -191,10 +191,12 @@ class InstanceVertexList(VertexList):
     def __init__(self, domain: VertexDomain, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
         super().__init__(domain, group, start, count)
         self.instance_bucket = bucket
-        self.instance_bucket.create_instance()
 
     def create_instance(self, **attributes: Any) -> VertexInstanceBase:
         return self.instance_bucket.create_instance(**attributes)
+
+    def get_instance_by_index(self, index: int) -> VertexInstanceBase | None:
+        return self.instance_bucket.allocator.slot_to_inst.get(index)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
         if self.initial_attribs[name].fmt.is_instanced:
@@ -256,15 +258,13 @@ class InstanceIndexedVertexList(VertexList):
         self.index_type = index_type
         self.base_vertex = base_vertex
         self.instance_bucket = instance_bucket
-        self.instance_bucket.create_instance()
         self.start_base_vertex = start if self.supports_base_vertex else 0
         super().__init__(domain, group, start, count)
 
     def delete(self) -> None:
         """Delete this group."""
-        raise Exception
         super().delete()
-        self.domain.index_allocator.dealloc(self.index_start, self.index_count)
+        self.domain.index_stream.dealloc(self.index_start, self.index_count)
 
     def migrate(self, domain: InstancedIndexedVertexDomain) -> None:
         old_domain = self.domain
