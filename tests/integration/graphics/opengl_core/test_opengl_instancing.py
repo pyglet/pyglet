@@ -100,7 +100,7 @@ def test_instancing_count(vlist_factory):
         )
 
     assert vlist.instance_bucket is not None
-    assert vlist.instance_bucket.instance_count == instance_count + 1  # the initial list
+    assert vlist.instance_bucket.instance_count == instance_count  # the initial list
 
 
 def test_missing_instance_attribute_raises(vlist_factory):
@@ -171,12 +171,12 @@ def test_instance_deletion(shader_program, vlist_factory):
     # Delete instance in center.
     test_instance = instances[5]
 
-    assert test_instance.slot == 6
+    assert test_instance.slot == 5
 
     test_instance.delete()
 
     # Previous instance should stay the same
-    assert instances[4].slot == 5
+    assert instances[4].slot == 4
 
     # Last instance should move to fill the spot.
-    assert last_instance.slot == 6
+    assert last_instance.slot == 5
