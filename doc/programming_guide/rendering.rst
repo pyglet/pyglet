@@ -356,6 +356,59 @@ Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
 
+Instanced Rendering
+~~~~~~~~~~~~~~~~~~~
+
+Instanced rendering lets you draw many copies of the same geometry with a single
+draw call by providing *per-instance* attributes (such as translation, color,
+or scale). In pyglet, you declare which attributes are instanced when creating
+the vertex list, and then create instances to populate the per-instance data.
+
+There are two instanced creation methods:
+
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced`
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced_indexed`
+
+Both accept an ``instance_attributes`` mapping of attribute name to divisor.
+For normal per-instance behavior, use a divisor of ``1`` (one attribute row per
+instance). The instanced attributes must exist in your shader just like regular
+attributes.
+
+At creation time, provide:
+
+* Per-vertex attributes with arrays sized ``count * components``.
+* Per-instance attributes with a single element (used for the initial instance).
+
+An instanced VertexList contains no instances by default. To add more
+instances, call ``vlist.create_instance(...)``, which returns a lightweight
+object with assignable properties for each instanced attribute. You cannot modify
+any per-vertex attributes from instanced vertex lists. Those can be modified through
+the original vertex list mesh.
+
+Each created instance adds another row to the instance buffer and increases the
+instance count used for drawing.
+
+Example (indexed instancing)::
+
+    vlist = program.vertex_list_instanced_indexed(
+        4,
+        mode=pyglet.gl.GL_TRIANGLES,
+        indices=[0, 1, 2, 0, 2, 3],
+        instance_attributes={"translate": 1, "colors": 1},
+        position=('f', (0, 0, 0,  32, 0, 0,  32, 32, 0,  0, 32, 0)),
+        translate=('f', (0, 0, 0)),
+        colors=('f', (1, 0, 0, 1)),
+        batch=batch,
+    )
+
+    # Create additional instances:
+    instance1 = vlist.create_instance(translate=(64, 0, 0), colors=(0, 1, 0, 1))
+    instance2 = vlist.create_instance(translate=(0, 64, 0), colors=(0, 0, 1, 1))
+
+
+If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
+vertex list: ``instance = vlist.get_instance_by_index(0)``.
+
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
 
