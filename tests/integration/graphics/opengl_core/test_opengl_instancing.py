@@ -135,44 +135,20 @@ def test_attribute_divisors(shader_program, vlist_factory):
 
 
 def test_instance_deletion(shader_program, vlist_factory):
-    """Ensure the attribute divisor is set correctly in the VAO."""
+    """Ensure instance slots stay contiguous when one is deleted."""
     vlist = vlist_factory((0.0,) * 12)
 
     instances = []
     for i in range(10):
-        instances.append(vlist.create_instance(colors=(1,1,1,1), translate=(100*i,100,0)))
+        instances.append(vlist.create_instance(colors=(1, 1, 1, 1), translate=(100 * i, 100, 0)))
+
+    assert [inst.slot for inst in instances] == list(range(10))
 
     last_instance = instances[-1]
 
     # Delete instance in center.
     test_instance = instances[5]
-
-    assert test_instance.slot == 6
-
-    test_instance.delete()
-
-    # Previous instance should stay the same
-    assert instances[4].slot == 5
-
-    # Last instance should move to fill the spot.
-    assert last_instance.slot == 6
-
-
-def test_instance_deletion(shader_program, vlist_factory):
-    """Ensure the attribute divisor is set correctly in the VAO."""
-    vlist = vlist_factory((0.0,) * 12)
-
-    instances = []
-    for i in range(10):
-        instances.append(vlist.create_instance(colors=(1,1,1,1), translate=(100*i,100,0)))
-
-    last_instance = instances[-1]
-
-    # Delete instance in center.
-    test_instance = instances[5]
-
     assert test_instance.slot == 5
-
     test_instance.delete()
 
     # Previous instance should stay the same
