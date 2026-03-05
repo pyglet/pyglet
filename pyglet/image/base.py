@@ -260,24 +260,6 @@ class ImageData(_AbstractImage):
         self._current_data = data
         self._current_texture = None
 
-    def get_data(self, fmt: str | None = None, pitch: int | None = None) -> NotImplementedError:
-        """Get the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~get_bytes` instead.
-        """
-        raise NotImplementedError("Removed. Use `get_bytes` instead.")
-
-    def set_data(self, fmt: str, pitch: int, data: bytes) -> NotImplementedError:
-        """Set the byte data of the image.
-
-        Warning:
-            This method is deprecated and will be removed in the next version.
-            Use :py:meth:`~set_bytes` instead.
-        """
-        raise NotImplementedError("Removed. Use `set_bytes` instead.")
-
     def create_texture(self, cls: type[Texture]) -> Texture:
         """Given a texture class, create a texture containing this image."""
         texture = cls.create_from_image(self)

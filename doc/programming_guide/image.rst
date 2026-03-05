@@ -487,19 +487,19 @@ The length of a format string always gives the number of bytes per pixel.  So,
 the minimum absolute pitch for a given image is ``len(kitten.format) *
 kitten.width``.
 
-To retrieve pixel data in a particular format, use the `get_data` method,
+To retrieve pixel data in a particular format, use the `get_bytes` method,
 specifying the desired format and pitch. The following example reads tightly
 packed rows in ``RGB`` format (the alpha component, if any, will be
 discarded)::
 
     kitten = kitten.get_image_data()
-    data = kitten.get_data('RGB', kitten.width * 3)
+    data = kitten.get_bytes('RGB', kitten.width * 3)
 
-`data` always returns a string, however pixel data can be set from a
+`data` always returns a bytes object, however pixel data can be set from a
 ctypes array, stdlib array, list of byte data, string, or ctypes pointer.
-To set the image data use `set_data`, again specifying the format and pitch::
+To set the image data use `set_bytes`, again specifying the format and pitch::
 
-    kitten.set_data('RGB', kitten.width * 3, data)
+    kitten.set_bytes('RGB', kitten.width * 3, data)
 
 You can also create :py:class:`~pyglet.image.ImageData` directly, by providing
 each of these attributes to the constructor. This is any easy way to load

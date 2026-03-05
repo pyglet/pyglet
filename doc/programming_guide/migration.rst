@@ -95,6 +95,9 @@ Instead, to draw an image, create a py:class:`~pyglet.sprite.Sprite` and constru
 .. note:: It is still recommended to use batching when creating objects such as sprites, as it produces large
           performance gains. See :ref:`guide_graphics`
 
+Additionally, ``ImageData.get_data`` and ``ImageData.set_data`` have been removed after being deprecated. Use
+``ImageData.get_bytes`` and ``ImageData.set_bytes`` instead (the same applies to ``ImageDataRegion``).
+
 
 Resource Image and Texture Loading
 ----------------------------------
