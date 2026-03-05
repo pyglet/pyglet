@@ -71,6 +71,7 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def set_visible(self, visible: bool = True) -> None:
+        self._visible = visible
         if visible:
             self.dispatch_event('_on_internal_resize', self._width, self._height)
             self.dispatch_event('on_show')
