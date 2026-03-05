@@ -47,7 +47,7 @@ class HeadlessWindow(BaseWindow):
             self.context.before_draw()
 
     def set_caption(self, caption: str) -> None:
-        pass
+        self._caption = caption
 
     def set_minimum_size(self, width: int, height: int) -> None:
         pass
