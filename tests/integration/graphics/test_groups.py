@@ -172,7 +172,22 @@ def test_group_no_parent(gl3_context):
 
 def test_group_ordering(gl3_context):
     # Make sure groups are ordered by ordering number.
-    pass
+    batch = pyglet.graphics.Batch()
+
+    high_group = pyglet.graphics.Group(order=10)
+    low_group = pyglet.graphics.Group(order=-10)
+
+    # Add in reverse order to ensure sorting is applied.
+    # Keep in list so no GC.
+    sprites = [
+        pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch, group=high_group),
+        pyglet.sprite.Sprite(test_image, x=0, y=0, batch=batch, group=low_group)
+    ]
+    draw_list = batch._create_draw_list()  # noqa: SLF001
+    set_groups = [group for (_domain, mode, group) in draw_list if mode == "set"]
+
+    ordered = [group for group in set_groups if group in (low_group, high_group)]
+    assert ordered == [low_group, high_group]
 
 
 def test_group_consolidation(gl3_context):

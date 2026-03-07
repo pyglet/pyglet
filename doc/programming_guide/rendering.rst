@@ -211,18 +211,19 @@ and
 
 At a minimum, you must provide a `count` and `mode` when creating a VertexList.
 The `count` is simply the number of vertices you wish to create. The `mode` is
-the OpenGL primitive type. A ``group`` and ``batch`` parameters are also accepted
-(described below).
+the GeometryMode primitive type, pyglet converts these to their respective API geometry mode.
+A ``group`` and ``batch`` parameters are also accepted (described below).
 
-The mode should be passed using one of the following constants:
+The mode should be passed using one of the following enumerations from ``pyglet.enums.GeometryMode``:
 
-* ``pyglet.gl.GL_POINTS``
-* ``pyglet.gl.GL_LINES``
-* ``pyglet.gl.GL_LINE_STRIP``
-* ``pyglet.gl.GL_TRIANGLES``
-* ``pyglet.gl.GL_TRIANGLE_STRIP``
+* ``pyglet.enums.GeometryMode.POINTS``
+* ``pyglet.enums.GeometryMode.LINES``
+* ``pyglet.enums.GeometryMode.LINE_STRIP``
+* ``pyglet.enums.GeometryMode.TRIANGLES``
+* ``pyglet.enums.GeometryMode.TRIANGLE_STRIP``
+* ``pyglet.enums.GeometryMode.TRIANGLE_FAN``
 
-When using ``GL_LINE_STRIP`` and ``GL_TRIANGLE_STRIP``, care must be taken to
+When using ``pyglet.enums.GeometryMode.LINE_STRIP`` and ``pyglet.enums.GeometryMode.TRIANGLE_STRIP``, care must be taken to
 insert degenerate vertices at the beginning and end of each vertex list.
 For example, given the vertex list::
 
@@ -232,13 +233,13 @@ the correct vertex list to provide the vertex list is::
 
     A, A, B, C, D, D
 
-.. note:: Because of the way the high level API renders multiple primitives with
-          shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN``
+.. note:: For OpenGL, because of the way the high level API renders multiple primitives with
+          shared state, polygon and line-loop modes, and ``pyglet.enums.GeometryMode.TRIANGLE_FAN``
           cannot be used --- the results are undefined.
 
 Create a VertexList with three vertices, without initial data::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES)
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES)
 
 From examining the ShaderProgram.attributes above, we know `position` and `colors`
 attributes are available. The underlying arrays can be accessed directly::
@@ -306,7 +307,7 @@ argument. The following formats are available:
 For example, if you would like to pass the `position` data as a signed int, you
 can pass the "i" format string as a Python keyword argument::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, position='i')
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, position='i')
 
 By appending ``"n"`` to the format string, you can also specify that the passed
 data should be "normalized" to the range ``[0, 1]``. The value is used as-is if
@@ -317,7 +318,7 @@ bytes are divided by 255 to get the normalised value.
 A common case is to use normalized unsigned bytes for the color data. Simply
 pass "Bn" as the format::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, colors='Bn')
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, colors='Bn')
 
 
 Passing Initial Data
@@ -328,7 +329,7 @@ easily pass initial arrays of data on creation. You do this by passing the forma
 and the data as a tuple, using a keyword argument as above. To set the position
 and color data on creation::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES,
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES,
                                 position=('f', (200, 400, 300, 350, 300, 450)),
                                 colors=('Bn', (255, 0, 0, 255,  0, 255, 0, 255,  75, 75, 255, 255),)
 
@@ -347,7 +348,7 @@ The following example creates four vertices, and provides their positional data.
 By passing an index list of [0, 1, 2, 0, 2, 3], we creates two adjacent triangles,
 and the shared vertices are reused::
 
-    vlist = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES,
+    vlist = program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES,
         [0, 1, 2, 0, 2, 3],
         position=('i', (100, 100,  150, 100,  150, 150,  100, 150)),
     )
@@ -355,6 +356,59 @@ and the shared vertices are reused::
 Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
+
+Instanced Rendering
+~~~~~~~~~~~~~~~~~~~
+
+Instanced rendering lets you draw many copies of the same geometry with a single
+draw call by providing *per-instance* attributes (such as translation, color,
+or scale). In pyglet, you declare which attributes are instanced when creating
+the vertex list, and then create instances to populate the per-instance data.
+
+There are two instanced creation methods:
+
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced`
+* :py:meth:`~pyglet.graphics.shader.ShaderProgram.vertex_list_instanced_indexed`
+
+Both accept an ``instance_attributes`` mapping of attribute name to divisor.
+For normal per-instance behavior, use a divisor of ``1`` (one attribute row per
+instance). The instanced attributes must exist in your shader just like regular
+attributes.
+
+At creation time, provide:
+
+* Per-vertex attributes with arrays sized ``count * components``.
+* Per-instance attributes with a single element (used for the initial instance).
+
+An instanced VertexList contains no instances by default. To add more
+instances, call ``vlist.create_instance(...)``, which returns a lightweight
+object with assignable properties for each instanced attribute. You cannot modify
+any per-vertex attributes from instanced vertex lists. Those can be modified through
+the original vertex list mesh.
+
+Each created instance adds another row to the instance buffer and increases the
+instance count used for drawing.
+
+Example (indexed instancing)::
+
+    vlist = program.vertex_list_instanced_indexed(
+        4,
+        mode=pyglet.enums.GeometryMode.TRIANGLES,
+        indices=[0, 1, 2, 0, 2, 3],
+        instance_attributes={"translate": 1, "colors": 1},
+        position=('f', (0, 0, 0,  32, 0, 0,  32, 32, 0,  0, 32, 0)),
+        translate=('f', (0, 0, 0)),
+        colors=('f', (1, 0, 0, 1)),
+        batch=batch,
+    )
+
+    # Create additional instances:
+    instance1 = vlist.create_instance(translate=(64, 0, 0), colors=(0, 1, 0, 1))
+    instance2 = vlist.create_instance(translate=(0, 64, 0), colors=(0, 0, 1, 1))
+
+
+If you lose track of your instances or wish to get them by index, you can do so via the helper method on the mesh
+vertex list: ``instance = vlist.get_instance_by_index(0)``.
 
 Resource Management
 ~~~~~~~~~~~~~~~~~~~
@@ -395,7 +449,7 @@ automatically. A batch is created with no arguments::
 To use a Batch, you simply pass it as a (keyword) argument when creating
 any of pyglet's high level objects. For example::
 
-    vlist = program.vertex_list(3, pyglet.gl.GL_TRIANGLES, batch=batch)
+    vlist = program.vertex_list(3, pyglet.enums.GeometryMode.TRIANGLES, batch=batch)
     sprite = pyglet.sprite.Sprite(img, x, y, batch=batch)
 
 To draw all objects contained in the batch at once::
@@ -439,7 +493,7 @@ and `Group.unset_state` methods to perform the required state changes::
 An instance of this group can now be attached to vertex lists::
 
     custom_group = CustomGroup()
-    vertex_list = program.vertex_list(2, pyglet.gl.GL_POINTS, batch, custom_group,
+    vertex_list = program.vertex_list(2, pyglet.enums.GeometryMode.POINTS, batch, custom_group,
         position=('i', (10, 15, 30, 35)),
         colors=('Bn', (0, 0, 255, 0, 255, 0))
     )
@@ -482,9 +536,9 @@ but have different bound textures. The following example demonstrates this::
             super().__init__(order=order, parent=parent)
             self.add_texture(texture, binding=0)
 
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture2))
-    program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, TextureBindGroup(texture1))
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture1))
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture2))
+    program.vertex_list_indexed(4, pyglet.enums.GeometryMode.TRIANGLES, indices, batch, TextureBindGroup(texture1))
 
 
 Hierarchical state

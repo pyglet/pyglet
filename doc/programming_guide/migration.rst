@@ -13,7 +13,7 @@ Introduction
 
 A major focus for pyglet 3.0 has been clearing up ambiguity in the APIs, and working towards future proofing
 the library. You should find that the vast majority of the high-level API (sprites, text, audio) is mostly
-the same as before, but much of the lower level and internal modules have some changes. We hope that this page
+the same as before, but much of the lower level and internal modules have changed. We hope that this page
 will make upgrading to pyglet v3.0 relatively straight-forward.
 
 Some of the major changes include::
@@ -26,7 +26,7 @@ Some of the major changes include::
 * Clearer separation of raw ImageData and Textures.
 
 
-The secions below should hopefully cover all of the changes that you will need to migrate a project. If you
+The sections below should hopefully cover all of the changes that you will need to migrate a project. If you
 find any missing changes or bugs, please use `GitHub Issues`_ or
 another :ref:`contributor communication <contributor-communication>`
 channel to let us know about it.
@@ -39,12 +39,43 @@ channel to let us know about it.
 pyglet.gl reorganization
 ^^^^^^^^^^^^^^^^^^^^^^^^
 Historically pyglet has been based on OpenGL, and much of the internal APIs were tightly intertwined.
-With verion 3.0, to support multiple backends and a more flexible rendering architecture, the graphics backend
+With version 3.0, to support multiple backends and a more flexible rendering architecture, the graphics backend
 is now decoupled from the high-level APIs. The `pyglet.gl` module has therefore been reorganized under
 ``pyglet.graphics.api.gl``. If you used OpenGL directly, you will need to update these imports.
 However, with the new backend agnostic changes, this should no longer be needed unless you are directly interacting
 with OpenGL. We understand people still may use pyglet just for OpenGL usage, so this capability will still be
-possible. Minor changes to graphics state and other things however, may no longer need direct OpenGL calls.
+possible. Due to changes in groups (see below), you may no longer need direct OpenGL calls in many cases.
+
+Enum-based graphics constants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many GL constants that were previously passed around in higher-level APIs
+now have pyglet-owned enums under :py:mod:`pyglet.enums`. This keeps the API
+backend-agnostic and avoids relying on raw ``GL_*`` values in user code.
+
+Common migrations:
+
+* Geometry modes:
+
+  ``pyglet.gl.GL_TRIANGLES`` -> ``pyglet.enums.GeometryMode.TRIANGLES``
+
+* Texture filtering:
+
+  ``pyglet.gl.GL_NEAREST`` -> ``pyglet.enums.TextureFilter.NEAREST``
+  ``pyglet.gl.GL_LINEAR`` -> ``pyglet.enums.TextureFilter.LINEAR``
+
+* Framebuffer attachments:
+
+  ``pyglet.gl.GL_COLOR_ATTACHMENT0`` -> ``pyglet.enums.FramebufferAttachment.COLOR0``
+  ``pyglet.gl.GL_DEPTH_ATTACHMENT`` -> ``pyglet.enums.FramebufferAttachment.DEPTH``
+
+* Blend factors:
+
+  ``pyglet.gl.GL_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.SRC_ALPHA``
+  ``pyglet.gl.GL_ONE_MINUS_SRC_ALPHA`` -> ``pyglet.enums.BlendFactor.ONE_MINUS_SRC_ALPHA``
+
+If you still use raw OpenGL calls directly, you can continue to use ``GL_*``
+constants from ``pyglet.graphics.api.gl``. But for pyglet's high-level APIs
+and new rendering helpers, refer to the enums.
 
 
 Image changes and removal of image.blit
@@ -52,30 +83,35 @@ Image changes and removal of image.blit
 Many classes have been moved out of the ``pyglet.image`` to ``pyglet.graphics.texture``. These changes
 were done because the distinction between CPU-side image representations and GPU-side rendering operations
 was somewhat blurred until now. ``ImageData`` is intended to represent raw pixel data stored in system CPU memory,
-while ``Texture``s represent GPU usage and drawing. Keeping everything in the same module and the constant
-cross-usage of both led to ambiguous behavior and inconsistent expectations.
+while ``Texture`` objects represent data stored on the GPU. Keeping everything in the same module led to ambiguous
+behavior and inconsistent expectations.
 
 With those changes in mind, ``ImageData.blit`` has also been removed, as this is no longer consistent with
 that separation.
 
-Instead to draw an image, create a Sprite (or Texture) from it and draw it directly (or batch it). Batched Sprites
-are actually a quite efficient way to render a Texture, even if you have a large quantity of them::
+Instead, to draw an image, create a py:class:`~pyglet.sprite.Sprite` and construct it with either a ``Texture`` or
+``ImageData``.
 
-    batch = pyglet.graphics.Batch()
-    sprite = pyglet.sprite.Sprite(image, batch=batch)
-    batch.draw()
+.. note:: It is still recommended to use batching when creating objects such as sprites, as it produces large
+          performance gains. See :ref:`guide_graphics`
+
+Additionally, ``ImageData.get_data`` and ``ImageData.set_data`` have been removed after being deprecated. Use
+``ImageData.get_bytes`` and ``ImageData.set_bytes`` instead (the same applies to ``ImageDataRegion``).
 
 
 Resource Image and Texture Loading
 ----------------------------------
-:py:meth:`~pyglet.resource.image` previously loaded an image into a texture atlas. However, this was not properly named
-as it did not actually return a `~pyglet.image.ImageData` instance in the same way `~pyglet.image.load` does. With the
+:py:meth:`~pyglet.resource.image` previously loaded an image into a texture atlas. However, this was not named
+consistently in the same way :py:meth:`~pyglet.image.load` was, causing confusion. The latter returned
+:py:class:`~pyglet.image.ImageData` instances while the :py:meth:`~pyglet.resource.image` returned a ``Texture``. With the
 decisions explained in the previous section, the behavior of this function has been changed.
 
-To go along with that, the :py:meth:`~pyglet.resource.texture` function has also changed slightly. In previous versions
-it _only_ returned a standalone Texture instance - there was no automatic texture atlas support. With v3.0 this function
-now supports automatically adding to an atlas, mimicing what :py:meth:`~pyglet.resource.image` previously did. You can
-still opt to get a standalone Texture if you wish, by passing the ``atlas=False`` argument.
+With these changes being needed, the :py:meth:`~pyglet.resource.texture` was also updated to correct this ambiguity. In
+previous versions  _only_ returned a standalone ``Texture`` instance - there was no automatic texture atlas support.
+With v3.0, :py:meth:`~pyglet.resource.texture` now supports automatically adding to an atlas, mimicking how
+:py:meth:`~pyglet.resource.image` previously behaved.
+
+.. note:: You can still opt to get a standalone ``Texture`` by passing the ``atlas=False`` argument, if you wish.
 
 In summary, going forward, migrate your code to instead use :py:meth:`~pyglet.resource.texture` as it will give the
 previous behavior of loading into a texture atlas.
@@ -87,18 +123,18 @@ Image Grids
 -----------
 The function `pyglet.image.ImageGrid.get_texture_sequence` has been removed. This is no longer recommended,
 as it created it's own texture, further reducing performance. Going forward, it is best to
-use ``pyglet.graphics.TextureGrid``. This behaves the same way as ``ImageGrid``, but for textures. This
-will allow you to use an existing texture, such as loaded from an atlas.
+use :py:class:`~pyglet.graphics.TextureGrid`. This behaves the same way as :py:class:`~pyglet.image.ImageGrid`, but
+for textures. This will allow you to use an already existing texture, such as one loaded from an atlas.
 
 
 Separation of Media Players
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The former `pyglet.media.Player` class has been split into two dedicated classes: `pyglet.media.AudioPlayer`
-and `pyglet.media.VideoPlayer`. This separation makes the API clearer by distinguishing pure audio playback
+The former ``pyglet.media.Player` class has been split into two dedicated classes: :py:class:`~pyglet.media.AudioPlayer`
+and :py:class:`~pyglet.media.VideoPlayer`. This separation makes the API clearer by distinguishing pure audio playback
 from video playback, which requires GPU-accelerated rendering and integration with the graphics system.
 
 Video playback has always needed FFmpeg integration, but did not need it for more common audio playback. The new
-`pyglet.media.VideoPlayer` will enforce a check for FFmpeg to make sure it is loaded.
+:py:class:`~pyglet.media.VideoPlayer` will enforce a check for FFmpeg to make sure it is loaded.
 
 By decoupling these responsibilities, pyglet can provide more focused, maintainable implementations
 while avoiding unnecessary dependencies for applications that only need audio or only need video.
@@ -114,16 +150,16 @@ visible.
 This caused problems in certain hardware and certain configurations. For example, sometimes
 you could ask for an OpenGL ES context, but because of the shadow window, the driver would upgrade it
 to a full context. Some drivers are also more strict when it comes to sharing behavior. Many downstream
-libraries that depend on pyglet have long disabled the "shadow window" to work around such issues, so for
-v3.0 we are removing it. This will increase compatibility between backends, and lessen the chance of strange
-hard to track down driver related bugs.
+libraries that depend on pyglet have long disabled the "shadow window" to work around such issues. Due to these many
+factors, we have opted to remove this going forward. This will increase compatibility between backends, while reducing
+the amount of driver related bugs and exceptions.
 
-This change should only affect you if you attempt to load resources before a Window is created. If you want the
-previous behavior, it can still be done by simply creating your own window before as shown below::
+This change should only affect you if you attempt to load resources before a Window is created.
+
+If your application still needs this behavior, it can still be done by creating your own hidden window, as shown below::
 
     shadow_window = pyglet.window.Window(1, 1, visible=False)
 
-This will mimic the previous behavior.
 
 pyglet.graphics.Group changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,7 +167,7 @@ One of the most significant changes will be with Groups. There were three drivin
 
 1) To make groups easier to use: This was a common pitfall for users creating their own groups.
 2) To better support multiple backends: Less need for direct backend (GL) calls for users.
-3) To optimize the draw list for better performance.: Now that groups are state aware, we can remove
+3) To optimize the draw list for better performance: Now that groups are state aware, we can remove
    duplicate function calls.
 
 To better understand Groups, please visit the rendering section here: (see :ref:`guide_graphics`) as the next section
@@ -191,11 +227,39 @@ Or just as valid::
     group = TextureGroup()
     group.set_texture(texture)
 
-We have added many built in and common states to pyglet to make Groups easier to define and use.
+We have added many built in and common states to pyglet to make Groups easier to define and use. This also reduces the
+need for you to use direct API related calls (such as OpenGL).
 
 This change should only affect you if you utilize any sort of custom groups in your code.
 
-You will notice in the above example there is no longer a `set_state` or `unset_state` method on the Group itself;
-These methods have have been moved into the `State` object. Refer to the rendering guide section: "Creating a custom
+You will notice in the above example there is no longer a ``set_state`` or ``unset_state`` method on the Group itself;
+These methods have have been moved into the ``State`` object. Refer to the rendering guide section: "Creating a custom
 state" to learn the new way to do this.
+
+Other notable API changes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Additional changes not covered above:
+
+* ``pyglet.config``:
+  The old ``pyglet.gl.Config`` was replaced by backend-specific configs such as
+  ``pyglet.config.Config``.
+
+* ``pyglet.graphics.Texture``:
+  ``Texture.blit_into`` was renamed to ``Texture.upload`` and
+  ``Texture.get_image_data`` was renamed to ``Texture.fetch``.
+
+* Fonts and text:
+  ``pyglet.font.manager`` now supports custom font-name callbacks,
+  ``pyglet.font.get_custom_font_names`` was added, and ``pyglet.font.FontGroup``
+  allows grouped font fallbacks. ``Label.font_name`` now returns the resolved
+  font family name, not the style string passed in.
+
+* ``pyglet.window``:
+  ``Window.set_mouse_visible`` was renamed to
+  ``Window.set_mouse_cursor_visible``, and ``Window.set_mouse_platform_visible``
+  was renamed to ``Window.set_mouse_cursor_platform_visible``.
+
+* ``pyglet.input``:
+  Controllers now dispatch separate events for left/right sticks and
+  left/right triggers.
 

@@ -172,7 +172,6 @@ class InstanceVertexListBase(VertexListBase):
     def __init__(self, domain: VertexDomainBase, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
         super().__init__(domain, group, start, count)
         self.instance_bucket = bucket
-        self.instance_bucket.create_instance()
 
     def create_instance(self, **attributes: Any) -> VertexInstanceBase:
         return self.instance_bucket.create_instance(**attributes)
@@ -353,7 +352,6 @@ class InstanceIndexedVertexListBase(VertexListBase):
         self.index_type = index_type
         self.base_vertex = base_vertex
         self.instance_bucket = instance_bucket
-        self.instance_bucket.create_instance()
         self.start_base_vertex = start if self.supports_base_vertex else 0
         super().__init__(domain, group, start, count)
 

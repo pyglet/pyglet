@@ -487,19 +487,19 @@ The length of a format string always gives the number of bytes per pixel.  So,
 the minimum absolute pitch for a given image is ``len(kitten.format) *
 kitten.width``.
 
-To retrieve pixel data in a particular format, use the `get_data` method,
+To retrieve pixel data in a particular format, use the `get_bytes` method,
 specifying the desired format and pitch. The following example reads tightly
 packed rows in ``RGB`` format (the alpha component, if any, will be
 discarded)::
 
     kitten = kitten.get_image_data()
-    data = kitten.get_data('RGB', kitten.width * 3)
+    data = kitten.get_bytes('RGB', kitten.width * 3)
 
-`data` always returns a string, however pixel data can be set from a
+`data` always returns a bytes object, however pixel data can be set from a
 ctypes array, stdlib array, list of byte data, string, or ctypes pointer.
-To set the image data use `set_data`, again specifying the format and pitch::
+To set the image data use `set_bytes`, again specifying the format and pitch::
 
-    kitten.set_data('RGB', kitten.width * 3, data)
+    kitten.set_bytes('RGB', kitten.width * 3, data)
 
 You can also create :py:class:`~pyglet.image.ImageData` directly, by providing
 each of these attributes to the constructor. This is any easy way to load
@@ -635,7 +635,7 @@ is bleeding between adjacent images.
 
 When OpenGL renders a texture to the screen, by default it obtains each pixel
 color by interpolating nearby texels.  You can disable this behaviour by
-switching to the ``GL_NEAREST`` interpolation mode, however you then lose the
+switching to the ``pyglet.enums.TextureFilter.NEAREST`` interpolation mode, however you then lose the
 benefits of smooth scaling, distortion, rotation and sub-pixel positioning.
 
 You can alleviate the problem by always leaving a 1-pixel clear border around
@@ -758,20 +758,25 @@ includes:
 Framebuffers
 ------------
 To simplify working with framebuffers, pyglet provides the
-:py:class:`~pyglet.image.FrameBuffer` and :py:class:`~pyglet.image.RenderBuffer`
+:py:class:`~pyglet.graphics.Framebuffer` and :py:class:`~pyglet.graphics.Renderbuffer`
 classes. These work as you would expect, and allow a simple way to add texture
 attachments. Attachment and target types can be specified as ::
 
-    from pyglet.graphics.api.gl import *
+    import pyglet
+    from pyglet.enums import TextureFilter, FramebufferAttachment, ComponentFormat
+    from pyglet.graphics import Texture, Renderbuffer, Framebuffer
+
+    window = pyglet.window.Window()
 
     # Prepare the buffers. One texture (for easy access), and one Renderbuffer:
-    color_buffer = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
-    depth_buffer = pyglet.image.Renderbuffer(width, height, GL_DEPTH_COMPONENT)
+    color_buffer = Texture.create(width, height, filters=TextureFilter.NEAREST)
+    depth_buffer = Renderbuffer(window.context, width, height,
+                                component_format=ComponentFormat.D, bit_size=24)
 
     # Create a Framebuffer, and attach:
-    framebuffer = pyglet.image.Framebuffer()
-    framebuffer.attach_texture(color_buffer, attachment=GL_COLOR_ATTACHMENT0)
-    framebuffer.attach_renderbuffer(depth_buffer, attachment=GL_DEPTH_ATTACHMENT)
+    framebuffer = Framebuffer(context=window.context)
+    framebuffer.attach_texture(color_buffer, attachment=FramebufferAttachment.COLOR0)
+    framebuffer.attach_renderbuffer(depth_buffer, attachment=FramebufferAttachment.DEPTH)
 
     # When drawing:
     framebuffer.bind()
@@ -956,7 +961,7 @@ with a specific internal format.
 Texture filtering
 ^^^^^^^^^^^^^^^^^
 
-By default, all textures are created with smooth (:py:data:`~pyglet.gl.GL_LINEAR`)
+By default, all textures are created with smooth (:py:data:`~pyglet.enums.TextureFilter.LINEAR`)
 filtering.
 
 To use a different filter for a specific texture, pass the filtering constant(s)
@@ -967,13 +972,13 @@ Pixel art
 """""""""
 
 To enable nearest-neighbor filtering for retro-style games, set the
-corresponding variables of :py:class:`pyglet.image.Texture` to
-:py:data:`~pyglet.gl.GL_NEAREST`:
+corresponding variables of :py:class:`pyglet.graphics.Texture` to
+:py:data:`~pyglet.enums.TextureFilter.NEAREST`:
 
 .. code-block:: python
 
-   pyglet.image.Texture.default_min_filter = GL_LINEAR
-   pyglet.image.Texture.default_mag_filter = GL_LINEAR
+   from pyglet.enums import TextureFilter
+   pyglet.graphics.Texture.default_filters = (TextureFilter.NEAREST, TextureFilter.NEAREST)
 
 Afterward, all textures pyglet creates will default
 to nearest-neighbor sampling.
