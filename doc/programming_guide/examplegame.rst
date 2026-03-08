@@ -278,13 +278,16 @@ asteroids obey the laws of physics.
 Drawing with batches
 ^^^^^^^^^^^^^^^^^^^^
 
-Calling each object’s `draw()` method manually can become cumbersome and
+Calling each object’s ``draw()`` method manually can become cumbersome and
 tedious if there are many different kinds of objects.  It's also very
-inefficient if you need to draw a large number of objects. The pyglet
+inefficient if you need to draw a large number of objects, because the GPU needs
+to perform a separate draw call (with all the state setup) for each one. The pyglet
 :class:`pyglet.graphics.Batch` class simplifies drawing by letting you draw
 all your objects with a single function call.  All you need to do is create
 a batch, pass it into each object you want to draw, and call the batch’s
-:meth:`~pyglet.graphics.Batch.draw` method.
+:meth:`~pyglet.graphics.Batch.draw` method. The main documentation goes into
+much more detail on rendering and performance, but for now, just try to put
+everything in the same Batch and you'll be off to a good start.
 
 To create a new batch, simply create an instance of :class:`pyglet.graphics.Batch`::
 
@@ -298,7 +301,7 @@ constructor as the batch keyword argument::
 Add the batch keyword argument to each graphical object created in asteroid.py.
 
 To use the batch with the asteroid sprites, we’ll need to pass the batch into
-the `game.load.asteroid()` function, then just add it as a keyword argument to
+the ``game.load.asteroid()`` function, then just add it as a keyword argument to
 each new sprite. Update the function::
 
     def asteroids(num_asteroids, player_position, batch=None):
@@ -311,7 +314,7 @@ And update the place where it’s called::
 
     asteroids = load.asteroids(3, player_ship.position, main_batch)
 
-Now you can replace those five lines of `draw()` calls with just one::
+Now you can replace those five lines of ``draw()`` calls with just one::
 
     main_batch.draw()
 
@@ -323,7 +326,7 @@ Displaying little ship icons
 To show how many lives the player has left, we’ll need to draw a little row
 of icons in the upper right corner of the screen.  Since we’ll be making more
 than one using the same template, let’s create a function called
-`player_lives()` in the `load` module to generate them. The icons should look
+``player_lives()`` in the ``load`` module to generate them. The icons should look
 the same as the player’s ship.  We could create a scaled version using an
 image editor, or we could just let pyglet do the scaling.  I don’t know about
 you, but I prefer the option that requires less work.
@@ -344,24 +347,25 @@ and scale, and append it to the return list::
 The player icon is 50x50 pixels, so half that size will be 25x25.  We want to
 put a little bit of space between each icon, so we create them at 30-pixel
 intervals starting from the right side of the screen and moving to the left.
-Note that like the `asteroids()` function, `player_lives()` takes a `batch`
+Note that like the ``asteroids()`` function, ``player_lives()`` takes a ``batch``
 argument.
 
 Making things move
 ^^^^^^^^^^^^^^^^^^
 
 The game would be pretty boring if nothing on the screen ever moved. To
-achieve motion, we’ll need to write our own set of classes to handle
-frame-by-frame movement calculations.  We’ll also need to write a Player
-class to respond to keyboard input.
+achieve motion, we’ll write our own set of classes to handle frame-by-frame
+movement calculations.  We’ll also write a Player class to respond to keyboard
+input.
 
-**Creating the basic motion class**
+Creating the basic motion class
+-------------------------------
 
 Since every visible object is represented by at least one Sprite, we may as
 well make our basic motion class a subclass of pyglet.sprite.Sprite. Another
 approach would be to have our class have a sprite attribute.
 
-Create a new game submodule called physicalobject.py and declare a
+Create a new game submodule called ``physicalobject.py`` and declare a
 PhysicalObject class. The only new attributes we’ll be adding will store the
 object’s velocity, so the constructor will be simple::
 
@@ -409,14 +413,12 @@ accomplishes the goal::
 As you can see, it simply checks to see if objects are no longer visible on
 the screen, and if so, it moves them to the other side of the screen.
 To make every PhysicalObject use this behavior, add a call to
-`self.check_bounds()` at the end of `update()`.
+``self.check_bounds()`` at the end of ``update()``.
 
 To make the asteroids use our new motion code, just import the physicalobject
-module and change the `new_asteroid = ...` line to create a new
-`PhysicalObject` instead of a `Sprite`.  You’ll also want to give them a random
-initial velocity.  Here is the new, improved `load.asteroids()` function:
-
-.. code:: python
+module and change the ``new_asteroid = ...`` line to create a new
+``PhysicalObject`` instead of a `Sprite`.  You’ll also want to give them a random
+initial velocity.  Here is the new, improved ``load.asteroids()`` function::
 
     def asteroids(num_asteroids, player_position, batch=None):
         ...
@@ -426,10 +428,13 @@ initial velocity.  Here is the new, improved `load.asteroids()` function:
         new_asteroid.velocity_y = random.random()*40
         ...
 
+.. tip:: You can pre-calculate the min_x & min_y for a small performance bump.
+
+
 Writing the game update function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To call each object’s `update()` method every frame, we first need to have a
+To call each object’s ``update()`` method every frame, we first need to have a
 list of those objects. For now, we can just declare it after setting up all
 the other objects::
 
@@ -441,17 +446,18 @@ Now we can write a simple function to iterate over the list::
         for obj in game_objects:
             obj.update(dt)
 
-The `update()` function takes a `dt` parameter because it is still not the
+The ``update()`` function takes a ``dt`` parameter because it is still not the
 source of the actual time step.
+
 
 Calling the update() function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We need to update the objects at least once per frame.  What’s a frame?  Well,
-most screens have a maximum refresh rate of 60 hertz.  If we set our loop to
-run at exactly 60 hertz, though, the motion will look a little jerky because
-it won’t match the screen exactly.  Instead, we can have it
-update twice as fast, 120 times per second, to get smooth animation.
+most screens have a maximum refresh rate of at least 60 hertz.  If we set our
+loop to run at exactly 60 hertz, though, the motion may look a little jerky
+because it won’t match the screen exactly.  Instead, an easy trick is to update
+twice as fast, 120 times per second, to get smooth animation.
 
 The best way to call a function 120 times per second is to ask pyglet to do it.
 The :mod:`pyglet.clock` module contains a number of ways to call functions
@@ -460,20 +466,21 @@ periodically or at some specified time in the future.  The one we want is
 
     pyglet.clock.schedule_interval(update, 1/120.0)
 
-Putting this line above `pyglet.app.run()` in the if `__name__ == '__main__'`
-block tells pyglet to call `update()` 120 times per second.  pyglet will pass
-in the elapsed time, i.e. `dt`, as the only parameter.
+Putting this line above ``pyglet.app.run()`` in the if ``__name__ == '__main__'``
+block tells pyglet to call ``update()`` 120 times per second.  pyglet will pass
+in the elapsed time, i.e. ``dt``, as the only parameter.
 
 Now when you run asteroid.py, you should see your formerly static asteroids
 drifting serenely across the screen, reappearing on the other side when they
 slide off the edge.
 
+
 Writing the Player class
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to obeying the basic laws of physics, the player object needs to
-respond to keyboard input.  Start by creating a `game.player` module,
-importing the appropriate modules, and subclassing `PhysicalObject`::
+respond to keyboard input.  Start by creating a ``game.player`` module,
+importing the appropriate modules, and subclassing ``PhysicalObject``::
 
     from . import physicalobject, resources
 
@@ -495,16 +502,18 @@ rotation speed::
 
 Now we need to get the class to respond to user input.  pyglet uses an
 event-based approach to input, sending key press and key release events
-to registered event handlers.  But we want to use a polling approach in
-this example, checking periodically if a key is down.  One way to accomplish
-that is to maintain a dictionary of keys.  First, we need to initialize the
+to registered event handlers. For this game, however, we want to use a polling
+approach - checking periodically if a key is down. To do that we'll "handle"
+the events, and then update some value that we can check.  One way to accomplish
+that is to maintain a dictionary of keys. The events update the dictionary,
+and we simply check it each update. First, we need to initialize the
 dictionary in the constructor::
 
         self.keys = dict(left=False, right=False, up=False)
 
-Then we need to write two methods, `on_key_press()` and `on_key_release()`.
-When pyglet checks a new event handler, it looks for these two methods,
-among others::
+Then we need to write two methods, ``on_key_press()`` and ``on_key_release()``.
+These methods match the exact names of pyglet's key events. When you register an event
+handler in pyglet, it looks for any matching names::
 
     import math
     from pyglet.window import key
@@ -532,9 +541,9 @@ That looks pretty cumbersome. There’s a better way to do it which we’ll see
 later, but for now, this version serves as a good demonstration of pyglet’s
 event system.
 
-The last thing we need to do is write the `update()` method.  It follows the
+The last thing we need to do is write the ``update()`` method.  It follows the
 same behavior as a PhysicalObject plus a little extra, so we’ll need to call
-PhysicalObject's `update()` method and then respond to input::
+PhysicalObject's ``update()`` method and then respond to input::
 
     def update(self, dt):
         super().update(dt)
@@ -547,7 +556,7 @@ PhysicalObject's `update()` method and then respond to input::
 Pretty simple so far.  To rotate the player, we just add the rotation speed
 to the angle, multiplied by dt to account for time.  Note that Sprite objects’
 rotation attributes are in degrees, with clockwise as the positive direction.
-This means that you need to call `math.degrees()` or `math.radians()` and make
+This means that you need to call ``math.degrees()`` or ``math.radians()`` and make
 the result negative whenever you use Python’s built-in math functions with
 the Sprite class, since those functions use radians instead of degrees, and
 their positive direction is counter-clockwise.  The code to make the ship
@@ -560,7 +569,7 @@ thrust forward uses an example of such a conversion::
             self.velocity_x += force_x
             self.velocity_y += force_y
 
-First, we convert the angle to radians so that `math.cos()` and `math.sin()`
+First, we convert the angle to radians so that ``math.cos()`` and ``math.sin()``
 will get the correct values.  Then we apply some simple physics to modify the
 ship’s X and Y velocity components and push the ship in the right direction.
 
@@ -577,7 +586,7 @@ The first thing we need to do is make player_ship an instance of Player::
     player_ship = player.Player(x=400, y=300, batch=main_batch)
 
 Now we need to tell pyglet that player_ship is an event handler.  To do that,
-we need to push it onto the event stack with `game_window.push_handlers()`::
+we need to push it onto the event stack with ``game_window.push_handlers()``::
 
     game_window.push_handlers(player_ship)
 
@@ -590,8 +599,8 @@ Giving the player something to do
 
 In any good game, there needs to be something working against the player.
 In the case of Asteroids, it’s the threat of collision with, well, an asteroid.
-Collision detection requires a lot of infrastructure in the code, so this
-section will focus on making it work.  We’ll also clean up the
+Collision detection requires a lot of infrastructure in the code, so in the third
+version of our code, we will focus on making it work.  We’ll also clean up the
 player class and show some visual feedback for thrusting.
 
 Simplifying player input
