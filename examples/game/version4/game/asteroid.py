@@ -1,12 +1,12 @@
 import random
-from . import physicalobject, resources
+from . import physicalobject, util
 
 
 class Asteroid(physicalobject.PhysicalObject):
     """An asteroid that divides a little before it dies"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(resources.asteroid_image, *args, **kwargs)
+        super().__init__(util.load_centered('asteroid.png'), *args, **kwargs)
 
         # Slowly rotate the asteroid as it moves
         self.rotate_speed = random.random() * 100.0 - 50.0

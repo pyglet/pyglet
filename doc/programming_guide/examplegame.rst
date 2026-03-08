@@ -359,7 +359,7 @@ movement calculations.  We’ll also write a Player class to respond to keyboard
 input.
 
 Creating the basic motion class
--------------------------------
+===============================
 
 Since every visible object is represented by at least one Sprite, we may as
 well make our basic motion class a subclass of pyglet.sprite.Sprite. Another
@@ -720,7 +720,7 @@ graphics batch.  To do that, we need to call its ``delete()`` method.
 Normally a Sprite‘s own ``delete()`` method will work fine without modifications,
 but our subclass has its own child Sprite (the engine flame) which must
 also be deleted when the Player instance is deleted. To get both to die
-gracefully, we must write a simple but slightly enhanced `delete()` method::
+gracefully, we must write a simple but slightly enhanced ``delete()`` method::
 
     def delete(self):
         self.engine_sprite.delete()
@@ -744,7 +744,7 @@ We need to check every object against every other object.  The simplest
 method is to use nested loops.  This method will be inefficient for a large
 number of objects, but it will work for our purposes.  We can use one easy
 optimization and avoid checking the same pair of objects twice.
-Here’s the setup for the loops, which belongs in `update()`.
+Here’s the setup for the loops, which belongs in ``update()``.
 It simply iterates over all object pairs without doing anything::
 
     for i in range(len(game_objects)):
@@ -776,20 +776,20 @@ Now all that remains is for us to go through the list and remove dead objects::
         to_remove.delete()
         game_objects.remove(to_remove)
 
-As you can see, it simply calls the object’s `delete()` method to remove it
+As you can see, it simply calls the object’s ``delete()`` method to remove it
 from any batches, then it removes it from the list.  If you haven’t used list
 comprehensions much, the above code might look like it’s removing objects
-from the list while traversing it.  Fortunately, the list comprehension is
-evaluated before the loop actually runs, so there should be no problems.
+from the list while traversing it.  Fortunately, the list comprehension creates
+a new list, so we can safely remove objects from the main list.
+
 
 Implementing the collision functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We need to add three things to the PhysicalObject class: the dead attribute,
-the `collides_with()` method, and the `handle_collision_with()` method.
-The `collides_with()` method will need to use the `distance()` function,
-so let’s start by moving that function into its own submodule of game,
-called util.py::
+the ``collides_with()`` method, and the ``handle_collision_with()`` method.
+The ``collides_with()`` method will need to use the ``distance()`` function,
+so let’s start by moving that function into util.py::
 
     import pyglet, math
 
@@ -799,7 +799,7 @@ called util.py::
             (point_1[1] - point_2[1]) ** 2)
 
 Remember to call from util import distance in load.py.  Now we can write
-`PhysicalObject.collides_with()` without duplicating code::
+``PhysicalObject.collides_with()`` without duplicating code::
 
     def collides_with(self, other_object):
         collision_distance = self.texture.width/2 + other_object.texture.width/2
@@ -813,7 +813,7 @@ every object to die as soon as it touches another object::
     def handle_collision_with(self, other_object):
         self.dead = True
 
-One last thing: set self.dead = False in PhysicalObject.__init__().
+One last thing: set ``self.dead = False`` in ``PhysicalObject.__init__()``.
 
 And that’s it! You should be able to zip around the screen, engine blazing
 away.  If you hit something, both you and the thing you collided with should
@@ -824,7 +824,7 @@ making progress.
 Collision response
 ------------------
 
-In this section, we’ll add bullets.  This new feature will require us to
+In the next section, we’ll add bullets.  This new feature will require us to
 start adding things to the game_objects list during the game,
 as well as have objects check each others’ types to make a decision about
 whether or not they should die.
@@ -865,7 +865,7 @@ add new objects to a separate list, then add the objects in the separate
 list to game_objects after we have finished iterating over it.
 
 Declare a to_add list just above the loop and add new objects to it instead.
-At the very bottom of `update()`, after the object removal code,
+At the very bottom of ``update()``, after the object removal code,
 add the objects in to_add to game_objects::
 
     ...collision...
@@ -960,7 +960,7 @@ into space.  First, we need to resurrect the on_key_press() event handler::
         if symbol == key.SPACE:
             self.fire()
 
-The `fire()` method itself will be a bit more complicated.  Most of the
+The ``fire()`` method itself will be a bit more complicated.  Most of the
 calculations will be very similar to the ones for thrusting, but there
 will be some differences.  We’ll need to spawn the bullet out at the
 nose of the ship, not at its center.  We’ll also need to add the ship’s
@@ -1001,7 +1001,7 @@ At this point, you should be able to fire bullets out of the front of your
 ship.  There’s just one problem: as soon as you fire, your ship disappears.
 You may have noticed earlier that asteroids also disappear when they touch
 each other.  To fix this problem, we’ll need to start customizing
-each class’s `handle_collision_with()` method.
+each class’s ``handle_collision_with()`` method.
 
 Customizing collision behavior
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1055,7 +1055,7 @@ PhysicalObject constructor::
             ...
             self.is_bullet = True
 
-Then, insert a bit of code in `PhysicalObject.collides_with()` to ignore
+Then, insert a bit of code in ``PhysicalObject.collides_with()`` to ignore
 bullets under the right circumstances::
 
     def collides_with(self, other_object):
@@ -1065,7 +1065,7 @@ bullets under the right circumstances::
             return False
         ...
 
-Finally, set self.reacts_to_bullets = False in Player.__init__().  The `Bullet`
+Finally, set self.reacts_to_bullets = False in Player.__init__().  The ``Bullet``
 class is completely finished!  Now let’s make something happen when a bullet
 hits an asteroid.
 
@@ -1076,7 +1076,7 @@ Asteroids is challenging to players because every time you shoot an asteroid,
 it turns into more asteroids.  We need to mimic that behavior if we want our
 game to be any fun.  We’ve already done most of the hard parts.
 All that remains is to make another subclass of PhysicalObject and write
-a custom `handle_collision_with()` method, along with a couple of maintenance
+a custom ``handle_collision_with()`` method, along with a couple of maintenance
 tweaks.
 
 Writing the asteroid class
@@ -1092,7 +1092,7 @@ to pass a specific texture to the superclass, passing along any other parameters
         def __init__(self, *args, **kwargs):
             super().__init__(util.load_centered('asteroid.png'), *args, **kwargs)
 
-Now we need to write a new `handle_collision_with()` method.  It should create
+Now we need to write a new ``handle_collision_with()`` method.  It should create
 a random number of new, smaller asteroids with random velocities.  However,
 it should only do that if it’s big enough. An asteroid should divide at most
 twice, and if we scale it down by half each time, then an asteroid should stop
@@ -1126,7 +1126,7 @@ like they come from the same object::
 
 While we’re here, let’s add a small graphical touch to the asteroids by making
 them rotate a little.  To do that, we’ll add a rotate_speed attribute and give
-it a random value.  Then we’ll write an `update()` method to apply that
+it a random value.  Then we’ll write an ``update()`` method to apply that
 rotation every frame.
 
 Add the attribute in the constructor::
@@ -1168,6 +1168,7 @@ I’m going to leave it as an exercise for you to do the following:
 * Let the player restart the level if they die
 * Implement lives and a “Game Over” screen
 * Add particle effects
+* Implement the ``pyglet.math.Vec2`` class for movement and rotation
 
 Good luck!  With a little effort, you should be able to figure out most of
 these things on your own. If you have trouble, join us on the pyglet
