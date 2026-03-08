@@ -616,6 +616,8 @@ keyboard.
 To start using it, we need to initialize it and push it onto the event stack
 instead of the Player class.  First, let’s add it to Player‘s constructor::
 
+    from pyglet.window import key
+
     self.key_handler = key.KeyStateHandler()
 
 We also need to push the key_handler object onto the event stack.  Keep pushing
@@ -625,7 +627,7 @@ to keep handling key press and release events later::
     game_window.push_handlers(player_ship.key_handler)
 
 Since Player now relies on key_handler to read the keyboard, we need to change
-the `update()` method to use it.  The only changes are in the if conditions::
+the ``update()`` method to use it.  The only changes are in the if conditions::
 
     if self.key_handler[key.LEFT]:
         ...
@@ -634,7 +636,7 @@ the `update()` method to use it.  The only changes are in the if conditions::
     if self.key_handler[key.UP]:
         ...
 
-Now we can remove the `on_key_press()` and `on_key_release()` methods
+Now we can remove the ``on_key_press()`` and ``on_key_release()`` methods
 from the class. It’s just that simple.  If you need to see a list of key
 constants, you can check the API documentation under
 :class:`pyglet.window.key`.
@@ -657,38 +659,36 @@ this approach will be the simplest and most scalable.
 
 To make the flame draw in the correct position, we could either do some
 complicated math every frame, or we could just move the texture’s anchor point.
-First, load the texture in resources.py::
-
-    engine_texture = pyglet.resource.texture("engine_flame.png")
-
+Remember our ``util.load_centered(...)`` function? Until now we have been loading
+everything exactly centered (x and y anchor positions equal to half of their width).
 To get the flame to draw behind the player, we need to move the flame texture’s
-center of rotation to the right, past the end of the texture.
-To do that, we just set its `anchor_x` and `anchor_y` attributes::
+center of rotation to the right, past the end of the texture. To do that, we can
+just change the ``x_divisor`` argument to shift it::
 
-    engine_texture.anchor_x = engine_texture.width * 1.5
-    engine_texture.anchor_y = engine_texture.height / 2
+    engine_flame = util.load_centered('engine_flame.png', x_divisor=0.6)
 
 Now the texture is ready to be used by the player class.  If you’re still
 confused about anchor points, experiment with the values for engine_texture’s
-anchor point when you finish this section.
+anchor points when you finish this section.
 
 Creating and drawing the flame
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The engine sprite needs to be initialized with all the same arguments as
 Player, except that it needs a different texture and must be initially invisible.
-The code for creating it belongs in `Player.__init__()` and is very
+The code for creating it belongs in ``Player.__init__()`` and is very
 straightforward::
 
-    self.engine_sprite = pyglet.sprite.Sprite(img=util.load_centered('engine_flame.png', x_divisor=1.5), *args, **kwargs)
+    self.engine_sprite = pyglet.sprite.Sprite(img=util.load_centered('engine_flame.png', x_divisor=0.6), *args, **kwargs)
     self.engine_sprite.visible = False
 
-Note that the engine flame should not be centered on the ship. Rather, it should be shown
-behind it. To achieve this effect, we just set the anchor point outside the image bounds.
-Instead of the default devisor of 2.0, we pass 1.5 to achieve this effect. 
+Note that while the engine flame is still centered on the Y axis, just like the ship,
+the X anchor value is pushed out further than the image bounds. Remember our utility
+function divides the texture width by the divisor. The effective anchor value set is
+larger than the actual width of the image, which pushes it out behind the ship.
 
 To make the engine sprite appear only while the player is thrusting, we need
-to add some logic to the if `self.key_handler[key.UP]` block in the `update()`
+to add some logic to the if ``self.key_handler[key.UP]`` block in the ``update()``
 method::
 
     if self.key_handler[key.UP]:
@@ -698,7 +698,7 @@ method::
         self.engine_sprite.visible = False
 
 To make the sprite appear at the player’s position, we also need to update
-its position and rotation attributes::
+its position and rotation attributes to match::
 
     if self.key_handler[key.UP]:
         ...
@@ -709,14 +709,15 @@ its position and rotation attributes::
     else:
         self.engine_sprite.visible = False
 
+
 Cleaning up after death
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 When the player is inevitably smashed to bits by an asteroid, he will
 disappear from the screen. However, simply removing the Player instance
 from the game_objects list is not enough for it to be removed from the
-graphics batch.  To do that, we need to call its `delete()` method.
-Normally a Sprite‘s own `delete()` method will work fine without modifications,
+graphics batch.  To do that, we need to call its ``delete()`` method.
+Normally a Sprite‘s own ``delete()`` method will work fine without modifications,
 but our subclass has its own child Sprite (the engine flame) which must
 also be deleted when the Player instance is deleted. To get both to die
 gracefully, we must write a simple but slightly enhanced `delete()` method::
