@@ -5,7 +5,7 @@ import warnings
 from typing import Sequence, TYPE_CHECKING, Literal
 
 import pyglet
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, NullContext, UBOMatrixTransformations
 from pyglet.math import Mat4
 from pyglet.graphics.api.gl.shader import Shader, ShaderProgram
 
@@ -101,13 +101,13 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
 class OpenGLBackend(BackendGlobalObject):
     platform_func: WGLFunctions | None
     gl_api: Literal["gl", "gles"]
-    current_context: OpenGLSurfaceContext | None
+    current_context: OpenGLSurfaceContext | NullContext
     _have_context: bool = False
 
     def __init__(self, gl_api: Literal["gl", "gles"] = "gl") -> None:
         self.gl_api = gl_api
         self.initialized = False
-        self.current_context = None
+        self.current_context = NullContext()
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
@@ -119,7 +119,7 @@ class OpenGLBackend(BackendGlobalObject):
 
     @property
     def object_space(self) -> ObjectSpace:
-        assert self.current_context is not None, "Context has not been created."
+        # assert self.current_context is not None, "Context has not been created."
         return self.current_context.object_space
 
     def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:

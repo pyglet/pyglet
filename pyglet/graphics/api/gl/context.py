@@ -5,7 +5,7 @@ import weakref
 from typing import Callable, TYPE_CHECKING
 
 from pyglet.graphics.api.gl import gl, gl_info, ObjectSpace
-from pyglet.graphics.api.base import SurfaceContext
+from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.gl.gl import GLFunctions, GLuint, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 
 
@@ -192,8 +192,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         self.detach()
 
         if self.core.current_context is self:
-            self.core.current_context = None
-            #gl_info.remove_active_context()
+            self.core.current_context = NullContext()
+            # gl_info.remove_active_context()
 
     def _safe_to_operate_on_object_space(self) -> bool:
         """Check if it's safe to interact with this context's object space.
@@ -202,7 +202,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
         object space is the same as this context's object space and this
         method is called from the main thread.
         """
-        return (self.object_space is self.core.current_context.object_space and
+        return (self.core.current_context and self.object_space is self.core.current_context.object_space and
                 threading.current_thread() is threading.main_thread())
 
     def _safe_to_operate_on(self) -> bool:

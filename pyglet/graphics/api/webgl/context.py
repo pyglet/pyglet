@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 import js
 from pyodide.ffi import create_proxy
 
-from pyglet.graphics.api.base import SurfaceContext
+from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
@@ -122,7 +122,7 @@ class OpenGLSurfaceContext(SurfaceContext):
         # self.detach()
         #
         if self.core.current_context is self:
-            self.core.current_context = None
+            self.core.current_context = NullContext()
         #     #gl_info.remove_active_context()
 
     def attach(self, window: Window) -> None:
