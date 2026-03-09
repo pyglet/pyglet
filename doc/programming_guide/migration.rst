@@ -246,7 +246,7 @@ Additional changes not covered above:
 
 * ``pyglet.graphics.Texture``:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
-  ``Texture.get_image_data`` was renamed to ``Texture.fetch``.
+  ``Texture.get_image_data`` was renamed to ``Texture.fetch`` to better reflect that these involve GPU requests.
 
 * Fonts and text:
   ``pyglet.font.manager`` now supports custom font-name callbacks,
