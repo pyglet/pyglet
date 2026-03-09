@@ -451,7 +451,27 @@ class Texture(TextureBase):
         self._gl.texParameteri(self.target, GL_TEXTURE_MIN_FILTER, self._gl_min_filter)
         self._gl.texParameteri(self.target, GL_TEXTURE_MAG_FILTER, self._gl_mag_filter)
 
-    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage2D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
+        )
+
+    def _generate_mipmaps(self) -> None:
+        self._gl.generateMipmap(self.target)
+        self._gl.flush()
+
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                          level: int = 0) -> None:
         data_format = image_data.format
         data_pitch = abs(image_data._current_pitch)
 
@@ -465,11 +485,11 @@ class Texture(TextureBase):
 
         if self.target == GL_TEXTURE_3D or self.target == GL_TEXTURE_2D_ARRAY:
             self._gl.texSubImage3D(
-                self.target, self.level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
+                self.target, level, x, y, z, image_data.width, image_data.height, 1, fmt, gl_type, js_array,
             )
         else:
             self._gl.texSubImage2D(
-                self.target, self.level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array,
+                self.target, level, x, y, image_data.width, image_data.height, fmt, gl_type, js_array,
             )
 
     @staticmethod
@@ -572,6 +592,7 @@ class Texture(TextureBase):
             js_array,
         )
         gl.flush()
+        texture._mark_mipmap_valid(0)
         return texture
 
     @classmethod
@@ -629,6 +650,8 @@ class Texture(TextureBase):
 
         data = js.Uint8Array.new(width * height * len(internal_format)) if blank_data else None
         texture._allocate(data)
+        if blank_data:
+            texture._mark_mipmap_valid(0)
         return texture
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
@@ -764,6 +787,29 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
                                    GL_UNSIGNED_BYTE,
                                    0)
 
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        Texture.upload(self, image, x, y, z, level=level)
+
+    def _get_mipmap_depth(self, level: int) -> int:
+        depth = max(1, int(self.images))
+        return max(1, depth >> level)
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage3D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            depth,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
+        )
+
     def _attach_texture_to_fbo(self, z: int = 0) -> None:
         self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
 
@@ -840,14 +886,15 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
         texture._allocate(None)
         return texture
 
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
+                          level: int = 0):
         data_pitch = abs(image_data._current_pitch)
 
         data = image_data.convert(image_data.format, data_pitch)
 
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._gl.texSubImage3D(self.target, self.level,
+        self._gl.texSubImage3D(self.target, level,
                                       x, y, z,
                                       image_data.width, image_data.height, 1,
                                       fmt, gl_type,
@@ -865,13 +912,36 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
                                    GL_UNSIGNED_BYTE,
                                    0)
 
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        Texture.upload(self, image, x, y, z, level=level)
+
+    def _get_mipmap_depth(self, level: int) -> int:
+        return max(1, int(self.max_depth))
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = js.Uint8Array.new(data_size) if data_size is not None else None
+        self._gl.texImage3D(
+            self.target,
+            level,
+            self._gl_internal_format,
+            width,
+            height,
+            self.max_depth,
+            0,
+            _get_base_format(self.internal_format),
+            GL_UNSIGNED_BYTE,
+            data,
+        )
+
+    def _generate_mipmaps(self) -> None:
+        self._gl.generateMipmap(self.target)
+        self._gl.flush()
+
     def _bind_sequence_texture(self) -> None:
         self._gl.bindTexture(self.target, self.id)
 
-    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
-        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, layer)
-
-    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
+    def _allocate_image(self, image: ImageData, layer: int) -> None:
         image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, layer)
 
 TextureArray.region_class = TextureArrayRegion

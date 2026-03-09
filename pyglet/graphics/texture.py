@@ -126,6 +126,8 @@ class TextureBase(_AbstractImage):
         super().__init__(width, height)
         self.id = tex_id
         self.tex_type = tex_type
+        self._mipmap_levels = 1
+        self._valid_mipmaps: set[int] = set()
 
         # Use class defaults if None:
         filters = filters or self.default_filters
@@ -278,7 +280,8 @@ class TextureBase(_AbstractImage):
     def _apply_filters(self) -> None:
         raise NotImplementedError
 
-    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                          level: int = 0) -> None:
         raise NotImplementedError
 
     def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
@@ -321,10 +324,97 @@ class TextureBase(_AbstractImage):
 
         return align, row_length
 
-    def get_mipmapped_texture(self) -> TextureBase:
-        raise NotImplementedError(f"Not implemented for {self}.")
+    def _compute_mipmap_count(self) -> int:
+        max_dim = max(self.width, self.height)
+        if self.tex_type == TextureType.TYPE_3D:
+            max_dim = max(max_dim, self._get_mipmap_depth(0))
+        count = 1
+        while max_dim > 1:
+            max_dim //= 2
+            count += 1
+        return count
 
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
+    def _get_mipmap_depth(self, level: int) -> int:
+        return 1
+
+    def _get_mipmap_dimensions(self, level: int) -> tuple[int, int, int]:
+        width = max(1, self.width >> level)
+        height = max(1, self.height >> level)
+        depth = self._get_mipmap_depth(level)
+        return width, height, depth
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        raise NotImplementedError
+
+    def _generate_mipmaps(self) -> None:
+        raise NotImplementedError
+
+    def _mark_mipmap_valid(self, level: int) -> None:
+        self._valid_mipmaps.add(level)
+
+    @property
+    def mipmap_count(self) -> int:
+        """Return the number of mipmap levels initialized for this texture."""
+        return self._mipmap_levels
+
+    @property
+    def valid_mipmaps(self) -> tuple[int, ...]:
+        """Return a sorted tuple of mipmap levels that currently have valid data."""
+        return tuple(sorted(self._valid_mipmaps))
+
+    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
+        """Initialize mipmap levels for this texture.
+
+        Args:
+            levels:
+                The total number of mipmap levels to initialize. If None, the maximum
+                number of mipmap levels for this texture size is used.
+            blank_data:
+                If True, initialize levels with zeroed data. If False, allocate the
+                levels without initializing their contents.
+        """
+        max_levels = self._compute_mipmap_count()
+        target_levels = levels if levels is not None else max_levels
+        if target_levels < 1:
+            raise ImageException("Mipmap levels must be at least 1.")
+        if target_levels > max_levels:
+            msg = f"Mipmap levels cannot exceed {max_levels} for this texture size."
+            raise ImageException(msg)
+
+        if target_levels <= self._mipmap_levels and (not blank_data or 0 in self._valid_mipmaps):
+            return self._mipmap_levels
+
+        self.bind()
+        if blank_data and 0 not in self._valid_mipmaps:
+            width, height, depth = self._get_mipmap_dimensions(0)
+            data_size = width * height * depth * len(self.internal_format)
+            self._allocate_mipmap_level(0, width, height, depth, data_size)
+            self._mark_mipmap_valid(0)
+        for level in range(self._mipmap_levels, target_levels):
+            width, height, depth = self._get_mipmap_dimensions(level)
+            data_size = None
+            if blank_data:
+                data_size = width * height * depth * len(self.internal_format)
+            self._allocate_mipmap_level(level, width, height, depth, data_size)
+            if blank_data:
+                self._mark_mipmap_valid(level)
+
+        self._mipmap_levels = target_levels
+        return self._mipmap_levels
+
+    def generate_mipmaps(self) -> None:
+        """Generate mipmaps for this texture from the base level."""
+        self.bind()
+        self._generate_mipmaps()
+        self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
+        self._valid_mipmaps = set(range(self._mipmap_levels))
+
+    def get_mipmapped_texture(self) -> TextureBase:
+        msg = f"Not implemented for {self}."
+        raise NotImplementedError(msg)
+
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
         """Upload image data into the Texture at specific coordinates.
 
         You must have this texture bound before uploading data.
@@ -332,18 +422,26 @@ class TextureBase(_AbstractImage):
         The image's anchor point will be aligned to the given ``x`` and ``y``
         coordinates.  If this texture is a 3D texture, the ``z``
         parameter gives the image slice to blit into.
+        The ``level`` parameter specifies the mipmap level to upload to.
         """
+        if level < 0:
+            raise ImageException("Mipmap level must be non-negative.")
+        if level >= self._mipmap_levels:
+            raise ImageException(
+                f"Mipmap level {level} is not initialized. Call init_mipmaps or generate_mipmaps first."
+            )
         x -= self.anchor_x
         y -= self.anchor_y
 
         self._begin_upload(image)
 
-        self._update_subregion(image, x, y, z)
+        self._update_subregion(image, x, y, z, level=level)
 
         self._end_upload(image)
 
         # Flush image upload before data gets GC'd:
         self._flush()
+        self._mark_mipmap_valid(level)
 
     def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
         return self.region_class(x, y, 0, width, height, self)
@@ -513,9 +611,9 @@ class _TextureRegionShared:
         region._set_tex_coords_order(*self.tex_coords_order)
         return region
 
-    def upload(self, source: ImageData, x: int, y: int, z: int) -> None:
+    def upload(self, source: ImageData, x: int, y: int, z: int, level: int = 0) -> None:
         assert source.width <= self._width and source.height <= self._height, f"{source} is larger than {self}"
-        self.owner.upload(source, x + self.x, y + self.y, z + self.z)
+        self.owner.upload(source, x + self.x, y + self.y, z + self.z, level=level)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(id={self.id},"
@@ -534,7 +632,7 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
     def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
 
-    def upload(self, image: _AbstractImage, x: int, y: int, z: int) -> None:
+    def upload(self, image: ImageData, x: int, y: int, z: int) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -571,20 +669,19 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
     def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
 
-    def upload(self, image: _AbstractImage, x: int, y: int, z: int) -> None:
+    def upload(self, image: ImageData, x: int, y: int, z: int) -> None:
         raise NotImplementedError
 
-    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
+    def _allocate_image(self, image: ImageData, layer: int) -> None:
         raise NotImplementedError
 
-    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
-        raise NotImplementedError
-
-    def _verify_size(self, image: _AbstractImage) -> None:
+    def _verify_size(self, image: ImageData) -> None:
         if image.width > self.width or image.height > self.height:
-            raise TextureArraySizeExceeded(
+            msg = (
                 f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
-                f'{self.height})')
+                f'{self.height})'
+            )
+            raise TextureArraySizeExceeded(msg)
 
     def add(self, image: ImageData) -> TArrayRegion:
         if len(self.items) >= self.max_depth:
@@ -598,7 +695,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
         self.items.append(item)
         return item
 
-    def allocate(self, *images: _AbstractImage) -> list[TArrayRegion]:
+    def allocate(self, *images: ImageData) -> list[TArrayRegion]:
         """Allocates multiple images at once."""
         if len(self.items) + len(images) > self.max_depth:
             raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
@@ -638,7 +735,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
             for old_item, image in zip(self[index], images):
                 self._verify_size(image)
                 item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
-                self._replace_image(image, old_item.z)
+                self.upload(image, image.anchor_x, image.anchor_y, old_item.z)
                 self.items[old_item.z] = item
         else:
             image = cast(ImageData, value)
@@ -657,6 +754,20 @@ class TextureRegionBase(TextureBase, _TextureRegionShared):
                          owner.anisotropic_level)
         self._init_region(x, y, z, width, height, owner)
 
+    @property
+    def mipmap_count(self) -> int:
+        return self.owner.mipmap_count
+
+    @property
+    def valid_mipmaps(self) -> tuple[int, ...]:
+        return self.owner.valid_mipmaps
+
+    def init_mipmaps(self, levels: int | None = None, blank_data: bool = True) -> int:
+        return self.owner.init_mipmaps(levels=levels, blank_data=blank_data)
+
+    def generate_mipmaps(self) -> None:
+        self.owner.generate_mipmaps()
+
 
 class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
     """Interface for a sequence of textures, each with the same dimensions."""
@@ -671,7 +782,7 @@ class TextureArrayRegionBase(TextureRegionBase):
 
 class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
                        UniformTextureSequence[TextureArrayRegionBase]):
-    def __init__(self, width, height, tex_id, max_depth,
+    def __init__(self, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
@@ -686,13 +797,14 @@ class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
 
     @classmethod
     def create(cls, width: int, height: int,
+               max_depth: int = 256,
                internal_format: ComponentFormat = ComponentFormat.RGBA,
                internal_format_size: int = 8,
                internal_format_type: str = "b",
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               max_depth: int = 256) -> TextureArray:
+               context: SurfaceContext | None = None) -> TextureArrayBase:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -712,10 +824,7 @@ class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
         """
         raise NotImplementedError
 
-    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
-        raise NotImplementedError
-
-    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
+    def _allocate_image(self, image: ImageData, layer: int) -> None:
         raise NotImplementedError
 
 class Texture3D(_Texture3DShared[TextureRegionBase], TextureBase, UniformTextureSequence[TextureRegionBase]):
@@ -729,12 +838,12 @@ class Texture3D(_Texture3DShared[TextureRegionBase], TextureBase, UniformTexture
     items: tuple
 
     @classmethod
-    def create_for_images(cls, images,
+    def create_for_images(cls, images: Sequence[ImageData],
                  internal_format_size: int = 8,
                  internal_format_type: str = "b",
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0, blank_data=True):
+                 anisotropic_level: int = 0, blank_data: bool=True) -> Texture3D:
         raise NotImplementedError
 
     def _bind_sequence_texture(self) -> None:

@@ -67,7 +67,7 @@ from pyglet.graphics.api.gl.gl import (
 
 from pyglet.graphics.api.gl import gl
 from pyglet.graphics.api.gl.enums import texture_map
-from pyglet.image.base import _AbstractImage, ImageData, ImageDataRegion, CompressionFormat, \
+from pyglet.image.base import ImageData, ImageDataRegion, CompressionFormat, \
     CompressedImageData
 from pyglet.image.base import ImageException
 from pyglet.graphics.texture import TextureBase, UniformTextureSequence, CompressedTextureBase, \
@@ -280,6 +280,21 @@ class Texture(TextureBase):
         self._context.glTexParameteri(self.target, GL_TEXTURE_MIN_FILTER, self._gl_min_filter)
         self._context.glTexParameteri(self.target, GL_TEXTURE_MAG_FILTER, self._gl_mag_filter)
 
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = (GLubyte * data_size)() if data_size is not None else None
+        self._context.glTexImage2D(self.target, level,
+                                   self._gl_internal_format,
+                                   width, height,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   data)
+
+    def _generate_mipmaps(self) -> None:
+        self._context.glGenerateMipmap(self.target)
+        self._context.glFlush()
+
     @classmethod
     def create_from_image(cls,
                           image_data: ImageData | ImageDataRegion,
@@ -346,6 +361,7 @@ class Texture(TextureBase):
                          gl_type,
                          image_bytes)
         ctx.glFlush()
+        texture._mark_mipmap_valid(0)
         return texture
 
     def _swizzle_legacy_fmts(self, pixel_fmt: str) -> None:
@@ -411,6 +427,8 @@ class Texture(TextureBase):
 
         data = (GLubyte * (width * height * len(internal_format)))() if blank_data else None
         texture._allocate(data)
+        if blank_data:
+            texture._mark_mipmap_valid(0)
         return texture
 
     def _allocate(self, data: None | Array) -> None:
@@ -464,7 +482,8 @@ class Texture(TextureBase):
                 data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int,
+                          level: int = 0) -> None:
         data_pitch = abs(image_data._current_pitch)
 
         # Get data in required format (hopefully will be the same format it's already
@@ -473,7 +492,7 @@ class Texture(TextureBase):
 
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._context.glTexSubImage2D(self.target, self.level,
+        self._context.glTexSubImage2D(self.target, level,
                                       x, y,
                                       image_data.width, image_data.height,
                                       fmt, gl_type,
@@ -510,6 +529,28 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
                              _get_base_format(self.internal_format),
                              GL_UNSIGNED_BYTE,
                              data)
+        self._context.glFlush()
+
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        Texture.upload(self, image, x, y, z, level=level)
+
+    def _get_mipmap_depth(self, level: int) -> int:
+        depth = max(1, int(self.images))
+        return max(1, depth >> level)
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = (GLubyte * data_size)() if data_size is not None else None
+        self._context.glTexImage3D(self.target, level,
+                                   self._gl_internal_format,
+                                   width, height, depth,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   data)
+
+    def _generate_mipmaps(self) -> None:
+        self._context.glGenerateMipmap(self.target)
         self._context.glFlush()
 
     @classmethod
@@ -578,14 +619,15 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
     def _attach_gles_fbo_texture(self, z: int = 0) -> None:
         self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
 
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
+                          level: int = 0):
         data_pitch = abs(image_data._current_pitch)
 
         data = image_data.convert(image_data.format, data_pitch)
 
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._context.glTexSubImage3D(self.target, self.level,
+        self._context.glTexSubImage3D(self.target, level,
                                       x, y, z,
                                       image_data.width, image_data.height, 1,
                                       fmt, gl_type,
@@ -666,14 +708,15 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
     def _attach_gles_fbo_texture(self, z: int = 0) -> None:
         self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
 
-    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int):
+    def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
+                          level: int = 0):
         data_pitch = abs(image_data._current_pitch)
 
         data = image_data.convert(image_data.format, data_pitch)
 
         fmt, gl_type = _get_pixel_format(image_data)
 
-        self._context.glTexSubImage3D(self.target, self.level,
+        self._context.glTexSubImage3D(self.target, level,
                                       x, y, z,
                                       image_data.width, image_data.height, 1,
                                       fmt, gl_type,
@@ -688,14 +731,32 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
                          GL_UNSIGNED_BYTE,
                          data)
 
+    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
+        Texture.upload(self, image, x, y, z, level=level)
+
+    def _get_mipmap_depth(self, level: int) -> int:
+        return max(1, int(self.max_depth))
+
+    def _allocate_mipmap_level(self, level: int, width: int, height: int, depth: int,
+                               data_size: int | None) -> None:
+        data = (GLubyte * data_size)() if data_size is not None else None
+        self._context.glTexImage3D(self.target, level,
+                                   self._gl_internal_format,
+                                   width, height, self.max_depth,
+                                   0,
+                                   _get_base_format(self.internal_format),
+                                   GL_UNSIGNED_BYTE,
+                                   data)
+
+    def _generate_mipmaps(self) -> None:
+        self._context.glGenerateMipmap(self.target)
+        self._context.glFlush()
+
     def _bind_sequence_texture(self) -> None:
         self._context.glBindTexture(self.target, self.id)
 
-    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
+    def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)
-
-    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
-        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, layer)
 
     @classmethod
     def create_for_images(cls, images: Sequence[ImageData],
@@ -752,7 +813,7 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
 
 TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
- 
+
 
 class TextureGrid(TextureGridBase):
     pass
@@ -880,7 +941,7 @@ def _get_format_family(gl_internal_format: int) -> str | None:
         return "ASTC"
     return None
 
-def _get_extension_from_compression(cf: CompressionFormat):
+def _get_extension_from_compression(cf: CompressionFormat) -> int:
     if cf.fmt in (b'DXT1', b'BC1 '):
         return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT if cf.alpha else GL_COMPRESSED_RGB_S3TC_DXT1_EXT
     if cf.fmt in (b'DXT3', b'BC2 '):
@@ -895,6 +956,8 @@ def _get_extension_from_compression(cf: CompressionFormat):
     # KTX2 formats:
     if cf.fmt == b'KTX2' and (fmt := vk_to_gl_format.get(cf.vk_format)):
         return fmt
+    msg = f"Unknown format received: {cf}"
+    raise NotImplementedError(msg)
 
 def _get_gl_compression_format(cf: CompressionFormat) -> int:
     # Old formats:: dwFourCC
@@ -959,7 +1022,6 @@ class CompressedTexture(CompressedTextureBase):
         ctx = context or pyglet.graphics.api.core.current_context
 
         tex_id = GLuint()
-        print("tex_type", tex_type)
         target = texture_map[tex_type]
         ctx.glGenTextures(1, byref(tex_id))
 
@@ -1108,15 +1170,3 @@ class CompressedTexture(CompressedTextureBase):
     #                                                 self.width, self.height,
     #                                                 self.gl_format,
     #                                                 len(self.data), self.data)
-
-    def get_image_data(self) -> CompressedImageData:
-        return self
-
-    def get_region(self, x: int, y: int, width: int, height: int) -> _AbstractImage:
-        raise NotImplementedError(f"Not implemented for {self}")
-
-    def blit(self, x: int, y: int, z: int = 0) -> None:
-        self.get_texture().blit(x, y, z)
-
-    def blit_into(self, source, x: int, y: int, z: int) -> None:
-        raise NotImplementedError(f"Not implemented for {self}")
