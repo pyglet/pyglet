@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import Iterator, Literal, TYPE_CHECKING
+from typing import Generic, Iterator, Literal, Protocol, Sequence, TYPE_CHECKING, TypeVar, cast, overload
 
 import pyglet
 from pyglet.enums import AddressMode, ComponentFormat, TextureFilter, TextureType
@@ -28,26 +27,45 @@ class TextureArrayDepthExceeded(ImageException):
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
-class TextureSequence(_AbstractImageSequence):
+TTexture = TypeVar("TTexture", bound="TextureBase")
+
+
+class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
     """Interface for a sequence of textures.
 
     Typical implementations store multiple :py:class:`~pyglet.graphics.TextureRegion`s
     within one :py:class:`~pyglet.graphics.Texture` to minimise state changes.
     """
 
-    def __getitem__(self, item) -> TextureBase:
+    @overload
+    def __getitem__(self, item: int) -> TTexture:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Sequence[TTexture]:
+        ...
+
+    def __getitem__(self, item: int | slice) -> TTexture | Sequence[TTexture]:
         raise NotImplementedError
 
-    def __setitem__(self, item, texture: type[TextureBase]) -> _AbstractImage:
+    @overload
+    def __setitem__(self, item: int, image: ImageData) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, item: slice, image: Sequence[ImageData]) -> None:
+        ...
+
+    def __setitem__(self, item: int | slice, image: ImageData | Sequence[ImageData]) -> None:
         raise NotImplementedError
 
     def __len__(self) -> int:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[TextureBase]:
+    def __iter__(self) -> Iterator[TTexture]:
         raise NotImplementedError
 
-    def get_texture_sequence(self) -> TextureSequence:
+    def get_texture_sequence(self) -> TextureSequence[TTexture]:
         return self
 
 
@@ -73,6 +91,10 @@ class TextureBase(_AbstractImage):
     """The default vertex winding order for a quad.
     This defaults to counter-clockwise, starting at the bottom-left.
     """
+
+    # If this backend supports pixel data conversion.
+    # If False, will force data to be RGBA, even if CPU is used to order it.
+    pixel_conversion = True
 
     target: int
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
@@ -127,8 +149,12 @@ class TextureBase(_AbstractImage):
         """
         self.id = None
 
-    #def __del__(self):
-    #    raise NotImplementedError
+    def __del__(self) -> None:
+        if self.id is not None:
+            try:
+                self._delete_resource()
+            except (AttributeError, ImportError, NotImplementedError):
+                pass  # Interpreter is shutting down
 
     def bind(self, texture_unit: int = 0) -> None:
         """Bind to a specific Texture Unit by number."""
@@ -214,8 +240,8 @@ class TextureBase(_AbstractImage):
         """
 
     def get_image_data(self, z: int = 0) -> ImageData:
-        """To be removed and replaced with fetch."""
-        raise NotImplementedError
+        """Get the image data of this texture."""
+        return self.fetch(z)
 
     def get_texture(self) -> TextureBase:
         return self
@@ -243,6 +269,58 @@ class TextureBase(_AbstractImage):
         """
         raise NotImplementedError
 
+    def _delete_resource(self) -> None:
+        raise NotImplementedError
+
+    def _flush(self) -> None:
+        raise NotImplementedError
+
+    def _apply_filters(self) -> None:
+        raise NotImplementedError
+
+    def _update_subregion(self, image_data: ImageData | ImageDataRegion, x: int, y: int, z: int) -> None:
+        raise NotImplementedError
+
+    def _begin_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        """Prepare backend state for an upload."""
+        return None
+
+    def _end_upload(self, image_data: ImageData | ImageDataRegion) -> None:
+        """Reset backend state after an upload."""
+        return None
+
+    @staticmethod
+    def _get_image_alignment(image_data: ImageData) -> tuple[int, int]:
+        """Image alignment and row length information on an Image to upload.
+
+        Args:
+            image_data: The image data to get the alignment from.
+
+        Returns:
+            (align, row_length)
+                align: 1, 2, 4, or 8 \
+                row_length: 0 if tightly packed.
+        """
+        components = len(image_data.format)
+        width = image_data.width
+        packed_row_bytes = width * components
+        pitch = abs(image_data._current_pitch)
+        if packed_row_bytes % 8 == 0:
+            align = 8
+        elif packed_row_bytes % 4 == 0:
+            align = 4
+        elif packed_row_bytes % 2 == 0:
+            align = 2
+        else:
+            align = 1
+
+        if pitch == packed_row_bytes:
+            row_length = 0
+        else:
+            row_length = pitch // components
+
+        return align, row_length
+
     def get_mipmapped_texture(self) -> TextureBase:
         raise NotImplementedError(f"Not implemented for {self}.")
 
@@ -255,7 +333,17 @@ class TextureBase(_AbstractImage):
         coordinates.  If this texture is a 3D texture, the ``z``
         parameter gives the image slice to blit into.
         """
-        raise NotImplementedError(f"Not implemented for {self}")
+        x -= self.anchor_x
+        y -= self.anchor_y
+
+        self._begin_upload(image)
+
+        self._update_subregion(image, x, y, z)
+
+        self._end_upload(image)
+
+        # Flush image upload before data gets GC'd:
+        self._flush()
 
     def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
         return self.region_class(x, y, 0, width, height, self)
@@ -334,19 +422,64 @@ class TextureBase(_AbstractImage):
         """
         return self.min_filter, self.mag_filter
 
+    @filters.setter
+    def filters(self, filters: TextureFilter | tuple[TextureFilter, TextureFilter]) -> None:
+        if isinstance(filters, TextureFilter):
+            self.min_filter = filters
+            self.mag_filter = filters
+        else:
+            self.min_filter, self.mag_filter = filters
+
+        self._apply_filters()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height})"
 
 
-class TextureRegionBase(TextureBase):
-    """A rectangular region of a texture, presented as if it were a separate texture."""
+class _SupportsZ(Protocol):
+    z: int
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
-        super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
-                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
-                         owner.anisotropic_level)
 
+TRegion = TypeVar("TRegion", bound=_SupportsZ)
+TArrayRegion = TypeVar("TArrayRegion", bound=_SupportsZ)
+
+
+class _TextureSequenceItems(Generic[TRegion]):
+    items: list[TRegion] | tuple[TRegion, ...]
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+    @overload
+    def __getitem__(self, index: int) -> TRegion:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> Sequence[TRegion]:
+        ...
+
+    def __getitem__(self, index: int | slice) -> TRegion | Sequence[TRegion]:
+        return self.items[index]
+
+    def __iter__(self) -> Iterator[TRegion]:
+        return iter(self.items)
+
+
+class _TextureRegionShared:
+    x: int
+    y: int
+    z: int
+    _width: int
+    _height: int
+    id: int | None
+    width: int
+    height: int
+    owner: TextureBase
+    region_class: type[TextureRegionBase]
+    tex_coords: tuple[float, ...]
+    tex_coords_order: tuple[int, int, int, int]
+
+    def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase) -> None:
         self.x = x
         self.y = y
         self.z = z
@@ -365,10 +498,9 @@ class TextureRegionBase(TextureBase):
         v2 = (y + height) / owner.height * scale_v + owner_v1
         r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
-        raise Exception
 
-    def fetch(self, _z = 0) -> ImageDataRegion:
-        image_data = self.owner.get_image_data(self.z)
+    def fetch(self, _z: int = 0) -> ImageDataRegion:
+        image_data = self.owner.fetch(self.z)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
     def get_image_data(self) -> ImageDataRegion:
@@ -392,11 +524,141 @@ class TextureRegionBase(TextureBase):
     def delete(self) -> None:
         """Deleting a TextureRegion has no effect. Operate on the owning texture instead."""
 
-    def __del__(self):
+    def __del__(self) -> None:
         pass
 
 
-class UniformTextureSequence(TextureSequence):
+class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
+    items: list[TRegion] | tuple[TRegion, ...]
+
+    def _bind_sequence_texture(self) -> None:
+        raise NotImplementedError
+
+    def upload(self, image: _AbstractImage, x: int, y: int, z: int) -> None:
+        raise NotImplementedError
+
+    @classmethod
+    def create_for_image_grid(cls, grid: ImageGrid) -> Texture3D:
+        return cls.create_for_images(grid[:])
+
+    @overload
+    def __setitem__(self, index: int, value: ImageData) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, index: slice, value: Sequence[ImageData]) -> None:
+        ...
+
+    def __setitem__(self, index: int | slice, value: ImageData | Sequence[ImageData]) -> None:
+        if isinstance(index, slice):
+            images = cast(Sequence[ImageData], value)
+            self._bind_sequence_texture()
+
+            for item, image in zip(self[index], images):  # Needs a test.
+                self.upload(image, image.anchor_x, image.anchor_y, item.z)
+        else:
+            image = cast(ImageData, value)
+            self.upload(image, image.anchor_x, image.anchor_y, self[index].z)
+
+
+class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayRegion]):
+    items: list[TArrayRegion]
+    max_depth: int
+    width: int
+    height: int
+    region_class: type[TArrayRegion]
+
+    def _bind_sequence_texture(self) -> None:
+        raise NotImplementedError
+
+    def upload(self, image: _AbstractImage, x: int, y: int, z: int) -> None:
+        raise NotImplementedError
+
+    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
+        raise NotImplementedError
+
+    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
+        raise NotImplementedError
+
+    def _verify_size(self, image: _AbstractImage) -> None:
+        if image.width > self.width or image.height > self.height:
+            raise TextureArraySizeExceeded(
+                f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
+                f'{self.height})')
+
+    def add(self, image: ImageData) -> TArrayRegion:
+        if len(self.items) >= self.max_depth:
+            raise TextureArrayDepthExceeded("TextureArray is full.")
+
+        self._verify_size(image)
+        start_length = len(self.items)
+        item = self.region_class(0, 0, start_length, image.width, image.height, self)
+
+        self.upload(image, image.anchor_x, image.anchor_y, start_length)
+        self.items.append(item)
+        return item
+
+    def allocate(self, *images: _AbstractImage) -> list[TArrayRegion]:
+        """Allocates multiple images at once."""
+        if len(self.items) + len(images) > self.max_depth:
+            raise TextureArrayDepthExceeded("The amount of images being added exceeds the depth of this TextureArray.")
+
+        self._bind_sequence_texture()
+
+        start_length = len(self.items)
+        for i, image in enumerate(images):
+            self._verify_size(image)
+            item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
+            self.items.append(item)
+            self._allocate_image(image, start_length + i)
+
+        return self.items[start_length:]
+
+    @classmethod
+    def create_for_image_grid(cls, grid: ImageGrid) -> TextureArray:
+        texture_array = cls.create(grid[0].width, grid[0].height,
+                                   internal_format=ComponentFormat(grid[0].format),
+                                   max_depth=len(grid))
+        texture_array.allocate(*grid[:])
+        return texture_array
+
+    @overload
+    def __setitem__(self, index: int, value: ImageData) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, index: slice, value: Sequence[ImageData]) -> None:
+        ...
+
+    def __setitem__(self, index: int | slice, value: ImageData | Sequence[ImageData]) -> None:
+        if isinstance(index, slice):
+            images = cast(Sequence[ImageData], value)
+            self._bind_sequence_texture()
+
+            for old_item, image in zip(self[index], images):
+                self._verify_size(image)
+                item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
+                self._replace_image(image, old_item.z)
+                self.items[old_item.z] = item
+        else:
+            image = cast(ImageData, value)
+            self._verify_size(image)
+            item = self.region_class(0, 0, index, image.width, image.height, self)
+            self.upload(image, image.anchor_x, image.anchor_y, index)
+            self.items[index] = item
+
+
+class TextureRegionBase(TextureBase, _TextureRegionShared):
+    """A rectangular region of a texture, presented as if it were a separate texture."""
+
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
+        super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
+                         owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
+                         owner.anisotropic_level)
+        self._init_region(x, y, z, width, height, owner)
+
+
+class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
     """Interface for a sequence of textures, each with the same dimensions."""
 
 
@@ -407,7 +669,8 @@ class TextureArrayRegionBase(TextureRegionBase):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class TextureArrayBase(TextureBase, UniformTextureSequence):
+class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
+                       UniformTextureSequence[TextureArrayRegionBase]):
     def __init__(self, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
@@ -449,47 +712,13 @@ class TextureArrayBase(TextureBase, UniformTextureSequence):
         """
         raise NotImplementedError
 
-    def _verify_size(self, image: _AbstractImage) -> None:
-        if image.width > self.width or image.height > self.height:
-            raise TextureArraySizeExceeded(
-                f'Image ({image.width}x{image.height}) exceeds the size of the TextureArray ({self.width}x'
-                f'{self.height})')
-
-    def add(self, image: ImageData) -> TextureArrayRegion:
-        if len(self.items) >= self.max_depth:
-            raise TextureArrayDepthExceeded("TextureArray is full.")
-
-        self._verify_size(image)
-        start_length = len(self.items)
-        item = self.region_class(0, 0, start_length, image.width, image.height, self)
-
-        self.blit_into(image, image.anchor_x, image.anchor_y, start_length)
-        self.items.append(item)
-        return item
-
-    def allocate(self, *images: _AbstractImage) -> list[TextureArrayRegion]:
-        """Allocates multiple images at once."""
+    def _allocate_image(self, image: _AbstractImage, layer: int) -> None:
         raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def create_for_image_grid(cls, grid) -> TextureArray:
-        ...
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __getitem__(self, index) -> TextureArrayRegion:
-        return self.items[index]
-
-    def __setitem__(self, index, value) -> None:
+    def _replace_image(self, image: _AbstractImage, layer: int) -> None:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
-
-
-class Texture3D(TextureBase, UniformTextureSequence):
+class Texture3D(_Texture3DShared[TextureRegionBase], TextureBase, UniformTextureSequence[TextureRegionBase]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -508,29 +737,8 @@ class Texture3D(TextureBase, UniformTextureSequence):
                  anisotropic_level: int = 0, blank_data=True):
         raise NotImplementedError
 
-    @classmethod
-    def create_for_image_grid(cls, grid,
-                 internal_format: ComponentFormat = ComponentFormat.RGBA,
-                 internal_format_size: int = 8,
-                 internal_format_type: str = "b",
-                 filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
-                 address_mode: AddressMode = AddressMode.REPEAT,
-                 anisotropic_level: int = 0):
-        return cls.create_for_images(grid[:], internal_format, internal_format_size, internal_format_type,
-                 filters, address_mode, anisotropic_level)
-
-    def __len__(self):
-        return len(self.items)
-
-    def __getitem__(self, index):
-        return self.items[index]
-
-    def __setitem__(self, index, value):
+    def _bind_sequence_texture(self) -> None:
         raise NotImplementedError
-
-    def __iter__(self) -> Iterator[TextureRegionBase]:
-        return iter(self.items)
-
 
 
 class TextureGridBase(_AbstractGrid):
@@ -621,6 +829,7 @@ TextureBase.region_class = TextureRegionBase
 
 TextureArrayBase.region_class = TextureArrayRegionBase
 TextureArrayRegionBase.region_class = TextureArrayRegionBase
+
 
 class CompressedTextureBase(_AbstractImage):
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
