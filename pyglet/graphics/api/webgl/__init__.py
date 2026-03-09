@@ -8,7 +8,7 @@ import js
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations, NullContext
 from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
 from pyglet.math import Mat4
 
@@ -115,12 +115,12 @@ class ObjectSpace:
 
 
 class WebGLBackend(BackendGlobalObject):
-    current_context: OpenGLSurfaceContext | None
+    current_context: OpenGLSurfaceContext | NullContext
     _have_context: bool = False
 
     def __init__(self) -> None:
         self.initialized = False
-        self.current_context = None
+        self.current_context = NullContext()
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
