@@ -325,12 +325,12 @@ class TextureBase(_AbstractImage):
         return align, row_length
 
     def _compute_mipmap_count(self) -> int:
-        max_dim = max(self.width, self.height)
+        max_size = max(self.width, self.height)
         if self.tex_type == TextureType.TYPE_3D:
-            max_dim = max(max_dim, self._get_mipmap_depth(0))
+            max_size = max(max_size, self._get_mipmap_depth(0))
         count = 1
-        while max_dim > 1:
-            max_dim //= 2
+        while max_size > 1:
+            max_size //= 2
             count += 1
         return count
 
