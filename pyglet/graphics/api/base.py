@@ -110,14 +110,18 @@ class SurfaceContext(ABC):  # Temp name for now.
 class NullContext:
     """Used to represent a Null state before a Context is created.
 
-    If a user tries to perform any context specific operations
-    _before_ any Context has been created, this object will
-    intercept any access attempts and provide a useful exception.
+    If a user tries to perform any context specific operations _before_
+    any Context has been created (or if it has been deleted), this object
+    will intercept any access attempts and provide a useful exception.
+
+    .. note:: To simplify comparisons, this class behaves similarly to a NoneType.
+              It is NOT actually a NoneType however, so it should not be used as such
+              (for example as an argument to a ctypes call).
     """
 
     def __getattribute__(self, item):
-        msg = ("A rendering Context has not yet been created. Please create a "
-               "context (a Window) before attempting to perform any GPU related activities.")
+        msg = ("A rendering Context has not yet been created, or has already been deleted. Please ensure "
+               "a context exists (create a Window) before attempting to perform any GPU related activities.")
         raise RuntimeError(msg)
 
     def __eq__(self, other):
