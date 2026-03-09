@@ -90,6 +90,12 @@ class TestTextureArray(unittest.TestCase):
         self.check_image(texture[1], 32, 32, 87)
         self.check_image(texture[2], 32, 32, 3)
 
+        # Test slicing.
+        texture[0:2] = [self.create_image(32, 32, 11), self.create_image(32, 32, 22)]
+        self.check_image(texture[0], 32, 32, 11)
+        self.check_image(texture[1], 32, 32, 22)
+        self.check_image(texture[2], 32, 32, 3)
+
     def testSquare(self):
         # Test a 3x3 grid with no padding and 4x4 images
         rows = cols = 3
