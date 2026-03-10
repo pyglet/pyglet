@@ -441,10 +441,10 @@ class Texture(TextureBase):
                              data)
         self._context.glFlush()
 
-    def _attach_gles_fbo_texture(self, _z: int = 0) -> None:
-        self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+    def _attach_gles_fbo_texture(self, _z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
 
-    def fetch(self, z: int = 0) -> ImageData:
+    def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
         Binds the texture and reads the pixel data back from the GPU, as such, can be a costly operation.
@@ -456,6 +456,8 @@ class Texture(TextureBase):
         Args:
             z:
                 For 3D textures, the image slice to retrieve.
+            level:
+                The mipmap level of the texture to retrieve.
         """
         self._context.glBindTexture(self.target, self.id)
 
@@ -469,13 +471,13 @@ class Texture(TextureBase):
         if self._context.get_info().get_opengl_api() == "gles":
             self._context.gles_pixel_fbo.bind()
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._attach_gles_fbo_texture(z)
+            self._attach_gles_fbo_texture(z, level)
             self._context.glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf)
             self._context.gles_pixel_fbo.unbind()
             data = ImageData(self.width, self.height, fmt, buf)
         else:
             self._context.glPixelStorei(GL_PACK_ALIGNMENT, 1)
-            self._context.glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+            self._context.glGetTexImage(self.target, level, gl_format, GL_UNSIGNED_BYTE, buf)
 
             data = ImageData(self.width, self.height, fmt, buf)
             if self.images > 1:
@@ -616,8 +618,8 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
         texture.item_height = item_height
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):
@@ -705,8 +707,8 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
         texture._allocate(None)
         return texture
 
-    def _attach_gles_fbo_texture(self, z: int = 0) -> None:
-        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def _attach_gles_fbo_texture(self, z: int = 0, level: int = 0) -> None:
+        self._context.glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
     def _update_subregion(self, image_data: ImageData, x: int, y: int, z: int,
                           level: int = 0):
@@ -1096,7 +1098,7 @@ class CompressedTexture(CompressedTextureBase):
 
     def _allocate(self, data: None | Array) -> None:
         if self._can_gpu_decode:
-            self._context.glCompressedTexImage2D(self.target, self.level,
+            self._context.glCompressedTexImage2D(self.target, 0,
                                                  self._gl_internal_format,
                                                  self.width, self.height, 0,
                                                  len(data), data)

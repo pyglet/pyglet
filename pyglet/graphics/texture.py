@@ -99,9 +99,6 @@ class TextureBase(_AbstractImage):
     target: int
     """The GL texture target (e.g., ``GL_TEXTURE_2D``)."""
 
-    level: int = 0
-    """The mipmap level of this texture."""
-
     images = 1
 
     default_filters: TextureFilter | tuple[TextureFilter, TextureFilter] = TextureFilter.LINEAR, TextureFilter.LINEAR
@@ -256,7 +253,7 @@ class TextureBase(_AbstractImage):
         """
         raise NotImplementedError("This method has been removed. See the 3.0 migration documentation.")
 
-    def fetch(self, z: int = 0) -> ImageData:
+    def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture by reading pixel data back from the GPU.
 
         This can be a somewhat costly operation.
@@ -268,6 +265,8 @@ class TextureBase(_AbstractImage):
         Args:
             z:
                 For 3D textures, the image slice to retrieve.
+            level:
+                The mipmap level of the texture to retrieve.
         """
         raise NotImplementedError
 
@@ -427,9 +426,8 @@ class TextureBase(_AbstractImage):
         if level < 0:
             raise ImageException("Mipmap level must be non-negative.")
         if level >= self._mipmap_levels:
-            raise ImageException(
-                f"Mipmap level {level} is not initialized. Call init_mipmaps or generate_mipmaps first."
-            )
+            msg = f"Mipmap level {level} is not initialized. Call init_mipmaps or generate_mipmaps first."
+            raise ImageException(msg)
         x -= self.anchor_x
         y -= self.anchor_y
 
@@ -597,8 +595,8 @@ class _TextureRegionShared:
         r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
-    def fetch(self, _z: int = 0) -> ImageDataRegion:
-        image_data = self.owner.fetch(self.z)
+    def fetch(self, _z: int = 0, level: int = 0) -> ImageDataRegion:
+        image_data = self.owner.fetch(self.z, level)
         return image_data.get_region(self.x, self.y, self.width, self.height)
 
     def get_image_data(self) -> ImageDataRegion:
@@ -649,13 +647,13 @@ class _Texture3DShared(_TextureSequenceItems[TRegion], Generic[TRegion]):
 
     def __setitem__(self, index: int | slice, value: ImageData | Sequence[ImageData]) -> None:
         if isinstance(index, slice):
-            images = cast(Sequence[ImageData], value)
+            images: Sequence[ImageData] = value
             self._bind_sequence_texture()
 
             for item, image in zip(self[index], images):  # Needs a test.
                 self.upload(image, image.anchor_x, image.anchor_y, item.z)
         else:
-            image = cast(ImageData, value)
+            image: ImageData =value
             self.upload(image, image.anchor_x, image.anchor_y, self[index].z)
 
 
@@ -729,7 +727,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
 
     def __setitem__(self, index: int | slice, value: ImageData | Sequence[ImageData]) -> None:
         if isinstance(index, slice):
-            images = cast(Sequence[ImageData], value)
+            images: Sequence[ImageData] = value
             self._bind_sequence_texture()
 
             for old_item, image in zip(self[index], images):
@@ -738,7 +736,7 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
                 self.upload(image, image.anchor_x, image.anchor_y, old_item.z)
                 self.items[old_item.z] = item
         else:
-            image = cast(ImageData, value)
+            image: ImageData = value
             self._verify_size(image)
             item = self.region_class(0, 0, index, image.width, image.height, self)
             self.upload(image, image.anchor_x, image.anchor_y, index)
@@ -919,6 +917,16 @@ class TextureGridBase(_AbstractGrid):
         item_height = item_height or (texture.height - row_padding * (rows - 1)) // rows
         self.texture = owner
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
+
+    def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
+        return self.texture.get_region(x, y, width, height)
+
+    def _update_item(self, existing_item: TextureRegionBase, new_item: _AbstractImage) -> None:
+        if isinstance(new_item, (ImageData, ImageDataRegion)):
+            image_data = new_item
+        else:
+            image_data = new_item.get_image_data()
+        existing_item.owner.upload(image_data, existing_item.x, existing_item.y, existing_item.z)
 
     @classmethod
     def from_image_grid(cls, image_grid: ImageGrid) -> TextureGridBase:

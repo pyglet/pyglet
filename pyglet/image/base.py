@@ -706,7 +706,7 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         """
         warnings.warn("Use pyglet.graphics.TextureGrid instead", DeprecationWarning)
         if not self._texture_grid:
-            from pyglet.graphics.texture import TextureGrid
+            from pyglet.graphics.texture import TextureGrid  # noqa: PLC0415
             self._texture_grid = TextureGrid.from_image_grid(self)
         return self._texture_grid
 

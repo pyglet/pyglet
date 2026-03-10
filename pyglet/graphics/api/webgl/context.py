@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
 
-import js
-from pyodide.ffi import create_proxy
+from pyodide.ffi import create_proxy  # noqa: F401, F821
 
 from pyglet.graphics.api.base import SurfaceContext, NullContext
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.gl import GL_COLOR_BUFFER_BIT
 from pyglet.graphics.api.webgl.gl_info import GLInfo
-from pyglet.graphics.api.webgl.shader import GLDataType
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.webgl.shader import GLDataType
+    from pyglet.config import SurfaceConfig
     from pyglet.graphics.api import WebGLBackend
-    from pyglet.graphics.api.webgl.config import OpenGLWindowConfig
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext
     from pyglet.window import Window
     from pyglet.window.emscripten import EmscriptenWindow
@@ -40,14 +39,14 @@ class OpenGLSurfaceContext(SurfaceContext):
     """
 
     gl: WebGL2RenderingContext
-    config: OpenGLWindowConfig
+    config: SurfaceConfig
     context_share: OpenGLSurfaceContext | None
 
     def __init__(
         self,
         global_ctx: WebGLBackend,
         window: EmscriptenWindow,
-        config: OpenGLWindowConfig,  # noqa: D417
+        config: SurfaceConfig,
         context_share: OpenGLSurfaceContext | None = None,
     ) -> None:
         """Initialize a context.

@@ -230,7 +230,7 @@ class GLCompressedImageData(CompressedImageData):
 
         if self._have_extension():
             gl.compressedTexImage2D(
-                texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
+                texture.target, 0, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
             )
         elif self.decoder:
             image = self.decoder(self.data, self.width, self.height)
@@ -269,7 +269,7 @@ class GLCompressedImageData(CompressedImageData):
             gl.generateMipmap(texture.target)
 
         gl.compressedTexImage2D(
-            texture.target, texture.level, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
+            texture.target, 0, self.gl_format, self.width, self.height, 0, len(self.data), self.data,
         )
 
         width, height = self.width, self.height
@@ -664,10 +664,10 @@ class Texture(TextureBase):
                              data)
         self._gl.flush()
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, self.level)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.id, level)
 
-    def fetch(self, z: int = 0) -> ImageData:
+    def fetch(self, z: int = 0, level: int = 0) -> ImageData:
         """Fetch the image data of this texture from the GPU.
 
         Bind the texture, and read the pixel data back from the GPU.
@@ -679,6 +679,8 @@ class Texture(TextureBase):
         Args:
             z:
                 For 3D textures, the image slice to retrieve.
+            level:
+                The mipmap level of the texture to retrieve.
         """
         self._gl.bindTexture(self.target, self.id)
 
@@ -692,7 +694,7 @@ class Texture(TextureBase):
         self._gl.pixelStorei(GL_PACK_ALIGNMENT, 1)
         fbo = self._gl.createFramebuffer()
         self._gl.bindFramebuffer(GL_FRAMEBUFFER, fbo)
-        self._attach_texture_to_fbo(z)
+        self._attach_texture_to_fbo(z, level)
 
         if self._gl.checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise Exception("Framebuffer is incomplete.")
@@ -810,8 +812,8 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
             data,
         )
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
     def _bind_sequence_texture(self) -> None:
         self._gl.bindTexture(self.target, self.id)
@@ -900,8 +902,8 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
                                       fmt, gl_type,
                                       data)
 
-    def _attach_texture_to_fbo(self, z: int = 0) -> None:
-        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, self.level, z)
+    def _attach_texture_to_fbo(self, z: int = 0, level: int = 0) -> None:
+        self._gl.framebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.id, level, z)
 
     def _allocate(self, data: None | js.Uint8Array) -> None:
         self._gl.texImage3D(self.target, 0,
@@ -911,9 +913,6 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
                                    _get_base_format(self.internal_format),
                                    GL_UNSIGNED_BYTE,
                                    0)
-
-    def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        Texture.upload(self, image, x, y, z, level=level)
 
     def _get_mipmap_depth(self, level: int) -> int:
         return max(1, int(self.max_depth))
@@ -942,7 +941,7 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
         self._gl.bindTexture(self.target, self.id)
 
     def _allocate_image(self, image: ImageData, layer: int) -> None:
-        image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, layer)
+        self.upload(image, image.anchor_x, image.anchor_y, layer)
 
 TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion

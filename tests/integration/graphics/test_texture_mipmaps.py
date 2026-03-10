@@ -12,8 +12,7 @@ def colorbyte(color):
     return bytes((color,))
 
 
-@skip_graphics_api(GraphicsAPI.GL2)
-class TestTextureMipmaps(unittest.TestCase):
+class TestTextureMipmaps2D(unittest.TestCase):
     def setUp(self):
         self.w = Window(visible=False)
 
@@ -57,6 +56,19 @@ class TestTextureMipmaps(unittest.TestCase):
             texture.init_mipmaps(levels=0)
         with self.assertRaisesRegex(Exception, "cannot exceed"):
             texture.init_mipmaps(levels=10)
+
+
+@skip_graphics_api(GraphicsAPI.GL2)
+class TestTextureMipmapsArrays(unittest.TestCase):
+    def setUp(self):
+        self.w = Window(visible=False)
+
+    def tearDown(self) -> None:
+        self.w.close()
+
+    def create_image(self, width, height, color):
+        data = colorbyte(color) * (width * height)
+        return ImageData(width, height, 'R', data)
 
     def test_texture3d_mipmap_depth(self):
         images = [self.create_image(8, 4, i + 1) for i in range(4)]

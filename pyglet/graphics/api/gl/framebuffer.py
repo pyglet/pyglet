@@ -251,7 +251,8 @@ class Framebuffer:
 
         return _status_states.get(gl_status, "Unknown error")
 
-    def attach_texture(self, texture: Texture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
+    def attach_texture(self, texture: Texture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+                       level: int = 0) -> None:
         """Attach a Texture to the Framebuffer.
 
         Args:
@@ -260,10 +261,12 @@ class Framebuffer:
                 point named by attachment.
             attachment:
                 Specifies the attachment point of the framebuffer.
+            level:
+                The mipmap level of the targeted texture to attach to the framebuffer.
         """
         self.bind()
         gl_attachment = _gl_attachment_map[attachment]
-        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, texture.level)
+        self._context.glFramebufferTexture(self._gl_target, gl_attachment, texture.id, level)
         self._attachment_types |= gl_attachment
         self._width = max(texture.width, self._width)
         self._height = max(texture.height, self._height)
