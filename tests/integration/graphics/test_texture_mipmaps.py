@@ -20,8 +20,9 @@ class TestTextureMipmaps2D(unittest.TestCase):
         self.w.close()
 
     def create_image(self, width, height, color):
-        data = colorbyte(color) * (width * height)
-        return ImageData(width, height, 'R', data)
+        pixel = colorbyte(color) * 3 + colorbyte(255)
+        data = pixel * (width * height)
+        return ImageData(width, height, 'RGBA', data)
 
     def test_texture2d_init_and_upload_levels(self):
         texture = Texture.create(8, 4, blank_data=False)
@@ -67,8 +68,9 @@ class TestTextureMipmapsArrays(unittest.TestCase):
         self.w.close()
 
     def create_image(self, width, height, color):
-        data = colorbyte(color) * (width * height)
-        return ImageData(width, height, 'R', data)
+        pixel = colorbyte(color) * 3 + colorbyte(255)
+        data = pixel * (width * height)
+        return ImageData(width, height, 'RGBA', data)
 
     def test_texture3d_mipmap_depth(self):
         images = [self.create_image(8, 4, i + 1) for i in range(4)]
