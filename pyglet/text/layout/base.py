@@ -18,8 +18,6 @@ import pyglet
 from pyglet import graphics
 from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.graphics import Group, ShaderProgram
-from pyglet.graphics.draw import Group
-from pyglet.graphics.texture import TextureBase
 from pyglet.text import runlist
 from pyglet.font.base import GlyphPosition
 
@@ -67,7 +65,7 @@ class TextLayoutGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
         super().__init__(order=order, parent=parent)
         self.uniforms = {"scissor": False}
@@ -106,7 +104,7 @@ class ScrollableTextLayoutGroup(Group):
     """
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
 
         super().__init__(order=order, parent=parent)

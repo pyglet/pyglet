@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyglet.graphics import Group, ShaderProgram
-    from pyglet.graphics.texture import TextureBase
+    from pyglet.graphics.texture import Texture
 
 # Standard projection Z is 0 to 255. Keep window within that.
 # You will have to change window projection if you wish to go beyond this.
@@ -76,7 +76,7 @@ fragment_source = """#version 150 core
 
 
 class DepthSpriteGroup(pyglet.sprite.SpriteGroup):
-    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
+    def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor, program: ShaderProgram,
                  parent: Group | None = None) -> None:
         super().__init__(texture, blend_src, blend_dest, program, parent)
         self.set_depth_test(CompareOp.LESS)

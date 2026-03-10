@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics import Group
     from pyglet.graphics.api.webgl.shader import ShaderProgram
-    from pyglet.graphics.texture import TextureBase
+    from pyglet.graphics.texture import Texture
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ class TextureState(State):  # noqa: D101
     sets_state: bool = True
 
     @classmethod
-    def from_texture(cls, texture: TextureBase, binding: int, set_id: int) -> TextureState:
+    def from_texture(cls, texture: Texture, binding: int, set_id: int) -> TextureState:
         return cls((texture.target, id(texture.id)),
                    webgl_texture=texture.id,
                    binding=binding,

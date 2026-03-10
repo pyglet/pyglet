@@ -23,7 +23,7 @@ from pyglet.graphics.state import (
 if TYPE_CHECKING:
     from pyglet.customtypes import ScissorProtocol
     from pyglet.graphics.api.base import SurfaceContext
-    from pyglet.graphics.texture import TextureBase
+    from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList
     from pyglet.graphics.shader import ShaderProgramBase
 
@@ -111,7 +111,7 @@ class Group:
     def set_uniform_buffer(self, ubo: str, binding: int):
         self.add_state(UniformBufferState(ubo, binding))
 
-    def set_texture(self, texture: TextureBase, texture_unit: int=0, set_id: int=0) -> None:
+    def set_texture(self, texture: Texture, texture_unit: int=0, set_id: int=0) -> None:
         """Set the texture state.
 
         Args:

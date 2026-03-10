@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.webgl.webgl_js import WebGLFramebuffer, WebGLRenderbuffer
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
-    from pyglet.graphics.api.webgl.texture import Texture
+    from pyglet.graphics.api.webgl.texture import WebGLTexture
 
 _gl_target_map = {
     FramebufferTarget.FRAMEBUFFER: gl.GL_FRAMEBUFFER,
@@ -261,7 +261,7 @@ class Framebuffer:
 
         return _status_states.get(gl_status, "Unknown error")
 
-    def attach_texture(self, texture: Texture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
+    def attach_texture(self, texture: WebGLTexture, attachment: FramebufferAttachment = FramebufferAttachment.COLOR0,
                        level: int = 0) -> None:
         """Attach a Texture to the Framebuffer.
 
@@ -294,7 +294,7 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_texture_layer(self, texture: Texture, layer: int, level: int,
+    def attach_texture_layer(self, texture: WebGLTexture, layer: int, level: int,
                              attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Texture layer to the Framebuffer.
 

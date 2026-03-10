@@ -27,7 +27,7 @@ class TextureArrayDepthExceeded(ImageException):
     """Exception occurs when depth has hit the maximum supported of the array."""
 
 
-TTexture = TypeVar("TTexture", bound="TextureBase")
+TTexture = TypeVar("TTexture", bound="Texture")
 
 
 class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
@@ -69,14 +69,14 @@ class TextureSequence(_AbstractImageSequence, Generic[TTexture]):
         return self
 
 
-class TextureBase(_AbstractImage):
+class Texture(_AbstractImage):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
     the ``get_texture()`` method of any AbstractImage class (such as ImageData).
     """
 
-    region_class: TextureRegionBase  # Set to TextureRegion after it's defined
+    region_class: type[TextureRegion]  # Set to TextureRegion after it's defined
     """The class to use when constructing regions of this texture.
      The class should be a subclass of TextureRegion.
     """
@@ -176,7 +176,7 @@ class TextureBase(_AbstractImage):
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
                blank_data: bool = True,
-               context: SurfaceContext | None = None) -> TextureBase:
+               context: SurfaceContext | None = None) -> Texture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, target and format.
@@ -215,7 +215,7 @@ class TextureBase(_AbstractImage):
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: SurfaceContext | None = None,
-                          ) -> TextureBase:
+                          ) -> Texture:
         """Create a Texture from image data.
 
         On return, the texture will be bound.
@@ -242,7 +242,7 @@ class TextureBase(_AbstractImage):
         """Get the image data of this texture."""
         return self.fetch(z)
 
-    def get_texture(self) -> TextureBase:
+    def get_texture(self) -> Texture:
         return self
 
     def blit(self, x: int, y: int, z: int = 0, width: int | None = None, height: int | None = None) -> None:
@@ -409,7 +409,7 @@ class TextureBase(_AbstractImage):
         self._mipmap_levels = max(self._mipmap_levels, self._compute_mipmap_count())
         self._valid_mipmaps = set(range(self._mipmap_levels))
 
-    def get_mipmapped_texture(self) -> TextureBase:
+    def get_mipmapped_texture(self) -> Texture:
         msg = f"Not implemented for {self}."
         raise NotImplementedError(msg)
 
@@ -441,11 +441,11 @@ class TextureBase(_AbstractImage):
         self._flush()
         self._mark_mipmap_valid(level)
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         return self.region_class(x, y, 0, width, height, self)
 
     def get_transform(self, flip_x: bool = False, flip_y: bool = False,
-                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureRegionBase:
+                      rotate: Literal[0, 90, 180, 270, 360] = 0) -> TextureRegion:
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
@@ -570,12 +570,12 @@ class _TextureRegionShared:
     id: int | None
     width: int
     height: int
-    owner: TextureBase
-    region_class: type[TextureRegionBase]
+    owner: Texture
+    region_class: type[TextureRegion]
     tex_coords: tuple[float, ...]
     tex_coords_order: tuple[int, int, int, int]
 
-    def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase) -> None:
+    def _init_region(self, x: int, y: int, z: int, width: int, height: int, owner: Texture) -> None:
         self.x = x
         self.y = y
         self.z = z
@@ -602,7 +602,7 @@ class _TextureRegionShared:
     def get_image_data(self) -> ImageDataRegion:
         return self.fetch()
 
-    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
+    def get_region(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         x += self.x
         y += self.y
         region = self.region_class(x, y, self.z, width, height, self.owner)
@@ -743,10 +743,10 @@ class _TextureArrayShared(_TextureSequenceItems[TArrayRegion], Generic[TArrayReg
             self.items[index] = item
 
 
-class TextureRegionBase(TextureBase, _TextureRegionShared):
+class TextureRegion(Texture, _TextureRegionShared):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
         super().__init__(width, height, owner.id, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
                          owner.anisotropic_level)
@@ -771,15 +771,15 @@ class UniformTextureSequence(TextureSequence[TTexture], Generic[TTexture]):
     """Interface for a sequence of textures, each with the same dimensions."""
 
 
-class TextureArrayRegionBase(TextureRegionBase):
+class TextureArrayRegion(TextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
-                       UniformTextureSequence[TextureArrayRegionBase]):
+class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture,
+                   UniformTextureSequence[TextureArrayRegion]):
     def __init__(self, width: int, height: int, tex_id: int, max_depth: int,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
                  internal_format_size: int = 8,
@@ -802,7 +802,7 @@ class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               context: SurfaceContext | None = None) -> TextureArrayBase:
+               context: SurfaceContext | None = None) -> TextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -825,7 +825,7 @@ class TextureArrayBase(_TextureArrayShared[TextureArrayRegionBase], TextureBase,
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         raise NotImplementedError
 
-class Texture3D(_Texture3DShared[TextureRegionBase], TextureBase, UniformTextureSequence[TextureRegionBase]):
+class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence[TextureRegion]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -848,7 +848,7 @@ class Texture3D(_Texture3DShared[TextureRegionBase], TextureBase, UniformTexture
         raise NotImplementedError
 
 
-class TextureGridBase(_AbstractGrid):
+class TextureGrid(_AbstractGrid):
     """A texture containing a regular grid of texture regions.
 
     To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
@@ -908,7 +908,8 @@ class TextureGridBase(_AbstractGrid):
                 Pixels separating adjacent columns.  The padding is only
                 inserted between columns, not at the edges of the grid.
         """
-        if isinstance(texture, TextureRegion):
+        # Backend-specific region implementations may not inherit the abstract TextureRegion base.
+        if isinstance(texture, TextureRegion) or hasattr(texture, "owner"):
             owner = texture.owner
         else:
             owner = texture
@@ -918,10 +919,10 @@ class TextureGridBase(_AbstractGrid):
         self.texture = owner
         super().__init__(rows, columns, item_width, item_height, row_padding, column_padding)
 
-    def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegionBase:
+    def _create_item(self, x: int, y: int, width: int, height: int) -> TextureRegion:
         return self.texture.get_region(x, y, width, height)
 
-    def _update_item(self, existing_item: TextureRegionBase, new_item: _AbstractImage) -> None:
+    def _update_item(self, existing_item: TextureRegion, new_item: _AbstractImage) -> None:
         if isinstance(new_item, (ImageData, ImageDataRegion)):
             image_data = new_item
         else:
@@ -929,7 +930,7 @@ class TextureGridBase(_AbstractGrid):
         existing_item.owner.upload(image_data, existing_item.x, existing_item.y, existing_item.z)
 
     @classmethod
-    def from_image_grid(cls, image_grid: ImageGrid) -> TextureGridBase:
+    def from_image_grid(cls, image_grid: ImageGrid) -> TextureGrid:
         texture = image_grid.image.get_texture()
         return cls(
             texture,
@@ -942,13 +943,13 @@ class TextureGridBase(_AbstractGrid):
         )
 
 
-TextureBase.region_class = TextureRegionBase
+Texture.region_class = TextureRegion
 
-TextureArrayBase.region_class = TextureArrayRegionBase
-TextureArrayRegionBase.region_class = TextureArrayRegionBase
+TextureArray.region_class = TextureArrayRegion
+TextureArrayRegion.region_class = TextureArrayRegion
 
 
-class CompressedTextureBase(_AbstractImage):
+class CompressedTexture(_AbstractImage):
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     """12-tuple of float, named (u1, v1, r1, u2, v2, r2, ...).
     ``u, v, r`` give the 3D texture coordinates for vertices 1-4. The vertices
@@ -993,8 +994,9 @@ class CompressedTextureBase(_AbstractImage):
         self.internal_format = compression_format
         self.anisotropic_level = anisotropic_level
 
-    def get_texture(self) -> CompressedTextureBase:
+    def get_texture(self) -> CompressedTexture:
         return self
+
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
@@ -1004,24 +1006,42 @@ if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
         get_screenshot,
     )
     from pyglet.graphics.api.gl.texture import (
-        CompressedTexture,  # noqa: F401
-        Texture,
-        TextureRegion,
-        Texture3D,
-        TextureArray,
-        TextureArrayRegion,
-        TextureGrid,
+        GLCompressedTexture,
+        GLCompressedTexture as CompressedTexture,  # noqa: F401
+        GLTexture,
+        GLTexture as Texture,  # noqa: F401
+        GLTextureRegion,
+        GLTextureRegion as TextureRegion,  # noqa: F401
+        GLTexture3D,
+        GLTexture3D as Texture3D,  # noqa: F401
+        GLTextureArray,
+        GLTextureArray as TextureArray,  # noqa: F401
+        GLTextureArrayRegion,
+        GLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+        GLTextureGrid,
+        GLTextureGrid as TextureGrid,  # noqa: F401
         get_max_texture_size,
         get_max_array_texture_layers,
     )
-elif pyglet.options.backend in ("webgl"):
+elif pyglet.options.backend == "webgl":
+    from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
+        Framebuffer,
+        Renderbuffer,
+        get_max_color_attachments,
+        get_screenshot,
+    )
     from pyglet.graphics.api.webgl.texture import (
-        Texture,
-        TextureRegion,
-        Texture3D,  # noqa: F401
-        TextureArray,
-        TextureArrayRegion,
-        TextureGrid,  # noqa: F401
+        WebGLTexture,
+        WebGLTexture as Texture,  # noqa: F401
+        WebGLTextureRegion as TextureRegion,  # noqa: F401
+        WebGLTexture3D,
+        WebGLTexture3D as Texture3D,  # noqa: F401
+        WebGLTextureArray,
+        WebGLTextureArray as TextureArray,  # noqa: F401
+        WebGLTextureArrayRegion,
+        WebGLTextureArrayRegion as TextureArrayRegion,  # noqa: F401
+        WebGLTextureGrid,
+        WebGLTextureGrid as TextureGrid,  # noqa: F401
         get_max_texture_size,  # noqa: F401
         get_max_array_texture_layers,  # noqa: F401
     )

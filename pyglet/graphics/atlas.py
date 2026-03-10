@@ -248,6 +248,6 @@ class TextureArrayBin:
         except IndexError:
             pass
 
-        array = pyglet.graphics.texture.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
+        array = pyglet.graphics.TextureArray.create(self.texture_width, self.texture_height, max_depth=self.max_depth)
         self.arrays.append(array)
         return array.add(img)

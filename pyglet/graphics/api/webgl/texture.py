@@ -44,8 +44,8 @@ from pyglet.graphics.api.webgl.gl import (
     GL_UNPACK_SKIP_ROWS,
     GL_UNSIGNED_BYTE,
 )
-from pyglet.graphics.texture import TextureBase, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
-    _TextureArrayShared, TextureGridBase
+from pyglet.graphics.texture import Texture, UniformTextureSequence, _TextureRegionShared, _Texture3DShared, \
+    _TextureArrayShared, TextureGrid
 from pyglet.image.base import (
     CompressedImageData,
     ImageData,
@@ -213,11 +213,11 @@ class GLCompressedImageData(CompressedImageData):
 
         return self.extension is None or core.have_extension(self.extension)
 
-    def get_texture(self) -> TextureBase:
+    def get_texture(self) -> Texture:
         if self._current_texture:
             return self._current_texture
 
-        texture = TextureBase.create(self.width, self.height, blank_data=False)
+        texture = WebGLTexture.create(self.width, self.height, blank_data=False)
 
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
@@ -245,7 +245,7 @@ class GLCompressedImageData(CompressedImageData):
         self._current_texture = texture
         return texture
 
-    def get_mipmapped_texture(self) -> TextureBase:
+    def get_mipmapped_texture(self) -> Texture:
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
 
@@ -254,7 +254,7 @@ class GLCompressedImageData(CompressedImageData):
             #       For now, just return a non-mipmapped texture.
             return self.get_texture()
 
-        texture = TextureBase.create(self.width, self.height, GL_TEXTURE_2D, None)
+        texture = WebGLTexture.create(self.width, self.height, blank_data=False)
 
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
@@ -350,14 +350,14 @@ def _get_pixel_format(image_data: ImageData) -> tuple[int, int]:
     return fmt, gl_type
 
 
-class Texture(TextureBase):
+class WebGLTexture(Texture):
     """An image loaded into GPU memory.
 
     Typically, you will get an instance of Texture by accessing calling
     the ``get_texture()`` method of any AbstractImage class (such as ImageData).
     """
 
-    region_class: TextureRegion  # Set to TextureRegion after it's defined
+    region_class: WebGLTextureRegion  # Set to WebGLTextureRegion after it's defined
     """The class to use when constructing regions of this texture.
      The class should be a subclass of TextureRegion.
     """
@@ -533,7 +533,7 @@ class Texture(TextureBase):
                           address_mode: AddressMode = AddressMode.REPEAT,
                           anisotropic_level: int = 0,
                           context: OpenGLSurfaceContext | None = None,
-                          ) -> Texture:
+                          ) -> WebGLTexture:
         """Create a Texture from image data.
 
         Args:
@@ -604,7 +604,7 @@ class Texture(TextureBase):
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> Texture:
+               blank_data: bool = True, context: OpenGLSurfaceContext | None = None) -> WebGLTexture:
         """Create a Texture.
 
         Create a Texture with the specified dimensions, and attributes.
@@ -707,20 +707,20 @@ class Texture(TextureBase):
         data = ImageData(self.width, self.height, fmt, pixel_buf)
         return data
 
-class TextureRegion(_TextureRegionShared, Texture):
+class WebGLTextureRegion(_TextureRegionShared, WebGLTexture):
     """A rectangular region of a texture, presented as if it were a separate texture."""
 
-    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: TextureBase):
+    def __init__(self, x: int, y: int, z: int, width: int, height: int, owner: Texture):
         super().__init__(owner._context, width, height, owner.id, owner.tex_type, owner.internal_format,
                          owner.internal_format_size, owner.internal_format_type, owner.filters, owner.address_mode,
                          owner.anisotropic_level)
         self._init_region(x, y, z, width, height, owner)
 
 
-Texture.region_class = TextureRegion
+WebGLTexture.region_class = WebGLTextureRegion
 
 
-class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence[TextureRegion]):
+class WebGLTexture3D(_Texture3DShared[WebGLTextureRegion], WebGLTexture, UniformTextureSequence[WebGLTextureRegion]):
     """A texture with more than one image slice.
 
     Use the :py:meth:`create_for_images` or :py:meth:`create_for_image_grid`
@@ -738,7 +738,7 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
                  filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                  address_mode: AddressMode = AddressMode.REPEAT,
                  anisotropic_level: int = 0,
-                 context: OpenGLSurfaceContext | None = None) -> Texture3D:
+                 context: OpenGLSurfaceContext | None = None) -> WebGLTexture3D:
         ctx = context or pyglet.graphics.api.core.current_context
         gl = ctx.gl
         item_width = images[0].width
@@ -790,7 +790,7 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
                                    0)
 
     def upload(self, image: ImageData | ImageDataRegion, x: int, y: int, z: int, level: int = 0) -> None:
-        Texture.upload(self, image, x, y, z, level=level)
+        WebGLTexture.upload(self, image, x, y, z, level=level)
 
     def _get_mipmap_depth(self, level: int) -> int:
         depth = max(1, int(self.images))
@@ -819,15 +819,15 @@ class Texture3D(_Texture3DShared[TextureRegion], Texture, UniformTextureSequence
         self._gl.bindTexture(self.target, self.id)
 
 
-class TextureArrayRegion(TextureRegion):
+class WebGLTextureArrayRegion(WebGLTextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture."""
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.width}x{self.height}, layer={self.z})"
 
 
-class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformTextureSequence[TextureArrayRegion]):
-    items: list[TextureArrayRegion]
+class WebGLTextureArray(_TextureArrayShared[WebGLTextureArrayRegion], WebGLTexture, UniformTextureSequence[WebGLTextureArrayRegion]):
+    items: list[WebGLTextureArrayRegion]
 
     def __init__(self, context: OpenGLSurfaceContext, width, height, tex_id, max_depth,
                  internal_format: ComponentFormat = ComponentFormat.RGBA,
@@ -850,7 +850,7 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
                filters: TextureFilter | tuple[TextureFilter, TextureFilter] | None = None,
                address_mode: AddressMode = AddressMode.REPEAT,
                anisotropic_level: int = 0,
-               context: OpenGLSurfaceContext | None = None) -> TextureArray:
+               context: OpenGLSurfaceContext | None = None) -> WebGLTextureArray:
         """Create an empty TextureArray.
 
         You may specify the maximum depth, or layers, the Texture Array should have. This defaults
@@ -943,9 +943,18 @@ class TextureArray(_TextureArrayShared[TextureArrayRegion], Texture, UniformText
     def _allocate_image(self, image: ImageData, layer: int) -> None:
         self.upload(image, image.anchor_x, image.anchor_y, layer)
 
-TextureArray.region_class = TextureArrayRegion
-TextureArrayRegion.region_class = TextureArrayRegion
+WebGLTextureArray.region_class = WebGLTextureArrayRegion
+WebGLTextureArrayRegion.region_class = WebGLTextureArrayRegion
 
 
-class TextureGrid(TextureGridBase):
+class WebGLTextureGrid(TextureGrid):
     pass
+
+
+# Backwards-compatible aliases.
+Texture = WebGLTexture
+TextureRegion = WebGLTextureRegion
+Texture3D = WebGLTexture3D
+TextureArrayRegion = WebGLTextureArrayRegion
+TextureArray = WebGLTextureArray
+TextureGrid = WebGLTextureGrid
