@@ -7,12 +7,13 @@ from typing import Sequence, TYPE_CHECKING, Literal
 import pyglet
 from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, NullContext, UBOMatrixTransformations
 from pyglet.math import Mat4
-from pyglet.graphics.api.gl.shader import Shader, ShaderProgram
+from pyglet.graphics.api.gl.shader import GLShader as Shader, GLShaderProgram as ShaderProgram
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.gl.win32.wgl import WGLFunctions
+    from pyglet.config.gl import GLSurfaceConfig
+    from pyglet.libs.win32.wgl import WGLFunctions
     from pyglet.graphics.shader import ShaderType
-    from pyglet.graphics.api.gl import OpenGLWindowConfig, ObjectSpace, OpenGLSurfaceContext
+    from pyglet.graphics.api.gl import ObjectSpace, OpenGLSurfaceContext
     from pyglet.window import Window
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -48,7 +49,8 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
 
         self._default_program = backend.create_shader_program(
             backend.create_shader(self._default_vertex_source, 'vertex'),
-            backend.create_shader(self._default_fragment_source, 'fragment'))
+            backend.create_shader(self._default_fragment_source, 'fragment'),
+        )
 
         window_block = self._default_program.uniform_blocks['WindowBlock']
         self.ubo = window_block.create_ubo()
@@ -63,7 +65,7 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
         with self.ubo as window_block:
             window_block.view[:] = self._view
             window_block.projection[:] = self._projection
-            #window_block.model[:] = self._model
+            # window_block.model[:] = self._model
 
     @property
     def projection(self) -> Mat4:
@@ -98,6 +100,7 @@ class OpenGL3_Matrices(UBOMatrixTransformations):
 
         self._model = model
 
+
 class OpenGLBackend(BackendGlobalObject):
     platform_func: WGLFunctions | None
     gl_api: Literal["gl", "gles"]
@@ -122,10 +125,10 @@ class OpenGLBackend(BackendGlobalObject):
         # assert self.current_context is not None, "Context has not been created."
         return self.current_context.object_space
 
-    def create_context(self, config: OpenGLWindowConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
+    def create_context(self, config: GLSurfaceConfig, shared: OpenGLSurfaceContext | None) -> OpenGLSurfaceContext:
         return config.create_context(self, shared)
 
-    def get_surface_context(self, window: Window, config: OpenGLWindowConfig) -> SurfaceContext:
+    def get_surface_context(self, window: Window, config: GLSurfaceConfig) -> SurfaceContext:
         context = self.windows[window] = self.create_context(config, shared=self.current_context)
         self._have_context = True
         return context
@@ -139,10 +142,12 @@ class OpenGLBackend(BackendGlobalObject):
         # Version 3.2 needs to be specified explicitly.
         if self.gl_api == "gles":
             configs = [
-                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=2,
-                                                    opengl_api=self.gl_api),
-                pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=2,
-                                                    opengl_api=self.gl_api),
+                pyglet.config.OpenGLConfig(
+                    double_buffer=True, depth_size=24, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                ),
+                pyglet.config.OpenGLConfig(
+                    double_buffer=True, depth_size=16, major_version=3, minor_version=2, opengl_api=self.gl_api,
+                ),
             ]
         else:
             configs = [
@@ -222,5 +227,3 @@ class OpenGLBackend(BackendGlobalObject):
 
     def set_viewport(self, window, x: int, y: int, width: int, height: int) -> None:
         self.current_context.glViewport(x, y, width, height)
-
-

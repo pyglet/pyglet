@@ -102,7 +102,7 @@ def get_max_color_attachments() -> int:
     return pyglet.graphics.api.core.current_context.get_info().MAX_COLOR_ATTACHMENTS
 
 
-class Renderbuffer:
+class GLRenderbuffer:
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
@@ -169,7 +169,7 @@ _status_states = {
     gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
 }
 
-class Framebuffer:
+class GLFramebuffer:
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
@@ -295,7 +295,7 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_renderbuffer(self, renderbuffer: Renderbuffer,
+    def attach_renderbuffer(self, renderbuffer: GLRenderbuffer,
                             attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Renderbuffer to the Framebuffer.
 

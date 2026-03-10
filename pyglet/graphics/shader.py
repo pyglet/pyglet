@@ -60,12 +60,12 @@ class Sampler:
     stages: Sequence[ShaderType] = ("fragment",)
 
 
-class ShaderProgramBase(ABC):
+class ShaderProgram(ABC):
     _attributes: dict[str, Attribute]
-    _uniform_blocks: dict[str, UniformBlockBase]
+    _uniform_blocks: dict[str, UniformBlock]
     _samplers: dict[str, Sampler]
 
-    def __init__(self, *shaders: ShaderBase) -> None:
+    def __init__(self, *shaders: Shader) -> None:
         self._id = None
 
         assert shaders, "At least one Shader object is required."
@@ -102,8 +102,8 @@ class ShaderProgramBase(ABC):
         for sampler in samplers:
             self._samplers[sampler.name] = sampler
 
-    def get_uniform_block_cls(self) -> type[UniformBlockBase]:
-        return UniformBlockBase
+    def get_uniform_block_cls(self) -> type[UniformBlock]:
+        return UniformBlock
 
     @property
     def attributes(self) -> dict[str, Any]:
@@ -116,7 +116,7 @@ class ShaderProgramBase(ABC):
         return self._attributes.copy()
 
     @property
-    def uniform_blocks(self) -> dict[str, UniformBlockBase]:
+    def uniform_blocks(self) -> dict[str, UniformBlock]:
         """A dictionary of introspected UniformBlocks.
 
         This property returns a dictionary of
@@ -201,7 +201,7 @@ class ShaderSource(abc.ABC):
         """Return the validated shader source."""
 
 
-class ShaderBase(abc.ABC):
+class Shader(abc.ABC):
     """Graphics shader.
 
     Shader objects may be compiled on instantiation if OpenGL or already compiled in Vulkan.
@@ -225,7 +225,7 @@ class ShaderBase(abc.ABC):
 
     @classmethod
     @abstractmethod
-    def supported_shaders(cls: type[ShaderBase]) -> tuple[ShaderType, ...]:
+    def supported_shaders(cls: type[Shader]) -> tuple[ShaderType, ...]:
         """Return the supported shader types for this shader class."""
 
     @staticmethod
@@ -339,13 +339,13 @@ class GraphicsAttribute:
         raise NotImplementedError
 
 
-class UniformBufferObjectBase:
+class UniformBufferObject:
     @abstractmethod
     def read(self) -> bytes:
         raise NotImplementedError
 
 
-class UniformBlockBase:
+class UniformBlock:
     program: CallableProxyType[Callable[..., Any] | Any] | Any
     name: str
     index: int
@@ -355,7 +355,7 @@ class UniformBlockBase:
     view_cls: type[ctypes.Structure] | None
     __slots__ = 'binding', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
 
-    def __init__(self, program: ShaderProgramBase, name: str, index: int, size: int, binding: int,
+    def __init__(self, program: ShaderProgram, name: str, index: int, size: int, binding: int,
                  uniforms: dict, uniform_count: int) -> None:
         """Initialize a uniform block for a ShaderProgram."""
         self.program = weakref.proxy(program)
@@ -367,11 +367,11 @@ class UniformBlockBase:
         self.uniform_count = uniform_count
         self.view_cls = None
 
-    def bind(self, ubo: UniformBufferObjectBase) -> None:
+    def bind(self, ubo: UniformBufferObject) -> None:
         """Bind the Uniform Buffer Object to the binding point of this Uniform Block."""
         raise NotImplementedError
 
-    def create_ubo(self) -> UniformBufferObjectBase:
+    def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
         raise NotImplementedError
 

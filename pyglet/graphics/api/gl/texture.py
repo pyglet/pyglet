@@ -1172,13 +1172,3 @@ class GLCompressedTexture(CompressedTexture):
     #                                                 self.width, self.height,
     #                                                 self.gl_format,
     #                                                 len(self.data), self.data)
-
-
-# Backwards-compatible aliases.
-Texture = GLTexture
-TextureRegion = GLTextureRegion
-Texture3D = GLTexture3D
-TextureArrayRegion = GLTextureArrayRegion
-TextureArray = GLTextureArray
-TextureGrid = GLTextureGrid
-CompressedTexture = GLCompressedTexture

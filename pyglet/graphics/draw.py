@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.base import SurfaceContext
     from pyglet.graphics.texture import Texture
     from pyglet.graphics.vertexdomain import VertexDomain, VertexList, IndexedVertexList
-    from pyglet.graphics.shader import ShaderProgramBase
+    from pyglet.graphics.shader import ShaderProgram
 
 
 
@@ -102,10 +102,10 @@ class Group:
     def set_viewport(self, x, y, width, height):
          self.add_state(ViewportState(x, y, width, height))
 
-    def set_shader_program(self, program: ShaderProgramBase):
+    def set_shader_program(self, program: ShaderProgram):
         self.add_state(ShaderProgramState(program))
 
-    def set_shader_uniforms(self, program: ShaderProgramBase, uniforms: dict[str, Any]):
+    def set_shader_uniforms(self, program: ShaderProgram, uniforms: dict[str, Any]):
         self.add_state(ShaderUniformState(program, uniforms))
 
     def set_uniform_buffer(self, ubo: str, binding: int):
@@ -152,7 +152,7 @@ class Group:
             batch.invalidate()
 
     @property
-    def batches(self) -> tuple[BatchBase, ...]:
+    def batches(self) -> tuple[Batch, ...]:
         """Which graphics Batches this Group is a part of.
 
         Read Only.
@@ -242,7 +242,7 @@ class _DomainKey:
     mode: GeometryMode
     attributes: str
 
-class BatchBase:
+class Batch:
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
@@ -328,7 +328,7 @@ class BatchBase:
         self._empty_domains.clear()
 
     def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                      program: ShaderProgramBase) -> bool:
+                      program: ShaderProgram) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
         The results are undefined if `mode` is not correct or if `vertex_list`
@@ -367,7 +367,7 @@ class BatchBase:
 
         return True
 
-    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: BatchBase) -> None:
+    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group, batch: Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -571,7 +571,11 @@ class BatchBase:
 class ShaderGroup(Group):
     """A group that enables and binds a ShaderProgram."""
 
-    def __init__(self, program: ShaderProgramBase, order: int = 0, parent: Group | None = None) -> None:
+    def __init__(self, program: ShaderProgram, order: int = 0, parent: Group | None = None) -> None:
         super().__init__(order, parent)
         self.set_shader_program(program)
+
+
+# Backwards-compatible alias.
+BatchBase = Batch
 

@@ -25,7 +25,6 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 
 import pyglet
 
-# from pyglet.graphics.api.webgl.buffer import BufferObject
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.buffer import BufferObject
@@ -38,12 +37,12 @@ from pyglet.graphics.api.webgl.gl import (
 )
 from pyglet.graphics.shader import (
     Attribute,
-    ShaderBase,
+    Shader,
     ShaderException,
-    ShaderProgramBase,
+    ShaderProgram,
     ShaderSource,
     ShaderType,
-    UniformBufferObjectBase,
+    UniformBufferObject as BaseUniformBufferObject,
     AttributeView,
     GraphicsAttribute,
 )
@@ -61,12 +60,12 @@ class GLException(Exception):
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
-    from pyglet.customtypes import CTypesPointer, DataTypes
+    from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext
-    from pyglet.graphics.shader import CTypesDataType
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceVertexList, \
+        InstanceIndexedVertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 
@@ -74,7 +73,7 @@ _debug_api_shaders = pyglet.options.debug_api_shaders
 GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
 
-_c_types: dict[int, CTypesDataType] = {
+_c_types: dict[int, CType] = {
     gl.GL_BYTE: c_byte,
     gl.GL_UNSIGNED_BYTE: c_ubyte,
     gl.GL_SHORT: c_short,
@@ -710,7 +709,7 @@ class UniformBlock:  # noqa: D101
         )
 
 
-class UniformBufferObject(UniformBufferObjectBase):
+class UniformBufferObject(BaseUniformBufferObject):
     buffer: BufferObject
     view: Structure
     _view_ptr: CTypesPointer[Structure]
@@ -850,7 +849,7 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: ShaderProgram | ComputeShaderProgram,
+    ctx: OpenGLSurfaceContext, program: ShaderProgram | WebGLComputeShaderProgram,
 ) -> dict[str, UniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
@@ -978,7 +977,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class Shader(ShaderBase):
+class WebGLShader(Shader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -1085,7 +1084,7 @@ class Shader(ShaderBase):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
 
 
-class ShaderProgram(ShaderProgramBase):
+class WebGLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
 
     _id: int | WebGLProgram | None
@@ -1095,7 +1094,7 @@ class ShaderProgram(ShaderProgramBase):
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
+    def __init__(self, *shaders: WebGLShader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
         super().__init__(*shaders)
         self._context = pyglet.graphics.api.core.current_context
@@ -1338,7 +1337,7 @@ class ShaderProgram(ShaderProgramBase):
         return f"{self.__class__.__name__}(id={self.id})"
 
 
-class ComputeShaderProgram:
+class WebGLComputeShaderProgram:
     """OpenGL Compute Shader Program."""
 
     def __init__(self, source: str) -> None:

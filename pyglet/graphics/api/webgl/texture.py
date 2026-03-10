@@ -949,12 +949,3 @@ WebGLTextureArrayRegion.region_class = WebGLTextureArrayRegion
 
 class WebGLTextureGrid(TextureGrid):
     pass
-
-
-# Backwards-compatible aliases.
-Texture = WebGLTexture
-TextureRegion = WebGLTextureRegion
-Texture3D = WebGLTexture3D
-TextureArrayRegion = WebGLTextureArrayRegion
-TextureArray = WebGLTextureArray
-TextureGrid = WebGLTextureGrid

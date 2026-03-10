@@ -37,8 +37,16 @@ from pyglet.graphics.api.gl import (
     GL_TRUE,
     GL_UNIFORM_BUFFER,
 )
-from pyglet.graphics.shader import ShaderSource, ShaderType, ShaderBase, Attribute, \
-    ShaderProgramBase, UniformBufferObjectBase, GraphicsAttribute, AttributeView
+from pyglet.graphics.shader import (
+    Attribute,
+    AttributeView,
+    GraphicsAttribute,
+    Shader,
+    ShaderProgram,
+    ShaderSource,
+    ShaderType,
+    UniformBufferObject as BaseUniformBufferObject,
+)
 from pyglet.graphics.shader import ShaderException
 
 from pyglet.graphics.api.gl.buffer import BufferObject
@@ -699,7 +707,7 @@ class UniformBlock:
                 f"binding={self.binding})")
 
 
-class UniformBufferObject(UniformBufferObjectBase):
+class UniformBufferObject(BaseUniformBufferObject):
     buffer: BufferObject
     view: Structure
     _view_ptr: CTypesPointer[Structure]
@@ -875,7 +883,7 @@ def _get_uniform_block_name(ctx, program_id: int, index: int) -> str:
         raise ShaderException(msg)  # noqa: B904
 
 
-def _introspect_uniform_blocks(ctx, program: ShaderProgram | ComputeShaderProgram) -> dict[str, UniformBlock]:
+def _introspect_uniform_blocks(ctx, program: GLShaderProgram | GLComputeShaderProgram) -> dict[str, UniformBlock]:
     uniform_blocks = {}
     program_id = program.id
 
@@ -1001,7 +1009,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class Shader(ShaderBase):
+class GLShader(Shader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -1068,7 +1076,7 @@ class Shader(ShaderBase):
         return GLShaderSource
 
     @classmethod
-    def supported_shaders(cls: type[Shader]) -> tuple[ShaderType, ...]:
+    def supported_shaders(cls: type[GLShader]) -> tuple[ShaderType, ...]:
         return 'vertex', 'fragment', 'compute', 'geometry', 'tesscontrol', 'tessevaluation'
 
     @property
@@ -1116,7 +1124,7 @@ class Shader(ShaderBase):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
 
 
-class ShaderProgram(ShaderProgramBase):
+class GLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
     _id: int | None
     _context: OpenGLSurfaceContext | None
@@ -1125,7 +1133,7 @@ class ShaderProgram(ShaderProgramBase):
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
+    def __init__(self, *shaders: GLShader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
         super().__init__(*shaders)
 
@@ -1340,11 +1348,11 @@ class ShaderProgram(ShaderProgramBase):
         return f"{self.__class__.__name__}(id={self.id})"
 
 
-class ComputeShaderProgram:
+class GLComputeShaderProgram:
     """OpenGL Compute Shader Program."""
     _context: OpenGLSurfaceContext | None
     _id: int | None
-    _shader: Shader
+    _shader: GLShader
     _uniforms: dict[str, Any]
     _uniform_blocks: dict[str, UniformBlock]
     max_work_group_size: tuple[int, int, int]
@@ -1363,7 +1371,7 @@ class ComputeShaderProgram:
             )
             raise ShaderException(msg)
 
-        self._shader = Shader(source, 'compute')
+        self._shader = GLShader(source, 'compute')
         self._context = pyglet.graphics.api.core.current_context
         self._id = _link_program(self._context, self._shader)
 

@@ -96,7 +96,7 @@ class AbstractBuffer(abc.ABC):
         """
 
 
-class MappedBufferObjectBase(AbstractBuffer):
+class MappedBufferObject(AbstractBuffer):
     """A buffer that requires being mapped before writing or reading data."""
 
     def get_region(self, start: int, count: int) -> ctypes.Array[CType]:
@@ -139,7 +139,7 @@ class MappedBufferObjectBase(AbstractBuffer):
     #         Pointer to the mapped block in memory
     #     """
 
-class BackedBufferObjectBase(AbstractBuffer):
+class BackedBufferObject(AbstractBuffer):
     """A buffer with system-memory backed store.
 
     Updates to the data via `set_data` and `set_data_region` will be held
@@ -172,7 +172,7 @@ class BackedBufferObjectBase(AbstractBuffer):
         ...
 
 
-class AttributeBufferObject(BackedBufferObjectBase):
+class AttributeBufferObject(BackedBufferObject):
     """A backed buffer used for Shader Program attributes."""
 
     def __init__(self, size: int, shader_attr: GraphicsAttribute) -> None:  # noqa: D107
@@ -180,14 +180,14 @@ class AttributeBufferObject(BackedBufferObjectBase):
         super().__init__(size, shader_attr.attribute.c_type, shader_attr.view.stride, shader_attr.attribute.fmt.components)
 
 
-class IndexedBufferObject(BackedBufferObjectBase):
+class IndexedBufferObject(BackedBufferObject):
     """A backed buffer used for indices."""
 
     def __init__(self, size: int, c_type: CType, stride: int, count: int) -> None:
         super().__init__(size, c_type, stride, count)
 
 
-class PersistentBufferObject(BackedBufferObjectBase):
+class PersistentBufferObject(BackedBufferObject):
     """A persistently mapped buffer.
 
     Available in OpenGL 4.3+ contexts. Persistently mapped buffers

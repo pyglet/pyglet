@@ -1000,8 +1000,8 @@ class CompressedTexture(_AbstractImage):
 
 if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     from pyglet.graphics.api.gl.framebuffer import (  # noqa: F401
-        Framebuffer,
-        Renderbuffer,
+        GLFramebuffer as Framebuffer,
+        GLRenderbuffer as Renderbuffer,
         get_max_color_attachments,
         get_screenshot,
     )
@@ -1025,8 +1025,8 @@ if pyglet.options.backend in ("opengl", "gles3", "gl2", "gles2"):
     )
 elif pyglet.options.backend == "webgl":
     from pyglet.graphics.api.webgl.framebuffer import (  # noqa: F401
-        Framebuffer,
-        Renderbuffer,
+        WebGLFramebuffer as Framebuffer,
+        WebGLRenderbuffer as Renderbuffer,
         get_max_color_attachments,
         get_screenshot,
     )

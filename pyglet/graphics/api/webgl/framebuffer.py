@@ -31,7 +31,7 @@ from pyglet.image.base import ImageData
 from pyglet.graphics.api.webgl.texture import _get_internal_format
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.webgl.webgl_js import WebGLFramebuffer, WebGLRenderbuffer
+    from pyglet.graphics.api.webgl.webgl_js import WebGLFramebuffer as WebGLFramebufferObject, WebGLRenderbuffer as WebGLRenderbufferObject
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.texture import WebGLTexture
@@ -104,7 +104,7 @@ def get_max_color_attachments() -> int:
     return pyglet.graphics.api.core.current_context.get_info().MAX_COLOR_ATTACHMENTS
 
 
-class Renderbuffer:
+class WebGLRenderbuffer:
     """OpenGL Renderbuffer Object."""
 
     def __init__(self, context: OpenGLSurfaceContext, width: int, height: int,
@@ -138,7 +138,7 @@ class Renderbuffer:
         self.unbind()
 
     @property
-    def id(self) -> WebGLRenderbuffer:
+    def id(self) -> WebGLRenderbufferObject:
         return self._id
 
     @property
@@ -178,12 +178,12 @@ _status_states = {
     gl.GL_FRAMEBUFFER_COMPLETE: "Framebuffer is complete.",
 }
 
-class Framebuffer:
+class WebGLFramebuffer:
     """OpenGL Framebuffer Object.
 
     .. versionadded:: 2.0
     """
-    _id: WebGLFramebuffer | None
+    _id: WebGLFramebufferObject | None
 
     def __init__(self,
                  target: FramebufferTarget = FramebufferTarget.FRAMEBUFFER,
@@ -199,7 +199,7 @@ class Framebuffer:
         self._gl_target = _gl_target_map[target]
 
     @property
-    def id(self) -> WebGLFramebuffer:
+    def id(self) -> WebGLFramebufferObject:
         """The Framebuffer id."""
         return self._id
 
@@ -325,7 +325,7 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_renderbuffer(self, renderbuffer: Renderbuffer,
+    def attach_renderbuffer(self, renderbuffer: WebGLRenderbuffer,
                             attachment: FramebufferAttachment = FramebufferAttachment.COLOR0) -> None:
         """Attach a Renderbuffer to the Framebuffer.
 

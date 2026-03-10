@@ -5,6 +5,7 @@ from typing import Any, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext
     from pyglet.window import Window
 
 
@@ -38,6 +39,10 @@ class SurfaceConfig:
 
     def is_finalized(self) -> bool:
         return True
+
+    def create_context(self, backend: BackendGlobalObject, shared: SurfaceContext):
+        raise NotImplementedError
+
 
 class UserConfig:
     """User configuration information."""

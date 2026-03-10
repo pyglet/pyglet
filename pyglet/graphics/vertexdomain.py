@@ -12,7 +12,7 @@ relation to the attribute buffers.
 
 Applications can create vertices (and optionally, indices) within a domain
 with the :py:meth:`VertexDomain.create` method.  This returns a
-:py:class:`VertexListBase` representing the list of vertices created.  The vertex
+:py:class:`VertexList` representing the list of vertices created.  The vertex
 attribute data within the group can be modified, and the changes will be made
 to the underlying buffers automatically.
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from ctypes import Array
     from pyglet.customtypes import DataTypes
     from pyglet.graphics.api.base import SurfaceContext
-    from pyglet.graphics.instance import InstanceBucket, VertexInstanceBase, BaseInstanceDomain
+    from pyglet.graphics.instance import InstanceBucket, VertexInstance, InstanceDomain
     from pyglet.graphics.buffer import AttributeBufferObject, IndexedBufferObject
     from pyglet.graphics import Group
     from pyglet.enums import GeometryMode
@@ -52,32 +52,32 @@ def _nearest_pow2(v: int) -> int:
 
 
 def _make_attribute_property(name: str) -> property:
-    def _attribute_getter(self: VertexListBase) -> Array[float | int]:
+    def _attribute_getter(self: VertexList) -> Array[float | int]:
         buffer = self.domain.attrib_name_buffers[name]
         region = buffer.get_attribute_region(name, self.start, self.count)
         buffer.invalidate_attribute_region(name, self.start, self.count)
         return region
 
-    def _attribute_setter(self: VertexListBase, data: Any) -> None:
+    def _attribute_setter(self: VertexList, data: Any) -> None:
         buffer = self.domain.attrib_name_buffers[name]
         buffer.set_region(self.start, self.count, data)
 
     return property(_attribute_getter, _attribute_setter)
 
 
-class VertexListBase:
+class VertexList:
     """A list of vertices within a :py:class:`VertexDomain`.
 
     Use :py:meth:`VertexDomain.create` to construct this list.
     """
     count: int
     start: int
-    domain: VertexDomainBase
+    domain: VertexDomain
     indexed: bool = False
     instanced: bool = False
     initial_attribs: dict
 
-    def __init__(self, domain: VertexDomainBase, group: Group, start: int, count: int) -> None:  # noqa: D107
+    def __init__(self, domain: VertexDomain, group: Group, start: int, count: int) -> None:  # noqa: D107
         self.domain = domain
         self.group = group
         self.start = start
@@ -118,7 +118,7 @@ class VertexListBase:
         self.domain.vertex_buffers.allocator.dealloc(self.start, self.count)
         self.domain.dealloc_from_group(self)
 
-    def migrate(self, domain: VertexDomainBase, group: Group) -> None:
+    def migrate(self, domain: VertexDomain, group: Group) -> None:
         """Move this group from its current domain and add to the specified one.
 
         Attributes on domains must match.
@@ -164,16 +164,16 @@ class VertexListBase:
             raise ValueError(msg) from None
 
 
-class InstanceVertexListBase(VertexListBase):
+class InstanceVertexList(VertexList):
     """A list of vertices within an :py:class:`InstancedVertexDomain` that are not indexed."""
-    domain: InstancedVertexDomainBase
+    domain: InstancedVertexDomain
     instanced: bool = True
 
-    def __init__(self, domain: VertexDomainBase, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
+    def __init__(self, domain: VertexDomain, group: Group, start: int, count: int, bucket: InstanceBucket) -> None:  # noqa: D107
         super().__init__(domain, group, start, count)
         self.instance_bucket = bucket
 
-    def create_instance(self, **attributes: Any) -> VertexInstanceBase:
+    def create_instance(self, **attributes: Any) -> VertexInstance:
         return self.instance_bucket.create_instance(**attributes)
 
     def set_attribute_data(self, name: str, data: Any) -> None:
@@ -197,13 +197,13 @@ class InstanceVertexListBase(VertexListBase):
             raise ValueError(msg) from None
 
 
-class _IndexSupportBase:
-    domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase
+class _IndexSupport:
+    domain: IndexedVertexDomain | InstancedIndexedVertexDomain
     start: int
     count: int
     bucket: None
 
-    def migrate(self, domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase, group: Group):
+    def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain, group: Group):
         self.domain.dealloc_from_group(self)
         new_start = domain.safe_alloc(self.count)
         # Copy data to new stream.
@@ -212,7 +212,7 @@ class _IndexSupportBase:
         self.domain = domain
         self.start = new_start
 
-class _LocalIndexSupport(_IndexSupportBase):
+class _LocalIndexSupport(_IndexSupport):
     """When BaseVertex is supported by the version, this class will be mixed in.
 
     Will allow the class to use local index values instead of incrementing each mesh.
@@ -221,7 +221,7 @@ class _LocalIndexSupport(_IndexSupportBase):
 
     supports_base_vertex: bool = True
 
-    domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase
+    domain: IndexedVertexDomain | InstancedIndexedVertexDomain
     index_count: int
     index_start: int
 
@@ -233,7 +233,7 @@ class _LocalIndexSupport(_IndexSupportBase):
     def indices(self, local: Sequence[int]) -> None:  # type: ignore[override]
         self.domain.index_stream.set_region(self.index_start, self.index_count, local)
 
-    def migrate(self, domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase, group: Group) -> None:  # type: ignore[override]
+    def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain, group: Group) -> None:  # type: ignore[override]
         old_dom = self.domain
         src_idx_start = self.index_start
         src_idx_count = self.index_count
@@ -249,13 +249,13 @@ class _LocalIndexSupport(_IndexSupportBase):
         domain.alloc_to_group(self, group)  # Allocate after new index start.
 
 
-class _RunningIndexSupport(_IndexSupportBase):
-    """Used to mixin an IndexedVertexListBase class.
+class _RunningIndexSupport(_IndexSupport):
+    """Used to mixin an IndexedVertexList class.
 
     Keeps an incrementing count for indices in the buffer.
     """
 
-    domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase
+    domain: IndexedVertexDomain | InstancedIndexedVertexDomain
     index_count: int
     index_start: int
     start: int
@@ -274,7 +274,7 @@ class _RunningIndexSupport(_IndexSupportBase):
         stored: list[int] = [i + base for i in local]
         self.domain.index_stream.set_region(self.index_start, self.index_count, stored)
 
-    def migrate(self, domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase, group: Group) -> None:
+    def migrate(self, domain: IndexedVertexDomain | InstancedIndexedVertexDomain, group: Group) -> None:
         old_dom = self.domain
         old_start: int = self.start
         src_idx_start = self.index_start
@@ -295,18 +295,18 @@ class _RunningIndexSupport(_IndexSupportBase):
         domain.alloc_to_group(self, group)  # Allocate after new index start.
 
 
-class IndexedVertexListBase(VertexListBase):
-    """A list of vertices within an :py:class:`IndexedVertexDomainBase` that are indexed.
+class IndexedVertexList(VertexList):
+    """A list of vertices within an :py:class:`IndexedVertexDomain` that are indexed.
 
-    Use :py:meth:`IndexedVertexDomainBase.create` to construct this list.
+    Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
-    domain: IndexedVertexDomainBase
+    domain: IndexedVertexDomain
     indexed: bool = True
 
     index_count: int
     index_start: int
 
-    def __init__(self, domain: IndexedVertexDomainBase, group: Group, start: int, count: int, index_start: int,  # noqa: D107
+    def __init__(self, domain: IndexedVertexDomain, group: Group, start: int, count: int, index_start: int,  # noqa: D107
                  index_count: int) -> None:
         super().__init__(domain, group, start, count)
         self.index_start = index_start
@@ -329,12 +329,12 @@ class IndexedVertexListBase(VertexListBase):
         self.domain.index_stream.set_region(self.index_start, self.index_count, data)
 
 
-class InstanceIndexedVertexListBase(VertexListBase):
+class InstanceIndexedVertexList(VertexList):
     """A list of vertices within an :py:class:`IndexedVertexDomain` that are indexed.
 
     Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
-    domain: IndexedVertexDomainBase | InstancedIndexedVertexDomainBase
+    domain: IndexedVertexDomain | InstancedIndexedVertexDomain
     indexed: bool = True
     instanced: bool = True
 
@@ -344,7 +344,7 @@ class InstanceIndexedVertexListBase(VertexListBase):
     instance_bucket: InstanceBucket
     supports_base_vertex: bool = False
 
-    def __init__(self, domain: InstancedIndexedVertexDomainBase, group: Group, start: int, count: int,
+    def __init__(self, domain: InstancedIndexedVertexDomain, group: Group, start: int, count: int,
                  index_start: int, index_count: int, index_type: DataTypes, base_vertex: int,
                  instance_bucket: InstanceBucket) -> None:
         self.index_start = index_start
@@ -361,7 +361,7 @@ class InstanceIndexedVertexListBase(VertexListBase):
         super().delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
 
-    def migrate(self, domain: InstancedIndexedVertexDomainBase) -> None:
+    def migrate(self, domain: InstancedIndexedVertexDomain) -> None:
         old_domain = self.domain
 
         # Moved vertex data here.
@@ -403,7 +403,7 @@ class InstanceIndexedVertexListBase(VertexListBase):
         """Removes a vertex list from a specific state in this domain."""
         vertex_list.bucket.remove_vertex_list(vertex_list)
 
-class VertexDomainBase(ABC):
+class VertexDomain(ABC):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
@@ -419,7 +419,7 @@ class VertexDomainBase(ABC):
     _property_dict: dict[str, property]
     _vertexlist_class: type
 
-    _vertex_class: type[VertexListBase] = VertexListBase
+    _vertex_class: type[VertexList] = VertexList
 
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
         self._context = context or pyglet.graphics.api.core.current_context
@@ -447,7 +447,7 @@ class VertexDomainBase(ABC):
             if not attrib.fmt.is_instanced:
                 self.attrib_name_buffers[name] = self.vertex_buffers
 
-        # Make a custom VertexListBase class w/ properties for each attribute
+        # Make a custom VertexList class w/ properties for each attribute
         self._vertexlist_class = self._create_vertex_class()
 
     @abstractmethod
@@ -480,8 +480,8 @@ class VertexDomainBase(ABC):
         """Reallocate vertices, resizing the buffers if necessary."""
         return self.vertex_buffers.realloc(start, count, new_count)
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexListBase:  # noqa: ARG002
-        """Create a :py:class:`VertexListBase` in this domain.
+    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
+        """Create a :py:class:`VertexList` in this domain.
 
         Args:
             group:
@@ -554,10 +554,10 @@ class VertexDomainBase(ABC):
         """
 
     @abstractmethod
-    def draw_subset(self, mode: GeometryMode, vertex_list: VertexListBase) -> None:
-        """Draw a specific VertexListBase in the domain.
+    def draw_subset(self, mode: GeometryMode, vertex_list: VertexList) -> None:
+        """Draw a specific VertexList in the domain.
 
-        The `vertex_list` parameter specifies a :py:class:`VertexListBase`
+        The `vertex_list` parameter specifies a :py:class:`VertexList`
         to draw. Only primitives in that list will be drawn.
 
         Args:
@@ -577,14 +577,14 @@ class VertexDomainBase(ABC):
         return f'<{self.__class__.__name__}@{id(self):x} vertex_alloc={self.vertex_buffers.allocator}>'
 
 
-class IndexedVertexDomainBase(VertexDomainBase):
+class IndexedVertexDomain(VertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
     _initial_index_count = 16
-    _vertex_class = IndexedVertexListBase
+    _vertex_class = IndexedVertexList
     index_stream: IndexStream
 
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
@@ -608,7 +608,7 @@ class IndexedVertexDomainBase(VertexDomainBase):
         """Reallocate indices, resizing the buffers if necessary."""
         return self.index_stream.realloc(start, count, new_count)
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> IndexedVertexListBase:
+    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> IndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
@@ -647,10 +647,10 @@ class IndexedVertexDomainBase(VertexDomainBase):
 
         """
 
-    def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexListBase) -> None:
-        """Draw a specific IndexedVertexListBase in the domain.
+    def draw_subset(self, mode: GeometryMode, vertex_list: IndexedVertexList) -> None:
+        """Draw a specific IndexedVertexList in the domain.
 
-        The `vertex_list` parameter specifies a :py:class:`IndexedVertexListBase`
+        The `vertex_list` parameter specifies a :py:class:`IndexedVertexList`
         to draw. Only primitives in that list will be drawn.
 
         Args:
@@ -661,14 +661,14 @@ class IndexedVertexDomainBase(VertexDomainBase):
         """
 
 
-class InstancedVertexDomainBase(VertexDomainBase):
+class InstancedVertexDomain(VertexDomain):
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute]) -> None:
         super().__init__(context, initial_count, attribute_meta)
         self.instance_domain = self.create_instance_domain(initial_count)
         self._instance_map = {}
 
     @abstractmethod
-    def create_instance_domain(self, size: int) -> BaseInstanceDomain:
+    def create_instance_domain(self, size: int) -> InstanceDomain:
         ...
 
     def _create_vao(self) -> None:
@@ -682,14 +682,14 @@ class InstancedVertexDomainBase(VertexDomainBase):
         key = (vertex_list.start, vertex_list.count)
         self._instance_map[key] = vertex_list.instance_bucket
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexListBase:  # noqa: ARG002
+    def create(self, group: Group, count: int, indices: Sequence[int] | None = None) -> VertexList:  # noqa: ARG002
         start = self.safe_alloc(count)
         bucket = self.instance_domain.get_arrays_bucket(mode=0, first_vertex=start, vertex_count=count)
         vlist = self._vertexlist_class(self, group, start, count, bucket)
         self.alloc_to_group(vlist, group)
         return vlist
 
-class InstancedIndexedVertexDomainBase(IndexedVertexDomainBase):
+class InstancedIndexedVertexDomain(IndexedVertexDomain):
     def __init__(self, context: SurfaceContext, initial_count: int, attribute_meta: dict[str, Attribute],
                  index_type: DataTypes = "I") -> None:
         super().__init__(context, initial_count, attribute_meta, index_type)
@@ -697,7 +697,7 @@ class InstancedIndexedVertexDomainBase(IndexedVertexDomainBase):
         self._instance_map = {}
 
     @abstractmethod
-    def create_instance_domain(self, size: int) -> BaseInstanceDomain:
+    def create_instance_domain(self, size: int) -> InstanceDomain:
         ...
 
     def _create_vao(self) -> None:
@@ -713,7 +713,7 @@ class InstancedIndexedVertexDomainBase(IndexedVertexDomainBase):
         key = (vertex_list.index_start, vertex_list.index_count)
         self._instance_map[key] = vertex_list.instance_bucket
 
-    def create(self, group: Group, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexListBase:
+    def create(self, group: Group, count: int, indices: Sequence[int] | None) -> InstanceIndexedVertexList:
         """Create an :py:class:`IndexedVertexList` in this domain.
 
         Args:
@@ -747,7 +747,7 @@ class InstancedIndexedVertexDomainBase(IndexedVertexDomainBase):
         return type(self._vertex_class.__name__, (mixin, self._vertex_class),
                                       self.vertex_buffers._property_dict)  # noqa: SLF001
 
-class BaseStream(ABC):
+class Stream(ABC):
     """A container that handles a set of buffers to be used with domains."""
     def __init__(self, size: int) -> None:
         """Initialize the stream and create an allocator.
@@ -806,7 +806,7 @@ class BaseStream(ABC):
     def set_region(self, start: int, count: int, data) -> None: ...
 
 
-class VertexStream(BaseStream):
+class VertexStream(Stream):
     """A stream of buffers to be used with per-vertex attributes."""
     attrib_name_buffers: dict[str, AttributeBufferObject]
     attribute_meta: Sequence[Attribute]
@@ -840,7 +840,7 @@ class VertexStream(BaseStream):
 
             self.buffers.append(buffer)
 
-            # Create custom property to be used in the VertexListBase:
+            # Create custom property to be used in the VertexList:
             self._property_dict[name] = _make_attribute_property(name)
 
     def _create_interleaved_buffers(self) -> NoReturn:
@@ -908,7 +908,7 @@ class VertexStream(BaseStream):
 class InstanceStream(VertexStream):
     """Handles a stream of buffers to be used with the per-instance attributes."""
 
-class IndexStream(BaseStream):
+class IndexStream(Stream):
     """A container to manage an index buffer for a domain."""
 
     def __init__(self, ctx, data_type: DataTypes, initial_elems: int):
@@ -982,10 +982,10 @@ class VertexGroupBucket(allocation.RangeAllocator):
     def __init__(self) -> None:
         super().__init__()
 
-    def add_vertex_list(self, vl: VertexListBase) -> None:
+    def add_vertex_list(self, vl: VertexList) -> None:
         self.add(vl.start, vl.count)
 
-    def remove_vertex_list(self, vl: VertexListBase) -> None:
+    def remove_vertex_list(self, vl: VertexList) -> None:
         self.remove(vl.start, vl.count)
 
 
@@ -996,8 +996,8 @@ class IndexedVertexGroupBucket(allocation.RangeAllocator):
     """
     __slots__ = ("_merged", "_ranges", "is_dirty")
 
-    def add_vertex_list(self, vl: IndexedVertexListBase) -> None:
+    def add_vertex_list(self, vl: IndexedVertexList) -> None:
         self.add(vl.index_start, vl.index_count)
 
-    def remove_vertex_list(self, vl: IndexedVertexListBase) -> None:
+    def remove_vertex_list(self, vl: IndexedVertexList) -> None:
         self.remove(vl.index_start, vl.index_count)

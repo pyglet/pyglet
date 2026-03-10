@@ -51,10 +51,10 @@ from pyglet.graphics.vertexdomain import (
     IndexStream,
     VertexArrayBinding,
     VertexArrayProtocol,
-    VertexDomainBase,
-    VertexListBase,
-    IndexedVertexDomainBase,
-    IndexedVertexListBase,
+    VertexDomain as BaseVertexDomain,
+    VertexList as BaseVertexList,
+    IndexedVertexDomain as BaseIndexedVertexDomain,
+    IndexedVertexList as BaseIndexedVertexList,
     VertexGroupBucket,
     _RunningIndexSupport,
 )
@@ -133,11 +133,11 @@ class InstancedIndexedVertexDomain:
         raise NotImplementedError("InstancedIndexedVertexDomain is not available in OpenGL 2.0.")
 
 
-class VertexList(VertexListBase):
+class VertexList(BaseVertexList):
     ...
 
 
-class IndexedVertexList(IndexedVertexListBase):
+class IndexedVertexList(BaseIndexedVertexList):
     ...
 
 
@@ -191,7 +191,7 @@ class GLIndexStream(IndexStream):
         self.buffer.unbind()
 
 
-class VertexDomain(VertexDomainBase):
+class VertexDomain(BaseVertexDomain):
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
@@ -288,7 +288,7 @@ class VertexDomain(VertexDomainBase):
 
 
 
-class IndexedVertexDomain(IndexedVertexDomainBase):
+class IndexedVertexDomain(BaseIndexedVertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyglet.window.win32 import Win32Window
 
 
-class _BaseWin32Context(OpenGLSurfaceContext):
+class _Win32Context(OpenGLSurfaceContext):
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: Win32Window,
@@ -50,7 +50,7 @@ class _BaseWin32Context(OpenGLSurfaceContext):
             self.platform_func.wglSwapIntervalEXT(int(vsync))
 
 
-class Win32Context(_BaseWin32Context):
+class Win32Context(_Win32Context):
     config: GLLegacyConfig
     context_share: Win32Context | NullContext
 
@@ -71,7 +71,7 @@ class Win32Context(_BaseWin32Context):
         super().attach(window)
 
 
-class Win32ARBContext(_BaseWin32Context):
+class Win32ARBContext(_Win32Context):
     config: GLSurfaceConfig
     context_share: Win32ARBContext | NullContext
 
@@ -108,3 +108,7 @@ class Win32ARBContext(_BaseWin32Context):
         share = None if isinstance(share, NullContext) else share
         self._context = _global_wgl.funcs.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)
+
+
+# Backwards-compatible alias.
+_BaseWin32Context = _Win32Context

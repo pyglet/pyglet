@@ -9,7 +9,7 @@ import js
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
 from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations, NullContext
-from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
+from pyglet.graphics.api.webgl.shader import WebGLShader as Shader, WebGLShaderProgram as ShaderProgram
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:
