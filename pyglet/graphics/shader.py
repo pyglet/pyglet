@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import ctypes
+import warnings
 import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -340,9 +341,39 @@ class GraphicsAttribute:
 
 
 class UniformBufferObject:
-    @abstractmethod
+    buffer: Any
+    view: ctypes.Structure
+    _view_ptr: Any
+    binding: int
+    __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
+
+    def __init__(self, context: Any, view_class: type[ctypes.Structure], buffer_size: int, binding: int) -> None:
+        self.buffer = self._create_buffer(context, buffer_size)
+        self.view = view_class()
+        self._view_ptr = ctypes.pointer(self.view)
+        self.binding = binding
+
+    @property
+    def id(self) -> int:
+        """The buffer ID associated with this UBO."""
+        return self.buffer.id
+
     def read(self) -> bytes:
+        """Read the byte contents of the buffer."""
+        return self.buffer.get_data()
+
+    def __enter__(self) -> ctypes.Structure:
+        return self.view
+
+    def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
+        self.buffer.set_data(self._view_ptr)
+
+    @abstractmethod
+    def _create_buffer(self, context: Any, buffer_size: int) -> Any:
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding})"
 
 
 class UniformBlock:
@@ -365,15 +396,15 @@ class UniformBlock:
         self.binding = binding
         self.uniforms = uniforms
         self.uniform_count = uniform_count
-        self.view_cls = None
+        self.view_cls = self._create_structure()
 
     def bind(self, ubo: UniformBufferObject) -> None:
         """Bind the Uniform Buffer Object to the binding point of this Uniform Block."""
-        raise NotImplementedError
+        self._bind_buffer_base(self.binding, ubo.buffer.id)
 
     def create_ubo(self) -> UniformBufferObject:
         """Create a new UniformBufferObject from this uniform block."""
-        raise NotImplementedError
+        return self._create_backend_ubo(self.view_cls, self.size, self.binding)
 
     def set_binding(self, binding: int) -> None:
         """Rebind the Uniform Block to a new binding index number.
@@ -389,6 +420,43 @@ class UniformBlock:
         .. note:: You must call ``create_ubo`` to get another Uniform Buffer Object after calling this,
                   as the previous buffers are still bound to the old binding point.
         """
+        assert binding != 0, "Binding 0 is reserved for the internal Pyglet 'WindowBlock'."
+
+        import pyglet
+        ctx = pyglet.graphics.api.core.current_context
+        assert ctx is not None, "No context available."
+
+        manager = ctx.ubo_manager
+        if binding >= manager.max_value:
+            msg = f"Binding value exceeds maximum allowed by hardware: {manager.max_value}"
+            raise ShaderException(msg)
+
+        existing_name = manager.get_name(binding)
+        if existing_name and existing_name != self.name:
+            msg = f"Binding: {binding} was in use by {existing_name}, and has been overridden."
+            warnings.warn(msg)
+
+        self.binding = binding
+        self._set_block_binding()
+
+    def _create_structure(self) -> type[ctypes.Structure]:
+        return self._introspect_uniforms()
+
+    @abstractmethod
+    def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _create_backend_ubo(
+        self,
+        view_class: type[ctypes.Structure],
+        buffer_size: int,
+        binding: int,
+    ) -> UniformBufferObject:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _set_block_binding(self) -> None:
         raise NotImplementedError
 
     def _introspect_uniforms(self) -> type[ctypes.Structure]:
