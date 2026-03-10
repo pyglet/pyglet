@@ -1306,7 +1306,8 @@ class GLComputeShaderProgram:
         if _debug_api_shaders:
             print(_get_program_log(self._id))
 
-        self._uniforms = _introspect_uniforms(self._id, True)
+        have_dsa = pyglet.graphics.api.have_version(4, 1) or pyglet.graphics.api.have_extension("GL_ARB_separate_shader_objects")
+        self._uniforms = _introspect_uniforms(self._context, self._id, have_dsa)
         self._uniform_blocks = _introspect_uniform_blocks(self._context, self)
 
         self.max_work_group_size = self._get_tuple(gl.GL_MAX_COMPUTE_WORK_GROUP_SIZE)  # x, y, z
