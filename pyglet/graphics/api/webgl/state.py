@@ -194,7 +194,7 @@ class ViewportState(State):
     x: int
     y: int
     width: int
-    height: float
+    height: int
 
     sets_state: bool = True
 
