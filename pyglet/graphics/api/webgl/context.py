@@ -67,8 +67,8 @@ class OpenGLSurfaceContext(SurfaceContext):
         self.context_share = context_share
         self.is_current = False
 
-        # The GL Context.
-        self.gl = self.window.canvas.getContext("webgl2")
+        # The GL Context.  Pass through the WebGLConfig settings:
+        self.gl = self.window.canvas.getContext("webgl2", **self.config.attributes)
 
         self._info = GLInfo()
         self._info.query(self.gl)
