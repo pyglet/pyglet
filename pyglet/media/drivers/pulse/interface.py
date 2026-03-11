@@ -25,6 +25,16 @@ _SIZE_T_MAX = sys.maxsize*2 + 1
 PA_INVALID_INDEX = _UINT32_MAX
 PA_INVALID_WRITABLE_SIZE = _SIZE_T_MAX
 
+SAMPLE_FORMATS = {"U8": {"little": pa.PA_SAMPLE_U8,
+                         "big": pa.PA_SAMPLE_U8},
+                  "S16": {"little": pa.PA_SAMPLE_S16LE,
+                          "big": pa.PA_SAMPLE_S16BE},
+                  "S24": {"little": pa.PA_SAMPLE_S24LE,
+                          "big": pa.PA_SAMPLE_S24BE},
+                  "S32": {"little": pa.PA_SAMPLE_S32LE,
+                          "big": pa.PA_SAMPLE_S32BE},
+                  "F32": {"little": pa.PA_SAMPLE_FLOAT32LE,
+                          "big": pa.PA_SAMPLE_FLOAT32BE)}}
 
 def get_uint32_or_none(value: int) -> Optional[int]:
     if value == _UINT32_MAX:
@@ -373,20 +383,18 @@ class PulseAudioStream(PulseAudioMainloopChild):
         """
         Create a PulseAudio sample spec from pyglet audio format.
         """
-        _FORMATS = {
-            ('little', 8):  pa.PA_SAMPLE_U8,
-            ('big', 8):     pa.PA_SAMPLE_U8,
-            ('little', 16): pa.PA_SAMPLE_S16LE,
-            ('big', 16):    pa.PA_SAMPLE_S16BE,
-            ('little', 24): pa.PA_SAMPLE_S24LE,
-            ('big', 24):    pa.PA_SAMPLE_S24BE,
-        }
-        fmt = (sys.byteorder, audio_format.sample_size) 
-        if fmt not in _FORMATS:
-            raise MediaException(f'Unsupported sample size/format: {fmt}')
+
+        try:
+            fmt = SAMPLE_FORMATS[audio_format.sample_format][sys.byteorder]
+        except KeyError:
+            raise MediaException(
+                f"PulseAudio does not support "
+                f"'{audio_format.channels}-channel, "
+                f"{audio_format.sample_size}-bit "
+                f"{audio_format.sample_type}' audio.")
 
         sample_spec = pa.pa_sample_spec()
-        sample_spec.format = _FORMATS[fmt]
+        sample_spec.format = fmt
         sample_spec.rate = audio_format.sample_rate
         sample_spec.channels = audio_format.channels
         return sample_spec

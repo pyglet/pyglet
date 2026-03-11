@@ -14,6 +14,11 @@ from .exceptions import DirectSoundNativeError
 
 _debug = debug_print('debug_media')
 
+SAMPLE_FORMATS = {"U8": lib.WAVE_FORMAT_PCM,
+                  "S16": lib.WAVE_FORMAT_PCM,
+                  "S24": lib.WAVE_FORMAT_PCM,
+                  "S32": lib.WAVE_FORMAT_PCM,
+                  "F32": 3)}
 
 def _check(hresult):
     if hresult != lib.DS_OK:
@@ -21,11 +26,15 @@ def _check(hresult):
 
 
 def _create_wave_format(audio_format):
-    if audio_format.channels > 2 or audio_format.sample_size not in (8, 16):
-        raise MediaException(f'Unsupported audio format: {audio_format}')
+    if audio_format.channels > 2 \
+            or audio_format.sample_format not in SAMPLE_FORMATS:
+        raise MediaException(
+            f"DirectSound does not support '{audio_format.channels}-channel, "
+            f"{audio_format.sample_size}-bit "
+            f"{audio_format.sample_type}' audio.")
 
     wfx = lib.WAVEFORMATEX()
-    wfx.wFormatTag = lib.WAVE_FORMAT_PCM
+    wfx.wFormatTag = SAMPLE_FORMATS[audio_format.sample_format]
     wfx.nChannels = audio_format.channels
     wfx.nSamplesPerSec = audio_format.sample_rate
     wfx.wBitsPerSample = audio_format.sample_size

@@ -45,6 +45,10 @@ class DirectSoundDriver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
+    @property
+    def sample_formats(self):
+        return tuple(interface.SAMPLE_FORMATS.keys())
+
     def create_audio_player(self, source, player):
         assert self._ds_driver is not None
         return DirectSoundAudioPlayer(self, source, player)

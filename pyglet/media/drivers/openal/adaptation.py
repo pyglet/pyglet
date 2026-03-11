@@ -28,6 +28,10 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
+    @property
+    def sample_formats(self):
+        return tuple(interface.SAMPLE_FORMATS.keys())
+
     def create_audio_player(self, source: 'Source', player: 'Player') -> 'OpenALAudioPlayer':
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)

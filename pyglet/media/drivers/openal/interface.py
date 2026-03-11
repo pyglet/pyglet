@@ -10,6 +10,16 @@ from pyglet.media.exceptions import MediaException
 
 _debug = debug_print('debug_media')
 
+SAMPLE_FORMATS = {"U8": {1: al.AL_FORMAT_MONO8, 2: al.AL_FORMAT_STEREO8},
+                 "S16": {1: al.AL_FORMAT_MONO16, 2: al.AL_FORMAT_STEREO16}}
+
+if bool(al.alIsExtensionPresent(b"AL_EXT_32bit_formats")):
+    SAMPLE_FORMATS["S32"] = {1: al.alGetEnumValue(b"AL_FORMAT_MONO_I32"),
+                            2: al.alGetEnumValue(b"AL_FORMAT_STEREO_I32")}
+if bool(al.alIsExtensionPresent(b"AL_EXT_float32")):
+    SAMPLE_FORMATS["F32"] = {1: al.alGetEnumValue(b"AL_FORMAT_MONO_FLOAT32"),
+                            2: al.alGetEnumValue(b"AL_FORMAT_STEREO_FLOAT32")}
+
 
 class OpenALException(MediaException):
     def __init__(self, message=None, error_code=None, error_string=None):
@@ -384,12 +394,6 @@ class OpenALListener(OpenALObject):
 
 
 class OpenALBuffer(OpenALObject):
-    _format_map = {
-        (1,  8): al.AL_FORMAT_MONO8,
-        (1, 16): al.AL_FORMAT_MONO16,
-        (2,  8): al.AL_FORMAT_STEREO8,
-        (2, 16): al.AL_FORMAT_STEREO16,
-    }
 
     def __init__(self, al_name):
         self.al_name = al_name
@@ -418,9 +422,14 @@ class OpenALBuffer(OpenALObject):
         assert self.is_valid
 
         try:
-            al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
+            sample_format = audio_format.sample_format
+            channels = audio_format.channels
+            al_format = SAMPLE_FORMATS[sample_format][channels]
         except KeyError:
-            raise MediaException(f"OpenAL does not support '{audio_format.sample_size}bit' audio.")
+            raise MediaException(
+                f"OpenAL does not support '{audio_format.channels}-channel, "
+                f"{audio_format.sample_size}-bit "
+                f"{audio_format.sample_type}' audio.")
 
         al.alBufferData(self.al_name,
                         al_format,
