@@ -19,7 +19,7 @@ SAMPLE_FORMATS = {"U8": lib.WAVE_FORMAT_PCM,
                   "S16": lib.WAVE_FORMAT_PCM,
                   "S24": lib.WAVE_FORMAT_PCM,
                   "S32": lib.WAVE_FORMAT_PCM,
-                  "F32": 3)}
+                  "F32": 3}
 
 
 def create_xa2_buffer(audio_data):
