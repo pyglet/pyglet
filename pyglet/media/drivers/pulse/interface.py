@@ -34,7 +34,7 @@ SAMPLE_FORMATS = {"U8": {"little": pa.PA_SAMPLE_U8,
                   "S32": {"little": pa.PA_SAMPLE_S32LE,
                           "big": pa.PA_SAMPLE_S32BE},
                   "F32": {"little": pa.PA_SAMPLE_FLOAT32LE,
-                          "big": pa.PA_SAMPLE_FLOAT32BE)}}
+                          "big": pa.PA_SAMPLE_FLOAT32BE}}
 
 def get_uint32_or_none(value: int) -> Optional[int]:
     if value == _UINT32_MAX:

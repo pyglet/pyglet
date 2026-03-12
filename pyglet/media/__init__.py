@@ -128,8 +128,8 @@ __all__ = [
     'synthesis', 
     'get_audio_driver',
     'AUDIO_SAMPLE_FORMAT_U8',
-    'AUDIO_SAMPLE_FORMAT_S16'
+    'AUDIO_SAMPLE_FORMAT_S16',
     #'AUDIO_SAMPLE_FORMAT_S24' # Could be considered as well
-    'AUDIO_SAMPLE_FORMAT_S32'
-    'AUDIO_SAMPLE_FORMAT_F32'
+    'AUDIO_SAMPLE_FORMAT_S32',
+    'AUDIO_SAMPLE_FORMAT_F32',
 ]
