@@ -18,6 +18,8 @@ AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["bottom", "center", "top"]
 
+MediaTypes = Literal["audio", "video"]
+
 Number = Union[int, float]
 
 RGBColor = Tuple[Number, Number, Number]
