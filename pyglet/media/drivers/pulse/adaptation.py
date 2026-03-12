@@ -1,4 +1,5 @@
-from collections import deSAMPLEmport ctypes
+from collections import deque
+import ctypes
 import threading
 from typing import Deque, Optional, TYPE_CHECKING
 import weakref
