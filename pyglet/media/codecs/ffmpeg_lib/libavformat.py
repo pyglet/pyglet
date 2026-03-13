@@ -31,6 +31,8 @@ AVSEEK_FLAG_FRAME = 8  # ///< seeking based on frame number
 AVSEEK_SIZE = 0x10000
 AVFMT_FLAG_CUSTOM_IO = 0x0080
 
+AVERROR_EOF = -541478725  # -MKTAG('E', 'O', 'F', ' ')
+
 MAX_REORDER_DELAY = 16
 
 
@@ -48,9 +50,23 @@ class AVOutputFormat(Structure):
     pass
 
 
-class AVIOContext(Structure):
-    pass
+AVCodecContext = libavcodec.AVCodecContext
+AVPacketSideData = libavcodec.AVPacketSideData
+AVPacket = libavcodec.AVPacket
+AVCodecParserContext = libavcodec.AVCodecParserContext
+AVCodecParameters = libavcodec.AVCodecParameters
+AVRational = libavutil.AVRational
+AVDictionary = libavutil.AVDictionary
+AVFrame = libavutil.AVFrame
+AVClass = libavutil.AVClass
+AVCodec = libavcodec.AVCodec
 
+class AVIOContext(Structure):
+    _fields_ = [
+        ('av_class', POINTER(AVClass)),
+        ('buffer', POINTER(c_char)),
+        ('buffer_size', c_int),  # Rest not listed/used
+    ]
 
 class AVIndexEntry(Structure):
     pass
@@ -98,18 +114,6 @@ class AVFrac(Structure):
         ('num', c_int64),
         ('den', c_int64),
     ]
-
-
-AVCodecContext = libavcodec.AVCodecContext
-AVPacketSideData = libavcodec.AVPacketSideData
-AVPacket = libavcodec.AVPacket
-AVCodecParserContext = libavcodec.AVCodecParserContext
-AVCodecParameters = libavcodec.AVCodecParameters
-AVRational = libavutil.AVRational
-AVDictionary = libavutil.AVDictionary
-AVFrame = libavutil.AVFrame
-AVClass = libavutil.AVClass
-AVCodec = libavcodec.AVCodec
 
 
 class AVStream(Structure):
@@ -475,6 +479,9 @@ avformat.avformat_alloc_context.argtypes = []
 
 avformat.avformat_free_context.restype = c_void_p
 avformat.avformat_free_context.argtypes = [POINTER(AVFormatContext)]
+
+avformat.avio_context_free.restype = c_void_p
+avformat.avio_context_free.argtypes = [c_void_p]
 
 avformat.av_demuxer_iterate.argtypes = [POINTER(c_void_p)]
 avformat.av_demuxer_iterate.restype = POINTER(AVInputFormat)
