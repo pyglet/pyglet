@@ -26,7 +26,7 @@ in more detail in the following sections, but a rough overview is as follows:
   standard OpenGL Shader Programs. pyglet does full attribute and uniform
   introspection, and provides methods for automatically generating buffers
   that match the attribute formats.
-* VertexDomains at at the lowest level, and users will generally not need to
+* VertexDomains are at the lowest level, and users will generally not need to
   interact with them directly. They maintain ownership of raw OpenGL vertex
   array buffers, that match a specific collection of vertex attributes.
   Buffers are resized automatically as needed. Access to these buffers is
