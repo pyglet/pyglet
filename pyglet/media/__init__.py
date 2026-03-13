@@ -98,19 +98,26 @@ def load(filename: str, file: BinaryIO | None = None,
             NOTE: currently only supported by FFmpegDecoder!
     """
 
-    if audio_sample_format \
-            and audio_sample_format not in _VALID_AUDIO_SAMPLE_FORMATS:
-        raise ValueError(
-            f"Invalid audio_sample_format '{audio_sample_format}'. "
-            f"Expected one of: {', '.join(_VALID_AUDIO_SAMPLE_FORMATS)}")
+    audio_driver = get_audio_driver()
+    if audio_sample_format:
+        if audio_sample_format not in _VALID_AUDIO_SAMPLE_FORMATS:
+            raise ValueError(
+                f"Invalid audio_sample_format '{audio_sample_format}'. "
+                f"Expected one of: {', '.join(_VALID_AUDIO_SAMPLE_FORMATS)}")
+        if audio_sample_format not in audio_driver.sample_formats:
+            raise ValueError(
+                f"Unsupported audio_sample_format '{audio_sample_format}'. "
+                f"{type(audio_driver).__name__} is only compatible with: "
+                f"{', '.join(audio_driver.sample_formats)}")
 
     if decoder:
         if type(decoder).__name__ == "FFmpegDecoder":
-            return decoder.decode(filename, file, streaming=streaming,
-                                  audio_sample_format=audio_sample_format)
+            return decoder.decode(
+                filename, file, streaming=streaming,
+                audio_sample_format=audio_sample_format,
+                audio_driver_sample_formats=audio_driver.sample_formats)
         else:
             return decoder.decode(filename, file, streaming=streaming)
-
 
     return _codec_registry.decode(filename, file, streaming=streaming)
 

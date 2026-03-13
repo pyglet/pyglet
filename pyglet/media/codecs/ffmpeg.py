@@ -581,13 +581,17 @@ class FFmpegSource(StreamingSource):
     MAX_QUEUE_SIZE = 100
 
     def __init__(self, filename: str, file: BinaryIO | None=None,
-                 audio_sample_format: str | None=None):
+                 audio_sample_format: str | None=None,
+                 audio_driver_sample_formats: list[str] | None=None):
         self._packet = None
         self._video_stream = None
         self._audio_stream = None
         self._stream_end = False
         self._file = None
         self._memory_file = None
+
+        if audio_driver_sample_formats is None:
+            audio_driver_sample_formats = ["U8", "S16"]
 
         encoded_filename = filename.encode(sys.getfilesystemencoding())
 
@@ -651,18 +655,17 @@ class FFmpegSource(StreamingSource):
                 sample_bits = self.AV_FORMAT_MAP[sample_format][0]
 
                 if not audio_sample_format:
-                    audio_driver = pyglet.media.get_audio_driver()
                     if info.sample_format in (AV_SAMPLE_FMT_FLT,
                                               AV_SAMPLE_FMT_FLTP):
-                        if "F32" in audio_driver.sample_formats:
+                        if "F32" in audio_driver_sample_formats:
                             self.tgt_format = AV_SAMPLE_FMT_FLT
                         else:
                             self.tgt_format = AV_SAMPLE_FMT_S16
                     elif info.sample_format in (AV_SAMPLE_FMT_S32,
                                                 AV_SAMPLE_FMT_S32P):
-                        if "S32" in audio_driver.sample_formats:
+                        if "S32" in audio_driver_sample_formats:
                             self.tgt_format = AV_SAMPLE_FMT_S32
-                        elif "F32" in audio_driver.sample_formats:
+                        elif "F32" in audio_driver_sample_formats:
                             self.tgt_format = AV_SAMPLE_FMT_FLT
                         else:
                             self.tgt_format = AV_SAMPLE_FMT_S16
@@ -696,10 +699,10 @@ class FFmpegSource(StreamingSource):
 
                 # Dither withnoise-shaping when reducing bit-depth
                 if (self.AV_FORMAT_MAP[self.tgt_format][0] < sample_bits):
-                        avutil.av_opt_set(self.audio_convert_ctx,
-                                          asbytes("dither_method"),
-                                          asbytes("low_shibata"),
-                                          0)
+                    avutil.av_opt_set(self.audio_convert_ctx,
+                                      asbytes("dither_method"),
+                                      asbytes("low_shibata"),
+                                      0)
 
                 result = swresample.swr_init(self.audio_convert_ctx)
                 if result < 0:
@@ -1266,7 +1269,8 @@ class FFmpegDecoder(MediaDecoder):
         return '.mp3', '.ogg'
 
     def decode(self, filename: str, file: BinaryIO | None,
-               streaming: bool=True, audio_sample_format: str | None=None
+               streaming: bool=True, audio_sample_format: str | None=None,
+               audio_driver_sample_formats: list[str] | None=None,
     ) -> FFmpegSource | StaticSource:
 
         if audio_sample_format \
@@ -1275,10 +1279,12 @@ class FFmpegDecoder(MediaDecoder):
                 f"Audio format '{audio_sample_format}' not supported.")
 
         if streaming:
-            return FFmpegSource(filename, file, audio_sample_format)
+            return FFmpegSource(filename, file, audio_sample_format,
+                                audio_driver_sample_formats)
         else:
             return StaticSource(FFmpegSource(filename, file,
-                                             audio_sample_format))
+                                             audio_sample_format,
+                                             audio_driver_sample_formats))
 
 
 def get_decoders() -> list[FFmpegDecoder]:
