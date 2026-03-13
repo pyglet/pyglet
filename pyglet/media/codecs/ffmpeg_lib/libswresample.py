@@ -50,7 +50,7 @@ swresample.swr_init.argtypes = [POINTER(SwrContext)]
 swresample.swr_free.argtypes = [POINTER(POINTER(SwrContext))]
 swresample.swr_convert.restype = c_int
 swresample.swr_convert.argtypes = [POINTER(SwrContext),
-                                   POINTER(c_uint8) * SWR_CH_MAX,
+                                   POINTER(POINTER(c_uint8)),
                                    c_int,
                                    POINTER(POINTER(c_uint8)),
                                    c_int]
