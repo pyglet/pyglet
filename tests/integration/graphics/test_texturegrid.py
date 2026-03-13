@@ -1,14 +1,16 @@
 import unittest
 
+from pyglet.graphics import TextureGrid
 from pyglet.image import ImageData, ImageGrid
+from pyglet.window import Window
 
 
 def colorbyte(color):
     return bytes((color,))
 
 
-class ImageGridTestCase(unittest.TestCase):
-    """Test ImageGrid indexing and slicing over image regions."""
+class TextureGridTestCase(unittest.TestCase):
+    """Test texture sequence behavior produced by ImageGrid."""
 
     def set_grid_image(self, item_width: int, item_height: int, rows: int, cols: int, rowpad: int, colpad: int):
         data = b''
@@ -28,7 +30,7 @@ class ImageGridTestCase(unittest.TestCase):
                 data += (width * b'\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'R', data)
-        self.grid = ImageGrid(
+        image_grid = ImageGrid(
             self.image,
             rows,
             cols,
@@ -37,14 +39,22 @@ class ImageGridTestCase(unittest.TestCase):
             rowpad,
             colpad,
         )
+        self.grid = TextureGrid.from_image_grid(image_grid)
 
-    def check_cell(self, cell_image, cellindex):
-        self.assertTrue(cell_image.width == self.grid.item_width)
-        self.assertTrue(cell_image.height == self.grid.item_height)
+    def check_cell(self, cell_texture, cellindex):
+        self.assertTrue(cell_texture.width == self.grid.item_width)
+        self.assertTrue(cell_texture.height == self.grid.item_height)
 
         color = colorbyte(cellindex + 1)
-        data = cell_image.get_bytes('R', cell_image.width)
+        cellimage = cell_texture.get_image_data()
+        data = cellimage.get_bytes('R', cellimage.width)
         self.assertTrue(data == color * len(data))
+
+    def setUp(self):
+        self.w = Window(visible=False)
+
+    def tearDown(self) -> None:
+        self.w.close()
 
     def test_square(self):
         rows = cols = 3
