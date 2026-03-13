@@ -1,13 +1,13 @@
 from __future__ import annotations
 import sys
 import warnings
-from typing import BinaryIO, Any, Literal, TYPE_CHECKING
+from typing import Any, BinaryIO
 
 from pyglet.util import CodecRegistry, Decoder, Encoder
 from .base import *
 
 import pyglet
-
+from pyglet.customtypes import MediaTypes
 
 _debug = pyglet.options.debug_media
 
@@ -21,6 +21,10 @@ get_encoders = registry.get_encoders
 
 
 class MediaDecoder(Decoder):
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        """Return media streams this decoder can decode."""
+        return ("audio",)
+
     def decode(self, filename: str, file: BinaryIO, streaming: bool) -> Any:
         """Read the given file object and return an instance of `Source` or `StreamingSource`.
 

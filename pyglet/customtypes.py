@@ -18,7 +18,7 @@ AnchorX = Literal["left", "center", "right"]
 AnchorY = Literal["top", "bottom", "center", "baseline"]
 ContentVAlign = Literal["bottom", "center", "top"]
 
-MediaTypes = Literal["audio", "video"]
+MediaTypes = Literal["audio", "video", "image"]
 
 Number = Union[int, float]
 
@@ -61,6 +61,7 @@ __all__ = [
     "ContentVAlign",
     "DataTypes",
     "HorizontalAlign",
+    "MediaTypes",
     "RGBAColor",
     "RGBColor",
 ]

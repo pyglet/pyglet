@@ -1,6 +1,6 @@
-"""Wrapper for include/libavformat/avformat.h
-"""
-from ctypes import c_int, c_int64
+"""Wrapper for include/libavformat/avformat.h."""
+from __future__ import annotations
+from ctypes import byref, c_int, c_int64
 from ctypes import c_uint8, c_uint, c_double, c_ubyte, c_size_t, c_char, c_char_p
 from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure, Union
 
@@ -418,6 +418,22 @@ else:
     for compat_ver in (59, 60, 61, 62):
         compat.add_version_changes('avformat', compat_ver, AVFormatContext, AVFormatContext_Fields,
                                    removals=('filename', 'internal'))
+class AVInputFormat(Structure):
+    _fields_ = [
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("flags", c_int),
+        ("extensions", c_char_p),
+        ("mime_type", c_char_p),
+    ]
+
+class AVOutputFormat(Structure):
+    _fields_ = [
+        ("name", c_char_p),
+        ("long_name", c_char_p),
+        ("mime_type", c_char_p),
+        ("extensions", c_char_p),
+    ]
 
 avformat.av_find_input_format.restype = c_int
 avformat.av_find_input_format.argtypes = [c_int]
@@ -460,6 +476,28 @@ avformat.avformat_alloc_context.argtypes = []
 avformat.avformat_free_context.restype = c_void_p
 avformat.avformat_free_context.argtypes = [POINTER(AVFormatContext)]
 
+avformat.av_demuxer_iterate.argtypes = [POINTER(c_void_p)]
+avformat.av_demuxer_iterate.restype = POINTER(AVInputFormat)
+
+
+def _split_extensions(ext_bytes: bytes) -> list[str]:
+    if not ext_bytes:
+        return []
+    return [e.strip().lower() for e in ext_bytes.decode("utf-8").split(",") if e.strip()]
+
+
+def get_input_extensions() -> list[str]:
+    opaque = c_void_p(None)
+    result = set()
+
+    while True:
+        fmt = avformat.av_demuxer_iterate(byref(opaque))
+        if not fmt:
+            break
+        result.update(_split_extensions(fmt.contents.extensions))
+
+    return sorted(result)
+
 __all__ = [
     'avformat',
     'AVSEEK_FLAG_BACKWARD',
@@ -469,4 +507,5 @@ __all__ = [
     'AVFormatContext',
     'AVCodecContext',
     'avformat_version',
+    'get_input_extensions',
 ]

@@ -26,7 +26,7 @@ class Player(physicalobject.PhysicalObject):
         self.key_handler = key.KeyStateHandler()
         self.event_handlers = [self, self.key_handler]
 
-        self.bullet_sound = pyglet.resource.media('bullet.wav', streaming=False)
+        self.bullet_sound = pyglet.resource.audio('bullet.wav', streaming=False)
 
     def update(self, dt):
         # Do all the normal physics stuff

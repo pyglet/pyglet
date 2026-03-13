@@ -42,7 +42,7 @@ from .ffmpeg_lib import (
     libavutil,
     swscale,
 )
-from .ffmpeg_lib.libavformat import AVCodecContext, AVFormatContext, avformat, avformat_version
+from .ffmpeg_lib.libavformat import AVCodecContext, AVFormatContext, avformat, avformat_version, get_input_extensions
 from .ffmpeg_lib.libavutil import (
     AV_NOPTS_VALUE,
     AV_PIX_FMT_RGBA,
@@ -66,6 +66,7 @@ from .ffmpeg_lib.libavutil import (
 from .ffmpeg_lib.libswresample import swresample, swresample_version
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import MediaTypes
     from .ffmpeg_lib.libavformat import AVStream
 
 
@@ -1206,16 +1207,20 @@ else:
 #   Decoder class:
 #########################################
 
+_extensions_supported = get_input_extensions()
+
 class FFmpegDecoder(MediaDecoder):
 
     def get_file_extensions(self) -> Sequence[str]:
-        return '.mp3', '.ogg'
+        return _extensions_supported
+
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        return "audio", "video"
 
     def decode(self, filename: str, file: BinaryIO | None, streaming: bool=True) -> FFmpegSource | StaticSource:
         if streaming:
             return FFmpegSource(filename, file)
-        else:
-            return StaticSource(FFmpegSource(filename, file))
+        return StaticSource(FFmpegSource(filename, file))
 
 
 def get_decoders() -> list[FFmpegDecoder]:

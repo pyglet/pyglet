@@ -18,14 +18,14 @@ def test_playback(event_loop, test_data):
     player.play()
 
     sound = test_data.get_file('media', 'alert.wav')
-    source = pyglet.media.load(sound, streaming=False)
+    source = pyglet.media.load_audio(sound, streaming=False)
     player.queue(source)
     event_loop.run_event_loop()
 
     event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
     sound2 = test_data.get_file('media', 'receive.wav')
-    source2 = pyglet.media.load(sound2, streaming=False)
+    source2 = pyglet.media.load_audio(sound2, streaming=False)
     player.queue(source2)
     player.play()
     event_loop.run_event_loop()
@@ -37,7 +37,7 @@ def test_playback(event_loop, test_data):
 def test_playback_fire_and_forget(event_loop, test_data):
     """Test playing back sound files using fire and forget."""
     sound = test_data.get_file('media', 'alert.wav')
-    source = pyglet.media.load(sound, streaming=False)
+    source = pyglet.media.load_audio(sound, streaming=False)
     player = source.play()
     player.on_player_eos = event_loop.interrupt_event_loop
     event_loop.run_event_loop()
