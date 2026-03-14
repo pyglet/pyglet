@@ -2,6 +2,7 @@ import ctypes
 import select
 
 from os import read as os_read
+from time import CLOCK_MONOTONIC
 from select import POLLIN
 
 from pyglet import app, lib
@@ -12,9 +13,7 @@ from pyglet.app.base import PlatformEventLoop
 try:
     from os import timerfd_create, timerfd_settime, timerfd_gettime
     from os import EFD_SEMAPHORE, eventfd, eventfd_read, eventfd_write
-    from time import CLOCK_MONOTONIC
 except ImportError:
-    CLOCK_MONOTONIC = 1
     EFD_SEMAPHORE = 1
 
     class Timespec(ctypes.Structure):
@@ -125,8 +124,8 @@ class XlibEventLoop(PlatformEventLoop):
         self._notification_device = NotificationDevice()
         self._timer_device = TimerDevice()
 
-        self.register(self._notification_device, POLLIN)
-        self.register(self._timer_device, POLLIN)
+        self.register(self._notification_device)
+        self.register(self._timer_device)
 
     def register(self, device, eventmask=POLLIN):
         self.epoll.register(device, eventmask)
@@ -143,14 +142,15 @@ class XlibEventLoop(PlatformEventLoop):
         # Timeout is from EventLoop.idle(). Return after that timeout or directly
         # after receiving a new event. None means: block for user input.
 
+        # More precise than epoll.poll(timeout):
         if timeout:
-            self._timer_device.set_timer(timeout)
+            self._timer_device.set_timer(timeout * 0.9)
 
         # At least one event will be returned (a real event, or the timer event)
         for fd, _ in self.epoll.poll(timeout):
             self.monitored_devices[fd].select()
 
-        # Check the remaining time left before the timer device times out.
-        # If the timer has expired and woke the poll, this will equal 0.0 and return False.
-        # If an event woke the poll, then the value will be greater than 0.0 and return True.
+        # Check the remaining time left on the timer_device.
+        # If the timer_device has expired and woke the poll, this will be 0.0 (returning False).
+        # If another event woke the poll, the remainder will be greater than 0.0 (returning True).
         return timerfd_gettime(self._timer_device.fd) > (0.0, 0.0)
