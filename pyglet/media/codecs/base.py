@@ -43,9 +43,9 @@ class AudioFormat:
         self.sample_rate = sample_rate
         if sample_type is None:
             if self.sample_size == 8:
-                sample_type = SAMPLE_TYPE_UINT
+                sample_type = self.SAMPLE_TYPE_UINT
             else:
-                sample_type = SAMPLE_TYPE_INT
+                sample_type = self.SAMPLE_TYPE_INT
         if sample_type not in self._VALID_TYPES:
             raise ValueError(f"sample_type must be one of {self._VALID_TYPES}")
         self.sample_type = sample_type
