@@ -1,3 +1,6 @@
+"""Configuration options for the Graphics Context.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -5,9 +8,7 @@ from typing import Any, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext
     from pyglet.window import Window
-
 
 
 class SurfaceConfig:
@@ -37,15 +38,16 @@ class SurfaceConfig:
         """The public attributes of this configuration."""
         return {attrib: value for attrib, value in self.__dict__.items() if attrib[0] != '_'}
 
+    @property
     def is_finalized(self) -> bool:
         return True
-
-    def create_context(self, backend: BackendGlobalObject, shared: SurfaceContext):
-        raise NotImplementedError
 
 
 class UserConfig:
     """User configuration information."""
+
+
+# Platform Specific Configurations
 
 @dataclass
 class OpenGLConfig(UserConfig):
@@ -88,11 +90,43 @@ class OpenGLConfig(UserConfig):
     minor_version: int | None = None
     #: Whether to use forward compatibility mode.
     forward_compatible: bool | None = None
-    opengl_api: str | None = "gl"
     #: Debug mode.
     debug: bool | None = None
     #: If the framebuffer should be transparent.
     transparent_framebuffer: bool | None = None
+
+    opengl_api: str | None = "gl"
+
+    @property
+    def is_finalized(self) -> bool:
+        return False
+
+
+@dataclass
+class WebGLConfig(UserConfig):
+    """A WebGL Graphics configuration."""
+    #: Whether the drawing buffer has an alpha channel (pyglet defaults to False).
+    alpha: bool = False
+    #: Whether the drawing buffer has a depth buffer (default True).
+    depth: bool | None = None
+    #: Whether the drawing buffer has a stencil buffer (default False).
+    stencil: bool | None = None
+    #: Whether antialiasing is enabled (default True).
+    antialias: bool | None = None
+    #: Whether color values are pre-multiplied by alpha (default True).
+    premultipliedAlpha: bool | None = None
+    #: Whether the drawing buffer is preserved after rendering (default False).
+    preserveDrawingBuffer: bool | None = None
+    #: Whether context creation fails if performance is low (default False).
+    failIfMajorPerformanceCaveat: bool | None = None
+    #: Hints GPU preference: "default", "low-power", or "high-performance" (default "default").
+    powerPreference: str | None = None
+    #: Hints to reduce latency by desynchronizing canvas painting (default False).
+    desynchronized: bool | None = None
+
+    @property
+    def opengl_api(self):
+        return "webgl"
 
     @property
     def is_finalized(self) -> bool:
@@ -100,7 +134,7 @@ class OpenGLConfig(UserConfig):
 
 
 def match_surface_config(config: UserConfig, surface: Window) -> SurfaceConfig | None:
-    if isinstance(config, OpenGLConfig):
+    if isinstance(config, (OpenGLConfig, WebGLConfig)):
         from pyglet.config.gl import get_surface_config  # noqa: PLC0415
         return get_surface_config(config, surface)
     return None
