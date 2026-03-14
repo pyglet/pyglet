@@ -105,7 +105,7 @@ class AudioFormat:
         return (
             '%s(channels=%d, sample_size=%d, sample_rate=%d, sample_type=%s)'
             % (self.__class__.__name__, self.channels, self.sample_size,
-               self.sample_rate, sample_type)
+               self.sample_rate, self.sample_type)
         )
 
 
