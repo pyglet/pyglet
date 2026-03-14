@@ -2,13 +2,16 @@ from __future__ import annotations
 from enum import Enum, auto
 
 
-class GraphicsAPI(Enum):
+class GraphicsAPI(str, Enum):
     """Supported graphics backends."""
-    OPENGL = auto()
-    OPENGL_2 = auto()
-    OPENGL_ES_2 = auto()
-    OPENGL_ES_3 = auto()
-    WEBGL = auto()
+    OPENGL = "opengl"
+    OPENGL_2 = "gl2"
+    OPENGL_ES_2 = "gles2"
+    OPENGL_ES_3 = "gles3"
+    WEBGL = "webgl"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class GeometryMode(Enum):
