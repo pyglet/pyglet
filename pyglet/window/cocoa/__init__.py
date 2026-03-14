@@ -167,15 +167,15 @@ class CocoaWindow(BaseWindow):
             self._nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
             self._nsview.setWantsBestResolutionOpenGLSurface_(True)
 
-        if not self._fullscreen:
-            if self._style in ("transparent", "overlay"):
-                self._nswindow.setOpaque_(False)
-                self._nswindow.setBackgroundColor_(NSColor.clearColor())
-                self._nswindow.setHasShadow_(False)
+            if not self._fullscreen:
+                if self._style in ("transparent", "overlay"):
+                    self._nswindow.setOpaque_(False)
+                    self._nswindow.setBackgroundColor_(NSColor.clearColor())
+                    self._nswindow.setHasShadow_(False)
 
-                if self._style == "overlay":
-                    self.set_mouse_passthrough(True)
-                    self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
+                    if self._style == "overlay":
+                        self.set_mouse_passthrough(True)
+                        self._nswindow.setLevel_(cocoapy.NSStatusWindowLevel)
 
             self._nswindow.setContentView_(self._nsview)
             self._nswindow.makeFirstResponder_(self._nsview)

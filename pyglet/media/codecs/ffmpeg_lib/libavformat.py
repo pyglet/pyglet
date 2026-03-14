@@ -132,8 +132,8 @@ AVStream_Fields = [
         ('metadata', POINTER(AVDictionary)),
         ('avg_frame_rate', AVRational),
         ('attached_pic', AVPacket),
-        ('side_data', POINTER(AVPacketSideData)),
-        ('nb_side_data', c_int),
+        ('side_data', POINTER(AVPacketSideData)),  # Deprecated in 60. Removed in 62.
+        ('nb_side_data', c_int),  # Deprecated in 60. Removed in 62.
         ('event_flags', c_int),
         ('r_frame_rate', AVRational),
         ('recommended_encoder_configuration', c_char_p),  # Deprecated. Removed in 59.
@@ -147,10 +147,15 @@ compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=(
 compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
                            removals=('av_class', 'codec', 'recommended_encoder_configuration', 'info'))
 
-for compat_ver in (60, 61, 62):
+for compat_ver in (60, 61):
     compat.add_version_changes('avformat', compat_ver, AVStream, AVStream_Fields,
                                removals=('codec', 'recommended_encoder_configuration', 'info'),
                                repositions=(compat.Reposition("codecpar", "id"),))
+
+compat.add_version_changes('avformat', 62, AVStream, AVStream_Fields,
+                           removals=('codec', 'recommended_encoder_configuration', 'info', 'side_data',
+                                     'nb_side_data'),
+                           repositions=(compat.Reposition("codecpar", "id"),))
 
 
 class AVProgram(Structure):

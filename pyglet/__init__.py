@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, ItemsView, Sized
 
 #: The release version
-version = '2.1.9'
+version = '2.1.13'
 __version__ = version
 
 MIN_PYTHON_VERSION = 3, 8
@@ -255,8 +255,8 @@ class Options:
 
     .. versionadded:: 2.0.5"""
 
-    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "real"
-    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'real'`.
+    dpi_scaling: Literal["real", "scaled", "stretch", "platform"] = "platform"
+    """For 'HiDPI' displays, Window behavior can differ between operating systems. Defaults to `'platform'`.
 
     The current options are an attempt to create consistent behavior across all of the operating systems.
 

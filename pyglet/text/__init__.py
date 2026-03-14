@@ -398,7 +398,7 @@ class Label(DocumentLabel):
             width: int | None = None, height: int | None = None,
             anchor_x: AnchorX = "left", anchor_y: AnchorY = "baseline", rotation: float = 0.0,
             multiline: bool = False, dpi: int | None = None,
-            font_name: str | None = None, font_size: float | None = None,
+            font_name: str | list[str] | None = None, font_size: float | None = None,
             weight: str = "normal", italic: bool | str = False, stretch: bool | str = False,
             color: tuple[int, int, int, int] | tuple[int, int, int] = (255, 255, 255, 255),
             align: HorizontalAlign = "left",
@@ -437,7 +437,8 @@ class Label(DocumentLabel):
                 Resolution of the fonts in this layout.  Defaults to 96.
             font_name:
                 Font family name(s).  If more than one name is given, the
-                first matching name is used.
+                first matching name is used. A list of names can optionally
+                be given: the first matching font will be used.
             font_size:
                 Font size, in points.
             weight:

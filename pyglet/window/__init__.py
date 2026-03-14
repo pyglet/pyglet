@@ -104,6 +104,7 @@ from pyglet.math import Mat4
 from pyglet.window import event, key
 
 if TYPE_CHECKING:
+    import BaseWindow as Window
     from pyglet.display.base import Display, Screen, ScreenMode
     from pyglet.gl import DisplayConfig, Config, Context
     from pyglet.text import Label

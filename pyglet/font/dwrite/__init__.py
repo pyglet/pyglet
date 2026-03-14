@@ -646,7 +646,7 @@ def _get_font_file(font_face: IDWriteFontFace) -> IDWriteFontFile:
     font_files = (IDWriteFontFile * file_ct.value)()
     font_face.GetFiles(byref(file_ct), font_files)
 
-    return font_files[font_face.GetIndex()]
+    return font_files[0]
 
 def _get_font_ref(font_file: IDWriteFontFile, release_file: bool=True) -> tuple[c_void_p, int]:
     """Get a unique font reference for the font face.
