@@ -10,15 +10,8 @@ from pyglet.media.exceptions import MediaException
 
 _debug = debug_print('debug_media')
 
-SAMPLE_FORMATS = {"U8": {1: al.AL_FORMAT_MONO8, 2: al.AL_FORMAT_STEREO8},
-                 "S16": {1: al.AL_FORMAT_MONO16, 2: al.AL_FORMAT_STEREO16}}
 
-if bool(al.alIsExtensionPresent(b"AL_EXT_32bit_formats")):
-    SAMPLE_FORMATS["S32"] = {1: al.alGetEnumValue(b"AL_FORMAT_MONO_I32"),
-                            2: al.alGetEnumValue(b"AL_FORMAT_STEREO_I32")}
-if bool(al.alIsExtensionPresent(b"AL_EXT_float32")):
-    SAMPLE_FORMATS["F32"] = {1: al.alGetEnumValue(b"AL_FORMAT_MONO_FLOAT32"),
-                            2: al.alGetEnumValue(b"AL_FORMAT_STEREO_FLOAT32")}
+SAMPLE_FORMATS = {}  # Gets set dynamically by OpenALContext on driver creation
 
 
 class OpenALException(MediaException):
@@ -116,6 +109,7 @@ class OpenALContext(OpenALObject):
         self._al_context = al_context
         self._sources = set()
         self.make_current()
+        self.initialize_sample_formats()
 
     def delete_sources(self):
         for s in tuple(self._sources):
@@ -144,6 +138,20 @@ class OpenALContext(OpenALObject):
         new_source = OpenALSource(self)
         self._sources.add(new_source)
         return new_source
+
+    def initialize_sample_formats(self):
+        global SAMPLE_FORMATS
+        SAMPLE_FORMATS = {
+            "U8": {1: al.AL_FORMAT_MONO8, 2: al.AL_FORMAT_STEREO8},
+            "S16": {1: al.AL_FORMAT_MONO16, 2: al.AL_FORMAT_STEREO16}}
+        if bool(al.alIsExtensionPresent(b"AL_EXT_32bit_formats")):
+                SAMPLE_FORMATS["S32"] = {
+                    1: al.alGetEnumValue(b"AL_FORMAT_MONO_I32"),
+                    2: al.alGetEnumValue(b"AL_FORMAT_STEREO_I32")}
+        if bool(al.alIsExtensionPresent(b"AL_EXT_float32")):
+                SAMPLE_FORMATS["F32"] = {
+                    1: al.alGetEnumValue(b"AL_FORMAT_MONO_FLOAT32"),
+                    2: al.alGetEnumValue(b"AL_FORMAT_STEREO_FLOAT32")}
 
     def source_deleted(self, source):
         self._sources.remove(source)
