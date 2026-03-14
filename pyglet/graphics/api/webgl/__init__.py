@@ -14,7 +14,7 @@ from pyglet.math import Mat4
 
 if TYPE_CHECKING:
 
-    from pyglet.config import SurfaceConfig, WebGLConfig
+    from pyglet.config import SurfaceConfig
     from pyglet.graphics.shader import ShaderType
     from pyglet.window import Window
 
@@ -156,11 +156,7 @@ class WebGLBackend(BackendGlobalObject):
 
         These will be used during Window creation.
         """
-        # return [
-        #     pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-        #     pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-        # ]
-        return [WebGLConfig()]
+        return [pyglet.config.WebGLConfig()]
 
     def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLConfig:
         return pyglet.config.WebGLConfig(**kwargs)
