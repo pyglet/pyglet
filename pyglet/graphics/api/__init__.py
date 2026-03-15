@@ -24,16 +24,20 @@ if pyglet.options.backend in ("opengl", "gles3"):
 
     core = OpenGLBackend("gles" if pyglet.options.backend == "gles3" else "gl")
 
-    from pyglet.graphics.api.gl.draw import Batch
+    from pyglet.graphics.api.gl.draw import GLBatch as Batch
     from pyglet.graphics.api.gl.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.gl.shader import ShaderProgram, Shader, ComputeShaderProgram
+    from pyglet.graphics.api.gl.shader import (
+        GLComputeShaderProgram as ComputeShaderProgram,
+        GLShader as Shader,
+        GLShaderProgram as ShaderProgram,
+    )
 
 elif pyglet.options.backend in ("gl2", "gles2"):
     from pyglet.graphics.api.gl2.global_opengl import OpenGL2Backend
 
     core = OpenGL2Backend("gles" if pyglet.options.backend == "gles2" else "gl")
 
-    from pyglet.graphics.api.gl2.draw import Batch
+    from pyglet.graphics.api.gl2.draw import GL2Batch as Batch
     from pyglet.graphics.api.gl2.draw import get_default_shader, get_default_batch
     from pyglet.graphics.api.gl2.shader import ShaderProgram, Shader, ComputeShaderProgram
 
@@ -42,9 +46,13 @@ elif pyglet.options.backend == "webgl":
 
     core = WebGLBackend()
 
-    from pyglet.graphics.api.webgl.draw import Batch
+    from pyglet.graphics.api.webgl.draw import WebGLBatch as Batch
     from pyglet.graphics.api.webgl.draw import get_default_shader, get_default_batch
-    from pyglet.graphics.api.webgl.shader import ShaderProgram, Shader, ComputeShaderProgram
+    from pyglet.graphics.api.webgl.shader import (
+        WebGLComputeShaderProgram as ComputeShaderProgram,
+        WebGLShader as Shader,
+        WebGLShaderProgram as ShaderProgram,
+    )
 
 elif pyglet.options.backend == "vulkan":
     from pyglet.graphics.api.vulkan.instance import VulkanGlobal

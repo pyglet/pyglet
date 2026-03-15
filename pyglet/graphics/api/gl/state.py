@@ -10,7 +10,7 @@ from pyglet.graphics.api.gl.enums import blend_factor_map, compare_op_map
 from pyglet.graphics.state import State
 
 if TYPE_CHECKING:
-    from pyglet.graphics.texture import TextureBase
+    from pyglet.graphics.texture import Texture
     from pyglet.graphics.api.gl.shader import ShaderProgram
     from pyglet.customtypes import ScissorProtocol
 
@@ -39,7 +39,7 @@ class TextureState(State):  # noqa: D101
     sets_state: bool = True
 
     @classmethod
-    def from_texture(cls, texture: TextureBase, binding: int, set_id: int) -> TextureState:
+    def from_texture(cls, texture: Texture, binding: int, set_id: int) -> TextureState:
         return cls((texture.target, texture.id), binding, set_id)
 
     def set_state(self, ctx: OpenGLSurfaceContext) -> None:

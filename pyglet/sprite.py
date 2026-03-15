@@ -74,7 +74,7 @@ from pyglet import event, clock
 
 if TYPE_CHECKING:
     from typing import ClassVar, Literal
-    from pyglet.graphics.texture import TextureBase
+    from pyglet.graphics.texture import Texture
 
 from pyglet.graphics import Group, Batch, ShaderProgram
 from pyglet.enums import BlendFactor, GeometryMode
@@ -97,7 +97,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 class SpriteGroup(Group):
     """Shared Sprite rendering Group."""
 
-    def __init__(self, texture: TextureBase, blend_src: BlendFactor, blend_dest: BlendFactor,
+    def __init__(self, texture: Texture, blend_src: BlendFactor, blend_dest: BlendFactor,
                  program: ShaderProgram, parent: Group | None = None) -> None:
         """Create a sprite group.
 
@@ -145,7 +145,7 @@ class Sprite(event.EventDispatcher):
     group_class: ClassVar[type[SpriteGroup | Group]] = SpriteGroup
 
     def __init__(self,
-                 img: TextureBase | Animation,
+                 img: Texture | Animation,
                  x: float = 0, y: float = 0, z: float = 0,
                  blend_src: BlendFactor = BlendFactor.SRC_ALPHA,
                  blend_dest: BlendFactor = BlendFactor.ONE_MINUS_SRC_ALPHA,
@@ -343,7 +343,7 @@ class Sprite(event.EventDispatcher):
             self._batch.migrate(self._vertex_list, GeometryMode.TRIANGLES, self._group, self._batch)
 
     @property
-    def image(self) -> TextureBase | Animation:
+    def image(self) -> Texture | Animation:
         """The Sprite's Image or Animation to display.
 
         .. note:: Changing this can be an expensive operation if the texture is not part of the same texture or atlas.
@@ -353,7 +353,7 @@ class Sprite(event.EventDispatcher):
         return self._texture
 
     @image.setter
-    def image(self, img: TextureBase | Animation) -> None:
+    def image(self, img: Texture | Animation) -> None:
         if self._animation is not None:
             clock.unschedule(self._animate)
             self._animation = None
@@ -369,7 +369,7 @@ class Sprite(event.EventDispatcher):
             self._set_texture(img.get_texture())
         self._update_position()
 
-    def _set_texture(self, texture: TextureBase) -> None:
+    def _set_texture(self, texture: Texture) -> None:
         if texture.id is not self._texture.id:
             self._vertex_list.delete()
             self._texture = texture

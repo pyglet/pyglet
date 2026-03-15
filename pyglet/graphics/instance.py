@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class InstanceAllocator:
     """Allocator for instances within a bucket."""
     count: int
-    slot_to_handle: dict[int, VertexInstanceBase]
-    handle_to_slot: dict[VertexInstanceBase, int]
+    slot_to_handle: dict[int, VertexInstance]
+    handle_to_slot: dict[VertexInstance, int]
 
     def __init__(self) -> None:  # noqa: D107
         self.count = 0
@@ -34,7 +34,7 @@ class InstanceAllocator:
         self.slot_to_inst[slot] = inst
         return slot
 
-    def remove(self, inst: VertexInstanceBase) -> tuple[int, int, int] | None:
+    def remove(self, inst: VertexInstance) -> tuple[int, int, int] | None:
         slot = self.inst_to_slot.pop(inst)
         last = self.count - 1
         if slot != last:
@@ -49,7 +49,7 @@ class InstanceAllocator:
         self.count -= 1
         return None
 
-class VertexInstanceBase:
+class VertexInstance:
     """Base class for VertexInstance instances."""
     _bucket_ref: ReferenceType[InstanceBucket]
     slot: int
@@ -99,9 +99,9 @@ class InstanceBucket:
         # Build a VertexInstance class with properties for each instanced attribute:
         props = {name: _make_inst_attr_prop(name) for name in self.stream.attrib_name_buffers.keys()}
         props["__slots__"] = ("_bucket_ref", "slot")
-        self._InstanceCls = type("VertexInstance", (VertexInstanceBase,), props)
+        self._InstanceCls = type("VertexInstance", (VertexInstance,), props)
 
-    def create_instance(self, **attributes: Any) -> VertexInstanceBase:
+    def create_instance(self, **attributes: Any) -> VertexInstance:
         v_instance = self._InstanceCls(weakref.ref(self), slot=-1)
         slot = self.allocator.add(v_instance)
         v_instance.slot = slot
@@ -112,7 +112,7 @@ class InstanceBucket:
             self.stream.set_region(slot, 1, attributes)
         return v_instance
 
-    def delete_instance(self, vi: VertexInstanceBase) -> None:
+    def delete_instance(self, vi: VertexInstance) -> None:
         # When removing an instance, take the last slot and move to the removed slot to maintain contiguous allocation.
         swap = self.allocator.remove(vi)
         if swap:
@@ -124,7 +124,7 @@ class InstanceBucket:
     def instance_count(self) -> int:
         return self.allocator.count
 
-class BaseInstanceDomain(ABC):
+class InstanceDomain(ABC):
     """Base class for managing instance domains and the buckets associated with each."""
     _geom: dict[InstanceBucket, tuple[Any, ...]]
     _buckets: dict[tuple, InstanceBucket]

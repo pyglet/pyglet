@@ -462,10 +462,10 @@ information is output: ``pyglet.options.debug_lib`` and/or ``pyglet.options.debu
 Loading media
 -------------
 
-Audio and video files are loaded in the same way, using the
-:py:func:`pyglet.media.load` function, providing a filename::
+Audio files are loaded with :py:func:`pyglet.media.load_audio`, and video
+files are loaded with :py:func:`pyglet.media.load_video`::
 
-    source = pyglet.media.load('explosion.wav')
+    source = pyglet.media.load_audio('explosion.wav')
 
 If the media file is bundled with the application, consider using the
 :py:mod:`~pyglet.resource` module (see :ref:`guide_resources`).
@@ -475,7 +475,8 @@ The result of loading a media file is a
 information about the type of media encoded in the file, and serves as an
 opaque object used for playing back the file (described in the next section).
 
-The :py:func:`~pyglet.media.load` function will raise a
+The :py:func:`~pyglet.media.load_audio` and
+:py:func:`~pyglet.media.load_video` functions will raise a
 :py:class:`~pyglet.media.exceptions.MediaException` if the format is unknown.
 ``IOError`` may also be raised if the file could not be read from disk.
 Future versions of pyglet will also support reading from arbitrary file-like
@@ -532,14 +533,14 @@ file in memory first. For example, a sound that will be played many times
 (such as a bullet or explosion) should only be decoded once. You can instruct
 pyglet to completely decode an audio file into memory at load time::
 
-    explosion = pyglet.media.load('explosion.wav', streaming=False)
+    explosion = pyglet.media.load_audio('explosion.wav', streaming=False)
 
 The resulting source is an instance of :class:`~pyglet.media.StaticSource`,
 which provides the same interface as a :class:`~pyglet.media.StreamingSource`.
 You can also construct a :class:`~pyglet.media.StaticSource` directly from an
 already- loaded :class:`~pyglet.media.Source`::
 
-    explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
+    explosion = pyglet.media.StaticSource(pyglet.media.load_audio('explosion.wav'))
 
 
 .. _guide-media-audiosynthesis:
@@ -601,7 +602,7 @@ pyglet provides a simple interface for this kind of use-case. Call the
 :meth:`~pyglet.media.Source.play` method of any :class:`~pyglet.media.Source`
 to play it immediately and completely::
 
-    explosion = pyglet.media.load('explosion.wav', streaming=False)
+    explosion = pyglet.media.load_audio('explosion.wav', streaming=False)
     explosion.play()
 
 You can call :py:meth:`~pyglet.media.Source.play` on any
@@ -655,7 +656,7 @@ A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one
 player, and only once on that player. :py:class:`~pyglet.media.StaticSource`
 objects can be queued any number of times on any number of players. Recall
 that a :py:class:`~pyglet.media.StaticSource` can be created by passing
-``streaming=False`` to the :py:func:`pyglet.media.load` method.
+``streaming=False`` to the :py:func:`pyglet.media.load_audio` method.
 
 In the following example, two sounds are queued onto a player::
 

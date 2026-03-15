@@ -139,6 +139,16 @@ Video playback has always needed FFmpeg integration, but did not need it for mor
 By decoupling these responsibilities, pyglet can provide more focused, maintainable implementations
 while avoiding unnecessary dependencies for applications that only need audio or only need video.
 
+Media Loading
+-------------
+Along with the split to the media players, media loading functions have also been split into explicit audio/video calls.
+
+Here are the following API changes:
+
+* ``pyglet.media.load`` -> ``pyglet.media.load_audio`` or ``pyglet.media.load_video``
+* ``pyglet.resource.media`` -> ``pyglet.resource.audio`` or ``pyglet.resource.video``
+
+The behavior and signature has been kept the same.
 
 Loading resources before Window creation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -246,7 +256,7 @@ Additional changes not covered above:
 
 * ``pyglet.graphics.Texture``:
   ``Texture.blit_into`` was renamed to ``Texture.upload`` and
-  ``Texture.get_image_data`` was renamed to ``Texture.fetch``.
+  ``Texture.get_image_data`` was renamed to ``Texture.fetch`` to better reflect that these involve GPU requests.
 
 * Fonts and text:
   ``pyglet.font.manager`` now supports custom font-name callbacks,

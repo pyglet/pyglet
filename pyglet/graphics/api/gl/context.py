@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyglet.graphics.api.gl.xlib.glx_info import GLXInfo
     from pyglet.graphics.api.gl.win32.wgl_info import WGLInfo
     from pyglet.graphics.api.gl.global_opengl import OpenGLBackend
-    from pyglet.graphics.api.gl.framebuffer import Framebuffer
+    from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
 
 
 class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
@@ -25,7 +25,7 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
 
     Use ``DisplayConfig.create_context`` to create a context.
     """
-    gles_pixel_fbo: Framebuffer | None
+    gles_pixel_fbo: GLFramebuffer | None
     #: gl_info.GLInfo instance, filled in on first set_current
     _info: gl_info.GLInfo | None = None
 
@@ -129,8 +129,8 @@ class OpenGLSurfaceContext(SurfaceContext, GLFunctions):
             self.uniform_getters, self.uniform_setters = self._get_uniform_func_tables()
             self._info.query(self)
             if self.get_info().get_opengl_api() == "gles":
-                from pyglet.graphics.api.gl.framebuffer import Framebuffer
-                self.gles_pixel_fbo = Framebuffer(context=self)
+                from pyglet.graphics.api.gl.framebuffer import GLFramebuffer
+                self.gles_pixel_fbo = GLFramebuffer(context=self)
 
         if self.object_space.doomed_textures:
             self._delete_objects(self.object_space.doomed_textures, self.glDeleteTextures)

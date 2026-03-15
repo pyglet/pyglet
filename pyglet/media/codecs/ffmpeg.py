@@ -1,6 +1,7 @@
 """Use ffmpeg to decode audio and video media."""
 from __future__ import annotations
 
+import os
 import sys
 from collections import deque
 from ctypes import (
@@ -42,7 +43,8 @@ from .ffmpeg_lib import (
     libavutil,
     swscale,
 )
-from .ffmpeg_lib.libavformat import AVCodecContext, AVFormatContext, avformat, avformat_version
+from .ffmpeg_lib.libavformat import AVCodecContext, AVFormatContext, avformat, avformat_version, get_input_extensions, \
+    AVERROR_EOF
 from .ffmpeg_lib.libavutil import (
     AV_NOPTS_VALUE,
     AV_PIX_FMT_RGBA,
@@ -66,6 +68,7 @@ from .ffmpeg_lib.libavutil import (
 from .ffmpeg_lib.libswresample import swresample, swresample_version
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import MediaTypes
     from .ffmpeg_lib.libavformat import AVStream
 
 
@@ -154,6 +157,8 @@ class MemoryFileObject:
 
         def read_data_cb(_, buff: bytes, buf_size: int) -> int:
             data = self.file.read(buf_size)
+            if not data:
+                return AVERROR_EOF
             read_size = len(data)
             memmove(buff, data, read_size)
             return read_size
@@ -162,25 +167,32 @@ class MemoryFileObject:
             if whence == libavformat.AVSEEK_SIZE:
                 return self.file_size
 
-            pos = self.file.seek(offset, whence)
-            return pos
+            # Remove FFMPEG bits to make compatible with Python.
+            py_whence = whence & 0xFFFF
+            if py_whence not in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END):
+                return -1
+
+            # Returns the position of the seek
+            return self.file.seek(offset, py_whence)
 
         self.read_func = libavformat.ffmpeg_read_func(read_data_cb)
         self.seek_func = libavformat.ffmpeg_seek_func(seek_data_cb)
 
     def __del__(self) -> None:
         """These are usually freed when the source is, but no guarantee."""
-        if self.buffer:
+        if self.fmt_context:
             try:
-                avutil.av_freep(self.buffer)
+                avutil.av_freep(byref(self.fmt_context.contents.buffer))
             except OSError:
                 pass
 
-        if self.fmt_context:
             try:
-                avutil.av_freep(self.fmt_context)
+                avformat.avio_context_free(self.fmt_context)
             except OSError:
                 pass
+
+            self.fmt_context = None
+            self.buffer = None
 
 
 def ffmpeg_open_memory_file(filename: bytes, file_object: BinaryIO) -> tuple[FFmpegFile, MemoryFileObject]:
@@ -1206,16 +1218,20 @@ else:
 #   Decoder class:
 #########################################
 
+_extensions_supported = get_input_extensions()
+
 class FFmpegDecoder(MediaDecoder):
 
     def get_file_extensions(self) -> Sequence[str]:
-        return '.mp3', '.ogg'
+        return _extensions_supported
+
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        return "audio", "video"
 
     def decode(self, filename: str, file: BinaryIO | None, streaming: bool=True) -> FFmpegSource | StaticSource:
         if streaming:
             return FFmpegSource(filename, file)
-        else:
-            return StaticSource(FFmpegSource(filename, file))
+        return StaticSource(FFmpegSource(filename, file))
 
 
 def get_decoders() -> list[FFmpegDecoder]:

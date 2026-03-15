@@ -12,16 +12,17 @@ from __future__ import annotations
 from typing import Callable, Sequence, Any, TYPE_CHECKING
 
 import pyglet
-from pyglet.graphics.api.gl import OpenGLSurfaceContext
 from pyglet.graphics.api.gl.enums import geometry_map
 from pyglet.graphics.api.gl2.vertexdomain import VertexList, IndexedVertexList, VertexDomain, IndexedVertexDomain, \
     InstancedVertexDomain, InstancedIndexedVertexDomain
-from pyglet.graphics.draw import _DomainKey, BatchBase, Group
+from pyglet.graphics.draw import _DomainKey, Batch as BaseBatch, Group
 
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
+    from pyglet.graphics.api.gl2 import vertexdomain
+    from pyglet.graphics.api.gl import OpenGLSurfaceContext
     from pyglet.graphics.state import State
     from pyglet.enums import GeometryMode
     from pyglet.graphics.api.gl2.shader import ShaderProgram
@@ -58,7 +59,7 @@ _fragment_source: str = """#version 110
 """
 
 
-def get_default_batch() -> Batch:
+def get_default_batch() -> GL2Batch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
     # try:
@@ -88,7 +89,7 @@ _domain_class_map: dict[tuple[bool, bool], type[VertexDomain]] = {
 
 
 
-class Batch(BatchBase):
+class GL2Batch(BaseBatch):
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
@@ -189,7 +190,7 @@ class Batch(BatchBase):
         return True
 
     def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                batch: Batch) -> None:
+                batch: GL2Batch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.

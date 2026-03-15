@@ -19,7 +19,7 @@ if len(sys.argv) > 1:
 
 window = pyglet.window.Window(640, 480)
 
-sound = pyglet.resource.media(BALL_SOUND, streaming=False)
+sound = pyglet.resource.audio(BALL_SOUND, streaming=False)
 balls_batch = pyglet.graphics.Batch()
 balls = []
 label = pyglet.text.Label('Press space to add a ball, backspace to remove',

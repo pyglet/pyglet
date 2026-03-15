@@ -59,6 +59,7 @@ from typing import IO, TYPE_CHECKING
 import pyglet
 
 if TYPE_CHECKING:
+    from pyglet.customtypes import MediaTypes
     from pyglet.graphics.texture import Texture, TextureRegion, TextureArrayRegion
     from typing import Literal
 
@@ -688,10 +689,34 @@ class Loader:
         self._ensure_index()
         return list(self._texture_atlas_bins.values())
 
-    def media(self, name: str, streaming: bool = True) -> Source:
-        """Load a sound or video resource.
+    def _load_media_resource(self, name: str, streaming: bool, media_capability: MediaTypes) -> Source:
+        self._ensure_index()
+        from pyglet import media  # noqa: PLC0415
 
-        The meaning of ``streaming`` is as for :py:func:`~pyglet.media.load`.
+        try:
+            file_location = self._index[name]
+            if media_capability == 'audio':
+                load_func = media.load_audio
+            elif media_capability == 'video':
+                load_func = media.load_video
+            else:
+                msg = f"Unsupported media capability: {media_capability}"
+                raise ValueError(msg)
+
+            if isinstance(file_location, FileLocation):
+                # Don't open the file if it's streamed from disk
+                file_path = os.path.join(file_location.path, name)
+                return load_func(file_path, streaming=streaming)
+
+            fileobj = file_location.open(name)
+            return load_func(name, file=fileobj, streaming=streaming)
+        except KeyError:
+            raise ResourceNotFoundException(name)
+
+    def audio(self, name: str, streaming: bool = True) -> Source:
+        """Load a sound resource.
+
+        The meaning of ``streaming`` is as for :py:func:`~pyglet.media.load_audio`.
         Compressed sources cannot be streamed (that is, video and compressed
         audio cannot be streamed from a ZIP archive).
 
@@ -702,19 +727,23 @@ class Loader:
                 True if the source should be streamed from disk, False if
                 it should be entirely decoded into memory immediately.
         """
-        self._ensure_index()
-        from pyglet import media
-        try:
-            file_location = self._index[name]
-            if isinstance(location, FileLocation):
-                # Don't open the file if it's streamed from disk
-                file_path = os.path.join(file_location.path, name)
-                return media.load(file_path, streaming=streaming)
-            fileobj = file_location.open(name)
+        return self._load_media_resource(name, streaming=streaming, media_capability='audio')
 
-            return media.load(name, file=fileobj, streaming=streaming)
-        except KeyError:
-            raise ResourceNotFoundException(name)
+    def video(self, name: str, streaming: bool = True) -> Source:
+        """Load a video resource.
+
+        The meaning of ``streaming`` is as for :py:func:`~pyglet.media.load_video`.
+        Compressed sources cannot be streamed (that is, video and compressed
+        audio cannot be streamed from a ZIP archive).
+
+        Args:
+            name:
+                Filename of the media source to load.
+            streaming:
+                True if the source should be streamed from disk, False if
+                it should be entirely decoded into memory immediately.
+        """
+        return self._load_media_resource(name, streaming=streaming, media_capability='video')
 
     def scene(self, name: str) -> Scene:
         """Load a 3D Scene."""
@@ -808,7 +837,8 @@ location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
-media = _default_loader.media
+audio = _default_loader.audio
+video = _default_loader.video
 texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed

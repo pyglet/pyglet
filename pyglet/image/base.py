@@ -118,11 +118,11 @@ class _AbstractImageSequence(ABC):
         return Animation.from_image_sequence(self, period, loop)
 
     @abstractmethod
-    def __getitem__(self, item) -> _AbstractImage:
+    def __getitem__(self, item) -> ImageData:
         """Retrieve one or more images by index."""
 
     @abstractmethod
-    def __setitem__(self, item, image: _AbstractImage) -> _AbstractImage:
+    def __setitem__(self, item, image: ImageData) -> None:
         """Replace one or more images in the sequence.
 
         Args:
@@ -136,7 +136,7 @@ class _AbstractImageSequence(ABC):
         """Length of the image sequence."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[_AbstractImage]:
+    def __iter__(self) -> Iterator[ImageData]:
         """Iterate over the images in sequence."""
 
 
@@ -706,7 +706,7 @@ class ImageGrid(_AbstractGrid[Union[ImageData, ImageDataRegion]], _AbstractImage
         """
         warnings.warn("Use pyglet.graphics.TextureGrid instead", DeprecationWarning)
         if not self._texture_grid:
-            from pyglet.graphics.texture import TextureGrid
+            from pyglet.graphics.texture import TextureGrid  # noqa: PLC0415
             self._texture_grid = TextureGrid.from_image_grid(self)
         return self._texture_grid
 

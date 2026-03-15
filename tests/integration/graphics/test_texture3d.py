@@ -90,6 +90,20 @@ class TestTexture3D(unittest.TestCase):
         self.check_image(texture[1], 32, 32, 87)
         self.check_image(texture[2], 32, 32, 3)
 
+        # Test slicing.
+        texture[0:2] = [self.create_image(32, 32, 11), self.create_image(32, 32, 22)]
+        self.check_image(texture[0], 32, 32, 11)
+        self.check_image(texture[1], 32, 32, 22)
+        self.check_image(texture[2], 32, 32, 3)
+
+    def testUploadZ(self):
+        images = [self.create_image(8, 8, 1) for _ in range(2)]
+        texture = Texture3D.create_for_images(images)
+        texture.upload(self.create_image(8, 8, 5), 0, 0, 0)
+        texture.upload(self.create_image(8, 8, 9), 0, 0, 1)
+        self.check_image(texture[0], 8, 8, 5)
+        self.check_image(texture[1], 8, 8, 9)
+
     def testSquare(self):
         # Test a 3x3 grid with no padding and 4x4 images
         rows = cols = 3
