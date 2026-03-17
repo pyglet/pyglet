@@ -52,6 +52,9 @@ class AudioFormat:
 
         # Convenience
 
+        self.sample_format = \
+            f"{self.sample_type[0].capitalize()}{self.sample_size}"
+
         self.bytes_per_frame = (sample_size // 8) * channels
         self.bytes_per_second = self.bytes_per_frame * sample_rate
 
@@ -63,16 +66,6 @@ class AudioFormat:
         For the actual amount of bytes per sample, divide `sample_size` by
         eight.
         """
-
-    @property
-    def sample_format(self) -> str:
-        mapping = {
-            self.SAMPLE_TYPE_FLOAT: 'F',
-            self.SAMPLE_TYPE_UINT:  'U',
-            self.SAMPLE_TYPE_INT:   'S'
-        }
-        prefix = mapping.get(self.sample_type, 'S')
-        return f"{prefix}{self.sample_size}"
 
     def align(self, num_bytes: int) -> int:
         """Align a given amount of bytes to the audio frame size of this
