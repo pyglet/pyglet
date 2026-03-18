@@ -170,7 +170,11 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
         v_normal_p0p1 = Vec2(-v_np0p1.y, v_np0p1.x)
         # Add the 2 normal vectors and normalize to get miter vector
         v_miter1 = Vec2(v_normal_p0p1.x + v_normal.x, v_normal_p0p1.y + v_normal.y).normalize()
-        scale1 = scale1 / math.sin(math.acos(v_np1p2.dot(v_miter1)))
+        try:
+            dot = max(-1.0, min(1.0, v_np1p2.dot(v_miter1)))
+            scale1 = scale1 / math.sin(math.acos(dot))
+        except ZeroDivisionError:
+            scale1 = thickness / 2.0
 
     if p3:
         # Compute the miter joint vector for the end of the segment
@@ -178,7 +182,11 @@ def _get_segment(p0: tuple[float, float] | list[float], p1: tuple[float, float] 
         v_normal_p2p3 = Vec2(-v_np2p3.y, v_np2p3.x)
         # Add the 2 normal vectors and normalize to get miter vector
         v_miter2 = Vec2(v_normal_p2p3.x + v_normal.x, v_normal_p2p3.y + v_normal.y).normalize()
-        scale2 = scale2 / math.sin(math.acos(v_np2p3.dot(v_miter2)))
+        try:
+            dot = max(-1.0, min(1.0, v_np2p3.dot(v_miter2)))
+            scale2 = scale2 / math.sin(math.acos(dot))
+        except ZeroDivisionError:
+            scale2 = thickness / 2.0
 
     # Quick fix for preventing the scaling factors from getting out of hand
     # with extreme angles.
