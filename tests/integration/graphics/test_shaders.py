@@ -17,6 +17,43 @@ _MATRIX_UNIFORMS = (
 )
 
 
+def _is_gles2_context(gl3_context) -> bool:
+    if pyglet.options.backend == "gles2":
+        return True
+
+    info = gl3_context.context.get_info()
+    return info.get_opengl_api() == "gles" and not info.have_version(3, 0)
+
+
+def _skip_unsupported_matrix_uniform(gl3_context, matrix_type: str) -> None:
+    # GLSL ES 1.00 (GLES2) supports only square matrices.
+    if _is_gles2_context(gl3_context) and matrix_type not in {"mat2", "mat3", "mat4"}:
+        pytest.skip(f"{matrix_type} uniform requires GLES 3.0+.")
+
+
+def _build_matrix_fragment_source(gl3_context, matrix_decl: str, value_expr: str) -> str:
+    if _is_gles2_context(gl3_context):
+        return f"""#version 150 core
+        {matrix_decl}
+
+        void main()
+        {{
+            gl_FragColor = vec4({value_expr});
+        }}
+    """
+
+    return f"""#version 150 core
+        out vec4 final_colors;
+
+        {matrix_decl}
+
+        void main()
+        {{
+            final_colors = vec4({value_expr});
+        }}
+    """
+
+
 def _render_program_to_pixel(program) -> bytes:
     from pyglet.graphics.api.gl import gl
     image = pyglet.image.ImageData(1, 1, 'RGBA', bytes([0, 0, 0, 255]))
@@ -583,6 +620,7 @@ def test_shader_uniform_float_array(gl3_context):
 @pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
 def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
     gl3_context.switch_to()
+    _skip_unsupported_matrix_uniform(gl3_context, matrix_type)
 
     vertex_source: str = """#version 150 core
         void main()
@@ -591,16 +629,11 @@ def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
         }
     """
 
-    fragment_source: str = f"""#version 150 core
-        out vec4 final_colors;
-
-        uniform {matrix_type} matrix_uniform;
-
-        void main()
-        {{
-            final_colors = vec4(matrix_uniform[0][0]);
-        }}
-    """
+    fragment_source: str = _build_matrix_fragment_source(
+        gl3_context,
+        f"uniform {matrix_type} matrix_uniform;",
+        "matrix_uniform[0][0]",
+    )
 
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
@@ -621,6 +654,7 @@ def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
 @pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
 def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_length):
     gl3_context.switch_to()
+    _skip_unsupported_matrix_uniform(gl3_context, matrix_type)
 
     vertex_source: str = """#version 150 core
         void main()
@@ -629,16 +663,11 @@ def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_leng
         }
     """
 
-    fragment_source: str = f"""#version 150 core
-        out vec4 final_colors;
-
-        uniform {matrix_type} matrix_uniform[4];
-
-        void main()
-        {{
-            final_colors = vec4(matrix_uniform[2][0][0]);
-        }}
-    """
+    fragment_source: str = _build_matrix_fragment_source(
+        gl3_context,
+        f"uniform {matrix_type} matrix_uniform[4];",
+        "matrix_uniform[2][0][0]",
+    )
 
     program = pyglet.graphics.ShaderProgram(
         pyglet.graphics.Shader(vertex_source, "vertex"),
