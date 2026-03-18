@@ -4,6 +4,18 @@ import pyglet
 
 from tests.annotations import skip_graphics_api, GraphicsAPI
 
+_MATRIX_UNIFORMS = (
+    ("mat2", 4),
+    ("mat3", 9),
+    ("mat4", 16),
+    ("mat2x3", 6),
+    ("mat2x4", 8),
+    ("mat3x2", 6),
+    ("mat3x4", 12),
+    ("mat4x2", 8),
+    ("mat4x3", 12),
+)
+
 
 def _render_program_to_pixel(program) -> bytes:
     from pyglet.graphics.api.gl import gl
@@ -566,3 +578,79 @@ def test_shader_uniform_float_array(gl3_context):
         fetched_data = program['float_array'][11]
 
     assert test_data == fetched_data
+
+
+@pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
+def test_shader_uniform_matrix_types(gl3_context, matrix_type, matrix_length):
+    gl3_context.switch_to()
+
+    vertex_source: str = """#version 150 core
+        void main()
+        {
+            gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    """
+
+    fragment_source: str = f"""#version 150 core
+        out vec4 final_colors;
+
+        uniform {matrix_type} matrix_uniform;
+
+        void main()
+        {{
+            final_colors = vec4(matrix_uniform[0][0]);
+        }}
+    """
+
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
+    )
+
+    test_data = tuple((index + 1) / 10.0 for index in range(matrix_length))
+
+    with program:
+        program['matrix_uniform'] = test_data
+        fetched_data = program['matrix_uniform']
+
+    assert len(fetched_data) == matrix_length
+    for actual, expected in zip(fetched_data, test_data):
+        assert actual == pytest.approx(expected, abs=1e-06)
+
+
+@pytest.mark.parametrize(("matrix_type", "matrix_length"), _MATRIX_UNIFORMS)
+def test_shader_uniform_matrix_array_types(gl3_context, matrix_type, matrix_length):
+    gl3_context.switch_to()
+
+    vertex_source: str = """#version 150 core
+        void main()
+        {
+            gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    """
+
+    fragment_source: str = f"""#version 150 core
+        out vec4 final_colors;
+
+        uniform {matrix_type} matrix_uniform[4];
+
+        void main()
+        {{
+            final_colors = vec4(matrix_uniform[2][0][0]);
+        }}
+    """
+
+    program = pyglet.graphics.ShaderProgram(
+        pyglet.graphics.Shader(vertex_source, "vertex"),
+        pyglet.graphics.Shader(fragment_source, "fragment"),
+    )
+
+    test_data = tuple((index + 1) / 10.0 for index in range(matrix_length))
+
+    with program:
+        program['matrix_uniform'][2] = test_data
+        fetched_data = program['matrix_uniform'].get()
+
+    assert len(fetched_data[2]) == matrix_length
+    for actual, expected in zip(fetched_data[2], test_data):
+        assert actual == pytest.approx(expected, abs=1e-06)
