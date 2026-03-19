@@ -266,19 +266,20 @@ class DIDeviceManager(EventDispatcher):
 
         return False
 
-    def _unregister_device_events(self):
-        if WM_DEVICECHANGE in self.window._event_handlers:
-            del self.window._event_handlers[WM_DEVICECHANGE]
-        if self._devnotify and self.registered:
+    def _unregister_device_events(self) -> None:
+        if self.registered:
+            if WM_DEVICECHANGE in self.window._event_handlers:  # noqa: SLF001
+                del self.window._event_handlers[WM_DEVICECHANGE]  # noqa: SLF001
+            self.registered = False
+        if self._devnotify:
             _user32.UnregisterDeviceNotification(self._devnotify)
-        self.registered = False
+
         self._devnotify = None
 
     def on_close(self):
-        if self.registered:
-            self._unregister_device_events()
+        self._unregister_device_events()
 
-        import pyglet.app
+        import pyglet.app  # noqa: PLC0415
         if len(pyglet.app.windows) != 0:
             # At this point the closed windows aren't removed from the app.windows list. Check for non-current window.
             for existing_window in pyglet.app.windows:
@@ -288,12 +289,12 @@ class DIDeviceManager(EventDispatcher):
 
         self.window = None
 
-    def __del__(self):
-        if self.registered:
-            self._unregister_device_events()
+    def __del__(self) -> None:
+        self._unregister_device_events()
 
     def _get_devices(self, display=None):
         """Enumerate all the devices on the system.
+
         Returns two values: new devices, missing devices
         """
         _missing_devices = list(self.devices)
@@ -302,7 +303,7 @@ class DIDeviceManager(EventDispatcher):
 
         if not pyglet.options.win32_disable_xinput:
             try:
-                from pyglet.input.win32.xinput import get_xinput_guids
+                from pyglet.input.win32.xinput import get_xinput_guids  # noqa: PLC0415
                 _xinput_devices = get_xinput_guids()
             except ImportError:
                 pass
