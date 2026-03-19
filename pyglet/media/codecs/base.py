@@ -51,9 +51,10 @@ class AudioFormat:
         self.sample_type = sample_type
 
         # Convenience
-
-        self.sample_format = \
-            f"{self.sample_type[0].capitalize()}{self.sample_size}"
+        prefixes = {self.SAMPLE_TYPE_INT: "S",
+                    self.SAMPLE_TYPE_UINT: "U",
+                    self.SAMPLE_TYPE_FLOAT: "F"}
+        self.sample_format = f"{prefixes[self.sample_type]}{self.sample_size}"
 
         self.bytes_per_frame = (sample_size // 8) * channels
         self.bytes_per_second = self.bytes_per_frame * sample_rate
