@@ -58,8 +58,21 @@ if TYPE_CHECKING:
 __all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
+AUDIO_SAMPLE_FORMAT_U8 = "U8"
+AUDIO_SAMPLE_FORMAT_S16 = "S16"
+#AUDIO_SAMPLE_FORMAT_S24 = "S24"  # Could be considered as well
+AUDIO_SAMPLE_FORMAT_S32 = "S32"
+AUDIO_SAMPLE_FORMAT_F32 = "F32"
+
+_VALID_AUDIO_SAMPLE_FORMATS = (AUDIO_SAMPLE_FORMAT_U8,
+                               AUDIO_SAMPLE_FORMAT_S16,
+                               #AUDIO_SAMPLE_FORMAT_S24,  # Could be considered as well
+                               AUDIO_SAMPLE_FORMAT_S32,
+                               AUDIO_SAMPLE_FORMAT_F32)
+
 def load(filename: str, file: BinaryIO | None = None,
-         streaming: bool = True, decoder: MediaDecoder | None = None) -> Source | StreamingSource:
+         streaming: bool = True, decoder: MediaDecoder | None = None,
+         audio_sample_format: str | None = None) -> Source | StreamingSource:
     """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
@@ -78,9 +91,33 @@ def load(filename: str, file: BinaryIO | None = None,
         decoder:
             A specific decoder you wish to use, rather than relying on
             automatic detection. If specified, no other decoders are tried.
+        audio_sample_format:
+            A specific audio sample format you wish the decoder to ouput,
+            rather than relying on automatic detection. For possible values see
+            the AUDIO_SAMPLE_FORMAT_* constants.
+            NOTE: currently only supported by FFmpegDecoder!
     """
+
+    audio_driver = get_audio_driver()
+    if audio_sample_format:
+        if audio_sample_format not in _VALID_AUDIO_SAMPLE_FORMATS:
+            raise ValueError(
+                f"Invalid audio_sample_format '{audio_sample_format}'. "
+                f"Expected one of: {', '.join(_VALID_AUDIO_SAMPLE_FORMATS)}")
+        if audio_sample_format not in audio_driver.sample_formats:
+            raise ValueError(
+                f"Unsupported audio_sample_format '{audio_sample_format}'. "
+                f"{type(audio_driver).__name__} is only compatible with: "
+                f"{', '.join(audio_driver.sample_formats)}")
+
     if decoder:
-        return decoder.decode(filename, file, streaming=streaming)
+        if type(decoder).__name__ == "FFmpegDecoder":
+            return decoder.decode(
+                filename, file, streaming=streaming,
+                audio_sample_format=audio_sample_format,
+                audio_driver_sample_formats=audio_driver.sample_formats)
+        else:
+            return decoder.decode(filename, file, streaming=streaming)
 
     return _codec_registry.decode(filename, file, streaming=streaming)
 
@@ -97,4 +134,9 @@ __all__ = [
     'load', 
     'synthesis', 
     'get_audio_driver',
+    'AUDIO_SAMPLE_FORMAT_U8',
+    'AUDIO_SAMPLE_FORMAT_S16',
+    #'AUDIO_SAMPLE_FORMAT_S24' # Could be considered as well
+    'AUDIO_SAMPLE_FORMAT_S32',
+    'AUDIO_SAMPLE_FORMAT_F32',
 ]
