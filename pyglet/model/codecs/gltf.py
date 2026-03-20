@@ -348,6 +348,17 @@ class Node(BaseNode):
         return [self._owner.nodes[i] for i in self._child_indices]
 
 
+class Skin:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        ibm_idx = data.get('inverseBindMatrices')
+        ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
+        self.inverse_bind_matrices = ibm_accessor.as_array() if ibm_accessor \
+            else None
+        joints_indices = data.get('joints', [])
+        self.joints = [owner.nodes[i] for i in joints_indices]
+
+
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
         self._gltf_data = gltf_data
@@ -372,6 +383,10 @@ class GLTF:
 
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
+
+        self.skins = [
+            Skin(data=data, owner=self) for data in gltf_data['skins']
+        ]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
