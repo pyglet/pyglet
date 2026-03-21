@@ -77,12 +77,13 @@ class Device:
 
         Args:
             window:
-                Optional window to associate with the device.  The behaviour
+                Optional window to associate with the device. The behavior
                 of this parameter is device and operating system dependent.
                 It can usually be omitted for most devices.
             exclusive:
                 If ``True`` the device will be opened exclusively so that no
-                other application can use it.
+                other application can use it. Note that not all device types
+                support being opened exclusively.
 
         Raises:
             DeviceOpenException:

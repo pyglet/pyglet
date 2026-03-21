@@ -23,9 +23,11 @@ _dwmapi = DebugLibrary('dwmapi')
 _shell32 = DebugLibrary('shell32')
 _ole32 = DebugLibrary('ole32')
 _oleaut32 = DebugLibrary('oleaut32')
-_shcore = DebugLibrary('shcore')
 _advapi32 = DebugLibrary("advapi32")
 _comdlg32 = DebugLibrary("comdlg32")
+
+if constants.WINDOWS_8_1_OR_GREATER:
+    _shcore = DebugLibrary('shcore')
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE

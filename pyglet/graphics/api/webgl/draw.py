@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any, Callable, Sequence
 import pyglet
 from pyglet.graphics.api.webgl import vertexdomain
 from pyglet.graphics.api.webgl.enums import geometry_map
-from pyglet.graphics.draw import BatchBase, _DomainKey, Group
+from pyglet.graphics.draw import Batch, _DomainKey, Group
 
 _debug_graphics_batch = pyglet.options.debug_graphics_batch
 
 if TYPE_CHECKING:
     from pyglet.enums import GeometryMode
-    from pyglet.graphics.api.webgl.vertexdomain import IndexedVertexList, VertexList
-    from pyglet.graphics.api.webgl.shader import ShaderProgram
+    from pyglet.graphics.api.webgl.vertexdomain import WebGLIndexedVertexList, WebGLVertexList
+    from pyglet.graphics.api.webgl.shader import WebGLShaderProgram as ShaderProgram
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.state import State
 
@@ -50,7 +50,7 @@ _fragment_source: str = """#version 330 core
 """
 
 
-def get_default_batch() -> Batch:
+def get_default_batch() -> WebGLBatch:
     """Batch used globally for objects that have no Batch specified."""
     return pyglet.graphics.api.core.get_default_batch()
     # try:
@@ -69,16 +69,16 @@ def get_default_shader() -> ShaderProgram:
     )
 
 
-_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.VertexDomain]] = {
+_domain_class_map: dict[tuple[bool, bool], type[vertexdomain.WebGLVertexDomain]] = {
     # Indexed, Instanced : Domain
-    (False, False): vertexdomain.VertexDomain,
-    (True, False): vertexdomain.IndexedVertexDomain,
-    (False, True): vertexdomain.InstancedVertexDomain,
-    (True, True): vertexdomain.InstancedIndexedVertexDomain,
+    (False, False): vertexdomain.WebGLVertexDomain,
+    (True, False): vertexdomain.WebGLIndexedVertexDomain,
+    (False, True): vertexdomain.WebGLInstancedVertexDomain,
+    (True, True): vertexdomain.WebGLInstancedIndexedVertexDomain,
 }
 
 
-class Batch(BatchBase):
+class WebGLBatch(Batch):
     """Manage a collection of drawables for batched rendering.
 
     Many drawable pyglet objects accept an optional `Batch` argument in their
@@ -108,7 +108,7 @@ class Batch(BatchBase):
     _draw_list: list[Callable]
     top_groups: list[Group]
     group_children: dict[Group, list[Group]]
-    group_map: dict[Group, dict[_DomainKey, vertexdomain.VertexDomain]]
+    group_map: dict[Group, dict[_DomainKey, vertexdomain.WebGLVertexDomain]]
 
     def __init__(self, context: OpenGLSurfaceContext | None = None, initial_count: int = 32) -> None:
         """Initialize the batch for use.
@@ -138,7 +138,7 @@ class Batch(BatchBase):
         """
         self._draw_list_dirty = True
 
-    def update_shader(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
+    def update_shader(self, vertex_list: WebGLVertexList | WebGLIndexedVertexList, mode: GeometryMode, group: Group,
                       program: ShaderProgram) -> bool:
         """Migrate a vertex list to another domain that has the specified shader attributes.
 
@@ -178,8 +178,8 @@ class Batch(BatchBase):
 
         return True
 
-    def migrate(self, vertex_list: VertexList | IndexedVertexList, mode: GeometryMode, group: Group,
-                batch: Batch) -> None:
+    def migrate(self, vertex_list: WebGLVertexList | WebGLIndexedVertexList, mode: GeometryMode, group: Group,
+                batch: WebGLBatch) -> None:
         """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
@@ -215,7 +215,7 @@ class Batch(BatchBase):
             self._draw_list_dirty = True
 
     def get_domain(self, indexed: bool, instanced: bool, mode: GeometryMode, group: Group,
-                   attributes: dict[str, Any]) -> vertexdomain.VertexDomain | vertexdomain.IndexedVertexDomain | vertexdomain.InstancedVertexDomain | vertexdomain.InstancedIndexedVertexDomain:
+                   attributes: dict[str, Any]) -> vertexdomain.WebGLVertexDomain | vertexdomain.WebGLIndexedVertexDomain | vertexdomain.WebGLInstancedVertexDomain | vertexdomain.WebGLInstancedIndexedVertexDomain:
         """Get, or create, the vertex domain corresponding to the given arguments.
 
         mode is the render mode such as GL_LINES or GL_TRIANGLES
@@ -547,7 +547,7 @@ class Batch(BatchBase):
 
         self.delete_empty_domains()
 
-    def draw_subset(self, vertex_lists: Sequence[VertexList | IndexedVertexList]) -> None:
+    def draw_subset(self, vertex_lists: Sequence[WebGLVertexList | WebGLIndexedVertexList]) -> None:
         """Draw only some vertex lists in the batch.
 
         The use of this method is highly discouraged, as it is quite
@@ -588,3 +588,7 @@ class Batch(BatchBase):
         for top_group in self.top_groups:
             if top_group.visible:
                 visit(top_group)
+
+
+# Backwards-compatible alias.
+Batch = WebGLBatch

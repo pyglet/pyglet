@@ -14,7 +14,7 @@ if len(sys.argv) < 2:
     print(__doc__)
     sys.exit(1)
 
-source = pyglet.media.load(sys.argv[1])
+source = pyglet.media.load_video(sys.argv[1])
 fmt = source.video_format
 if not fmt:
     print('No video track in this source.')

@@ -141,7 +141,7 @@ class Model:
     def matrix(self, matrix: Mat4):
         self._modelview_matrix = matrix
         for group in self.groups:
-            group.matrix = matrix
+            group.uniforms["model"] = matrix
 
 
 class BaseMaterialGroup(graphics.Group):

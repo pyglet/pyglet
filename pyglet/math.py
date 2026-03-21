@@ -1398,11 +1398,11 @@ class Quaternion(_typing.NamedTuple):
     z: float = 0.0
 
     @classmethod
-    def from_mat3(cls) -> Quaternion:
+    def from_mat3(cls, mat: Mat3) -> Quaternion:
         raise NotImplementedError
 
     @classmethod
-    def from_mat4(cls) -> Quaternion:
+    def from_mat4(cls, mat: Mat4) -> Quaternion:
         raise NotImplementedError
 
     def to_mat4(self) -> Mat4:

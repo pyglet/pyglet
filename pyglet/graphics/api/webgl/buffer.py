@@ -14,30 +14,26 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Sequence
 
-import js
-import pyodide.ffi
+import js  # noqa: F821
+import pyodide.ffi  # noqa: F821
 
-import pyglet
-from pyglet.customtypes import CType, CTypesPointer
 from pyglet.graphics.api.webgl.gl import (
     GL_ARRAY_BUFFER,
     GL_BUFFER_SIZE,
     GL_DYNAMIC_DRAW,
     GL_ELEMENT_ARRAY_BUFFER,
-    GL_MAP_COHERENT_BIT,
-    GL_MAP_PERSISTENT_BIT,
-    GL_MAP_READ_BIT,
     GL_MAP_WRITE_BIT,
     GL_WRITE_ONLY,
 )
 from pyglet.graphics.buffer import AbstractBuffer
 
 if TYPE_CHECKING:
-    from _ctypes import Array
+    from pyglet.customtypes import CType, CTypesPointer
+    from ctypes import Array
 
     from pyglet.graphics.api.webgl import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGLBuffer
-    from pyglet.graphics.shader import Attribute, GraphicsAttribute
+    from pyglet.graphics.shader import GraphicsAttribute
 
 
 class BufferObject(AbstractBuffer):
@@ -116,13 +112,13 @@ class BufferObject(AbstractBuffer):
         self._gl.bufferSubData(self.target, start, data)
 
     def map(self, bits=GL_WRITE_ONLY) -> CTypesPointer[ctypes.c_byte]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def map_range(self, start: int, size: int, ptr_type: type[CTypesPointer], bits=GL_MAP_WRITE_BIT) -> CTypesPointer:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def unmap(self) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def delete(self) -> None:
         self._gl.deleteBuffer(self.id)
@@ -137,16 +133,22 @@ class BufferObject(AbstractBuffer):
                 pass  # Interpreter is shutting down
 
     def resize(self, size: int) -> None:
-        # Map, create a copy, then reinitialize.
-        temp = (ctypes.c_byte * size)()
+        # Copy data from old buffer into new buffer, then reinitialize.
+        new_id = self._gl.createBuffer()
 
-        self._gl.bindBuffer(self.target, self.id)
-        data = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
-        ctypes.memmove(temp, data, min(size, self.size))
-        glUnmapBuffer(self.target)
+        self._gl.bindBuffer(self._gl.COPY_READ_BUFFER, self.id)
+        self._gl.bindBuffer(self._gl.COPY_WRITE_BUFFER, new_id)
+        self._gl.bufferData(self._gl.COPY_WRITE_BUFFER, self.size, self._gl.DYNAMIC_DRAW)
 
+        self._gl.copyBufferSubData(
+            self._gl.COPY_READ_BUFFER,
+            self._gl.COPY_WRITE_BUFFER,
+            0,
+            0,
+            min(self.size, size),
+        )
         self.size = size
-        self._gl.bufferData(self.target, self.size, temp, self.usage)
+        self.id = new_id
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, data_type={self.data_type}, size={self.size})"

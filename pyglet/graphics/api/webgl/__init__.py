@@ -8,8 +8,8 @@ import js
 
 import pyglet
 from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
-from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations
-from pyglet.graphics.api.webgl.shader import Shader, ShaderProgram
+from pyglet.graphics.api.base import BackendGlobalObject, SurfaceContext, UBOMatrixTransformations, NullContext
+from pyglet.graphics.api.webgl.shader import WebGLShader as Shader, WebGLShaderProgram as ShaderProgram
 from pyglet.math import Mat4
 
 if TYPE_CHECKING:
@@ -115,12 +115,12 @@ class ObjectSpace:
 
 
 class WebGLBackend(BackendGlobalObject):
-    current_context: OpenGLSurfaceContext | None
+    current_context: OpenGLSurfaceContext | NullContext
     _have_context: bool = False
 
     def __init__(self) -> None:
         self.initialized = False
-        self.current_context = None
+        self.current_context = NullContext()
 
         # When the shadow window is created, a context is made. This is used to help the "real" context to utilize
         # its full capabilities; however, the two contexts have no relationship normally. This is used for the purpose
@@ -151,18 +151,15 @@ class WebGLBackend(BackendGlobalObject):
     #     self._have_context = True
     #     return context
 
-    def get_default_configs(self) -> Sequence[pyglet.config.OpenGLConfig]:
+    def get_default_configs(self) -> Sequence[pyglet.config.WebGLConfig]:
         """A sequence of configs to use if the user does not specify any.
 
         These will be used during Window creation.
         """
-        return [
-            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-            pyglet.config.OpenGLConfig(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-        ]
+        return [pyglet.config.WebGLConfig()]
 
-    def get_config(self, **kwargs: float | str | None) -> pyglet.config.OpenGLConfig:
-        return pyglet.config.OpenGLConfig(**kwargs)
+    def get_config(self, **kwargs: float | str | None) -> pyglet.config.WebGLConfig:
+        return pyglet.config.WebGLConfig(**kwargs)
 
     def get_info(self):
         return self.current_context.get_info()

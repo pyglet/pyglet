@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING
 import pyglet
 import pyglet.graphics.api.gl.gl as gl
 from pyglet.graphics.api.gl.shader import GLDataType
-from pyglet.graphics.api.gl.shader import Shader as GLShader
-from pyglet.graphics.api.gl.shader import ShaderProgram as GLShaderProgram
+from pyglet.graphics.api.gl.shader import GLShader
+from pyglet.graphics.api.gl.shader import GLShaderProgram
 from pyglet.graphics.shader import ShaderException, ShaderSource, ShaderType
 
 if TYPE_CHECKING:

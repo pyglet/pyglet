@@ -300,7 +300,7 @@ Normal operation of the ``AudioPlayer``
 The client code instantiates a media player this way::
 
     player = pyglet.media.AudioPlayer()
-    source = pyglet.media.load(filename)
+    source = pyglet.media.load_audio(filename)
     player.queue(source)
     player.play()
 

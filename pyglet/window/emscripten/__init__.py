@@ -742,7 +742,7 @@ class EmscriptenWindow(BaseWindow):
         assert self._canvas is None
         canvas_name = pyglet.options.pyodide.canvas_id
         canvas = js.document.getElementById(canvas_name)
-        if not self._canvas:
+        if not canvas:
             self._canvas = js.document.createElement("canvas")
             self._canvas.id = canvas_name
             js.document.body.appendChild(self._canvas)

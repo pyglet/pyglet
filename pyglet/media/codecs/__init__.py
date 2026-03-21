@@ -1,11 +1,13 @@
+from __future__ import annotations
 import sys
 import warnings
+from typing import Any, BinaryIO
 
 from pyglet.util import CodecRegistry, Decoder, Encoder
 from .base import *
 
 import pyglet
-
+from pyglet.customtypes import MediaTypes
 
 _debug = pyglet.options.debug_media
 
@@ -19,28 +21,31 @@ get_encoders = registry.get_encoders
 
 
 class MediaDecoder(Decoder):
+    def get_media_capabilities(self) -> tuple[MediaTypes, ...]:
+        """Return media streams this decoder can decode."""
+        return ("audio",)
 
-    def decode(self, filename, file, streaming):
-        """Read the given file object and return an instance of `Source`
-        or `StreamingSource`. 
-        Throws DecodeException if there is an error.  `filename`
-        can be a file type hint.
+    def decode(self, filename: str, file: BinaryIO, streaming: bool) -> Any:
+        """Read the given file object and return an instance of `Source` or `StreamingSource`.
+
+        Throws DecodeException if there is an error.  `filename` can be a file type hint.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class MediaEncoder(Encoder):
 
-    def encode(self, source, filename, file):
-        """Encode the given source to the given file.  `filename`
-        provides a hint to the file format desired.  options are
+    def encode(self, source: Any, filename: str, file: BinaryIO) -> None:
+        """Encode the given source to the given file.
+
+        `filename` provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
         issue warnings.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
-def add_default_codecs():
+def add_default_codecs() -> None:
     # Add all bundled codecs. These should be listed in order of
     # preference.  This is called automatically by pyglet.media.
 
@@ -49,13 +54,13 @@ def add_default_codecs():
             # Currently other codecs cannot retrieve files from pyodides path, as it exists in its own environment.
             # Will make this the only audio codec providers.
             # This could potentially be adjusted later, but the codec already handles all the major filetypes.
-            from . import webaudio_pyodide
+            from . import webaudio_pyodide  # noqa: PLC0415
             registry.add_decoders(webaudio_pyodide)
             return  # Return to prevent other codecs from handling file types.
         except ImportError:
             pass
     try:
-        from . import wave
+        from . import wave  # noqa: PLC0415
         registry.add_decoders(wave)
         registry.add_encoders(wave)
     except ImportError:
@@ -63,43 +68,43 @@ def add_default_codecs():
 
     if pyglet.compat_platform.startswith('linux'):
         try:
-            from . import gstreamer
+            from . import gstreamer  # noqa: PLC0415
             registry.add_decoders(gstreamer)
         except ImportError:
             pass
 
     try:
         if pyglet.compat_platform in ('win32', 'cygwin'):
-            from pyglet.libs.win32.constants import WINDOWS_VISTA_OR_GREATER
+            from pyglet.libs.win32.constants import WINDOWS_VISTA_OR_GREATER  # noqa: PLC0415
             if WINDOWS_VISTA_OR_GREATER:  # Supports Vista and above.
-                from . import wmf
+                from . import wmf  # noqa: PLC0415
                 registry.add_decoders(wmf)
-    except ImportError:
-        pass
-
-    try:
-        if have_ffmpeg():
-            from . import ffmpeg
-            registry.add_decoders(ffmpeg)
-    except ImportError:
-        pass
-
-    try:
-        from . import pyogg
-        registry.add_decoders(pyogg)
     except ImportError:
         pass
 
     if pyglet.compat_platform.startswith("darwin"):
         try:
-            from . import coreaudio
+            from . import coreaudio  # noqa: PLC0415
             registry.add_decoders(coreaudio)
         except ImportError:
             pass
 
+    try:
+        from . import pyogg  # noqa: PLC0415
+        registry.add_decoders(pyogg)
+    except ImportError:
+        pass
+
+    try:
+        if have_ffmpeg():
+            from . import ffmpeg  # noqa: PLC0415
+            registry.add_decoders(ffmpeg)
+    except ImportError:
+        pass
 
 
-def have_ffmpeg():
+
+def have_ffmpeg() -> bool:
     """Check if FFmpeg library is available.
 
     Returns:
@@ -108,7 +113,7 @@ def have_ffmpeg():
     .. versionadded:: 1.4
     """
     try:
-        from . import ffmpeg_lib
+        from . import ffmpeg_lib  # noqa: PLC0415
         if _debug:
             print('FFmpeg available, using to load media files.')
 

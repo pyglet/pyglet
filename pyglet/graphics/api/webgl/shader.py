@@ -18,14 +18,12 @@ from ctypes import (
     c_uint,
     c_ushort,
     cast,
-    pointer,
     sizeof,
 )
 from typing import TYPE_CHECKING, Any, Callable, Sequence, Type, Union
 
 import pyglet
 
-# from pyglet.graphics.api.webgl.buffer import BufferObject
 from pyglet.enums import GeometryMode
 from pyglet.graphics.api.webgl import gl
 from pyglet.graphics.api.webgl.buffer import BufferObject
@@ -38,12 +36,13 @@ from pyglet.graphics.api.webgl.gl import (
 )
 from pyglet.graphics.shader import (
     Attribute,
-    ShaderBase,
+    Shader,
     ShaderException,
-    ShaderProgramBase,
+    UniformBlock as BaseUniformBlock,
+    ShaderProgram,
     ShaderSource,
     ShaderType,
-    UniformBufferObjectBase,
+    UniformBufferObject,
     AttributeView,
     GraphicsAttribute,
 )
@@ -61,12 +60,12 @@ class GLException(Exception):
 if TYPE_CHECKING:
     from _weakref import CallableProxyType
 
-    from pyglet.customtypes import CTypesPointer, DataTypes
+    from pyglet.customtypes import CTypesPointer, DataTypes, CType
     from pyglet.graphics import Batch, Group
     from pyglet.graphics.api.webgl.context import OpenGLSurfaceContext
     from pyglet.graphics.api.webgl.webgl_js import WebGL2RenderingContext, WebGLProgram, WebGLRenderingContext
-    from pyglet.graphics.shader import CTypesDataType
-    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList
+    from pyglet.graphics.vertexdomain import IndexedVertexList, VertexList, InstanceVertexList, \
+        InstanceIndexedVertexList
 
 _debug_api_shaders = pyglet.options.debug_api_shaders
 
@@ -74,7 +73,7 @@ _debug_api_shaders = pyglet.options.debug_api_shaders
 GLDataType = Union[Type[gl.GLint], Type[gl.GLfloat], Type[gl.GLboolean], int]
 GLFunc = Callable
 
-_c_types: dict[int, CTypesDataType] = {
+_c_types: dict[int, CType] = {
     gl.GL_BYTE: c_byte,
     gl.GL_UNSIGNED_BYTE: c_ubyte,
     gl.GL_SHORT: c_short,
@@ -565,16 +564,9 @@ def compute_std140_offsets(uniforms):
     return offsets
 
 
-class UniformBlock:  # noqa: D101
+class WebGLUniformBlock(BaseUniformBlock):  # noqa: D101
     ctx: OpenGLSurfaceContext | None
-    program: CallableProxyType[Callable[..., Any] | Any] | Any
-    name: str
-    index: int
-    size: int
-    binding: int
-    uniforms: dict[int, tuple[str, GLDataType, int, int]]
-    view_cls: type[Structure] | None
-    __slots__ = 'binding', 'ctx', 'index', 'name', 'program', 'size', 'uniform_count', 'uniforms', 'view_cls'
+    __slots__ = ('ctx',)
 
     def __init__(
         self,
@@ -589,52 +581,15 @@ class UniformBlock:  # noqa: D101
         """Initialize a uniform block for a ShaderProgram."""
         self.ctx = pyglet.graphics.api.core.current_context
         assert self.ctx
-        self.program = weakref.proxy(program)
-        self.name = name
-        self.index = index
-        self.size = size
-        self.binding = binding
-        self.uniforms = uniforms
-        self.uniform_count = uniform_count
-        self.view_cls = self._create_structure()
+        super().__init__(program, name, index, size, binding, uniforms, uniform_count)
 
-    def _create_structure(self):
-        return self._introspect_uniforms()
+    def _bind_buffer_base(self, binding: int, buffer_id: int) -> None:
+        self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, binding, buffer_id)
 
-    def bind(self, ubo: UniformBufferObject) -> None:
-        """Bind buffer to the binding point."""
-        self.ctx.gl.bindBufferBase(GL_UNIFORM_BUFFER, self.binding, ubo.buffer.id)
+    def _create_backend_ubo(self, view_class: type[Structure], buffer_size: int, binding: int) -> WebGLUniformBufferObject:
+        return WebGLUniformBufferObject(self.ctx, view_class, buffer_size, binding)
 
-    def create_ubo(self) -> UniformBufferObject:
-        """Create a new UniformBufferObject from this uniform block."""
-        return UniformBufferObject(self.ctx, self.view_cls, self.size, self.binding)
-
-    def set_binding(self, binding: int) -> None:
-        """Rebind the Uniform Block to a new binding index number.
-
-        This only affects the program this Uniform Block is derived from.
-
-        Binding value of 0 is reserved for the Pyglet's internal uniform block named ``WindowBlock``.
-
-        .. warning:: By setting a binding manually, the user is expected to manage all Uniform Block bindings
-                     for all shader programs manually. Since the internal global ID's will be unaware of changes set
-                     by this function, collisions may occur if you use a lower number.
-
-        .. note:: You must call ``create_ubo`` to get another Uniform Buffer Object after calling this,
-                  as the previous buffers are still bound to the old binding point.
-        """
-        assert binding != 0, "Binding 0 is reserved for the internal Pyglet 'WindowBlock'."
-        assert pyglet.graphics.api.core.current_context is not None, "No context available."
-        manager: _UBOBindingManager = pyglet.graphics.api.core.current_context.ubo_manager
-        if binding >= manager.max_value:
-            msg = f"Binding value exceeds maximum allowed by hardware: {manager.max_value}"
-            raise ShaderException(msg)
-        existing_name = manager.get_name(binding)
-        if existing_name and existing_name != self.name:
-            msg = f"Binding: {binding} was in use by {existing_name}, and has been overridden."
-            warnings.warn(msg)
-
-        self.binding = binding
+    def _set_block_binding(self) -> None:
         self.ctx.gl.uniformBlockBinding(self.program.id, self.index, self.binding)
 
     def _introspect_uniforms(self) -> type[Structure]:
@@ -710,43 +665,15 @@ class UniformBlock:  # noqa: D101
         )
 
 
-class UniformBufferObject(UniformBufferObjectBase):
+class WebGLUniformBufferObject(UniformBufferObject):
     buffer: BufferObject
-    view: Structure
-    _view_ptr: CTypesPointer[Structure]
-    binding: int
+    __slots__ = ()
 
-    __slots__ = '_view_ptr', 'binding', 'buffer', 'view'
-
-    def __init__(self, context: OpenGLSurfaceContext, view_class: type[Structure], buffer_size: int, binding: int) -> None:
-        """Initialize the Uniform Buffer Object with the specified Structure."""
-        self.buffer = BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
-        self.view = view_class()
-        self._view_ptr = pointer(self.view)
-        self.binding = binding
-
-    @property
-    def id(self) -> int:
-        """The buffer ID associated with this UBO."""
-        return self.buffer.id
-
-    def read(self) -> Array:
-        """Read the byte contents of the buffer."""
-        return self.buffer.get_data()
-
-    def __enter__(self) -> Structure:
-        return self.view
-
-    def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
-        self.buffer.set_data(self._view_ptr)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(id={self.buffer.id}, binding={self.binding})"
+    def _create_buffer(self, context: OpenGLSurfaceContext, buffer_size: int) -> BufferObject:
+        return BufferObject(context, buffer_size, target=GL_UNIFORM_BUFFER)
 
 
 # Utility functions:
-
-
 def _get_number(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram, variable_type: int) -> int:
     """Get the number of active variables of the passed GL type."""
     return gl_ctx.getProgramParameter(program_id, variable_type)
@@ -850,8 +777,8 @@ def _introspect_uniforms(gl_ctx: WebGLRenderingContext, program_id: WebGLProgram
 
 
 def _introspect_uniform_blocks(
-    ctx: OpenGLSurfaceContext, program: ShaderProgram | ComputeShaderProgram,
-) -> dict[str, UniformBlock]:
+    ctx: OpenGLSurfaceContext, program: ShaderProgram | WebGLComputeShaderProgram,
+) -> dict[str, WebGLUniformBlock]:
     uniform_blocks = {}
     gl_ctx: WebGL2RenderingContext = ctx.gl
     program_id: WebGLProgram = program.id
@@ -908,7 +835,7 @@ def _introspect_uniform_blocks(
                     warnings.warn(msg)
                 manager.add_explicit_binding(program, name, binding)
 
-        uniform_blocks[name] = UniformBlock(
+        uniform_blocks[name] = WebGLUniformBlock(
             program, name, index, block_data_size, binding_index, uniforms, len(indices),
         )
 
@@ -978,7 +905,7 @@ class GLShaderSource(ShaderSource):
         raise ShaderException(msg)
 
 
-class Shader(ShaderBase):
+class WebGLShader(Shader):
     """OpenGL shader.
 
     Shader objects are compiled on instantiation.
@@ -1085,17 +1012,17 @@ class Shader(ShaderBase):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
 
 
-class ShaderProgram(ShaderProgramBase):
+class WebGLShaderProgram(ShaderProgram):
     """OpenGL shader program."""
 
     _id: int | WebGLProgram | None
     _context: OpenGLSurfaceContext | None
     _uniforms: dict[str, _Uniform]
-    _uniform_blocks: dict[str, UniformBlock]
+    _uniform_blocks: dict[str, WebGLUniformBlock]
 
     __slots__ = '_attributes', '_context', '_id', '_uniform_blocks', '_uniforms'
 
-    def __init__(self, *shaders: Shader) -> None:
+    def __init__(self, *shaders: WebGLShader) -> None:
         """Initialize the ShaderProgram using at least two Shader instances."""
         super().__init__(*shaders)
         self._context = pyglet.graphics.api.core.current_context
@@ -1118,7 +1045,7 @@ class ShaderProgram(ShaderProgramBase):
         self._uniform_blocks = self._get_uniform_blocks()
         self.stop()
 
-    def _get_uniform_blocks(self) -> dict[str, UniformBlock]:
+    def _get_uniform_blocks(self) -> dict[str, WebGLUniformBlock]:
         """Return Uniform Block information."""
         return _introspect_uniform_blocks(self._context, self)
 
@@ -1338,7 +1265,7 @@ class ShaderProgram(ShaderProgramBase):
         return f"{self.__class__.__name__}(id={self.id})"
 
 
-class ComputeShaderProgram:
+class WebGLComputeShaderProgram:
     """OpenGL Compute Shader Program."""
 
     def __init__(self, source: str) -> None:

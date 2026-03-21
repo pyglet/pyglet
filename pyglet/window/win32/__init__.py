@@ -106,6 +106,16 @@ Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
+# Some events should not be queued, especially those with pointers or structures.
+# Data is only guaranteed to be available for the duration of the initial function call.
+_priority_events = [
+    constants.WM_GETMINMAXINFO,
+    constants.WM_GETDPISCALEDSIZE,
+    constants.WM_DPICHANGED,
+    constants.WM_INPUT,
+]
+
+
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -443,6 +453,27 @@ class Win32Window(BaseWindow):
             _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
 
 
+
+    def set_mouse_passthrough(self, state: bool) -> None:
+        color_ref = COLORREF()
+        alpha = BYTE()
+        flags = DWORD()
+
+        if self._ex_ws_style & constants.WS_EX_LAYERED:
+            _user32.GetLayeredWindowAttributes(self._hwnd, byref(color_ref), byref(alpha), byref(flags))
+
+        if state:
+            self._ex_ws_style |= (constants.WS_EX_TRANSPARENT | constants.WS_EX_LAYERED)
+        else:
+            self._ex_ws_style &= ~constants.WS_EX_TRANSPARENT
+
+            if self._ex_ws_style & constants.WS_EX_LAYERED and not flags.value & constants.LWA_ALPHA:
+                self._ex_ws_style &= ~constants.WS_EX_LAYERED
+
+        _user32.SetWindowLongW(self._hwnd, constants.GWL_EXSTYLE, self._ex_ws_style)
+
+        if state:
+            _user32.SetLayeredWindowAttributes(self._hwnd, color_ref.value, alpha.value, flags.value)
 
     def set_location(self, x: int, y: int) -> None:
         x, y = self._client_to_window_pos(x, y)
@@ -874,7 +905,7 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg)
             result = None
             if event_handler:
-                if self._allow_dispatch_event or not self._enable_event_queue:
+                if self._allow_dispatch_event or not self._enable_event_queue or msg in _priority_events:
                     result = event_handler(msg, wParam, lParam)
                 else:
                     result = 0

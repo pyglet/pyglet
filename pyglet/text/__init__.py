@@ -422,8 +422,8 @@ class Label(DocumentLabel):
             dpi:
                 Resolution of the fonts in this layout.  Defaults to 96.
             font_name:
-                Font family name(s).  If more than one name is given, the
-                first matching name is used.
+                Font family name(s). A list of names can optionally
+                be given: the first matching font will be used.
             font_size:
                 Font size, in points.
             weight:

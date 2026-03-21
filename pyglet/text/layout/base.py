@@ -18,8 +18,6 @@ import pyglet
 from pyglet import graphics
 from pyglet.enums import BlendFactor, GeometryMode
 from pyglet.graphics import Group, ShaderProgram
-from pyglet.graphics.draw import Group
-from pyglet.graphics.texture import TextureBase
 from pyglet.text import runlist
 from pyglet.font.base import GlyphPosition
 
@@ -67,7 +65,7 @@ class TextLayoutGroup(Group):
     is created; applications usually do not need to explicitly create it.
     """
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
         super().__init__(order=order, parent=parent)
         self.uniforms = {"scissor": False}
@@ -106,7 +104,7 @@ class ScrollableTextLayoutGroup(Group):
     """
     scissor_area: ClassVar[tuple[int, int, int, int]] = 0, 0, 0, 0
 
-    def __init__(self, texture: TextureBase, program: ShaderProgram, order: int = 1,  # noqa: D107
+    def __init__(self, texture: Texture, program: ShaderProgram, order: int = 1,  # noqa: D107
                  parent: Group | None = None) -> None:
 
         super().__init__(order=order, parent=parent)
@@ -552,7 +550,7 @@ class _GlyphBox(_AbstractBox):
     def update_rotation(self, rotation: float) -> None:
         rot = (rotation,)
         for _vertex_list in self.vertex_lists:
-            _vertex_list.rotation[:] = (rot * _vertex_list.count)
+            _vertex_list.rotation[:] = rot * _vertex_list.count
 
     def update_visibility(self, visible: bool) -> None:
         visible_tuple = (visible,)
@@ -828,6 +826,7 @@ class TextLayout:
         # Boxes are all existing _AbstractBoxes, these are used to gather line information.
         # Note that this is only relevant to layouts that do not store directly on lines.
         self._boxes = []
+        self._lines = []
 
         #: :meta private:
         self.group_cache = {}
@@ -1029,10 +1028,11 @@ class TextLayout:
 
         anchor_y = self._get_top_anchor()
 
-        acc_anchor_x = self._anchor_left
-        for box in self._boxes:
-            box.update_anchor(acc_anchor_x, anchor_y)
-            acc_anchor_x += box.advance
+        for line in self._lines:
+            acc_anchor_x = self._anchor_left
+            for box in line.boxes:
+                box.update_anchor(acc_anchor_x, anchor_y)
+                acc_anchor_x += box.advance
 
     @property
     def visible(self) -> bool:
@@ -1344,6 +1344,8 @@ class TextLayout:
 
         self._vertex_lists.clear()
         self._boxes.clear()
+        self._lines.clear()
+        self.group_cache.clear()
         #self.group_cache.clear()
 
         if not self._document or not self._document.text:
@@ -1353,9 +1355,9 @@ class TextLayout:
             self._anchor_bottom = 0
             return
 
-        lines = self._get_lines()
-        self._ascent = lines[0].ascent
-        self._descent = lines[0].descent
+        self._lines = self._get_lines()
+        self._ascent = self._lines[0].ascent
+        self._descent = self._lines[0].descent
 
         colors_iter = self._document.get_style_runs("color")
 
@@ -1367,7 +1369,7 @@ class TextLayout:
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
 
-        for line in lines:
+        for line in self._lines:
             self._boxes.extend(line.boxes)
             self._create_vertex_lists(line.x, line.y, self._anchor_left, anchor_top, line.start, line.boxes, context)
 

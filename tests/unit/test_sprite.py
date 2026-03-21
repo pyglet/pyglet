@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import pyglet
+from pyglet.graphics.texture import TextureArrayRegion
 
 
 @pytest.fixture(autouse=True)
@@ -208,3 +209,32 @@ def test_program_setter(request, fixture):
     with patch.multiple(_sprite._vertex_list, indexed=True, instanced=False):  # noqa: SLF001
         _sprite.program = program
         assert _sprite.program == program
+
+
+def test_init_uses_array_shader_for_texture_array_region(monkeypatch):
+    array_program = MagicMock()
+    default_program = MagicMock()
+    get_array_shader = MagicMock(return_value=array_program)
+    get_default_shader = MagicMock(return_value=default_program)
+
+    monkeypatch.setattr("pyglet.sprite.get_default_array_shader", get_array_shader)
+    monkeypatch.setattr("pyglet.sprite.get_default_shader", get_default_shader)
+
+    texture = MagicMock()
+    texture.width = 1
+    texture.height = 1
+    texture.anchor_x = 0
+    texture.anchor_y = 0
+    texture.tex_coords = (0.0,) * 12
+    texture.id = 1
+
+    image = MagicMock(spec=TextureArrayRegion)
+    image.get_texture.return_value = texture
+
+    sprite = pyglet.sprite.Sprite(image)
+    try:
+        assert sprite.program is array_program
+        get_array_shader.assert_called_once_with()
+        get_default_shader.assert_not_called()
+    finally:
+        sprite.delete()

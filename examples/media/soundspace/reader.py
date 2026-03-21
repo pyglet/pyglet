@@ -115,4 +115,4 @@ class SpaceReader:
 
     def source(self, filename, **kwargs):
         filename = os.path.join(self.basedir, filename)
-        return media.load(filename, **kwargs)
+        return media.load_audio(filename, **kwargs)

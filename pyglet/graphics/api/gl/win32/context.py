@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ctypes import c_int
 
+from pyglet.graphics.api.base import NullContext
 from pyglet.graphics.api.gl.base import ContextException
 from pyglet.graphics.api.gl.context import OpenGLSurfaceContext
 from pyglet.libs.win32 import wglext_arb, wgl
@@ -16,8 +17,7 @@ if TYPE_CHECKING:
     from pyglet.window.win32 import Win32Window
 
 
-
-class _BaseWin32Context(OpenGLSurfaceContext):
+class _Win32Context(OpenGLSurfaceContext):
     def __init__(self,
                  opengl_backend: OpenGLBackend,
                  window: Win32Window,
@@ -50,9 +50,9 @@ class _BaseWin32Context(OpenGLSurfaceContext):
             self.platform_func.wglSwapIntervalEXT(int(vsync))
 
 
-class Win32Context(_BaseWin32Context):
+class Win32Context(_Win32Context):
     config: GLLegacyConfig
-    context_share: Win32Context | None
+    context_share: Win32Context | NullContext
 
     def attach(self, window: Win32Window) -> None:
         if not self._context:
@@ -71,9 +71,9 @@ class Win32Context(_BaseWin32Context):
         super().attach(window)
 
 
-class Win32ARBContext(_BaseWin32Context):
+class Win32ARBContext(_Win32Context):
     config: GLSurfaceConfig
-    context_share: Win32ARBContext | None
+    context_share: Win32ARBContext | NullContext
 
     def attach(self, window: Win32Window) -> None:
         share = self.context_share
@@ -104,5 +104,11 @@ class Win32ARBContext(_BaseWin32Context):
         self.config.apply_format()
 
         from pyglet.config.gl.windows import _global_wgl
+        # If this is a NullContext, explicity conver to None for the ctypes call:
+        share = None if isinstance(share, NullContext) else share
         self._context = _global_wgl.funcs.wglCreateContextAttribsARB(window.dc, share, attribs)
         super().attach(window)
+
+
+# Backwards-compatible alias.
+_BaseWin32Context = _Win32Context
