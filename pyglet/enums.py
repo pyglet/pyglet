@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import Enum, auto
+from enum import Enum, auto, StrEnum
 
 
 class GraphicsAPI(str, Enum):
@@ -70,6 +70,21 @@ class TextureWrapping(Enum):
     WRAP_S = auto()
     WRAP_T = auto()
     WRAP_R = auto()
+
+
+class AnimationChannelTargetPath(StrEnum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    TRANSLATION = "translation"
+    ROTATION = "rotation"
+    SCALE = "scale"
+    WEIGHTS = "weights"
+
+
+class AnimationInterpolation(StrEnum):
+    # Keep the values of the strings as is, to match glTF 2.0 specifications
+    LINEAR = "LINEAR"
+    STEP = "STEP"
+    CUBIC_SPLINE = "CUBICSPLINE"
 
 
 class ComponentFormat(str, Enum):
