@@ -14,8 +14,10 @@ from pyglet.graphics.api.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIG
 from pyglet.graphics.api.gl import GL_POINTS, GL_TRIANGLES, GL_LINES, GL_TRIANGLE_STRIP, GL_LINE_STRIP, GL_TRIANGLE_FAN
 from pyglet.graphics.api.gl import GL_INT, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
 
-from pyglet.enums import AddressMode, GeometryMode
-
+from pyglet.enums import (
+    AddressMode, AnimationChannelTargetPath, AnimationInterpolation,
+    GeometryMode
+)
 
 from . import ModelDecodeException, ModelDecoder
 from .base import Scene
@@ -348,6 +350,73 @@ class Node(BaseNode):
         return [self._owner.nodes[i] for i in self._child_indices]
 
 
+class Skin:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        ibm_idx = data.get('inverseBindMatrices')
+        ibm_accessor = owner.accessors[ibm_idx] if ibm_idx is not None else None
+        self.inverse_bind_matrices = ibm_accessor.as_array() if ibm_accessor \
+            else None
+        joints_indices = data.get('joints', [])
+        self.joints = [owner.nodes[i] for i in joints_indices]
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class Animation:
+    def __init__(self, data, owner):
+        self.name = data.get('name')
+        self.samplers = [
+            AnimationSampler(sampler_data, owner) for sampler_data in data.get(
+                'samplers'
+            )
+        ]
+        # SAMPLERS NEED TO BE DEFINED FIRST
+        self.channels = [
+            AnimationChannel(channel_data, owner, self) for channel_data in
+            data.get(
+                'channels'
+            )
+        ]
+
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationChannel:
+    def __init__(self, data, owner, animation):
+        self.target = AnimationChannelTarget(data.get('target'), owner)
+        sampler_id = data.get('sampler')
+        sampler = animation.samplers[
+            sampler_id
+        ] if sampler_id is not None else None
+        self.sampler = sampler
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationChannelTarget:
+    def __init__(self, data, owner):
+        node_idx = data.get('node')
+        self.node = owner.nodes[node_idx] if node_idx is not None else None
+        self.path = data.get('path', AnimationChannelTargetPath.ROTATION)
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
+
+class AnimationSampler:
+    def __init__(self, data, owner):
+        input_idx = data.get('input')
+        self.input = owner.accessors[input_idx] if input_idx is not None else \
+            None
+        output_idx = data.get('output')
+        self.output = owner.accessors[output_idx] if output_idx is not None \
+            else None
+        interpolation = data.get('interpolation', 'LINEAR')
+        self.interpolation = AnimationInterpolation(interpolation)
+        self.extensions = data.get('extensions')
+        self.extras = data.get('extras')
+
 class GLTF:
     def __init__(self, gltf_data: dict, binary_buffer: bytes | None = None):
         self._gltf_data = gltf_data
@@ -372,6 +441,14 @@ class GLTF:
 
         self.meshes = [Mesh(data=data, owner=self) for data in gltf_data['meshes']]
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
+
+        self.skins = [
+            Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
+        ]
+        self.animations = [
+            Animation(data=data, owner=self) for data in
+            gltf_data.get('animations', [])
+        ]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
         self.default_scene = self.scenes[gltf_data.get('scene', 0)]
