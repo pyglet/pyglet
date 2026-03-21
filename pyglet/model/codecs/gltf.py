@@ -443,12 +443,11 @@ class GLTF:
         self.nodes = [Node(data=data, owner=self) for data in gltf_data['nodes']]
 
         self.skins = [
-            Skin(data=data, owner=self) for data in gltf_data['skins']
+            Skin(data=data, owner=self) for data in gltf_data.get('skins', [])
         ]
         self.animations = [
-            Animation(data=data, owner=self) for data in gltf_data[
-                'animations'
-            ]
+            Animation(data=data, owner=self) for data in
+            gltf_data.get('animations', [])
         ]
 
         self.scenes = [Scene(nodes=[self.nodes[i] for i in data['nodes']]) for data in gltf_data['scenes']]
