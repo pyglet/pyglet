@@ -582,7 +582,8 @@ class FFmpegSource(StreamingSource):
 
     def __init__(self, filename: str, file: BinaryIO | None=None,
                  audio_sample_format: str | None=None,
-                 audio_driver_sample_formats: list[str] | None=None):
+                 audio_driver_sample_formats: list[str] | None=None,
+                 audio_sample_rate: int | None=None):
         self._packet = None
         self._video_stream = None
         self._audio_stream = None
@@ -680,11 +681,15 @@ class FFmpegSource(StreamingSource):
                 else:
                     raise FFmpegException('Audio format not supported.')
 
+                if not audio_sample_rate:
+                    audio_sample_rate = info.sample_rate
+                self.tgt_sample_rate = audio_sample_rate
+
                 self.audio_format = AudioFormat(
                     channels=channels_out,
                     sample_size=self.AV_FORMAT_MAP[self.tgt_format][0],
                     sample_type=self.AV_FORMAT_MAP[self.tgt_format][1],
-                    sample_rate=info.sample_rate)
+                    sample_rate=self.tgt_sample_rate)
                 self._audio_stream = stream
                 self._audio_stream_index = i
 
@@ -738,23 +743,27 @@ class FFmpegSource(StreamingSource):
         if self.start_time > 0:
             self.seek(0.0)
 
-    def get_formatted_swr_context(self, channel_output: AVChannelLayout | int, sample_rate: int,
-                                  channel_input: AVChannelLayout | int, sample_format: int) -> int | SwrContext:
+    def get_formatted_swr_context(self, channel_output: AVChannelLayout | int,
+                                  sample_rate: int,
+                                  channel_input: AVChannelLayout | int,
+                                  sample_format: int) -> int | SwrContext:
         # Newer FFmpeg versions use the AVChannelLayout
         if swresample_version < 5:
-            return swresample.swr_alloc_set_opts(None,
-                                          channel_output, self.tgt_format, sample_rate,
-                                          channel_input, sample_format, sample_rate,
-                                          0, None)
+            return swresample.swr_alloc_set_opts(
+                None,
+                channel_output, self.tgt_format, self.tgt_sample_rate,
+                channel_input, sample_format, sample_rate,
+                0, None)
         else:
             swr_ctx = swresample.swr_alloc()
             if not swr_ctx:
                 raise RuntimeError("Could not allocate SwrContext")
 
-            if swresample.swr_alloc_set_opts2(byref(swr_ctx),
-                                              channel_output, self.tgt_format, sample_rate,
-                                              channel_input, sample_format, sample_rate,
-                                              0, None) < 0:
+            if swresample.swr_alloc_set_opts2(
+                byref(swr_ctx),
+                channel_output, self.tgt_format, self.tgt_sample_rate,
+                channel_input, sample_format, sample_rate,
+                0, None) < 0:
                 raise Exception("Could not set sample rate context values.")
             return swr_ctx
 
@@ -1271,6 +1280,7 @@ class FFmpegDecoder(MediaDecoder):
     def decode(self, filename: str, file: BinaryIO | None,
                streaming: bool=True, audio_sample_format: str | None=None,
                audio_driver_sample_formats: list[str] | None=None,
+               audio_sample_rate: int | None=None,
     ) -> FFmpegSource | StaticSource:
 
         if audio_sample_format \
@@ -1280,11 +1290,13 @@ class FFmpegDecoder(MediaDecoder):
 
         if streaming:
             return FFmpegSource(filename, file, audio_sample_format,
-                                audio_driver_sample_formats)
+                                audio_driver_sample_formats,
+                                audio_sample_rate)
         else:
             return StaticSource(FFmpegSource(filename, file,
                                              audio_sample_format,
-                                             audio_driver_sample_formats))
+                                             audio_driver_sample_formats,
+                                             audio_sample_rate))
 
 
 def get_decoders() -> list[FFmpegDecoder]:
