@@ -14,6 +14,7 @@ from ctypes import (
     c_int,
     c_int32,
     c_uint8,
+    c_double,
     cast,
     create_string_buffer,
     memmove,
@@ -583,7 +584,8 @@ class FFmpegSource(StreamingSource):
     def __init__(self, filename: str, file: BinaryIO | None=None,
                  audio_sample_format: str | None=None,
                  audio_driver_sample_formats: list[str] | None=None,
-                 audio_sample_rate: int | None=None):
+                 audio_sample_rate: int | None=None,
+                 audio_channels: int | None=None):
         self._packet = None
         self._video_stream = None
         self._audio_stream = None
@@ -648,7 +650,9 @@ class FFmpegSource(StreamingSource):
                   and self._audio_stream is None):
                 stream = ffmpeg_open_stream(self._file, i)
 
-                channels_out = min(2, info.channels)
+                if not audio_channels:
+                    audio_channels = info.channels
+                channels_out = min(2, abs(audio_channels))
                 channel_input = self._get_default_channel_layout(info.channels)
                 channel_output = self._get_default_channel_layout(channels_out)
 
@@ -708,6 +712,16 @@ class FFmpegSource(StreamingSource):
                                       asbytes("dither_method"),
                                       asbytes("low_shibata"),
                                       0)
+
+                # Set matrix for mixing down to dual-mono
+                if audio_channels == -2 and info.channels > 1:
+                    num_elements = info.channels * 2
+                    weight = 1.0 / info.channels
+                    MatrixArrayType = c_double * num_elements
+                    data = [weight] * num_elements
+                    matrix = MatrixArrayType(*data)
+                    swresample.swr_set_matrix(self.audio_convert_ctx, matrix,
+                                              info.channels)
 
                 result = swresample.swr_init(self.audio_convert_ctx)
                 if result < 0:
@@ -1281,6 +1295,7 @@ class FFmpegDecoder(MediaDecoder):
                streaming: bool=True, audio_sample_format: str | None=None,
                audio_driver_sample_formats: list[str] | None=None,
                audio_sample_rate: int | None=None,
+               audio_channels: int | None=None
     ) -> FFmpegSource | StaticSource:
 
         if audio_sample_format \
@@ -1291,12 +1306,14 @@ class FFmpegDecoder(MediaDecoder):
         if streaming:
             return FFmpegSource(filename, file, audio_sample_format,
                                 audio_driver_sample_formats,
-                                audio_sample_rate)
+                                audio_sample_rate,
+                                audio_channels)
         else:
             return StaticSource(FFmpegSource(filename, file,
                                              audio_sample_format,
                                              audio_driver_sample_formats,
-                                             audio_sample_rate))
+                                             audio_sample_rate,
+                                             audio_channels))
 
 
 def get_decoders() -> list[FFmpegDecoder]:

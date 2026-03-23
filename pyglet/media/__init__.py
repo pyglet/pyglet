@@ -72,24 +72,39 @@ AUDIO_SAMPLE_RATE_96000 = 96000
 AUDIO_SAMPLE_RATE_176400 = 176400
 AUDIO_SAMPLE_RATE_192000 = 192000
 
-_VALID_AUDIO_SAMPLE_FORMATS = (AUDIO_SAMPLE_FORMAT_U8,
-                               AUDIO_SAMPLE_FORMAT_S16,
-                               #AUDIO_SAMPLE_FORMAT_S24,  # Could be considered as well
-                               AUDIO_SAMPLE_FORMAT_S32,
-                               AUDIO_SAMPLE_FORMAT_F32)
+AUDIO_CHANNELS_MONO = 1
+AUDIO_CHANNELS_STEREO = 2
+AUDIO_CHANNELS_DUAL_MONO = -2
 
-_VALID_AUDIO_SAMPLE_RATES = (AUDIO_SAMPLE_RATE_22050,
-                             AUDIO_SAMPLE_RATE_44100,
-                             AUDIO_SAMPLE_RATE_48000,
-                             AUDIO_SAMPLE_RATE_88200,
-                             AUDIO_SAMPLE_RATE_96000,
-                             AUDIO_SAMPLE_RATE_176400,
-                             AUDIO_SAMPLE_RATE_192000)
+_VALID_AUDIO_SAMPLE_FORMATS = (
+    AUDIO_SAMPLE_FORMAT_U8,
+    AUDIO_SAMPLE_FORMAT_S16,
+    #AUDIO_SAMPLE_FORMAT_S24,  # Could be considered as well
+    AUDIO_SAMPLE_FORMAT_S32,
+    AUDIO_SAMPLE_FORMAT_F32,
+)
+
+_VALID_AUDIO_SAMPLE_RATES = (
+    AUDIO_SAMPLE_RATE_22050,
+    AUDIO_SAMPLE_RATE_44100,
+    AUDIO_SAMPLE_RATE_48000,
+    AUDIO_SAMPLE_RATE_88200,
+    AUDIO_SAMPLE_RATE_96000,
+    AUDIO_SAMPLE_RATE_176400,
+    AUDIO_SAMPLE_RATE_192000,
+)
+
+_VALID_AUDIO_CHANNELS = (
+    AUDIO_CHANNELS_MONO,
+    AUDIO_CHANNELS_STEREO,
+    AUDIO_CHANNELS_DUAL_MONO,
+)
 
 def load(filename: str, file: BinaryIO | None = None,
          streaming: bool = True, decoder: MediaDecoder | None = None,
          audio_sample_format: str | None = None,
-         audio_sample_rate: int | None = None) -> Source | StreamingSource:
+         audio_sample_rate: int | None = None,
+         audio_channels: int | None = None) -> Source | StreamingSource:
     """Load a Source from disk, or an opened file.
 
     All decoders that are registered for the filename extension are tried.
@@ -114,9 +129,15 @@ def load(filename: str, file: BinaryIO | None = None,
             the AUDIO_SAMPLE_FORMAT_* constants.
             NOTE: currently only supported by FFmpegDecoder!
         audio_sample_rate:
-            A specicif audio sample rate (in Hz) you wish the decoder to
-            output, rather than relying on automatic detection.
+            A specific audio sample rate (in Hz) you wish the decoder to
+            output, rather than relying on automatic detection. For possible
+            values see the AUDIO_SAMPLE_RATE_* constants.
             NOTE: currently only supported by FFmpegDecoder!
+        audio_channels:
+            A specific number of channels you wish the decoder to output,
+            rather than relying on autimatic detection. For possible values see
+            the AUDIO_CHANNELS_* constants.
+            Note: currently only supported by FFmpegDecoder!
     """
 
     audio_driver = get_audio_driver()
@@ -138,6 +159,12 @@ def load(filename: str, file: BinaryIO | None = None,
                 f"Expected one of: "
                 f"{', '.join([str(x) for x in _VALID_AUDIO_SAMPLE_RATES])}")
 
+    if audio_channels:
+        if audio_channels not in _VALID_AUDIO_CHANNELS:
+            raise ValueError(
+                f"Invalid audio_channels '{audio_channels}'. "
+                f"Expected one of: "
+                f"{', '.join([str(x) for x in _VALID_AUDIO_CHANNELS])}")
 
     if decoder:
         if type(decoder).__name__ == "FFmpegDecoder":
@@ -145,7 +172,8 @@ def load(filename: str, file: BinaryIO | None = None,
                 filename, file, streaming=streaming,
                 audio_sample_format=audio_sample_format,
                 audio_driver_sample_formats=audio_driver.sample_formats,
-                audio_sample_rate=audio_sample_rate)
+                audio_sample_rate=audio_sample_rate,
+                audio_channels=audio_channels)
         else:
             return decoder.decode(filename, file, streaming=streaming)
 
