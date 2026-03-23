@@ -31,6 +31,10 @@ class XAudio2Driver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
+    @property
+    def sample_formats(self):
+        return tuple(interface.SAMPLE_FORMATS.keys())
+
     def get_performance(self) -> interface.lib.XAUDIO2_PERFORMANCE_DATA:
         assert self._xa2_driver is not None
         return self._xa2_driver.get_performance()

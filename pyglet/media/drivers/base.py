@@ -450,6 +450,12 @@ class AbstractAudioDriver(metaclass=ABCMeta):
     def get_listener(self):
         pass
 
+    @property
+    @abstractmethod
+    def sample_formats(self):
+        """Get list of supported sample formats ("U8", "S16", "S32", "F32")."""
+        pass
+
     @abstractmethod
     def delete(self):
         pass

@@ -28,6 +28,10 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker = PlayerWorkerThread()
         self.worker.start()
 
+    @property
+    def sample_formats(self):
+       return self.context._supported_formats
+
     def create_audio_player(self, source: 'Source', player: 'Player') -> 'OpenALAudioPlayer':
         assert self.device is not None, 'Device was closed'
         return OpenALAudioPlayer(self, source, player)
@@ -218,7 +222,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         # Get, fill and queue OpenAL buffer using the entire AudioData
         buf = self.alsource.get_buffer()
-        buf.data(audio_data, self.source.audio_format)
+        buf.data(audio_data, self.source.audio_format,
+                 self.driver.sample_formats)
         self.alsource.queue_buffer(buf)
 
         # Adjust the write cursor and memorize buffer length
